@@ -58,7 +58,7 @@ namespace NachoCore
         public static void Archive (McEmailMessage message)
         {
             if (ShouldDeleteInsteadOfArchive(message.AccountId)) {
-                Delete (message);
+                Delete (message, true);
             } else {
                 McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (message.AccountId);
                 Move (message, archiveFolder); // Do not archive messages in Archive folder
@@ -73,7 +73,7 @@ namespace NachoCore
             var Ids = messages.Select (x => x.Id).ToList ();
             int accountId = messages [0].AccountId;
             if (ShouldDeleteInsteadOfArchive (accountId)) {
-                BackEnd.Instance.DeleteEmailsCmd (accountId, Ids);
+                BackEnd.Instance.DeleteEmailsCmd (accountId, Ids, true);
             } else {
                 McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
                 BackEnd.Instance.MoveEmailsCmd (accountId, Ids, archiveFolder.Id);
@@ -89,20 +89,20 @@ namespace NachoCore
             Archive (messages);
         }
 
-        public static void Delete (McEmailMessage message)
+        public static void Delete (McEmailMessage message, bool justDelete = false)
         {
             RemoveDeferral (message);
-            BackEnd.Instance.DeleteEmailCmd (message.AccountId, message.Id);
+            BackEnd.Instance.DeleteEmailCmd (message.AccountId, message.Id, justDelete);
         }
 
-        public static void Delete (List<McEmailMessage> messages)
+        public static void Delete (List<McEmailMessage> messages, bool justDelete = false)
         {
             if (0 == messages.Count) {
                 return;
             }
             var Ids = messages.Select (x => x.Id).ToList ();
             int accountId = messages [0].AccountId;
-            BackEnd.Instance.DeleteEmailsCmd (accountId, Ids);
+            BackEnd.Instance.DeleteEmailsCmd (accountId, Ids, justDelete);
         }
 
         public static void Delete (McEmailMessageThread thread)

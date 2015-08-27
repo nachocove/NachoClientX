@@ -93,6 +93,9 @@ namespace NachoCore.Model
             if (!String.IsNullOrEmpty (emailAddressListString)) {
                 var addressList = NcEmailAddress.ParseAddressListString (emailAddressListString);
                 foreach (var address in addressList) {
+                    if (!(address is MailboxAddress)) {
+                        continue; // ignore group address
+                    }
                     var emailAddressId = Get (accountId, ((MailboxAddress)address).Address);
                     if (0 != emailAddressId) {
                         emailAddressIdList.Add (emailAddressId);
@@ -100,6 +103,43 @@ namespace NachoCore.Model
                 }
             }
             return emailAddressIdList;
+        }
+
+        public static McEmailAddress QueryByCanonicalAddress (string canonicalAddress)
+        {
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT * from McEmailAddress WHERE CanonicalEmailAddress = ?",
+                canonicalAddress).SingleOrDefault ();
+        }
+
+        public static List<McEmailAddress> QueryToCcAddressByMessageId (int messageId)
+        {
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT a.* FROM McEmailAddress AS a " +
+                " JOIN McMapEmailAddressEntry AS m ON a.Id = m.EmailAddressId " +
+                " WHERE (m.AddressType = ? OR m.AddressType = ?) AND (m.ObjectId = ?) " +
+                " GROUP BY a.Id",
+                NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc, messageId);
+        }
+
+        public static List<McEmailAddress> QueryToAddressesByMessageId (int messageId)
+        {
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT a.* FROM McEmailAddress AS a " +
+                " JOIN McMapEmailAddressEntry AS m ON a.Id = m.EmailAddressId " +
+                " WHERE m.AddressType = ? AND (m.ObjectId = ?) " +
+                " GROUP BY a.Id",
+                NcEmailAddress.Kind.To, messageId);
+        }
+
+        public static List<McEmailAddress> QueryCcAddressesByMessageId (int messageId)
+        {
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT a.* FROM McEmailAddress AS a " +
+                " JOIN McMapEmailAddressEntry AS m ON a.Id = m.EmailAddressId " +
+                " WHERE m.AddressType = ? AND (m.ObjectId = ?) " +
+                " GROUP BY a.Id",
+                NcEmailAddress.Kind.Cc, messageId);
         }
     }
 }

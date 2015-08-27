@@ -130,7 +130,7 @@ namespace NachoCore.Utils
             if (!String.IsNullOrEmpty (src)) {
                 foreach (char c in src) {
                     if (Char.IsLetterOrDigit (c)) {
-                        initial += Char.ToUpper (c);
+                        initial += Char.ToUpperInvariant (c);
                         break;
                     }
                 }
@@ -145,7 +145,7 @@ namespace NachoCore.Utils
             initials += GetFirstLetterOrDigit (contact.FirstName);
             if (!String.IsNullOrEmpty (contact.LastName)) {
                 if (Char.IsLetter (contact.LastName [0])) {
-                    initials += Char.ToUpper (contact.LastName [0]);
+                    initials += Char.ToUpperInvariant (contact.LastName [0]);
                 } else if (!String.IsNullOrEmpty (contact.MiddleName)) {
                     initials += GetFirstLetterOrDigit (contact.MiddleName);
                 }

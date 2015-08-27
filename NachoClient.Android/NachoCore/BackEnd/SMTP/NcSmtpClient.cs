@@ -2,6 +2,7 @@
 //
 using System;
 using NachoCore.Utils;
+using MailKit;
 
 namespace NachoCore.SMTP
 {
@@ -9,9 +10,16 @@ namespace NachoCore.SMTP
     {
         public NcMailKitProtocolLogger MailKitProtocolLogger { get; private set; }
 
-        public NcSmtpClient () : base(new NcMailKitProtocolLogger("SMTP"))
+        public NcSmtpClient () : base(getLogger())
         {
             MailKitProtocolLogger = ProtocolLogger as NcMailKitProtocolLogger;
+        }
+
+        private static IProtocolLogger getLogger ()
+        {
+            //return new NcMailKitProtocolLogger("SMTP");
+            //return new NcDebugProtocolLogger (Log.LOG_SMTP);
+            return new NullProtocolLogger ();
         }
     }
 }

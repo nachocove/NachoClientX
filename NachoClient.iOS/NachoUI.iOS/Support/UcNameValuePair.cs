@@ -21,6 +21,7 @@ namespace NachoClient.iOS
         UITapGestureRecognizer TapGesture;
         UITapGestureRecognizer.Token TapGestureHandlerToken;
 
+        UILabel labelLabel;
         UILabel valueLabel;
 
         public UcNameValuePair (CGRect rect, string labelString, nfloat leftPadding, nfloat rightPadding, Action<NSObject> onSelected) : base (rect)
@@ -40,16 +41,19 @@ namespace NachoClient.iOS
 
             var leftMargin = leftPadding;
 
-            UILabel label = new UILabel (new CGRect (leftMargin, 0, 1, rect.Height));
-            label.Font = labelFont;
-            label.TextColor = labelColor;
-            label.TextAlignment = UITextAlignment.Left;
-            label.Text = labelString;
-            label.SizeToFit ();
-            ViewFramer.Create (label).Height (rect.Height);
-            this.AddSubview (label);
+            labelLabel = new UILabel (new CGRect (leftMargin, 0, 1, rect.Height));
+            labelLabel.Font = labelFont;
+            labelLabel.TextColor = labelColor;
+            labelLabel.TextAlignment = UITextAlignment.Left;
+            labelLabel.Text = labelString;
+            labelLabel.SizeToFit ();
+            if (labelLabel.Frame.X + labelLabel.Frame.Width > rightMargin) {
+                labelLabel.Frame = new CGRect(labelLabel.Frame.X, labelLabel.Frame.Y, rightMargin - labelLabel.Frame.X, labelLabel.Frame.Height);
+            }
+            ViewFramer.Create (labelLabel).Height (rect.Height);
+            this.AddSubview (labelLabel);
 
-            leftMargin += label.Frame.Width + SPACER;
+            leftMargin += labelLabel.Frame.Width + SPACER;
 
             valueLabel = new UILabel (new CGRect (leftMargin, 0, rightMargin - leftMargin, rect.Height));
             valueLabel.Font = valueFont;
@@ -73,6 +77,11 @@ namespace NachoClient.iOS
         public void SetValue (string valueString)
         {
             valueLabel.Text = valueString;
+        }
+
+        public void SetLabel (string labelString)
+        {
+            labelLabel.Text = labelString;
         }
 
         public void Cleanup ()

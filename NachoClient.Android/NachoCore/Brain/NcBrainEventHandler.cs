@@ -80,6 +80,8 @@ namespace NachoCore.Brain
             case NcBrainEventType.UNINDEX_MESSAGE:
             case NcBrainEventType.UPDATE_ADDRESS_SCORE:
             case NcBrainEventType.UPDATE_MESSAGE_SCORE:
+            case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
+            case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
                 var errMesg = String.Format ("Event type {0} should go to persistent queue instead", brainEvent.Type);
                 throw new NotSupportedException (errMesg);
             case NcBrainEventType.TEST:
@@ -110,8 +112,12 @@ namespace NachoCore.Brain
             try {
                 bool ranOnce = false;
                 while (DateTime.UtcNow < runTill) {
+                    if (IsInterrupted ()) {
+                        break;
+                    }
+
                     // Process all events in the persistent queue first
-                    if (0 < ProcessPersistedRequests (1)) {
+                    if (0 < ProcessPersistedRequests (100)) {
                         continue;
                     }
                     // Handle all other events
@@ -125,6 +131,10 @@ namespace NachoCore.Brain
                     }
                 }
                 while (DateTime.UtcNow < runTill) {
+                    if (IsInterrupted ()) {
+                        break;
+                    }
+
                     var emailMessages = McEmailMessage.QueryNeedUpdate (5, above: false);
                     if (0 == emailMessages.Count) {
                         break;
@@ -181,9 +191,40 @@ namespace NachoCore.Brain
                     UpdateEmailAddressScore (emailAddress, updateAddressEvent.ForceUpdateDependentMessages);
                     break;
                 case NcBrainEventType.UPDATE_MESSAGE_SCORE:
-                    var updatedMessageEvent = brainEvent as NcBrainUpdateMessageScoreEvent;
-                    var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)updatedMessageEvent.EmailMessageId);
-                    UpdateEmailMessageScore (emailMessage);
+                    long emailMesasgeId;
+                    int action = 0;
+                    if (brainEvent is NcBrainUpdateUserActionEvent) {
+                        var updateActionEvent = brainEvent as NcBrainUpdateUserActionEvent;
+                        emailMesasgeId = updateActionEvent.EmailMessageId;
+                        action = updateActionEvent.Action;
+                    } else {
+                        var updatedMessageEvent = brainEvent as NcBrainUpdateMessageScoreEvent;
+                        emailMesasgeId = updatedMessageEvent.EmailMessageId;
+                    }
+                    NcModel.Instance.RunInTransaction (() => {
+                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)emailMesasgeId);
+                        if (UpdateEmailMessageScore (emailMessage)) {
+                            if ((0 != action) && (0 != emailMessage.FromEmailAddressId)) {
+                                var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
+                                UpdateAddressUserAction (fromEmailAddress, action);
+                            }
+                        }
+                    });
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_NOTIFICATION_STATUS:
+                    var notifiedEvent = (NcBrainUpdateMessageNotificationStatusEvent)brainEvent;
+                    NcModel.Instance.RunInTransaction (() => {
+                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)notifiedEvent.EmailMessageId);
+                        if (null != emailMessage) {
+                            emailMessage.ScoreStates.UpdateNotificationTime (notifiedEvent.NotificationTime, notifiedEvent.Variance);
+                        }
+                    });
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
+                    ProcessMessageReadStatusUpdated ((NcBrainUpdateMessageReadStatusEvent)brainEvent);
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
+                    ProcessMessageReplyStatusUpdated ((NcBrainUpdateMessageReplyStatusEvent)brainEvent);
                     break;
                 default:
                     Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);
@@ -252,25 +293,6 @@ namespace NachoCore.Brain
             }
         }
 
-        private void ProcessUpdateAddressEvent (NcBrainUpdateAddressScoreEvent brainEvent)
-        {
-            Log.Debug (Log.LOG_BRAIN, "ProcessUpdateAddressEvent: event={0}", brainEvent.ToString ());
-            McEmailAddress emailAddress =
-                McEmailAddress.QueryById<McEmailAddress> ((int)brainEvent.EmailAddressId);
-            bool updateDependencies = brainEvent.ForceUpdateDependentMessages;
-            if (UpdateEmailAddressScore (emailAddress, true) && updateDependencies) {
-                emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
-            }
-        }
-
-        private void ProcessUpdateMessageEvent (NcBrainUpdateMessageScoreEvent brainEvent)
-        {
-            Log.Debug (Log.LOG_BRAIN, "ProcessUpdateMessageEvent: event={0}", brainEvent.ToString ());
-            McEmailMessage emailMessage =
-                McEmailMessage.QueryById<McEmailMessage> ((int)brainEvent.EmailMessageId);
-            UpdateEmailMessageScore (emailMessage);
-        }
-
         private int QuickScoreEmailMessages (int accountId, int count)
         {
             int numScored = 0;
@@ -279,8 +301,12 @@ namespace NachoCore.Brain
                 if (IsInterrupted ()) {
                     break;
                 }
-                emailMessage.Score = emailMessage.Classify ();
-                emailMessage.UpdateByBrain ();
+                var newScore = emailMessage.Classify ();
+                emailMessage.UpdateByBrain ((item) => {
+                    var em = (McEmailMessage)item;
+                    em.Score = newScore;
+                    return true;
+                });
                 numScored++;
             }
             if (0 != numScored) {
@@ -308,6 +334,22 @@ namespace NachoCore.Brain
                 NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_ContactSetChanged);
             }
             return numGleaned;
+        }
+
+        private void ProcessMessageReadStatusUpdated (NcBrainUpdateMessageReadStatusEvent readEvent)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)readEvent.EmailMessageId);
+                UpdateEmailMessageReadStatus (emailMessage, readEvent.ReadTime, readEvent.Variance);
+            });
+        }
+
+        private void ProcessMessageReplyStatusUpdated (NcBrainUpdateMessageReplyStatusEvent replyEvent)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)replyEvent.EmailMessageId);
+                UpdateEmailMessageReplyStatus (emailMessage, replyEvent.ReplyTime, replyEvent.Variance);
+            });
         }
     }
 }

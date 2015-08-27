@@ -30,7 +30,6 @@ using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
-using Google.iOS;
 
 namespace NachoClient.iOS
 {
@@ -173,6 +172,7 @@ namespace NachoClient.iOS
 
         public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
         {
+            hasRegisteredForRemoteNotifications = true;
             var deviceTokenBytes = deviceToken.ToArray ();
             PushAssist.SetDeviceToken (Convert.ToBase64String (deviceTokenBytes));
             Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications: {0}", deviceToken.ToString ());
@@ -213,6 +213,7 @@ namespace NachoClient.iOS
                 })) {
                     // Can't find any account matching those contexts. Abort immediately
                     completionHandler (UIBackgroundFetchResult.NoData);
+                    return;
                 }
                 if (NcApplication.Instance.IsForeground) {
                     completionHandler (UIBackgroundFetchResult.NewData);
@@ -387,22 +388,18 @@ namespace NachoClient.iOS
                 }
             }
 
-            // Initialize Google and add scope to give full access to email
-            var googleInfo = NSDictionary.FromFile ("GoogleService-Info.plist");
-            GIDSignIn.SharedInstance.ClientID = googleInfo [new NSString ("CLIENT_ID")].ToString ();
-            var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
-
             NcKeyboardSpy.Instance.Init ();
 
             if (NcApplication.ReadyToStartUI ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
-                Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
-                Window.RootViewController = (UIViewController)vc;
+                if (null == vc) {
+                    // Might get null if we're running in background
+                    Log.Info (Log.LOG_UI, "fast path view controller is null");
+                } else {
+                    Log.Info (Log.LOG_UI, "fast path to tab bar controller");
+                    Window.RootViewController = (UIViewController)vc;
+                }
             }
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
@@ -417,11 +414,6 @@ namespace NachoClient.iOS
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
-
-            if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
-                CreateGooglePlaceholderAccount ();
-                return true;
-            }
 
             if (!url.IsFileUrl) {
                 return false;
@@ -455,7 +447,7 @@ namespace NachoClient.iOS
                 UIApplication.SharedApplication.EndBackgroundTask (BackgroundIosTaskId);
             }
             BackgroundIosTaskId = UIApplication.SharedApplication.BeginBackgroundTask (() => {
-                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0}", application.BackgroundTimeRemaining);
+                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0:n2}", application.BackgroundTimeRemaining);
                 FinalShutdown (null);
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
@@ -533,7 +525,7 @@ namespace NachoClient.iOS
             }
             DidEnterBackgroundCalled = true;
             var timeRemaining = application.BackgroundTimeRemaining;
-            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0}", timeRemaining);
+            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0:n2}", timeRemaining);
             if (25.0 > timeRemaining) {
                 FinalShutdown (null);
             } else {
@@ -544,7 +536,7 @@ namespace NachoClient.iOS
                         // iOS caveat: BackgroundTimeRemaining can be MAX_DOUBLE early on.
                         // It also seems to return to MAX_DOUBLE value after we call EndBackgroundTask().
                         var remaining = application.BackgroundTimeRemaining;
-                        Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0}", remaining);
+                        Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0:n2}", remaining);
                         if (!didShutdown && 25.0 > remaining) {
                             didShutdown = true;
                             FinalShutdown (opaque);
@@ -584,6 +576,9 @@ namespace NachoClient.iOS
                 ShutdownTimer.Dispose ();
                 ShutdownTimer = null;
             }
+            if (doingPerformFetch) {
+                CompletePerformFetchWithoutShutdown ();
+            }
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
             }
@@ -616,6 +611,8 @@ namespace NachoClient.iOS
         private List<int> fetchAccounts;
         // A list of all accounts ids that are waiting for push assist to set up
         private List<int> pushAccounts;
+        // PushAssist is active only when the app is registered for remote notifications
+        private bool hasRegisteredForRemoteNotifications = false;
 
         private bool fetchComplete {
             get {
@@ -625,26 +622,63 @@ namespace NachoClient.iOS
 
         private bool pushAssistArmComplete {
             get {
-                return (0 == pushAccounts.Count);
+                return !hasRegisteredForRemoteNotifications || (0 == pushAccounts.Count);
             }
         }
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
-            // TODO - need to wait for ALL accounts to complete, not just 1st!
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
+            int accountId = (null != statusEvent.Account) ? statusEvent.Account.Id : -1;
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox");
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox account {0}", accountId);
                 fetchResult = UIBackgroundFetchResult.NewData;
                 break;
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
-                if ((null != statusEvent.Account) && (0 < statusEvent.Account.Id)) {
-                    fetchAccounts.Remove (statusEvent.Account.Id);
-                } else {
-                    Log.Error (Log.LOG_PUSH, "Info_SyncSucceeded for unknown account {0}", statusEvent.Account.Id);
+                if (0 >= accountId) {
+                    Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded for unspecified account {0}", accountId);
+                }
+                bool fetchWasComplete = fetchComplete;
+                fetchAccounts.Remove (accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded account {0}. {1} accounts and {2} push assists remaining.",
+                    accountId, fetchAccounts.Count, pushAccounts.Count);
+                if (fetchComplete) {
+                    // There will sometimes be duplicate Info_SyncSucceeded for an account.
+                    // Only call BadgeNotifUpdate once.
+                    if (!fetchWasComplete) {
+                        BadgeNotifUpdate ();
+                    }
+                    if (pushAssistArmComplete) {
+                        CompletePerformFetch ();
+                    }
+                }
+                break;
+
+            case NcResult.SubKindEnum.Info_PushAssistArmed:
+                if (0 >= accountId) {
+                    Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed for unspecified account {0}", accountId);
+                }
+                pushAccounts.Remove (accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed account {0}. {1} accounts and {2} push assists remaining.",
+                    accountId, fetchAccounts.Count, pushAccounts.Count);
+                if (fetchComplete && pushAssistArmComplete) {
+                    CompletePerformFetch ();
+                }
+                break;
+
+            case NcResult.SubKindEnum.Error_SyncFailed:
+                if (0 >= accountId) {
+                    Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed for unspecified account {0}", accountId);
+                }
+                fetchAccounts.Remove (accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed account {0}. {1} accounts and {2} push assists remaining.",
+                    accountId, fetchAccounts.Count, pushAccounts.Count);
+                // If one account found some new messages and a different account failed to sync,
+                // return a successful result.
+                if (UIBackgroundFetchResult.NoData == fetchResult) {
+                    fetchResult = UIBackgroundFetchResult.Failed;
                 }
                 if (fetchComplete) {
                     BadgeNotifUpdate ();
@@ -654,22 +688,11 @@ namespace NachoClient.iOS
                 }
                 break;
 
-            case NcResult.SubKindEnum.Info_PushAssistArmed:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed");
-                pushAccounts.Remove (statusEvent.Account.Id);
-                if (fetchComplete && pushAssistArmComplete) {
-                    CompletePerformFetch ();
-                }
-                break;
-
-            case NcResult.SubKindEnum.Error_SyncFailed:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed");
-                fetchResult = UIBackgroundFetchResult.Failed;
-                CompletePerformFetch ();
-                break;
-
             case NcResult.SubKindEnum.Error_SyncFailedToComplete:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailedToComplete");
+                // Stop the back end first, so that any accounts still running will give up the CPU
+                // as soon as possible.
+                BackEnd.Instance.Stop ();
                 BadgeNotifUpdate ();
                 CompletePerformFetch ();
                 break;
@@ -718,7 +741,11 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
             fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
-            pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            if (hasRegisteredForRemoteNotifications) {
+                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            } else {
+                pushAccounts = new List<int> ();
+            }
             StartFetch (application, completionHandler, "PF");
         }
 
@@ -741,8 +768,11 @@ namespace NachoClient.iOS
             // iOS only allows a limited amount of time to fetch data in the background.
             // Set a timer to force everything to shut down before iOS kills the app.
             performFetchTimer = new Timer (((object state) => {
-                // When the timer expires, just fire an event.  The status callback will take
-                // care of shutting everything down.
+                // Just fire an event.  The listener for the event will take care of
+                // shutting things down.  (The UI thread is the synchronization method
+                // for lifecycle events, so the timer expiration needs to be channelled
+                // through the UI thread.)
+                Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer fired. Shutting down the app.");
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Account = NcApplication.Instance.Account,
                     Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
@@ -841,7 +871,10 @@ namespace NachoClient.iOS
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
             // Use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because
             // we want to remove a notification if the server marks a message as read.
-            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind) {
+            // When the app is in QuickSync mode, BadgeNotifUpdate will be called when
+            // QuickSync is done.  There isn't a need to call it when each account's sync
+            // completes.
+            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind && NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
                 BadgeNotifUpdate ();
             }
         }
@@ -849,15 +882,7 @@ namespace NachoClient.iOS
         public void CredReqCallback (int accountId)
         {
             Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
-
-            if (McAccount.IsAccountBeingConfigured (accountId)) {
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
-                    Account = McAccount.QueryById<McAccount> (accountId),
-                });
-            } else {
-                DisplayCredentialsFixView (accountId);
-            }
+            LoginHelpers.UserInterventionStateChanged (accountId);
         }
 
         public void ServConfReqCallback (int accountId, McAccount.AccountCapabilityEnum capabilities, object arg = null)
@@ -867,121 +892,29 @@ namespace NachoClient.iOS
             // TODO Make use of the MX information that was gathered during auto-d.
             // It can be found at BackEnd.Instance.AutoDInfo(accountId).
 
-            NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
-            switch ((uint)arg) {
-            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotFindServer:
-                why = NcResult.WhyEnum.InvalidDest;
-                break;
-            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotConnectToServer:
-                why = NcResult.WhyEnum.ServerError;
-                break;
-            default:
-                why = NcResult.WhyEnum.NotSpecified;
-                break;
-            }
-            if (McAccount.IsAccountBeingConfigured (accountId)) {
-                var status = NachoCore.Utils.NcResult.Error (NcResult.SubKindEnum.Error_ServerConfReqCallback, why);
-                status.Value = capabilities;
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = status,
-                    Account = McAccount.QueryById<McAccount> (accountId),
-                });
-                return;
-            }
-
+//            NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
+//            switch ((uint)arg) {
+//            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotFindServer:
+//                why = NcResult.WhyEnum.InvalidDest;
+//                break;
+//            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotConnectToServer:
+//                why = NcResult.WhyEnum.ServerError;
+//                break;
+//            default:
+//                why = NcResult.WhyEnum.NotSpecified;
+//                break;
+//            }
 
             // called if server name is wrong
             // cancel should call "exit program, enter new server name should be updated server
 
-            LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
-
-            var Mo = NcModel.Instance;
-            var Be = BackEnd.Instance;
-
-            var credView = new UIAlertView ();
-
-            credView.Title = "Need Correct Server Name";
-            credView.AddButton ("Update");
-            credView.AddButton ("Cancel");
-            credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
-            credView.Show ();
-            credView.Clicked += delegate(object a, UIButtonEventArgs b) {
-                var parent = (UIAlertView)a;
-                if (b.ButtonIndex == 0) {
-
-                    LoginHelpers.SetDoesBackEndHaveIssues (accountId, false);
-
-                    var txt = parent.GetTextField (0).Text;
-                    // FIXME need to scan string to make sure it is of right format (regex).
-                    if (txt != null && NachoCore.Utils.Uri_Helpers.IsValidHost (txt)) {
-                        Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
-                        NcModel.Instance.RunInTransaction (() => {
-                            var tmpServer = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
-                            if (null == tmpServer) {
-                                tmpServer = new McServer () {
-                                    // FIXME STEVE
-                                    Capabilities = McAccount.ActiveSyncCapabilities,
-                                    Host = txt,
-                                };
-                                tmpServer.Insert ();
-                            } else {
-                                tmpServer.Host = txt;
-                                tmpServer.Update ();
-                            }
-                        });
-                        // FIXME STEVE - need to pass matching capability from request.
-                        // TODO Generic code needs to be moved out of AppDelegate.
-                        Be.ServerConfResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false); 
-                        credView.ResignFirstResponder ();
-                    }
-                    ;
-                }
-                ;
-
-                if (b.ButtonIndex == 1) {
-                    var gonnaquit = new UIAlertView ();
-                    gonnaquit.Title = "Are You Sure? \n No account information will be updated";
-
-                    gonnaquit.AddButton ("Ok"); // continue exiting
-                    gonnaquit.AddButton ("Go Back"); // enter info
-                    gonnaquit.CancelButtonIndex = 1;
-                    gonnaquit.Show ();
-                    gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
-                        if (e.ButtonIndex == 1) {
-                            // FIXME STEVE
-                            ServConfReqCallback (accountId, McAccount.AccountCapabilityEnum.EmailSender); // go again
-                        }
-                        gonnaquit.ResignFirstResponder ();
-                    };
-                }
-                ;
-            };
+            LoginHelpers.UserInterventionStateChanged (accountId);
         }
 
         public void CertAskReqCallback (int accountId, X509Certificate2 certificate)
         {
             Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
-
-            if (McAccount.IsAccountBeingConfigured (accountId)) {
-                Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CertAskReqCallback),
-                    Account = McAccount.QueryById<McAccount> (accountId),
-                });
-            } else {
-                // UI FIXME - ask user and call CertAskResp async'ly.
-                DisplayCredentialsFixView (accountId);
-            }
-        }
-
-        protected void DisplayCredentialsFixView (int accountId)
-        {
-            LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
-
-            UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-            cvc.SetAccountId (accountId);
-            this.Window.RootViewController.PresentViewController (cvc, true, null);
+            LoginHelpers.UserInterventionStateChanged (accountId);
         }
 
         /* BADGE & NOTIFICATION LOGIC HERE.
@@ -1079,8 +1012,19 @@ namespace NachoClient.iOS
             int remainingVisibleSlots = 10;
             var accountTable = new Dictionary<int, McAccount> ();
 
+            var notifiedMessageIDs = new HashSet<string> ();
+
             foreach (var message in unreadAndHot) {
+                if (!string.IsNullOrEmpty (message.MessageID) && notifiedMessageIDs.Contains (message.MessageID)) {
+                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Skipping message {0} because a message with that message ID has already been processed", message.Id);
+                    --badgeCount;
+                    message.MarkHasBeenNotified (true);
+                    continue;
+                }
                 if (message.HasBeenNotified) {
+                    if (message.ShouldNotify && !string.IsNullOrEmpty (message.MessageID)) {
+                        notifiedMessageIDs.Add (message.MessageID);
+                    }
                     continue;
                 }
                 McAccount account = null;
@@ -1096,22 +1040,22 @@ namespace NachoClient.iOS
                 }
                 if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message, account)) {
                     --badgeCount;
-                    message.HasBeenNotified = true;
-                    message.ShouldNotify = false;
-                    message.Update ();
+                    message.MarkHasBeenNotified (false);
                     continue;
                 }
                 if (!NotifyEmailMessage (message, account, !soundExpressed)) {
+                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification attempt for message {0} failed.", message.Id);
                     --badgeCount;
                     continue;
                 } else {
                     soundExpressed = true;
                 }
 
-                message.HasBeenNotified = true;
-                message.ShouldNotify = true;
-                message.Update ();
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
+                var updatedMessage = message.MarkHasBeenNotified (true);
+                if (!string.IsNullOrEmpty (updatedMessage.MessageID)) {
+                    notifiedMessageIDs.Add (updatedMessage.MessageID);
+                }
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification for message {0}", updatedMessage.Id);
                 --remainingVisibleSlots;
                 if (0 >= remainingVisibleSlots) {
                     break;
@@ -1180,20 +1124,6 @@ namespace NachoClient.iOS
             }
         }
 
-        // Creates an in-progress account for AdvancedLoginView
-        void CreateGooglePlaceholderAccount ()
-        {
-            var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
-            if (null != accountBeingConfigured) {
-                Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount {0} already being configured", accountBeingConfigured.DisplayName);
-                return;
-            }
-            var account = new McAccount ();
-            account.DisplayName = "Google placeholder account";
-            account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.GoogleCallback;
-            account.Insert ();
-            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount account created {0}", account.Id);
-        }
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate

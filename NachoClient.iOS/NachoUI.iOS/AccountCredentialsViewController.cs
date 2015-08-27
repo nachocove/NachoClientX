@@ -42,19 +42,20 @@ namespace NachoClient.iOS
         INachoCredentialsDelegate owner;
         McAccount.AccountServiceEnum service;
 
-        bool credReqCallback;
+        NachoCredentialsRequestEnum why;
         string emailInitializer;
         string passwordInitializer;
+       
 
         public AccountCredentialsViewController (IntPtr handle) : base (handle)
         {
         }
 
-        public void Setup (INachoCredentialsDelegate owner, McAccount.AccountServiceEnum service, bool credReqCallback, string email, string password)
+        public void Setup (INachoCredentialsDelegate owner, McAccount.AccountServiceEnum service, NachoCredentialsRequestEnum why, string email, string password)
         {
+            this.why = why;
             this.owner = owner;
             this.service = service;
-            this.credReqCallback = credReqCallback;
             this.emailInitializer = email;
             this.passwordInitializer = password;
         }
@@ -129,10 +130,17 @@ namespace NachoClient.iOS
             startLabel.TextAlignment = UITextAlignment.Center;
             startLabel.LineBreakMode = UILineBreakMode.WordWrap;
             startLabel.Alpha = 1;
-            if (credReqCallback) {
-                startLabel.Text = "There seems to be a problem with your credentials.";
-            } else {
+
+            switch (why) {
+            case NachoCredentialsRequestEnum.InitialAsk:
                 startLabel.Text = "Enter your account information";
+                break;
+            case NachoCredentialsRequestEnum.CredReqCallback:
+                startLabel.Text = "There seems to be a problem with your credentials.";
+                break;
+            case NachoCredentialsRequestEnum.ServerConfCallback:
+                startLabel.Text = "There seems to be a problem with your email address.";
+                break;
             }
 
             startLabel.Lines = 0;
@@ -347,7 +355,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (!credReqCallback) {
+            if (NachoCredentialsRequestEnum.InitialAsk == why) {
                 if (null != McAccount.QueryByEmailAddr (emailField.Text).FirstOrDefault ()) {
                     Complain ("Nacho Mail", "An account with that email address already exists. Duplicate accounts are not supported.");
                     return;
@@ -385,7 +393,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (null != owner) {
-                owner.CredentialsDismissed (this, false, emailField.Text.Trim (), passwordField.Text, credReqCallback, false);
+                owner.CredentialsDismissed (this, false, emailField.Text.Trim (), passwordField.Text, why, false);
             }
             PerformSegue ("UnwindFromAccountCredentials", this);
         }
@@ -435,7 +443,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (null != owner) {
-                owner.CredentialsDismissed (this, true, emailField.Text.Trim (), passwordField.Text, credReqCallback, false);
+                owner.CredentialsDismissed (this, true, emailField.Text.Trim (), passwordField.Text, why, false);
             }
             PerformSegue ("UnwindFromAccountCredentials", this);
         }
@@ -444,7 +452,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (null != owner) {
-                owner.CredentialsDismissed (this, false, emailField.Text.Trim (), passwordField.Text, credReqCallback, true);
+                owner.CredentialsDismissed (this, false, emailField.Text.Trim (), passwordField.Text, why, true);
             }
             PerformSegue ("UnwindFromAccountCredentials", this);
         }

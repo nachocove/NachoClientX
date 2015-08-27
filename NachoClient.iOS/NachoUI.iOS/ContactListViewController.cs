@@ -146,6 +146,7 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             MaybeRefreshContacts ();
         }
 
@@ -183,6 +184,10 @@ namespace NachoClient.iOS
                 RefreshContactsIfVisible ();
                 var sb = SearchDisplayController.SearchBar;
                 contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false);
+                SearchDisplayController.SearchResultsTableView.ReloadData ();
+            }
+            if (NcResult.SubKindEnum.Info_ContactLocalSearchComplete == s.Status.SubKind) {
+                RefreshContactsIfVisible ();
                 SearchDisplayController.SearchResultsTableView.ReloadData ();
             }
         }

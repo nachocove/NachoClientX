@@ -110,6 +110,46 @@ namespace Test.Android
             var x = McServer.QueryByHost (3, a.Host);
             Assert.AreEqual (100, x.Port);
         }
+
+        [Test]
+        public void TestHostIsHotMail ()
+        {
+            var serv = new McServer ();
+            serv.Host = "s.outlook.com";
+            Assert.IsTrue (serv.HostIsHotMail ());
+            serv.Host = "blu403-m.outlook.com";
+            Assert.IsTrue (serv.HostIsHotMail ());
+            serv.Host = "poutlook.com";
+            Assert.IsFalse (serv.HostIsHotMail ());
+            serv.Host = "blu403-moutlook.com";
+            Assert.IsFalse (serv.HostIsHotMail ());
+            serv.Host = "gmail.com";
+            Assert.IsFalse (serv.HostIsHotMail ());
+            serv.Host = "outlook.com";
+            Assert.IsTrue (serv.HostIsHotMail ());
+            serv.Host = "hotmail.com";
+            Assert.IsTrue (serv.HostIsHotMail ());
+        }
+
+        [Test]
+        public void TestPathIsEWS ()
+        {
+            Assert.IsTrue (McServer.PathIsEWS ("https://mail.bouldercolorado.gov/EWS/Exchange.asmx"));
+            Assert.IsTrue (McServer.PathIsEWS ("https://mail.bouldercolorado.gov/ews/exchange.asmx"));
+            Assert.IsTrue (McServer.PathIsEWS ("https://mail.bouldercolorado.gov/EWS/EXCHANGE.asmx"));
+            Assert.IsTrue (McServer.PathIsEWS ("https://mail.bouldercolorado.gov/EWS/EXCHANGE.ASMX/noreally"));
+            Assert.IsTrue (McServer.PathIsEWS ("EWS/Exchange.asmx/noreally"));
+            Assert.IsTrue (McServer.PathIsEWS ("noreally/EWS/Exchange.asmx/"));
+            Assert.IsTrue (McServer.PathIsEWS ("noreallyEWS/Exchange.asmx/"));
+            Assert.IsTrue (McServer.PathIsEWS ("EWS/Exchange.asmx"));
+            Assert.IsTrue (McServer.PathIsEWS ("/EWS/Exchange.asmx"));
+            Assert.IsFalse (McServer.PathIsEWS ("Microsoft-Server-ActiveSync"));
+            Assert.IsFalse (McServer.PathIsEWS ("/Microsoft-Server-ActiveSync"));
+            Assert.IsFalse (McServer.PathIsEWS ("https://s.outlook.com/Microsoft-Server-ActiveSync"));
+            Assert.IsFalse (McServer.PathIsEWS ("https://s.outlook.com"));
+            Assert.IsFalse (McServer.PathIsEWS ("s.outlook.com"));
+            Assert.IsFalse (McServer.PathIsEWS (""));
+        }
     }
 }
 

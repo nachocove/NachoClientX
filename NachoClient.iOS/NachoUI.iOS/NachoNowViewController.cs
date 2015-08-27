@@ -55,10 +55,9 @@ namespace NachoClient.iOS
             refreshControl.TintColor = A.Color_NachoGreen;
             refreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             refreshControl.ValueChanged += (object sender, EventArgs e) => {
+                var nr = priorityInbox.StartSync ();
+                rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
                 refreshControl.BeginRefreshing ();
-                priorityInbox.StartSync ();
-                RefreshPriorityInboxIfVisible ();
-                new NcTimer ("NachoNowViewController refresh", refreshCallback, null, 2000, 0);
             };
 
             tableViewController = new UITableViewController ();
@@ -68,11 +67,31 @@ namespace NachoClient.iOS
             this.AddChildViewController (tableViewController);
         }
 
-        protected void refreshCallback (object sender)
+        protected void EndRefreshingOnUIThread (object sender)
         {
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
                 refreshControl.EndRefreshing ();
             });
+        }
+
+        NcTimer refreshTimer;
+
+        void rearmRefreshTimer (int seconds)
+        {
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
+            refreshTimer = new NcTimer ("MessageListViewController refresh", EndRefreshingOnUIThread, null, seconds * 1000, 0); 
+        }
+
+        void cancelRefreshTimer ()
+        {
+            EndRefreshingOnUIThread (null);
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
         }
 
         protected void CreateView ()
@@ -217,6 +236,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             hotEventView.ViewWillDisappear ();
+            cancelRefreshTimer ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -322,6 +342,13 @@ namespace NachoClient.iOS
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshPriorityInboxIfVisible ();
                 break;
+            case NcResult.SubKindEnum.Error_SyncFailed:
+            case NcResult.SubKindEnum.Info_SyncSucceeded:
+                cancelRefreshTimer ();
+                break;
+            case NcResult.SubKindEnum.Info_StatusBarHeightChanged:
+                LayoutView ();
+                break;
             }
         }
 
@@ -364,16 +391,18 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
-            currentAccount = account;
-            priorityInboxNeedsRefresh = false;
-            NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController SwitchToAccount");
-            priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
-            hotListSource = new HotListTableViewSource (this, priorityInbox);
-            hotListView.Source = hotListSource;
-            hotListView.ReloadData ();
-            hotListSource.ConfigureFooter (hotListView);
-            switchAccountButton.SetAccountImage (account);
-            NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController SwitchToAccount");
+            if (IsViewLoaded) {
+                currentAccount = account;
+                priorityInboxNeedsRefresh = false;
+                NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController SwitchToAccount");
+                priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
+                hotListSource = new HotListTableViewSource (this, priorityInbox);
+                hotListView.Source = hotListSource;
+                hotListView.ReloadData ();
+                hotListSource.ConfigureFooter (hotListView);
+                switchAccountButton.SetAccountImage (account);
+                NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController SwitchToAccount");
+            }
         }
 
         /// <summary>

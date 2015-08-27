@@ -20,6 +20,7 @@ namespace NachoClient.iOS
 
         AdvancedTextField emailView;
         AdvancedTextField passwordView;
+        AdvancedTextField usernameView;
 
         AdvancedTextField imapServerView;
         AdvancedTextField imapPortNumberView;
@@ -27,6 +28,8 @@ namespace NachoClient.iOS
         AdvancedTextField smtpPortNumberView;
 
         UILabel infoLabel;
+        UILabel imapLabel;
+        UILabel smtpLabel;
         UIButton connectButton;
         UIButton advancedButton;
         UIButton startOverButton;
@@ -61,7 +64,7 @@ namespace NachoClient.iOS
         AdvancedLoginViewController.onConnectCallback onConnect;
         AdvancedLoginViewController.onValidateCallback onValidate;
 
-        public IMapFields (McAccount account, Prompt prompt, CGRect rect, string buttonText)
+        public IMapFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, string buttonText)
         {
             this.account = account;
             this.prompt = prompt;
@@ -73,17 +76,21 @@ namespace NachoClient.iOS
 
             if (null != account) {
                 LoadAccount ();
+            } else {
+                emailView.textField.Text = initialEmail;
+                passwordView.textField.Text = initialPassword;
             }
+            MaybeEnableConnect (emailView.textField);
         }
 
-        public IMapFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
-            : this (account, prompt, rect, "Connect")
+        public IMapFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
+            : this (account, prompt, initialEmail, initialPassword, rect, "Connect")
         {
             this.onConnect = onConnect;
         }
 
-        public IMapFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onValidateCallback onValidate)
-            : this (account, prompt, rect, "Save")
+        public IMapFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, AdvancedLoginViewController.onValidateCallback onValidate)
+            : this (account, prompt, initialEmail, initialPassword, rect, "Save")
         {
             this.onValidate = onValidate;
         }
@@ -105,7 +112,6 @@ namespace NachoClient.iOS
             accountImageView.Layer.MasksToBounds = true;
             accountImageView.ContentMode = UIViewContentMode.Center;
             contentView.AddSubview (accountImageView);
-
 
             accountEmailAddr = new UILabel (new CGRect (75, 12, contentView.Frame.Width - 75, 50));
             accountEmailAddr.Font = A.Font_AvenirNextRegular17;
@@ -145,12 +151,27 @@ namespace NachoClient.iOS
 
             yOffset += 25;
 
+            usernameView = new AdvancedTextField ("Username", "joe@bigdog.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            usernameView.EditingChangedCallback = MaybeEnableConnect;
+            contentView.AddSubview (usernameView);
+            yOffset += CELL_HEIGHT;
+
+            yOffset += 25;
+
+            imapLabel = new UILabel (new CGRect (15, yOffset, View.Frame.Width - 15, CELL_HEIGHT));
+            imapLabel.Font = A.Font_AvenirNextRegular17;
+            imapLabel.BackgroundColor = A.Color_NachoNowBackground;
+            imapLabel.Text = "Incoming Mail Server";
+            contentView.AddSubview (imapLabel);
+            yOffset += CELL_HEIGHT;
+
             imapServerView = new AdvancedTextField ("Server", "imap.domain.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             imapServerView.EditingChangedCallback = MaybeEnableConnect;
             contentView.AddSubview (imapServerView);
             yOffset += CELL_HEIGHT;
 
             imapPortNumberView = new AdvancedTextField ("Port", "993", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.Default);
+            imapPortNumberView.textField.Text = "993";
             imapPortNumberView.EditingChangedCallback = MaybeEnableConnect;
             contentView.AddSubview (imapPortNumberView);
             yOffset += CELL_HEIGHT;
@@ -161,12 +182,20 @@ namespace NachoClient.iOS
 
             yOffset += 25;
 
+            smtpLabel = new UILabel (new CGRect (15, yOffset, View.Frame.Width - 15, CELL_HEIGHT));
+            smtpLabel.Font = A.Font_AvenirNextRegular17;
+            smtpLabel.BackgroundColor = A.Color_NachoNowBackground;
+            smtpLabel.Text = "Outgoing Mail Server";
+            contentView.AddSubview (smtpLabel);
+            yOffset += CELL_HEIGHT;
+
             smtpServerView = new AdvancedTextField ("Server", "smtp.domain.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             smtpServerView.EditingChangedCallback = MaybeEnableConnect;
             contentView.AddSubview (smtpServerView);
             yOffset += CELL_HEIGHT;
 
             smtpPortNumberView = new AdvancedTextField ("Port", "587", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            smtpPortNumberView.textField.Text = "587";
             smtpPortNumberView.EditingChangedCallback = MaybeEnableConnect;
             contentView.AddSubview (smtpPortNumberView);
             yOffset += CELL_HEIGHT;
@@ -227,6 +256,7 @@ namespace NachoClient.iOS
                 passwordView,
             };
             advancedInputViews = new AdvancedTextField[] {
+                usernameView,
                 imapServerView,
                 imapPortNumberView,
                 smtpServerView,
@@ -301,6 +331,15 @@ namespace NachoClient.iOS
 
             if (showAdvancedSettings) {
                 yOffset += 20;
+                ViewFramer.Create (usernameView).Y (yOffset);
+                yOffset += CELL_HEIGHT;
+
+                yOffset += 20;
+
+                imapLabel.SizeToFit ();
+                ViewFramer.Create (imapLabel).Y (yOffset);
+                yOffset = imapLabel.Frame.Bottom + 5;
+
                 ViewFramer.Create (imapServerView).Y (yOffset);
                 yOffset += CELL_HEIGHT;
 
@@ -309,6 +348,10 @@ namespace NachoClient.iOS
 
                 ViewFramer.Create (imapWhiteInset).Y (imapServerView.Frame.Top + (CELL_HEIGHT / 2));
                 yOffset += 20;
+
+                smtpLabel.SizeToFit ();
+                ViewFramer.Create (smtpLabel).Y (yOffset);
+                yOffset = smtpLabel.Frame.Bottom + 5;
 
                 ViewFramer.Create (smtpServerView).Y (yOffset);
                 yOffset += CELL_HEIGHT;
@@ -340,7 +383,8 @@ namespace NachoClient.iOS
             // Padding
             yOffset += 20;
 
-            Util.SetHidden (!showAdvancedSettings, imapServerView, imapPortNumberView, imapWhiteInset, smtpServerView, smtpPortNumberView, smtpWhiteInset);
+            MaybeEnableConnect (emailView.textField);
+            Util.SetHidden (!showAdvancedSettings, usernameView, imapLabel, imapServerView, imapPortNumberView, imapWhiteInset, smtpLabel, smtpServerView, smtpPortNumberView, smtpWhiteInset);
 
             ViewFramer.Create (scrollView).Height (height);
             scrollView.ContentSize = new CGSize (scrollView.Frame.Width, yOffset);
@@ -404,6 +448,8 @@ namespace NachoClient.iOS
             emailView.textField.Text = account.EmailAddr;
             passwordView.textField.Text = creds.GetPassword ();
 
+            usernameView.textField.Text = creds.Username;
+
             var imapServer = McServer.QueryByAccountIdAndCapabilities (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
             if (null != imapServer) {
                 imapServerView.textField.Text = imapServer.Host;
@@ -423,10 +469,12 @@ namespace NachoClient.iOS
         public AdvancedLoginViewController.ConnectCallbackStatusEnum SaveUserSettings ()
         {
             if (!CanUserConnect ()) {
+                infoLabel.TextColor = UIColor.Red;
                 return AdvancedLoginViewController.ConnectCallbackStatusEnum.ContinueToShowAdvanced;
             }
             var email = emailView.textField.Text.Trim ();
             var password = passwordView.textField.Text;
+            var username = usernameView.textField.Text;
 
             // TODO: Ask jeff
             // Stop/Start did not recover from 2nd wrong password or wrong username
@@ -436,7 +484,7 @@ namespace NachoClient.iOS
             }
 
             if (null == account) {
-                if (LoginHelpers.AccountExists (email)) {
+                if (LoginHelpers.ConfiguredAccountExists (email)) {
                     // Already have this one.
                     Log.Info (Log.LOG_UI, "avl: SaveUserSettings existing account: {0}", email);
                     return AdvancedLoginViewController.ConnectCallbackStatusEnum.DuplicateAccount;
@@ -448,6 +496,8 @@ namespace NachoClient.iOS
             account.EmailAddr = email;
             account.Update ();
 
+            cred.Username = username;
+            cred.UserSpecifiedUsername = true;
             cred.UpdatePassword (password);
             cred.Update ();
 
@@ -505,8 +555,13 @@ namespace NachoClient.iOS
 
         void Validate ()
         {
+            if (!CanUserConnect ()) {
+                return;
+            }
+
             var cred = new McCred ();
             cred.SetTestPassword (passwordView.textField.Text);          
+            cred.Username = usernameView.textField.Text;
 
             var imapServerName = imapServerView.textField.Text;
             var smtpServerName = smtpServerView.textField.Text;
@@ -537,7 +592,7 @@ namespace NachoClient.iOS
             UpdateServer (verifiedServers.ElementAt (1));
         }
 
-        void UpdateServer(McServer verifiedServer)
+        void UpdateServer (McServer verifiedServer)
         {
             var server = McServer.QueryByAccountIdAndCapabilities (account.Id, verifiedServer.Capabilities);
             server.CopyNameFrom (verifiedServer);
@@ -566,8 +621,10 @@ namespace NachoClient.iOS
 
         public void MaybeEnableConnect (UITextField textField)
         {
+            textField.TextColor = UIColor.Black;
+
             var enable = FieldsAreSet (basicInputViews);
-            enable |= (showAdvancedSettings ? FieldsAreSet (advancedInputViews) : FieldsAreEmpty (advancedInputViews));
+            enable &= (showAdvancedSettings ? FieldsAreSet (advancedInputViews) : FieldsAreEmpty (advancedInputViews));
             connectButton.Enabled = enable;
             connectButton.Alpha = (enable ? 1.0f : .5f);
         }
@@ -575,55 +632,67 @@ namespace NachoClient.iOS
         bool CheckServer (AdvancedTextField serverName, AdvancedTextField portNumber, bool highlight)
         {
             if (serverName.IsNullOrEmpty ()) {
-                SetRedText (serverName, "Invalid server name. Please check that you typed it in correctly.");
+                Complain (serverName, "The server name is required.");
                 return false;
             }
-            if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (serverName.textField.Text)) {
-                SetRedText (serverName, "Invalid server name. Please check that you typed it in correctly.");
+            if (!EmailHelper.IsValidHost (serverName.textField.Text)) {
+                Complain (serverName, "Invalid server name. Please check that you typed it in correctly.");
                 return false;
             }
-            if (portNumber.IsNullOrEmpty ()) {
-                SetRedText (portNumber, "Invalid port number. It must be a number.");
-                return false;
+            if (serverName.textField.Text.Contains (":")) {
+                Complain (serverName, "Invalid server name. Scheme or port number is not allowed.");
             }
             int result;
             if (!int.TryParse (portNumber.textField.Text, out result)) {
-                SetRedText (portNumber, "Invalid port number. It must be a number.");
+                Complain (portNumber, "Invalid port number. It must be a number.");
                 return false;
             }
             return true;
         }
 
-        void SetRedText (AdvancedTextField field, string text)
+        void Complain (AdvancedTextField field, string text)
         {
-            infoLabel.Text = text;
+            if (Prompt.EditInfo == prompt) {
+                var vc = Util.FindOutermostViewController ();
+                NcAlertView.ShowMessage (vc, "Settings", text);
+            } else {
+                infoLabel.Text = text;
+                infoLabel.TextColor = A.Color_NachoRed;
+            }
+            if (null != field) {
+                field.textField.TextColor = A.Color_NachoRed;
+            }
         }
 
         bool CanUserConnect ()
         {
             if (emailView.IsNullOrEmpty ()) {
-                SetRedText (emailView, "Enter an email address");
+                Complain (emailView, "Enter an email address");
+                return false;
+            }
+            if (!EmailHelper.IsValidEmail (emailView.textField.Text)) {
+                Complain (emailView, "Email address is invalid");
                 return false;
             }
             if (passwordView.IsNullOrEmpty ()) {
-                SetRedText (passwordView, "Enter a password");
+                Complain (passwordView, "Enter a password");
             }
             string serviceName;
             var emailAddress = emailView.textField.Text;
             if (NcServiceHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
                 var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
-                SetRedText (emailView, nuance);
+                Complain (emailView, nuance);
                 return false;
             }
 
             // TODO: Allow iMap auto-d
 //            if (FieldsAreSet (advancedInputViews) && !FieldsAreEmpty (advancedInputViews)) {
-//                infoLabel.Text = "All fields must be filled in.";
+//                Complain (null, "All fields must be filled in.");
 //                return false;
 //            }
 
             if (!FieldsAreSet (advancedInputViews)) {
-                infoLabel.Text = "All fields must be filled in.";
+                Complain (null, "All fields must be filled in.");
                 return false;
             }
 

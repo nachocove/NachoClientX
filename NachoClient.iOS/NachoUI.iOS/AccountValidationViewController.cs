@@ -42,7 +42,7 @@ namespace NachoClient.iOS
 
         public void ChangePassword (McAccount account)
         {
-            this.title = "Change Password";
+            this.title = "Update Password";
             this.service = account.AccountService;
             this.account = account;
         }
@@ -162,7 +162,7 @@ namespace NachoClient.iOS
 
             yOffset = passwordBox.Frame.Bottom + 20f;
 
-            submitButton = Util.BlueButton ("Change", View.Frame.Width);
+            submitButton = Util.BlueButton ("Update", View.Frame.Width);
             ViewFramer.Create (submitButton).Y (yOffset);
             submitButton.TouchUpInside += SubmitButtonTouchUpInside;
             contentView.AddSubview (submitButton);
@@ -238,8 +238,10 @@ namespace NachoClient.iOS
 
         void HideStatusView ()
         {
-            greyBackground.RemoveFromSuperview ();
-            greyBackground = null;
+            if (null != greyBackground) {
+                greyBackground.RemoveFromSuperview ();
+                greyBackground = null;
+            }
         }
 
         protected override void ConfigureAndLayout ()
@@ -301,6 +303,8 @@ namespace NachoClient.iOS
             }
             var testCred = new McCred ();
             testCred.SetTestPassword (passwordField.Text);
+            Log.Info (Log.LOG_HTTP, "AccountValidationViewcontroller: Testing new password - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, passwordField.Text));              
+
             testCred.Username = creds.Username;
             testCred.UserSpecifiedUsername = creds.UserSpecifiedUsername;
 
@@ -357,6 +361,7 @@ namespace NachoClient.iOS
             HideStatusView ();
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
             if (null != creds) {
+                Log.Info (Log.LOG_HTTP, "AccountValidationViewcontroller: Saving new password - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, passwordField.Text));              
                 creds.UpdatePassword (passwordField.Text);
                 creds.Update ();
                 BackEnd.Instance.CredResp (account.Id);

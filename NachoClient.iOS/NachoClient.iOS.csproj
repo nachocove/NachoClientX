@@ -27,7 +27,7 @@
     <ConsolePause>false</ConsolePause>
     <MtouchDebug>true</MtouchDebug>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
-    <MtouchI18n>cjk,west</MtouchI18n>
+    <MtouchI18n>cjk,mideast,other,rare,west</MtouchI18n>
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
@@ -200,9 +200,6 @@
       <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Json" />
-    <Reference Include="BouncyCastle">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\Xamarin.iOS\BouncyCastle.dll</HintPath>
-    </Reference>
     <Reference Include="HockeyApp.iOS">
       <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
     </Reference>
@@ -244,6 +241,7 @@
     <Folder Include="NachoCore\BackEnd\Device\" />
     <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1406,9 +1404,6 @@
       <DependentUpon>SwitchAccountViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\SwitchAccountCustomSegue.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\IImapStrategy.cs">
-      <Link>NachoCore\BackEnd\IMAP\IImapStrategy.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\AccountTypeViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountTypeViewController.designer.cs">
       <DependentUpon>AccountTypeViewController.cs</DependentUpon>
@@ -1466,9 +1461,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapStrategy.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs</Link>
@@ -1547,12 +1539,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcServiceHelper.cs">
       <Link>NachoCore\Utils\NcServiceHelper.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachmentCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachmentCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBodyCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBodyCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs</Link>
     </Compile>
@@ -1566,6 +1552,76 @@
     <Compile Include="NachoUI.iOS\AccountValidationViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountValidationViewController.designer.cs">
       <DependentUpon>AccountValidationViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\CertAskViewController.cs" />
+    <Compile Include="NachoUI.iOS\CertAskViewController.designer.cs">
+      <DependentUpon>CertAskViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsBinningHelper.cs">
+      <Link>NachoCore\Utils\ContactsBinningHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration35.cs">
+      <Link>NachoCore\Model\Migration\NcMigration35.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapValidateConfig.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapValidateConfig.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\SearchHelper.cs">
+      <Link>NachoCore\Utils\SearchHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration36.cs">
+      <Link>NachoCore\Model\Migration\NcMigration36.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration37.cs">
+      <Link>NachoCore\Model\Migration\NcMigration37.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcQualifier.cs">
+      <Link>NachoCore\Brain\NcQualifier.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration38.cs">
+      <Link>NachoCore\Model\Migration\NcMigration38.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpDisconnectCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpDisconnectCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration39.cs">
+      <Link>NachoCore\Model\Migration\NcMigration39.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration40.cs">
+      <Link>NachoCore\Model\Migration\NcMigration40.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration41.cs">
+      <Link>NachoCore\Model\Migration\NcMigration41.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\GoogleOAuth2Authenticator.cs">
+      <Link>NachoCore\Utils\GoogleOAuth2Authenticator.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategy.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategy.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategyFetchKit.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategyFetchKit.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -2456,6 +2512,10 @@
     <BundleResource Include="Resources\avatar-imap%404x.png" />
     <BundleResource Include="Resources\avatar-imap%406x.png" />
     <BundleResource Include="Resources\Loginscreen-3%406x.png" />
+    <BundleResource Include="Resources\gen-avatar-alert%402x.png" />
+    <BundleResource Include="Resources\gen-avatar-alert%403x.png" />
+    <BundleResource Include="Resources\gen-avatar-alert%404x.png" />
+    <BundleResource Include="Resources\gen-avatar-alert%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
@@ -2473,10 +2533,6 @@
     <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.iOS\Lucene.Net.iOS.csproj">
       <Project>{35BDE52C-1FAD-42BB-841B-9298F354AFE8}</Project>
       <Name>Lucene.Net.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MimeKit\MimeKit\MimeKit.iOS.csproj">
-      <Project>{4C1288AD-12C8-4BF7-AED7-6C4DC539C856}</Project>
-      <Name>MimeKit.iOS</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK_iOS\AWSSDK_iOS.csproj">
       <Project>{2509D641-F08E-4DED-A12D-855B056BE831}</Project>
@@ -2518,9 +2574,21 @@
       <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
       <Name>DDay.iCal.iOS</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Google.iOS\GoogleAPIs\Google.iOS.csproj">
-      <Project>{C6741CA8-619D-4FF3-8CBA-108CFC3447A0}</Project>
-      <Name>Google.iOS</Name>
+    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\MimeKit\MimeKit.iOS.csproj">
+      <Project>{4C1288AD-12C8-4BF7-AED7-6C4DC539C856}</Project>
+      <Name>MimeKit.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\bc-csharp\crypto\BouncyCastle.iOS.csproj">
+      <Project>{0249241C-205E-4AC0-828B-90F822359B9E}</Project>
+      <Name>BouncyCastle.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\Portable.Text.Encoding\Portable.Text.Encoding\Portable.Text.Encoding.csproj">
+      <Project>{EEE48C75-11BE-4B50-B759-F85B5052D473}</Project>
+      <Name>Portable.Text.Encoding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Xamarin.Auth\src\Xamarin.Auth.iOS\Xamarin.Auth.iOS.csproj">
+      <Project>{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}</Project>
+      <Name>Xamarin.Auth.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

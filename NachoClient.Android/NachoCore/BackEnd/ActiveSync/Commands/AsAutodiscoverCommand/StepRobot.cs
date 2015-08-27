@@ -96,8 +96,10 @@ namespace NachoCore.ActiveSync
             // Record re-dir source URLs to avoid any loops.
             private List<Uri> ReDirSource = new List<Uri> ();
             private Uri LastUri;
+            // A pointer to the cmd's event Q.
+            private ConcurrentQueue<Event> RobotEventsQ;
 
-            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUerSpecifiedDomain)
+            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUerSpecifiedDomain, ConcurrentQueue<Event> robotEventsQ)
             {
                 int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
                 CertTimeout = new TimeSpan (0, 0, timeoutSeconds);
@@ -130,6 +132,7 @@ namespace NachoCore.ActiveSync
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
                 IsUserSpecifiedDomain = isUerSpecifiedDomain;
+                RobotEventsQ = robotEventsQ;
 
                 StepSm = new NcStateMachine ("AUTODSTEP") {
                     /* NOTE: There are three start states:
@@ -486,6 +489,13 @@ namespace NachoCore.ActiveSync
                 StepSm.Validate ();
             }
 
+            public virtual double TimeoutInSeconds
+            {
+                get {
+                    return 10.0;
+                }
+            }
+
             public void Execute ()
             {
                 StepSm.Name = Command.Sm.Name + ":" + StepSm.Name + "(" + Enum.GetName (typeof(Steps), Step) + ")";
@@ -527,7 +537,7 @@ namespace NachoCore.ActiveSync
             {
                 // Once cancelled, we must post NO event to TL SM.
                 if (!Ct.IsCancellationRequested) {
-                    Command.ProcessEventFromRobot (Event, this);
+                    Command.ProcessEventFromRobot (Event, this, RobotEventsQ);
                 }
             }
 
@@ -562,7 +572,6 @@ namespace NachoCore.ActiveSync
                     DontReportCommResult = true,
                     TriesLeft = 2,
                     TimeoutExpander = KDefaultTimeoutExpander,
-                    Timeout = new TimeSpan (0, 0, 10),
                     DontReUseHttpClient = true,
                 };
             }
@@ -1082,8 +1091,12 @@ namespace NachoCore.ActiveSync
                             if (null == serverUri) {
                                 Log.Error (Log.LOG_AS, "URI not extracted from: {0} in: {1}", xmlUrlValue, xmlSettings);
                             } else {
-                                SrServerUri = serverUri;
-                                haveServerSettings = true;
+                                if (McServer.PathIsEWS (serverUri.ToString ())) {
+                                    Log.Error (Log.LOG_AS, "ProcessXmlSettings: Url seems to be EWS: {0}.", serverUri.ToString ());
+                                } else {
+                                    SrServerUri = serverUri;
+                                    haveServerSettings = true;
+                                }
                             }
                         }
                         // TODO: add support for CertEnroll.

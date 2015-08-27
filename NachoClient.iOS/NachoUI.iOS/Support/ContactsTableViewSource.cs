@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using NachoPlatform;
 using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
@@ -16,8 +17,7 @@ namespace NachoClient.iOS
     public class ContactsTableViewSource : UITableViewSource
     {
         bool multipleSections;
-        int[] sectionStart;
-        int[] sectionLength;
+        ContactBin[] sections;
 
         bool allowSwiping;
 
@@ -34,10 +34,29 @@ namespace NachoClient.iOS
         protected string searchToken;
         McAccount accountForSearchAPI;
 
+        protected SearchHelper searcher;
+
         public ContactsTableViewSource ()
         {
             owner = null;
             allowSwiping = false;
+            searcher = new SearchHelper ("ContactsTableViewSourceUpdateSearchResults", (searchString) => {
+                if (String.IsNullOrEmpty (searchString)) {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        SetSearchResults (new List<McContactEmailAddressAttribute> ());
+                        NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
+                    });
+                } else {
+                    int curVersion = searcher.Version;
+                    var results = McContact.SearchIndexAllContacts (searchString, false, true);
+                    if (curVersion == searcher.Version) {
+                        InvokeOnUIThread.Instance.Invoke (() => {
+                            SetSearchResults (results);
+                            NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
+                        });
+                    }
+                }
+            });
         }
 
         public void SetOwner (IContactsTableViewSourceDelegate owner, McAccount accountForSearchAPI, bool allowSwiping, UISearchDisplayController SearchDisplayController)
@@ -49,42 +68,12 @@ namespace NachoClient.iOS
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
         }
 
-        protected void FindRange (char uppercaseTarget, ref int index, out int count)
-        {
-            count = 0;
-            while ((index < contacts.Count) && (uppercaseTarget == contacts [index].FirstLetter [0])) {
-                count = count + 1;
-                index = index + 1;
-            }
-        }
-
         public void SetContacts (List<NcContactIndex> recent, List<NcContactIndex> contacts, bool multipleSections)
         {
             this.recent = recent;
+            sections = ContactsBinningHelper.BinningContacts (ref contacts);
             this.contacts = contacts;
             this.multipleSections = multipleSections;
-
-            foreach (var c in contacts) {
-                if (String.IsNullOrEmpty (c.FirstLetter)) {
-                    c.FirstLetter = " ";
-                } else {
-                    c.FirstLetter = c.FirstLetter.ToUpperInvariant ();
-                }
-            }
-            this.contacts.Sort ();
-
-            sectionStart = new int[27];
-            sectionLength = new int[27];
-
-            int index = 0;
-            int count;
-            for (int i = 0; i < 26; i++) {
-                sectionStart [i] = index;
-                FindRange ((char)(((int)'A') + i), ref index, out count);
-                sectionLength [i] = count;
-            }
-            sectionStart [26] = index;
-            sectionLength [26] = contacts.Count - index;
 
             if (SearchDisplayController.Active) {
                 SearchDisplayController.Delegate.ShouldReloadForSearchScope (SearchDisplayController, 0);
@@ -167,8 +156,6 @@ namespace NachoClient.iOS
 
         public override string TitleForHeader (UITableView tableView, nint section)
         {
-            String header = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#";
-
             var n = (int)section;
             if (null != recent) {
                 if (0 == section) {
@@ -176,7 +163,7 @@ namespace NachoClient.iOS
                 }
                 n = n - 1;
             }
-            return header.Substring (n, 1);
+            return sections [n].FirstLetter.ToString ();
         }
 
         /// <summary>
@@ -192,7 +179,7 @@ namespace NachoClient.iOS
                 rows = recent.Count;
             } else if (multipleSections) {
                 var index = section - ((null == recent) ? 0 : 1);
-                rows = sectionLength [index];
+                rows = sections [index].Length;
             } else {
                 rows = ((null == contacts) ? 0 : contacts.Count);
             }
@@ -212,7 +199,7 @@ namespace NachoClient.iOS
                 contact = recent [indexPath.Row].GetContact ();
             } else if (multipleSections) {
                 var section = indexPath.Section - ((null == recent) ? 0 : 1);
-                var index = indexPath.Row + sectionStart [section];
+                var index = indexPath.Row + sections [section].Start;
                 contact = contacts [index].GetContact ();
             } else {
                 contact = contacts [indexPath.Row].GetContact ();
@@ -224,7 +211,9 @@ namespace NachoClient.iOS
         {
             string dummy;
             McContact contact = ContactFromIndexPath (tableView, indexPath, out dummy);
-            owner.ContactSelectedCallback (contact);
+            if (null != contact) {
+                owner.ContactSelectedCallback (contact);
+            }
             DumpInfo (contact);
             tableView.DeselectRow (indexPath, true);
         }
@@ -378,7 +367,11 @@ namespace NachoClient.iOS
         /// <param name="doGalSearch">True if it should issue a GAL search as well</param>.
         public bool UpdateSearchResults (nint forSearchOption, string forSearchString, bool doGalSearch = true)
         {
-            if ((null != accountForSearchAPI) && doGalSearch) {
+            // Issue an asynchronous search.
+            searcher.Search (forSearchString);
+
+            // Issue a backend search command, e.g. GAL search for EAS
+            if ((null != accountForSearchAPI) && accountForSearchAPI.HasCapability(McAccount.AccountCapabilityEnum.ContactReader) && doGalSearch) {
                 // Issue a GAL search. The status indication handler will update the search results
                 // (with doGalSearch = false) to reflect potential matches from GAL.
                 if (String.IsNullOrEmpty (searchToken)) {
@@ -389,12 +382,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            // We immediately display matches from our db
-            NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
-            var results = McContact.SearchIndexAllContacts (forSearchString, false, true);
-            SetSearchResults (results);
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
-            return true;
+            return false;
         }
 
         protected void DumpInfo (McContact contact)

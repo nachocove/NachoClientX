@@ -182,7 +182,6 @@ namespace NachoCore.Utils
             byte[] logData = buffer.Skip (offset).Take (count).ToArray ();
             byte[] timestamp = Encoding.ASCII.GetBytes (String.Format ("{0:yyyy-MM-ddTHH:mm:ss.fffZ}: ", DateTime.UtcNow));
             byte[] prefix = isRequest ? Encoding.ASCII.GetBytes ("C: ") : Encoding.ASCII.GetBytes ("S: ");
-            //Log.Info (Log.LOG_IMAP, "{0}{1}", Encoding.ASCII.GetString (prefix), Encoding.UTF8.GetString (logData));
 
             if (!_Enabled || null == RedactProtocolLogFunc) {
                 return;
@@ -289,6 +288,46 @@ namespace NachoCore.Utils
         }
 
         #endregion
+    }
+
+    public class NcDebugProtocolLogger : IProtocolLogger
+    {
+        string LogPrefix;
+        //ulong LogModule;
+        public NcDebugProtocolLogger (ulong logModule)
+        {
+            //LogModule = logModule;
+            LogPrefix = Log.ModuleString (logModule);
+        }
+
+        #region IProtocolLogger implementation
+        public void LogConnect (System.Uri uri)
+        {
+            Console.WriteLine ("{0}: Connect {1}", LogPrefix, uri);
+        }
+        public void LogClient (byte[] buffer, int offset, int count)
+        {
+            logBuffer (true, buffer, offset, count);
+        }
+        public void LogServer (byte[] buffer, int offset, int count)
+        {
+            logBuffer (false, buffer, offset, count);
+        }
+        #endregion
+        #region IDisposable implementation
+        public void Dispose ()
+        {
+        }
+        #endregion
+
+        private void logBuffer (bool isRequest, byte[] buffer, int offset, int count)
+        {
+            byte[] logData = buffer.Skip (offset).Take (count).ToArray ();
+            Console.WriteLine ("{0}: {1}: {2}",
+                LogPrefix,
+                isRequest ? "C" : "S",
+                Encoding.UTF8.GetString (logData));
+        }
     }
 }
 

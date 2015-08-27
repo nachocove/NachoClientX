@@ -19,9 +19,14 @@ namespace NachoCore.ActiveSync
         {
             FoldersInRequest = pingKit.Folders;
             HeartbeatInterval = pingKit.MaxHeartbeatInterval;
-            // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
-            Timeout = new TimeSpan (0, 0, (int)HeartbeatInterval + 10);
             MaxTries = 1;
+        }
+
+        public override double TimeoutInSeconds {
+            get {
+                // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
+                return (int)HeartbeatInterval + 10;
+            }
         }
 
         public override bool DoSendPolicyKey (AsHttpOperation Sender)

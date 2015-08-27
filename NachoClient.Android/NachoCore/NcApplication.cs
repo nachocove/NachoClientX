@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
+using System.Globalization;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -365,6 +366,7 @@ namespace NachoCore
                         if (ex is System.IO.IOException && ex.Message.Contains ("Too many open files")) {
                             Log.Error (Log.LOG_SYS, "UnobservedTaskException:{0}: Dumping File Descriptors", ex.Message);
                             Log.DumpFileDescriptors ();
+                            NcModel.Instance.DumpLastAccess ();
                         }
                     }
                     if (null != UnobservedTaskException) {
@@ -571,6 +573,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
             Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
+            Log.Info (Log.LOG_LIFECYCLE, "Culture: {0}", CultureInfo.CurrentCulture);
             if (0 < BuildInfo.Source.Length) {
                 Log.Info (Log.LOG_LIFECYCLE, "Source Info: {0}", BuildInfo.Source);
             }
@@ -598,11 +601,11 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
             MonitorStop ();
             CrlMonitor.StopService ();
-            if (Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
+            if ((null != Class4EarlyShowTimer) && Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
             }
 
-            if (Class4LateShowTimer.DisposeAndCheckHasFired ()) {
+            if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
                 NcCapture.PauseAll ();
                 NcTimeVariance.PauseAll ();
@@ -624,12 +627,6 @@ namespace NachoCore
 
             NcApplication.Instance.StartClass4Services ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass4Services complete");
-
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds()) {
-                var senderHasIssues = DoesBackEndStateIndicateAnIssue (accountId, McAccount.AccountCapabilityEnum.EmailSender);
-                var readerHasIssues = DoesBackEndStateIndicateAnIssue (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
-                LoginHelpers.SetDoesBackEndHaveIssues (accountId, senderHasIssues || readerHasIssues);
-            }
         }
 
         bool DoesBackEndStateIndicateAnIssue (int accountId, McAccount.AccountCapabilityEnum capabiliity)
@@ -692,11 +689,13 @@ namespace NachoCore
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
                 NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
             Log.Info (Log.LOG_SYS, "Monitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
-            Log.Info (Log.LOG_SYS, "Monitor: FD Max open files {0}", PlatformProcess.GetCurrentNumberOfFileDescriptors ());
-            Log.Info (Log.LOG_SYS, "Monitor: FD Current open files {0}", PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
+            Log.Info (Log.LOG_SYS, "Monitor: Files: Max {0}, Currently open {1}",
+                PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
             if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
                 Log.DumpFileDescriptors ();
             }
+            NcModel.Instance.DumpLastAccess ();
+            NcTask.Dump ();
 
             if (null != MonitorEvent) {
                 MonitorEvent (this, EventArgs.Empty);
@@ -753,14 +752,24 @@ namespace NachoCore
             // to happen right away should go into a background task.
             NcTask.Run (delegate {
 
-                NcEventManager.Initialize ();
+                //////////////////////////////////////////////////////////////////////////////////////
+                // Actions that shouldn't be cancelled.  These need to run to completion, even if that
+                // means the task survives across a shutdown.
 
+                NcEventManager.Initialize ();
                 LocalNotificationManager.InitializeLocalNotifications ();
+
+                /////////////////////////////////////////////////////////////////////////////////////
+                // Actions that can be cancelled.  These are not necessary for the correctness of the
+                // running app, or they can be delayed until the next time the app starts.
+
+                NcTask.Cts.Token.ThrowIfCancellationRequested ();
 
                 // Clean up old McPending tasks that have been abandoned.
                 DateTime cutoff = DateTime.UtcNow - new TimeSpan (2, 0, 0, 0); // Two days ago
                 foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
                     foreach (var pending in McPending.QueryOlderThanByState (account.Id, cutoff, McPending.StateEnum.Failed)) {
+                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
                         // TODO Expand this to clean up more than just downloads.
                         if (McPending.Operations.EmailBodyDownload == pending.Operation ||
                             McPending.Operations.CalBodyDownload == pending.Operation ||
@@ -851,11 +860,23 @@ namespace NachoCore
             }
         }
 
+        public bool CertAskReqPreApproved (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            var certificate = BackEnd.Instance.ServerCertToBeExamined (accountId, capabilities);
+            if (null != certificate) {
+                return (McMutables.GetBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", certificate.Thumbprint));
+            } else {
+                return false;
+            }
+        }
+
         public void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay)
         {
             if (isOkay) {
-                McMutables.GetOrCreateBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", 
-                    BackEnd.Instance.ServerCertToBeExamined (accountId, capabilities).Thumbprint, true);
+                var certificate = BackEnd.Instance.ServerCertToBeExamined (accountId, capabilities);
+                if (null != certificate) {
+                    McMutables.GetOrCreateBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", certificate.Thumbprint, true);
+                }
             }
             BackEnd.Instance.CertAskResp (accountId, capabilities, isOkay);
         }
@@ -1002,7 +1023,7 @@ namespace NachoCore
                 try {
                     File.Delete (startupLog);
                 } catch (Exception e) {
-                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete starutp log (file={0}, exception={1})", startupLog, e.Message);
+                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete startup log (file={0}, exception={1})", startupLog, e.Message);
                 }
             }
         }
@@ -1023,8 +1044,11 @@ namespace NachoCore
                 }
                 Log.Warn (Log.LOG_PUSH, "Unnotified email message (id={0}, dateReceived={1}, createdAt={2})",
                     message.Id, message.DateReceived, message.CreatedAt);
-                message.HasBeenNotified = true;
-                message.Update ();
+                message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.HasBeenNotified = true;
+                    return true;
+                });
             }
         }
 
@@ -1066,6 +1090,9 @@ namespace NachoCore
             }
             var configAccount = McAccount.GetAccountBeingConfigured ();
             if (null != configAccount) {
+                return false;
+            }
+            if (LoginHelpers.GetGoogleSignInCallbackArrived ()) {
                 return false;
             }
             return true;

@@ -230,15 +230,15 @@ namespace NachoCore
             if (null == PendingOnTimeTimer) {
                 PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => {
                     McPending.MakeEligibleOnTime ();
-                }, null, 1000, 2000);
+                }, null, 1000, 1000);
                 PendingOnTimeTimer.Stfu = true;
             }
-            NcTask.Run (() => {
-                ApplyAcrossServices (accountId, "Start", (service) => {
+            ApplyAcrossServices (accountId, "Start", (service) => {
+                NcTask.Run (() => {
                     service.Execute ();
-                    return NcResult.OK ();
-                });
-            }, "Start");
+                }, "Start");
+                return NcResult.OK ();
+            });
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
         }
 
@@ -277,7 +277,17 @@ namespace NachoCore
             }, "CredResp");
         }
 
-       private NcResult CmdInDoNotDelayContext (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> cmd)
+        public void PendQHotInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            ApplyAcrossServices (accountId, "PendQHotInd", (service) => {
+                if (0 != (capabilities & service.Capabilities)) {
+                    service.PendQHotInd ();
+                }
+                return NcResult.OK ();
+            });
+        }
+
+        private NcResult CmdInDoNotDelayContext (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> cmd)
         {
             return ApplyToService (accountId, capability, (service) => {
                 if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down) {
@@ -285,6 +295,9 @@ namespace NachoCore
                 }
                 if (NcCommStatus.Instance.Quality (service.Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
                     return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
+                }
+                if (!service.IsDoNotDelayOk) {
+                    return NcResult.Error (service.DoNotDelaySubKind);
                 }
                 return cmd (service);
             });
@@ -324,14 +337,14 @@ namespace NachoCore
         public NcResult ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
                                          int folderId, bool originalEmailIsEmbedded)
         {
-            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.ForwardEmailCmd (newEmailMessageId, forwardedEmailMessageId,
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailSender, (service) => service.ForwardEmailCmd (newEmailMessageId, forwardedEmailMessageId,
                 folderId, originalEmailIsEmbedded));
         }
 
         public NcResult ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
                                        int folderId, bool originalEmailIsEmbedded)
         {
-            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.ReplyEmailCmd (newEmailMessageId, repliedToEmailMessageId,
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailSender, (service) => service.ReplyEmailCmd (newEmailMessageId, repliedToEmailMessageId,
                 folderId, originalEmailIsEmbedded));
         }
 
@@ -370,16 +383,16 @@ namespace NachoCore
             return (List<NcResult>)outer.Value;
         }
 
-        public List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds)
+        public List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds, bool justDelete = false)
         {
             return DeleteMultiCmd (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, emailMessageIds, (service, id, lastInSeq) => {
-                return service.DeleteEmailCmd (id, lastInSeq);
+                return service.DeleteEmailCmd (id, lastInSeq, justDelete);
             });
         }
 
-        public NcResult DeleteEmailCmd (int accountId, int emailMessageId)
+        public NcResult DeleteEmailCmd (int accountId, int emailMessageId, bool justDelete = false)
         {
-            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.DeleteEmailCmd (emailMessageId));
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.DeleteEmailCmd (emailMessageId, true, justDelete));
         }
 
         public List<NcResult> MoveEmailsCmd (int accountId, List<int> emailMessageIds, int destFolderId)
@@ -679,6 +692,7 @@ namespace NachoCore
             };
 
             Action<McCred> onFailure = (cred) => {
+                Log.Error (Log.LOG_BACKEND, "CredReq:onFailure called.");
                 InvokeOnUIThread.Instance.Invoke (delegate () {
                     Owner.CredReq (sender.AccountId);
                 });

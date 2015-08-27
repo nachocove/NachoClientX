@@ -88,8 +88,6 @@ namespace NachoClient.iOS
             syncStatusLabel.Font = A.Font_AvenirNextRegular17;
             syncStatusLabel.TextColor = UIColor.White;
             syncStatusLabel.TextAlignment = UITextAlignment.Center;
-            syncStatusLabel.Text = "Verifying Your Server...";
-            syncStatusLabel.Alpha = 0.0f;
             this.AddSubview (syncStatusLabel);
 
             startedCircleImage = new UIImageView (UIImage.FromBundle ("Loginscreen-BG@2x"));
@@ -189,22 +187,23 @@ namespace NachoClient.iOS
                 this.Hidden = false;
                 this.Superview.BringSubviewToFront (this);
                 owner.NavigationItem.Title = "";
+                syncStatusLabel.Alpha = 0;
                 ResetLoadingItems ();
                 StartLoadingAnimation ();
             }
-            // Does the loading message need to change?
-            if (!String.IsNullOrEmpty (loadingMessage) && !syncStatusLabel.Text.Equals (loadingMessage)) {
-                UIView.AnimateKeyframes (.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                        syncStatusLabel.Alpha = 0.0f;
+            // Reload only if a new message is presented
+            if (!String.IsNullOrEmpty (loadingMessage) && !loadingMessage.Equals (syncStatusLabel.Text)) {
+                // First-time transition doesn't animiate in.
+                if (String.IsNullOrEmpty (syncStatusLabel.Text)) {
+                    syncStatusLabel.Text = loadingMessage;
+                    UIView.Animate (0.5, () => {
+                        syncStatusLabel.Alpha = 1;
                     });
-                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                } else {
+                    UIView.Transition (syncStatusLabel, 1.0, UIViewAnimationOptions.TransitionCrossDissolve, () => {
                         syncStatusLabel.Text = loadingMessage;
-                        syncStatusLabel.Alpha = 1.0f;
-                    });
-
-                }, ((bool finished) => {
-                }));
+                    }, null);
+                }
             }
         }
 
@@ -218,7 +217,6 @@ namespace NachoClient.iOS
 
         protected void ResetLoadingItems ()
         {
-            syncStatusLabel.Alpha = 0.0f;
             circleMask.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             spinnerView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             bottomHalfSpinner.Center = bottomHalfSpinnerCenter;
@@ -228,18 +226,12 @@ namespace NachoClient.iOS
 
         protected void StartLoadingAnimation ()
         {
-            UIView.AnimateKeyframes (1, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeCubicPaced), () => {
-
+            UIView.AnimateKeyframes (0.5, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeCubicPaced), () => {
                 UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
                     circleMask.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
                     spinnerView.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
                     animationBlocker.Alpha = 0.0f;
                 });
-
-                UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
-                    syncStatusLabel.Alpha = 1.0f;
-                });
-
             }, ((bool finished) => {
                 ArrowAnimation (topHalfSpinner, bottomHalfSpinner, topHalfSpinnerCenter, bottomHalfSpinnerCenter, false);
             }));

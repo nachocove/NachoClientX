@@ -12,18 +12,8 @@ namespace NachoCore.Utils
     {
         static string MODULE = "ClientConfigurationBits";
 
-        //Sets the status of the sync bit for given accountId
-        //Implies that auto-d is complete too.
-        static public void SetFirstSyncCompleted (int accountId, bool toWhat)
+        static public void UserInterventionStateChanged (int accountId)
         {
-            Log.Info (Log.LOG_UI, "SetFirstSyncCompleted: {0}={1}", accountId, toWhat);
-            McMutables.SetBool (accountId, MODULE, "hasSyncedFolders", toWhat);
-        }
-
-        static public void SetDoesBackEndHaveIssues (int accountId, bool toWhat)
-        {
-            Log.Info (Log.LOG_UI, "SetDoesBackEndHaveIssues: {0}={1}", accountId, toWhat);
-            McMutables.SetBool (accountId, MODULE, "doesBackEndHaveIssues", toWhat);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = NcResult.Info (NcResult.SubKindEnum.Info_UserInterventionFlagChanged),
                 Account = McAccount.QueryById<McAccount> (accountId),
@@ -31,9 +21,25 @@ namespace NachoCore.Utils
             });
         }
 
-        static public bool DoesBackEndHaveIssues (int accountId)
+        static public bool IsUserInterventionRequired (int accountId, out McServer serverWithIssue, out BackEndStateEnum serverStatus)
         {
-            return McMutables.GetOrCreateBool (accountId, MODULE, "doesBackEndHaveIssues", false);
+            var servers = McServer.QueryByAccountId<McServer> (accountId);
+
+            foreach (var server in servers) {
+                var status = BackEnd.Instance.BackEndState (accountId, server.Capabilities);
+                switch (status) {
+                case BackEndStateEnum.CertAskWait:
+                case BackEndStateEnum.CredWait:
+                case BackEndStateEnum.ServerConfWait:
+                    Log.Info (Log.LOG_UTILS, "UserInterventionRequired: {0}", status);
+                    serverWithIssue = server;
+                    serverStatus = status; 
+                    return true;
+                }
+            }
+            serverWithIssue = null;
+            serverStatus = BackEndStateEnum.NotYetStarted; 
+            return false;
         }
 
         static public bool ShouldAlertUser ()
@@ -48,12 +54,16 @@ namespace NachoCore.Utils
 
         static public bool ShouldAlertUser (int accountId)
         {
-            if (DoesBackEndHaveIssues (accountId)) {
+            McServer serverWithIssue;
+            BackEndStateEnum serverStatus;
+            if (IsUserInterventionRequired (accountId, out serverWithIssue, out serverStatus)) {
+                Log.Info (Log.LOG_UTILS, "ShouldAlertUser: {0}: user intervention required {1}/{2}", accountId, serverWithIssue, serverStatus);
                 return true;
             }
             DateTime expiry;
             string rectificationUrl;
             if (LoginHelpers.PasswordWillExpire (accountId, out expiry, out rectificationUrl)) {
+                Log.Info (Log.LOG_UTILS, "ShouldAlertUser: {0}: password will expire {1}", accountId, expiry);
                 return true;
             }
             return false;
@@ -117,6 +127,17 @@ namespace NachoCore.Utils
                 }
             }
             return (DateTime.MaxValue != gonnaExpireOn);
+        }
+
+        static public void ClearPasswordExpiration (int accountId)
+        {
+            var creds = McCred.QueryByAccountId<McCred> (accountId);
+            if (null == creds) {
+                return;
+            }
+            foreach (var cred in creds) {
+                cred.ClearExpiry ();
+            }
         }
 
         static public int GlobalAccountId {
@@ -192,10 +213,24 @@ namespace NachoCore.Utils
             }
         }
 
-        public static bool AccountExists (string emailAddress)
+        public static bool ConfiguredAccountExists (string emailAddress)
         {
             var existingAccount = McAccount.QueryByEmailAddr (emailAddress).SingleOrDefault ();
-            return (null != existingAccount);
+            if (null != existingAccount) {
+                return (McAccount.ConfigurationInProgressEnum.Done == existingAccount.ConfigurationInProgress);
+            } else {
+                return false;
+            }
+        }
+
+        public static void SetGoogleSignInCallbackArrived (bool value)
+        {
+            McMutables.SetBool (GlobalAccountId, MODULE, "GoogleSignInCallbackArrived", value);
+        }
+
+        public static bool GetGoogleSignInCallbackArrived ()
+        {
+            return McMutables.GetOrCreateBool (GlobalAccountId, MODULE, "GoogleSignInCallbackArrived", false);
         }
     }
 }

@@ -64,6 +64,8 @@ namespace NachoClient.iOS
 
 
 
+
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -113,9 +115,21 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            // Can't switch acct; let's be sure for now
+            // When the app is re-started from a notification on a
+            // different account, the tab bar and nacho now should
+            // close all views & start in nach now. But perhaps it
+            // is possible for this view to become visible just as
+            // it is about to be popped?  Catch & avoid that case.
             var message = thread.FirstMessageSpecialCase ();
-            NcAssert.True ((null == message) || (NcApplication.Instance.Account.Id == message.AccountId));
+            if (null != message) {
+                if (NcApplication.Instance.Account.Id != message.AccountId) {
+                    Log.Error (Log.LOG_UI, "MessageViewController mismatched accounts {0} {1}.", NcApplication.Instance.Account.Id, message.AccountId);
+                    if (null != NavigationController) {
+                        NavigationController.PopViewController (false);
+                    }
+                }
+                NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
+            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -405,32 +419,39 @@ namespace NachoClient.iOS
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
             }
 
+            NachoCore.Utils.NcAbate.HighPriority ("MessageViewController");
+
             var message = thread.SingleMessageSpecialCase ();
 
             if (null == message) {
                 // TODO: Unavailable message
                 NavigationController.PopViewController (true);
+                NachoCore.Utils.NcAbate.RegularPriority ("MessageViewController");
                 return;
             }
                 
             attachments = McAttachment.QueryByItemId (message);
+            attachmentListView.Hidden = !HasAttachments;
 
+            NachoCore.Utils.NcAbate.RegularPriority ("MessageViewController");
+
+            // User image view
             var userImageView = headerView.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
             var userLabelView = headerView.ViewWithTag ((int)TagType.USER_LABEL_TAG) as UILabel;
-            var userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
+            userImageView.Hidden = true;
+            userLabelView.Hidden = true;
+
+            var userImage = Util.PortraitToImage (message.cachedPortraitId);
+
             if (null != userImage) {
                 userImageView.Hidden = false;
                 userImageView.Image = userImage;
-                userLabelView.Hidden = true;
             } else {
                 userLabelView.Hidden = false;
                 userLabelView.Text = message.cachedFromLetters;
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
-                userImageView.Hidden = true;
             }
-
-            attachmentListView.Hidden = !HasAttachments;
-
+                
             var cursor = new VerticalLayoutCursor (headerView);
             cursor.AddSpace (35); // for From and top inset
 
@@ -562,6 +583,12 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
+            // Header view is the background when loading a message.
+            // Size the header to be at least as large as the screen.
+
+            var headerSize = NMath.Max (separator2YOffset, View.Frame.Height);
+            ViewFramer.Create (headerView).Height (headerSize);
+
             var separator1View = headerView.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
             ViewFramer.Create (separator1View).Y (separator1YOffset);
             var separator2View = headerView.ViewWithTag ((int)TagType.SEPARATOR2_TAG);

@@ -30,6 +30,7 @@ namespace NachoPlatform
         private const string KAccessToken = "AccessToken";
         private const string KRefreshToken = "RefreshToken";
         private const string KUserId = "UserId";
+        private const string KLogSalt = "LogSalt";
 
         /*
          * For better or worse...
@@ -66,9 +67,7 @@ namespace NachoPlatform
         public string GetPassword (int handle)
         {
             var data = Getter (CreateQuery (handle));
-            // XAMMIT. 
-            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            return StringFromNSData (data);
         }
 
         public bool SetPassword (int handle, string password)
@@ -84,9 +83,7 @@ namespace NachoPlatform
         public string GetStringForKey (string key)
         {
             var data = Getter (CreateQuery (key));
-            // XAMMIT. 
-            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            return StringFromNSData (data);
         }
 
         public bool SetStringForKey (string key, string value)
@@ -94,6 +91,22 @@ namespace NachoPlatform
             return Setter (CreateQuery (key), NSData.FromString (value));
         }
 
+        public string GetLogSalt (int handle)
+        {
+            var data = Getter (CreateQuery (handle, KLogSalt), errorIfMissing:true);
+            return StringFromNSData (data);
+        }
+
+        public bool SetLogSalt (int handle, string logSalt)
+        {
+            return Setter (CreateQuery (handle, KLogSalt), NSData.FromString (logSalt));
+        }
+
+        public bool DeleteLogSalt (int handle)
+        {
+            return Deleter (CreateQuery (handle, KLogSalt));     
+        }
+            
         public string GetIdentifierForVendor ()
         {
             return GetStringForKey (KIdentifierForVendor);
@@ -121,10 +134,8 @@ namespace NachoPlatform
 
         public string GetAccessToken (int handle)
         {
-            var data = Getter (CreateQuery (handle, KAccessToken));
-            // XAMMIT.
-            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            var data = Getter (CreateQuery (handle, KAccessToken), errorIfMissing:true);
+            return StringFromNSData (data);
         }
 
         public bool DeleteAccessToken (int handle)
@@ -139,10 +150,8 @@ namespace NachoPlatform
 
         public string GetRefreshToken (int handle)
         {
-            var data = Getter (CreateQuery (handle, KRefreshToken));
-            // XAMMIT. 
-            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            var data = Getter (CreateQuery (handle, KRefreshToken), errorIfMissing:true);
+            return StringFromNSData (data);
         }
 
         public bool DeleteRefreshToken (int handle)
@@ -151,7 +160,21 @@ namespace NachoPlatform
         }
 
         // Shared implementations below.
-        private NSData Getter (SecRecord query)
+        private string StringFromNSData (NSData data)
+        {
+            try {
+                // XAMMIT. 
+                // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
+                return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            } catch (ArgumentNullException) {
+                // XAMMIT. 
+                // Sometimes NSData.ToString throws ArgumentNullException.
+                Log.Error (Log.LOG_SYS, "StringFromNSData: ArgumentNullException");
+                return null;
+            }
+        }
+
+        private NSData Getter (SecRecord query, bool errorIfMissing = false)
         {
             SecStatusCode res;
             var match = SecKeyChain.QueryAsRecord (query, out res);
@@ -163,6 +186,8 @@ namespace NachoPlatform
             } else {
                 if (SecStatusCode.ItemNotFound != res) {
                     Log.Error (Log.LOG_SYS, "Getter: SecKeyChain.QueryAsRecord returned {0}", res.ToString ());
+                } else if (errorIfMissing) {
+                    Log.Error (Log.LOG_SYS, "Getter: missing: query is: KeyClass={0}, Account={1}, Service={2}.", query.KeyClass, query.Account, query.Service);
                 }
                 return null;
             }

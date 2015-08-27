@@ -51,6 +51,8 @@ namespace NachoClient.iOS
                 Util.ConfigureNavBar (false, NavigationController);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            // Refresh the ! on the status line
+            LoginHelpers.UserInterventionStateChanged (NcApplication.Instance.Account.Id);
         }
 
         public override void ViewDidDisappear (bool animated)

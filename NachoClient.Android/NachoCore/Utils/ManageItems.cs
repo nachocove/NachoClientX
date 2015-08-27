@@ -116,7 +116,7 @@ namespace NachoCore.Utils
             item.ReminderIsSet = true;
             item.Reminder = 10;
             item.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedLocalTimeZone (), DateTime.UtcNow).toEncodedTimeZone ();
-            item.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
+            item.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpperInvariant ();
             return item;
         }
 
@@ -228,7 +228,7 @@ namespace NachoCore.Utils
             item.ReminderIsSet = true;
             item.Reminder = 10;
             item.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedLocalTimeZone (), DateTime.UtcNow).toEncodedTimeZone ();
-            item.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
+            item.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpperInvariant ();
             item.MeetingStatusIsSet = true;
             item.MeetingStatus = NcMeetingStatus.MeetingOrganizer;
             item.ResponseRequestedIsSet = true;

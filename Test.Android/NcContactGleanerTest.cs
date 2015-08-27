@@ -48,7 +48,7 @@ namespace Test.Common
             emailMessage.Insert ();
 
             Assert.AreEqual ((int)McEmailMessage.GleanPhaseEnum.NOT_GLEANED, emailMessage.HasBeenGleaned);
-            bool gleaned = NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+            bool gleaned = NcContactGleaner.GleanContactsHeaderPart1 (emailMessage, false);
             Assert.True (gleaned);
 
             Assert.AreEqual ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1, emailMessage.HasBeenGleaned);
@@ -82,7 +82,7 @@ namespace Test.Common
             }
 
             // Run part 1 again to make sure duplicate contacts are rejected
-            gleaned = NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+            gleaned = NcContactGleaner.GleanContactsHeaderPart1 (emailMessage, false);
             Assert.True (gleaned);
             CheckHasContact ("john@abc.org", "John", "Brown");
             CheckHasContact ("jane@abc.org", "Jane", "Doe");

@@ -57,12 +57,6 @@ namespace NachoCore.ActiveSync
             emailMessage.SenderEmailAddressId = McEmailAddress.Get (folder.AccountId, emailMessage.Sender);
 
             NcModel.Instance.RunInTransaction (() => {
-                if ((0 != emailMessage.FromEmailAddressId) || !String.IsNullOrEmpty(emailMessage.To)) {
-                    if (!folder.IsJunkFolder ()) {
-                        NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
-                    }
-                }
-
                 bool justCreated = false;
                 if (null == eMsg) {
                     justCreated = true;
@@ -72,11 +66,20 @@ namespace NachoCore.ActiveSync
                     emailMessage.Insert ();
                     folder.Link (emailMessage);
                     aHelp.InsertAttachments (emailMessage);
+                    NcContactGleaner.GleanContactsHeaderPart1 (emailMessage, folder.IsJunkFolder ());
                 } else {
-                    emailMessage.AccountId = folder.AccountId;
-                    emailMessage.Id = eMsg.Id;
+                    emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var target = (McEmailMessage)record;
+                        target.AccountId = folder.AccountId;
+                        target.Id = eMsg.Id;
+                        return true;
+                    });
                     folder.UpdateLink (emailMessage);
-                    emailMessage.Update ();
+                    if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
+                        // Another client has remotely read / unread this email.
+                        // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
+                        NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
+                    }
                 }
             });
 

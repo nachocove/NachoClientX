@@ -49,6 +49,8 @@ namespace NachoCore
         void ServerConfResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool forceAutodiscovery);
         // let the BE know that the credentials have been updated for this account.
         void CredResp (int accountId);
+        // Indicate that pending Q items have been newly made eligible.
+        void PendQHotInd (int accountId, McAccount.AccountCapabilityEnum capabilities);
         // search email. returns token that can be used to cancel the search and all eclipsed searches.
         NcResult StartSearchEmailReq (int accountId, string prefix, uint? maxResults);
         // follow-on email search, using same token.
@@ -69,8 +71,8 @@ namespace NachoCore
         NcResult ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
                         int folderId, bool originalEmailIsEmbedded);
         // delete an email from a synced folder. returns token that can be used to possibly cancel.
-        NcResult DeleteEmailCmd (int accountId, int emailMessageId);
-        List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds);
+        NcResult DeleteEmailCmd (int accountId, int emailMessageId, bool justDelete = false);
+        List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds, bool justDelete = false);
         // move an email from one folder to another. returns token that can be used to possibly cancel.
         NcResult MoveEmailCmd (int accountId, int emailMessageId, int destFolderId);
         List<NcResult> MoveEmailsCmd (int accountId, List<int> emailMessageIds, int destFolderId);

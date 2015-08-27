@@ -15,7 +15,7 @@ using NachoCore.Utils;
 namespace NachoClient.iOS
 {
     public partial class AdvancedSettingsViewController : NcUIViewControllerNoLeaks
-	{
+    {
         McAccount account;
         ILoginFields loginFields;
 
@@ -25,11 +25,12 @@ namespace NachoClient.iOS
         List<McServer> SavedList;
         List<McServer> ServerList;
 
-		public AdvancedSettingsViewController (IntPtr handle) : base (handle)
-		{
-		}
+        public AdvancedSettingsViewController (IntPtr handle) : base (handle)
+        {
+        }
 
-        public void Setup(McAccount account) {
+        public void Setup (McAccount account)
+        {
             this.account = account;
         }
 
@@ -52,10 +53,10 @@ namespace NachoClient.iOS
             var rect = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             switch (account.AccountType) {
             case McAccount.AccountTypeEnum.Exchange:
-                loginFields = new ExchangeFields (account, LoginProtocolControl.Prompt.EditInfo, rect, onValidate);
+                loginFields = new ExchangeFields (account, LoginProtocolControl.Prompt.EditInfo, null, null, rect, onValidate);
                 break;
             case McAccount.AccountTypeEnum.IMAP_SMTP:
-                loginFields = new IMapFields (account, LoginProtocolControl.Prompt.EditInfo, rect, onValidate);
+                loginFields = new IMapFields (account, LoginProtocolControl.Prompt.EditInfo, null, null, rect, onValidate);
                 break;
             default:
                 NcAssert.CaseError ();
@@ -126,11 +127,13 @@ namespace NachoClient.iOS
 
         void HideStatusView ()
         {
-            greyBackground.RemoveFromSuperview ();
-            greyBackground = null;
+            if (null != greyBackground) {
+                greyBackground.RemoveFromSuperview ();
+                greyBackground = null;
+            }
         }
 
-        void onValidate(McCred cred, List<McServer> servers)
+        void onValidate (McCred cred, List<McServer> servers)
         {
             View.EndEditing (true);
 
@@ -238,5 +241,5 @@ namespace NachoClient.iOS
                 }),
                 new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
         }
-	}
+    }
 }

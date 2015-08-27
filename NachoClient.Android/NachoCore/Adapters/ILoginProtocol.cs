@@ -27,8 +27,6 @@ namespace NachoCore
 
         void StartSync ();
 
-        void TryAgainOrQuit ();
-
         void ShowSupport ();
 
         void ShowTutorial ();
@@ -43,9 +41,11 @@ namespace NachoCore
 
         void ShowWaitingScreen (string waitingMessage);
 
-        void ShowDuplicateAccount();
+        void ShowDuplicateAccount ();
 
-        void ShowCertRejected();
+        void ShowCertRejected ();
+
+        void ShowServerConfCallback ();
     }
 }
 

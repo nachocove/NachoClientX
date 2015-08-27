@@ -66,13 +66,41 @@ namespace NachoCore.Model
             return (0 < NeedUpdate);
         }
 
+        public void GetParts (ref int top, ref int bottom)
+        {
+            top += (
+                ScoreStates.EmailsRead + ScoreStates.EmailsReplied +
+                ScoreStates.EmailsSent +
+                ScoreStates.MarkedHot
+            );
+            bottom += (
+                ScoreStates.EmailsReceived +
+                ScoreStates.EmailsSent +
+                ScoreStates.EmailsDeleted +
+                ScoreStates.MarkedHot + ScoreStates.MarkedNotHot
+            );
+        }
+
+        public void GetToParts (ref int top, ref int bottom)
+        {
+            top += ScoreStates.ToEmailsRead + ScoreStates.ToEmailsReplied;
+            bottom += ScoreStates.ToEmailsReceived + ScoreStates.ToEmailsDeleted;
+        }
+
+        public void GetCcParts (ref int top, ref int bottom)
+        {
+            top += ScoreStates.CcEmailsRead + ScoreStates.CcEmailsReplied;
+            bottom += ScoreStates.CcEmailsReceived + ScoreStates.CcEmailsDeleted;
+        }
+
         public double Classify ()
         {
-            int total = ScoreStates.EmailsReceived + ScoreStates.EmailsSent + ScoreStates.EmailsDeleted;
-            if (0 == total) {
+            int top = 0, bottom = 0;
+            GetParts (ref top, ref bottom);
+            if (0 == bottom) {
                 return 0.0;
             }
-            return (double)(ScoreStates.EmailsRead + ScoreStates.EmailsReplied + ScoreStates.EmailsSent) / (double)total;
+            return (double)top / (double)bottom;
         }
 
         public void Analyze ()
@@ -108,13 +136,21 @@ namespace NachoCore.Model
         public void IncrementEmailsRead (int count = 1)
         {
             ScoreStates.EmailsRead += count;
-            MarkDependencies (NcEmailAddress.Kind.From);
+            if (ScoreStates.CheckStatistics ("IncrementEmailsRead")) {
+                MarkDependencies (NcEmailAddress.Kind.From);
+            } else {
+                ScoreStates.EmailsRead -= count;
+            }
         }
 
         public void IncrementEmailsReplied (int count = 1)
         {
             ScoreStates.EmailsReplied += count;
-            MarkDependencies (NcEmailAddress.Kind.From);
+            if (ScoreStates.CheckStatistics ("IncrementEmailsReplied")) {
+                MarkDependencies (NcEmailAddress.Kind.From);
+            } else {
+                ScoreStates.EmailsReplied -= count;
+            }
         }
 
         public void IncrementEmailsArchived (int count = 1)
@@ -129,6 +165,13 @@ namespace NachoCore.Model
             MarkDependencies (NcEmailAddress.Kind.From);
         }
 
+        public void IncrementEmailsSent (int count = 1)
+        {
+            ScoreStates.EmailsSent += count;
+            MarkDependencies (NcEmailAddress.Kind.To);
+            MarkDependencies (NcEmailAddress.Kind.Cc);
+        }
+
         ///////////////////// To address methods /////////////////////
         public void IncrementToEmailsReceived (int count = 1, bool markDependencies = true)
         {
@@ -141,16 +184,24 @@ namespace NachoCore.Model
         public void IncrementToEmailsRead (int count = 1, bool markDependencies = true)
         {
             ScoreStates.ToEmailsRead += count;
-            if (markDependencies) {
-                MarkDependencies (NcEmailAddress.Kind.To);
+            if (ScoreStates.CheckToStatistics ("IncrementToEmailsRead")) {
+                if (markDependencies) {
+                    MarkDependencies (NcEmailAddress.Kind.To);
+                }
+            } else {
+                ScoreStates.ToEmailsRead -= count;
             }
         }
 
         public void IncrementToEmailsReplied (int count = 1, bool markDependencies = true)
         {
             ScoreStates.ToEmailsReplied += count;
-            if (markDependencies) {
-                MarkDependencies (NcEmailAddress.Kind.To);
+            if (ScoreStates.CheckToStatistics ("IncrementToEmailsReplied")) {
+                if (markDependencies) {
+                    MarkDependencies (NcEmailAddress.Kind.To);
+                }
+            } else {
+                ScoreStates.ToEmailsReplied -= count;
             }
         }
 
@@ -182,16 +233,24 @@ namespace NachoCore.Model
         public void IncrementCcEmailsRead (int count = 1, bool markDependencies = true)
         {
             ScoreStates.CcEmailsRead += count;
-            if (markDependencies) {
-                MarkDependencies (NcEmailAddress.Kind.Cc);
+            if (ScoreStates.CheckCcStatistics ("IncrementCcEmailsRead")) {
+                if (markDependencies) {
+                    MarkDependencies (NcEmailAddress.Kind.Cc);
+                }
+            } else {
+                ScoreStates.CcEmailsRead -= count;
             }
         }
 
         public void IncrementCcEmailsReplied (int count = 1, bool markDependencies = true)
         {
             ScoreStates.CcEmailsReplied += count;
-            if (markDependencies) {
-                MarkDependencies (NcEmailAddress.Kind.Cc);
+            if (ScoreStates.CheckCcStatistics ("IncrementCcEmailsReplied")) {
+                if (markDependencies) {
+                    MarkDependencies (NcEmailAddress.Kind.Cc);
+                }
+            } else {
+                ScoreStates.CcEmailsReplied -= count;
             }
         }
 
@@ -217,7 +276,7 @@ namespace NachoCore.Model
                 delta = 1;
             }
             var queryString = String.Format (
-                                  "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + {0} WHERE Id IN " +
+                                  "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + {0}, RowVersion = RowVersion + 1 WHERE Id IN " +
                                   " (SELECT m.ObjectId FROM McMapEmailAddressEntry AS m " +
                                   "  WHERE m.EmailAddressId = ? AND m.AddressType = ?)", delta);
             NcModel.Instance.RunInLock (() => {

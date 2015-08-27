@@ -67,7 +67,6 @@ namespace NachoClient.iOS
 
                 }, ((bool finished) => {
                     hasCompletedInitialAnimation = true;
-                    Console.WriteLine("s: {0} l: {1} circle: {2}", shortScreen, largeScreen, circleMail);
                 }));
             }
         }

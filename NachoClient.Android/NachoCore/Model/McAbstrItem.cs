@@ -117,8 +117,16 @@ namespace NachoCore.Model
                         DeleteAncillary ();
                         returnVal = result;
                     } else {
-                        IsAwaitingDelete = true;
-                        Update ();
+                        if (this is McEmailMessage) {
+                            UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.IsAwaitingDelete = true;
+                                return true;
+                            });
+                        } else {
+                            IsAwaitingDelete = true;
+                            Update ();
+                        }
                         returnVal = 0;
                     }
                 });

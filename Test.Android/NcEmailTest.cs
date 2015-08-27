@@ -269,10 +269,12 @@ namespace Test.Common
         {
             var noCategoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", null));
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (noCategoriesXML, new MockNcFolder ());
-
             Assert.True (email1.Categories.Count == 0);
-            email1.Categories = getCategories (1);
-            email1.Update ();
+            email1 = email1.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Categories = getCategories (1);
+                return true;
+            });
             Assert.True (email1.Categories.Count > 0);
         }
 
@@ -282,10 +284,12 @@ namespace Test.Common
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories (1)));
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
             IList<McEmailMessageCategory> categories = email1.Categories;
-
             AssertListsAreEquals (categories, email1.Categories);
-            email1.Categories = categories;
-            email1.Update ();
+            email1 = email1.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Categories = categories;
+                return true;
+            });
             AssertListsAreEquals (categories, email1.Categories);
         }
 
@@ -294,15 +298,18 @@ namespace Test.Common
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories (1)));
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
-
             Assert.True (email1.Categories.Count == 6);
-
-            email1.AccountId = 1;
-            email1.Update ();
-
+            email1 = email1.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.AccountId = 1;
+                return true;
+            });
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE AccountId=?", 1) [0];
-            email2.IsRead = true;
-            email2.Update ();
+            email2 = email2.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.IsRead = true;
+                return true;
+            });
             Assert.True (email2.Categories.Count == 6);
 
         }
@@ -317,8 +324,11 @@ namespace Test.Common
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 1 && email1.Categories [0].Name.Trim ().Equals (catList [0].Name.Trim ()));
-            email1.Categories = getCategories (1);
-            email1.Update ();
+            email1 = email1.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Categories = getCategories (1);
+                return true;
+            });
             Assert.True (email1.Categories.Count == 6);
         }
 
@@ -329,8 +339,11 @@ namespace Test.Common
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 6);
-            email1.Categories = new List<McEmailMessageCategory> ();
-            email1.Update ();
+            email1 = email1.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Categories = new List<McEmailMessageCategory> ();
+                return true;
+            });
             Assert.True (email1.Categories.Count == 0);
         }
 
@@ -346,29 +359,39 @@ namespace Test.Common
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
             Assert.True (email2.Categories.Count == 6);
-            email2.Categories = new List<McEmailMessageCategory> ();
-            email2.Update ();
+            email2 = email2.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Categories = new List<McEmailMessageCategory> ();
+                return true;
+            });
             Assert.True (email2.Categories.Count == 0);
-            email2.Categories = oneItem;
-            email2.Update ();
+            email2 = email2.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Categories = oneItem;
+                return true;
+            });
             Assert.True (email2.Categories.Count == 1);
-
-            email2.To = "No Recip.";
             var email2Categories = new List<McEmailMessageCategory> (email2.Categories);
             email2Categories.Add (getCategories (1) [2]);
-            email2.Categories = email2Categories;
-            email2.Update ();
+            email2 = email2.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.To = "No Recip.";
+                target.Categories = email2Categories;
+                return true;
+            });
 
             McEmailMessage email3 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
             Assert.True (email3.To.Equals ("No Recip.") && email3.Categories.Count == 2);
-
-            email3.To = "Mark";
-            email3.From = "Zuckerburg";
-            email3.Cc = "Jonah Hill";
-            email3.Subject = "FaceBook";
-            email3.Categories = getCategories (1);
-            email3.Update ();
+            email3 = email3.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.To = "Mark";
+                target.From = "Zuckerburg";
+                target.Cc = "Jonah Hill";
+                target.Subject = "FaceBook";
+                target.Categories = getCategories (1);
+                return true;
+            });
 
             McEmailMessage email4 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
@@ -387,9 +410,12 @@ namespace Test.Common
             NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
-            email2.Cc = "ChangedTheCC";
             IList<McEmailMessageCategory> listPreUpdate = email2.Categories;
-            email2.Update ();
+            email2 = email2.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Cc = "ChangedTheCC";
+                return true;
+            });
             IList<McEmailMessageCategory> listPostUpdate = email2.Categories;
 
             AssertListsAreEquals (listPreUpdate, listPostUpdate);
@@ -403,8 +429,11 @@ namespace Test.Common
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
             Assert.True (email2.Categories [0].Name.Trim ().Equals ("Green"));
-            email2.Categories [0].Name = "ChangedTheName";
-            email2.Update ();
+            email2 = email2.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Categories [0].Name = "ChangedTheName";
+                return true;
+            });
             Assert.True (email2.Categories [0].Name.Trim ().Equals ("ChangedTheName"));
         }
 

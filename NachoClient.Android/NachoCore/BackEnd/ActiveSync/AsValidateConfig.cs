@@ -23,7 +23,7 @@ namespace NachoCore.ActiveSync
         public AsValidateConfig (IBEContext bEContext)
         {
             BEContext = bEContext;
-            Sm = new NcStateMachine ("VCONF") {
+            Sm = new NcStateMachine ("ASVCONF") {
                 LocalEventType = typeof(AsProtoControl.AsEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {

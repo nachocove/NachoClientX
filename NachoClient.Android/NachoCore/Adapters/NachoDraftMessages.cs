@@ -6,6 +6,7 @@ using System.Linq;
 using NachoCore;
 using NachoCore.Brain;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
@@ -78,9 +79,9 @@ namespace NachoCore
             return folder.IsClientOwnedDraftsFolder ();
         }
 
-        public void StartSync ()
+        public NcResult StartSync ()
         {
-
+            return NachoSyncResult.DoesNotSync ();
         }
 
         public INachoEmailMessages GetAdapterForThread (string threadId)

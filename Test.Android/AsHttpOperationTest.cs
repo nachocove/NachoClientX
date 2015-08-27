@@ -46,6 +46,11 @@ namespace Test.iOS
 
         AsHttpOperation Op { set; get; }
 
+        public virtual double TimeoutInSeconds
+        {
+            get { return 0.0; }
+        }
+
         public virtual Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation sender)
         {
             return null;
@@ -795,11 +800,6 @@ namespace Test.iOS
                             (uint)AsProtoControl.CtlEvt.E.UiCertOkYes,
                             (uint)AsProtoControl.CtlEvt.E.UiCertOkNo,
                             (uint)AsProtoControl.CtlEvt.E.ReFSync,
-                            (uint)AsProtoControl.CtlEvt.E.PkFetch,
-                            (uint)AsProtoControl.CtlEvt.E.PkHotQOp,
-                            (uint)AsProtoControl.CtlEvt.E.PkPing,
-                            (uint)AsProtoControl.CtlEvt.E.PkQOp,
-                            (uint)AsProtoControl.CtlEvt.E.PkWait,
                             (uint)AsProtoControl.AsEvt.E.ReSync,
                             (uint)AsProtoControl.AsEvt.E.AuthFail,
                             (uint)NcProtoControl.PcEvt.E.PendQ,
@@ -849,11 +849,6 @@ namespace Test.iOS
                             (uint)AsProtoControl.CtlEvt.E.UiCertOkYes,
                             (uint)AsProtoControl.CtlEvt.E.UiCertOkNo,
                             (uint)AsProtoControl.CtlEvt.E.ReFSync,
-                            (uint)AsProtoControl.CtlEvt.E.PkFetch,
-                            (uint)AsProtoControl.CtlEvt.E.PkHotQOp,
-                            (uint)AsProtoControl.CtlEvt.E.PkPing,
-                            (uint)AsProtoControl.CtlEvt.E.PkQOp,
-                            (uint)AsProtoControl.CtlEvt.E.PkWait,
                             (uint)AsProtoControl.AsEvt.E.ReProv,
                             (uint)AsProtoControl.AsEvt.E.ReSync,
                             (uint)NcProtoControl.PcEvt.E.PendQ,

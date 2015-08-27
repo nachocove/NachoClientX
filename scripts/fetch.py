@@ -57,8 +57,17 @@ class FetchThread(threading.Thread):
             else:
                 print 'ERROR: failed to pull %s!' % self.repo
                 return 1
-        return 0
+        try:
+            os.chdir(repo_dir)
+            rc = subprocess.check_call(['git', 'submodule', 'update', '--init', '--recursive'])
+        except subprocess.CalledProcessError as e:
+            rc = e.returncode
 
+        if 0 != rc:
+            print 'ERROR: failed to update submodule  %s!' % self.repo
+            return 1
+
+        return 0
 
 def main():
     if 1 == len(sys.argv):

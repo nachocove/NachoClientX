@@ -14,9 +14,10 @@ namespace NachoCore.Model
 {
     public class McCred : McAbstrObjectPerAcc
     {
-        public enum CredTypeEnum { 
-            Password = 0, 
-            OAuth2, 
+        public enum CredTypeEnum
+        {
+            Password = 0,
+            OAuth2,
             SAML,
             // Only append - values stored in DB.
         };
@@ -96,7 +97,14 @@ namespace NachoCore.Model
             }
         }
 
-        static public string Join(string domain, string username)
+        public void ClearExpiry ()
+        {
+            Expiry = DateTime.MaxValue;
+            RectificationUrl = null;
+            Update ();
+        }
+
+        static public string Join (string domain, string username)
         {
             if (String.IsNullOrEmpty (domain)) {
                 return username;
@@ -105,7 +113,7 @@ namespace NachoCore.Model
             }
         }
 
-        static public void Split(string username, out string domain, out string user)
+        static public void Split (string username, out string domain, out string user)
         {
             user = "";
             domain = "";
@@ -116,7 +124,7 @@ namespace NachoCore.Model
             int slashIndex = username.IndexOf ("\\", StringComparison.OrdinalIgnoreCase);
             if (-1 == slashIndex) {
                 user = username;
-            } else if(username.Length == (slashIndex + 1)) {
+            } else if (username.Length == (slashIndex + 1)) {
                 user = username.Substring (0, slashIndex);
             } else {
                 domain = username.Substring (0, slashIndex);
@@ -135,7 +143,7 @@ namespace NachoCore.Model
             Password = password;
         }
 
-        public string GetTestPassword()
+        public string GetTestPassword ()
         {
             return Password;
         }
@@ -201,7 +209,9 @@ namespace NachoCore.Model
         private class OAuth2RefreshRespose
         {
             public string access_token { get; set; }
+
             public string expires_in { get; set; }
+
             public string token_type { get; set; }
         }
 
@@ -209,10 +219,10 @@ namespace NachoCore.Model
         {
             var handler = new NativeMessageHandler ();
             var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
-            var query = "client_secret=" + BuildInfo.GoogleClientSecret +
+            var query = "client_secret=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientSecret) +
                         "&grant_type=" + "refresh_token" +
-                        "&refresh_token=" + GetRefreshToken () +
-                        "&client_id=" + BuildInfo.GoogleClientId;
+                        "&refresh_token=" + Uri.EscapeDataString (GetRefreshToken ()) +
+                        "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
             var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
             var httpRequest = new HttpRequestMessage (HttpMethod.Post, requestUri);
             try {
@@ -227,6 +237,7 @@ namespace NachoCore.Model
                         Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token {0} or expires_in {1}", response.access_token, response.expires_in);
                         return false;
                     }
+                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", response.expires_in);
                     UpdateOauth2 (response.access_token, GetRefreshToken (), 
                         DateTime.UtcNow.AddSeconds (int.Parse (response.expires_in)));
                     return true;

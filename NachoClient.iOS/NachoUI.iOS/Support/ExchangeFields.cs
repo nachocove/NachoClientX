@@ -57,7 +57,7 @@ namespace NachoClient.iOS
         AdvancedLoginViewController.onConnectCallback onConnect;
         AdvancedLoginViewController.onValidateCallback onValidate;
 
-        private ExchangeFields (McAccount account, Prompt prompt, CGRect rect, string buttonText)
+        private ExchangeFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, string buttonText)
         {
             this.prompt = prompt;
             this.account = account;
@@ -70,17 +70,21 @@ namespace NachoClient.iOS
 
             if (null != account) {
                 LoadAccount ();
+            } else {
+                emailView.textField.Text = initialEmail;
+                passwordView.textField.Text = initialPassword;
             }
+            MaybeEnableConnect (emailView.textField);
         }
 
-        public ExchangeFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
-            : this (account, prompt, rect, "Connect")
+        public ExchangeFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
+            : this (account, prompt, initialEmail, initialPassword, rect, "Connect")
         {
             this.onConnect = onConnect;
         }
 
-        public ExchangeFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onValidateCallback onValidate)
-            : this (account, prompt, rect, "Save")
+        public ExchangeFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, AdvancedLoginViewController.onValidateCallback onValidate)
+            : this (account, prompt, initialEmail, initialPassword, rect, "Save")
         {
             this.onValidate = onValidate;
         }
@@ -328,6 +332,7 @@ namespace NachoClient.iOS
             // Padding
             yOffset += 20;
 
+            MaybeEnableConnect (emailView.textField);
             Util.SetHidden (!showAdvancedSettings, serverView, domainView, usernameView, domainWhiteInset);
 
             ViewFramer.Create (scrollView).Height (height);
@@ -419,7 +424,7 @@ namespace NachoClient.iOS
             }
 
             if (null == account) {
-                if (LoginHelpers.AccountExists (email)) {
+                if (LoginHelpers.ConfiguredAccountExists (email)) {
                     Log.Info (Log.LOG_UI, "avl: SaveUserSettings duplicate account: {0}", email);
                     return AdvancedLoginViewController.ConnectCallbackStatusEnum.DuplicateAccount;
                 }
@@ -503,6 +508,9 @@ namespace NachoClient.iOS
 
         void Validate ()
         {
+            if (!CanUserConnect ()) {
+                return;
+            }
             var cred = new McCred ();
             cred.SetTestPassword (passwordView.textField.Text);          
             if (String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
@@ -553,6 +561,8 @@ namespace NachoClient.iOS
 
         public void MaybeEnableConnect (UITextField textField)
         {
+            textField.TextColor = UIColor.Black;
+
             if (!haveFilledRequiredFields ()) {
                 connectButton.Enabled = false;
                 connectButton.Alpha = .5f;
@@ -562,24 +572,44 @@ namespace NachoClient.iOS
             }
         }
 
-        void SetRedText (AdvancedTextField field, string text)
+        void Complain (AdvancedTextField field, string text)
         {
-            infoLabel.Text = text;
+            if (Prompt.EditInfo == prompt) {
+                var vc = Util.FindOutermostViewController ();
+                NcAlertView.ShowMessage (vc, "Settings", text);
+            } else {
+                infoLabel.Text = text;
+                infoLabel.TextColor = A.Color_NachoRed;
+            }
+            if (null != field) {
+                field.textField.TextColor = A.Color_NachoRed;
+            }
         }
 
         bool CanUserConnect ()
         {
             if (emailView.IsNullOrEmpty ()) {
-                SetRedText (emailView, "Enter an email address");
+                Complain (emailView, "Enter an email address");
+                return false;
+            }
+            if (!EmailHelper.IsValidEmail (emailView.textField.Text)) {
+                Complain (emailView, "Email address is invalid");
                 return false;
             }
             if (passwordView.IsNullOrEmpty ()) {
-                SetRedText (passwordView, "Enter a password");
+                Complain (passwordView, "Enter a password");
                 return false;
             }
             if (Prompt.EditInfo == prompt) {
                 if (serverView.IsNullOrEmpty ()) {
-                    SetRedText (serverView, "Enter a server");
+                    Complain (serverView, "Enter a server");
+                    return false;
+                }
+            }
+            if (!serverView.IsNullOrEmpty ()) {
+                var result = EmailHelper.IsValidServer (serverView.textField.Text);
+                if (EmailHelper.ParseServerWhyEnum.Success_0 != result) {
+                    Complain (serverView, EmailHelper.ParseServerWhyEnumToString (result));
                     return false;
                 }
             }
@@ -587,10 +617,9 @@ namespace NachoClient.iOS
             var emailAddress = emailView.textField.Text;
             if (NcServiceHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
                 var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
-                SetRedText (emailView, nuance);
+                Complain (emailView, nuance);
                 return false;
             }
-
             return true;
         }
 

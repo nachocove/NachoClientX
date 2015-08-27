@@ -10,7 +10,8 @@ namespace NachoCore.Utils
     {
         public static bool IsHttps (this Uri uri)
         {
-            return uri.Scheme.ToUpper () == "HTTPS";
+            // Scheme is converted to lower case
+            return uri.Scheme == Uri.UriSchemeHttps;
         }
 
         public static bool IsValidHost (string host)

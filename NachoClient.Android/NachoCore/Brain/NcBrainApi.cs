@@ -15,6 +15,17 @@ namespace NachoCore.Brain
             dbEvent.Insert ();
         }
 
+        protected static bool ValidEmailMessage (McEmailMessage emailMessage)
+        {
+            if (null == emailMessage) {
+                return false;
+            }
+            if ((0 == emailMessage.Id) || (0 == emailMessage.AccountId)) {
+                return false;
+            }
+            return true;
+        }
+
         public static void UpdateAddressScore (int accountId, int emailAddressId, bool forcedUpdateDependentMessages = false)
         {
             if ((0 == accountId) || (0 == emailAddressId)) {
@@ -31,6 +42,16 @@ namespace NachoCore.Brain
                 return;
             }
             var brainEvent = new NcBrainUpdateMessageScoreEvent (accountId, emailMessageId);
+            PersistentEnqueue (accountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+        }
+
+        public static void UpdateUserAction (int accountId, int emailMessageId, int action)
+        {
+            if ((0 == accountId) || (0 == emailMessageId)) {
+                return;
+            }
+            var brainEvent = new NcBrainUpdateUserActionEvent (accountId, emailMessageId, action);
             PersistentEnqueue (accountId, brainEvent);
             SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
         }
@@ -79,6 +100,57 @@ namespace NachoCore.Brain
                 // Mark the index to prevent further use
                 index.MarkForDeletion ();
             }
+        }
+
+        public static void MessageNotificationStatusUpdated (McEmailMessage emailMessage, DateTime notificationTime, double variance)
+        {
+            if (!ValidEmailMessage (emailMessage) || (0 == variance)) {
+                return;
+            }
+            // Sanity check if this may require an actual update
+            if (!McEmailMessageScore.ShouldUpdateMinimum (emailMessage.ScoreStates.NotificationTime, notificationTime)) {
+                return;
+            }
+            var brainEvent = new NcBrainUpdateMessageNotificationStatusEvent (emailMessage.AccountId, emailMessage.Id) {
+                NotificationTime = notificationTime,
+                Variance = variance,
+            };
+            PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+        }
+
+        public static void MessageReadStatusUpdated (McEmailMessage emailMessage, DateTime readTime, double variance)
+        {
+            if (!ValidEmailMessage (emailMessage) || (0 == variance)) {
+                return;
+            }
+            // Sanity check if this may require an actual update
+            if (!McEmailMessageScore.ShouldUpdateMinimum (emailMessage.ScoreStates.ReadTime, readTime)) {
+                return;
+            }
+            var brainEvent = new NcBrainUpdateMessageReadStatusEvent (emailMessage.AccountId, emailMessage.Id) {
+                ReadTime = readTime,
+                Variance = variance,
+            };
+            PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+        }
+
+        public static void MessageReplyStatusUpdated (McEmailMessage emailMessage, DateTime replyTime, double variance)
+        {
+            if (!ValidEmailMessage (emailMessage) || (0 == variance)) {
+                return;
+            }
+            // Sanity check if this may require an actual update
+            if (!McEmailMessageScore.ShouldUpdateMinimum (emailMessage.ScoreStates.ReplyTime, replyTime)) {
+                return;
+            }
+            var brainEvent = new NcBrainUpdateMessageReplyStatusEvent (emailMessage.AccountId, emailMessage.Id) {
+                ReplyTime = replyTime,
+                Variance = variance,
+            };
+            PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
         }
     }
 }

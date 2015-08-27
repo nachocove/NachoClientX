@@ -91,6 +91,7 @@ namespace NachoCore.ActiveSync
         public const string ResponseSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006";
         public const int TestTimeoutSecs = 30;
         private List<StepRobot> Robots;
+        private object RobotsLockObj = new object ();
         private Queue<StepRobot> AskingRobotQ;
         private Queue<StepRobot> SuccessfulRobotQ;
         private ConcurrentQueue<Event> RobotEventsQ;
@@ -528,6 +529,104 @@ namespace NachoCore.ActiveSync
             case "outlook.com":
             case "live.com":
             case "hotmail.com":
+            case "msn.com":
+            case "outlook.sa":
+            case "hotmail.com.ar":
+            case "outlook.com.ar":
+            case "live.com.ar":
+            case "hotmail.com.au":
+            case "outlook.com.au":
+            case "live.com.au":
+            case "windowslive.com":
+            case "outlook.at":
+            case "live.at":
+            case "hotmail.be":
+            case "outlook.be":
+            case "live.be":
+            case "hotmail.com.br":
+            case "outlook.com.br":
+            case "hotmail.ca":
+            case "live.ca":
+            case "hotmail.cz":
+            case "outlook.cz":
+            case "hotmail.cl":
+            case "outlook.cl":
+            case "live.cl":
+            case "live.cn":
+            case "hotmail.dk":
+            case "outlook.dk":
+            case "live.dk":
+            case "hotmail.fi":
+            case "live.fi":
+            case "hotmail.fr":
+            case "outlook.fr":
+            case "live.fr":
+            case "hotmail.gr":
+            case "outlook.com.gr":
+            case "hotmail.de":
+            case "outlook.de":
+            case "live.de":
+            case "hotmail.com.hk":
+            case "live.hk":
+            case "hotmail.hu":
+            case "outlook.hu":
+            case "hotmail.co.in":
+            case "outlook.in":
+            case "live.in":
+            case "hotmail.co.id":
+            case "outlook.co.id":
+            case "outlook.ie":
+            case "live.ie":
+            case "hotmail.co.il":
+            case "outlook.co.il":
+            case "hotmail.it":
+            case "outlook.it":
+            case "live.it":
+            case "hotmail.co.jp":
+            case "outlook.jp":
+            case "live.jp":
+            case "hotmail.co.kr":
+            case "outlook.kr":
+            case "live.co.kr":
+            case "hotmail.lv":
+            case "outlook.lv":
+            case "hotmail.lt":
+            case "hotmail.my":
+            case "outlook.my":
+            case "live.com.my":
+            case "live.com.mx":
+            case "hotmail.nl":
+            case "live.nl":
+            case "hotmail.no":
+            case "live.no":
+            case "hotmail.ph":
+            case "outlook.ph":
+            case "live.com.ph":
+            case "outlook.pt":
+            case "live.com.pt":
+            case "live.ru":
+            case "hotmail.rs":
+            case "hotmail.sg":
+            case "outlook.sg":
+            case "live.com.sg":
+            case "hotmail.sk":
+            case "outlook.sk":
+            case "hotmail.co.za":
+            case "live.co.za":
+            case "hotmail.es":
+            case "outlook.es":
+            case "hotmail.se":
+            case "live.se":
+            case "hotmail.com.tw":
+            case "livemail.tw":
+            case "hotmail.co.th":
+            case "outlook.co.th":
+            case "hotmail.com.tr":
+            case "outlook.com.tr":
+            case "hotmail.com.vn":
+            case "outlook.com.vn":
+            case "hotmail.co.uk":
+            case "live.co.uk":
                 return McServer.HotMail_Host;
             }
             return null;
@@ -544,6 +643,7 @@ namespace NachoCore.ActiveSync
                 var server = new McServer () {
                     AccountId = Account.Id,
                     Capabilities = McAccount.ActiveSyncCapabilities,
+                    IsHardWired = true,
                     Host = known,
                 };
                 server.Insert ();
@@ -560,7 +660,7 @@ namespace NachoCore.ActiveSync
         private void AddAndStartRobot (StepRobot.Steps step, string domain, bool isUserSpecifiedDomain)
         {
             Log.Info (Log.LOG_AS, "AUTOD:{0}:BEGIN:Starting discovery for {1}/step {2}", step, domain, step);
-            var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain, isUserSpecifiedDomain);
+            var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain, isUserSpecifiedDomain, RobotEventsQ);
             Robots.Add (robot);
             robot.Execute ();
         }
@@ -569,9 +669,11 @@ namespace NachoCore.ActiveSync
         {
             Log.Info (Log.LOG_AS, "AUTOD::END:Stopping all robots.");
             if (null != Robots) {
-                foreach (var robot in Robots) {
-                    robot.Cancel ();
-                    DisposedJunk.Add (robot);
+                lock (RobotsLockObj) {
+                    foreach (var robot in Robots) {
+                        robot.Cancel ();
+                        DisposedJunk.Add (robot);
+                    }
                 }
                 Robots = null;
             }
@@ -709,7 +811,7 @@ namespace NachoCore.ActiveSync
             StepRobot robot = (StepRobot)Sm.Arg;
             // Robot can't be on either ask or success queue, or it would not be reporting failure.
             Robots.Remove (robot);
-            lock (Robots) {
+            lock (RobotsLockObj) {
                 if (ShouldDeQueueRobotEvents ()) {
                     SubdomainComplete = true;
                 }
@@ -756,12 +858,12 @@ namespace NachoCore.ActiveSync
         }
 
         // handle event from Robot
-        private void ProcessEventFromRobot (Event Event, StepRobot Robot)
+        private void ProcessEventFromRobot (Event Event, StepRobot Robot, ConcurrentQueue<Event> robotEventsQ)
         {
-            lock (Robots) {
+            lock (RobotsLockObj) {
                 if (ShouldEnQueueRobotEvent (Event, Robot)) {
                     Log.Info (Log.LOG_AS, "AUTOD:{0}:Enqueuing Event for base domain {1}", Robot.Step, Robot.SrDomain);
-                    RobotEventsQ.Enqueue (Event);
+                    robotEventsQ.Enqueue (Event);
                     return;
                 }
             }
@@ -805,14 +907,12 @@ namespace NachoCore.ActiveSync
             if (ProtocolState.DisableProvisionCommand) {
                 TestCmd = new AsSettingsCommand (this) {
                     DontReportCommResult = true,
-                    Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                     MaxTries = 2,
                     OmitDeviceInformation = true,
                 };
             } else {
                 TestCmd = new AsProvisionCommand (this) {
                     DontReportCommResult = true,
-                    Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                     MaxTries = 2,
                 };
             }
@@ -824,7 +924,6 @@ namespace NachoCore.ActiveSync
             DoCancel ();
             TestCmd = new AsOptionsCommand (this) {
                 DontReportCommResult = true,
-                Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                 MaxTries = 2,
             };
             // HotMail/GMail doesn't WWW-Authenticate on OPTIONS.

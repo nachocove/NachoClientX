@@ -26,47 +26,83 @@ namespace NachoCore.IMAP
 
         public override void Execute (NcStateMachine sm)
         {
+            NcTask.Run (() => {
+                Event evt = ExecuteCommandInternal ();
+                if (!Cts.Token.IsCancellationRequested) {
+                    sm.PostEvent (evt);
+                }
+            }, "ImapDiscoverCommand");
+        }
+
+        private Event ExecuteCommandInternal ()
+        {
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
+            Event evt;
             try {
-                
-                Event evt = base.ExecuteConnectAndAuthEvent ();
-                sm.PostEvent (evt);
-                return;
-
+                return TryLock (Client.SyncRoot, KLockTimeout, () => {
+                    if (Client.IsConnected) {
+                        Client.Disconnect (false, Cts.Token);
+                    }
+                    return base.ExecuteConnectAndAuthEvent ();
+                });
+            } catch (CommandLockTimeOutException ex) {
+                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: CommandLockTimeOutException: {0}", ex.Message);
+                ResolveAllDeferred ();
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOLOKTIME");
+                errResult.Message = ex.Message;
+            } catch (OperationCanceledException ex) {
+                ResolveAllDeferred ();
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
+                errResult.Message = ex.Message;
+            } catch (UriFormatException ex) {
+                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL2", AutoDFailureReason.CannotFindServer);
+                errResult.Message = ex.Message;
             } catch (SocketException ex) {
-                Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
-                ResolveAllFailed (NcResult.WhyEnum.InvalidDest);
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", AutoDFailureReason.CannotFindServer);
                 errResult.Message = ex.Message;
             } catch (AuthenticationException ex) {
-                Log.Info (Log.LOG_IMAP, "AuthenticationException");
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: AuthenticationException {0}", ex.Message);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+                errResult.Message = ex.Message;
+            } catch (ServiceNotAuthenticatedException ex) {
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ServiceNotAuthenticatedException: {0}", ex.Message);
+                evt =  Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
+                errResult.Message = ex.Message;
+            } catch (InvalidOperationException ex) {
+                Log.Warn (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
+                evt =  Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
+                errResult.Message = ex.Message;
+            } catch (ImapProtocolException ex) {
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapProtocolException {0}", ex.Message);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOEXTEMP");
                 errResult.Message = ex.Message;
             } catch (ImapCommandException ex) {
-                Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapCommandException {0}", ex.Message);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCOMMEXTEMP");
                 errResult.Message = ex.Message;
             } catch (IOException ex) {
-                Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPIO");
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.Message);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
                 errResult.Message = ex.Message;
             } catch (Exception ex) {
-                Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
-                ResolveAllFailed (NcResult.WhyEnum.Unknown);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
+                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
                 errResult.Message = ex.Message;
+            } finally {
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
             }
             StatusInd (errResult);
+            return evt;
         }
 
         protected override Event ExecuteCommand ()
         {
             BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUC");
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOVSUC");
         }
 
         /// <summary>
@@ -95,9 +131,6 @@ namespace NachoCore.IMAP
                     service = McAccount.AccountServiceEnum.Yahoo;
                 } else {
                     // we don't know (or don't care)
-                    if (username.Contains ("@")) {
-                        Log.Info (Log.LOG_IMAP, "Unknown generic IMAP server for domain {0}", username.Split ('@') [1]);
-                    }
                     service = BEContext.Account.AccountService;
                 }
                 break;
@@ -120,7 +153,7 @@ namespace NachoCore.IMAP
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
                     var parts = username.Split ('@');
-                    if (DomainIsOrEndsWith(parts [1].ToLower (), "icloud.com")) {
+                    if (DomainIsOrEndsWith(parts [1].ToLowerInvariant (), "icloud.com")) {
                         username = parts [0];
                     }
                 }
@@ -145,7 +178,7 @@ namespace NachoCore.IMAP
                 return false;
             }
             if (emailAddress.Contains ("@")) {
-                var domain = emailAddress.Split ('@') [1].ToLower ();
+                var domain = emailAddress.Split ('@') [1].ToLowerInvariant ();
                 if (DomainIsOrEndsWith (domain, "icloud.com") ||
                     DomainIsOrEndsWith (domain, "me.com")) {
                     return true;
@@ -163,7 +196,7 @@ namespace NachoCore.IMAP
             // indicate that the DNS Server belongs to yahoo), but that would require a whole
             // new discovery statemachine. We'll see if this gets us far enough along.
             if (emailAddress.Contains ("@")) {
-                var domain = emailAddress.Split ('@') [1].ToLower ();
+                var domain = emailAddress.Split ('@') [1].ToLowerInvariant ();
                 if (DomainIsOrEndsWith (domain, "yahoo.com") ||
                     DomainIsOrEndsWith (domain, "yahoo.net") ||
                     DomainIsOrEndsWith (domain, "ymail.com") ||

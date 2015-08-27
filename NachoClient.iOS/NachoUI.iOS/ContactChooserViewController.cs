@@ -12,6 +12,7 @@ using UIKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -31,6 +32,7 @@ namespace NachoClient.iOS
         string contactSearchToken;
 
         protected const string ContactCellReuseIdentifier = "ContactCell";
+        protected SearchHelper searcher;
 
         public void SetOwner (INachoContactChooserDelegate owner, McAccount account, NcEmailAddress address, NachoContactType contactType)
         {
@@ -45,12 +47,37 @@ namespace NachoClient.iOS
             this.owner = null;
         }
 
+        protected void SetupSearcher ()
+        {
+            searcher = new SearchHelper ("ContactChooserUpdateAuotCompleteResults", (searchString) => {
+                if (String.IsNullOrEmpty (searchString)) {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        searchResults = null;
+                        resultsTableView.ReloadData ();
+                    });
+                } else {
+                    int curVersion = searcher.Version;
+                    var results = McContact.SearchIndexAllContacts (searchString, true, true);
+                    if (curVersion == searcher.Version) {
+                        InvokeOnUIThread.Instance.Invoke (() => {
+                            searchResults = results;
+                            NcAbate.HighPriority("ContactChooserUpdateAuotCompleteResults");
+                            resultsTableView.ReloadData ();
+                            NcAbate.RegularPriority("ContactChooserUpdateAuotCompleteResults");
+                        });
+                    }
+                }
+            });
+        }
+
         public ContactChooserViewController (IntPtr handle) : base (handle)
         {
+            SetupSearcher ();
         }
 
         public ContactChooserViewController () : base ()
         {
+            SetupSearcher ();
         }
 
         public override void ViewDidLoad ()
@@ -83,6 +110,12 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             CancelSearchIfActive ();
+        }
+
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return true;
+            }
         }
 
         public override bool ShouldEndEditing {
@@ -225,26 +258,18 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public void UpdateAutocompleteResults (int forSearchOption, string forSearchString)
         {
-            if (null == forSearchString) {
-                searchResults = null;
-                NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults");
-                resultsTableView.ReloadData ();
-                NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults");
-            } else {
-                NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
-                searchResults = McContact.SearchIndexAllContacts (forSearchString, true, true);
-                resultsTableView.ReloadData ();
-                NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
-            }
+            searcher.Search (forSearchString);
         }
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
-            // TODO: Think about whether we want to users about errors during GAL search
-            if (String.IsNullOrEmpty (contactSearchToken)) {
-                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
-            } else {
-                BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.ContactReader)) {
+                // TODO: Think about whether we want to users about errors during GAL search
+                if (String.IsNullOrEmpty (contactSearchToken)) {
+                    contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
+                } else {
+                    BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
+                }
             }
         }
 

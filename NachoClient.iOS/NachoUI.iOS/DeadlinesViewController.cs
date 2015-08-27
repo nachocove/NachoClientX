@@ -13,10 +13,15 @@ namespace NachoClient.iOS
     {
         public DeadlinesViewController (IntPtr handle) : base (handle)
         {
-            SetEmailMessages (new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id));
+            SetEmailMessages (GetNachoEmailMessages (NcApplication.Instance.Account.Id));
         }
 
-        public override bool HasAccountSwitcher()
+        protected override INachoEmailMessages GetNachoEmailMessages (int accountId)
+        {
+            return new NachoDeadlineEmailMessages (accountId);
+        }
+
+        public override bool HasAccountSwitcher ()
         {
             return true;
         }

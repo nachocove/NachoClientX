@@ -181,7 +181,12 @@ namespace NachoPlatform
                     // iOS's NSTimeZone does not expose the daylight saving transition rules, so there is no way
                     // to construct a TimeZoneInfo object from the NSTimeZone object.  Instead we have to look
                     // up the TimeZoneInfo by its ID.
-                    eventTimeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
+                    try {
+                        eventTimeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
+                    } catch (TimeZoneNotFoundException) {
+                        Log.Warn (Log.LOG_CALENDAR, "Device event has unknown time zone: {0}", Event.TimeZone.Name);
+                        // Leave eventTimeZone set to null, so it will be set to the local time zone below.
+                    }
                 }
                 if (null == eventTimeZone) {
                     // If the iOS event didn't specify a time zone, or if a time zone with that ID could not be
@@ -369,6 +374,7 @@ namespace NachoPlatform
                         // than the SetPositions field.
                         result.Type = NcRecurrenceType.YearlyOnDay;
                         result.DayOfWeek = ConvertDaysOfWeek (rule.DaysOfTheWeek);
+                        result.DayOfWeekIsSet = true;
                         int week = (int)rule.DaysOfTheWeek [0].WeekNumber;
                         if (0 >= week || 5 <= week) {
                             result.WeekOfMonth = 5;
@@ -496,17 +502,19 @@ namespace NachoPlatform
             }
 
             // Ask for all events from one month ago (which is as far back as the calendar normally goes) until
-            // way into the future.  iOS will only deliver several years of events at a time, so we won't actually
-            // get recurring events hundreds of years from now.  There is not a way to find out how far into the
-            // future the user has scrolled the calendar, nor is there a way for the calendar view to ask for more
-            // McCalendar items as the user scrolls, so the app needs to get events from iOS farther into the future
-            // than is necessary in the normal case.
+            // one year into the future.  There is not a way to find out how far into the future the user has
+            // scrolled the calendar, nor is there a way for the calendar view to ask for more McCalendar items
+            // as the user scrolls.  So we pick what seems like a reasonable time frame for synching device
+            // events.  If the user scrolls more than a year into the future, the calendar simply won't have
+            // any events from the device calendar.
             var result = new List<PlatformCalendarRecordiOS> ();
             var allCalendars = Es.GetCalendars (EKEntityType.Event);
-            var predicate = Es.PredicateForEvents (DateTime.UtcNow.AddDays (-31).ToNSDate (), NSDate.DistantFuture, allCalendars);
+            var predicate = Es.PredicateForEvents (DateTime.UtcNow.AddDays (-31).ToNSDate (), DateTime.UtcNow.AddYears (1).ToNSDate (), allCalendars);
             var deviceEvents = Es.EventsMatching (predicate);
             if (null != deviceEvents) {
+                var cancellationToken = NcTask.Cts.Token;
                 foreach (var deviceEvent in deviceEvents) {
+                    cancellationToken.ThrowIfCancellationRequested ();
                     result.Add (new PlatformCalendarRecordiOS () {
                         Event = deviceEvent,
                     });

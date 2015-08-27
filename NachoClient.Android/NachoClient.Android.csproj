@@ -72,15 +72,6 @@
       <HintPath>..\Json.NET\json.net-4.5.11\lib\android\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Json" />
-    <Reference Include="DDay.Collections.Android">
-      <HintPath>..\..\DDay-iCal-Xamarin\DDay.Collections.Android\obj\Debug\DDay.Collections.Android.dll</HintPath>
-    </Reference>
-    <Reference Include="DDay.iCal.Android">
-      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.Android\obj\Debug\DDay.iCal.Android.dll</HintPath>
-    </Reference>
-    <Reference Include="antlr.runtime.Android">
-      <HintPath>..\..\DDay-iCal-Xamarin\antlr.runtime.Android\obj\Debug\antlr.runtime.Android.dll</HintPath>
-    </Reference>
     <Reference Include="System.Web.Services" />
     <Reference Include="Xamarin.Android.Support.v4">
       <HintPath>..\packages\Xamarin.Android.Support.v4.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
@@ -409,9 +400,7 @@
     <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
     <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\IImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs" />
@@ -492,10 +481,30 @@
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpAuthenticateCommand.cs" />
     <Compile Include="NachoCore\Utils\NcServiceHelper.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachmentCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBodyCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration34.cs" />
+    <Compile Include="NachoCore\Utils\ContactsBinningHelper.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration35.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapValidateConfig.cs" />
+    <Compile Include="NachoCore\Utils\SearchHelper.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration36.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration37.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs" />
+    <Compile Include="NachoCore\Brain\NcQualifier.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration38.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpDisconnectCommand.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration39.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration40.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration41.cs" />
+    <Compile Include="NachoCore\Utils\GoogleOAuth2Authenticator.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategyFetchKit.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -558,6 +567,7 @@
     <Folder Include="NachoUI.Android\Support\" />
     <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -600,14 +610,6 @@
       <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
       <Name>MobileHtmlAgilityPack</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\bc-csharp\crypto\BouncyCastle.Android.csproj">
-      <Project>{A0D302CB-8866-4AB1-98B9-F0772EABF5DF}</Project>
-      <Name>BouncyCastle.Android</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MimeKit\MimeKit\MimeKit.Android.csproj">
-      <Project>{004B4019-62B7-4A15-AF2C-C20968845C46}</Project>
-      <Name>MimeKit.Android</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\MailKit\MailKit\MailKit.Android.csproj">
       <Project>{9BF818C3-C20E-4EFB-9426-F0A6C2EDC627}</Project>
       <Name>MailKit.Android</Name>
@@ -619,6 +621,38 @@
     <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK_Android\AWSSDK_Android.csproj">
       <Project>{4A459CB4-279E-4626-8ADC-BC8FAEF391B7}</Project>
       <Name>AWSSDK_Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\MimeKit\MimeKit.Android.csproj">
+      <Project>{004B4019-62B7-4A15-AF2C-C20968845C46}</Project>
+      <Name>MimeKit.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\Portable.Text.Encoding\Portable.Text.Encoding\Portable.Text.Encoding.csproj">
+      <Project>{EEE48C75-11BE-4B50-B759-F85B5052D473}</Project>
+      <Name>Portable.Text.Encoding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\submodules\MimeKit\submodules\bc-csharp\crypto\BouncyCastle.Android.csproj">
+      <Project>{A0D302CB-8866-4AB1-98B9-F0772EABF5DF}</Project>
+      <Name>BouncyCastle.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\antlr.runtime.Android\antlr.runtime.Android.csproj">
+      <Project>{1923FB99-0E59-4774-8AA9-C14B9BC3F655}</Project>
+      <Name>antlr.runtime.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.Collections.Android\DDay.Collections.Android.csproj">
+      <Project>{B1C25481-681E-4D29-86B0-81F8FE327E0B}</Project>
+      <Name>DDay.Collections.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.iCal.Android\DDay.iCal.Android.csproj">
+      <Project>{7CDD1BB5-9CD8-421B-8BC9-89F335170BBB}</Project>
+      <Name>DDay.iCal.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ModernHttpClient\vendor\okhttp\OkHttp\OkHttp.csproj">
+      <Project>{133270E5-3A11-4A4A-A4AD-1D89FC9DBAAF}</Project>
+      <Name>OkHttp</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Xamarin.Auth\src\Xamarin.Auth.Android\Xamarin.Auth.Android.csproj">
+      <Project>{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}</Project>
+      <Name>Xamarin.Auth.Android</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

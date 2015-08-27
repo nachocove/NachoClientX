@@ -223,6 +223,20 @@ namespace NachoCore.Model
         /// Date and time when the action specified by the LastVerbExecuted element was performed on the msg (optional)
         public DateTime LastVerbExecutionTime { set; get; }
 
+        /// IMAP Stuff
+        [Indexed]       
+        public uint ImapUid { get; set; }
+
+        /// <summary>
+        /// Email headers only. Used for Brain to help with scoring, etc.
+        /// </summary>
+        /// <value>The headers.</value>
+        public string Headers { get; set; }
+
+        /// True if the message header matches some of the fields. A match can cause a 
+        /// message from being removed from the hot list.
+        public bool HeadersFiltered { get; set; }
+
         ///
         /// <Flag> STUFF.
         ///
@@ -274,8 +288,8 @@ namespace NachoCore.Model
         // (i.e. indexing of an email message without its body downloaded), it is changed to an int.
         // I didn't want to rename it to IndexVersion (like McContact) in order to avoid a migration.
         //
-        // For partially indexed messagess, the field has the value of EmailMessageIndexDocument.Version-1.
-        // For fully indexed messages, EmailMessageIndexDocument.Version. If a new indexing schema is needed,
+        // For header indexed messages, the field has the value of EmailMessageIndexDocument.Version-1.
+        // For header+body indexed messages, EmailMessageIndexDocument.Version. If a new indexing schema is needed,
         // just increment the version # and implement the new version of EmailMessageIndexDocument.
         // Brain will unindex all old version documents and re-index them using the new schema.
         public int IsIndexed { set; get; }
@@ -288,6 +302,10 @@ namespace NachoCore.Model
         // Note that this boolean is only meaningful within the context of a background duration;
         // as the settings can change during foreground.
         public bool ShouldNotify { get; set; }
+
+        /// True if its InReplyTo matches the MessageID of another McEmailMessage whose From
+        /// address matches one of the McAccount. Set by brain.
+        public bool IsReply { get; set; }
 
         /// Attachments are separate
 
@@ -332,8 +350,11 @@ namespace NachoCore.Model
             body.UpdateData ((FileStream stream) => {
                 mime.WriteTo (stream);
             });
-            WaitingForAttachmentsToDownload = false;
-            this.Update ();
+            UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.WaitingForAttachmentsToDownload = false;
+                return true;
+            });
         }
 
         public void ConvertToRegularSend ()
@@ -365,11 +386,14 @@ namespace NachoCore.Model
             body.UpdateData ((FileStream stream) => {
                 outgoingMime.WriteTo (stream);
             });
-            ReferencedEmailId = 0;
-            ReferencedBodyIsIncluded = false;
-            ReferencedIsForward = false;
-            WaitingForAttachmentsToDownload = false;
-            this.Update ();
+            UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.ReferencedEmailId = 0;
+                target.ReferencedBodyIsIncluded = false;
+                target.ReferencedIsForward = false;
+                target.WaitingForAttachmentsToDownload = false;
+                return true;
+            });
         }
 
         public void DeleteAttachments ()
@@ -595,12 +619,12 @@ namespace NachoCore.Model
                 " LEFT JOIN McBody as b ON b.Id == e.BodyId " +
                 " WHERE likelihood (e.IsIndexed < ?, 0.5) OR " +
                 "  (likelihood (e.IsIndexed < ?, 0.5) AND " +
-                "   (likelihood (e.BodyId = 0, 0.2) OR " +
-                "    (likelihood (b.FilePresence = ?, 0.5) AND likelihood (b.BodyType = ?, 0.9))))" +
+                "   likelihood (e.BodyId > 0, 0.2) AND " +
+                "   likelihood (b.FilePresence = ?, 0.5))" +
                 " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?",
                 EmailMessageIndexDocument.Version - 1, EmailMessageIndexDocument.Version, 
-                McAbstrFileDesc.FilePresenceEnum.Complete, McAbstrFileDesc.BodyTypeEnum.MIME_4, maxMessages
+                McAbstrFileDesc.FilePresenceEnum.Complete, maxMessages
             );
         }
 
@@ -665,6 +689,54 @@ namespace NachoCore.Model
                 emailMessageList = emailMessageList.Where (x => x.AccountId == accountId);
             }
             return emailMessageList.ToList ();
+        }
+
+        const string KCapQueryByImapUidRange = "NcModel.McEmailMessage.QueryByImapUidRange";
+
+        public static List<NcEmailMessageIndex> QueryByImapUidRange (int accountId, int folderId, uint min, uint max, uint limit)
+        {
+            NcCapture.AddKind (KCapQueryByImapUidRange);
+            using (var cap = NcCapture.CreateAndStart (KCapQueryByImapUidRange)) {
+                // We'll just reuse NcEmailMessageIndex instead of making a new fake class to fetch the Uid's. It would
+                // look identical except for the Id argument, so what the heck.
+                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                    "SELECT e.ImapUid as Id FROM McEmailMessage as e " +
+                    " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                    " JOIN McFolder AS f ON m.FolderId = f.Id " +
+                    " WHERE " +
+                    " likelihood (e.AccountId = ?, 1.0) AND " +
+                    " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (m.AccountId = ?, 1.0) AND " +
+                    " likelihood (m.ClassCode = ?, 0.2) AND " +
+                    " likelihood (e.ImapUid <> 0 AND e.ImapUid >= ? AND e.ImapUid < ?, 0.1) AND " +
+                    " likelihood (m.FolderId = ?, 0.5) " +
+                    " ORDER BY e.ImapUid DESC LIMIT ?",
+                    accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
+                    min, max, folderId, limit);
+            }
+        }
+
+        const string KCapQueryImapMessagesToSend = "NcModel.McEmailMessage.QueryImapMessagesToSend";
+
+        public static List<NcEmailMessageIndex> QueryImapMessagesToSend (int accountId, int folderId, uint limit)
+        {
+            NcCapture.AddKind (KCapQueryImapMessagesToSend);
+            using (var cap = NcCapture.CreateAndStart (KCapQueryImapMessagesToSend)) {
+                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                    "SELECT e.Id FROM McEmailMessage as e " +
+                    " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                    " JOIN McFolder AS f ON m.FolderId = f.Id " +
+                    " WHERE " +
+                    " likelihood (e.AccountId = ?, 1.0) AND " +
+                    " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (m.AccountId = ?, 1.0) AND " +
+                    " likelihood (m.ClassCode = ?, 0.2) AND " +
+                    " likelihood (e.ImapUid = 0, 0.1) AND " +
+                    " likelihood (m.FolderId = ?, 0.5) " +
+                    " LIMIT ?",
+                    accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
+                    folderId, limit);
+            }
         }
 
         public override ClassCodeEnum GetClassCode ()
@@ -741,6 +813,62 @@ namespace NachoCore.Model
             }
             return DateTime.MinValue;
         }
+
+        public static bool TryImportanceFromString (string priority, out NcImportance importance)
+        {
+            // see https://msdn.microsoft.com/en-us/library/Gg671973(v=EXCHG.80).aspx
+            int prio;
+            if (Int32.TryParse (priority, out prio)) {
+                if (prio > 3) {
+                    importance = NcImportance.Low_0;
+                    return true;
+                } else if (prio < 3) {
+                    importance = NcImportance.High_2;
+                    return true;
+                } else {
+                    importance = NcImportance.Normal_1;
+                    return true;
+                }
+            }
+
+            // according to https://tools.ietf.org/html/rfc2156
+            //       importance      = "low" / "normal" / "high"
+            // But apparently I need to make sure to account for case (i.e. Normal and Low, etc).
+            switch (priority.ToLowerInvariant ()) {
+            case "low":
+            case "non-urgent":
+                importance = NcImportance.Low_0;
+                return true;
+
+            case "medium":
+            case "normal":
+                importance = NcImportance.Normal_1;
+                return true;
+
+            case "high":
+            case "urgent":
+                importance = NcImportance.High_2;
+                return true;
+
+            default:
+                // cover the case where we have something like "3 (Normal)" (seriously I saw this one)
+                // ignore the number and go with the letters. If they don't match (say some idiot makes
+                // it "1 (Normal)", then tough cookies.
+                if (priority.ToLowerInvariant ().Contains ("normal") || priority.ToLowerInvariant ().Contains ("medium")) {
+                    importance = NcImportance.Normal_1;
+                    return true;
+                } else if (priority.ToLowerInvariant ().Contains ("low")) {
+                    importance = NcImportance.Low_0;
+                    return true;
+                } else if (priority.ToLowerInvariant ().Contains ("high")) {
+                    importance = NcImportance.High_2;
+                    return true;
+                }
+                Log.Error (Log.LOG_EMAIL, "Unknown Importance/Priority string {0}", priority);
+                importance = NcImportance.Normal_1; // gotta set something or the compiler complains.
+                return false;
+            }
+        }
     }
 
     public class McEmailMessageThread
@@ -796,10 +924,12 @@ namespace NachoCore.Model
 
         public IEnumerator<McEmailMessage> GetEnumerator ()
         {
-            NcAssert.NotNull (Source);
-
             if (null == thread) {
+                NcAssert.NotNull (Source);
                 thread = Source.GetEmailThreadMessages (FirstMessageId);
+                if (null == thread) {
+                    yield break; // thread is gone. Maybe backend removed it asynchronously
+                }
             }
             using (IEnumerator<McEmailMessageThread> ie = thread.GetEnumerator ()) {
                 while (ie.MoveNext ()) {
@@ -1069,35 +1199,52 @@ namespace NachoCore.Model
             }
         }
 
-        public override int Update ()
+        public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
         {
-            using (var capture = CaptureWithStart ("Update")) {
-                int returnVal = -1;  
-                if (!HasBeenNotified) {
-                    HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
-                }
-
-                NcModel.Instance.RunInTransaction (() => {
-                    returnVal = base.Update ();
-                    SaveMeetingRequest ();
-                    SaveCategories ();
-                    if (emailAddressesChanged) {
-                        DeleteAddressMaps ();
-                        InsertAddressMaps ();
+            int myCount = 0;
+            T retval = null;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.UpdateWithOCApply<T> ((record) => {
+                    var target = (McEmailMessage)record;
+                    if (!target.HasBeenNotified) {
+                        target.HasBeenNotified = (NcApplication.Instance.IsForeground || target.IsRead);
                     }
-                    // Score states are only affected by brain which uses the score states Update() method.
-                    // So, no need to update score states here
-                });
-
-                return returnVal;
-            }
+                    return mutator (record);
+                }, out myCount, tries);
+                if (null == retval) {
+                    // We were not able to update the record.
+                    return;
+                }
+                SaveMeetingRequest ();
+                SaveCategories ();
+                if (emailAddressesChanged) {
+                    DeleteAddressMaps ();
+                    InsertAddressMaps ();
+                }
+                // Score states are only affected by brain which uses the score states Update() method.
+                // So, no need to update score states here
+            });
+            count = myCount;
+            return retval;
         }
 
-        public void UpdateIsIndex ()
+        public override T UpdateWithOCApply<T> (Mutator mutator, int tries = 100)
+        {
+            int rc = 0;
+            return UpdateWithOCApply<T> (mutator, out rc, tries);
+        }
+
+        public override int Update ()
+        {
+            NcAssert.True (false, "Must use UpdateWithOCApply.");
+            return 0;
+        }
+
+        public void UpdateIsIndex (int newIsIndexed)
         {
             NcModel.Instance.BusyProtect (() => {
-                return NcModel.Instance.Db.Execute ("UPDATE McEmailMessage SET IsIndexed = ? WHERE Id = ?",
-                    IsIndexed, Id);
+                return NcModel.Instance.Db.Execute ("UPDATE McEmailMessage SET IsIndexed = ?, RowVersion = RowVersion + 1 WHERE Id = ?",
+                    newIsIndexed, Id);
             });
         }
 
@@ -1124,9 +1271,12 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             using (var capture = CaptureWithStart ("Delete")) {
-                int returnVal = base.Delete ();
-                NcBrain.UnindexEmailMessage (this);
-                DeleteScoreStates ();
+                int returnVal = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    returnVal = base.Delete ();
+                    NcBrain.UnindexEmailMessage (this);
+                    DeleteScoreStates ();
+                });
                 return returnVal;
             }
         }
@@ -1161,19 +1311,40 @@ namespace NachoCore.Model
             return false;
         }
 
-        public void SetIndexVersion ()
+        public int SetIndexVersion ()
         {
+            int newIsIndexed;
             if (0 == BodyId) {
                 // No body to index. This message is fully indexed.
-                IsIndexed = EmailMessageIndexDocument.Version;
+                newIsIndexed = EmailMessageIndexDocument.Version - 1;
             } else {
                 var body = GetBody ();
                 if ((null != body) && body.IsComplete ()) {
-                    IsIndexed = EmailMessageIndexDocument.Version;
+                    newIsIndexed = EmailMessageIndexDocument.Version;
                 } else {
-                    IsIndexed = EmailMessageIndexDocument.Version - 1;
+                    newIsIndexed = EmailMessageIndexDocument.Version - 1;
                 }
             }
+            return newIsIndexed;
+        }
+
+        public static McEmailMessage QueryByMessageId (int accountId, string messageId)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT * FROM McEmailMessage WHERE AccountId = ? AND MessageID = ?", accountId, messageId).FirstOrDefault ();
+        }
+
+        public McEmailMessage MarkHasBeenNotified (bool shouldNotify)
+        {
+            if (shouldNotify) {
+                NcBrain.MessageNotificationStatusUpdated (this, DateTime.UtcNow, 0.1);
+            }
+            return UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.HasBeenNotified = true;
+                target.ShouldNotify = shouldNotify;
+                return true;
+            });
         }
     }
 }

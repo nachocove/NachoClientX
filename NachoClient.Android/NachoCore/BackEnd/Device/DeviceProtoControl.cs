@@ -46,6 +46,7 @@ namespace NachoCore
             {
                 SyncStart = (PcEvt.E.Last + 1),
                 SyncCancelled,
+                SyncStopped,
                 SyncDone,
                 AbateOn,
                 AbateOff,
@@ -56,6 +57,7 @@ namespace NachoCore
         private NcDeviceContacts DeviceContacts = null;
         private NcDeviceCalendars DeviceCalendars = null;
         private CancellationTokenSource Cts = null;
+        private object CtsLock = new object ();
 
         public DeviceProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
@@ -81,6 +83,7 @@ namespace NachoCore
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)DevEvt.E.SyncCancelled,
+                            (uint)DevEvt.E.SyncStopped,
                             (uint)DevEvt.E.SyncDone,
                         },
                         On = new Trans[] {
@@ -107,6 +110,7 @@ namespace NachoCore
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoNop, State = (uint)Lst.SyncWQd },
+                            new Trans { Event = (uint)DevEvt.E.SyncStopped, Act = DoNop, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoNop, State = (uint)Lst.Idle },
                             new Trans { Event = (uint)DevEvt.E.AbateOn, Act = DoAbate, State = (uint)Lst.Cancelling },
                         }
@@ -128,6 +132,7 @@ namespace NachoCore
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoNop, State = (uint)Lst.CancellingQd },
                             new Trans { Event = (uint)DevEvt.E.SyncCancelled, Act = DoNop, State = (uint)Lst.Abated },
+                            new Trans { Event = (uint)DevEvt.E.SyncStopped, Act = DoNop, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoNop, State = (uint)Lst.AbateIdle },
                             new Trans { Event = (uint)DevEvt.E.AbateOff, Act = DoNop, State = (uint)Lst.SyncWQd },
                         }
@@ -142,6 +147,7 @@ namespace NachoCore
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
                             (uint)DevEvt.E.SyncCancelled,
+                            (uint)DevEvt.E.SyncStopped,
                             (uint)DevEvt.E.SyncDone,
                         },
                         On = new Trans[] {
@@ -170,6 +176,7 @@ namespace NachoCore
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.SyncWQd },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncCancelled, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)DevEvt.E.SyncStopped, Act = DoNop, State = (uint)Lst.AbatedQd },
                             new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)DevEvt.E.AbateOn, Act = DoAbate, State = (uint)Lst.CancellingQd },
                         }
@@ -191,6 +198,7 @@ namespace NachoCore
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.CancellingQd },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncCancelled, Act = DoNop, State = (uint)Lst.AbatedQd },
+                            new Trans { Event = (uint)DevEvt.E.SyncStopped, Act = DoNop, State = (uint)Lst.AbatedQd },
                             new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoNop, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)DevEvt.E.AbateOff, Act = DoNop, State = (uint)Lst.SyncWQd },
                         }
@@ -206,6 +214,7 @@ namespace NachoCore
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
                             (uint)DevEvt.E.SyncCancelled,
+                            (uint)DevEvt.E.SyncStopped,
                             (uint)DevEvt.E.SyncDone,
                         },
                         On = new Trans[] {
@@ -227,6 +236,7 @@ namespace NachoCore
                             (uint)SmEvt.E.TempFail,
                             (uint)DevEvt.E.SyncDone,
                             (uint)DevEvt.E.SyncCancelled,
+                            (uint)DevEvt.E.SyncStopped,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
@@ -248,6 +258,7 @@ namespace NachoCore
                             (uint)SmEvt.E.TempFail,
                             (uint)DevEvt.E.SyncDone,
                             (uint)DevEvt.E.SyncCancelled,
+                            (uint)DevEvt.E.SyncStopped,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
@@ -287,23 +298,38 @@ namespace NachoCore
 
         private void DeviceDbChange (object sender, EventArgs ea)
         {
-            Sm.PostEvent ((uint)DevEvt.E.SyncStart, "DEVCISTART");
+            // This method is always called on the UI thread.  The SyncStart event can result in a call
+            // to DoSync(), which gathers all the device contacts and calendar events before kicking off
+            // its own background thread.  Gathering the contacts and events can take a while, long enough
+            // that it shouldn't happen on the UI thread.  So kick off a task to post the event.
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)DevEvt.E.SyncStart, "DEVCISTART");
+            }, "DeviceProtoControl:DeviceDbChange");
         }
 
         // Start a new sync if needed, or resume an old one.
         private void DoSync ()
         {
-            if (null == DeviceContacts) {
-                DeviceContacts = new NcDeviceContacts ();
+            try {
+                if (null == DeviceContacts) {
+                    DeviceContacts = new NcDeviceContacts ();
+                }
+                if (null == DeviceCalendars) {
+                    DeviceCalendars = new NcDeviceCalendars ();
+                }
+            } catch (OperationCanceledException) {
+                // The app is shutting down.  Cancel the sync.
+                Sm.PostEvent ((uint)DevEvt.E.SyncDone, "DEVPCABORTED");
+                return;
             }
-            if (null == DeviceCalendars) {
-                DeviceCalendars = new NcDeviceCalendars ();
+            var abateTokenSource = new CancellationTokenSource ();
+            lock (CtsLock) {
+                Cts = abateTokenSource;
             }
-            if (null == Cts) {
-                Cts = new CancellationTokenSource ();
-            }
-            var cToken = Cts.Token;
+            var abateToken = abateTokenSource.Token;
             NcTask.Run (() => {
+                var linkedCancel = CancellationTokenSource.CreateLinkedTokenSource (abateToken, NcTask.Cts.Token);
+                var cToken = linkedCancel.Token;
                 try {
                     // Protect against the situation where another DoSync background task finishes in between
                     // this call to DoSync and when this background task gets going.
@@ -320,10 +346,9 @@ namespace NachoCore
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
                                 }
-                                // The sync has completed.
-                                DeviceContacts = null;
                             } finally {
-                                // Trigger status events and report progress both when the sync is complete and when the sync has been interrupted.
+                                // Trigger status events and report progress both when the sync is complete
+                                // and when the sync has been interrupted.
                                 if (somethingHappened) {
                                     deviceContacts.Report ();
                                 }
@@ -344,10 +369,9 @@ namespace NachoCore
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
                                 }
-                                // The sync has completed.
-                                DeviceCalendars = null;
                             } finally {
-                                // Trigger status events and report progress both when the sync is complete and when the sync has been interrupted.
+                                // Trigger status events and report progress both when the sync is complete
+                                // and when the sync has been interrupted.
                                 if (somethingHappened) {
                                     deviceCalendars.Report ();
                                 }
@@ -355,10 +379,32 @@ namespace NachoCore
                         }
                     }
 
-                    Sm.PostEvent ((uint)DevEvt.E.SyncDone, "DEVNCCONSYNCED");
+                    // The sync has completed.  Reset things so the next DoSync will start over.
+                    DeviceContacts = null;
+                    DeviceCalendars = null;
+
+                    Sm.PostEvent ((uint)DevEvt.E.SyncDone, "DEVPCSYNCED");
+
                 } catch (OperationCanceledException) {
-                    // Abate was signaled.
-                    Sm.PostEvent ((uint)DevEvt.E.SyncCancelled, "DEVNCCONCANCEL");
+                    if (abateToken.IsCancellationRequested) {
+                        // Abate was signaled
+                        Sm.PostEvent ((uint)DevEvt.E.SyncCancelled, "DEVPCCANCEL");
+                    } else if (NcTask.Cts.Token.IsCancellationRequested) {
+                        // The app is shutting down
+                        Sm.PostEvent ((uint)DevEvt.E.SyncStopped, "DEVPCSTOPPED");
+                    } else {
+                        Log.Error (Log.LOG_SYS,
+                            "DeviceProtoControl:DoSync caught an OperationCanceledException, but neither of the cancellation tokens have been cancelled.");
+                        throw;
+                    }
+                } finally {
+                    linkedCancel.Dispose ();
+                    lock (CtsLock) {
+                        if (Cts == abateTokenSource) {
+                            Cts = null;
+                        }
+                    }
+                    abateTokenSource.Dispose ();
                 }
             }, "DeviceProtoControl:DoSync");
         }
@@ -367,10 +413,12 @@ namespace NachoCore
         {
             // If the state machine in state SyncW gets AbateOn, AbateOff, AbateOn events before it gets
             // the SyncCancelled event, then Cts will be null.  This is not an error, since the in-progress
-            // sync has already been notified and there is nothing else that needs ot be cancelled.
-            if (null != Cts) {
-                Cts.Cancel ();
-                Cts = null;
+            // sync has already been notified and there is nothing else that needs to be cancelled.
+            lock (CtsLock) {
+                if (null != Cts) {
+                    Cts.Cancel ();
+                    Cts = null;
+                }
             }
         }
 

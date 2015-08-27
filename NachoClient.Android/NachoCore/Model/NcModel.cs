@@ -47,14 +47,38 @@ namespace NachoCore.Model
             }
         }
 
+        public DateTime GetLastAccess ()
+        {
+            return LastAccess;
+        }
+
+        public void Eliminate ()
+        {
+            lock (LockObj) {
+                if (!DidDispose) {
+                    try {
+                        Dispose ();
+                        DidDispose = true;
+                    } catch (SQLiteException ex) {
+                        if (SQLite3.Result.Busy == ex.Result) {
+                            // We tried to close a conn with 
+                            // "unfinalized statements or unfinished backups".
+                            Log.Error (Log.LOG_DB, "Eliminate: unfinalized statements or unfinished backups.");
+                        } else {
+                            throw;
+                        }
+                    }
+                }
+            }
+        }
+
         public void EliminateIfStale (Action action)
         {
             lock (LockObj) {
                 var wayBack = DateTime.UtcNow.AddMinutes (-1);
                 if (LastAccess < wayBack) {
                     action ();
-                    Dispose ();
-                    DidDispose = true;
+                    Eliminate ();
                 }
             }
         }
@@ -108,6 +132,15 @@ namespace NachoCore.Model
                 }
                 return db;
             } 
+
+            set {
+                NcAssert.True (null == value);
+                var threadId = Thread.CurrentThread.ManagedThreadId;
+                NcSQLiteConnection db = null;
+                if (DbConns.TryRemove (threadId, out db)) {
+                    db.Eliminate (); 
+                }
+            }
         }
 
         private object _TeleDbLock;
@@ -407,30 +440,36 @@ namespace NachoCore.Model
             public int checkpointed { set; get; }
         }
 
+        private void DbConnGCTimerCallback (Object state)
+        {
+            Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections");
+            foreach (var kvp in DbConns) {
+                NcSQLiteConnection dummy;
+                if (kvp.Key == NcApplication.Instance.UiThreadId) {
+                    continue;
+                }
+                kvp.Value.EliminateIfStale (() => {
+                    if (!DbConns.TryRemove (kvp.Key, out dummy)) {
+                        Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
+                    } else {
+                        Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
+                    }
+                });
+            }
+            // Avoid recurring timer because C# will dump many invocations into the Q and run them concurrently.
+            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
+            DbConnGCTimer.Stfu = true;
+        }
+
         public void Start ()
         {
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", state => {
-                foreach (var kvp in DbConns) {
-                    NcSQLiteConnection dummy;
-                    if (kvp.Key == NcApplication.Instance.UiThreadId) {
-                        continue;
-                    }
-                    kvp.Value.EliminateIfStale (() => {
-                        if (!DbConns.TryRemove (kvp.Key, out dummy)) {
-                            Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
-                        } else {
-                            Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
-                        }
-                    });
-                }
-            }, null, 120 * 1000, 120 * 1000);
+            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
             DbConnGCTimer.Stfu = true;
 
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
                 var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
                 var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                foreach (var db in new List<SQLiteConnection> { Db, TeleDb }) {
-                    var thisDb = db;
+                foreach (var idx in new int[] { 0, 1 }) {
                     // Integrity check is slow but it was useful when we were tracking
                     // down integrity problem. Comment it out for future reuse
 //                    if (0 == walCheckpointCount) {
@@ -449,9 +488,10 @@ namespace NachoCore.Model
                         if (NcApplication.Instance.IsQuickSync) {
                             return;
                         }
+                        var thisDb = (0 == idx) ? Db : TeleDb;
                         List<CheckpointResult> results = thisDb.Query<CheckpointResult> (checkpointCmd);
                         if ((0 < results.Count) && (0 != results [0].busy)) {
-                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", db.DatabasePath);
+                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", thisDb.DatabasePath);
                         }
                     }
                 }
@@ -662,6 +702,18 @@ namespace NachoCore.Model
         {
             var guidString = Guid.NewGuid ().ToString ("N");
             return Path.Combine (GetFileDirPath (accountId, KTmpPathSegment), guidString);
+        }
+
+        public void DumpLastAccess ()
+        {
+            Log.Info (Log.LOG_DB, "DbConn: Dumping LastAccess for open DB connections");
+            foreach (var kvp in DbConns) {
+                if (kvp.Key == NcApplication.Instance.UiThreadId) {
+                    Log.Info (Log.LOG_DB, "DbConn: UiThread Key: {0} LastAccess at: {1} Seconds: {2:N0}", kvp.Key, kvp.Value.GetLastAccess (), (DateTime.UtcNow - kvp.Value.GetLastAccess ()).TotalSeconds);
+                } else {
+                    Log.Info (Log.LOG_DB, "DbConn: Key: {0} LastAccess at: {1} Seconds: {2:N0}", kvp.Key, kvp.Value.GetLastAccess (), (DateTime.UtcNow - kvp.Value.GetLastAccess ()).TotalSeconds);
+                }
+            }
         }
 
         // To be run synchronously only on app boot.
