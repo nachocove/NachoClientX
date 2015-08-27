@@ -43,11 +43,32 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            getStartedButton.Hidden = false;
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
             if (accountBeingConfigured != null || StartWithTutorial) {
                 Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with account being configured (or just tutorial left)");
                 introLabel.Text = "Welcome Back!  We need to finish setting up your account.";
                 getStartedButton.SetTitle ("Continue", UIControlState.Normal);
+            }else if (NcMdmConfig.Instance.IsPopulated){
+                if (NcMdmConfig.Instance.IsValid) {
+                    Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with mdm account");
+                    var companyName = NcMdmConfig.Instance.BrandingName;
+                    if (String.IsNullOrEmpty (companyName)) {
+                        companyName = "company";
+                    }
+                    introLabel.Text = String.Format ("Start by setting up your {0} account.", companyName);
+                    getStartedButton.SetTitle ("Get Started", UIControlState.Normal);
+                } else {
+                    // The user is stuck here at a dead end until their MDM profile is fixed.  Will we be relaunched, or do we need to
+                    // force a re-query of the mdm parameters somehow?
+                    Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with invalid mdm account");
+                    var companyName = NcMdmConfig.Instance.BrandingName;
+                    if (String.IsNullOrEmpty (companyName)) {
+                        companyName = "company";
+                    }
+                    introLabel.Text = String.Format ("Please contact the administrator for your {0} account.  We received an invalid configuration.", companyName);
+                    getStartedButton.Hidden = true;
+                }
             } else {
                 Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with no account");
                 introLabel.Text = "Start by choosing your email service provider";
@@ -91,16 +112,23 @@ namespace NachoClient.iOS
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
             if (accountBeingConfigured != null){
                 Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue account ID{0} config", accountBeingConfigured.Id);
-                var vc = (AccountCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
-                vc.AccountDelegate = this;
-                vc.Account = accountBeingConfigured;
-                NavigationController.PushViewController (vc, true);
+                var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
+                var credentialsViewController = vc.SuggestedCredentialsViewController (accountBeingConfigured.AccountService);
+                credentialsViewController.AccountDelegate = this;
+                credentialsViewController.Account = accountBeingConfigured;
+                NavigationController.PushViewController (credentialsViewController, true);
             }else if (StartWithTutorial){
                 Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue with tutorial");
                 syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
                 syncingViewController.AccountDelegate = this;
                 syncingViewController.Complete();
                 PerformSegue ("tutorial", new SegueHolder(NcApplication.Instance.Account.AccountService));
+            }else if (NcMdmConfig.Instance.IsPopulated){
+                Log.Info (Log.LOG_UI, "GettingStartedViewController going to mdm account config");
+                var vc = (StandardCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
+                vc.AccountDelegate = this;
+                vc.Account = NcAccountHandler.Instance.CreateAccount (NcMdmConfig.Instance);
+                NavigationController.PushViewController (vc, true);
             }else{
                 Log.Info (Log.LOG_UI, "GettingStartedViewController going to start with fresh account");
                 var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");

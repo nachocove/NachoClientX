@@ -287,6 +287,8 @@ namespace NachoCore.Model
 
         public bool FastNotificationEnabled { get; set; }
 
+        public bool IsMdmBased { get; set; }
+
         /// <summary>
         /// Does this account have the given capability or capabilities?
         /// </summary>

@@ -118,7 +118,11 @@ namespace NachoClient.iOS
                 var server = McServer.QueryByAccountId<McServer> (account.Id).FirstOrDefault ();
                 if (null != server) {
                     if (null == server.UserSpecifiedServerName) {
-                        serverField.Text = server.Host;
+                        string serverName = server.Host;
+                        if (server.Port != 0) {
+                            serverName = String.Format ("{0}:{1}", server.Host, server.Port);
+                        }
+                        serverField.Text = serverName;
                     } else {
                         serverField.Text = server.UserSpecifiedServerName;
                     }

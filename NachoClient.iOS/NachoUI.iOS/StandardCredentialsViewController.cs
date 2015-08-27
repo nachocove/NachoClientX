@@ -80,6 +80,8 @@ namespace NachoClient.iOS
             }
             if (Service == McAccount.AccountServiceEnum.IMAP_SMTP) {
                 ToggleAdvancedFields ();
+            } else if (Account != null && Account.IsMdmBased == true) {
+                ToggleAdvancedFields ();
             }
         }
 
@@ -222,6 +224,7 @@ namespace NachoClient.iOS
                     }
                 }
             }
+            UpdateSubmitEnabled ();
         }
 
         void UpdateForSubmitting ()
