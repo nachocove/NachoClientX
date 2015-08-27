@@ -23,7 +23,7 @@ namespace NachoCore.IMAP
             NcResult result = null;
             foreach (var body in fetchkit.FetchBodies) {
                 var fetchResult = FetchOneBody (body.ServerId, body.ParentId);
-                if (!fetchResult.isOK ()) {
+                if (fetchResult.isError ()) {
                     Log.Error (Log.LOG_IMAP, "FetchBodies: {0}", fetchResult.GetMessage ());
                     result = fetchResult;
                 }
@@ -90,6 +90,7 @@ namespace NachoCore.IMAP
                 long bytes;
                 using (var cap = NcCapture.CreateAndStart (KImapFetchBodyCommandFetch)) {
                     using (Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this)) {
+                        bytes = st.Length;
                         var path = body.GetFilePath ();
                         using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
                             switch (body.BodyType) {
@@ -104,21 +105,16 @@ namespace NachoCore.IMAP
                             case McAbstrFileDesc.BodyTypeEnum.HTML_2:
                             case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
                                 var basic = part as BodyPartBasic;
-                                using (var filtered = new FilteredStream (st)) {
-                                    if (null != basic) {
-                                        filtered.Add (DecoderFilter.Create (basic.ContentTransferEncoding));
-                                    } else {
-                                        Log.Warn (Log.LOG_IMAP, "Not a basic part {0}", part.GetType ().Name);
-                                    }
-
-                                    // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
-                                    // to the proper place and remove the headers while we're doing so.
-                                    CopyBody (filtered, bodyFile);
-                                    break;
+                                string TransferEncoding = string.Empty;
+                                if (null != basic) {
+                                    TransferEncoding = basic.ContentTransferEncoding;
                                 }
+                                // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
+                                // to the proper place and remove the headers while we're doing so.
+                                CopyFilteredStream(st, bodyFile, basic.ContentType.Charset, TransferEncoding, CopyBodyWithoutHeaderAction);
+                                break;
                             }
                         }
-                        bytes = st.Length;
                     }
                     cap.Pause ();
                     float kBytes = (float)bytes / (float)1024.0;
@@ -181,16 +177,13 @@ namespace NachoCore.IMAP
         /// </summary>
         /// <param name="src">Source stream</param>
         /// <param name="dst">Dst stream</param>
-        /// <param name="terminator">Terminator (default "\r\n")</param>
-        private void CopyBody (Stream src, Stream dst, string terminator = "\r\n")
+        private void CopyBodyWithoutHeaderAction (Stream src, Stream dst)
         {
-            // TODO Need to pass in the encoding, instead of assuming UTF8?
-            Encoding enc = Encoding.UTF8;
-            int bufsize = 1024;
+            string terminator = "\r\n";
             string line;
             bool skip = true;
-            using (var streamReader = new StreamReader (src, enc, true, bufsize)) {
-                using (var streamWriter = new StreamWriter (dst, enc, bufsize, true)) {
+            using (var streamReader = new StreamReader (src)) {
+                using (var streamWriter = new StreamWriter (dst)) {
                     streamWriter.NewLine = terminator;
                     while ((line = streamReader.ReadLine ()) != null) {
                         if (skip && line.Equals (string.Empty)) {
