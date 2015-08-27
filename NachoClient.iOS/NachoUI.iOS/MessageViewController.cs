@@ -25,7 +25,7 @@ namespace NachoClient.iOS
 {
     public partial class MessageViewController : NcUIViewControllerNoLeaks, INachoMessageViewer,
         INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, 
-        IUcAddressBlockDelegate, INachoDateControllerParent
+        IUcAddressBlockDelegate, INachoDateControllerParent, IBodyViewOwner
     {
         // Model data
         public McEmailMessageThread thread;
@@ -390,7 +390,7 @@ namespace NachoClient.iOS
             yOffset += 1;
 
             // Message body, which is added to the scroll view, not the header view.
-            bodyView = BodyView.VariableHeightBodyView (new CGPoint (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, BodyViewLayoutCallback, onLinkSelected);
+            bodyView = BodyView.VariableHeightBodyView (new CGPoint (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, this);
             scrollView.AddSubview (bodyView);
 
             blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
@@ -622,15 +622,6 @@ namespace NachoClient.iOS
             #if (DEBUG_UI)
             ViewHelper.DumpViews<TagType> (scrollView);
             #endif
-        }
-
-        protected void BodyViewLayoutCallback ()
-        {
-            // BodyView calls its layout delegate after the download of the body has finished.
-            // Downloading the body can result in a status change for attachments.  So we refresh
-            // the attachments in addition to laying out the view.
-            attachmentListView.Refresh ();
-            LayoutView ();
         }
 
         protected void LayoutBody ()
@@ -1011,7 +1002,18 @@ namespace NachoClient.iOS
         {
         }
 
-        public void onLinkSelected (NSUrl url)
+        #region IBodyViewOwner implementation
+
+        void IBodyViewOwner.SizeChanged ()
+        {
+            // BodyView calls its layout delegate after the download of the body has finished.
+            // Downloading the body can result in a status change for attachments.  So we refresh
+            // the attachments in addition to laying out the view.
+            attachmentListView.Refresh ();
+            LayoutView ();
+        }
+
+        void IBodyViewOwner.LinkSelected (NSUrl url)
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
@@ -1020,5 +1022,11 @@ namespace NachoClient.iOS
             }
         }
 
+        void IBodyViewOwner.DismissView ()
+        {
+            NavigationController.PopViewController (true);
+        }
+
+        #endregion
     }
 }

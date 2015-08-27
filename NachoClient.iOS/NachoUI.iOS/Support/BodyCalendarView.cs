@@ -42,14 +42,18 @@ namespace NachoClient.iOS
         private bool cancelActions = false;
         private nfloat viewWidth;
         private string organizerEmail;
+        private Action dismissView;
+        private BodyWebView.LinkSelectedCallback onLinkSelected;
 
-        public BodyCalendarView (nfloat Y, nfloat width, McEmailMessage parentMessage, bool isOnHot)
+        public BodyCalendarView (nfloat Y, nfloat width, McEmailMessage parentMessage, bool isOnHot, Action dismissView, BodyWebView.LinkSelectedCallback onLinkSelected)
             : base (new CGRect (0, Y, width, 150))
         {
             this.parentMessage = parentMessage;
             meetingInfo = parentMessage.MeetingRequest;
             NcAssert.NotNull (meetingInfo, "BodyCalendarView was given a message without a MeetingRequest.");
             calendarItem = McCalendar.QueryByUID (parentMessage.AccountId, meetingInfo.GetUID ());
+            this.dismissView = dismissView;
+            this.onLinkSelected = onLinkSelected;
 
             viewWidth = width;
             Tag = CALENDAR_PART_TAG;
@@ -138,15 +142,15 @@ namespace NachoClient.iOS
                 // Location label, image, and detail
                 Util.AddTextLabelWithImageView (yOffset, "LOCATION", "event-location", EventViewController.TagType.EVENT_LOCATION_TITLE_TAG, this);
                 yOffset += 16 + 6;
-                Util.AddDetailTextLabel (42, yOffset, viewWidth - 90, 20, EventViewController.TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, this);
-                yOffset += 20 + 20;
-                this.ViewWithTag ((int)EventViewController.TagType.EVENT_LOCATION_TITLE_TAG).Hidden = false;
-                var locationLabel = this.ViewWithTag ((int)EventViewController.TagType.EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
-                locationLabel.Hidden = false;
-                locationLabel.Text = location;
-                locationLabel.Lines = 0;
-                locationLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                locationLabel.SizeToFit ();
+
+                var locationView = new UcLocationView (37, yOffset, viewWidth - 37, onLinkSelected);
+                locationView.Tag = (int)EventViewController.TagType.EVENT_LOCATION_DETAIL_LABEL_TAG;
+                locationView.Font = A.Font_AvenirNextRegular14;
+                locationView.TextColor = A.Color_NachoDarkText;
+                locationView.SetText (location);
+                this.AddSubview (locationView);
+                yOffset += locationView.Frame.Height + 20;
+
             }
 
             var accountId = parentMessage.AccountId;
@@ -638,6 +642,8 @@ namespace NachoClient.iOS
                 () => {
                     declineButton.Hidden = true;
                     removeFromCalendarButton.Hidden = true;
+                    // Dismiss the entire view once the animation is done.
+                    dismissView ();
                 });
 
             // Remove the item from the calendar.
@@ -667,18 +673,21 @@ namespace NachoClient.iOS
         {
             MarkSelectedButton (NcResponseType.Accepted);
             UpdateMeetingStatus (NcResponseType.Accepted);
+            dismissView ();
         }
 
         private void TentativeButtonClicked (object sender, EventArgs e)
         {
             MarkSelectedButton (NcResponseType.Tentative);
             UpdateMeetingStatus (NcResponseType.Tentative);
+            dismissView ();
         }
 
         private void DeclineButtonClicked (object sender, EventArgs e)
         {
             MarkSelectedButton (NcResponseType.Declined);
             UpdateMeetingStatus (NcResponseType.Declined);
+            dismissView ();
         }
     }
 }

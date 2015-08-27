@@ -15,12 +15,14 @@ namespace NachoClient.iOS
     /// </summary>
     public class UcLocationView : UITextView
     {
-        protected BodyView.LinkSelectedCallback onLinkSelected;
+        protected BodyWebView.LinkSelectedCallback onLinkSelected;
 
-        public UcLocationView (nfloat Y, nfloat preferredWidth, BodyView.LinkSelectedCallback onLinkSelected)
-            : base (new CGRect (0, Y, preferredWidth, 1))
+        public UcLocationView (nfloat X, nfloat Y, nfloat preferredWidth, BodyWebView.LinkSelectedCallback onLinkSelected)
+            : base (new CGRect (X, Y, preferredWidth, 1))
         {
             this.onLinkSelected = onLinkSelected;
+
+            TextContainerInset = new UIEdgeInsets (0, 0, 0, 0);
 
             DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber | UIDataDetectorType.Address;
             Delegate = new UcLocationViewDelegate (this);
