@@ -600,9 +600,9 @@ namespace NachoCore.SMTP
             // pending that aren't allowed to be delayed.
             SetCmd (null);
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            lock (SmtpClient.SyncRoot) {
-                SmtpClient.Disconnect (true);
-            }
+
+            var disconnect = new SmtpDisconnectCommand (this, SmtpClient);
+            disconnect.Execute (this.Sm);
         }
 
         private void DoDrive ()
