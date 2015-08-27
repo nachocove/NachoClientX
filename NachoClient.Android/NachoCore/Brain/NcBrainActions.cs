@@ -20,7 +20,7 @@ namespace NachoCore.Brain
             }
             Log.Debug (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
             if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1 > emailMessage.HasBeenGleaned) {
-                if (!NcContactGleaner.GleanContactsHeaderPart1 (emailMessage)) {
+                if (!NcContactGleaner.GleanContactsHeaderPart1 (emailMessage, false)) {
                     return false;
                 }
             }
@@ -371,6 +371,24 @@ namespace NachoCore.Brain
                 emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
             });
 
+            return true;
+        }
+
+        protected bool UpdateEmailMessageReadStatus (McEmailMessage emailMessage, DateTime readTime, double readVariance)
+        {
+            if (null == emailMessage) {
+                return false;
+            }
+            emailMessage.UpdateReadAnalysis (readTime, readVariance);
+            return true;
+        }
+
+        protected bool UpdateEmailMessageReplyStatus (McEmailMessage emailMessage, DateTime replyTime, double replyVariance)
+        {
+            if (null == emailMessage) {
+                return false;
+            }
+            emailMessage.UpdateReplyAnalysis (replyTime, replyVariance);
             return true;
         }
     }

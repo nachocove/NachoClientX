@@ -2,6 +2,7 @@
 //
 using System;
 using NachoPlatformBinding;
+using NachoCore.Utils;
 
 namespace NachoPlatform
 {
@@ -15,6 +16,7 @@ namespace NachoPlatform
         {
             NetStatusStatusEnum status;
             NetStatusSpeedEnum speed;
+            Log.Info (Log.LOG_SYS, "Fire called by ReachableBlock/UnreachableBlock.");
             GetCurrentStatus (out status, out speed);
             if (null != NetStatusEvent) {
                 NetStatusEvent (this, new NetStatusEventArgs (status, speed));

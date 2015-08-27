@@ -232,15 +232,16 @@ namespace NachoCore.ActiveSync
             existing.RefreshFromGalXml (xmlProperties);
             existing.GalCacheToken = token;
 
-            // Check if the portraits are the same
-            bool doUpdate = true;
-            if ((0 != original.PortraitId) && (0 != existing.PortraitId)) {
+            // Update if the portraits have changed
+            bool doUpdate;
+            if ((0 == original.PortraitId) || (0 == existing.PortraitId)) {
+                doUpdate = (original.PortraitId != existing.PortraitId);
+            } else {
                 var originalPortrait = McPortrait.QueryById<McPortrait> (original.PortraitId);
                 var existingPortrait = McPortrait.QueryById<McPortrait> (existing.PortraitId);
-                if (McPortrait.CompareData (originalPortrait, existingPortrait)) {
-                    doUpdate = false;
-                }
+                doUpdate = !McPortrait.CompareData (originalPortrait, existingPortrait);
             }
+
             if (doUpdate || !McContact.CompareOnEditableFields (existing, original)) {
                 existing.Update ();
             }

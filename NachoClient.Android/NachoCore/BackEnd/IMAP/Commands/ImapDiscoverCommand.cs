@@ -28,7 +28,9 @@ namespace NachoCore.IMAP
         {
             NcTask.Run (() => {
                 Event evt = ExecuteCommandInternal ();
-                sm.PostEvent (evt);
+                if (!Cts.Token.IsCancellationRequested) {
+                    sm.PostEvent (evt);
+                }
             }, "ImapDiscoverCommand");
         }
 
@@ -39,12 +41,21 @@ namespace NachoCore.IMAP
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
             try {
-                lock (Client.SyncRoot) {
+                return TryLock (Client.SyncRoot, KLockTimeout, () => {
                     if (Client.IsConnected) {
                         Client.Disconnect (false, Cts.Token);
                     }
                     return base.ExecuteConnectAndAuthEvent ();
-                }
+                });
+            } catch (CommandLockTimeOutException ex) {
+                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: CommandLockTimeOutException: {0}", ex.Message);
+                ResolveAllDeferred ();
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOLOKTIME");
+                errResult.Message = ex.Message;
+            } catch (OperationCanceledException ex) {
+                ResolveAllDeferred ();
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
+                errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL2", AutoDFailureReason.CannotFindServer);
@@ -91,7 +102,7 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUC");
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOVSUC");
         }
 
         /// <summary>
@@ -120,9 +131,6 @@ namespace NachoCore.IMAP
                     service = McAccount.AccountServiceEnum.Yahoo;
                 } else {
                     // we don't know (or don't care)
-                    if (username.Contains ("@")) {
-                        Log.Info (Log.LOG_IMAP, "Unknown generic IMAP server for domain {0}", username.Split ('@') [1]);
-                    }
                     service = BEContext.Account.AccountService;
                 }
                 break;

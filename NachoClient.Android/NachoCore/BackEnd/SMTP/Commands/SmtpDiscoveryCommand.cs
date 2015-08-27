@@ -22,7 +22,9 @@ namespace NachoCore.SMTP
         {
             NcTask.Run (() => {
                 Event evt = ExecuteCommand ();
-                sm.PostEvent (evt);
+                if (!Cts.Token.IsCancellationRequested) {
+                    sm.PostEvent (evt);
+                }
             }, "SmtpDiscoveryCommand");
         }
 
@@ -33,17 +35,22 @@ namespace NachoCore.SMTP
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
             try {
-                lock (Client.SyncRoot) {
+                Event evt1 = TryLock (Client.SyncRoot, KLockTimeout, () => {
                     if (Client.IsConnected) {
                         Client.Disconnect (false, Cts.Token);
                     }
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        var authy = new SmtpAuthenticateCommand (BEContext, Client);
-                        authy.ConnectAndAuthenticate ();
+                        ConnectAndAuthenticate ();
+                        Cts.Token.ThrowIfCancellationRequested ();
                     }
-                }
+                    return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
+                });
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
-                return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
+                return evt1;
+            } catch (OperationCanceledException ex ) {
+                ResolveAllDeferred ();
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPDISCOCANCEL"); // will be ignored by the caller
+                errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
                 evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL2", AutoDFailureReason.CannotFindServer);

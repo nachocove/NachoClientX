@@ -61,7 +61,9 @@ namespace NachoClient.iOS
                     if (curVersion == searcher.Version) {
                         InvokeOnUIThread.Instance.Invoke (() => {
                             searchResults = results;
+                            NcAbate.HighPriority("ContactChooserUpdateAuotCompleteResults");
                             resultsTableView.ReloadData ();
+                            NcAbate.RegularPriority("ContactChooserUpdateAuotCompleteResults");
                         });
                     }
                 }
@@ -108,6 +110,12 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             CancelSearchIfActive ();
+        }
+
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return true;
+            }
         }
 
         public override bool ShouldEndEditing {
@@ -255,11 +263,13 @@ namespace NachoClient.iOS
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
-            // TODO: Think about whether we want to users about errors during GAL search
-            if (String.IsNullOrEmpty (contactSearchToken)) {
-                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
-            } else {
-                BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.ContactReader)) {
+                // TODO: Think about whether we want to users about errors during GAL search
+                if (String.IsNullOrEmpty (contactSearchToken)) {
+                    contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
+                } else {
+                    BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
+                }
             }
         }
 

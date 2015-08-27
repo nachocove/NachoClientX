@@ -395,6 +395,7 @@ namespace NachoCore.SMTP
 
         public override void ForceStop ()
         {
+            base.ForceStop ();
             Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPFORCESTOP");
         }
 
@@ -457,6 +458,10 @@ namespace NachoCore.SMTP
             //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
+            if (null != Cmd && Cmd is SmtpDiscoveryCommand) {
+                // a SmtpDiscoveryCommand is already running.
+                return;
+            }
             BackEndStatePreset = BackEndStateEnum.Running;
             var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
             cmd.Execute (Sm);
@@ -599,9 +604,9 @@ namespace NachoCore.SMTP
             // pending that aren't allowed to be delayed.
             SetCmd (null);
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            lock (SmtpClient.SyncRoot) {
-                SmtpClient.Disconnect (true);
-            }
+
+            var disconnect = new SmtpDisconnectCommand (this, SmtpClient);
+            disconnect.Execute (this.Sm);
         }
 
         private void DoDrive ()

@@ -689,12 +689,13 @@ namespace NachoCore
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
                 NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
             Log.Info (Log.LOG_SYS, "Monitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
-            Log.Info (Log.LOG_SYS, "Monitor: FD Max open files {0}", PlatformProcess.GetCurrentNumberOfFileDescriptors ());
-            Log.Info (Log.LOG_SYS, "Monitor: FD Current open files {0}", PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
+            Log.Info (Log.LOG_SYS, "Monitor: Files: Max {0}, Currently open {1}",
+                PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
             if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
                 Log.DumpFileDescriptors ();
             }
             NcModel.Instance.DumpLastAccess ();
+            NcTask.Dump ();
 
             if (null != MonitorEvent) {
                 MonitorEvent (this, EventArgs.Empty);
@@ -751,14 +752,24 @@ namespace NachoCore
             // to happen right away should go into a background task.
             NcTask.Run (delegate {
 
-                NcEventManager.Initialize ();
+                //////////////////////////////////////////////////////////////////////////////////////
+                // Actions that shouldn't be cancelled.  These need to run to completion, even if that
+                // means the task survives across a shutdown.
 
+                NcEventManager.Initialize ();
                 LocalNotificationManager.InitializeLocalNotifications ();
+
+                /////////////////////////////////////////////////////////////////////////////////////
+                // Actions that can be cancelled.  These are not necessary for the correctness of the
+                // running app, or they can be delayed until the next time the app starts.
+
+                NcTask.Cts.Token.ThrowIfCancellationRequested ();
 
                 // Clean up old McPending tasks that have been abandoned.
                 DateTime cutoff = DateTime.UtcNow - new TimeSpan (2, 0, 0, 0); // Two days ago
                 foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
                     foreach (var pending in McPending.QueryOlderThanByState (account.Id, cutoff, McPending.StateEnum.Failed)) {
+                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
                         // TODO Expand this to clean up more than just downloads.
                         if (McPending.Operations.EmailBodyDownload == pending.Operation ||
                             McPending.Operations.CalBodyDownload == pending.Operation ||

@@ -219,10 +219,10 @@ namespace NachoCore.Model
         {
             var handler = new NativeMessageHandler ();
             var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
-            var query = "client_secret=" + BuildInfo.GoogleClientSecret +
+            var query = "client_secret=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientSecret) +
                         "&grant_type=" + "refresh_token" +
-                        "&refresh_token=" + GetRefreshToken () +
-                        "&client_id=" + BuildInfo.GoogleClientId;
+                        "&refresh_token=" + Uri.EscapeDataString (GetRefreshToken ()) +
+                        "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
             var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
             var httpRequest = new HttpRequestMessage (HttpMethod.Post, requestUri);
             try {
@@ -237,6 +237,7 @@ namespace NachoCore.Model
                         Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token {0} or expires_in {1}", response.access_token, response.expires_in);
                         return false;
                     }
+                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", response.expires_in);
                     UpdateOauth2 (response.access_token, GetRefreshToken (), 
                         DateTime.UtcNow.AddSeconds (int.Parse (response.expires_in)));
                     return true;

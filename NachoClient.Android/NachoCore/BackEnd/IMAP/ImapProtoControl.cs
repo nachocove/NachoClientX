@@ -131,6 +131,7 @@ namespace NachoCore.IMAP
         private PushAssist PushAssist { set; get; }
 
         private const string KImapStrategyPick = "ImapStrategy Pick";
+
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
@@ -408,17 +409,17 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.Park,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
+                            (uint)SmEvt.E.TempFail,
                         },
                         Invalid = new uint[] {
-                            (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
-                            (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.ReFSync,
                             (uint)ImapEvt.E.Wait,
                             (uint)ImapEvt.E.GetServConf,
                         },
                         On = new Trans[] {
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
@@ -433,6 +434,7 @@ namespace NachoCore.IMAP
             PushAssist = new PushAssist (this);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
+            NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
         // State-machine's state persistance callback.
@@ -460,6 +462,8 @@ namespace NachoCore.IMAP
             }
             LastIsDoNotDelayOk = IsDoNotDelayOk;
         }
+
+        #region NcCommStatus
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
         {
@@ -493,6 +497,21 @@ namespace NachoCore.IMAP
             }
         }
 
+        #endregion
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            if (null == siea.Account || siea.Account.Id != AccountId) {
+                return;
+            }
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_DaysToSyncChanged:
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
+                break;
+            }
+        }
+
         public static string MessageServerId (McFolder folder, UniqueId ImapMessageUid)
         {
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
@@ -500,6 +519,8 @@ namespace NachoCore.IMAP
 
         public override void ForceStop ()
         {
+            base.ForceStop ();
+
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
@@ -515,6 +536,7 @@ namespace NachoCore.IMAP
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();
                 PushAssist = null;
@@ -547,12 +569,17 @@ namespace NachoCore.IMAP
             //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
+            if (null != Cmd && Cmd is ImapDiscoverCommand) {
+                // a ImapDiscoverCommand is already running.
+                return;
+            }
             BackEndStatePreset = BackEndStateEnum.Running;
             SetCmd (new ImapDiscoverCommand (this, MainClient));
             ExecuteCmd ();
         }
 
         private int DiscoveryRetries = 0;
+
         private void DoDiscTempFail ()
         {
             Log.Info (Log.LOG_SMTP, "IMAP DoDisc Attempt {0}", DiscoveryRetries++);
@@ -620,7 +647,9 @@ namespace NachoCore.IMAP
 
         private void ExecuteCmd ()
         {
-            PossiblyKickPushAssist ();
+            if (!(Cmd is ImapDiscoverCommand)) {
+                PossiblyKickPushAssist ();
+            }
             Cmd.Execute (Sm);
         }
 
@@ -634,6 +663,11 @@ namespace NachoCore.IMAP
         public override void CredResp ()
         {
             NcTask.Run (delegate {
+                // stop push assist. We just got a new credential, so chances are
+                // we need to tell push assist to restart with new ones.
+                if (null != PushAssist) {
+                    PushAssist.Stop ();
+                }
                 Sm.PostEvent ((uint)ImapEvt.E.UiSetCred, "IMAPPCUSC");
             }, "ImapCredResp");
         }
@@ -666,8 +700,7 @@ namespace NachoCore.IMAP
              */
             if (NcCommStatus.CommQualityEnum.OK == NcCommStatus.Instance.Quality (Server.Id) &&
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
-                MaxConcurrentExtraRequests > ConcurrentExtraRequests)
-            {
+                MaxConcurrentExtraRequests > ConcurrentExtraRequests) {
                 NcImapClient Client = new NcImapClient ();  // Presumably this will get cleaned up by GC?
                 Interlocked.Increment (ref ConcurrentExtraRequests);
                 var pack = Strategy.PickUserDemand (Client);
@@ -823,9 +856,9 @@ namespace NachoCore.IMAP
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            lock (MainClient.SyncRoot) {
-                MainClient.Disconnect (true); // TODO Where does the Cancellation token come from?
-            }
+
+            var disconnect = new ImapDisconnectCommand (this, MainClient);
+            disconnect.Execute (this.Sm);
         }
 
         private void DoDrive ()
@@ -837,6 +870,10 @@ namespace NachoCore.IMAP
 
         private void DoUiCredReq ()
         {
+            // our creds are bad. Stop pinger.
+            if (null != PushAssist) {
+                PushAssist.Stop ();
+            }
             CancelCmd ();
             BackEndStatePreset = BackEndStateEnum.CredWait;
             // Send the request toward the UI.
@@ -846,8 +883,14 @@ namespace NachoCore.IMAP
         #region ValidateConfig
 
         private ImapValidateConfig Validator;
+
         public override void ValidateConfig (McServer server, McCred cred)
         {
+            // Stop push assist. We just got a new credential, so chances are
+            // we need to tell push assist to restart with new ones.
+            if (null != PushAssist) {
+                PushAssist.Stop ();
+            }
             CancelValidateConfig ();
             Validator = new ImapValidateConfig (this);
             Validator.Execute (server, cred);
@@ -874,7 +917,7 @@ namespace NachoCore.IMAP
 
         private void PossiblyKickPushAssist ()
         {
-            if (CanStartPushAssist ()) {
+            if (null != PushAssist && CanStartPushAssist ()) {
                 // uncomment for testing on the simulator
                 //PushAssist.SetDeviceToken ("SIMULATOR");
                 if (PushAssist.IsStartOrParked ()) {
@@ -903,8 +946,7 @@ namespace NachoCore.IMAP
             string command = string.Format ("AUTHENTICATE {0}", sasl.MechanismName);
             if (sasl.SupportsInitialResponse &&
                 (0 != (ProtoControl.ProtocolState.ImapServerCapabilitiesUnAuth & McProtocolState.NcImapCapabilities.SaslIR)) ||
-                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR)))
-            {
+                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR))) {
                 command += " ";
             } else {
                 command += "\n";

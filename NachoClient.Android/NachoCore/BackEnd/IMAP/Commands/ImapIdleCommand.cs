@@ -14,6 +14,7 @@ namespace NachoCore.IMAP
     public class ImapIdleCommand : ImapCommand
     {
         McFolder IdleFolder;
+        bool ENABLED = true;
 
         public ImapIdleCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
@@ -40,7 +41,7 @@ namespace NachoCore.IMAP
             if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
             }
-            if (Client.Capabilities.HasFlag (ImapCapabilities.Idle)) {
+            if (ENABLED && Client.Capabilities.HasFlag (ImapCapabilities.Idle)) {
                 IdleIdle(mailKitFolder, done);
             } else {
                 NoopIdle(mailKitFolder, done);
@@ -52,8 +53,13 @@ namespace NachoCore.IMAP
             if (mailDeleted) {
                 Log.Info (Log.LOG_IMAP, "{0}: Mail Deleted during idle", IdleFolder.ImapFolderNameRedacted ());
             }
-            mailKitFolder.Close (false, Cts.Token); // close and then reopen to pull in the latest values
-            mailKitFolder = GetOpenMailkitFolder (IdleFolder);
+            mailKitFolder.Status (
+                StatusItems.Count |
+                StatusItems.Recent |
+                StatusItems.UidValidity |
+                StatusItems.UidNext |
+                StatusItems.HighestModSeq |
+                StatusItems.Unread);
             UpdateImapSetting (mailKitFolder, ref IdleFolder);
             if (mailArrived || mailDeleted || needResync) {
                 if (!GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
@@ -70,6 +76,12 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
         }
 
+        /// <summary>
+        /// Use the IMAP IDLE command to wait for new things to happen.
+        /// </summary>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="done">Done cancellation, i.e. if cancelled, will send a 'Done'
+        /// command to the server to terminate the Idle gracefully.</param>
         private void IdleIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
         {
             EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
@@ -121,6 +133,17 @@ namespace NachoCore.IMAP
         // TODO: Should be tied into power-state
         uint kNoopSleepTime = 20;
 
+        /// <summary>
+        /// Servers that do not support Idle need to be polled. We sleep for kNoopSleepTime seconds, and then
+        /// Call the Noop command. From RFC 3501:
+        ///       Since any command can return a status update as untagged data, the
+        ///       NOOP command can be used as a periodic poll for new messages or
+        ///       message status updates during a period of inactivity (this is the
+        ///       preferred method to do this).  The NOOP command can also be used
+        ///       to reset any inactivity autologout timer on the server.
+        /// </summary>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="done">Done.</param>
         private void NoopIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
         {
             EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
@@ -154,10 +177,12 @@ namespace NachoCore.IMAP
                 mailKitFolder.MessageExpunged += MessageExpungedHandler;
                 mailKitFolder.CountChanged += MessageCountChangedHandler;
                 while (!Cts.Token.IsCancellationRequested) {
+                    Log.Info (Log.LOG_IMAP, "ImapIdleCommand: waiting {0}s to call Noop", kNoopSleepTime);
                     var cancelled = done.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(kNoopSleepTime));
                     if (cancelled) {
                         break;
                     }
+                    Log.Info (Log.LOG_IMAP, "ImapIdleCommand: Calling Noop");
                     Client.NoOp (Cts.Token);
                 }
                 Cts.Token.ThrowIfCancellationRequested ();

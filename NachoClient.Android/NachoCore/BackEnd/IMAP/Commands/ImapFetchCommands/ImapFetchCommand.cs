@@ -7,14 +7,30 @@ using System.Collections.Generic;
 using System.Linq;
 using MailKit;
 using System.Diagnostics;
+using NachoCore.Model;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchCommand : ImapCommand, ITransferProgress
+    public partial class ImapFetchCommand : ImapCommand, ITransferProgress
     {
         private const string KImapSyncLogRedaction = "IMAP Sync Log Redaction";
+        FetchKit FetchKit;
 
-        public ImapFetchCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapFetchCommand (IBEContext beContext, NcImapClient imap, FetchKit Fetchkit) : base (beContext, imap)
+        {
+            FetchKit = Fetchkit;
+
+            SetupLogRedaction ();
+        }
+        public ImapFetchCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
+        {
+            pending.MarkDispached ();
+            PendingSingle = pending;
+
+            SetupLogRedaction ();
+        }
+
+        private void SetupLogRedaction ()
         {
             RedactProtocolLogFunc = RedactProtocolLog;
             NcCapture.AddKind (KImapSyncLogRedaction);
@@ -22,6 +38,65 @@ namespace NachoCore.IMAP
 
             //* 59 FETCH (UID 8721 MODSEQ (952121) BODY[1]<0> {500} ... )
             FetchCmdRegex = new Regex (@"^(?<star>\* )(?<num>\d+ )(?<cmd>FETCH )", flags);
+        }
+
+        protected override Event ExecuteCommand ()
+        {
+            NcResult result = null;
+            if (null != PendingSingle) {
+                result = ProcessPending (PendingSingle);
+            } else if (null != FetchKit) {
+                result = ProcessFetchKit (FetchKit);
+            } else {
+                result = NcResult.Error ("Unknown operation");
+            }
+
+            if (result.isError ()) {
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result.Message);
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, result);
+                });
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
+            } else {
+                if (result.isInfo ()) {
+                    PendingResolveApply ((pending) => {
+                        pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                    });
+                }
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
+            }
+        }
+
+        private NcResult ProcessPending (McPending pending)
+        {
+            switch (pending.Operation) {
+            case McPending.Operations.EmailBodyDownload:
+                return FetchOneBody (pending);
+
+            case McPending.Operations.AttachmentDownload:
+                return FetchAttachment (pending);
+
+            default:
+                NcAssert.True (false, string.Format ("ItemOperations: inappropriate McPending Operation {0}", pending.Operation));
+                return null; // make the compiler happy.
+            }
+        }
+
+        private NcResult ProcessFetchKit (FetchKit fetchkit)
+        {
+            NcResult result = null;
+            var fetchresult = FetchBodies (fetchkit);
+            if (!fetchresult.isOK ()) {
+                result = fetchresult;
+            }
+            var attachmentresult = FetchAttachments (fetchkit);
+            if (!attachmentresult.isOK ()) {
+                result = attachmentresult;
+            }
+            if (null != result) {
+                return result;
+            }
+            return NcResult.OK ();
         }
 
         private string lastIncompleteLine;

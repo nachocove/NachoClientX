@@ -1071,6 +1071,78 @@ namespace Test.Common
                 Assert.AreEqual (SortedList [i].ImapUid, results2 [i].Id);
             }
         }
+
+        [Test]
+        public void TestQueryImapMessagesToSend ()
+        {
+            var messages = new List<NcEmailMessageIndex> ();
+            for (uint i = 1; i <= 10; i++) { // 0 is not a valid UID.
+                var message = new McEmailMessage () {
+                    AccountId = Folder.AccountId,
+                    ServerId = i.ToString (),
+                    Subject = string.Format ("Subject {0}", i),
+                    ImapUid = 0,
+                    From = "bob@company.net",
+                };
+                Assert.AreEqual (1, message.Insert ());
+                Assert.AreEqual (i, message.Id);
+                Folder.Link (message);
+                messages.Add (new NcEmailMessageIndex(message.Id));
+            }
+            var results1 = McEmailMessage.QueryImapMessagesToSend (Folder.AccountId, Folder.Id, 30);
+            Assert.AreEqual (messages.Count, results1.Count);
+            var SortedList = messages.OrderBy(x=>x.Id).ToList();
+            for (int i = 0; i < messages.Count; i++) {
+                Assert.AreEqual (SortedList [i].Id, results1[i].Id);
+            }
+        }
+
+        [Test]
+        public void TestNcImportance ()
+        {
+            var normalList = new string[] {
+                "normal",
+                "Normal",
+                "NormAl",
+                "3",
+                "medium",
+                "3 (Normal)",
+                "1 (Normal)",
+            };
+            foreach (var s in normalList) {
+                NcImportance i;
+                Assert.IsTrue (McEmailMessage.TryImportanceFromString (s, out i));
+                Assert.AreEqual (NcImportance.Normal_1, i);
+            }
+
+            var lowList = new string[] {
+                "low",
+                "LOW",
+                "Low",
+                "5",
+                "4",
+                "non-urgent",
+            };
+            foreach (var s in lowList) {
+                NcImportance i;
+                Assert.IsTrue (McEmailMessage.TryImportanceFromString (s, out i));
+                Assert.AreEqual (NcImportance.Low_0, i);
+            }
+
+            var highList = new string[] {
+                "high",
+                "HIgh",
+                "High",
+                "1",
+                "2",
+                "urgent",
+            };
+            foreach (var s in highList) {
+                NcImportance i;
+                Assert.IsTrue (McEmailMessage.TryImportanceFromString (s, out i));
+                Assert.AreEqual (NcImportance.High_2, i);
+            }
+        }
     }
 }
 

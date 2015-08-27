@@ -37,6 +37,16 @@ namespace Test.Common
             OpenedIndexes.Cleanup ();
         }
 
+        public void TestUpdateMessageReadStatus (McEmailMessage emailMessage, DateTime time, double variance)
+        {
+            UpdateEmailMessageReadStatus (emailMessage, time, variance);
+        }
+
+        public void TestUpdateMessageReplyStatus (McEmailMessage emailMessage, DateTime time, double variance)
+        {
+            UpdateEmailMessageReplyStatus (emailMessage, time, variance);
+        }
+
         public WrappedNcBrain (string prefix) : base (prefix)
         {
         }
@@ -302,7 +312,9 @@ namespace Test.Common
             var david = "david@company.net";
             var ellen = "ellen@company.net";
 
-            McEmailMessage.MarketingMailDisqualifier.Penalty = 0.375;
+            double testPenalty = 0.375;
+            McEmailMessage.MarketingMailDisqualifier.Penalty = testPenalty;
+            McEmailMessage.YahooBulkEmailDisqualifier.Penalty = testPenalty;
 
             // Insert one email that isn't read
             var message1 = new McEmailMessage () {
@@ -695,6 +707,451 @@ This is a MIME email");
             var updatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.Id);
             Assert.AreEqual (0, updatedMessage.ScoreVersion);
             Assert.AreEqual (McEmailMessage.minHotScore, updatedMessage.Score);
+        }
+
+        [Test]
+        public void TestNotificationStatusUpdated ()
+        {
+            var message1 = new McEmailMessage () {
+                AccountId = TestIndexEmailMessageAccountId,
+                From = "alan@company.net",
+                To = "bob@company.net",
+                Subject = "test notification status updated",
+                BodyId = 0,
+            };
+            InsertAndCheck (message1);
+            Assert.AreEqual (DateTime.MinValue, message1.ScoreStates.NotificationTime);
+            Assert.AreEqual (0.0, message1.ScoreStates.NotificationVariance);
+
+            // 1st update
+            var now = DateTime.UtcNow;
+            double variance = 0.25;
+            NcBrain.MessageNotificationStatusUpdated (message1, now, variance);
+
+            WaitForBrain ();
+
+            var message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (now, message1b.ScoreStates.NotificationTime);
+            Assert.AreEqual (variance, message1b.ScoreStates.NotificationVariance);
+
+
+            // 2nd update with later time - should not update
+            var now2 = now + new TimeSpan (0, 10, 0);
+            NcBrain.MessageNotificationStatusUpdated (message1b, now2, 2 * variance);
+
+            WaitForBrain ();
+
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (now, message1b.ScoreStates.NotificationTime);
+            Assert.AreEqual (variance, message1b.ScoreStates.NotificationVariance);
+
+            // 3rd update with an earlier time - should update
+            var now3 = now - new TimeSpan (0, 10, 0);
+            NcBrain.MessageNotificationStatusUpdated (message1b, now3, 0.5 * variance);
+
+            WaitForBrain ();
+
+            message1b = McEmailMessage.QueryById <McEmailMessage> (message1.Id);
+            Assert.AreEqual (now3, message1b.ScoreStates.NotificationTime);
+            Assert.AreEqual (0.5 * variance, message1b.ScoreStates.NotificationVariance);
+        }
+
+        protected void CheckFromStatistics (string from, int received, int read, int replied)
+        {
+            var emailAddress = McEmailAddress.QueryByCanonicalAddress (from);
+            if (null == emailAddress) {
+                Assert.AreEqual (0, received);
+                Assert.AreEqual (0, read);
+                Assert.AreEqual (0, replied);
+                return;
+            }
+
+            Assert.AreEqual (received, emailAddress.ScoreStates.EmailsReceived);
+            Assert.AreEqual (read, emailAddress.ScoreStates.EmailsRead);
+            Assert.AreEqual (replied, emailAddress.ScoreStates.EmailsReplied);
+        }
+
+        protected void CheckToStatistics (string to, int received, int read, int replied)
+        {
+            var emailAddress = McEmailAddress.QueryByCanonicalAddress (to);
+            if (null == emailAddress) {
+                Assert.AreEqual (0, received);
+                Assert.AreEqual (0, read);
+                Assert.AreEqual (0, replied);
+                return;
+            }
+
+            Assert.AreEqual (received, emailAddress.ScoreStates.ToEmailsReceived);
+            Assert.AreEqual (read, emailAddress.ScoreStates.ToEmailsRead);
+            Assert.AreEqual (replied, emailAddress.ScoreStates.ToEmailsReplied);
+        }
+
+        protected void CheckCcStatistics (string cc, int received, int read, int replied)
+        {
+            var emailAddress = McEmailAddress.QueryByCanonicalAddress (cc);
+            if (null == emailAddress) {
+                Assert.AreEqual (0, received);
+                Assert.AreEqual (0, read);
+                Assert.AreEqual (0, replied);
+                return;
+            }
+
+            Assert.AreEqual (received, emailAddress.ScoreStates.CcEmailsReceived);
+            Assert.AreEqual (read, emailAddress.ScoreStates.CcEmailsRead);
+            Assert.AreEqual (replied, emailAddress.ScoreStates.CcEmailsReplied);
+        }
+
+        protected void CheckFromToCcStatistics (string from, string to, string cc, int received, int read, int replied)
+        {
+            CheckFromStatistics (from, received, read, replied);
+            CheckToStatistics (from, 0, 0, 0);
+            CheckCcStatistics (from, 0, 0, 0);
+
+            CheckFromStatistics (to, 0, 0, 0);
+            CheckToStatistics (to, received, read, replied);
+            CheckCcStatistics (to, 0, 0, 0);
+
+            CheckFromStatistics (cc, 0, 0, 0);
+            CheckToStatistics (cc, 0, 0, 0);
+            CheckCcStatistics (cc, received, read, replied);
+        }
+
+        [Test]
+        public void TestMessageReadStatusUpdated ()
+        {
+            var message1 = new McEmailMessage () {
+                AccountId = TestIndexEmailMessageAccountId,
+                From = "alan@company.net",
+                To = "bob@company.net",
+                Cc = "charles@company.net",
+                Subject = "test read status updated",
+                BodyId = 0,
+            };
+            InsertAndCheck (message1);
+            Assert.AreEqual (DateTime.MinValue, message1.ScoreStates.ReadTime);
+            Assert.AreEqual (0.0, message1.ScoreStates.ReadVariance);
+
+            var now = DateTime.UtcNow;
+            double variance = 0.25;
+            NcBrain.MessageReadStatusUpdated (message1, now, variance);
+
+            WaitForBrain ();
+
+            var message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (now, message1b.ScoreStates.ReadTime);
+            Assert.AreEqual (variance, message1b.ScoreStates.ReadVariance);
+
+            // This verifies that the the brain API can reach the brain task with correct parameters.
+            // All other tests on read status update are done via TestUpdateMessageReadSatatus() using
+            // backdoor test API.
+        }
+
+        [Test]
+        public void TestMessageReplyStatusUpdated ()
+        {
+            var message1 = new McEmailMessage () {
+                AccountId = TestIndexEmailMessageAccountId,
+                From = "alan@company.net",
+                To = "bob@company.net",
+                Cc = "charles@company.net",
+                Subject = "test reply status updated",
+                BodyId = 0,
+            };
+            InsertAndCheck (message1);
+            Assert.AreEqual (DateTime.MinValue, message1.ScoreStates.ReplyTime);
+            Assert.AreEqual (0.0, message1.ScoreStates.ReplyVariance);
+
+            var now = DateTime.UtcNow;
+            double variance = 0.25;
+            NcBrain.MessageReplyStatusUpdated (message1, now, variance);
+
+            WaitForBrain ();
+
+            var message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (now, message1b.ScoreStates.ReplyTime);
+            Assert.AreEqual (variance, message1b.ScoreStates.ReplyVariance);
+
+            // This verifies that the the brain API can reach the brain task with correct parameters.
+            // All other tests on read status update are done via TestUpdateMessageReadSatatus() using
+            // backdoor test API.
+        }
+
+        protected void UpdateEmailMesasageIsRead (McEmailMessage emailMessage, bool isRead)
+        {
+            emailMessage.UpdateWithOCApply<McEmailMessage> ((item) => {
+                var em = (McEmailMessage)item;
+                em.IsRead = isRead;
+                return true;
+            });
+        }
+
+        [Test]
+        public void TestUpdateMessageReadStatus ()
+        {
+            Brain = new WrappedNcBrain ("TestUpdateMessageReadStatus");
+
+            // Verify that it only updates to the least recent time
+            int accountId = 2;
+            string alan = "alan@company.net";
+            string bob = "bob@company.net";
+            string charles = "charles@compnay.net";
+            var message1 = new McEmailMessage () {
+                AccountId = accountId,
+                From = alan,
+                To = bob,
+                Cc = charles,
+                Subject = "test update read status #1",
+                BodyId = 0,
+                FromEmailAddressId = McEmailAddress.Get (accountId, alan),
+            };
+            InsertAndCheck (message1);
+
+            // Simulate a read
+            UpdateEmailMesasageIsRead (message1, isRead: true);
+            var now = DateTime.UtcNow;
+            double variance = 0.25;
+            Brain.TestUpdateMessageReadStatus (message1, now, variance);
+
+            var message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (now, message1b.ScoreStates.ReadTime);
+            Assert.AreEqual (variance, message1b.ScoreStates.ReadVariance);
+            Assert.False (message1b.ScoreStates.IsRead);
+            CheckFromToCcStatistics (alan, bob, charles, 0, 0, 0);
+
+            // Update to a later time should be ignored.
+            var later = now + new TimeSpan (0, 10, 0);
+            Brain.TestUpdateMessageReadStatus (message1b, later, 0.5 * variance);
+
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (now, message1b.ScoreStates.ReadTime);
+            Assert.AreEqual (variance, message1b.ScoreStates.ReadVariance);
+            CheckFromToCcStatistics (alan, bob, charles, 0, 0, 0);
+
+            // Update to an earlier time should be enforced.
+            var earlier = now - new TimeSpan (0, 10, 0);
+            Brain.TestUpdateMessageReadStatus (message1b, earlier, 2.0 * variance);
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (earlier, message1b.ScoreStates.ReadTime);
+            Assert.AreEqual (2.0 * variance, message1b.ScoreStates.ReadVariance);
+            CheckFromToCcStatistics (alan, bob, charles, 0, 0, 0);
+
+            // Analyze it. Now, all statistics should be updated.
+            Brain.TestAnalyzeEmailMessage (message1b);
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (earlier, message1b.ScoreStates.ReadTime);
+            Assert.AreEqual (2.0 * variance, message1b.ScoreStates.ReadVariance);
+            Assert.True (message1b.ScoreStates.IsRead);
+            CheckFromToCcStatistics (alan, bob, charles, 1, 1, 0);
+
+            // Unread the email. Statistics should be updated.
+            UpdateEmailMesasageIsRead (message1, isRead: false);
+            Brain.TestUpdateMessageReadStatus (message1b, DateTime.MinValue, 0.0);
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (DateTime.MinValue, message1b.ScoreStates.ReadTime);
+            Assert.AreEqual (0.0, message1b.ScoreStates.ReadVariance);
+            Assert.False (message1b.ScoreStates.IsRead);
+            CheckFromToCcStatistics (alan, bob, charles, 1, 0, 0);
+
+            // Read it again. Statistics should be updated.
+            UpdateEmailMesasageIsRead (message1, isRead: true);
+            Brain.TestUpdateMessageReadStatus (message1b, later, 2.0 * variance);
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (later, message1b.ScoreStates.ReadTime);
+            Assert.AreEqual (2.0 * variance, message1b.ScoreStates.ReadVariance);
+            Assert.True (message1b.ScoreStates.IsRead);
+            CheckFromToCcStatistics (alan, bob, charles, 1, 1, 0);
+
+            // message2 is inserted as read and then we update the read time again
+            string david = "david@company.net";
+            string ellen = "ellen@company.net";
+            string fred = "fred@company.net";
+            var message2 = new McEmailMessage () {
+                AccountId = accountId,
+                From = david,
+                To = ellen,
+                Cc = fred,
+                Subject = "test update read status #2",
+                BodyId = 0,
+                FromEmailAddressId = McEmailAddress.Get (accountId, david),
+                IsRead = true,
+            };
+            InsertAndCheck (message2);
+            Brain.TestAnalyzeEmailMessage (message2);
+
+            var message2b = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
+            Assert.AreEqual (DateTime.MinValue, message2b.ScoreStates.ReadTime);
+            Assert.AreEqual (0.0, message2b.ScoreStates.ReadVariance);
+            Assert.True (message2b.ScoreStates.IsRead);
+            CheckFromToCcStatistics (david, ellen, fred, 1, 1, 0);
+
+            // Now read it once
+            now = DateTime.UtcNow;
+            Brain.TestUpdateMessageReadStatus (message2b, now, variance);
+            message2b = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
+            Assert.AreEqual (now, message2b.ScoreStates.ReadTime);
+            Assert.AreEqual (variance, message2b.ScoreStates.ReadVariance);
+            Assert.True (message2b.ScoreStates.IsRead);
+            // statistics should not be updated since they were accounted for by TestAnalyzeEmailMessage().
+            CheckFromToCcStatistics (david, ellen, fred, 1, 1, 0);
+
+            // Now update read status with a later time
+            later = now + new TimeSpan (0, 10, 0);
+            Brain.TestUpdateMessageReadStatus (message2b, later, 0.5 * variance);
+            message2b = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
+            Assert.AreEqual (now, message2b.ScoreStates.ReadTime);
+            Assert.AreEqual (variance, message2b.ScoreStates.ReadVariance);
+            Assert.True (message2b.ScoreStates.IsRead);
+            // statistics should not be updated since they were accounted for by TestAnalyzeEmailMessage().
+            CheckFromToCcStatistics (david, ellen, fred, 1, 1, 0);
+
+            // Update with an earlier time
+            earlier = now - new TimeSpan (0, 10, 0);
+            Brain.TestUpdateMessageReadStatus (message2b, earlier, 2.0 * variance);
+            message2b = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
+            Assert.AreEqual (earlier, message2b.ScoreStates.ReadTime);
+            Assert.AreEqual (2.0 * variance, message2b.ScoreStates.ReadVariance);
+            Assert.True (message2b.ScoreStates.IsRead);
+            // statistics should not be updated since they were accounted for by TestAnalyzeEmailMessage().
+            CheckFromToCcStatistics (david, ellen, fred, 1, 1, 0);
+        }
+
+        protected void UpdateEmailMesasageLastVerbExecuted (McEmailMessage emailMessage, AsLastVerbExecutedType lastVerb)
+        {
+            emailMessage.UpdateWithOCApply<McEmailMessage> ((item) => {
+                var em = (McEmailMessage)item;
+                em.LastVerbExecuted = (int)lastVerb;
+                return true;
+            });
+        }
+
+        [Test]
+        public void TestUpdateMessageReplyStatus ()
+        {
+            Brain = new WrappedNcBrain ("TestUpdateMessageReplyStatus");
+
+            // Verify that it only updates to the least recent time
+            int accountId = 3;
+            string alan = "alan@company.net";
+            string bob = "bob@company.net";
+            string charles = "charles@compnay.net";
+            var message1 = new McEmailMessage () {
+                AccountId = accountId,
+                From = alan,
+                To = bob,
+                Cc = charles,
+                Subject = "test update reply status #1",
+                BodyId = 0,
+                FromEmailAddressId = McEmailAddress.Get (accountId, alan),
+            };
+            InsertAndCheck (message1);
+
+            // Simulate a reply
+            UpdateEmailMesasageLastVerbExecuted (message1, lastVerb: AsLastVerbExecutedType.REPLYTOSENDER);
+            var now = DateTime.UtcNow;
+            double variance = 0.25;
+            Brain.TestUpdateMessageReplyStatus (message1, now, variance);
+
+            var message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (now, message1b.ScoreStates.ReplyTime);
+            Assert.AreEqual (variance, message1b.ScoreStates.ReplyVariance);
+            Assert.False (message1b.ScoreStates.IsReplied);
+            CheckFromToCcStatistics (alan, bob, charles, 0, 0, 0);
+
+            // Update to a later time should be ignored.
+            var later = now + new TimeSpan (0, 10, 0);
+            Brain.TestUpdateMessageReplyStatus (message1b, later, 0.5 * variance);
+
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (now, message1b.ScoreStates.ReplyTime);
+            Assert.AreEqual (variance, message1b.ScoreStates.ReplyVariance);
+            CheckFromToCcStatistics (alan, bob, charles, 0, 0, 0);
+
+            // Update to an earlier time should be enforced.
+            var earlier = now - new TimeSpan (0, 10, 0);
+            Brain.TestUpdateMessageReplyStatus (message1b, earlier, 2.0 * variance);
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (earlier, message1b.ScoreStates.ReplyTime);
+            Assert.AreEqual (2.0 * variance, message1b.ScoreStates.ReplyVariance);
+            CheckFromToCcStatistics (alan, bob, charles, 0, 0, 0);
+
+            // Analyze it. Now, all statistics should be updated.
+            Brain.TestAnalyzeEmailMessage (message1b);
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (earlier, message1b.ScoreStates.ReplyTime);
+            Assert.AreEqual (2.0 * variance, message1b.ScoreStates.ReplyVariance);
+            Assert.True (message1b.ScoreStates.IsReplied);
+            CheckFromToCcStatistics (alan, bob, charles, 1, 0, 1);
+
+            // Unread the email. Statistics should be updated.
+            UpdateEmailMesasageLastVerbExecuted (message1, lastVerb: AsLastVerbExecutedType.UNKNOWN);
+            Brain.TestUpdateMessageReplyStatus (message1b, DateTime.MinValue, 0.0);
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (DateTime.MinValue, message1b.ScoreStates.ReplyTime);
+            Assert.AreEqual (0.0, message1b.ScoreStates.ReplyVariance);
+            Assert.False (message1b.ScoreStates.IsReplied);
+            CheckFromToCcStatistics (alan, bob, charles, 1, 0, 0);
+
+            // Read it again. Statistics should be updated.
+            UpdateEmailMesasageLastVerbExecuted (message1, lastVerb: AsLastVerbExecutedType.REPLYTOSENDER);
+            Brain.TestUpdateMessageReplyStatus (message1b, later, 2.0 * variance);
+            message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (later, message1b.ScoreStates.ReplyTime);
+            Assert.AreEqual (2.0 * variance, message1b.ScoreStates.ReplyVariance);
+            Assert.True (message1b.ScoreStates.IsReplied);
+            CheckFromToCcStatistics (alan, bob, charles, 1, 0, 1);
+
+            // message2 is inserted as read and then we update the read time again
+            string david = "david@company.net";
+            string ellen = "ellen@company.net";
+            string fred = "fred@company.net";
+            var message2 = new McEmailMessage () {
+                AccountId = accountId,
+                From = david,
+                To = ellen,
+                Cc = fred,
+                Subject = "test update read status #2",
+                BodyId = 0,
+                FromEmailAddressId = McEmailAddress.Get (accountId, david),
+                LastVerbExecuted = (int)AsLastVerbExecutedType.REPLYTOSENDER,
+            };
+            InsertAndCheck (message2);
+            Brain.TestAnalyzeEmailMessage (message2);
+
+            var message2b = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
+            Assert.AreEqual (DateTime.MinValue, message2b.ScoreStates.ReplyTime);
+            Assert.AreEqual (0.0, message2b.ScoreStates.ReplyVariance);
+            Assert.True (message2b.ScoreStates.IsReplied);
+            CheckFromToCcStatistics (david, ellen, fred, 1, 0, 1);
+
+            // Now read it once
+            now = DateTime.UtcNow;
+            Brain.TestUpdateMessageReplyStatus (message2b, now, variance);
+            message2b = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
+            Assert.AreEqual (now, message2b.ScoreStates.ReplyTime);
+            Assert.AreEqual (variance, message2b.ScoreStates.ReplyVariance);
+            Assert.True (message2b.ScoreStates.IsReplied);
+            // statistics should not be updated since they were accounted for by TestAnalyzeEmailMessage().
+            CheckFromToCcStatistics (david, ellen, fred, 1, 0, 1);
+
+            // Now update read status with a later time
+            later = now + new TimeSpan (0, 10, 0);
+            Brain.TestUpdateMessageReplyStatus (message2b, later, 0.5 * variance);
+            message2b = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
+            Assert.AreEqual (now, message2b.ScoreStates.ReplyTime);
+            Assert.AreEqual (variance, message2b.ScoreStates.ReplyVariance);
+            Assert.True (message2b.ScoreStates.IsReplied);
+            // statistics should not be updated since they were accounted for by TestAnalyzeEmailMessage().
+            CheckFromToCcStatistics (david, ellen, fred, 1, 0, 1);
+
+            // Update with an earlier time
+            earlier = now - new TimeSpan (0, 10, 0);
+            Brain.TestUpdateMessageReplyStatus (message2b, earlier, 2.0 * variance);
+            message2b = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
+            Assert.AreEqual (earlier, message2b.ScoreStates.ReplyTime);
+            Assert.AreEqual (2.0 * variance, message2b.ScoreStates.ReplyVariance);
+            Assert.True (message2b.ScoreStates.IsReplied);
+            // statistics should not be updated since they were accounted for by TestAnalyzeEmailMessage().
+            CheckFromToCcStatistics (david, ellen, fred, 1, 0, 1);
         }
     }
 }

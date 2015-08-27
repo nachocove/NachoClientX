@@ -130,6 +130,26 @@ namespace Test.Android
             serv.Host = "hotmail.com";
             Assert.IsTrue (serv.HostIsHotMail ());
         }
+
+        [Test]
+        public void TestPathIsEWS ()
+        {
+            Assert.IsTrue (McServer.PathIsEWS ("https://mail.bouldercolorado.gov/EWS/Exchange.asmx"));
+            Assert.IsTrue (McServer.PathIsEWS ("https://mail.bouldercolorado.gov/ews/exchange.asmx"));
+            Assert.IsTrue (McServer.PathIsEWS ("https://mail.bouldercolorado.gov/EWS/EXCHANGE.asmx"));
+            Assert.IsTrue (McServer.PathIsEWS ("https://mail.bouldercolorado.gov/EWS/EXCHANGE.ASMX/noreally"));
+            Assert.IsTrue (McServer.PathIsEWS ("EWS/Exchange.asmx/noreally"));
+            Assert.IsTrue (McServer.PathIsEWS ("noreally/EWS/Exchange.asmx/"));
+            Assert.IsTrue (McServer.PathIsEWS ("noreallyEWS/Exchange.asmx/"));
+            Assert.IsTrue (McServer.PathIsEWS ("EWS/Exchange.asmx"));
+            Assert.IsTrue (McServer.PathIsEWS ("/EWS/Exchange.asmx"));
+            Assert.IsFalse (McServer.PathIsEWS ("Microsoft-Server-ActiveSync"));
+            Assert.IsFalse (McServer.PathIsEWS ("/Microsoft-Server-ActiveSync"));
+            Assert.IsFalse (McServer.PathIsEWS ("https://s.outlook.com/Microsoft-Server-ActiveSync"));
+            Assert.IsFalse (McServer.PathIsEWS ("https://s.outlook.com"));
+            Assert.IsFalse (McServer.PathIsEWS ("s.outlook.com"));
+            Assert.IsFalse (McServer.PathIsEWS (""));
+        }
     }
 }
 

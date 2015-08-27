@@ -207,13 +207,16 @@ namespace NachoCore.ActiveSync
                     // Policy required element of Policies.
                     var xmlPolicy = xmlPolicies.Element (m_ns + Xml.Provision.Policy);
 
-                    // PolicyKey required element of Policy.
+                    // PolicyKey optional element of Policy.
                     McProtocolState protocolState = BEContext.ProtocolState;
-                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                        var target = (McProtocolState)record;
-                        target.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
-                        return true;
-                    });
+                    var xmlPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey);
+                    if (null != xmlPolicyKey) {
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.AsPolicyKey = xmlPolicyKey.Value;
+                            return true;
+                        });
+                    }
 
                     // PolicyType required element of Policy, but we don't care much.
                     var xmlPolicyType = xmlPolicy.Element (m_ns + Xml.Provision.PolicyType);

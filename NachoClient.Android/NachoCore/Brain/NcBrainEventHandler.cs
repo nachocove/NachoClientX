@@ -80,6 +80,8 @@ namespace NachoCore.Brain
             case NcBrainEventType.UNINDEX_MESSAGE:
             case NcBrainEventType.UPDATE_ADDRESS_SCORE:
             case NcBrainEventType.UPDATE_MESSAGE_SCORE:
+            case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
+            case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
                 var errMesg = String.Format ("Event type {0} should go to persistent queue instead", brainEvent.Type);
                 throw new NotSupportedException (errMesg);
             case NcBrainEventType.TEST:
@@ -201,12 +203,28 @@ namespace NachoCore.Brain
                     }
                     NcModel.Instance.RunInTransaction (() => {
                         var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)emailMesasgeId);
-                        UpdateEmailMessageScore (emailMessage);
-                        if ((0 != action) && (0 != emailMessage.FromEmailAddressId)) {
-                            var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
-                            UpdateAddressUserAction (fromEmailAddress, action);
+                        if (UpdateEmailMessageScore (emailMessage)) {
+                            if ((0 != action) && (0 != emailMessage.FromEmailAddressId)) {
+                                var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
+                                UpdateAddressUserAction (fromEmailAddress, action);
+                            }
                         }
                     });
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_NOTIFICATION_STATUS:
+                    var notifiedEvent = (NcBrainUpdateMessageNotificationStatusEvent)brainEvent;
+                    NcModel.Instance.RunInTransaction (() => {
+                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)notifiedEvent.EmailMessageId);
+                        if (null != emailMessage) {
+                            emailMessage.ScoreStates.UpdateNotificationTime (notifiedEvent.NotificationTime, notifiedEvent.Variance);
+                        }
+                    });
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
+                    ProcessMessageReadStatusUpdated ((NcBrainUpdateMessageReadStatusEvent)brainEvent);
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
+                    ProcessMessageReplyStatusUpdated ((NcBrainUpdateMessageReplyStatusEvent)brainEvent);
                     break;
                 default:
                     Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);
@@ -316,6 +334,22 @@ namespace NachoCore.Brain
                 NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_ContactSetChanged);
             }
             return numGleaned;
+        }
+
+        private void ProcessMessageReadStatusUpdated (NcBrainUpdateMessageReadStatusEvent readEvent)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)readEvent.EmailMessageId);
+                UpdateEmailMessageReadStatus (emailMessage, readEvent.ReadTime, readEvent.Variance);
+            });
+        }
+
+        private void ProcessMessageReplyStatusUpdated (NcBrainUpdateMessageReplyStatusEvent replyEvent)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)replyEvent.EmailMessageId);
+                UpdateEmailMessageReplyStatus (emailMessage, replyEvent.ReplyTime, replyEvent.Variance);
+            });
         }
     }
 }

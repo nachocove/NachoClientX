@@ -88,9 +88,9 @@ namespace NachoCore.ActiveSync
         // HttpClient factory stuff.
         private static object LockObj = new object ();
         public static Type HttpClientType = typeof(MockableHttpClient);
-        private static IHttpClient EncryptedClient;
-        private static string LastUsername;
-        private static string LastPassword;
+        private static Dictionary<int,IHttpClient> EncryptedClients = new Dictionary<int, IHttpClient> ();
+        private static Dictionary<int,string> LastUsernames = new Dictionary<int, string> ();
+        private static Dictionary<int,string> LastPasswords = new Dictionary<int, string> ();
         private static IHttpClient ClearClient;
 
         private IBEContext BEContext;
@@ -106,6 +106,7 @@ namespace NachoCore.ActiveSync
         private Stream ContentData;
         private string ContentType;
         private uint ConsecThrottlePriorDelaySecs;
+        private bool ExtraRetry451Consumed;
 
         // Properties.
         // User for mocking.
@@ -121,27 +122,30 @@ namespace NachoCore.ActiveSync
 
         public bool DontReUseHttpClient { set; get; }
 
-        private IHttpClient GetEncryptedClient (string username, string password)
+        private IHttpClient GetEncryptedClient (int accountId, string username, string password)
         {
             lock (LockObj) {
-                if (DontReUseHttpClient || null == EncryptedClient ||
-                    null == LastUsername || null == LastPassword ||
-                    LastUsername != username || LastPassword != password) {
+                if (DontReUseHttpClient || 
+                    (!EncryptedClients.ContainsKey (accountId)) ||
+                    (!LastUsernames.ContainsKey (accountId)) || 
+                    (!LastPasswords.ContainsKey (accountId)) ||
+                    LastUsernames[accountId] != username || 
+                    LastPasswords[accountId] != password) {
                     var handler = new NativeMessageHandler () {
                         AllowAutoRedirect = false,
                         PreAuthenticate = true,
                     };
-                    LastUsername = username;
-                    LastPassword = password;
+                    LastUsernames[accountId] = username;
+                    LastPasswords[accountId] = password;
                     handler.Credentials = new NetworkCredential (username, password);
                     var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
                     client.Timeout = new TimeSpan (0, 0, KMaxTimeoutSeconds);
                     // Don't Dispose () HttpClient nor HttpClientHandler. We don't have
                     // a ref-count to know when we CAN Dispose(). As we are almost always
                     // re-using, this should not be an issue.
-                    EncryptedClient = client;
+                    EncryptedClients[accountId] = client;
                 }
-                return EncryptedClient;
+                return EncryptedClients[accountId];
             }
         }
 
@@ -442,7 +446,9 @@ namespace NachoCore.ActiveSync
 
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
-                client = GetEncryptedClient (BEContext.Cred.Username, BEContext.Cred.GetPassword ());
+                string password = BEContext.Cred.GetPassword ();
+                Log.Info (Log.LOG_HTTP, "AsHttpOperation: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, password));              
+                client = GetEncryptedClient (BEContext.Account.Id, BEContext.Cred.Username, password);
             } else {
                 client = GetClearClient ();
             }
@@ -651,20 +657,25 @@ namespace NachoCore.ActiveSync
                         var decoder = new ASWBXML (cToken);
                         try {
                             var isWedged = false;
+                            int timeoutInSeconds = (response.Content.Headers.ContentLength ?? -1) >= 100000 ? 60 : 20;
                             var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
                                              (state) => {
                                     if (!cToken.IsCancellationRequested) {
+                                        Log.Error (Log.LOG_HTTP, "LoadBytes timed out after {0:n0}s trying to process {1:n0} bytes for command {2}",
+                                            timeoutInSeconds, response.Content.Headers.ContentLength ?? -1, CommandName);
                                         isWedged = true;
                                         TimeoutTimerCallback (state);
                                     }
                                 },
-                                             cToken, 180 * 1000, System.Threading.Timeout.Infinite);
-                            var capture = NcCapture.Create (KLoadBytes);
-                            capture.Start ();
-                            decoder.LoadBytes (BEContext.Account.Id, ContentData);
-                            capture.Stop ();
-                            if (1000 < capture.ElapsedMilliseconds) {
-                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0}ms", capture.ElapsedMilliseconds);
+                                cToken, timeoutInSeconds * 1000, System.Threading.Timeout.Infinite);
+                            long loadBytesDuration;
+                            using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
+                                decoder.LoadBytes (BEContext.Account.Id, ContentData);
+                                loadBytesDuration = capture.ElapsedMilliseconds;
+                            }
+                            if (1000 < loadBytesDuration) {
+                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0:n0}ms for {1:n0} bytes for command {2}",
+                                    loadBytesDuration, response.Content.Headers.ContentLength ?? -1, CommandName);
                             }
                             diaper.Dispose ();
                             if (isWedged) {
@@ -846,6 +857,10 @@ namespace NachoCore.ActiveSync
 
             case (HttpStatusCode)451:
                 ReportCommResult (ServerUri.Host, false);
+                if (!ExtraRetry451Consumed) {
+                    ++TriesLeft;
+                    ExtraRetry451Consumed = true;
+                }
                 if (!Allow451Follow) {
                     return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOP451A", null, "HttpStatusCode.451 follow not allowed.");
                 }

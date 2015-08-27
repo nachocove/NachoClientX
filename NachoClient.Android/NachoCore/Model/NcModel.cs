@@ -440,31 +440,36 @@ namespace NachoCore.Model
             public int checkpointed { set; get; }
         }
 
+        private void DbConnGCTimerCallback (Object state)
+        {
+            Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections");
+            foreach (var kvp in DbConns) {
+                NcSQLiteConnection dummy;
+                if (kvp.Key == NcApplication.Instance.UiThreadId) {
+                    continue;
+                }
+                kvp.Value.EliminateIfStale (() => {
+                    if (!DbConns.TryRemove (kvp.Key, out dummy)) {
+                        Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
+                    } else {
+                        Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
+                    }
+                });
+            }
+            // Avoid recurring timer because C# will dump many invocations into the Q and run them concurrently.
+            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
+            DbConnGCTimer.Stfu = true;
+        }
+
         public void Start ()
         {
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", state => {
-                Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections");
-                foreach (var kvp in DbConns) {
-                    NcSQLiteConnection dummy;
-                    if (kvp.Key == NcApplication.Instance.UiThreadId) {
-                        continue;
-                    }
-                    kvp.Value.EliminateIfStale (() => {
-                        if (!DbConns.TryRemove (kvp.Key, out dummy)) {
-                            Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
-                        } else {
-                            Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
-                        }
-                    });
-                }
-            }, null, 15 * 1000, 15 * 1000);
+            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
             DbConnGCTimer.Stfu = true;
 
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
                 var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
                 var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                foreach (var db in new List<SQLiteConnection> { Db, TeleDb }) {
-                    var thisDb = db;
+                foreach (var idx in new int[] { 0, 1 }) {
                     // Integrity check is slow but it was useful when we were tracking
                     // down integrity problem. Comment it out for future reuse
 //                    if (0 == walCheckpointCount) {
@@ -483,9 +488,10 @@ namespace NachoCore.Model
                         if (NcApplication.Instance.IsQuickSync) {
                             return;
                         }
+                        var thisDb = (0 == idx) ? Db : TeleDb;
                         List<CheckpointResult> results = thisDb.Query<CheckpointResult> (checkpointCmd);
                         if ((0 < results.Count) && (0 != results [0].busy)) {
-                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", db.DatabasePath);
+                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", thisDb.DatabasePath);
                         }
                     }
                 }

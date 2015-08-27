@@ -20,6 +20,7 @@ namespace NachoCore.Model
         public string Host { get; set; }
 
         public const string Default_Path = "/Microsoft-Server-ActiveSync";
+        public const string EWS_Path_Substring = "EWS/Exchange.asmx";
         // Well known server/host values:
         public const string GMail_Host = "m.google.com";
         public const string HotMail_Host = "s.outlook.com";
@@ -44,6 +45,9 @@ namespace NachoCore.Model
         // We want to remember if the user entered their
         // own server or if we figured it out on our own.
         public string UserSpecifiedServerName { get; set; }
+
+        // true if our code jammed the name in based on something static: not auto-d, not user-entered.
+        public bool IsHardWired { get; set; }
 
         /// <summary>
         /// The base URI for the server.
@@ -94,6 +98,11 @@ namespace NachoCore.Model
         public bool HostIsGMail ()
         {
             return Host.EndsWith (McServer.GMail_Host, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static bool PathIsEWS (string path)
+        {
+            return path.IndexOf (EWS_Path_Substring, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public static McServer Create (int accountId, McAccount.AccountCapabilityEnum capabilities, Uri uri)

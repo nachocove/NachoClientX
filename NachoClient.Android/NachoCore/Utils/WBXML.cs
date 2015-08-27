@@ -457,7 +457,7 @@ namespace NachoCore.Wbxml
         private int GetCodePageByXmlns (string xmlns)
         {
             for (int i = 0; i < codePages.Length; i++) {
-                if (codePages [i].Xmlns.ToUpper () == xmlns.ToUpper ()) {
+                if (codePages [i].Xmlns.ToUpperInvariant () == xmlns.ToUpperInvariant ()) {
                     return i;
                 }
             }
@@ -468,7 +468,7 @@ namespace NachoCore.Wbxml
         private int GetCodePageByNamespace (string nameSpace)
         {
             for (int i = 0; i < codePages.Length; i++) {
-                if (codePages [i].Namespace.ToUpper () == nameSpace.ToUpper ()) {
+                if (codePages [i].Namespace.ToUpperInvariant () == nameSpace.ToUpperInvariant ()) {
                     return i;
                 }
             }
@@ -489,12 +489,12 @@ namespace NachoCore.Wbxml
             }
 
             // Try current first
-            if (codePages [currentCodePage].Xmlns.ToUpper () == xmlns.ToUpper ()) {
+            if (codePages [currentCodePage].Xmlns.ToUpperInvariant () == xmlns.ToUpperInvariant ()) {
                 return false;
             }
 
             for (int i = 0; i < codePages.Length; i++) {
-                if (codePages [i].Xmlns.ToUpper () == xmlns.ToUpper ().TrimEnd (':')) {
+                if (codePages [i].Xmlns.ToUpperInvariant () == xmlns.ToUpperInvariant ().TrimEnd (':')) {
                     currentCodePage = i;
                     return true;
                 }
@@ -507,10 +507,10 @@ namespace NachoCore.Wbxml
         {
             foreach (XAttribute attribute in element.Attributes()) {
                 int codePage = GetCodePageByNamespace (attribute.Value);
-                if (attribute.Name.ToString ().ToUpper () == "XMLNS") {
+                if (attribute.Name.ToString ().ToUpperInvariant () == "XMLNS") {
                     // <foo xmlns="...">
                     defaultCodePage = codePage;
-                } else if (attribute.Name.Namespace.ToString ().ToUpper () == "XMLNS") {
+                } else if (attribute.Name.Namespace.ToString ().ToUpperInvariant () == "XMLNS") {
                     // <foo xmlns:bar="...">
                     codePages [codePage].Xmlns = attribute.Name.LocalName;
                 }

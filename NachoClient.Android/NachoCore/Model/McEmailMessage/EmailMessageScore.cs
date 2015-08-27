@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using System.Diagnostics;
 using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Brain;
@@ -39,6 +40,7 @@ namespace NachoCore.Model
                         { 5, AnalyzeSendAddresses },
                         { 6, AnalyzeHeaders },
                         { 7, AnalyzeReplies },
+                        { 8, AnalyzeYahooBulkEmails },
                     };
                 }
                 return _AnalysisFunctions;
@@ -57,6 +59,7 @@ namespace NachoCore.Model
 
         public static NcUserActionDisqualifier UserActionDisqualifier = new NcUserActionDisqualifier ();
         public static NcMarketingEmailDisqualifier MarketingMailDisqualifier = new NcMarketingEmailDisqualifier ();
+        public static NcYahooBulkEmailDisqualifier YahooBulkEmailDisqualifier = new NcYahooBulkEmailDisqualifier ();
 
         /// Did the user take explicit action?
         public int UserAction { get; set; }
@@ -170,6 +173,13 @@ namespace NachoCore.Model
             }
 
             score = (0 == bottom) ? 0.0 : (double)top / (double)bottom;
+            if (0.0 > score) {
+                Log.Error (Log.LOG_BRAIN, "Invalid score {0}\n{1}", score, new StackTrace (true));
+                score = 0.0;
+            } else if (1.0 < score) {
+                Log.Error (Log.LOG_BRAIN, "Invalid score {0}\n{1}", score, new StackTrace (true));
+                score = 1.0;
+            }
             NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
             if (0 < tvList.Count) {
                 DateTime now = DateTime.UtcNow;
@@ -192,6 +202,7 @@ namespace NachoCore.Model
                         // Disqualifiers are evaluated next. Again, can cause early exit and avoid excessive compute
                         UserActionDisqualifier.Classify,
                         MarketingMailDisqualifier.Classify,
+                        YahooBulkEmailDisqualifier.Classify,
                         // The probablistic score is computed last because it is the most expensive.
                         (emailMessage2) => emailMessage2.BayesianLikelihood ()
                         // TODO - incorporate content score
@@ -255,8 +266,10 @@ namespace NachoCore.Model
                     }
 
                     // Initialize new columns
-                    SetScoreIsRead (IsRead);
-                    SetScoreIsReplied (IsReplied ());
+                    if (SetScoreIsRead (IsRead) ||
+                        SetScoreIsReplied (IsReplied ())) {
+                        ScoreStates.Update ();
+                    }
                 } else {
                     Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
                 }
@@ -304,13 +317,7 @@ namespace NachoCore.Model
             }
 
             // Update statistics for email addresses
-            McEmailAddress emailAddress;
-            foreach (var toAddressId in ToEmailAddressId) {
-                emailAddress = McEmailAddress.QueryById<McEmailAddress> (toAddressId);
-                if (null == emailAddress) {
-                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find To email address {0} in email message {1}", toAddressId, Id);
-                    continue;
-                }
+            foreach (var emailAddress in McEmailAddress.QueryToAddressesByMessageId (Id)) {
                 emailAddress.IncrementToEmailsReceived (markDependencies: false);
                 if (IsReplied ()) {
                     emailAddress.IncrementToEmailsReplied (markDependencies: false);
@@ -321,12 +328,7 @@ namespace NachoCore.Model
                 emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }
-            foreach (var ccAddressId in CcEmailAddressId) {
-                emailAddress = McEmailAddress.QueryById<McEmailAddress> (ccAddressId);
-                if (null == emailAddress) {
-                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find Cc email address {0} in email message {1}", ccAddressId, Id);
-                    continue;
-                }
+            foreach (var emailAddress in McEmailAddress.QueryCcAddressesByMessageId (Id)) {
                 emailAddress.IncrementCcEmailsReceived (markDependencies: false);
                 if (IsReplied ()) {
                     emailAddress.IncrementCcEmailsReplied (markDependencies: false);
@@ -363,9 +365,24 @@ namespace NachoCore.Model
             RepliesToMyEmailsQualifier.Analyze (this);
         }
 
+        protected void AnalyzeYahooBulkEmails ()
+        {
+            YahooBulkEmailDisqualifier.Analyze (this);
+        }
+
         public void Analyze ()
         {
             var newScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
+            if (NcTask.Cts.Token.IsCancellationRequested) {
+                UpdateByBrain ((item) => {
+                    var em = (McEmailMessage)item;
+                    em.ScoreVersion = newScoreVersion;
+                    // If we scoring the last version, need to mark for update to recompute the score later
+                    em.NeedUpdate = (Scoring.Version == newScoreVersion ? 1 : 0);
+                    return true;
+                });
+                return;
+            }
             InitializeTimeVariance ();
             var newScore = Classify ();
             var newState = TimeVarianceState;
@@ -391,20 +408,22 @@ namespace NachoCore.Model
             ScoreStates.SecondsRead += seconds;
         }
 
-        public void SetScoreIsRead (bool value)
+        public bool SetScoreIsRead (bool value)
         {
             if (value == ScoreStates.IsRead) {
-                return;
+                return false;
             }
             ScoreStates.IsRead = value;
+            return true;
         }
 
-        public void SetScoreIsReplied (bool value)
+        public bool SetScoreIsReplied (bool value)
         {
             if (value == ScoreStates.IsReplied) {
-                return;
+                return false;
             }
             ScoreStates.IsReplied = value;
+            return true;
         }
 
         private string TimeVarianceDescription ()
@@ -789,6 +808,82 @@ namespace NachoCore.Model
                 return false;
             }
             return accountAddress == mbAddr.Address;
+        }
+
+        protected void UpdateAnalysisInternal (DateTime newTime, double variance, Func<DateTime, double, bool> updateFunc, Func<bool, bool> setFunc, 
+                                               Action<McEmailAddress, int> fromFunc, Action<McEmailAddress, int> toFunc, Action<McEmailAddress, int> ccFunc)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                if (updateFunc (newTime, variance)) {
+                    int delta = DateTime.MinValue == newTime ? -1 : +1;
+                    if (2 <= ScoreVersion) {
+                        if (setFunc (DateTime.MinValue != newTime)) {
+                            ScoreStates.Update ();
+                        } else {
+                            delta = 0;
+                        }
+                        if (0 != delta) {
+                            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (FromEmailAddressId);
+                            if (null != emailAddress) {
+                                fromFunc (emailAddress, delta);
+                                emailAddress.ScoreStates.Update ();
+                            }
+                        }
+                    }
+                    if ((4 <= ScoreVersion) && (0 != delta)) {
+                        var accountAddress = AccountAddress (AccountId);
+                        foreach (var emailAddress in McEmailAddress.QueryToAddressesByMessageId (Id)) {
+                            if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                                continue;
+                            }
+                            toFunc (emailAddress, delta);
+                            emailAddress.ScoreStates.Update ();
+                        }
+                        foreach (var emailAddress in McEmailAddress.QueryCcAddressesByMessageId (Id)) {
+                            if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                                continue;
+                            }
+                            ccFunc (emailAddress, delta);
+                            emailAddress.ScoreStates.Update ();
+                        }
+                    }
+                    if (Scoring.Version == ScoreVersion) {
+                        Score = Classify ();
+                        NeedUpdate = 0;
+                        UpdateScoreAndNeedUpdate ();
+                    }
+                }
+            });
+        }
+
+        public void UpdateReadAnalysis (DateTime readTime, double variance)
+        {
+            UpdateAnalysisInternal (readTime, variance, ScoreStates.UpdateReadTime, SetScoreIsRead,
+                (emailAdddress, delta) => {
+                    emailAdddress.IncrementEmailsRead (delta);
+                },
+                (emailAddress, delta) => {
+                    emailAddress.IncrementToEmailsRead (delta);
+                },
+                (emailAddress, delta) => {
+                    emailAddress.IncrementCcEmailsRead (delta);
+                }
+            );
+        }
+
+        public void UpdateReplyAnalysis (DateTime replyTime, double variance)
+        {
+            UpdateAnalysisInternal (replyTime, variance, ScoreStates.UpdateReplyTime, SetScoreIsReplied,
+                (emailAddress, delta) => {
+                    emailAddress.IncrementEmailsReplied (delta);
+                },
+                (emailAddress, delta) => {
+                    emailAddress.IncrementToEmailsReplied (delta);
+                },
+                (emailAddress, delta) => {
+                    emailAddress.IncrementCcEmailsReplied (delta);
+                }
+            );
         }
     }
 }
