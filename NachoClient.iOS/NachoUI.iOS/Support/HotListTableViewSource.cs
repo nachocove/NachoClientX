@@ -12,7 +12,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public class HotListTableViewSource : UITableViewSource, INachoMessageEditorParent, INachoFolderChooserParent
+    public class HotListTableViewSource : UITableViewSource, INachoMessageEditorParent, INachoFolderChooserParent, IBodyViewOwner
     {
         INachoEmailMessages messageThreads;
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
@@ -186,7 +186,7 @@ namespace NachoClient.iOS
 
             // Preview label view
             // Size fields will be recalculated after text is known
-            var previewLabelView = new ScrollableBodyView (new CGRect (12, 75, viewWidth - 15 - 12, view.Frame.Height - 128), onLinkSelected);
+            var previewLabelView = new ScrollableBodyView (new CGRect (12, 75, viewWidth - 15 - 12, view.Frame.Height - 128), this);
             previewLabelView.Tag = PREVIEW_TAG;
             view.AddSubview (previewLabelView);
 
@@ -780,7 +780,16 @@ namespace NachoClient.iOS
             targetContentOffset.Y = tableView.RectForRowAtIndexPath (next).Location.Y - 10;
         }
 
-        public void onLinkSelected (NSUrl url)
+        #region IBodyViewOwner implementation
+
+        // Items in the hot list can't react to size changes or be dismissed, so those implementations are empty.
+        // We do need to react to URL that are tapped.
+
+        void IBodyViewOwner.SizeChanged ()
+        {
+        }
+
+        void IBodyViewOwner.LinkSelected (NSUrl url)
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 owner.PerformSegueForDelegate ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
@@ -789,6 +798,11 @@ namespace NachoClient.iOS
             }
         }
 
+        void IBodyViewOwner.DismissView ()
+        {
+        }
+
+        #endregion
     }
 
 }
