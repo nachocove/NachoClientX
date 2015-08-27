@@ -41,6 +41,7 @@ namespace NachoCore.SMTP
                     }
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
                         ConnectAndAuthenticate ();
+                        Cts.Token.ThrowIfCancellationRequested ();
                     }
                     return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
                 });
