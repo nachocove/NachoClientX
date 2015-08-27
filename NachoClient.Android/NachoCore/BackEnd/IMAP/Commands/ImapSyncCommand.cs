@@ -684,18 +684,14 @@ namespace NachoCore.IMAP
                         return null;
                     }
 
-                    if (stream.Length > 0) {
-                        using (var decoded = new MemoryStream ()) {
-                            CopyFilteredStream (stream, decoded, part.ContentType.Charset, TransferEncoding, CopyDataAction);
-                            var buffer = decoded.GetBuffer ();
-                            var length = (int)decoded.Length;
-                            preview = Encoding.UTF8.GetString (buffer, 0, length);
-                        }
-                    } else {
-                        preview = string.Empty;
+                    using (var decoded = new MemoryStream ()) {
+                        CopyFilteredStream (stream, decoded, part.ContentType.Charset, TransferEncoding, CopyDataAction);
+                        var buffer = decoded.GetBuffer ();
+                        var length = (int)decoded.Length;
+                        preview = Encoding.UTF8.GetString (buffer, 0, length);
                     }
 
-                    if (!isPlainText && !string.IsNullOrEmpty (preview)) {
+                    if (!isPlainText) {
                         var p = Html2Text (preview);
                         if (string.Empty == p) {
                             preview = string.Empty;
