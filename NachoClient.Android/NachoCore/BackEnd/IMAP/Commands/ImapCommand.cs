@@ -419,7 +419,7 @@ namespace NachoCore.IMAP
         {
             using (var filtered = new FilteredStream (outStream)) {
                 filtered.Add (DecoderFilter.Create (TransferEncoding));
-                if (string.IsNullOrEmpty (CharSet)) {
+                if (!string.IsNullOrEmpty (CharSet)) {
                     try {
                         filtered.Add (new CharsetFilter (CharSet, "utf-8"));
                     } catch (NotSupportedException ex) {
