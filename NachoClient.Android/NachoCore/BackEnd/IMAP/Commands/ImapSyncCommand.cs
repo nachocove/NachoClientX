@@ -105,13 +105,20 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL1");
             }
             var syncSet = ImapStrategy.QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
-            if (null == syncSet || !syncSet.Any ()) {
-                Finish (false);
-                return Event.Create ((uint)NachoCore.IMAP.ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
+            var uploadMessages = McEmailMessage.QueryImapMessagesToSend (BEContext.Account.Id, Synckit.Folder.Id, span);
+            bool changed = false;
+            Event evt;
+            if ((null != syncSet && syncSet.Any ()) ||
+                (null != uploadMessages && uploadMessages.Any ())) {
+                Synckit.SyncSet = syncSet;
+                Synckit.UploadMessages = uploadMessages;
+                evt = syncFolder (mailKitFolder);
+                changed = true;
+            } else {
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
             }
-            Synckit.SyncSet = syncSet;
-            Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (BEContext.Account.Id, Synckit.Folder.Id, span);
-            return syncFolder (mailKitFolder);
+            Finish (changed);
+            return evt;
         }
 
         private Event getFolderMetaDataInternal (NcImapFolder mailKitFolder, TimeSpan timespan)
@@ -126,7 +133,7 @@ namespace NachoCore.IMAP
         private Event syncFolder (NcImapFolder mailKitFolder)
         {
             bool changed = false;
-            if (Synckit.SyncSet.Any ()) {
+            if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
                 // First find all messages marked as /Deleted
                 UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
 
