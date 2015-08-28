@@ -78,12 +78,9 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public override string IssueWithFields (String email)
+        public override string IssueWithFields ()
         {
             String serviceName;
-            if (NcServiceHelper.IsServiceUnsupported (email, out serviceName)) {
-                return String.Format("Nacho Mail does not support {0} yet.", serviceName);
-            }
             if (!EmailHelper.IsValidHost (incomingServerField.Text)) {
                 return "Invalid incoming server name. Please check that you typed it in correctly.";
             }

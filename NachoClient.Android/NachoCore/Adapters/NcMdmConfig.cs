@@ -47,11 +47,7 @@ namespace NachoCore
         {
             setter (this);
             IsPopulated = !String.IsNullOrEmpty(Host) || Port.HasValue || !String.IsNullOrEmpty(Username) || !String.IsNullOrEmpty(Domain) || !String.IsNullOrEmpty(EmailAddr) || !String.IsNullOrEmpty(BrandingName);
-            if (String.IsNullOrEmpty (Host) && Port.HasValue) {
-                IsValid = false;
-            } else {
-                IsValid = true;
-            }
+            Validate ();
             NcApplication.Instance.InvokeStatusIndEventInfo (ConstMcAccount.NotAccountSpecific, 
                 NcResult.SubKindEnum.Info_MdmConfigMayHaveChanged);
         }
@@ -71,6 +67,26 @@ namespace NachoCore
             IsValid = false;
             NcApplication.Instance.InvokeStatusIndEventInfo (ConstMcAccount.NotAccountSpecific, 
                 NcResult.SubKindEnum.Info_MdmConfigMayHaveChanged);
+        }
+
+        private void Validate ()
+        {
+            IsValid = true;
+            if (String.IsNullOrEmpty (Host) && Port.HasValue) {
+                IsValid = false;
+                Log.Info (Log.LOG_UTILS, "NcMdmConfig invalid config: port without server");
+            }
+            if (!String.IsNullOrEmpty (EmailAddr) && !EmailHelper.IsValidEmail (EmailAddr)) {
+                IsValid = false;
+                Log.Info (Log.LOG_UTILS, "NcMdmConfig invalid config: email address does not validate: {0}", EmailAddr);
+            }
+            if (!String.IsNullOrEmpty (Host)){
+                var result = EmailHelper.IsValidServer (Host);
+                if (result != EmailHelper.ParseServerWhyEnum.Success_0) {
+                    IsValid = false;
+                    Log.Info (Log.LOG_UTILS, "NcMdmConfig invalid config: server does not validate: {0} {1}", result, Host);
+                }
+            }
         }
     }
 }

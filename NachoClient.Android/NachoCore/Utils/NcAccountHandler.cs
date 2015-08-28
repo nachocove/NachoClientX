@@ -71,14 +71,11 @@ namespace NachoCore.Model
         {
             return CreateAccountCore (McAccount.AccountServiceEnum.Exchange, config.EmailAddr, (accountId) => {
                 string username = config.Username;
-                bool userSpecifiedUsername = true;
                 if (String.IsNullOrEmpty (username)) {
                     if (String.IsNullOrEmpty(config.Domain)){
                         username = config.EmailAddr;
-                        userSpecifiedUsername = false;
                     }else{
                         username = McCred.Join (config.Domain, "");
-                        userSpecifiedUsername = true;
                     }
                 }else{
                     username = McCred.Join (config.Domain, username);
@@ -88,7 +85,6 @@ namespace NachoCore.Model
                     CredType = McCred.CredTypeEnum.Password,
                     Username = username,
                 };
-                cred.UserSpecifiedUsername = userSpecifiedUsername;
                 cred.Insert ();
                 return cred;
             }, (account) => {

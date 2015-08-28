@@ -22,6 +22,8 @@ namespace NachoClient.iOS
         private UIView advancedSubview;
         private NSLayoutConstraint[] advancedConstraints;
         AccountAdvancedFieldsViewController advancedFieldsViewController;
+        private bool HideAdvancedButton = false;
+        private bool LockEmailField = false;
 
 
         public StandardCredentialsViewController (IntPtr handle) : base (handle)
@@ -65,7 +67,10 @@ namespace NachoClient.iOS
             statusLabel.Text = String.Format ("Please provide your {0} information", NcServiceHelper.AccountServiceName (Service));
             submitButton.Layer.CornerRadius = 6.0f;
             UpdateSubmitEnabled ();
-            advancedButton.Hidden = Service != McAccount.AccountServiceEnum.Exchange || (Account != null && Account.IsMdmBased == true);
+            HideAdvancedButton = Service != McAccount.AccountServiceEnum.Exchange;
+            if (HideAdvancedButton) {
+                advancedButton.Hidden = true;
+            }
             using (var icon = UIImage.FromBundle ("Loginscreen-2")) {
                 emailField.LeftViewMode = UITextFieldViewMode.Always;
                 emailField.AdjustedEditingInsets = new UIEdgeInsets (0, 45, 0, 15);
@@ -80,8 +85,26 @@ namespace NachoClient.iOS
             }
             if (Service == McAccount.AccountServiceEnum.IMAP_SMTP) {
                 ToggleAdvancedFields ();
-            } else if (Account != null && Account.IsMdmBased == true) {
-                ToggleAdvancedFields ();
+            } else if (Service == McAccount.AccountServiceEnum.Exchange && Account != null) {
+                var cred = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
+                var showAdvanced = false;
+                if (cred != null && cred.UserSpecifiedUsername) {
+                    showAdvanced = true;
+                }
+                var server = McServer.QueryByAccountId<McServer> (Account.Id).FirstOrDefault ();
+                if (server != null && !String.IsNullOrEmpty (server.UserSpecifiedServerName)) {
+                    showAdvanced = true;
+                }
+                if (showAdvanced) {
+                    ToggleAdvancedFields ();
+                }
+            }
+            if (Account != null && Account.IsMdmBased == true) {
+                if (!String.IsNullOrEmpty (NcMdmConfig.Instance.EmailAddr)) {
+                    LockEmailField = true;
+                    emailField.Enabled = false;
+                    emailField.BackgroundColor = emailField.BackgroundColor.ColorWithAlpha (0.6f);
+                }
             }
         }
 
@@ -159,7 +182,7 @@ namespace NachoClient.iOS
                 return "No network connection. Please check that you have internet access.";
             }
             if (IsShowingAdvanced) {
-                return advancedFieldsViewController.IssueWithFields (email);
+                return advancedFieldsViewController.IssueWithFields ();
             }
             return null;
         }
@@ -188,8 +211,6 @@ namespace NachoClient.iOS
         {
             if (!IsShowingAdvanced) {
                 if (Service == McAccount.AccountServiceEnum.Exchange || Service == McAccount.AccountServiceEnum.IMAP_SMTP) {
-                    IsShowingAdvanced = true;
-                    advancedButton.SetTitle ("Hide Advanced", UIControlState.Normal);
                     if (advancedFieldsViewController == null) {
                         if (Service == McAccount.AccountServiceEnum.IMAP_SMTP) {
                             advancedFieldsViewController = (ImapAdvancedFieldsViewController)Storyboard.InstantiateViewController ("ImapAdvancedFields");
@@ -199,9 +220,14 @@ namespace NachoClient.iOS
                         if (advancedFieldsViewController != null) {
                             advancedSubview = advancedFieldsViewController.View.Subviews [0];
                             advancedFieldsViewController.AccountDelegate = this;
+                            if (Account != null && Account.IsMdmBased) {
+                                advancedFieldsViewController.LockFieldsForMDMConfig (NcMdmConfig.Instance);
+                            }
                         }
                     }
                     if (advancedSubview != null) {
+                        IsShowingAdvanced = true;
+                        advancedButton.SetTitle ("Hide Advanced", UIControlState.Normal);
                         advancedFieldsViewController.PopulateFieldsWithAccount (Account);
                         advancedSubview.Frame = new CGRect (0, 0, advancedView.Frame.Width, advancedSubview.Frame.Height);
                         advancedView.AddSubview (advancedSubview);
@@ -235,7 +261,9 @@ namespace NachoClient.iOS
                 activityIndicatorView.Hidden = false;
                 accountIconView.Hidden = true;
                 activityIndicatorView.StartAnimating ();
-                emailField.Enabled = false;
+                if (!LockEmailField) {
+                    emailField.Enabled = false;
+                }
                 passwordField.Enabled = false;
                 submitButton.Enabled = false;
                 submitButton.Alpha = 0.5f;
@@ -248,10 +276,12 @@ namespace NachoClient.iOS
                 activityIndicatorView.StopAnimating ();
                 activityIndicatorView.Hidden = true;
                 accountIconView.Hidden = false;
-                emailField.Enabled = true;
+                if (!LockEmailField) {
+                    emailField.Enabled = true;
+                }
                 passwordField.Enabled = true;
                 supportButton.Hidden = false;
-                advancedButton.Hidden = Service != McAccount.AccountServiceEnum.Exchange;
+                advancedButton.Hidden = HideAdvancedButton;
                 UpdateSubmitEnabled ();
                 if (IsShowingAdvanced) {
                     advancedFieldsViewController.SetFieldsEnabled (true);
@@ -310,40 +340,60 @@ namespace NachoClient.iOS
 
                 if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
                     StopListeningForApplicationStatus ();
-                    IsSubmitting = false;
-                    if (Service == McAccount.AccountServiceEnum.GoogleExchange || Service == McAccount.AccountServiceEnum.Office365Exchange) {
-                        Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for known exchange service {0}, not showing advanced", Service);
-                        ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
-                    } else {
-                        Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for service {0}, showing advanced", Service);
-                        UpdateForSubmitting ();
-                        if (!IsShowingAdvanced) {
-                            statusLabel.Text = "We were unable to verify your information.  Please enter advanced configuration information.";
-                            ToggleAdvancedFields ();
-                        } else {
-                            statusLabel.Text = "We were unable to verify your information.  Please enter advanced configuration information.";
-                        }
-                    }
+                    HandleServerError ();
                 } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
-                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CredWait for service {0}", Service);
-                    IsSubmitting = false;
                     StopListeningForApplicationStatus ();
-                    ShowCredentialsError ("Invalid username or password.  Please adjust and try again.");
+                    HandleCredentialError ();
                 } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
-                    if (NcApplication.Instance.CertAskReqPreApproved (Account.Id, McAccount.AccountCapabilityEnum.EmailSender)) {
-                        Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CertAskWait for service {0}, but cert is pre approved, so continuting on", Service);
-                        NcApplication.Instance.CertAskResp (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, true);
-                    } else {
-                        Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CertAskWait for service {0}, user must approve", Service);
-                        PerformSegue ("cert-ask", null);
-                    }
+                    HandleCertificateAsk ();
                 } else if ((senderState >= BackEndStateEnum.PostAutoDPreInboxSync) && (readerState >= BackEndStateEnum.PostAutoDPreInboxSync)) {
-                    IsSubmitting = false;
-                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController PostAutoDPreInboxSync for reader or writer");
                     StopListeningForApplicationStatus ();
-                    AccountDelegate.AccountCredentialsViewControllerDidValidateAccount (this, Account);
+                    HandleAccountVerified ();
                 }
             }
+        }
+
+        private void HandleServerError ()
+        {
+            IsSubmitting = false;
+            if (Service == McAccount.AccountServiceEnum.GoogleExchange || Service == McAccount.AccountServiceEnum.Office365Exchange) {
+                Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for known exchange service {0}, not showing advanced", Service);
+                ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
+            } else {
+                Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for service {0}, showing advanced", Service);
+                UpdateForSubmitting ();
+                if (!IsShowingAdvanced) {
+                    statusLabel.Text = "We were unable to verify your information.  Please enter advanced configuration information.";
+                    ToggleAdvancedFields ();
+                } else {
+                    statusLabel.Text = "We were unable to verify your information.  Please enter advanced configuration information.";
+                }
+            }
+        }
+
+        private void HandleCredentialError ()
+        {
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CredWait for service {0}", Service);
+            IsSubmitting = false;
+            ShowCredentialsError ("Invalid username or password.  Please adjust and try again.");
+        }
+
+        private void HandleCertificateAsk ()
+        {
+            if (NcApplication.Instance.CertAskReqPreApproved (Account.Id, McAccount.AccountCapabilityEnum.EmailSender)) {
+                Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CertAskWait for service {0}, but cert is pre approved, so continuting on", Service);
+                NcApplication.Instance.CertAskResp (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, true);
+            } else {
+                Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CertAskWait for service {0}, user must approve", Service);
+                PerformSegue ("cert-ask", null);
+            }
+        }
+
+        private void HandleAccountVerified ()
+        {
+            IsSubmitting = false;
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController PostAutoDPreInboxSync for reader or writer");
+            AccountDelegate.AccountCredentialsViewControllerDidValidateAccount (this, Account);
         }
 
         // INachoCertificateResponderParent

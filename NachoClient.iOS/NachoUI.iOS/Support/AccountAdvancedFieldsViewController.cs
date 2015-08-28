@@ -2,6 +2,7 @@
 //
 using System;
 using UIKit;
+using NachoCore;
 using NachoCore.Model;
 
 namespace NachoClient.iOS
@@ -20,12 +21,16 @@ namespace NachoClient.iOS
         {
         }
 
-        public abstract String IssueWithFields (String email);
+        public abstract String IssueWithFields ();
         public abstract bool CanSubmitFields ();
         public abstract void PopulateFieldsWithAccount (McAccount account);
         public abstract void PopulateAccountWithFields (McAccount account);
         public abstract void UnpopulateAccount (McAccount account);
         public abstract void SetFieldsEnabled (bool enabled);
+
+        public virtual void LockFieldsForMDMConfig (NcMdmConfig config)
+        {
+        }
     }
 }
 

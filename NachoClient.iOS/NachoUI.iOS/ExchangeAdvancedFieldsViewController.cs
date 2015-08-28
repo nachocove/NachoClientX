@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Foundation;
 using UIKit;
 using CoreGraphics;
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -14,6 +15,11 @@ namespace NachoClient.iOS
 {
     public partial class ExchangeAdvancedFieldsViewController : AccountAdvancedFieldsViewController
 	{
+
+        private bool LockServerField = false;
+        private bool LockDomainField = false;
+        private bool LockUsernameField = false;
+
         public ExchangeAdvancedFieldsViewController (IntPtr handle) : base (handle)
         {
         }
@@ -44,7 +50,7 @@ namespace NachoClient.iOS
         private UILabel FieldLabel (String text)
         {
             var label = new UILabel(new CGRect(0, 0, 80, 20));
-            label.BackgroundColor = UIColor.White;
+            label.BackgroundColor = UIColor.Clear;
             label.TextColor = A.Color_NachoGreen;
             label.Font = A.Font_AvenirNextMedium14;
             label.Text = text;
@@ -56,17 +62,13 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public override string IssueWithFields (String email)
+        public override string IssueWithFields ()
         {
             if (!String.IsNullOrEmpty (serverField.Text)) {
                 var result = EmailHelper.IsValidServer (serverField.Text);
                 if (EmailHelper.ParseServerWhyEnum.Success_0 != result) {
                     return EmailHelper.ParseServerWhyEnumToString (result);
                 }
-            }
-            string serviceName;
-            if (NcServiceHelper.IsServiceUnsupported (email, out serviceName)) {
-                return String.Format ("Nacho Mail does not support {0} yet.", serviceName);
             }
             return null;
         }
@@ -77,9 +79,16 @@ namespace NachoClient.iOS
             var username = usernameField.Text.Trim ();
             var domain = domainField.Text.Trim ();
             var serverString = serverField.Text.Trim ();
-            cred.UserSpecifiedUsername = true;
             if (!String.IsNullOrEmpty (username)) {
+                cred.UserSpecifiedUsername = !LockUsernameField || (!LockDomainField && !string.IsNullOrEmpty(domain));
                 cred.Username = McCred.Join (domain, username);
+                cred.Update ();
+            } else if (!String.IsNullOrEmpty (domain)) {
+                cred.UserSpecifiedUsername = !LockDomainField;
+                cred.Username = McCred.Join (domain, username);
+                cred.Update ();
+            } else {
+                cred.UserSpecifiedUsername = false;
                 cred.Update ();
             }
             var server = McServer.QueryByAccountId<McServer> (account.Id).FirstOrDefault ();
@@ -103,6 +112,9 @@ namespace NachoClient.iOS
             if (server != null && !String.IsNullOrEmpty (serverString)) {
                 var result = EmailHelper.ParseServer (ref server, serverString);
                 NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == result);
+                if (!LockServerField) {
+                    server.UserSpecifiedServerName = serverString;
+                }
                 server.Update ();
                 Log.Info (Log.LOG_UI, "ExchangeAdvancedFields update server: {0}/{1}/{2}", account.Id, server.Id, serverString);
             }
@@ -124,9 +136,12 @@ namespace NachoClient.iOS
             if (account != null) {
                 var creds = McCred.QueryByAccountId<McCred> (account.Id).Single ();
                 if (creds != null) {
-                    if (creds.UserSpecifiedUsername) {
-                        string domain, username;
-                        McCred.Split (creds.Username, out domain, out username);
+                    string domain, username;
+                    McCred.Split (creds.Username, out domain, out username);
+                    if (String.IsNullOrEmpty (domain) && !String.IsNullOrEmpty (account.EmailAddr) && String.Equals (username, account.EmailAddr)) {
+                        usernameField.Text = "";
+                        domainField.Text = "";
+                    } else {
                         usernameField.Text = username;
                         domainField.Text = domain;
                     }
@@ -158,9 +173,34 @@ namespace NachoClient.iOS
 
         public override void SetFieldsEnabled (bool enabled)
         {
-            usernameField.Enabled = enabled;
-            serverField.Enabled = enabled;
-            domainField.Enabled = enabled;
+            if (!LockUsernameField) {
+                usernameField.Enabled = enabled;
+            }
+            if (!LockServerField) {
+                serverField.Enabled = enabled;
+            }
+            if (!LockDomainField) {
+                domainField.Enabled = enabled;
+            }
+        }
+
+        public override void LockFieldsForMDMConfig (NcMdmConfig config)
+        {
+            if (!String.IsNullOrEmpty (config.Host)) {
+                LockServerField = true;
+                serverField.Enabled = false;
+                serverField.BackgroundColor = serverField.BackgroundColor.ColorWithAlpha (0.6f);
+            }
+            if (!String.IsNullOrEmpty (config.Username)) {
+                LockUsernameField = true;
+                usernameField.Enabled = false;
+                usernameField.BackgroundColor = usernameField.BackgroundColor.ColorWithAlpha (0.6f);
+            }
+            if (!String.IsNullOrEmpty (config.Domain)) {
+                LockDomainField = true;
+                domainField.Enabled = false;
+                domainField.BackgroundColor = domainField.BackgroundColor.ColorWithAlpha (0.6f);
+            }
         }
 
         partial void textFieldChanged (Foundation.NSObject sender)
