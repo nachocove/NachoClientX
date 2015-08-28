@@ -29,6 +29,14 @@ namespace NachoCore.IMAP
             NcTask.Run (() => {
                 Event evt = ExecuteCommandInternal ();
                 if (!Cts.Token.IsCancellationRequested) {
+                    var protocolState = BEContext.ProtocolState;
+                    if (!protocolState.ImapDiscoveryDone) {
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.ImapDiscoveryDone = true;
+                            return true;
+                        });
+                    }
                     sm.PostEvent (evt);
                 }
             }, "ImapDiscoverCommand");
@@ -36,6 +44,8 @@ namespace NachoCore.IMAP
 
         private Event ExecuteCommandInternal ()
         {
+            bool Initial = BEContext.ProtocolState.ImapDiscoveryDone;
+
             Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
@@ -57,12 +67,21 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
                 errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL2", AutoDFailureReason.CannotFindServer);
+                // this can't (shouldn't?) really happen except if Initial=true
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
+                if (Initial) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPURICONF", AutoDFailureReason.CannotFindServer);
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPURLHARD");
+                }
                 errResult.Message = ex.Message;
             } catch (SocketException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
+                if (Initial) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMP");
+                }
                 errResult.Message = ex.Message;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: AuthenticationException {0}", ex.Message);
@@ -73,7 +92,7 @@ namespace NachoCore.IMAP
                 evt =  Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
                 errResult.Message = ex.Message;
             } catch (InvalidOperationException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
                 evt =  Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
                 errResult.Message = ex.Message;
             } catch (ImapProtocolException ex) {
@@ -90,12 +109,18 @@ namespace NachoCore.IMAP
                 errResult.Message = ex.Message;
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
+                if (Initial) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPUNKHARD");
+                }
                 errResult.Message = ex.Message;
             } finally {
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
             }
-            StatusInd (errResult);
+            if (Initial) {
+                StatusInd (errResult);
+            }
             return evt;
         }
 

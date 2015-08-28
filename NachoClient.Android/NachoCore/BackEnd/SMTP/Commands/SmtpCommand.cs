@@ -219,4 +219,22 @@ namespace NachoCore.SMTP
             Client.MailKitProtocolLogger.Stop ();
         }
     }
+
+    public class SmtpWaitCommand : SmtpCommand
+    {
+        NcCommand WaitCommand;
+        public SmtpWaitCommand (IBEContext dataSource, NcSmtpClient imap, int duration, bool earlyOnECChange) : base (dataSource, imap)
+        {
+            WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
+        }
+        public override void Execute (NcStateMachine sm)
+        {
+            WaitCommand.Execute (sm);
+        }
+        public override void Cancel ()
+        {
+            WaitCommand.Cancel ();
+        }
+    }
+
 }

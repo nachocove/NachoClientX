@@ -7,6 +7,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MailKit;
 using System.Net.Sockets;
+using NachoCore.Model;
 
 namespace NachoCore.SMTP
 {
@@ -23,6 +24,14 @@ namespace NachoCore.SMTP
             NcTask.Run (() => {
                 Event evt = ExecuteCommand ();
                 if (!Cts.Token.IsCancellationRequested) {
+                    var protocolState = BEContext.ProtocolState;
+                    if (!protocolState.SmtpDiscoveryDone) {
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.SmtpDiscoveryDone = true;
+                            return true;
+                        });
+                    }
                     sm.PostEvent (evt);
                 }
             }, "SmtpDiscoveryCommand");
@@ -30,6 +39,7 @@ namespace NachoCore.SMTP
 
         protected override Event ExecuteCommand ()
         {
+            bool Initial = BEContext.ProtocolState.SmtpDiscoveryDone;
             Log.Info (Log.LOG_SMTP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
@@ -52,12 +62,20 @@ namespace NachoCore.SMTP
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPDISCOCANCEL"); // will be ignored by the caller
                 errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
-                Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
-                evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL2", AutoDFailureReason.CannotFindServer);
+                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
+                if (Initial) {
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPURIFAIL", AutoDFailureReason.CannotFindServer);
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPURIHARD");
+                }
                 errResult.Message = ex.Message;
             } catch (SocketException ex) {
-                Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: SocketException: {0}", ex.Message);
-                evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: SocketException: {0}", ex.Message);
+                if (Initial) {
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCONNTEMP");
+                }
                 errResult.Message = ex.Message;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: AuthenticationException: {0}", ex.Message);
@@ -68,11 +86,11 @@ namespace NachoCore.SMTP
                 evt =  Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTHFAIL2");
                 errResult.Message = ex.Message;
             } catch (InvalidOperationException ex) {
-                Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: InvalidOperationException: {0}", ex.Message);
+                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: InvalidOperationException: {0}", ex.Message);
                 evt =  Event.Create ((uint)SmEvt.E.TempFail, "SMTPINVOPTEMP");
                 errResult.Message = ex.Message;
             } catch (SmtpProtocolException ex) {
-                Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: SmtpProtocolException: {0}", ex.Message);
+                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: SmtpProtocolException: {0}", ex.Message);
                 evt =  Event.Create ((uint)SmEvt.E.TempFail, "SMTPPROTOEXTEMP");
                 errResult.Message = ex.Message;
             } catch (SmtpCommandException ex) {
@@ -80,17 +98,23 @@ namespace NachoCore.SMTP
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCOMMEXTEMP");
                 errResult.Message = ex.Message;
             } catch (IOException ex) {
-                Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: IOException: {0}", ex.Message);
-                evt =  Event.Create ((uint)SmEvt.E.TempFail, "SMTPIOEXTEMP");
+                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: IOException: {0}", ex.Message);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPIOEXTEMP");
                 errResult.Message = ex.Message;
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: {0}", ex);
-                evt =  Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPSERVFAILUNDEF");
+                if (Initial) {
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPSERVFAILUNDEF");
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPUNKHARD");
+                }
                 errResult.Message = ex.Message;
             } finally {
                 Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
             }
-            StatusInd (errResult);
+            if (Initial) {
+                StatusInd (errResult);
+            }
             return evt;
         }
     }
