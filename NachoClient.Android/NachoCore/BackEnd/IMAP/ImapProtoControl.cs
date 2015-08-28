@@ -183,7 +183,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoWaitDisc, State = (uint)Lst.IdleW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoUiServConfReq, State = (uint)Lst.IdleW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
