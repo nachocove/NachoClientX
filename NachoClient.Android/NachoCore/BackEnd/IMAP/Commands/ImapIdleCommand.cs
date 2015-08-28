@@ -20,7 +20,7 @@ namespace NachoCore.IMAP
         {
             // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
             // for more inspiration
-            IdleFolder = McFolder.GetDefaultInboxFolder(BEContext.Account.Id);
+            IdleFolder = McFolder.GetDefaultInboxFolder(AccountId);
             NcAssert.NotNull (IdleFolder);
             RedactProtocolLogFunc = RedactProtocolLog;
         }
@@ -101,7 +101,7 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "{0}: flags for message {1} have changed to: {2}.",
                         IdleFolder.ImapFolderNameRedacted (), e.UniqueId, e.Flags);
                     McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (
-                        BEContext.Account.Id,
+                        AccountId,
                         ImapProtoControl.MessageServerId (IdleFolder, e.UniqueId.Value));
                     if (null != emailMessage) {
                         if (emailMessage.IsRead != e.Flags.HasFlag (MessageFlags.Seen)) {
