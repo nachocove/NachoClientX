@@ -115,7 +115,7 @@ namespace NachoCore.IMAP
             }
             bool changed = false;
             Event evt;
-            if (ImapStrategy.FillInQuickSyncKit (ref Synckit, BEContext.Account.Id, span)) {
+            if (ImapStrategy.FillInQuickSyncKit (ref Synckit, AccountId, span)) {
                 evt = syncFolder (mailKitFolder);
                 changed = true;
             } else {
