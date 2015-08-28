@@ -201,6 +201,21 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
+        /// Display a date that may or may not have a year associated with it, and for which the
+        /// day of the week is not important. For example, "August 27" or "August 27, 2000".
+        /// iOS uses a date in 1604 when the year doesn't matter, so leave off the year when the
+        /// date is earlier than 1700.
+        /// </summary>
+        static public string BirthdayOrAnniversary (DateTime d)
+        {
+            if (d.Year < 1700) {
+                return d.ToString ("MMMM d");
+            } else {
+                return d.ToString ("MMMM d, yyyy");
+            }
+        }
+
+        /// <summary>
         /// Compact version of event duration
         /// </summary>
         static public string PrettyEventDuration (DateTime startTime, DateTime endTime)
