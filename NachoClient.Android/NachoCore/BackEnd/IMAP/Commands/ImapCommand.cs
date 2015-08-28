@@ -37,7 +37,7 @@ namespace NachoCore.IMAP
             Client = imapClient;
             RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
-            DontReportCommResult = this is ImapDiscoverCommand;
+            DontReportCommResult = (this is ImapDiscoverCommand && !BEContext.ProtocolState.ImapDiscoveryDone);
         }
 
         // MUST be overridden by subclass.
@@ -153,6 +153,7 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
+                serverFailedGenerally = true;
             } catch (InvalidOperationException ex) {
                 Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
