@@ -505,6 +505,7 @@
     <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs" />
+    <Compile Include="NachoCore\Utils\TestMode.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
