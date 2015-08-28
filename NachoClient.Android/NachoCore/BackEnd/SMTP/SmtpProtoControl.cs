@@ -463,8 +463,8 @@ namespace NachoCore.SMTP
                 return;
             }
             BackEndStatePreset = BackEndStateEnum.Running;
-            var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
-            cmd.Execute (Sm);
+            SetCmd (new SmtpDiscoveryCommand (this, SmtpClient));
+            ExecuteCmd ();
         }
 
         private int DiscoveryRetries = 0;
