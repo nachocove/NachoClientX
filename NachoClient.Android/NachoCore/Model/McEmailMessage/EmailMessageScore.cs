@@ -180,12 +180,10 @@ namespace NachoCore.Model
                 Log.Error (Log.LOG_BRAIN, "Invalid score {0}\n{1}", score, new StackTrace (true));
                 score = 1.0;
             }
-            NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
+            NcTimeVarianceList tvList = EvaluateTimeVariance ();
             if (0 < tvList.Count) {
                 DateTime now = DateTime.UtcNow;
-                foreach (NcTimeVariance tv in tvList) {
-                    score *= tv.Adjustment (now);
-                }
+                score *= tvList.Adjustment (now);
             }
             return score;
         }
@@ -385,14 +383,12 @@ namespace NachoCore.Model
             }
             InitializeTimeVariance ();
             var newScore = Classify ();
-            var newState = TimeVarianceState;
             var newTYpe = TimeVarianceType;
             UpdateByBrain ((item) => {
                 var em = (McEmailMessage)item;
                 em.Score = newScore;
                 em.ScoreVersion = newScoreVersion;
                 em.NeedUpdate = 0;
-                em.TimeVarianceState = newState;
                 em.TimeVarianceType = newTYpe;
                 return true;
             });
@@ -533,9 +529,9 @@ namespace NachoCore.Model
         /// running. They just need to exist at point given the email parameters.
         /// </summary>
         /// <returns>List of NcTimeVariance objects</returns>
-        private NcTimeVariance.TimeVarianceList EvaluateTimeVariance ()
+        private NcTimeVarianceList EvaluateTimeVariance ()
         {
-            NcTimeVariance.TimeVarianceList tvList = new NcTimeVariance.TimeVarianceList ();
+            NcTimeVarianceList tvList = new NcTimeVarianceList ();
             DateTime deadline = DateTime.MinValue;
             DateTime deferredUntil = DateTime.MinValue;
 
@@ -579,26 +575,14 @@ namespace NachoCore.Model
         /// <returns><c>true</c>, if time variance was updated, <c>false</c> otherwise.</returns>
         /// <param name="tvList">A list of active time variance.</param>
         /// <param name="now">A timestamp to be used for finding next state for all tv.</param>
-        private bool UpdateTimeVarianceStates (NcTimeVariance.TimeVarianceList tvList, DateTime now)
+        private bool UpdateTimeVarianceStates (NcTimeVarianceList tvList, DateTime now)
         {
-            // If the list of active time variances is empty, then the message's score is
-            // stable.  This is indicated by a TimeVarianceType value of DONE.
-            //
-            // TODO The TimeVarianceType field used to be used for something else.  It has
-            // been repurposed for now, and is used like a boolean field.  The repurposing
-            // was done to avoid changing the database table layout.  This should be cleaned
-            // up in the Brain 2.0 work.
-
-            bool updated = false;
-            if (0 == tvList.Count && (int)NcTimeVarianceType.DONE != TimeVarianceType) {
-                TimeVarianceType = (int)NcTimeVarianceType.DONE;
-                updated = true;
+            var newType = tvList.LastTimeVarianceType (now);
+            if (TimeVarianceType == (int)newType) {
+                return false;
             }
-            if (0 < tvList.Count && (int)NcTimeVarianceType.DONE == TimeVarianceType) {
-                TimeVarianceType = (int)NcTimeVarianceType.NONE;
-                updated = true;
-            }
-            return updated;
+            TimeVarianceType = (int)newType;
+            return true;
         }
 
         private void InitializeTimeVariance ()
@@ -610,26 +594,20 @@ namespace NachoCore.Model
             }
 
             DateTime now = DateTime.Now;
-            NcTimeVariance.TimeVarianceList tvList;
-            tvList = EvaluateTimeVariance ().FilterStillRunning (now);
+            NcTimeVarianceList tvList = EvaluateTimeVariance ();
 
             /// Start all applicable state machines
-            if (0 < tvList.Count) {
-                foreach (NcTimeVariance tv in tvList) {
-                    tv.Start ();
-                }
-            } else {
+            if (!tvList.Start (now)) {
+                // All TV SMs finish for this email message. Compute the final score
                 Score = Classify ();
             }
 
             if (UpdateTimeVarianceStates (tvList, now)) {
                 var newScore = Score;
-                var newState = TimeVarianceState;
                 var newType = TimeVarianceType;
                 UpdateByBrain ((item) => {
                     var em = (McEmailMessage)item;
                     em.Score = newScore;
-                    em.TimeVarianceState = newState;
                     em.TimeVarianceType = newType;
                     return true;
                 });
@@ -706,8 +684,7 @@ namespace NachoCore.Model
 
             // Update time variance state if necessary
             DateTime now = DateTime.UtcNow;
-            NcTimeVariance.TimeVarianceList tvList =
-                emailMessage.EvaluateTimeVariance ().FilterStillRunning (now);
+            NcTimeVarianceList tvList = emailMessage.EvaluateTimeVariance ();
             bool fullUpdateNeeded = emailMessage.UpdateTimeVarianceStates (tvList, now);
 
             // Recompute a new score and update it in the cache
@@ -720,12 +697,10 @@ namespace NachoCore.Model
             if (fullUpdateNeeded || scoreChanged) {
                 emailMessage.NeedUpdate = 0;
                 if (fullUpdateNeeded) {
-                    var newState = emailMessage.TimeVarianceState;
                     var newType = emailMessage.TimeVarianceType;
                     emailMessage.UpdateByBrain ((item) => {
                         var em = (McEmailMessage)item;
                         em.Score = newScore;
-                        em.TimeVarianceState = newState;
                         em.TimeVarianceType = newType;
                         return true;
                     });
@@ -761,7 +736,7 @@ namespace NachoCore.Model
                 /// Throttle
                 n = (n + 1) % 8;
                 if (0 == n) {
-                    if (!NcTask.CancelableSleep (500, token)) {
+                    if (!NcTask.CancelableSleep (100, token)) {
                         break;
                     }
                 }

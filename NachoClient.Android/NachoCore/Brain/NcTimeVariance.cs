@@ -48,142 +48,19 @@ namespace NachoCore.Brain
 
         public static CurrentDateTimeFunction GetCurrentDateTime = PlatformGetCurrentDateTime;
 
-        /// A TimeVarianceList holds a list of NcTimeVariance derived objects for
-        /// one particular object (e.g one McEmailMessage)
-        public class TimeVarianceList : HashSet<NcTimeVariance>
-        {
-            public TimeVarianceList () : base (new NcTimeVarianceComparer ())
-            {
-            }
+        public NcTimeVarianceType Type { get; protected set; }
 
-            public NcTimeVariance TryGetType<T> ()
-            {
-                foreach (NcTimeVariance tv in this) {
-                    if (tv is T) {
-                        return tv;
-                    }
-                }
-                return null;
-            }
+        protected DateTime StartTime;
 
-            public TimeVarianceList FilterStillRunning (DateTime now)
-            {
-                TimeVarianceList tvList = new TimeVarianceList ();
-                foreach (NcTimeVariance tv in this) {
-                    DateTime lastEvent = tv.LastEventTime ();
-                    if (lastEvent > now) {
-                        tvList.Add (tv);
-                    }
-                }
-                return tvList;
+        protected virtual List<TimeSpan> TimeOffsets {
+            get {
+                throw new NotImplementedException ();
             }
         }
 
-        /// TimeVarianceTable holds a dictionary of TimeVarianceList
-        public class TimeVarianceTable : IEnumerable
-        {
-            private object _LockObj;
-
-            private object LockObj {
-                get {
-                    if (null == _LockObj) {
-                        _LockObj = new object ();
-                    }
-                    return _LockObj;
-                }
-                set {
-                    _LockObj = value;
-                }
-            }
-
-            private ConcurrentDictionary<string, TimeVarianceList> _TvLists;
-
-            private ConcurrentDictionary<string, TimeVarianceList> TvLists {
-                get {
-                    if (null == _TvLists) {
-                        _TvLists = new ConcurrentDictionary<string, TimeVarianceList> ();
-                    }
-                    return _TvLists;
-                }
-            }
-
-            public int Count {
-                get {
-                    int count = 0;
-                    lock (LockObj) {
-                        foreach (TimeVarianceList tvList in TvLists.Values) {
-                            count += tvList.Count;
-                        }
-                    }
-                    return count;
-                }
-            }
-
-            private TimeVarianceList AddList (string description)
-            {
-                lock (LockObj) {
-                    TimeVarianceList tvList = new TimeVarianceList ();
-                    if (TvLists.TryAdd (description, tvList)) {
-                        return tvList;
-                    }
-                    return GetList (description);
-                }
-            }
-
-            public TimeVarianceList GetList (string description)
-            {
-                TimeVarianceList tvList;
-                TvLists.TryGetValue (description, out tvList);
-                return tvList;
-            }
-
-            public bool RemoveList (string description, out TimeVarianceList tvList)
-            {
-                lock (LockObj) {
-                    return TvLists.TryRemove (description, out tvList);
-                }
-            }
-
-            public bool Add (NcTimeVariance tv)
-            {
-                lock (LockObj) {
-                    TimeVarianceList tvList = GetList (tv.Description);
-                    if (null == tvList) {
-                        tvList = AddList (tv.Description);
-                    }
-                    return tvList.Add (tv);
-                }
-            }
-
-            public bool Remove (NcTimeVariance tv)
-            {
-                lock (LockObj) {
-                    TimeVarianceList tvList = GetList (tv.Description);
-                    if (null == tvList) {
-                        return false;
-                    }
-                    bool removed = tvList.Remove (tv);
-                    if (0 == tvList.Count) {
-                        /// Remove the last element in the set. Get rid of the set itself
-                        TimeVarianceList dummy;
-                        RemoveList (tv.Description, out dummy);
-                    }
-                    return removed;
-                }
-            }
-
-            public IEnumerator GetEnumerator ()
-            {
-                foreach (TimeVarianceList tvList in TvLists.Values) {
-                    foreach (NcTimeVariance tv in tvList) {
-                        yield return tv;
-                    }
-                }
-            }
-
-            public void Clear ()
-            {
-                TvLists.Clear ();
+        protected virtual List<double> Factors {
+            get {
+                throw new NotImplementedException ();
             }
         }
 
@@ -223,7 +100,11 @@ namespace NachoCore.Brain
         }
 
         // The largest non-zero state. Advancing from this state goes to 0.
-        public int MaxState;
+        public int MaxState {
+            get {
+                return TimeOffsets.Count - 1;
+            }
+        }
 
         // The timer for keeping track of when the next event occurs.
         // In order to conserve memory, we only create the timer if
@@ -236,13 +117,7 @@ namespace NachoCore.Brain
             }
         }
 
-        protected string _Description { get; set; }
-
-        public string Description {
-            get {
-                return _Description;
-            }
-        }
+        public string Description { get; protected set; }
 
         public TimeVarianceCallBack CallBackFunction;
 
@@ -253,9 +128,12 @@ namespace NachoCore.Brain
         /// of adjustment (from 0.0 to 1.0) for each state.
         /// </summary>
         /// <param name="state">State.</param>
-        public virtual double Adjustment (int state)
+        public double Adjustment (int state)
         {
-            throw new NotImplementedException ("Adjustment");
+            if (state > MaxState) {
+                throw new IndexOutOfRangeException (GetType ().Name);
+            }
+            return Factors [state];
         }
 
         /// <summary>
@@ -266,12 +144,13 @@ namespace NachoCore.Brain
         /// <param name="state">State.</param>
         protected virtual DateTime NextEventTime (int state)
         {
-            throw new NotImplementedException ("NextEventTime");
-        }
-
-        public virtual NcTimeVarianceType TimeVarianceType ()
-        {
-            throw new NotImplementedException ("TimeVarianceType");
+            if (MaxState < state) {
+                throw new IndexOutOfRangeException (GetType ().Name);
+            }
+            if (0 == state) {
+                return DateTime.MinValue;
+            }
+            return StartTime + TimeOffsets [state];
         }
 
         public static DateTime PlatformGetCurrentDateTime ()
@@ -287,15 +166,16 @@ namespace NachoCore.Brain
         private void Initialize ()
         {
             _State = -1;
-            MaxState = 1;
         }
 
-        public NcTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId)
+        public NcTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, NcTimeVarianceType type, DateTime startTime)
         {
-            _Description = description;
+            Description = description;
             LockObj = new object ();
             CallBackFunction = callback;
             CallBackId = objId;
+            Type = type;
+            StartTime = startTime;
             Initialize ();
         }
 
@@ -387,7 +267,7 @@ namespace NachoCore.Brain
 
         public static void StopList (string description)
         {
-            TimeVarianceList tvList;
+            NcTimeVarianceList tvList;
             if (ActiveList.RemoveList (description, out tvList)) {
                 foreach (NcTimeVariance tv in tvList) {
                     tv.StopTimer ();
@@ -499,6 +379,11 @@ namespace NachoCore.Brain
             return retval;
         }
 
+        public bool ShouldRun (DateTime now)
+        {
+            return (LastEventTime () > now);
+        }
+
         public static void PauseAll ()
         {
             TimerPool.Pause ();
@@ -514,267 +399,278 @@ namespace NachoCore.Brain
     {
         public bool Equals (NcTimeVariance tv1, NcTimeVariance tv2)
         {
-            return tv1.TimeVarianceType () == tv2.TimeVarianceType ();
+            return tv1.Type == tv2.Type;
         }
 
         public int GetHashCode (NcTimeVariance tv)
         {
-            return (int)tv.TimeVarianceType ();
+            return (int)tv.Type;
         }
     }
 
     public class NcDeadlineTimeVariance : NcTimeVariance
     {
-        public DateTime Deadline;
+        protected static List<double> _Factors = new List<double> () {
+            0.1, // 0
+            1.0, // 1
+            0.7, // 2
+            0.4, // 3
+        };
 
-        public NcDeadlineTimeVariance (string description, TimeVarianceCallBack callback,
-                                       Int64 objId, DateTime deadline) : base (description, callback, objId)
-        {
-            Deadline = deadline;
-            MaxState = 3;
-        }
+        protected static List<TimeSpan> _TimeOffsets = new List<TimeSpan> () {
+            new TimeSpan (-1, 0, 0, 0), // 0
+            new TimeSpan (0, 0, 0, 0), // 1
+            new TimeSpan (1, 0, 0, 0), // 2
+            new TimeSpan (2, 0, 0, 0), // 3
+        };
 
-        public override NcTimeVarianceType TimeVarianceType ()
-        {
-            return NcTimeVarianceType.DEADLINE;
-        }
-
-        public override double Adjustment (int state)
-        {
-            double factor;
-            switch (state) {
-            case 0:
-                factor = 0.1;
-                break;
-            case 1:
-                factor = 1.0;
-                break;
-            case 2:
-                factor = 0.7;
-                break;
-            case 3:
-                factor = 0.4;
-                break;
-            default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown deadline state {0}", State));
+        protected override List<double> Factors {
+            get {
+                return _Factors;
             }
-            return factor;
         }
 
-        protected override DateTime NextEventTime (int state)
-        {
-            DateTime retval;
-            switch (state) {
-            case 0:
-                retval = new DateTime (0, 0, 0, 0, 0, 0);
-                break;
-            case 1:
-                retval = Deadline;
-                break;
-            case 2:
-                retval = SafeAddDateTime (Deadline, new TimeSpan (1, 0, 0, 0));
-                break;
-            case 3:
-                retval = SafeAddDateTime (Deadline, new TimeSpan (2, 0, 0, 0));
-                break;
-            default: 
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown deadline state {0}", State));
+        protected override List<TimeSpan> TimeOffsets {
+            get {
+                return _TimeOffsets;
             }
-            return LimitEventTime (retval);
+        }
+
+        public NcDeadlineTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, DateTime deadline)
+            : base (description, callback, objId, NcTimeVarianceType.DEADLINE, deadline)
+        {
         }
     }
 
     public class NcDeferenceTimeVariance : NcTimeVariance
     {
-        public DateTime DeferUntil { get; set; }
+        protected static List<double> _Factors = new List<double> {
+            1.0, // 0
+            0.1, // 1
+        };
 
-        public NcDeferenceTimeVariance (string description, TimeVarianceCallBack callback,
-                                        Int64 objId, DateTime deferUntil) : base (description, callback, objId)
-        {
-            DeferUntil = deferUntil;
-            MaxState = 1;
-        }
+        protected static List<TimeSpan> _TimeOffsets = new List<TimeSpan> {
+            new TimeSpan (-1, 0, 0, 0), // 0
+            new TimeSpan (0, 0, 0, 0), // 1
+        };
 
-        public override NcTimeVarianceType TimeVarianceType ()
-        {
-            return NcTimeVarianceType.DEFERENCE;
-        }
-
-        public override double Adjustment (int state)
-        {
-            double factor;
-            switch (state) {
-            case 0:
-                factor = 1.0;
-                break;
-            case 1:
-                factor = 0.1;
-                break;
-            default:
-                string mesg = String.Format ("unknown deference state {0}", State);
-                throw new NcAssert.NachoDefaultCaseFailure (mesg);
+        protected override List<double> Factors {
+            get {
+                return _Factors;
             }
-            return factor;
         }
 
-        protected override DateTime NextEventTime (int state)
-        {
-            DateTime retval;
-            switch (state) {
-            case 0:
-                retval = new DateTime (0, 0, 0, 0, 0, 0);
-                break;
-            case 1:
-                retval = DeferUntil;
-                break;
-            default:
-                string mesg = String.Format ("unknown deference state {0}", State);
-                throw new NcAssert.NachoDefaultCaseFailure (mesg);
+        protected override List<TimeSpan> TimeOffsets {
+            get {
+                return _TimeOffsets;
             }
-            return LimitEventTime (retval);
+        }
+
+        public NcDeferenceTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, DateTime deferUntil)
+            : base (description, callback, objId, NcTimeVarianceType.DEFERENCE, deferUntil)
+        {
         }
     }
 
     public class NcAgingTimeVariance : NcTimeVariance
     {
-        public DateTime StartTime { get; set; }
+        protected static List<double> _Factors = new List<double> {
+            0.1, // 0
+            1.0, // 1
+            0.8, // 2
+            0.7, // 3
+            0.6, // 4
+            0.5, // 5
+            0.4, // 6
+            0.3, // 7
+            0.2, // 8
+        };
 
-        public NcAgingTimeVariance (string description, TimeVarianceCallBack callback,
-                                    Int64 objId, DateTime startTime) : base (description, callback, objId)
-        {
-            StartTime = startTime;
-            MaxState = 8;
-        }
+        protected static List<TimeSpan> _TimeOffsets = new List<TimeSpan> {
+            new TimeSpan (-1, 0, 0, 0), // 0
+            new TimeSpan (7, 0, 0, 0), // 1
+            new TimeSpan (8, 0, 0, 0), // 2
+            new TimeSpan (9, 0, 0, 0), // 3
+            new TimeSpan (10, 0, 0, 0), // 4
+            new TimeSpan (11, 0, 0, 0), // 5
+            new TimeSpan (12, 0, 0, 0), // 6
+            new TimeSpan (13, 0, 0, 0), // 7
+            new TimeSpan (14, 0, 0, 0), // 8
+        };
 
-        public override NcTimeVarianceType TimeVarianceType ()
-        {
-            return NcTimeVarianceType.AGING;
-        }
-
-        public override double Adjustment (int state)
-        {
-            double factor;
-            switch (state) {
-            case 0:
-                factor = 0.1;
-                break;
-            case 1:
-                factor = 1.0;
-                break;
-            case 2:
-                factor = 0.8;
-                break;
-            case 3:
-                factor = 0.7;
-                break;
-            case 4:
-                factor = 0.6;
-                break;
-            case 5:
-                factor = 0.5;
-                break;
-            case 6:
-                factor = 0.4;
-                break;
-            case 7:
-                factor = 0.3;
-                break;
-            case 8:
-                factor = 0.2;
-                break;
-            default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown aging state {0}", state));
+        protected override List<double> Factors {
+            get {
+                return _Factors;
             }
-
-            return factor;
         }
 
-        protected override DateTime NextEventTime (int state)
-        {
-            DateTime retval;
-            switch (state) {
-            case 0:
-                retval = new DateTime (0, 0, 0, 0, 0, 0);
-                break;
-            case 1:
-                retval = SafeAddDateTime (StartTime, new TimeSpan (7, 0, 0, 0));
-                break;
-            case 2:
-                retval = SafeAddDateTime (StartTime, new TimeSpan (8, 0, 0, 0));
-                break;
-            case 3:
-                retval = SafeAddDateTime (StartTime, new TimeSpan (9, 0, 0, 0));
-                break;
-            case 4:
-                retval = SafeAddDateTime (StartTime, new TimeSpan (10, 0, 0, 0));
-                break;
-            case 5:
-                retval = SafeAddDateTime (StartTime, new TimeSpan (11, 0, 0, 0));
-                break;
-            case 6:
-                retval = SafeAddDateTime (StartTime, new TimeSpan (12, 0, 0, 0));
-                break;
-            case 7:
-                retval = SafeAddDateTime (StartTime, new TimeSpan (13, 0, 0, 0));
-                break;
-            case 8:
-                retval = SafeAddDateTime (StartTime, new TimeSpan (14, 0, 0, 0));
-                break;
-            default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown aging state {0}", State));
+        protected override List<TimeSpan> TimeOffsets {
+            get {
+                return _TimeOffsets;
             }
-            return retval;
+        }
+
+        public NcAgingTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, DateTime startTime)
+            : base (description, callback, objId, NcTimeVarianceType.AGING, startTime)
+        {
         }
     }
 
     public class NcMeetingTimeVariance : NcTimeVariance
     {
-        public DateTime EndTime { get; set; }
+        protected static List<double> _Factors = new List<double> {
+            0.05, // 0
+            1.0, // 1
+        };
 
-        public NcMeetingTimeVariance (string description, TimeVarianceCallBack callback,
-                                      Int64 objId, DateTime endTime) : base (description, callback, objId)
-        {
-            EndTime = endTime;
-            MaxState = 1;
-        }
+        protected static List<TimeSpan> _TimeOffsets = new List<TimeSpan> {
+            new TimeSpan (-1, 0, 0, 0), // 0
+            new TimeSpan (0, 0, 0, 0), // 1
+        };
 
-        public override NcTimeVarianceType TimeVarianceType ()
-        {
-            return NcTimeVarianceType.MEETING;
-        }
-
-        public override double Adjustment (int state)
-        {
-            double factor;
-            switch (state) {
-            case 0:
-                factor = 0.05;
-                break;
-            case 1:
-                factor = 1.0;
-                break;
-            default:
-                string mesg = String.Format ("unknown meeting state {0}", State);
-                throw new NcAssert.NachoDefaultCaseFailure (mesg);
+        protected override List<double> Factors {
+            get {
+                return _Factors;
             }
-            return factor;
         }
 
-        protected override DateTime NextEventTime (int state)
-        {
-            DateTime retval;
-            switch (state) {
-            case 0:
-                retval = new DateTime (0, 0, 0, 0, 0, 0);
-                break;
-            case 1:
-                retval = EndTime;
-                break;
-            default:
-                string mesg = String.Format ("unknown meeting state {0}", State);
-                throw new NcAssert.NachoDefaultCaseFailure (mesg);
+        protected override List<TimeSpan> TimeOffsets {
+            get {
+                return _TimeOffsets;
             }
-            return LimitEventTime (retval);
+        }
+
+        public NcMeetingTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, DateTime endTime)
+            : base (description, callback, objId, NcTimeVarianceType.MEETING, endTime)
+        {
+        }
+    }
+
+    /// A NcTimeVarianceSet holds a list of NcTimeVariance derived objects for
+    /// one particular object (e.g one McEmailMessage)
+    public class NcTimeVarianceList : HashSet<NcTimeVariance>
+    {
+        public NcTimeVarianceList () : base (new NcTimeVarianceComparer ())
+        {
+        }
+
+        public double Adjustment (DateTime now)
+        {
+            double adjustment = 1.0;
+            foreach (var tv in this) {
+                adjustment *= tv.Adjustment (now);
+            }
+            return adjustment;
+        }
+
+        public bool Start (DateTime now)
+        {
+            bool started = false;
+            foreach (var tv in this) {
+                if (tv.ShouldRun (now)) {
+                    tv.Start ();
+                    started = true;
+                }
+            }
+            return started;
+        }
+
+        public NcTimeVarianceType LastTimeVarianceType (DateTime now)
+        {
+            NcTimeVarianceType type = NcTimeVarianceType.DONE;
+            foreach (var tv in this) {
+                if (tv.ShouldRun (now)) {
+                    type = tv.Type;
+                }
+            }
+            return type;
+        }
+    }
+
+    /// TimeVarianceTable holds a dictionary of NcTimeVarianceSet
+    public class TimeVarianceTable : IEnumerable
+    {
+        private object LockObj = new object ();
+
+        private ConcurrentDictionary<string, NcTimeVarianceList> TvLists = new ConcurrentDictionary<string, NcTimeVarianceList> ();
+
+        public int Count {
+            get {
+                int count = 0;
+                lock (LockObj) {
+                    foreach (NcTimeVarianceList tvList in TvLists.Values) {
+                        count += tvList.Count;
+                    }
+                }
+                return count;
+            }
+        }
+
+        private NcTimeVarianceList AddList (string description)
+        {
+            lock (LockObj) {
+                NcTimeVarianceList tvList = new NcTimeVarianceList ();
+                if (TvLists.TryAdd (description, tvList)) {
+                    return tvList;
+                }
+                return GetList (description);
+            }
+        }
+
+        public NcTimeVarianceList GetList (string description)
+        {
+            NcTimeVarianceList tvList;
+            TvLists.TryGetValue (description, out tvList);
+            return tvList;
+        }
+
+        public bool RemoveList (string description, out NcTimeVarianceList tvList)
+        {
+            lock (LockObj) {
+                return TvLists.TryRemove (description, out tvList);
+            }
+        }
+
+        public bool Add (NcTimeVariance tv)
+        {
+            lock (LockObj) {
+                NcTimeVarianceList tvList = GetList (tv.Description);
+                if (null == tvList) {
+                    tvList = AddList (tv.Description);
+                }
+                return tvList.Add (tv);
+            }
+        }
+
+        public bool Remove (NcTimeVariance tv)
+        {
+            lock (LockObj) {
+                NcTimeVarianceList tvList = GetList (tv.Description);
+                if (null == tvList) {
+                    return false;
+                }
+                bool removed = tvList.Remove (tv);
+                if (0 == tvList.Count) {
+                    /// Remove the last element in the set. Get rid of the set itself
+                    NcTimeVarianceList dummy;
+                    RemoveList (tv.Description, out dummy);
+                }
+                return removed;
+            }
+        }
+
+        public IEnumerator GetEnumerator ()
+        {
+            foreach (NcTimeVarianceList tvList in TvLists.Values) {
+                foreach (NcTimeVariance tv in tvList) {
+                    yield return tv;
+                }
+            }
+        }
+
+        public void Clear ()
+        {
+            TvLists.Clear ();
         }
     }
 }
