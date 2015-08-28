@@ -36,11 +36,11 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            var emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
+            var emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, PendingSingle.ServerId);
             NcAssert.NotNull (emailMessage);
-            McFolder src = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ParentId);
+            McFolder src = McFolder.QueryByServerId<McFolder> (AccountId, PendingSingle.ParentId);
             NcAssert.NotNull (src);
-            McFolder dst = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.DestParentId);
+            McFolder dst = McFolder.QueryByServerId<McFolder> (AccountId, PendingSingle.DestParentId);
             NcAssert.NotNull (dst);
 
             var result = MoveEmail (emailMessage, src, dst, Cts.Token);
