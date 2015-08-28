@@ -1,12 +1,8 @@
 // # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
-using System.Threading.Tasks;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -137,9 +133,7 @@ namespace NachoCore.ActiveSync
 
         public AsProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
-            ProtoControl = this;
             Capabilities = McAccount.ActiveSyncCapabilities;
-            SetupAccount ();
             /*
              * State Machine design:
              * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
@@ -711,8 +705,6 @@ namespace NachoCore.ActiveSync
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new AsStrategy (this);
             PushAssist = new PushAssist (this);
-            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
             NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
@@ -722,8 +714,6 @@ namespace NachoCore.ActiveSync
                 Log.Warn (Log.LOG_IMAP, "AsProtoControl.Remove called while state is {0}", Sm.State);
             }
             // TODO cleanup stuff on disk like for wipe.
-            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();
@@ -1159,43 +1149,7 @@ namespace NachoCore.ActiveSync
                 Validator = null;
             }
         }
-
-        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
-        {
-            if (null == Server) {
-                // This can happen when we're in AUTO-D and another account's server goes sideways.
-                return;
-            }
-            if (e.ServerId == Server.Id) {
-                switch (e.Quality) {
-                case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality OK.", Server.Host);
-                    Execute ();
-                    break;
-
-                default:
-                case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality degraded.", Server.Host);
-                    break;
-
-                case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality unusable.", Server.Host);
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
-                    break;
-                }
-            }
-        }
-
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
-        {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                Execute ();
-            } else {
-                // The "Down" case.
-                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
-            }
-        }
-
+            
         public void StatusIndEventHandler (Object sender, EventArgs ea)
         {
             var siea = (StatusIndEventArgs)ea;

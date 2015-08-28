@@ -134,9 +134,7 @@ namespace NachoCore.IMAP
 
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
-            ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
-            SetupAccount ();
             MainClient = new NcImapClient ();
             NcCapture.AddKind (KImapStrategyPick);
 
@@ -432,9 +430,6 @@ namespace NachoCore.IMAP
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new ImapStrategy (this);
             PushAssist = new PushAssist (this);
-            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
-            NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
         // State-machine's state persistance callback.
@@ -462,42 +457,6 @@ namespace NachoCore.IMAP
             }
             LastIsDoNotDelayOk = IsDoNotDelayOk;
         }
-
-        #region NcCommStatus
-
-        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
-        {
-            if (e.ServerId == Server.Id) {
-                switch (e.Quality) {
-                case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_IMAP, "Server {0} communication quality OK.", Server.Host);
-                    Execute ();
-                    break;
-
-                default:
-                case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_IMAP, "Server {0} communication quality degraded.", Server.Host);
-                    break;
-
-                case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_IMAP, "Server {0} communication quality unusable.", Server.Host);
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
-                    break;
-                }
-            }
-        }
-
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
-        {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                Execute ();
-            } else {
-                // The "Down" case.
-                Sm.PostEvent ((uint)PcEvt.E.Park, "IMEHPARK");
-            }
-        }
-
-        #endregion
 
         public void StatusIndEventHandler (Object sender, EventArgs ea)
         {
@@ -534,8 +493,6 @@ namespace NachoCore.IMAP
                 Log.Warn (Log.LOG_IMAP, "ImapProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
             }
             // TODO cleanup stuff on disk like for wipe.
-            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();
@@ -584,10 +541,12 @@ namespace NachoCore.IMAP
         {
             Log.Info (Log.LOG_SMTP, "IMAP DoDisc Attempt {0}", DiscoveryRetries++);
             if (DiscoveryRetries >= KDiscoveryMaxRetries) {
-                var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
-                err.Message = "Too many failures";
-                StatusInd (err);
-                Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC");
+                if (!ProtocolState.ImapDiscoveryDone) {
+                    var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+                    err.Message = "Too many failures";
+                    StatusInd (err);
+                    Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC");
+                }
             } else {
                 DoDisc ();
             }

@@ -19,11 +19,15 @@ namespace NachoCore.SMTP
         public NcSmtpClient Client { get; set; }
 
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
+        protected bool DontReportCommResult { get; set; }
+        public INcCommStatus NcCommStatusSingleton { set; get; }
 
         public SmtpCommand (IBEContext beContext, NcSmtpClient smtpClient) : base (beContext)
         {
             Client = smtpClient;
             RedactProtocolLogFunc = null;
+            NcCommStatusSingleton = NcCommStatus.Instance;
+            DontReportCommResult = this is SmtpDiscoveryCommand;
         }
 
         // MUST be overridden by subclass.
@@ -74,6 +78,7 @@ namespace NachoCore.SMTP
             NcTask.Run (() => {
                 Event evt;
                 Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
+                bool serverFailedGenerally = false;
 
                 Log.Info (Log.LOG_SMTP, "{0}({1}): Started", cmdname, BEContext.Account.Id);
                 try {
@@ -89,6 +94,7 @@ namespace NachoCore.SMTP
                     Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.InvalidDest);
                     evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                    serverFailedGenerally = true;
                 } catch (ServiceNotConnectedException) {
                     // FIXME - this needs to feed into NcCommStatus, not loop forever.
                     Log.Info (Log.LOG_SMTP, "{0}: ServiceNotConnectedException", cmdname);
@@ -122,10 +128,14 @@ namespace NachoCore.SMTP
                     Log.Info (Log.LOG_SMTP, "{0}: IOException: {1}", cmdname, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPIO");
+                    serverFailedGenerally = true;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_SMTP, "{0}: Exception : {1}", cmdname, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPHARD2");
+                    serverFailedGenerally = true;
+                } finally {
+                    ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                 }
 
                 if (Cts.Token.IsCancellationRequested) {
@@ -145,6 +155,13 @@ namespace NachoCore.SMTP
                 }
                 sm.PostEvent (evt);
             }, cmdname);
+        }
+
+        protected void ReportCommResult (string host, bool didFailGenerally)
+        {
+            if (!DontReportCommResult) {
+                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, host, didFailGenerally);
+            }
         }
 
         public void ConnectAndAuthenticate ()
