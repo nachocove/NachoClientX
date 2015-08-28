@@ -1209,8 +1209,8 @@ namespace NachoCore.ActiveSync
                 // Do don't obey rate-limiter if HotMail.
                 if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id) &&
                     BEContext.ProtocolState.HasBeenRateLimited &&
-                    !BEContext.Server.HostIsHotMail () &&
-                    !BEContext.Server.HostIsGMail ()) {
+                    !BEContext.Server.HostIsAsHotMail () &&
+                    !BEContext.Server.HostIsAsGMail ()) {
                     var rlPingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders, false);
                     if (null != rlPingKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");

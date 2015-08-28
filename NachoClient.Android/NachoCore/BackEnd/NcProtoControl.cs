@@ -272,7 +272,7 @@ namespace NachoCore
                     return;
                 }
                 McPending markUpdate = null;
-                if (McPending.Operations.EmailMove == op && Server.HostIsGMail ()) {
+                if (McPending.Operations.EmailMove == op && Server.HostIsAsGMail ()) {
                     // Need to make sure the email is marked read to get it out of GFE Inbox.
                     var emailMessage = item as McEmailMessage;
                     if (null != emailMessage && !emailMessage.IsRead) {
