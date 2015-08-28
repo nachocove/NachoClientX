@@ -13,12 +13,20 @@ namespace NachoCore.Utils
         // All test mode commands must be prefix by this pattern
         private string Prefix = "###";
 
-        private static TestMode _Instance = new TestMode ();
+        private static volatile object LockObj = new object ();
+        private static TestMode _Instance;
 
         protected ConcurrentDictionary<string, TestModeAction> CommandTable;
 
         public static TestMode Instance {
             get {
+                if (null == _Instance) {
+                    lock (LockObj) {
+                        if (null == _Instance) {
+                            _Instance = new TestMode ();
+                        }
+                    }
+                }
                 return _Instance;
             }
         }
