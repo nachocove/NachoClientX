@@ -16,13 +16,15 @@ namespace NachoClient.iOS
     /// </summary>
     public abstract class BodyWebView : UIWebView, IBodyRender
     {
+        public delegate void LinkSelectedCallback (NSUrl url);
+
         protected NSUrl baseUrl;
         protected nfloat preferredWidth;
         private Action sizeChangedCallback;
         private bool loadingComplete;
-        private BodyView.LinkSelectedCallback onLinkSelected;
+        private LinkSelectedCallback onLinkSelected;
 
-        public BodyWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+        public BodyWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, NSUrl baseUrl, LinkSelectedCallback onLinkSelected)
             : base (new CGRect(0, Y, preferredWidth, initialHeight))
         {
             this.baseUrl = baseUrl;
@@ -163,7 +165,7 @@ namespace NachoClient.iOS
         private const string disableJavaScript = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
         private const string wrapPre = "<style>pre { white-space: pre-wrap;}</style>";
 
-        public BodyHtmlWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+        public BodyHtmlWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl, BodyWebView.LinkSelectedCallback onLinkSelected)
             : base (Y, preferredWidth, initialHeight, sizeChangedCallback, baseUrl, onLinkSelected)
         {
             this.html = html;
@@ -191,7 +193,7 @@ namespace NachoClient.iOS
     {
         private string rtf;
 
-        public BodyRtfWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string rtf, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+        public BodyRtfWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string rtf, NSUrl baseUrl, BodyWebView.LinkSelectedCallback onLinkSelected)
             : base (Y, preferredWidth, initialHeight, sizeChangedCallback, baseUrl, onLinkSelected)
         {
             this.rtf = rtf;
@@ -227,7 +229,7 @@ namespace NachoClient.iOS
             css.innerHTML = ""pre { font-family: AvenirNext-Regular,Helvetia,sans-serif; font-size: 17px; }"";
             document.getElementsByTagName('head')[0].appendChild(css);";
 
-        public BodyPlainWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string text, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+        public BodyPlainWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string text, NSUrl baseUrl, BodyWebView.LinkSelectedCallback onLinkSelected)
             : base (Y, preferredWidth, initialHeight, sizeChangedCallback, baseUrl, onLinkSelected)
         {
             this.text = text;
