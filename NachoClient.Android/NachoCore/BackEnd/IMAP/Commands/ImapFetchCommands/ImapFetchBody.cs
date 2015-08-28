@@ -201,10 +201,7 @@ namespace NachoCore.IMAP
                     }
                 }
             } catch (ArgumentException) {
-                // happens if there was nothing written to the stream.
-                if (bytes_written != 0) {
-                    throw;
-                }
+                // happens if there was nothing written to the stream, or MimeKit tries to convert with an empty buffer
             }
         }
 
