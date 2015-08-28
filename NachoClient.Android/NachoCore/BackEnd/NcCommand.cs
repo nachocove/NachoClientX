@@ -34,6 +34,12 @@ namespace NachoCore
             CannotFindServer
         };
 
+        protected enum ResolveAction {
+            None,
+            DeferAll,
+            FailAll,
+        }
+
         public NcCommand (IBEContext beContext)
         {
             Cts = new CancellationTokenSource ();

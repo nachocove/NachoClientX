@@ -193,28 +193,35 @@ namespace NachoCore.Utils
             evt.Organizer = new Organizer (c.OrganizerEmail);
             evt.Organizer.CommonName = c.OrganizerName;
             foreach (var mcAttendee in attendees) {
-                var iAttendee = new Attendee (EmailHelper.MailToUri (mcAttendee.Email));
-                NcAssert.True (null != mcAttendee.Name);
-                iAttendee.CommonName = mcAttendee.Name;
-                NcAssert.True (mcAttendee.AttendeeTypeIsSet);
-                switch (mcAttendee.AttendeeType) {
-                case NcAttendeeType.Required:
-                    iAttendee.RSVP = c.ResponseRequestedIsSet && c.ResponseRequested;
-                    iAttendee.Role = "REQ-PARTICIPANT";
-                    iAttendee.ParticipationStatus = DDay.iCal.ParticipationStatus.NeedsAction;
-                    iAttendee.Type = "INDIVIDUAL";
-                    break;
-                case NcAttendeeType.Optional:
-                    iAttendee.RSVP = c.ResponseRequestedIsSet && c.ResponseRequested;
-                    iAttendee.Role = "OPT-PARTICIPANT";
-                    iAttendee.ParticipationStatus = DDay.iCal.ParticipationStatus.NeedsAction;
-                    iAttendee.Type = "INDIVIDUAL";
-                    break;
-                case NcAttendeeType.Unknown:
-                    iAttendee.Role = "NON-PARTICIPANT";
-                    break;
+                try {
+                    var iAttendee = new Attendee (EmailHelper.MailToUri (mcAttendee.Email));
+                    NcAssert.True (null != mcAttendee.Name);
+                    iAttendee.CommonName = mcAttendee.Name;
+                    NcAssert.True (mcAttendee.AttendeeTypeIsSet);
+                    switch (mcAttendee.AttendeeType) {
+                    case NcAttendeeType.Required:
+                        iAttendee.RSVP = c.ResponseRequestedIsSet && c.ResponseRequested;
+                        iAttendee.Role = "REQ-PARTICIPANT";
+                        iAttendee.ParticipationStatus = DDay.iCal.ParticipationStatus.NeedsAction;
+                        iAttendee.Type = "INDIVIDUAL";
+                        break;
+                    case NcAttendeeType.Optional:
+                        iAttendee.RSVP = c.ResponseRequestedIsSet && c.ResponseRequested;
+                        iAttendee.Role = "OPT-PARTICIPANT";
+                        iAttendee.ParticipationStatus = DDay.iCal.ParticipationStatus.NeedsAction;
+                        iAttendee.Type = "INDIVIDUAL";
+                        break;
+                    case NcAttendeeType.Unknown:
+                        iAttendee.Role = "NON-PARTICIPANT";
+                        break;
+                    }
+                    evt.Attendees.Add (iAttendee);
+                } catch (UriFormatException e) {
+                    // The McAttendee somehow got an e-mail address that can't be parsed as an e-mail address.
+                    // I'm not sure how that happened, but it shouldn't crash the app.  Just ignore this
+                    // attendee.
+                    Log.Error (Log.LOG_CALENDAR, "McAttendee email address {0} could not be parsed: {1}", mcAttendee.Email, e.Message);
                 }
-                evt.Attendees.Add (iAttendee);
             }
         }
 

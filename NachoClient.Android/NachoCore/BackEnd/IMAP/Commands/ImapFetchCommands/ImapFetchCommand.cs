@@ -51,18 +51,19 @@ namespace NachoCore.IMAP
                 result = NcResult.Error ("Unknown operation");
             }
 
-            if (result.isInfo ()) {
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl, result);
-                });
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
-            } else {
-                NcAssert.True (result.isError ());
+            if (result.isError ()) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result.Message);
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, result);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
+            } else {
+                if (result.isInfo ()) {
+                    PendingResolveApply ((pending) => {
+                        pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                    });
+                }
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
             }
         }
 

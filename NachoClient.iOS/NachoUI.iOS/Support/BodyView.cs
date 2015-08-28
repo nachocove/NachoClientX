@@ -19,6 +19,19 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
+    public interface IBodyViewOwner
+    {
+        // Called when the size of the BodyView changes, allowing the parent view to adjust accordingly.
+        void SizeChanged ();
+
+        // Called when the user taps a link somewhere within the BodyView.  The parent view is expected
+        // to handle the link.
+        void LinkSelected (NSUrl url);
+
+        // Called when the parent view should be dismissed.  The parent view may ignore this request.
+        void DismissView ();
+    }
+
     public class BodyView : UIView
     {
         // Which kind of BodyView is this?
@@ -44,10 +57,7 @@ namespace NachoClient.iOS
         private UITapGestureRecognizer.Token retryDownloadGestureRecognizerToken;
 
         // Other stuff
-        public delegate void LinkSelectedCallback (NSUrl url);
-
-        private LinkSelectedCallback onLinkSelected;
-        private Action sizeChangedCallback = null;
+        private IBodyViewOwner owner;
         private string downloadToken = null;
         private bool statusIndicatorIsRegistered = false;
         private bool waitingForAppInForeground = false;
@@ -59,13 +69,12 @@ namespace NachoClient.iOS
         /// </summary>
         /// <returns>A new BodyView object that still needs to be configured.</returns>
         /// <param name="frame">The location and size of the BodyView.</param>
-        public static BodyView FixedSizeBodyView (CGRect frame, Action sizeChangedCallback, LinkSelectedCallback onLinkSelected)
+        public static BodyView FixedSizeBodyView (CGRect frame, IBodyViewOwner owner)
         {
             BodyView newBodyView = new BodyView (frame);
             newBodyView.variableHeight = false;
             newBodyView.visibleArea = frame.Size;
-            newBodyView.sizeChangedCallback = sizeChangedCallback;
-            newBodyView.onLinkSelected = onLinkSelected;
+            newBodyView.owner = owner;
             newBodyView.UserInteractionEnabled = false;
             return newBodyView;
         }
@@ -79,13 +88,12 @@ namespace NachoClient.iOS
         /// <param name="preferredWidth">The preferred width of the BodyView.</param>
         /// <param name="visibleArea">The maximum amount of space that is visible at one time in the parent view.</param>
         /// <param name="sizeChangedCallback">A function to call when the size of the BodyView changes.</param>
-        public static BodyView VariableHeightBodyView (CGPoint location, nfloat preferredWidth, CGSize visibleArea, Action sizeChangedCallback, LinkSelectedCallback onLinksSelected)
+        public static BodyView VariableHeightBodyView (CGPoint location, nfloat preferredWidth, CGSize visibleArea, IBodyViewOwner owner)
         {
             BodyView newBodyView = new BodyView (new CGRect (location.X, location.Y, preferredWidth, 1));
             newBodyView.variableHeight = true;
             newBodyView.visibleArea = visibleArea;
-            newBodyView.sizeChangedCallback = sizeChangedCallback;
-            newBodyView.onLinkSelected = onLinksSelected;
+            newBodyView.owner = owner;
             return newBodyView;
         }
 
@@ -214,9 +222,7 @@ namespace NachoClient.iOS
                 Configure (refreshedItem, false);
                 // Configure() normally doesn't call the parent view's callback. But because
                 // the download completed in the background, that callback needs to be called.
-                if (null != sizeChangedCallback) {
-                    sizeChangedCallback ();
-                }
+                owner.SizeChanged ();
             }
         }
 
@@ -378,9 +384,7 @@ namespace NachoClient.iOS
         public void LayoutAndNotifyParent ()
         {
             if (LayoutAndDetectSizeChange ()) {
-                if (null != sizeChangedCallback) {
-                    sizeChangedCallback ();
-                }
+                owner.SizeChanged ();
             }
         }
 
@@ -514,6 +518,16 @@ namespace NachoClient.iOS
             }
         }
 
+        private void onLinkSelected (NSUrl url)
+        {
+            owner.LinkSelected (url);
+        }
+
+        private void onDismissView ()
+        {
+            owner.DismissView ();
+        }
+
         private void RenderTextString (string text)
         {
             if (string.IsNullOrWhiteSpace (text)) {
@@ -582,7 +596,7 @@ namespace NachoClient.iOS
 
         private void RenderCalendarPart ()
         {
-            var calView = new BodyCalendarView (yOffset, preferredWidth, (McEmailMessage)item, !UserInteractionEnabled);
+            var calView = new BodyCalendarView (yOffset, preferredWidth, (McEmailMessage)item, !UserInteractionEnabled, onDismissView, onLinkSelected);
             AddSubview (calView);
             childViews.Add (calView);
             yOffset += calView.Frame.Height;
@@ -663,17 +677,20 @@ namespace NachoClient.iOS
     /// will be the only thing within the scroll view.  This is designed to be used within
     /// the Nacho Hot view.
     /// </summary>
-    public class ScrollableBodyView : UIScrollView
+    public class ScrollableBodyView : UIScrollView, IBodyViewOwner
     {
         private BodyView bodyView;
+        private IBodyViewOwner owner;
         private int displayedBodyId = 0;
 
         /// <summary>
         /// Create a scrollable BodyView with the given frame.
         /// </summary>
-        public ScrollableBodyView (CGRect frame, BodyView.LinkSelectedCallback onLinkSelected)
+        public ScrollableBodyView (CGRect frame, IBodyViewOwner owner)
             : base (frame)
         {
+            this.owner = owner;
+
             // UIScrollView comes with a gesture recognizer for scrolling.
             // Change it to use two fingers instead of one.
             PanGestureRecognizer.MinimumNumberOfTouches = 2;
@@ -682,7 +699,7 @@ namespace NachoClient.iOS
             ScrollsToTop = false;
 
             Scrolled += ScrollViewScrolled;
-            bodyView = BodyView.FixedSizeBodyView (new CGRect (0, 0, frame.Width, frame.Height), BodyViewSizeChanged, onLinkSelected);
+            bodyView = BodyView.FixedSizeBodyView (new CGRect (0, 0, frame.Width, frame.Height), this);
             AddSubview (bodyView);
         }
 
@@ -716,6 +733,22 @@ namespace NachoClient.iOS
         private void BodyViewSizeChanged ()
         {
             ContentSize = bodyView.Frame.Size;
+        }
+
+        void IBodyViewOwner.SizeChanged ()
+        {
+            ContentSize = bodyView.Frame.Size;
+            owner.SizeChanged ();
+        }
+
+        void IBodyViewOwner.LinkSelected (NSUrl url)
+        {
+            owner.LinkSelected (url);
+        }
+
+        void IBodyViewOwner.DismissView ()
+        {
+            owner.DismissView ();
         }
 
         // I'm not sure exactly how this works, but it seems to do what we want.

@@ -95,64 +95,81 @@ namespace NachoCore.IMAP
 
         public void ExecuteNoTask(NcStateMachine sm)
         {
+            Event evt;
+            Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
             Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
             try {
-                Event evt = ExecuteConnectAndAuthEvent();
+                evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
-                sm.PostEvent (evt);
-            } catch (CommandLockTimeOutException ex) {
-                Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
+                Cts.Token.ThrowIfCancellationRequested ();
             } catch (OperationCanceledException) {
                 Log.Info (Log.LOG_IMAP, "OperationCanceledException");
                 ResolveAllDeferred ();
                 // No event posted to SM if cancelled.
+                return;
+            } catch (CommandLockTimeOutException ex) {
+                Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
             } catch (ServiceNotConnectedException) {
                 // FIXME - this needs to feed into NcCommStatus, not loop forever.
                 Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
             } catch (AuthenticationException) {
                 Log.Info (Log.LOG_IMAP, "AuthenticationException");
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
             } catch (ServiceNotAuthenticatedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
             } catch (IOException ex) {
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPIO");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIO");
             } catch (ImapProtocolException ex) {
                 // From MailKit: The exception that is thrown when there is an error communicating with an IMAP server. A
                 // <see cref="ImapProtocolException"/> is typically fatal and requires the <see cref="ImapClient"/>
                 // to be reconnected.
                 Log.Info (Log.LOG_IMAP, "ImapProtocolException: {0}", ex.ToString ());
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPPROTOTEMPFAIL");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOTEMPFAIL");
             } catch (SocketException ex) {
                 // We check the server connectivity pretty well in Discovery. If this happens with
                 // other commands, it's probably a temporary failure.
                 Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
             } catch (InvalidOperationException ex) {
                 Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
-                ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD1");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD1");
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
-                ResolveAllFailed (NcResult.WhyEnum.Unknown);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
-            } finally {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             }
+            if (Cts.Token.IsCancellationRequested) {
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, BEContext.Account.Id);
+                return;
+            }
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
+            switch (action.Item1) {
+            case ResolveAction.None:
+                break;
+            case ResolveAction.DeferAll:
+                ResolveAllDeferred ();
+                break;
+            case ResolveAction.FailAll:
+                ResolveAllFailed (action.Item2);
+                break;
+            }
+            sm.PostEvent (evt);
         }
 
         public void ConnectAndAuthenticate ()
@@ -191,16 +208,20 @@ namespace NachoCore.IMAP
                             break;
                         } catch (ImapProtocolException e) {
                             Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", e);
-                            // some servers (icloud.com) seem to close the connection on a bad password/username.
-                            throw new AuthenticationException (ex.Message);
+                            if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.iCloud) {
+                                // some servers (icloud.com) seem to close the connection on a bad password/username.
+                                throw new AuthenticationException (e.Message);
+                            } else {
+                                throw;
+                            }
                         }
                     } catch (AuthenticationException e) {
                         ex = e;
-                        Log.Warn (Log.LOG_IMAP, "AuthenticationException: {0}", e.Message);
+                        Log.Info (Log.LOG_IMAP, "ConnectAndAuthenticate: AuthenticationException: (i={0}) {1}", i, e.Message);
                         continue;
                     } catch (ServiceNotAuthenticatedException e) {
                         ex = e;
-                        Log.Warn (Log.LOG_IMAP, "ServiceNotAuthenticatedException: {0}", e.Message);
+                        Log.Info (Log.LOG_IMAP, "ConnectAndAuthenticate: ServiceNotAuthenticatedException: (i={0}) {1}", i, e.Message);
                         continue;
                     }
                 }
@@ -419,7 +440,7 @@ namespace NachoCore.IMAP
         {
             using (var filtered = new FilteredStream (outStream)) {
                 filtered.Add (DecoderFilter.Create (TransferEncoding));
-                if (string.IsNullOrEmpty (CharSet)) {
+                if (!string.IsNullOrEmpty (CharSet)) {
                     try {
                         filtered.Add (new CharsetFilter (CharSet, "utf-8"));
                     } catch (NotSupportedException ex) {

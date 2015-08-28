@@ -362,7 +362,6 @@ namespace NachoCore.SMTP
                             (uint)PcEvt.E.Park,
                         },
                         Invalid = new uint[] {
-                            (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmtpEvt.E.AuthFail,
@@ -372,6 +371,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.GetServConf,
                         },
                         On = new Trans[] {
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
@@ -458,6 +458,10 @@ namespace NachoCore.SMTP
             //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
+            if (null != Cmd && Cmd is SmtpDiscoveryCommand) {
+                // a SmtpDiscoveryCommand is already running.
+                return;
+            }
             BackEndStatePreset = BackEndStateEnum.Running;
             var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
             cmd.Execute (Sm);
@@ -600,9 +604,9 @@ namespace NachoCore.SMTP
             // pending that aren't allowed to be delayed.
             SetCmd (null);
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            lock (SmtpClient.SyncRoot) {
-                SmtpClient.Disconnect (true);
-            }
+
+            var disconnect = new SmtpDisconnectCommand (this, SmtpClient);
+            disconnect.Execute (this.Sm);
         }
 
         private void DoDrive ()
