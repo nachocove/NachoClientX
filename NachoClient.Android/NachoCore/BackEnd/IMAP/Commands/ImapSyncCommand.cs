@@ -98,20 +98,24 @@ namespace NachoCore.IMAP
             return evt;
         }
 
+        /// <summary>
+        /// A sort of 'macro' method. This assumes that the Folder Metadata is out of date (or has never been retrieved)
+        /// so we do that first. Then we call back into strategy to let it decide what it wants us to do, and finally
+        /// we do it (if there's something to do).
+        /// </summary>
+        /// <returns>The Event to post</returns>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="span">Span.</param>
+        /// <param name="timespan">Timespan.</param>
         private Event QuickSync (NcImapFolder mailKitFolder, uint span, TimeSpan timespan)
         {
             if (!GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan)) {
                 Log.Warn (Log.LOG_IMAP, "Could not get folder metadata");
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL1");
             }
-            var syncSet = ImapStrategy.QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
-            var uploadMessages = McEmailMessage.QueryImapMessagesToSend (BEContext.Account.Id, Synckit.Folder.Id, span);
             bool changed = false;
             Event evt;
-            if ((null != syncSet && syncSet.Any ()) ||
-                (null != uploadMessages && uploadMessages.Any ())) {
-                Synckit.SyncSet = syncSet;
-                Synckit.UploadMessages = uploadMessages;
+            if (ImapStrategy.FillInQuickSyncKit (ref Synckit, BEContext.Account.Id, span)) {
                 evt = syncFolder (mailKitFolder);
                 changed = true;
             } else {
@@ -339,7 +343,7 @@ namespace NachoCore.IMAP
             McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
             if (null != emailMessage) {
                 try {
-                    changed = updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                    changed = UpdateEmailMetaData (emailMessage, imapSummary);
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception updating: {0}", ex.ToString ());
                 }
@@ -407,8 +411,10 @@ namespace NachoCore.IMAP
                 EmailMessage = EmailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                     var target = (McEmailMessage)record;
                     target.ImapUid = uid.Value.Id;
+                    target.ServerId = ImapProtoControl.MessageServerId (Synckit.Folder, uid.Value);
                     return true;
                 });
+                EmailMessage = FixupFromInfo (EmailMessage, true);
             } else {
                 Log.Error (Log.LOG_IMAP, "Append to Folder did not return a uid!");
             }
@@ -444,15 +450,20 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "Trying to update email message without any flags");
                 return false;
             }
-            return UpdateEmailMetaData (emailMessage, summary.Flags.Value, summary.UserFlags);
-        }
-
-        public static bool UpdateEmailMetaData (McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
-        {
+            MessageFlags Flags = summary.Flags.GetValueOrDefault ();
+            HashSet<string> UserFlags = summary.UserFlags;
             bool changed = false;
 
-            // IMAP can only update flags. Anything else is a new UID/message.
             if (updateFlags (emailMessage, Flags, UserFlags)) {
+                changed = true;
+            }
+            if (emailMessage.MessageID != summary.Envelope.MessageId) {
+                emailMessage.MessageID = summary.Envelope.MessageId;
+                changed = true;
+            }
+            bool ch;
+            FixupFromInfo (emailMessage, false, out ch);
+            if (ch) {
                 changed = true;
             }
             return changed;
@@ -485,6 +496,52 @@ namespace NachoCore.IMAP
                 // FIXME Where do we set these flags?
             }
             return changed;
+        }
+
+        public static McEmailMessage FixupFromInfo (McEmailMessage emailMessage, bool updateDb)
+        {
+            bool changed;
+            return FixupFromInfo (emailMessage, updateDb, out changed);
+        }
+
+        public static McEmailMessage FixupFromInfo (McEmailMessage emailMessage, bool updateDb, out bool changed)
+        {
+            changed = false;
+            if (!string.IsNullOrEmpty (emailMessage.From)) {
+                string cachedFromLetters = string.Empty;
+                int cachedFromColor = 1;
+                int fromEmailAddressId = 0;
+                try {
+                    cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
+                }
+
+                McEmailAddress fromEmailAddress;
+                if (McEmailAddress.Get (emailMessage.AccountId, emailMessage.From, out fromEmailAddress)) {
+                    fromEmailAddressId = fromEmailAddress.Id;
+                    cachedFromColor = fromEmailAddress.ColorIndex;
+                }
+                if (emailMessage.cachedFromLetters != cachedFromLetters ||
+                    emailMessage.cachedFromColor != cachedFromColor ||
+                    emailMessage.FromEmailAddressId != fromEmailAddressId) {
+                    if (updateDb) {
+                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var target = (McEmailMessage)record;
+                            target.cachedFromLetters = cachedFromLetters;
+                            target.cachedFromColor = cachedFromColor;
+                            target.FromEmailAddressId = fromEmailAddressId;
+                            return true;
+                        });
+                    } else {
+                        emailMessage.cachedFromLetters = cachedFromLetters;
+                        emailMessage.cachedFromColor = cachedFromColor;
+                        emailMessage.FromEmailAddressId = fromEmailAddressId;
+                    }
+                }
+                changed = true;
+            }
+            return emailMessage;
         }
 
         public static McEmailMessage ParseEmail (int accountId, string ServerId, MessageSummary summary)
@@ -529,19 +586,6 @@ namespace NachoCore.IMAP
                             emailMessage.From = string.Empty; // make sure it's at least empty, not null.
                         }
                     }
-                }
-                if (!string.IsNullOrEmpty (emailMessage.From)) {
-                    try {
-                        emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
-                    } catch (Exception ex) {
-                        Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
-                    }
-                }
-
-                McEmailAddress fromEmailAddress;
-                if (null != fromAddr && McEmailAddress.Get (accountId, fromAddr, out fromEmailAddress)) {
-                    emailMessage.FromEmailAddressId = fromEmailAddress.Id;
-                    emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
                 }
             }
             if (summary.Envelope.ReplyTo.Count > 0) {
@@ -613,7 +657,7 @@ namespace NachoCore.IMAP
             }
             emailMessage.IsIncomplete = false;
 
-            return emailMessage;
+            return FixupFromInfo (emailMessage, false);
         }
 
         private string FetchHeaders (NcImapFolder mailKitFolder, MessageSummary summary)
