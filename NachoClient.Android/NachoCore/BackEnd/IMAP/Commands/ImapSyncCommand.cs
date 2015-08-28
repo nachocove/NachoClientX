@@ -119,7 +119,16 @@ namespace NachoCore.IMAP
                 evt = syncFolder (mailKitFolder);
                 changed = true;
             } else {
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
+                // TODO: Need to figure out how strategy knows when to stop trying quicksync.
+                // Currently, all Strategy does is create the QuickSync SyncKit and throws it over the fence.
+                // It doesn't know if there is in fact anything to do. At this point only the Sync command,
+                // i.e. this code you're looking at, knows we're done. Needs more thought, so leaving the hack
+                // in here for now.
+                if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCQKNONE");
+                }
             }
             Finish (changed);
             return evt;
