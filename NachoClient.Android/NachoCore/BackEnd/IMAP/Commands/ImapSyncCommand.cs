@@ -110,7 +110,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)NachoCore.IMAP.ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
             }
             Synckit.SyncSet = syncSet;
-            Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (BEContext.Account.Id, Synckit.Folder.Id, span);
+            Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
             return syncFolder (mailKitFolder);
         }
 
@@ -221,7 +221,7 @@ namespace NachoCore.IMAP
                         bool changed1;
                         bool created1;
                         MessageSummary summ = imapSummary as MessageSummary;
-                        var emailMessage = ServerSaysAddOrChangeEmail (BEContext.Account.Id, summ, Synckit.Folder, out changed1, out created1);
+                        var emailMessage = ServerSaysAddOrChangeEmail (AccountId, summ, Synckit.Folder, out changed1, out created1);
                         if (null == emailMessage) {
                             // something went wrong in the call, but it was logged there, too.
                             continue;
@@ -421,7 +421,7 @@ namespace NachoCore.IMAP
             // TODO Convert some of this to queries instead of loops
             UniqueIdSet messagesDeleted = new UniqueIdSet ();
             foreach (var uid in uids) {
-                var email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ImapProtoControl.MessageServerId (Synckit.Folder, uid));
+                var email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, ImapProtoControl.MessageServerId (Synckit.Folder, uid));
                 if (null != email) {
                     Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", Synckit.Folder.ImapFolderNameRedacted (), email.ImapUid);
                     email.Delete ();

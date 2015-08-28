@@ -25,6 +25,7 @@ namespace NachoCore.IMAP
     {
         const int KAuthRetries = 2;
 
+        protected int AccountId { get; set; }
         protected NcImapClient Client { get; set; }
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
@@ -34,6 +35,7 @@ namespace NachoCore.IMAP
         {
             Client = imapClient;
             RedactProtocolLogFunc = null;
+            AccountId = BEContext.Account.Id;
         }
 
         // MUST be overridden by subclass.
@@ -55,7 +57,7 @@ namespace NachoCore.IMAP
                 try {
                     TryLock (Client.SyncRoot, KLockTimeout);
                 } catch (CommandLockTimeOutException ex) {
-                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
+                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, AccountId, ex.Message);
                 }
             }
         }
@@ -97,7 +99,7 @@ namespace NachoCore.IMAP
         {
             Event evt;
             Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             try {
                 evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
@@ -155,10 +157,10 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             }
             if (Cts.Token.IsCancellationRequested) {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, BEContext.Account.Id);
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
                 return;
             }
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             switch (action.Item1) {
             case ResolveAction.None:
                 break;
@@ -310,9 +312,9 @@ namespace NachoCore.IMAP
             bool added_or_changed = false;
             var ParentId = GetParentId (mailKitFolder);
             if (isDisinguished) {
-                folder = McFolder.GetDistinguishedFolder (BEContext.Account.Id, folderType);
+                folder = McFolder.GetDistinguishedFolder (AccountId, folderType);
             } else {
-                folder = McFolder.GetUserFolders (BEContext.Account.Id, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
+                folder = McFolder.GetUserFolders (AccountId, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
             }
 
             if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
@@ -327,7 +329,7 @@ namespace NachoCore.IMAP
 
             if (null == folder) {
                 // Add it
-                folder = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
+                folder = McFolder.Create (AccountId, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
                 Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Adding folder {0} UidValidity {1}", folder.ImapFolderNameRedacted (), mailKitFolder.UidValidity.ToString ());
                 folder.ImapUidValidity = mailKitFolder.UidValidity;
                 folder.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
