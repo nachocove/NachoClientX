@@ -60,11 +60,21 @@ namespace NachoClient.iOS
             }
             passwordField.WeakDelegate = this;
             accountIconView.Layer.CornerRadius = accountIconView.Frame.Size.Width / 2.0f;
-            var imageName = Util.GetAccountServiceImageName (Service);
-            using (var image = UIImage.FromBundle (imageName)) {
-                accountIconView.Image = image;
+            if (Account != null) {
+                using (var image = Util.ImageForAccount (Account)) {
+                    accountIconView.Image = image;
+                }
+            }else{
+                var imageName = Util.GetAccountServiceImageName (Service);
+                using (var image = UIImage.FromBundle (imageName)) {
+                    accountIconView.Image = image;
+                }
             }
-            statusLabel.Text = String.Format ("Please provide your {0} information", NcServiceHelper.AccountServiceName (Service));
+            string accountName = NcServiceHelper.AccountServiceName (Service);
+            if (Account != null) {
+                accountName = Account.DisplayName;
+            }
+            statusLabel.Text = String.Format ("Please provide your {0} information", accountName);
             submitButton.Layer.CornerRadius = 6.0f;
             UpdateSubmitEnabled ();
             HideAdvancedButton = Service != McAccount.AccountServiceEnum.Exchange;

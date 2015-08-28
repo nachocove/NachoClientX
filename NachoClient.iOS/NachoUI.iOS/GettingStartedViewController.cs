@@ -8,6 +8,7 @@ using CoreGraphics;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using System.Linq;
 
 namespace NachoClient.iOS
 {
@@ -35,6 +36,7 @@ namespace NachoClient.iOS
         public bool StartWithTutorial;
         AccountSyncingViewController syncingViewController;
         EventHandler StartEventHandler;
+        byte[] prefetchedImageBytes = null;
 
         public GettingStartedViewController (IntPtr handle) : base (handle)
         {
@@ -71,6 +73,9 @@ namespace NachoClient.iOS
                     var companyName = NcMdmConfig.Instance.BrandingName;
                     if (String.IsNullOrEmpty (companyName)) {
                         companyName = "company";
+                    }
+                    if (!String.IsNullOrEmpty (NcMdmConfig.Instance.BrandingLogoUrl)) {
+                        PrefetchAccountImageUrl (new NSUrl (NcMdmConfig.Instance.BrandingLogoUrl));
                     }
                     introLabel.Text = String.Format ("Start by setting up your {0} account.", companyName);
                     getStartedButton.SetTitle ("Get Started", UIControlState.Normal);
@@ -165,6 +170,12 @@ namespace NachoClient.iOS
             var vc = (StandardCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
             vc.AccountDelegate = this;
             vc.Account = NcAccountHandler.Instance.CreateAccount (NcMdmConfig.Instance);
+            if (prefetchedImageBytes != null) {
+                var portrait = McPortrait.InsertFile (vc.Account.Id, prefetchedImageBytes);
+                vc.Account.DisplayPortraitId = portrait.Id;
+                vc.Account.Update ();
+                // FIXME: what if the prefetch hasn't finished yet?
+            }
             NavigationController.PushViewController (vc, true);
         }
 
@@ -223,6 +234,19 @@ namespace NachoClient.iOS
                 LoginHelpers.SetSwitchToTime (vc.Account);
             }
             AccountDelegate.GettingStartedViewControllerDidComplete (this);
+        }
+
+        public async void PrefetchAccountImageUrl (NSUrl url){
+            try {
+                var httpClient = new System.Net.Http.HttpClient ();
+                byte[] imageBytes = await httpClient.GetByteArrayAsync (url);
+                // this line will throw an exception if the native UIImage can't be constructed
+                new UIImage(NSData.FromArray(imageBytes));
+                // so if we get here, we know the bytes are a valid image
+                prefetchedImageBytes = imageBytes;
+            } catch (Exception e) {
+                Log.Info (Log.LOG_DB, "GettingStartedViewController: PrefetchAccountImageUrl exception: {0}", e);
+            }
         }
     }
 }

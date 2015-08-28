@@ -437,6 +437,19 @@ namespace NachoCore.Model
             string hash = HashHelper.Sha256 (account.GetLogSalt () + password);
             return hash.Substring (hash.Length - 3); // e.g. "f47"
         }
+
+        public async void PopulateProfilePhotoFromURL (Foundation.NSUrl imageUrl)
+        {
+            try {
+                var httpClient = new System.Net.Http.HttpClient ();
+                byte[] contents = await httpClient.GetByteArrayAsync (imageUrl);
+                var portrait = McPortrait.InsertFile (Id, contents);
+                DisplayPortraitId = portrait.Id;
+                Update ();
+            } catch (Exception e) {
+                Log.Info (Log.LOG_DB, "McAccount: PopulateProfilePhotoFromURL exception: {0}", e);
+            }
+        }
     }
 
     public class ConstMcAccount : McAccount

@@ -20,6 +20,7 @@ namespace NachoCore
         public string Domain;
         public string EmailAddr;
         public string BrandingName;
+        public string BrandingLogoUrl;
         // End MDM Values
 
         public static NcMdmConfig Instance {
@@ -46,7 +47,7 @@ namespace NachoCore
         public void SetValues (Action<NcMdmConfig> setter)
         {
             setter (this);
-            IsPopulated = !String.IsNullOrEmpty(Host) || Port.HasValue || !String.IsNullOrEmpty(Username) || !String.IsNullOrEmpty(Domain) || !String.IsNullOrEmpty(EmailAddr) || !String.IsNullOrEmpty(BrandingName);
+            IsPopulated = !String.IsNullOrEmpty(Host) || Port.HasValue || !String.IsNullOrEmpty(Username) || !String.IsNullOrEmpty(Domain) || !String.IsNullOrEmpty(EmailAddr) || !String.IsNullOrEmpty(BrandingName) || !String.IsNullOrEmpty(BrandingLogoUrl);
             Validate ();
             NcApplication.Instance.InvokeStatusIndEventInfo (ConstMcAccount.NotAccountSpecific, 
                 NcResult.SubKindEnum.Info_MdmConfigMayHaveChanged);
