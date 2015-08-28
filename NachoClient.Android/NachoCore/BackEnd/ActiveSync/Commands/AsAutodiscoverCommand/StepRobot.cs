@@ -1205,7 +1205,7 @@ namespace NachoCore.ActiveSync
                         if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase) ||
                             aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix2, StringComparison.OrdinalIgnoreCase)) {
                             Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundGoogle;
-                            SrServerUri = McServer.BaseUriForHost (McServer.GMail_Host);
+                            SrServerUri = McServer.BaseUriForHost (McServer.AS_GMail_Host);
                             return Event.Create ((uint)SmEvt.E.Success, "SRPRMXSUCCESS");
                         } else {
                             Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundNonGoogle;
