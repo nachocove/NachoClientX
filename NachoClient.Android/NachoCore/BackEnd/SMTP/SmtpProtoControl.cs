@@ -527,8 +527,8 @@ namespace NachoCore.SMTP
         private void DoConn ()
         {
             DiscoveryRetries = 0;
-            var cmd = new SmtpAuthenticateCommand(this, SmtpClient);
-            cmd.Execute (Sm);
+            SetCmd (new SmtpAuthenticateCommand (this, SmtpClient));
+            ExecuteCmd ();
         }
 
         private void CancelCmd ()
