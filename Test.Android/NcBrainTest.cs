@@ -101,11 +101,15 @@ namespace Test.Common
             Directory.CreateDirectory (NcModel.Instance.GetAccountDirPath (TestIndexContactAccountId));
             Directory.CreateDirectory (NcModel.Instance.GetAccountDirPath (TestIndexEmailMessageAccountId));
             Directory.CreateDirectory (System.IO.Path.Combine (NcModel.Instance.GetAccountDirPath (TestIndexEmailMessageAccountId), "tmp"));
+
+            NcTimeVarianceTest.SetupMockTimer ();
         }
 
         [TearDown]
         public void TearDown ()
         {
+            NcTimeVarianceTest.TearDownMockTimer ();
+
             if (0 != Message.Id) {
                 Message.Delete ();
             }
@@ -1152,6 +1156,57 @@ This is a MIME email");
             Assert.True (message2b.ScoreStates.IsReplied);
             // statistics should not be updated since they were accounted for by TestAnalyzeEmailMessage().
             CheckFromToCcStatistics (david, ellen, fred, 1, 0, 1);
+        }
+
+        protected void CheckTimeVarianceList (McEmailMessage emailMessage, NcTimeVarianceType tvType, params object[] tvParams)
+        {
+            var description = emailMessage.TimeVarianceDescription ();
+            var tvList = NcTimeVariance.ActiveList.GetList (description);
+            if (0 == tvParams.Length) {
+                Assert.Null (tvList);
+            } else {
+                Assert.NotNull (tvList);
+                Assert.AreEqual (2 * tvList.Count, tvParams.Length);
+                var tvArray = tvList.ToArray ();
+                for (int n = 0; n < tvList.Count; n++) {
+                    var tv = tvArray [n];
+                    Assert.AreEqual (((Type)tvParams [2 * n]).Name, tv.GetType ().Name);
+                    Assert.AreEqual ((bool)tvParams [2 * n + 1], tv.IsRunning);
+                }
+            }
+
+            // Re-read the message to verify TimeVarianceType
+            var reread = McEmailMessage.QueryById<McEmailMessage> (emailMessage.Id);
+            Assert.AreEqual ((int)tvType, reread.TimeVarianceType);
+        }
+
+        [Test]
+        public void TestAgingTimeVariance ()
+        {
+            Brain = new WrappedNcBrain ("TestAgingTimeVariance");
+
+            // 1. Insert a McEmailMessage to db. Check that t.v. is not started.
+            int accountId = 2;
+            string alan = "alan@company.net";
+            string bob = "bob@company.net";
+            string charles = "charles@compnay.net";
+            var message1 = new McEmailMessage () {
+                AccountId = accountId,
+                From = alan,
+                To = bob,
+                Cc = charles,
+                Subject = "test aging time variance",
+            };
+            InsertAndCheck (message1);
+            CheckTimeVarianceList (message1, NcTimeVarianceType.NONE);
+
+            // 2. Analyze the email. Check that t.v. is started and TimeVarianceType is set.
+            Brain.TestAnalyzeEmailMessage (message1);
+            CheckTimeVarianceList (message1, NcTimeVarianceType.AGING, typeof(NcAgingTimeVariance), true);
+
+            // 3. Update the time to the latest event time. Verify that TimeVarianceType is updated to DONE.
+            MockTimer.AdvanceTime (14, 0, 1, 0); // 1 min past the last day of t.v.
+            CheckTimeVarianceList (message1, NcTimeVarianceType.DONE);
         }
     }
 }

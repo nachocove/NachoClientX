@@ -422,7 +422,7 @@ namespace NachoCore.Model
             return true;
         }
 
-        private string TimeVarianceDescription ()
+        public string TimeVarianceDescription ()
         {
             return String.Format ("[McEmailMessage:{0}]", Id);
         }
@@ -593,7 +593,7 @@ namespace NachoCore.Model
                 return;
             }
 
-            DateTime now = DateTime.Now;
+            DateTime now = NcTimeVariance.GetCurrentDateTime ();
             NcTimeVarianceList tvList = EvaluateTimeVariance ();
 
             /// Start all applicable state machines
