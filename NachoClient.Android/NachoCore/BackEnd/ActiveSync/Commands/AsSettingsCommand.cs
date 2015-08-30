@@ -52,23 +52,25 @@ namespace NachoCore.ActiveSync
                 // Tolerate lack of status for DeviceInformation Set.
                 if (null != xmlDeviceInformation) {
                     var xmlInnerStatus = xmlDeviceInformation.Element (m_ns + Xml.Settings.Status);
-                    var innerStatus = (Xml.Settings.SetGetStatusCode)uint.Parse (xmlInnerStatus.Value);
-                    switch (innerStatus) {
-                    case Xml.Settings.SetGetStatusCode.Success_1:
-                        // break and goto UserInformation.
-                        break;
-                    case Xml.Settings.SetGetStatusCode.ProtocolError_2:
-                    case Xml.Settings.SetGetStatusCode.InvalidArgs_5:
-                    case Xml.Settings.SetGetStatusCode.ConflictingArgs_6:
-                        BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
-                            NcResult.WhyEnum.ProtocolError));
-                        return Event.Create ((uint)SmEvt.E.HardFail, "SETTFAIL0A");
+                    if (null != xmlInnerStatus) {
+                        var innerStatus = (Xml.Settings.SetGetStatusCode)uint.Parse (xmlInnerStatus.Value);
+                        switch (innerStatus) {
+                        case Xml.Settings.SetGetStatusCode.Success_1:
+                            // break and goto UserInformation.
+                            break;
+                        case Xml.Settings.SetGetStatusCode.ProtocolError_2:
+                        case Xml.Settings.SetGetStatusCode.InvalidArgs_5:
+                        case Xml.Settings.SetGetStatusCode.ConflictingArgs_6:
+                            BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
+                                NcResult.WhyEnum.ProtocolError));
+                            return Event.Create ((uint)SmEvt.E.HardFail, "SETTFAIL0A");
 
-                    default:
-                        Log.Error (Log.LOG_AS, "Unknown inner status code in AsSettingsCommand response: {0}", innerStatus);
-                        BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
-                            NcResult.WhyEnum.Unknown));
-                        return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUSA");
+                        default:
+                            Log.Error (Log.LOG_AS, "Unknown inner status code in AsSettingsCommand response: {0}", innerStatus);
+                            BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
+                                NcResult.WhyEnum.Unknown));
+                            return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUSA");
+                        }
                     }
                 }
                    
@@ -76,23 +78,25 @@ namespace NachoCore.ActiveSync
                 var xmlUserInformation = xmlSettings.Element (m_ns + Xml.Settings.UserInformation);
                 if (null != xmlUserInformation) {
                     var xmlInnerStatus = xmlUserInformation.Element (m_ns + Xml.Settings.Status);
-                    var innerStatus = (Xml.Settings.SetGetStatusCode)uint.Parse (xmlInnerStatus.Value);
-                    switch (innerStatus) {
-                    case Xml.Settings.SetGetStatusCode.Success_1:
-                        // TODO: Capture user information.
-                        break;
-                    case Xml.Settings.SetGetStatusCode.ProtocolError_2:
-                    case Xml.Settings.SetGetStatusCode.InvalidArgs_5:
-                    case Xml.Settings.SetGetStatusCode.ConflictingArgs_6:
-                        BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
-                            NcResult.WhyEnum.ProtocolError));
-                        return Event.Create ((uint)SmEvt.E.HardFail, "SETTFAIL0B");
+                    if (null != xmlInnerStatus) {
+                        var innerStatus = (Xml.Settings.SetGetStatusCode)uint.Parse (xmlInnerStatus.Value);
+                        switch (innerStatus) {
+                        case Xml.Settings.SetGetStatusCode.Success_1:
+                            // TODO: Capture user information.
+                            break;
+                        case Xml.Settings.SetGetStatusCode.ProtocolError_2:
+                        case Xml.Settings.SetGetStatusCode.InvalidArgs_5:
+                        case Xml.Settings.SetGetStatusCode.ConflictingArgs_6:
+                            BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
+                                NcResult.WhyEnum.ProtocolError));
+                            return Event.Create ((uint)SmEvt.E.HardFail, "SETTFAIL0B");
 
-                    default:
-                        Log.Error (Log.LOG_AS, "Unknown inner status code in AsSettingsCommand response: {0}", innerStatus);
-                        BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
-                            NcResult.WhyEnum.Unknown));
-                        return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUSB");
+                        default:
+                            Log.Error (Log.LOG_AS, "Unknown inner status code in AsSettingsCommand response: {0}", innerStatus);
+                            BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
+                                NcResult.WhyEnum.Unknown));
+                            return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUSB");
+                        }
                     }
                 }
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsSettingsSuccess));
