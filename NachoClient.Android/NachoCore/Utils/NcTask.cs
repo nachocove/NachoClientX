@@ -164,7 +164,7 @@ namespace NachoCore.Utils
                     if (Thread.CurrentThread.ManagedThreadId == spawningId) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} completed after {1:n0} msec on spawning thread.", taskName, (finishTime - spawnTime).TotalMilliseconds);
                     } else {
-                        Log.Info (Log.LOG_SYS, "NcTask {0} completed after {1:n0} msec.", taskName, (finishTime - spawnTime).TotalMilliseconds);
+                        Log.Info (Log.LOG_SYS, "NcTask {0} completed after {1:n0} msec.", taskName, (finishTime - startTime).TotalMilliseconds);
                     }
                 }
             }, Cts.Token, option);
