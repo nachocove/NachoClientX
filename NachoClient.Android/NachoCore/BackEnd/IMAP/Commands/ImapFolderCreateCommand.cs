@@ -49,7 +49,7 @@ namespace NachoCore.IMAP
             }
             UpdateImapSetting (newFolder, ref folder);
 
-            var applyFolderCreate = new ApplyCreateFolder (BEContext.Account.Id) {
+            var applyFolderCreate = new ApplyCreateFolder (AccountId) {
                 PlaceholderId = PendingSingle.ServerId,
                 FinalServerId = newFolder.FullName,
             };

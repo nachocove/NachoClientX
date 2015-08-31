@@ -40,7 +40,7 @@ namespace NachoCore.SMTP
         protected override Event ExecuteCommand ()
         {
             bool Initial = BEContext.ProtocolState.SmtpDiscoveryDone;
-            Log.Info (Log.LOG_SMTP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
+            Log.Info (Log.LOG_SMTP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
@@ -110,7 +110,7 @@ namespace NachoCore.SMTP
                 }
                 errResult.Message = ex.Message;
             } finally {
-                Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
+                Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
             if (Initial) {
                 StatusInd (errResult);

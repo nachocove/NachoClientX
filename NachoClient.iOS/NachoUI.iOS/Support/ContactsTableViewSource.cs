@@ -371,7 +371,7 @@ namespace NachoClient.iOS
             searcher.Search (forSearchString);
 
             // Issue a backend search command, e.g. GAL search for EAS
-            if ((null != accountForSearchAPI) && accountForSearchAPI.HasCapability(McAccount.AccountCapabilityEnum.ContactReader) && doGalSearch) {
+            if ((null != accountForSearchAPI) && accountForSearchAPI.HasCapability (McAccount.AccountCapabilityEnum.ContactReader) && doGalSearch) {
                 // Issue a GAL search. The status indication handler will update the search results
                 // (with doGalSearch = false) to reflect potential matches from GAL.
                 if (String.IsNullOrEmpty (searchToken)) {
@@ -421,6 +421,9 @@ namespace NachoClient.iOS
 
             public override bool ShouldReloadForSearchString (UISearchDisplayController controller, string forSearchString)
             {
+                if (TestMode.Instance.Process (forSearchString)) {
+                    return false;
+                }
                 var searchOption = controller.SearchBar.SelectedScopeButtonIndex;
                 return owner.UpdateSearchResults (searchOption, forSearchString);
             }

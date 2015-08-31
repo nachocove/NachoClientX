@@ -319,6 +319,19 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
+        public static bool FillInQuickSyncKit (ref SyncKit Synckit, int AccountId, uint span)
+        {
+            var syncSet = QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
+            var uploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
+            if ((null != syncSet && syncSet.Any ()) ||
+                (null != uploadMessages && uploadMessages.Any ())) {
+                Synckit.SyncSet = syncSet;
+                Synckit.UploadMessages = uploadMessages;
+                return true;
+            }
+            return false;
+        }
+
         private static UniqueIdSet getCurrentEmailUids (McFolder folder, uint min, uint max, uint span)
         {
             // Turn the result into a UniqueIdSet

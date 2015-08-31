@@ -222,7 +222,7 @@ namespace NachoCore.Utils
                 return null;
             }
 
-            if (null == mailbox.Name) {
+            if (string.IsNullOrEmpty (mailbox.Name) && null != this.contact) {
                 mailbox.Name = this.contact.GetDisplayName ();
             }
 

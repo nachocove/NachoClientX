@@ -46,7 +46,7 @@ namespace NachoCore.IMAP
         {
             bool Initial = BEContext.ProtocolState.ImapDiscoveryDone;
 
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
@@ -116,7 +116,7 @@ namespace NachoCore.IMAP
                 }
                 errResult.Message = ex.Message;
             } finally {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
             if (Initial) {
                 StatusInd (errResult);

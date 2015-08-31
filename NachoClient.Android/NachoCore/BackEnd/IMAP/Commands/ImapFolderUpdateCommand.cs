@@ -26,7 +26,7 @@ namespace NachoCore.IMAP
             // TODO Not sure if this is the right thing to do. Do we loop over all namespaces if there's more than 1? How do we pick?
             FolderNamespace imapNameSpace = Client.PersonalNamespaces [0];
 
-            McFolder folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
+            McFolder folder = McFolder.QueryByServerId<McFolder> (AccountId, PendingSingle.ServerId);
 
             IMailFolder encapsulatingFolder;
             IMailFolder mailKitFolder;
