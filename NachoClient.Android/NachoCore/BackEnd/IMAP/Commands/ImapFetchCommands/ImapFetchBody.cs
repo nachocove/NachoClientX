@@ -154,7 +154,6 @@ namespace NachoCore.IMAP
                         StatusInd (status);
                     }
                 }
-                Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Fetched body for email {0}:{1} type {2}", email.Id, email.ServerId, body.BodyType);
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
             } catch (ImapCommandException ex) {
                 Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand ImapCommandException: {0}", ex.Message);
