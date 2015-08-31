@@ -259,6 +259,8 @@ namespace NachoPlatform
             contact.CompanyName = Person.Organization;
             contact.Title = Person.JobTitle;
             contact.Department = Person.Department;
+
+            contact.EmailAddresses = new List<McContactEmailAddressAttribute> ();
             var emails = Person.GetEmails ();
             int i = 1;
             if (null != emails) {
@@ -278,14 +280,29 @@ namespace NachoPlatform
                     ++i;
                 }
             }
+
+            contact.Dates.RemoveAll ((x) => {
+                return x.Name == "Birthday";
+            });
             var birthday = Person.Birthday;
             if (null != birthday) {
                 contact.AddDateAttribute (accountId, "Birthday", null, birthday.ToDateTime ());
             }
+
             if (null != Person.Note) {
-                var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Person.Note);
+                McBody body = null;
+                if (0 != contact.BodyId) {
+                    body = McBody.QueryById<McBody> (contact.BodyId);
+                }
+                if (null == body) {
+                    body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Person.Note);
+                } else {
+                    body.UpdateData (Person.Note);
+                }
                 contact.BodyId = body.Id;
             }
+
+            contact.PhoneNumbers = new List<McContactStringAttribute> ();
             var phones = Person.GetPhones ();
             if (null != phones) {
                 foreach (var phone in phones) {
@@ -311,7 +328,15 @@ namespace NachoPlatform
             if (Person.HasImage) {
                 var data = Person.GetImage (ABPersonImageFormat.OriginalSize);
                 if (null != data) {
-                    var portrait = McPortrait.InsertFile (accountId, data.ToArray ());
+                    McPortrait portrait = null;
+                    if (0 != contact.PortraitId) {
+                        portrait = McPortrait.QueryById<McPortrait> (contact.PortraitId);
+                    }
+                    if (null == portrait) {
+                        portrait = McPortrait.InsertFile (accountId, data.ToArray ());
+                    } else {
+                        portrait.UpdateData (data.ToArray ());
+                    }
                     contact.PortraitId = portrait.Id;
                 }
             }

@@ -226,7 +226,7 @@ namespace NachoCore.ActiveSync
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
-                        if (BEContext.Server.HostIsGMail () || BEContext.Server.HostIsHotMail ()) {
+                        if (BEContext.Server.HostIsAsGMail () || BEContext.Server.HostIsAsHotMail ()) {
                             // GFE will only give us plain text, no matter what we ask for.
                             // Hotmail will give us anything except MIME, but the HTML and RTF
                             // will be unformatted.  So we may as well just ask for plain text.
@@ -265,7 +265,7 @@ namespace NachoCore.ActiveSync
                     if (options.HasElements) {
                         collection.Add (options);
                     }
-                } else if (McFolder.AsSyncKey_Initial != folder.AsSyncKey && BEContext.Server.HostIsGMail ()) {
+                } else if (McFolder.AsSyncKey_Initial != folder.AsSyncKey && BEContext.Server.HostIsAsGMail ()) {
                     // If we perform a Sync-based command and don't include Options + FilterType, GFE
                     // Will go into a MoreAvailable=1 w/no changes tailspin until a new message arrives.
                     collection.Add (new XElement (m_ns + Xml.AirSync.Options,
@@ -808,7 +808,7 @@ namespace NachoCore.ActiveSync
                     pathElem.ServerId = addServerId;
                     pathElem.ParentId = folder.ServerId;
                     NcModel.Instance.RunInTransaction (() => {
-                        pathElem.Insert (BEContext.Server.HostIsGMail ());
+                        pathElem.Insert (BEContext.Server.HostIsAsGMail ());
                         var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
                             ClassCode = classCode,
                             ServerId = addServerId,

@@ -627,7 +627,7 @@ namespace NachoCore.ActiveSync
             case "outlook.com.vn":
             case "hotmail.co.uk":
             case "live.co.uk":
-                return McServer.HotMail_Host;
+                return McServer.AS_HotMail_Host;
             }
             return null;
         }
@@ -927,7 +927,7 @@ namespace NachoCore.ActiveSync
                 MaxTries = 2,
             };
             // HotMail/GMail doesn't WWW-Authenticate on OPTIONS.
-            Sm.State = (ServerCandidate.HostIsGMail () || ServerCandidate.HostIsHotMail ())
+            Sm.State = (ServerCandidate.HostIsAsGMail () || ServerCandidate.HostIsAsHotMail ())
                 ? (uint)Lst.TestW2 : (uint)Lst.TestW1;
 
             TestCmd.Execute (Sm);
@@ -947,6 +947,11 @@ namespace NachoCore.ActiveSync
             var robot = (StepRobot)Sm.Arg;
             NcAssert.NotNull (robot);
             ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, robot.SrServerUri);
+            if (ServerCandidate.HostIsAsGMail ()) {
+                // Robot can do this because of MX record. Not that if the user had entered this value, we would 
+                // not want IsHardWired to be true.
+                ServerCandidate.IsHardWired = true;
+            }
             // Must shut down any remaining robots so they don't post events to TL SM.
             KillAllRobots ();
             // Must clear event Q for TL SM of anything a robot may have posted (threads).
@@ -962,7 +967,8 @@ namespace NachoCore.ActiveSync
         {
             AutoDSucceeded = false;
             ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, 
-                McServer.BaseUriForHost (McServer.GMail_Host));
+                McServer.BaseUriForHost (McServer.AS_GMail_Host));
+            ServerCandidate.IsHardWired = true;
             DoTest ();
         }
 

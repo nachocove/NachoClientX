@@ -16,6 +16,7 @@ namespace NachoCore.SMTP
     {
         const int KAuthRetries = 2;
 
+        protected int AccountId { get; set; }
         public NcSmtpClient Client { get; set; }
 
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
@@ -24,6 +25,7 @@ namespace NachoCore.SMTP
         {
             Client = smtpClient;
             RedactProtocolLogFunc = null;
+            AccountId = BEContext.Account.Id;
         }
 
         // MUST be overridden by subclass.
@@ -40,7 +42,7 @@ namespace NachoCore.SMTP
                 try {
                     TryLock (Client.SyncRoot, KLockTimeout);
                 } catch (CommandLockTimeOutException ex) {
-                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
+                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, AccountId, ex.Message);
                 }
             }
         }
@@ -75,7 +77,7 @@ namespace NachoCore.SMTP
                 Event evt;
                 Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
 
-                Log.Info (Log.LOG_SMTP, "{0}({1}): Started", cmdname, BEContext.Account.Id);
+                Log.Info (Log.LOG_SMTP, "{0}({1}): Started", cmdname, AccountId);
                 try {
                     evt = ExecuteConnectAndAuthEvent ();
                     // In the no-exception case, ExecuteCommand is resolving McPending.
@@ -129,10 +131,10 @@ namespace NachoCore.SMTP
                 }
 
                 if (Cts.Token.IsCancellationRequested) {
-                    Log.Info (Log.LOG_SMTP, "{0}({1}): Cancelled", cmdname, BEContext.Account.Id);
+                    Log.Info (Log.LOG_SMTP, "{0}({1}): Cancelled", cmdname, AccountId);
                     return;
                 }
-                Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", cmdname, BEContext.Account.Id);
+                Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", cmdname, AccountId);
                 switch (action.Item1) {
                 case ResolveAction.None:
                     break;

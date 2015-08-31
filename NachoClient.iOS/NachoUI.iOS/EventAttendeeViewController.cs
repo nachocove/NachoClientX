@@ -534,6 +534,8 @@ namespace NachoClient.iOS
                 AttendeeList [address.index].AttendeeTypeIsSet = true;
                 break;
             case NcEmailAddress.Action.create:
+                // Get rid of any existing attendees with the same e-mail address.
+                AttendeeList.RemoveAll((McAttendee a) => { return a.Email == mailboxAddress.Address; });
                 var attendee = new McAttendee ();
                 attendee.AccountId = account.Id;
                 attendee.Name = name;

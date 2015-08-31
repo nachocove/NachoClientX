@@ -55,7 +55,7 @@ namespace NachoCore.IMAP
                 query = query.Or (SearchQuery.GMailRawSearch (PendingSingle.Search_Prefix));
             }
 
-            var folderList = McFolder.QueryByIsClientOwned (BEContext.Account.Id, false);
+            var folderList = McFolder.QueryByIsClientOwned (AccountId, false);
             var emailList = new List<NcEmailMessageIndex> ();
             foreach (var folder in folderList) {
                 if (folder.ImapNoSelect) {
@@ -74,7 +74,7 @@ namespace NachoCore.IMAP
                         foreach (var uid in uids) {
                             serverIdList.Add ("\"" + ImapProtoControl.MessageServerId (folder, uid) + "\"");
                         }
-                        var idList = McEmailMessage.QueryByServerIdList (BEContext.Account.Id, serverIdList);
+                        var idList = McEmailMessage.QueryByServerIdList (AccountId, serverIdList);
                         if (idList.Any ()) {
                             // TODO Should we post an indication to the UI for each searched folder?
                             Log.Info (Log.LOG_IMAP, "ImapSearchCommand {0}: Found {1} item(s)", folder.ImapFolderNameRedacted (), idList.Count);

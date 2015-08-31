@@ -179,7 +179,7 @@ namespace NachoCore.IMAP
 
                 // Compare the incoming folders to the ones we know about. Delete any that disappeared.
                 Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Deleted Folders");
-                foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
+                foreach (var folder in McFolder.QueryByIsClientOwned (AccountId, false)) {
                     Cts.Token.ThrowIfCancellationRequested ();
                     if (!foldernames.Contains (folder.ServerId)) {
                         Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Deleting folder {0} due to disappearance from server", folder.ImapFolderNameRedacted ());
