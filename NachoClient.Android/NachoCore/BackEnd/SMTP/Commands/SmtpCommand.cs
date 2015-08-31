@@ -156,7 +156,6 @@ namespace NachoCore.SMTP
             if (!Client.IsConnected) {
                 //client.ClientCertificates = new X509CertificateCollection ();
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
-                Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
                 Cts.Token.ThrowIfCancellationRequested ();
             }
             if (!Client.IsAuthenticated) {
@@ -207,7 +206,7 @@ namespace NachoCore.SMTP
                     throw ex;
                 }
 
-                Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
+                Log.Info (Log.LOG_SMTP, "SMTP Server {0}:{1} capabilities: {2}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString ());
                 if (null != Client.MailKitProtocolLogger && null != RestartLog) {
                     Client.MailKitProtocolLogger.Start (RestartLog);
                 }
