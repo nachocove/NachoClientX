@@ -44,7 +44,7 @@ namespace NachoCore.Brain
 
         public delegate DateTime CurrentDateTimeFunction ();
 
-        public delegate void TimeVarianceCallBack (int state, Int64 objId);
+        public delegate void NcTimeVarianceCallBack (int state, Int64 objId);
 
         public static CurrentDateTimeFunction GetCurrentDateTime = PlatformGetCurrentDateTime;
 
@@ -119,7 +119,7 @@ namespace NachoCore.Brain
 
         public string Description { get; protected set; }
 
-        public TimeVarianceCallBack CallBackFunction;
+        public NcTimeVarianceCallBack CallBackFunction;
 
         public Int64 CallBackId;
 
@@ -168,7 +168,7 @@ namespace NachoCore.Brain
             _State = -1;
         }
 
-        public NcTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, NcTimeVarianceType type, DateTime startTime)
+        public NcTimeVariance (string description, NcTimeVarianceCallBack callback, Int64 objId, NcTimeVarianceType type, DateTime startTime)
         {
             Description = description;
             LockObj = new object ();
@@ -436,7 +436,7 @@ namespace NachoCore.Brain
             }
         }
 
-        public NcDeadlineTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, DateTime deadline)
+        public NcDeadlineTimeVariance (string description, NcTimeVarianceCallBack callback, Int64 objId, DateTime deadline)
             : base (description, callback, objId, NcTimeVarianceType.DEADLINE, deadline)
         {
         }
@@ -466,7 +466,7 @@ namespace NachoCore.Brain
             }
         }
 
-        public NcDeferenceTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, DateTime deferUntil)
+        public NcDeferenceTimeVariance (string description, NcTimeVarianceCallBack callback, Int64 objId, DateTime deferUntil)
             : base (description, callback, objId, NcTimeVarianceType.DEFERENCE, deferUntil)
         {
         }
@@ -510,7 +510,7 @@ namespace NachoCore.Brain
             }
         }
 
-        public NcAgingTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, DateTime startTime)
+        public NcAgingTimeVariance (string description, NcTimeVarianceCallBack callback, Int64 objId, DateTime startTime)
             : base (description, callback, objId, NcTimeVarianceType.AGING, startTime)
         {
         }
@@ -540,7 +540,7 @@ namespace NachoCore.Brain
             }
         }
 
-        public NcMeetingTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId, DateTime endTime)
+        public NcMeetingTimeVariance (string description, NcTimeVarianceCallBack callback, Int64 objId, DateTime endTime)
             : base (description, callback, objId, NcTimeVarianceType.MEETING, endTime)
         {
         }
@@ -578,8 +578,13 @@ namespace NachoCore.Brain
         public NcTimeVarianceType LastTimeVarianceType (DateTime now)
         {
             NcTimeVarianceType type = NcTimeVarianceType.DONE;
+            DateTime last = DateTime.MinValue;
             foreach (var tv in this) {
-                if (tv.ShouldRun (now)) {
+                if (!tv.ShouldRun (now)) {
+                    continue;
+                }
+                if (tv.LastEventTime () > last) {
+                    last = tv.LastEventTime ();
                     type = tv.Type;
                 }
             }

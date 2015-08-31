@@ -391,6 +391,15 @@ namespace NachoCore.Brain
             emailMessage.UpdateReplyAnalysis (replyTime, replyVariance);
             return true;
         }
+
+        protected bool UpdateEmailMessageTimeVariance (McEmailMessage emailMessage)
+        {
+            if (!ValidEmailMessage (emailMessage)) {
+                return false;
+            }
+            emailMessage.UpdateTimeVariance ();
+            return true;
+        }
     }
 }
 

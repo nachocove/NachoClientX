@@ -47,6 +47,11 @@ namespace Test.Common
             UpdateEmailMessageReplyStatus (emailMessage, time, variance);
         }
 
+        public void TestUpdateEmailMessageTimeVariance (McEmailMessage emailMessage)
+        {
+            UpdateEmailMessageTimeVariance (emailMessage);
+        }
+
         public WrappedNcBrain (string prefix) : base (prefix)
         {
         }
@@ -1168,10 +1173,18 @@ This is a MIME email");
                 Assert.NotNull (tvList);
                 Assert.AreEqual (2 * tvList.Count, tvParams.Length);
                 var tvArray = tvList.ToArray ();
-                for (int n = 0; n < tvList.Count; n++) {
+                for (int n = 0; n < tvArray.Length; n++) {
                     var tv = tvArray [n];
-                    Assert.AreEqual (((Type)tvParams [2 * n]).Name, tv.GetType ().Name);
-                    Assert.AreEqual ((bool)tvParams [2 * n + 1], tv.IsRunning);
+                    bool matched = false;
+                    for (int m = 0; m < tvParams.Length; m += 2) {
+                        var expectedType = (Type)tvParams [m];
+                        var expectedIsRunning = (bool)tvParams [m + 1];
+                        if ((expectedType.Name == tv.GetType ().Name) &&
+                            (expectedIsRunning == tv.IsRunning)) {
+                            matched = true;
+                        }
+                    }
+                    Assert.True (matched);
                 }
             }
 
@@ -1180,32 +1193,144 @@ This is a MIME email");
             Assert.AreEqual ((int)tvType, reread.TimeVarianceType);
         }
 
-        [Test]
-        public void TestAgingTimeVariance ()
+        // This routine is shared by all time variance tests. It inserts a McEmailMessage to db and
+        // check that t.v. is not started.
+        protected McEmailMessage TimeVarianceInsertAndCheck ()
         {
-            Brain = new WrappedNcBrain ("TestAgingTimeVariance");
-
-            // 1. Insert a McEmailMessage to db. Check that t.v. is not started.
             int accountId = 2;
             string alan = "alan@company.net";
             string bob = "bob@company.net";
             string charles = "charles@compnay.net";
-            var message1 = new McEmailMessage () {
+            var message = new McEmailMessage () {
                 AccountId = accountId,
                 From = alan,
                 To = bob,
                 Cc = charles,
                 Subject = "test aging time variance",
             };
-            InsertAndCheck (message1);
-            CheckTimeVarianceList (message1, NcTimeVarianceType.NONE);
+            InsertAndCheck (message);
+            CheckTimeVarianceList (message, NcTimeVarianceType.NONE);
+
+            return message;
+        }
+
+        [Test]
+        public void TestAgingTimeVariance ()
+        {
+            Brain = new WrappedNcBrain ("TestAgingTimeVariance");
+
+            // 1. Insert a McEmailMessage to db. Check that t.v. is not started.
+            var message1 = TimeVarianceInsertAndCheck ();
 
             // 2. Analyze the email. Check that t.v. is started and TimeVarianceType is set.
             Brain.TestAnalyzeEmailMessage (message1);
             CheckTimeVarianceList (message1, NcTimeVarianceType.AGING, typeof(NcAgingTimeVariance), true);
 
-            // 3. Update the time to the latest event time. Verify that TimeVarianceType is updated to DONE.
+            // 3. Update the time to the last event time. Verify that TimeVarianceType is updated to DONE.
             MockTimer.AdvanceTime (14, 0, 1, 0); // 1 min past the last day of t.v.
+            CheckTimeVarianceList (message1, NcTimeVarianceType.DONE);
+        }
+
+        [Test]
+        public void TestDeadlineTimeVariance ()
+        {
+            Brain = new WrappedNcBrain ("TestDeadlineTimeVariance");
+
+            // 1. Insert a McEmailMessage to db. Check that t.v. is not starte
+            var message1 = TimeVarianceInsertAndCheck ();
+
+            // 2. Analyze the email. Check that t.v. is started and TimeVarinaceType is set to AGING.
+            Brain.TestAnalyzeEmailMessage (message1);
+            CheckTimeVarianceList (message1, NcTimeVarianceType.AGING, typeof(NcAgingTimeVariance), true);
+
+            // 3. Set due flag
+            message1 = message1.UpdateWithOCApply<McEmailMessage> ((item) => {
+                var em = (McEmailMessage)item;
+                em.FlagDue = MockTimer.CurrentDateTime + new TimeSpan (2, 0, 0, 0);
+                return true;
+            });
+            Brain.TestUpdateEmailMessageTimeVariance (message1);
+            CheckTimeVarianceList (message1, NcTimeVarianceType.DEADLINE, typeof(NcDeadlineTimeVariance), true);
+
+            // 4. Update the time to the last event time. Verify that TimeVariance is updated to DONE.
+            MockTimer.AdvanceTime (4, 0, 1, 0); // 1 min past the deadline
+            CheckTimeVarianceList (message1, NcTimeVarianceType.DONE);
+
+            // 5. Insert another MCEmailMessage that has deadline set remotely already.
+            int accountId = 2;
+            var message2 = new McEmailMessage () {
+                AccountId = accountId,
+                From = "david@company.net",
+                Subject = "test deadline time variance #2",
+                FlagDue = MockTimer.CurrentDateTime + new TimeSpan (3, 0, 0, 0),
+            };
+            InsertAndCheck (message2);
+            CheckTimeVarianceList (message2, NcTimeVarianceType.NONE);
+
+            // 6. Analyze the email. Check that t.v. is started and TimeVarianceType is set to DEADLINE.
+            Brain.TestAnalyzeEmailMessage (message2);
+            CheckTimeVarianceList (message2, NcTimeVarianceType.DEADLINE, typeof(NcDeadlineTimeVariance), true);
+
+            // 7. Add a deferred one day earlier than deadline. Verify that there are now two t.v.
+            message2 = message2.UpdateWithOCApply<McEmailMessage> ((item) => {
+                var em = (McEmailMessage)item;
+                em.FlagStartDate = MockTimer.CurrentDateTime + new TimeSpan (2, 0, 0, 0);
+                return true;
+            });
+            Brain.TestUpdateEmailMessageTimeVariance (message2);
+            CheckTimeVarianceList (message2, NcTimeVarianceType.DEADLINE, typeof(NcDeadlineTimeVariance), true, typeof(NcDeferenceTimeVariance), true);
+
+            // 8. Advance time 1 sec pass deferred time. Verify that only deadline t.v. is still running
+            MockTimer.AdvanceTime (2, 0, 0, 1);
+            CheckTimeVarianceList (message2, NcTimeVarianceType.DEADLINE, typeof(NcDeadlineTimeVariance), true);
+
+            // 9. Advance time 1 sec past deadline. Verify that TimeVarianceType is set to DONE.
+            MockTimer.AdvanceTime (3, 0, 0, 0);
+            CheckTimeVarianceList (message2, NcTimeVarianceType.DONE);
+
+            // 10. Insert a 3rd McEmailMessage both deadline and defer but defer is later than deadline.
+            var message3 = new McEmailMessage () {
+                AccountId = accountId,
+                From = "david@company.net",
+                Subject = "test deadline time variance #3",
+                FlagDue = MockTimer.CurrentDateTime + new TimeSpan (1, 0, 0, 0),
+                FlagStartDate = MockTimer.CurrentDateTime + new TimeSpan (2, 0, 0, 0),
+            };
+            InsertAndCheck (message3);
+            CheckTimeVarianceList (message3, NcTimeVarianceType.NONE);
+
+            // 11. Analyze the email. Check that t.v. is started and TimeVarianceType is set to DEADLINE and there is only deadline t.v.
+            Brain.TestAnalyzeEmailMessage (message3);
+            CheckTimeVarianceList (message3, NcTimeVarianceType.DEADLINE, typeof(NcDeadlineTimeVariance), true);
+
+            // 12. Advance time 1 sec past deadline. Verify that TimeVarianceType is set to DONE.
+            MockTimer.AdvanceTime (3, 0, 0, 1);
+            CheckTimeVarianceList (message3, NcTimeVarianceType.DONE);
+        }
+
+        public void TestDeferredTimeVariance ()
+        {
+
+            Brain = new WrappedNcBrain ("TestDeferredTimeVariance");
+
+            // 1. Insert a McEmailMessage to db. Check that t.v. is not starte
+            var message1 = TimeVarianceInsertAndCheck ();
+
+            // 2. Analyze the email. Check that t.v. is started and TimeVarinaceType is set to AGING.
+            Brain.TestAnalyzeEmailMessage (message1);
+            CheckTimeVarianceList (message1, NcTimeVarianceType.AGING, typeof(NcAgingTimeVariance), true);
+
+            // 3. Set due flag
+            message1 = message1.UpdateWithOCApply<McEmailMessage> ((item) => {
+                var em = (McEmailMessage)item;
+                em.FlagDue = MockTimer.CurrentDateTime + new TimeSpan (2, 0, 0, 0);
+                return true;
+            });
+            Brain.TestUpdateEmailMessageTimeVariance (message1);
+            CheckTimeVarianceList (message1, NcTimeVarianceType.DEADLINE, typeof(NcDeadlineTimeVariance), true);
+
+            // 4. Update the time to the last event time. Verify that TimeVariance is updated to DONE.
+            MockTimer.AdvanceTime (2, 0, 1, 0); // 1 min past the deadline
             CheckTimeVarianceList (message1, NcTimeVarianceType.DONE);
         }
     }

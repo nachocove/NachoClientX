@@ -8,11 +8,15 @@ namespace NachoCore.Brain
 {
     public partial class NcBrain
     {
-        protected static void PersistentEnqueue (int accountId, NcBrainEvent brainEvent)
+        protected static void PersistentEnqueue (int accountId, NcBrainEvent brainEvent, bool notifyImmediately)
         {
             var dbEvent = new McBrainEvent (brainEvent);
             dbEvent.AccountId = accountId;
             dbEvent.Insert ();
+
+            if (notifyImmediately) {
+                SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+            }
         }
 
         protected static bool ValidEmailMessage (McEmailMessage emailMessage)
@@ -32,8 +36,7 @@ namespace NachoCore.Brain
                 return;
             }
             var brainEvent = new NcBrainUpdateAddressScoreEvent (emailAddressId, forcedUpdateDependentMessages);
-            PersistentEnqueue (accountId, brainEvent);
-            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+            PersistentEnqueue (accountId, brainEvent, true);
         }
 
         public static void UpdateMessageScore (int accountId, int emailMessageId)
@@ -42,8 +45,7 @@ namespace NachoCore.Brain
                 return;
             }
             var brainEvent = new NcBrainUpdateMessageScoreEvent (accountId, emailMessageId);
-            PersistentEnqueue (accountId, brainEvent);
-            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+            PersistentEnqueue (accountId, brainEvent, true);
         }
 
         public static void UpdateUserAction (int accountId, int emailMessageId, int action)
@@ -52,8 +54,7 @@ namespace NachoCore.Brain
                 return;
             }
             var brainEvent = new NcBrainUpdateUserActionEvent (accountId, emailMessageId, action);
-            PersistentEnqueue (accountId, brainEvent);
-            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+            PersistentEnqueue (accountId, brainEvent, true);
         }
 
         public static void UnindexEmailMessage (McEmailMessage emailMessage)
@@ -62,7 +63,7 @@ namespace NachoCore.Brain
                 return;
             }
             var brainEvent = new NcBrainUnindexMessageEvent (emailMessage.AccountId, emailMessage.Id);
-            PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            PersistentEnqueue (emailMessage.AccountId, brainEvent, false);
         }
 
         public static bool ValidContact (McContact contact)
@@ -76,7 +77,7 @@ namespace NachoCore.Brain
                 return;
             }
             var brainEvent = new NcBrainUnindexContactEvent (contact.AccountId, contact.Id);
-            PersistentEnqueue (contact.AccountId, brainEvent);
+            PersistentEnqueue (contact.AccountId, brainEvent, false);
         }
 
         public static void ReindexContact (McContact contact)
@@ -85,7 +86,7 @@ namespace NachoCore.Brain
                 return;
             }
             var brainEvent = new NcBrainReindexContactEvent (contact.AccountId, contact.Id);
-            PersistentEnqueue (contact.AccountId, brainEvent);
+            PersistentEnqueue (contact.AccountId, brainEvent, false);
         }
 
         public static void MarkForDeletion (int accountId)
@@ -115,8 +116,7 @@ namespace NachoCore.Brain
                 NotificationTime = notificationTime,
                 Variance = variance,
             };
-            PersistentEnqueue (emailMessage.AccountId, brainEvent);
-            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+            PersistentEnqueue (emailMessage.AccountId, brainEvent, true);
         }
 
         public static void MessageReadStatusUpdated (McEmailMessage emailMessage, DateTime readTime, double variance)
@@ -132,8 +132,7 @@ namespace NachoCore.Brain
                 ReadTime = readTime,
                 Variance = variance,
             };
-            PersistentEnqueue (emailMessage.AccountId, brainEvent);
-            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+            PersistentEnqueue (emailMessage.AccountId, brainEvent, true);
         }
 
         public static void MessageReplyStatusUpdated (McEmailMessage emailMessage, DateTime replyTime, double variance)
@@ -149,8 +148,16 @@ namespace NachoCore.Brain
                 ReplyTime = replyTime,
                 Variance = variance,
             };
-            PersistentEnqueue (emailMessage.AccountId, brainEvent);
-            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+            PersistentEnqueue (emailMessage.AccountId, brainEvent, true);
+        }
+
+        public static void MessageFlagUpdated (McEmailMessage emailMessage)
+        {
+            if (!ValidEmailMessage (emailMessage)) {
+                return;
+            }
+            var brainEvent = new NcBrainMessageFlagEvent (emailMessage.AccountId, emailMessage.Id);
+            PersistentEnqueue (emailMessage.AccountId, brainEvent, true);
         }
     }
 }

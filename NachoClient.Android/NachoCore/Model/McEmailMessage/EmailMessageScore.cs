@@ -182,7 +182,7 @@ namespace NachoCore.Model
             }
             NcTimeVarianceList tvList = EvaluateTimeVariance ();
             if (0 < tvList.Count) {
-                DateTime now = DateTime.UtcNow;
+                DateTime now = NcTimeVariance.GetCurrentDateTime ();
                 score *= tvList.Adjustment (now);
             }
             return score;
@@ -522,6 +522,11 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McEmailMessage> ().Count ();
         }
 
+        protected T CreateTimeVariance<T> (DateTime time)
+        {
+            return (T)Activator.CreateInstance (typeof(T), TimeVarianceDescription (),
+                (NcTimeVariance.NcTimeVarianceCallBack)TimeVarianceCallBack, Id, time);
+        }
 
         /// <summary>
         /// Evaluate the parameters in McEmailMessage and produce a list of 
@@ -540,30 +545,35 @@ namespace NachoCore.Model
                 // meeting invite with a valid stop time, a single deadline time
                 // variance state machine is created. No other consideration is
                 // needed.
-                NcMeetingTimeVariance tv = 
-                    new NcMeetingTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deadline);
-                tvList.Add (tv);
+                tvList.Add (CreateTimeVariance<NcMeetingTimeVariance> (deadline));
                 return tvList;
             }
 
             ExtractDateTimeFromPair (FlagStartDate, FlagUtcStartDate, ref deferredUntil);
             ExtractDateTimeFromPair (FlagDue, FlagUtcDue, ref deadline);
 
+            // Handle deadline (with optional defer)
             if (IsValidDateTime (deadline)) {
-                NcDeadlineTimeVariance tv =
-                    new NcDeadlineTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deadline);
-                tvList.Add (tv);
+                tvList.Add (CreateTimeVariance<NcDeadlineTimeVariance> (deadline));
+
+                if (IsValidDateTime (deferredUntil) && (deferredUntil < deadline)) {
+                    // Make sure that deferred date is earlier than deadline. Deferring after a deadline makes
+                    // no sense but the user can configure such flags. In that case, just ignore the defer
+                    tvList.Add (CreateTimeVariance<NcDeferenceTimeVariance> (deferredUntil));
+                }
+                return tvList;
             }
+
+            // Handle defer (no deadline)
             if (IsValidDateTime (deferredUntil)) {
-                NcDeferenceTimeVariance tv =
-                    new NcDeferenceTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deferredUntil);
-                tvList.Add (tv);
+                var deferTv = CreateTimeVariance<NcDeferenceTimeVariance> (deferredUntil);
+                tvList.Add (deferTv);
+                tvList.Add (CreateTimeVariance<NcAgingTimeVariance> (deferTv.LastEventTime ()));
+                return tvList;
             }
-            {
-                NcAgingTimeVariance tv =
-                    new NcAgingTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, DateReceived);
-                tvList.Add (tv);
-            }
+
+            // Default agining only
+            tvList.Add (CreateTimeVariance<NcAgingTimeVariance> (DateReceived));
 
             return tvList;
         }
@@ -683,7 +693,7 @@ namespace NachoCore.Model
             }
 
             // Update time variance state if necessary
-            DateTime now = DateTime.UtcNow;
+            DateTime now = NcTimeVariance.GetCurrentDateTime ();
             NcTimeVarianceList tvList = emailMessage.EvaluateTimeVariance ();
             bool fullUpdateNeeded = emailMessage.UpdateTimeVarianceStates (tvList, now);
 
