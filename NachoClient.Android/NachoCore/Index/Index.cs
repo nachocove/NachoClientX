@@ -13,6 +13,7 @@ using Lucene.Net.Documents;
 using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
 using Lucene.Net.Search.Payloads;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.Index
 {
@@ -222,6 +223,7 @@ namespace NachoCore.Index
                 .Replace ("*", " ")
                 .Replace ("?", " ")
                 .Trim ();
+            queryString = Regex.Replace (queryString, @"\s+", " ");
             if (String.IsNullOrEmpty (queryString)) {
                 return new List<MatchedItem> ();
             }

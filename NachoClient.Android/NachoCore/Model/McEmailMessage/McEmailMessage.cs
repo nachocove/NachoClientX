@@ -612,6 +612,18 @@ namespace NachoCore.Model
                 accountId, threadId, "Defer until");
         }
 
+        public static List<McEmailMessageThread> QueryForMessageThreadSet(List<int> indexList)
+        {
+            var set = String.Format ("( {0} )", String.Join (",", indexList.ToArray<int> ()));
+            var cmd = String.Format (
+                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+                "WHERE " +
+                "e.ID IN {0} " +
+                " ORDER BY e.DateReceived DESC ",
+                set);
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (cmd); 
+        }
+
         public static List<McEmailMessage> QueryNeedsIndexing (int maxMessages)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
