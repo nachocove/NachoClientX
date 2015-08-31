@@ -292,6 +292,7 @@ namespace NachoCore.ActiveSync
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 // Remove NcTask.Run once #1313 solved.
                 // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
+                Cts = new CancellationTokenSource ();
                 NcTask.Run (AttemptHttp, "AttemptHttp");
             } else {
                 Owner.ResolveAllDeferred ();
@@ -403,7 +404,9 @@ namespace NachoCore.ActiveSync
                             }
                         },
                         cToken, 
-                        ((Owner.IsContentLarge (this)) ? 10 : 2) * 1000, 
+                        // We only want to see this Error if truly wedged.
+                        // This timer doesn't perform any recovery action.
+                        ((Owner.IsContentLarge (this)) ? 60 : 30) * 1000, 
                         System.Threading.Timeout.Infinite);
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
@@ -441,8 +444,13 @@ namespace NachoCore.ActiveSync
         private async void AttemptHttp ()
         {
             IHttpClient client;
-            Cts = new CancellationTokenSource ();
             var cToken = Cts.Token;
+
+            if (cToken.IsCancellationRequested) {
+                // Because of #1313, we are using Task.Run to start AttemptHttp. 
+                // Sometimes there is a big delay.
+                return;
+            }
 
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
