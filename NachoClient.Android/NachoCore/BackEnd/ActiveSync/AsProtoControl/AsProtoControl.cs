@@ -144,7 +144,6 @@ namespace NachoCore.ActiveSync
              * State Machine design:
              * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
              * * ForceStop can happen at any time, and must Cancel anything that is going on immediately.
-             * * ForceSync can happen at any time, and must Cancel anything that is going on immediately and initiate Sync.
              * * Objects can be added to the McPending Q at any time.
              * * All other events must come from the orderly completion of commands or internal forced transitions.
              * 
@@ -711,8 +710,6 @@ namespace NachoCore.ActiveSync
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new AsStrategy (this);
             PushAssist = new PushAssist (this);
-            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
             NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
@@ -722,8 +719,6 @@ namespace NachoCore.ActiveSync
                 Log.Warn (Log.LOG_IMAP, "AsProtoControl.Remove called while state is {0}", Sm.State);
             }
             // TODO cleanup stuff on disk like for wipe.
-            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();
@@ -1157,42 +1152,6 @@ namespace NachoCore.ActiveSync
             if (null != Validator) {
                 Validator.Cancel ();
                 Validator = null;
-            }
-        }
-
-        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
-        {
-            if (null == Server) {
-                // This can happen when we're in AUTO-D and another account's server goes sideways.
-                return;
-            }
-            if (e.ServerId == Server.Id) {
-                switch (e.Quality) {
-                case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality OK.", Server.Host);
-                    Execute ();
-                    break;
-
-                default:
-                case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality degraded.", Server.Host);
-                    break;
-
-                case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality unusable.", Server.Host);
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
-                    break;
-                }
-            }
-        }
-
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
-        {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                Execute ();
-            } else {
-                // The "Down" case.
-                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
             }
         }
 

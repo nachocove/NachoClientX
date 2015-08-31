@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
+using NachoPlatform;
 
 namespace NachoCore
 {
@@ -99,6 +100,10 @@ namespace NachoCore
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
             ForceStopped = false;
+            if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
+                NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
+                NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
+            }
         }
 
         protected void SetupAccount ()
@@ -174,6 +179,51 @@ namespace NachoCore
             // Create file directories.
             NcModel.Instance.InitializeDirs (AccountId);
         }
+
+        #region NcCommStatus
+
+        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
+        {
+            if (null == Server) {
+                // This can happen when we're in AUTO-D and another account's server goes sideways.
+                return;
+            }
+            if (e.ServerId == Server.Id) {
+                switch (e.Quality) {
+                case NcCommStatus.CommQualityEnum.OK:
+                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality OK.", Server.Host);
+                    if (!ForceStopped) {
+                        Execute ();
+                    }
+                    break;
+
+                default:
+                case NcCommStatus.CommQualityEnum.Degraded:
+                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality degraded.", Server.Host);
+                    break;
+
+                case NcCommStatus.CommQualityEnum.Unusable:
+                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality unusable.", Server.Host);
+                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
+                    break;
+                }
+            }
+        }
+
+        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
+        {
+            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
+                if (!ForceStopped) {
+                    Execute ();
+                }
+            } else {
+                // The "Down" case.
+                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
+            }
+        }
+
+        #endregion
+
 
         public NcStateMachine Sm { set; get; }
 
@@ -333,6 +383,10 @@ namespace NachoCore
 
         public virtual void Remove ()
         {
+            if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
+                NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
+                NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            }
         }
 
         public virtual void CertAskResp (bool isOkay)
