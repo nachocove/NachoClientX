@@ -295,7 +295,6 @@ namespace NachoCore.Index
             Type = field.StringValue;
             field = doc.GetField ("id");
             Id = field.StringValue;
-            Console.WriteLine ("score={0}", score);
         }
     }
 
