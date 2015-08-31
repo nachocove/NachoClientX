@@ -180,12 +180,10 @@ namespace NachoCore.Model
                 Log.Error (Log.LOG_BRAIN, "Invalid score {0}\n{1}", score, new StackTrace (true));
                 score = 1.0;
             }
-            NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
+            NcTimeVarianceList tvList = EvaluateTimeVariance ();
             if (0 < tvList.Count) {
-                DateTime now = DateTime.UtcNow;
-                foreach (NcTimeVariance tv in tvList) {
-                    score *= tv.Adjustment (now);
-                }
+                DateTime now = NcTimeVariance.GetCurrentDateTime ();
+                score *= tvList.Adjustment (now);
             }
             return score;
         }
@@ -385,14 +383,12 @@ namespace NachoCore.Model
             }
             InitializeTimeVariance ();
             var newScore = Classify ();
-            var newState = TimeVarianceState;
             var newTYpe = TimeVarianceType;
             UpdateByBrain ((item) => {
                 var em = (McEmailMessage)item;
                 em.Score = newScore;
                 em.ScoreVersion = newScoreVersion;
                 em.NeedUpdate = 0;
-                em.TimeVarianceState = newState;
                 em.TimeVarianceType = newTYpe;
                 return true;
             });
@@ -426,7 +422,7 @@ namespace NachoCore.Model
             return true;
         }
 
-        private string TimeVarianceDescription ()
+        public string TimeVarianceDescription ()
         {
             return String.Format ("[McEmailMessage:{0}]", Id);
         }
@@ -526,6 +522,11 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McEmailMessage> ().Count ();
         }
 
+        protected T CreateTimeVariance<T> (DateTime time)
+        {
+            return (T)Activator.CreateInstance (typeof(T), TimeVarianceDescription (),
+                (NcTimeVariance.NcTimeVarianceCallBack)TimeVarianceCallBack, Id, time);
+        }
 
         /// <summary>
         /// Evaluate the parameters in McEmailMessage and produce a list of 
@@ -533,9 +534,9 @@ namespace NachoCore.Model
         /// running. They just need to exist at point given the email parameters.
         /// </summary>
         /// <returns>List of NcTimeVariance objects</returns>
-        private NcTimeVariance.TimeVarianceList EvaluateTimeVariance ()
+        private NcTimeVarianceList EvaluateTimeVariance ()
         {
-            NcTimeVariance.TimeVarianceList tvList = new NcTimeVariance.TimeVarianceList ();
+            NcTimeVarianceList tvList = new NcTimeVarianceList ();
             DateTime deadline = DateTime.MinValue;
             DateTime deferredUntil = DateTime.MinValue;
 
@@ -544,30 +545,35 @@ namespace NachoCore.Model
                 // meeting invite with a valid stop time, a single deadline time
                 // variance state machine is created. No other consideration is
                 // needed.
-                NcMeetingTimeVariance tv = 
-                    new NcMeetingTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deadline);
-                tvList.Add (tv);
+                tvList.Add (CreateTimeVariance<NcMeetingTimeVariance> (deadline));
                 return tvList;
             }
 
             ExtractDateTimeFromPair (FlagStartDate, FlagUtcStartDate, ref deferredUntil);
             ExtractDateTimeFromPair (FlagDue, FlagUtcDue, ref deadline);
 
+            // Handle deadline (with optional defer)
             if (IsValidDateTime (deadline)) {
-                NcDeadlineTimeVariance tv =
-                    new NcDeadlineTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deadline);
-                tvList.Add (tv);
+                tvList.Add (CreateTimeVariance<NcDeadlineTimeVariance> (deadline));
+
+                if (IsValidDateTime (deferredUntil) && (deferredUntil < deadline)) {
+                    // Make sure that deferred date is earlier than deadline. Deferring after a deadline makes
+                    // no sense but the user can configure such flags. In that case, just ignore the defer
+                    tvList.Add (CreateTimeVariance<NcDeferenceTimeVariance> (deferredUntil));
+                }
+                return tvList;
             }
+
+            // Handle defer (no deadline)
             if (IsValidDateTime (deferredUntil)) {
-                NcDeferenceTimeVariance tv =
-                    new NcDeferenceTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deferredUntil);
-                tvList.Add (tv);
+                var deferTv = CreateTimeVariance<NcDeferenceTimeVariance> (deferredUntil);
+                tvList.Add (deferTv);
+                tvList.Add (CreateTimeVariance<NcAgingTimeVariance> (deferTv.LastEventTime ()));
+                return tvList;
             }
-            {
-                NcAgingTimeVariance tv =
-                    new NcAgingTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, DateReceived);
-                tvList.Add (tv);
-            }
+
+            // Default agining only
+            tvList.Add (CreateTimeVariance<NcAgingTimeVariance> (DateReceived));
 
             return tvList;
         }
@@ -579,26 +585,14 @@ namespace NachoCore.Model
         /// <returns><c>true</c>, if time variance was updated, <c>false</c> otherwise.</returns>
         /// <param name="tvList">A list of active time variance.</param>
         /// <param name="now">A timestamp to be used for finding next state for all tv.</param>
-        private bool UpdateTimeVarianceStates (NcTimeVariance.TimeVarianceList tvList, DateTime now)
+        private bool UpdateTimeVarianceStates (NcTimeVarianceList tvList, DateTime now)
         {
-            // If the list of active time variances is empty, then the message's score is
-            // stable.  This is indicated by a TimeVarianceType value of DONE.
-            //
-            // TODO The TimeVarianceType field used to be used for something else.  It has
-            // been repurposed for now, and is used like a boolean field.  The repurposing
-            // was done to avoid changing the database table layout.  This should be cleaned
-            // up in the Brain 2.0 work.
-
-            bool updated = false;
-            if (0 == tvList.Count && (int)NcTimeVarianceType.DONE != TimeVarianceType) {
-                TimeVarianceType = (int)NcTimeVarianceType.DONE;
-                updated = true;
+            var newType = tvList.LastTimeVarianceType (now);
+            if (TimeVarianceType == (int)newType) {
+                return false;
             }
-            if (0 < tvList.Count && (int)NcTimeVarianceType.DONE == TimeVarianceType) {
-                TimeVarianceType = (int)NcTimeVarianceType.NONE;
-                updated = true;
-            }
-            return updated;
+            TimeVarianceType = (int)newType;
+            return true;
         }
 
         private void InitializeTimeVariance ()
@@ -609,27 +603,21 @@ namespace NachoCore.Model
                 return;
             }
 
-            DateTime now = DateTime.Now;
-            NcTimeVariance.TimeVarianceList tvList;
-            tvList = EvaluateTimeVariance ().FilterStillRunning (now);
+            DateTime now = NcTimeVariance.GetCurrentDateTime ();
+            NcTimeVarianceList tvList = EvaluateTimeVariance ();
 
             /// Start all applicable state machines
-            if (0 < tvList.Count) {
-                foreach (NcTimeVariance tv in tvList) {
-                    tv.Start ();
-                }
-            } else {
+            if (!tvList.Start (now)) {
+                // All TV SMs finish for this email message. Compute the final score
                 Score = Classify ();
             }
 
             if (UpdateTimeVarianceStates (tvList, now)) {
                 var newScore = Score;
-                var newState = TimeVarianceState;
                 var newType = TimeVarianceType;
                 UpdateByBrain ((item) => {
                     var em = (McEmailMessage)item;
                     em.Score = newScore;
-                    em.TimeVarianceState = newState;
                     em.TimeVarianceType = newType;
                     return true;
                 });
@@ -705,9 +693,8 @@ namespace NachoCore.Model
             }
 
             // Update time variance state if necessary
-            DateTime now = DateTime.UtcNow;
-            NcTimeVariance.TimeVarianceList tvList =
-                emailMessage.EvaluateTimeVariance ().FilterStillRunning (now);
+            DateTime now = NcTimeVariance.GetCurrentDateTime ();
+            NcTimeVarianceList tvList = emailMessage.EvaluateTimeVariance ();
             bool fullUpdateNeeded = emailMessage.UpdateTimeVarianceStates (tvList, now);
 
             // Recompute a new score and update it in the cache
@@ -720,12 +707,10 @@ namespace NachoCore.Model
             if (fullUpdateNeeded || scoreChanged) {
                 emailMessage.NeedUpdate = 0;
                 if (fullUpdateNeeded) {
-                    var newState = emailMessage.TimeVarianceState;
                     var newType = emailMessage.TimeVarianceType;
                     emailMessage.UpdateByBrain ((item) => {
                         var em = (McEmailMessage)item;
                         em.Score = newScore;
-                        em.TimeVarianceState = newState;
                         em.TimeVarianceType = newType;
                         return true;
                     });
@@ -761,7 +746,7 @@ namespace NachoCore.Model
                 /// Throttle
                 n = (n + 1) % 8;
                 if (0 == n) {
-                    if (!NcTask.CancelableSleep (500, token)) {
+                    if (!NcTask.CancelableSleep (100, token)) {
                         break;
                     }
                 }

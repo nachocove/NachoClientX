@@ -248,12 +248,8 @@ namespace NachoCore.Brain
 
         private void ProcessMessageFlagsEvent (NcBrainMessageFlagEvent brainEvent)
         {
-            McEmailMessage emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)brainEvent.EmailMessageId);
-            if (null == emailMessage) {
-                return;
-            }
-            NcAssert.True (emailMessage.AccountId == brainEvent.AccountId);
-            emailMessage.UpdateTimeVariance ();
+            var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)brainEvent.EmailMessageId);
+            UpdateEmailMessageTimeVariance (emailMessage);
         }
 
         private void ProcessInitialRicEvent (NcBrainInitialRicEvent brainEvent)

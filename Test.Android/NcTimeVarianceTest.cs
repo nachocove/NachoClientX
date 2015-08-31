@@ -10,7 +10,8 @@ namespace Test.Common
 {
     public class NcTimeVarianceTest
     {
-        private const int TIMEOUT = 1000; // in milliseconds
+        // in milliseconds
+        private const int TIMEOUT = 1000;
         private const int ID_DEADLINE = 0;
         private const int ID_DEFERENCE = 1;
         private const int ID_AGING = 2;
@@ -23,23 +24,34 @@ namespace Test.Common
 
         private AutoResetEvent Signal;
 
+        public static void SetupMockTimer ()
+        {
+            NcTimeVariance.ActiveList.Clear ();
+            NcTimeVariance.GetCurrentDateTime = MockTimer.GetCurrentDateTime;
+            MockTimer.Start ();
+        }
+
+        public static void TearDownMockTimer ()
+        {
+            MockTimer.Stop ();
+            NcTimeVariance.GetCurrentDateTime = NcTimeVariance.PlatformGetCurrentDateTime;
+        }
+
         [SetUp]
         public void SetUp ()
         {
-            NcTimeVariance.GetCurrentDateTime = MockTimer.GetCurrentDateTime;
-            NcTimeVariance.ActiveList.Clear ();
             CallbackState = 0;
             Adjustment = 0.0;
             Signal = new AutoResetEvent (false);
             TimeVariance = new NcTimeVariance[3];
-            MockTimer.Start ();
+
+            SetupMockTimer ();
         }
 
         [TearDown]
         public void TearDown ()
         {
-            MockTimer.Stop ();
-            NcTimeVariance.GetCurrentDateTime = NcTimeVariance.PlatformGetCurrentDateTime;
+            TearDownMockTimer ();
 
             // Clean up lingering time variance objects in case of errors. When tests are
             // passing, this step is unnecessary.
@@ -57,13 +69,6 @@ namespace Test.Common
             CallbackState = state;
             Adjustment = TimeVariance [objId].Adjustment (MockTimer.GetCurrentDateTime ());
             Signal.Set ();
-        }
-
-        private void AdvanceTime (int days, int hours, int minutes, int seconds)
-        {
-            TimeSpan timeInterval = new TimeSpan (days, hours, minutes, seconds);
-            MockTimer.CurrentDateTime += timeInterval;
-            MockTimer.CurrentTime += (Int64)timeInterval.TotalMilliseconds;
         }
 
         private void CheckState (int id, bool waitForSignal, int state, double adjustment)
@@ -89,11 +94,11 @@ namespace Test.Common
 
             /// Advance to 1 second before the end of this state. Check that
             /// the state and adjustment remain unchanged
-            AdvanceTime (days - 1, 23, 59, 59);
+            MockTimer.AdvanceTime (days - 1, 23, 59, 59);
             CheckState (id, false, state, adjustment);
 
             /// Advance 1 second to the next state
-            AdvanceTime (0, 0, 0, 1);
+            MockTimer.AdvanceTime (0, 0, 0, 1);
         }
 
         private void CheckFinalState (int id, double adjustment)
@@ -158,7 +163,7 @@ namespace Test.Common
 
             tv.Start ();
             CheckState (ID_AGING, true, 1, 1.0);
-            AdvanceTime (4, 0, 0, 0); // +4 days. still in state 1
+            MockTimer.AdvanceTime (4, 0, 0, 0); // +4 days. still in state 1
             CheckState (ID_AGING, false, 1, 1.0);
 
             // Pause, advance, and resume within the same state
@@ -166,20 +171,20 @@ namespace Test.Common
             tv.Pause ();
             Assert.False (tv.IsRunning);
 
-            AdvanceTime (2, 0, 0, 0); // +2 days. still in state 1
+            MockTimer.AdvanceTime (2, 0, 0, 0); // +2 days. still in state 1
             CheckState (ID_AGING, false, 1, 1.0);
 
             tv.Resume ();
             CheckState (ID_AGING, false, 1, 1.0);
             Assert.True (tv.IsRunning);
 
-            AdvanceTime (1, 0, 0, 0); // +1 day. advance to state 2
+            MockTimer.AdvanceTime (1, 0, 0, 0); // +1 day. advance to state 2
             CheckState (ID_AGING, true, 2, 0.8);
 
             // Pause, advance to the middle a different state, and resume
             tv.Pause ();
             Assert.False (tv.IsRunning);
-            AdvanceTime (1, 12, 0, 0); // +1.5 day. advance to state 3
+            MockTimer.AdvanceTime (1, 12, 0, 0); // +1.5 day. advance to state 3
             tv.Resume ();
             Assert.True (tv.IsRunning);
             CheckState (ID_AGING, true, 3, 0.7);
@@ -187,7 +192,7 @@ namespace Test.Common
             // Pause, advance to the beginning of a different state, and resume
             tv.Pause ();
             Assert.False (tv.IsRunning);
-            AdvanceTime (0, 12, 0, 0); // +0.5 day. advance to state 4
+            MockTimer.AdvanceTime (0, 12, 0, 0); // +0.5 day. advance to state 4
             CheckState (ID_AGING, false, 3, 0.7);
             tv.Resume ();
             Assert.True (tv.IsRunning);
@@ -197,7 +202,7 @@ namespace Test.Common
             Assert.AreEqual (1, NcTimeVariance.ActiveList.Count);
             tv.Pause ();
             Assert.False (tv.IsRunning);
-            AdvanceTime (5, 0, 0, 0); // +5 days. advance to state 0
+            MockTimer.AdvanceTime (5, 0, 0, 0); // +5 days. advance to state 0
             tv.Resume ();
             Assert.False (tv.IsRunning); // false coz it is terminated
             CheckState (ID_AGING, true, 0, 0.1);

@@ -73,8 +73,12 @@ namespace NachoCore.Brain
             RootCounter = new NcCounter (prefix, true);
             McEmailMessageCounters = new OperationCounters ("McEmailMessage", RootCounter);
             McEmailAddressCounters = new OperationCounters ("McEmailAddress", RootCounter);
-            RootCounter.AutoReset = true;
-            RootCounter.ReportPeriod = 5 * 60; // report once every 5 min
+            if ("Brain" == prefix) {
+                RootCounter.AutoReset = true;
+                RootCounter.ReportPeriod = 5 * 60; // report once every 5 min
+            } else {
+                // A non-default prefix means this brain instance is for unit test. Disable the counter report timer
+            }
 
             LockObj = new object ();
 

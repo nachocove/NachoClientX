@@ -15,7 +15,7 @@ namespace Test.Common
 
             public TimerList ()
             {
-                TimeSlots = new SortedList<long, HashSet<MockTimer>>();
+                TimeSlots = new SortedList<long, HashSet<MockTimer>> ();
             }
 
             public HashSet<MockTimer> FindTimeSlot (Int64 time)
@@ -67,7 +67,7 @@ namespace Test.Common
             {
                 while (0 < TimeSlots.Count) {
                     HashSet<MockTimer> timeSlot;
-                    TimeSlots.TryGetValue (TimeSlots.Keys[0], out timeSlot);
+                    TimeSlots.TryGetValue (TimeSlots.Keys [0], out timeSlot);
                     TimeSlots.RemoveAt (0);
                     Log.Info (Log.LOG_TEST, "Removing {0} timers", timeSlot.Count);
                     timeSlot.Clear ();
@@ -77,6 +77,7 @@ namespace Test.Common
 
         // Keep track of all timers that will fire in the future
         private static TimerList _ActiveList;
+
         public static TimerList ActiveList {
             get {
                 if (null == _ActiveList) {
@@ -88,6 +89,7 @@ namespace Test.Common
 
         // Current time (in milliseconds)
         private static object _CurrentTimeLock;
+
         private static object CurrentTimeLock {
             get {
                 if (null == _CurrentTimeLock) {
@@ -98,6 +100,7 @@ namespace Test.Common
         }
 
         private static Int64 _CurrentTime;
+
         public static Int64 CurrentTime {
             get {
                 return _CurrentTime;
@@ -136,6 +139,7 @@ namespace Test.Common
         static AutoResetEvent Signal;
 
         Int64 _DueTime;
+
         public Int64 DueTime {
             get {
                 return _DueTime;
@@ -148,6 +152,7 @@ namespace Test.Common
                 }
             }
         }
+
         public Int64 PeriodTime;
         public TimerCallback Callback;
         Object Object_;
@@ -327,6 +332,16 @@ namespace Test.Common
         public static DateTime GetCurrentDateTime ()
         {
             return CurrentDateTime;
+        }
+
+        public static void AdvanceTime (int days, int hours, int minutes, int seconds)
+        {
+            TimeSpan timeInterval = new TimeSpan (days, hours, minutes, seconds);
+            CurrentDateTime += timeInterval;
+            Int64 expectedTime = CurrentTime + (Int64)timeInterval.TotalMilliseconds;
+            while (expectedTime != CurrentTime) {
+                CurrentTime += expectedTime - CurrentTime;
+            }
         }
     }
 }
