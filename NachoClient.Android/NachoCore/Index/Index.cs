@@ -206,7 +206,7 @@ namespace NachoCore.Index
                     var searcher = new IndexSearcher (reader);
                     var matches = searcher.Search (query, maxMatches);
                     foreach (var scoreDoc in matches.ScoreDocs) {
-                        matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc)));
+                        matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc), scoreDoc.Score));
                     }
                 }
             } catch (Lucene.Net.Store.NoSuchDirectoryException) {
@@ -275,22 +275,36 @@ namespace NachoCore.Index
 
     public class MatchedItem
     {
+        public float Score { get; protected set; }
+
         public string Type { get; protected set; }
 
         public string Id { get; protected set; }
 
-        public MatchedItem (string type, string id)
+        public MatchedItem (string type, string id, float score)
         {
+            Score = score;
             Type = type;
             Id = id;
         }
 
-        public MatchedItem (Document doc)
+        public MatchedItem (Document doc, float score)
         {
+            Score = score;
             var field = doc.GetField ("type");
             Type = field.StringValue;
             field = doc.GetField ("id");
             Id = field.StringValue;
+            Console.WriteLine ("score={0}", score);
+        }
+    }
+
+    public class MatchedItemScoreComparer : IComparer<MatchedItem>
+    {
+
+        public int Compare (MatchedItem a, MatchedItem b)
+        {
+            return Math.Sign (b.Score - a.Score);
         }
     }
 }
