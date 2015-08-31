@@ -389,8 +389,6 @@ namespace NachoCore.SMTP
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             //SyncStrategy = new SmtpStrategy (this);
             //PushAssist = new PushAssist (this);
-            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
 
         public override void ForceStop ()
@@ -406,8 +404,6 @@ namespace NachoCore.SMTP
                 Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
             }
             // TODO cleanup stuff on disk like for wipe.
-            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             base.Remove ();
         }
 
@@ -463,8 +459,8 @@ namespace NachoCore.SMTP
                 return;
             }
             BackEndStatePreset = BackEndStateEnum.Running;
-            var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
-            cmd.Execute (Sm);
+            SetCmd (new SmtpDiscoveryCommand (this, SmtpClient));
+            ExecuteCmd ();
         }
 
         private int DiscoveryRetries = 0;
@@ -527,8 +523,8 @@ namespace NachoCore.SMTP
         private void DoConn ()
         {
             DiscoveryRetries = 0;
-            var cmd = new SmtpAuthenticateCommand(this, SmtpClient);
-            cmd.Execute (Sm);
+            SetCmd (new SmtpAuthenticateCommand (this, SmtpClient));
+            ExecuteCmd ();
         }
 
         private void CancelCmd ()
@@ -650,38 +646,6 @@ namespace NachoCore.SMTP
                 ResolveDoNotDelayAsHardFail ();
             }
             LastIsDoNotDelayOk = IsDoNotDelayOk;
-        }
-
-        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
-        {
-            if (e.ServerId == Server.Id) {
-                switch (e.Quality) {
-                case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_SMTP, "Server {0} communication quality OK.", Server.Host);
-                    Execute ();
-                    break;
-
-                default:
-                case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_SMTP, "Server {0} communication quality degraded.", Server.Host);
-                    break;
-
-                case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_SMTP, "Server {0} communication quality unusable.", Server.Host);
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
-                    break;
-                }
-            }
-        }
-
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
-        {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                Execute ();
-            } else {
-                // The "Down" case.
-                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
-            }
         }
 
         #region ValidateConfig

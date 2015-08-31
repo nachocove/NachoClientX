@@ -91,27 +91,44 @@ namespace NachoCore.IMAP
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
             }
-            cap.Pause ();
-            Log.Info (Log.LOG_IMAP, "{0} Sync took {1}ms", Synckit.Folder.ImapFolderNameRedacted (), cap.ElapsedMilliseconds);
-            cap.Stop ();
             cap.Dispose ();
             return evt;
         }
 
+        /// <summary>
+        /// A sort of 'macro' method. This assumes that the Folder Metadata is out of date (or has never been retrieved)
+        /// so we do that first. Then we call back into strategy to let it decide what it wants us to do, and finally
+        /// we do it (if there's something to do).
+        /// </summary>
+        /// <returns>The Event to post</returns>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="span">Span.</param>
+        /// <param name="timespan">Timespan.</param>
         private Event QuickSync (NcImapFolder mailKitFolder, uint span, TimeSpan timespan)
         {
             if (!GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan)) {
                 Log.Warn (Log.LOG_IMAP, "Could not get folder metadata");
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL1");
             }
-            var syncSet = ImapStrategy.QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
-            if (null == syncSet || !syncSet.Any ()) {
-                Finish (false);
-                return Event.Create ((uint)NachoCore.IMAP.ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
+            bool changed = false;
+            Event evt;
+            if (ImapStrategy.FillInQuickSyncKit (ref Synckit, AccountId, span)) {
+                evt = syncFolder (mailKitFolder);
+                changed = true;
+            } else {
+                // TODO: Need to figure out how strategy knows when to stop trying quicksync.
+                // Currently, all Strategy does is create the QuickSync SyncKit and throws it over the fence.
+                // It doesn't know if there is in fact anything to do. At this point only the Sync command,
+                // i.e. this code you're looking at, knows we're done. Needs more thought, so leaving the hack
+                // in here for now.
+                if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCQKNONE");
+                }
             }
-            Synckit.SyncSet = syncSet;
-            Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (BEContext.Account.Id, Synckit.Folder.Id, span);
-            return syncFolder (mailKitFolder);
+            Finish (changed);
+            return evt;
         }
 
         private Event getFolderMetaDataInternal (NcImapFolder mailKitFolder, TimeSpan timespan)
@@ -126,7 +143,7 @@ namespace NachoCore.IMAP
         private Event syncFolder (NcImapFolder mailKitFolder)
         {
             bool changed = false;
-            if (Synckit.SyncSet.Any ()) {
+            if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
                 // First find all messages marked as /Deleted
                 UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
 
@@ -171,8 +188,6 @@ namespace NachoCore.IMAP
                 MinSynced = Math.Min (Synckit.SyncSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced);
                 if (MaxSynced != 0 && MaxSynced != Synckit.Folder.ImapUidHighestUidSynced ||
                     MinSynced != 0 && MinSynced != Synckit.Folder.ImapUidLowestUidSynced) {
-                    Log.Info (Log.LOG_IMAP, "{0}: Set ImapUidHighestUidSynced {1} ImapUidLowestUidSynced {2}",
-                        Synckit.Folder.ImapFolderNameRedacted (), MaxSynced, MinSynced);
                 }
             }
             // Update the sync count and last attempt and set the Highest and lowest sync'd
@@ -221,7 +236,7 @@ namespace NachoCore.IMAP
                         bool changed1;
                         bool created1;
                         MessageSummary summ = imapSummary as MessageSummary;
-                        var emailMessage = ServerSaysAddOrChangeEmail (BEContext.Account.Id, summ, Synckit.Folder, out changed1, out created1);
+                        var emailMessage = ServerSaysAddOrChangeEmail (AccountId, summ, Synckit.Folder, out changed1, out created1);
                         if (null == emailMessage) {
                             // something went wrong in the call, but it was logged there, too.
                             continue;
@@ -262,9 +277,6 @@ namespace NachoCore.IMAP
                         }
                         summaryUids.Add (imapSummary.UniqueId);
                     }
-                    cap.Pause ();
-                    Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms ({3} new or changed)", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds, newOrChanged.Count);
-                    cap.Stop ();
                 }
             }
             vanished = SyncKit.MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
@@ -285,9 +297,6 @@ namespace NachoCore.IMAP
                     } else {
                         imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Cts.Token);
                     }
-                    cap.Pause ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
-                    cap.Stop ();
                 }
             } catch (ImapProtocolException) {
                 // try one-by-one so we can at least get a few.
@@ -332,7 +341,7 @@ namespace NachoCore.IMAP
             McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
             if (null != emailMessage) {
                 try {
-                    changed = updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                    changed = UpdateEmailMetaData (emailMessage, imapSummary);
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception updating: {0}", ex.ToString ());
                 }
@@ -400,8 +409,10 @@ namespace NachoCore.IMAP
                 EmailMessage = EmailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                     var target = (McEmailMessage)record;
                     target.ImapUid = uid.Value.Id;
+                    target.ServerId = ImapProtoControl.MessageServerId (Synckit.Folder, uid.Value);
                     return true;
                 });
+                EmailMessage = FixupFromInfo (EmailMessage, true);
             } else {
                 Log.Error (Log.LOG_IMAP, "Append to Folder did not return a uid!");
             }
@@ -421,9 +432,8 @@ namespace NachoCore.IMAP
             // TODO Convert some of this to queries instead of loops
             UniqueIdSet messagesDeleted = new UniqueIdSet ();
             foreach (var uid in uids) {
-                var email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ImapProtoControl.MessageServerId (Synckit.Folder, uid));
+                var email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, ImapProtoControl.MessageServerId (Synckit.Folder, uid));
                 if (null != email) {
-                    Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", Synckit.Folder.ImapFolderNameRedacted (), email.ImapUid);
                     email.Delete ();
                     messagesDeleted.Add (uid);
                 }
@@ -437,15 +447,20 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "Trying to update email message without any flags");
                 return false;
             }
-            return UpdateEmailMetaData (emailMessage, summary.Flags.Value, summary.UserFlags);
-        }
-
-        public static bool UpdateEmailMetaData (McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
-        {
+            MessageFlags Flags = summary.Flags.GetValueOrDefault ();
+            HashSet<string> UserFlags = summary.UserFlags;
             bool changed = false;
 
-            // IMAP can only update flags. Anything else is a new UID/message.
             if (updateFlags (emailMessage, Flags, UserFlags)) {
+                changed = true;
+            }
+            if (emailMessage.MessageID != summary.Envelope.MessageId) {
+                emailMessage.MessageID = summary.Envelope.MessageId;
+                changed = true;
+            }
+            bool ch;
+            FixupFromInfo (emailMessage, false, out ch);
+            if (ch) {
                 changed = true;
             }
             return changed;
@@ -478,6 +493,52 @@ namespace NachoCore.IMAP
                 // FIXME Where do we set these flags?
             }
             return changed;
+        }
+
+        public static McEmailMessage FixupFromInfo (McEmailMessage emailMessage, bool updateDb)
+        {
+            bool changed;
+            return FixupFromInfo (emailMessage, updateDb, out changed);
+        }
+
+        public static McEmailMessage FixupFromInfo (McEmailMessage emailMessage, bool updateDb, out bool changed)
+        {
+            changed = false;
+            if (!string.IsNullOrEmpty (emailMessage.From)) {
+                string cachedFromLetters = string.Empty;
+                int cachedFromColor = 1;
+                int fromEmailAddressId = 0;
+                try {
+                    cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
+                }
+
+                McEmailAddress fromEmailAddress;
+                if (McEmailAddress.Get (emailMessage.AccountId, emailMessage.From, out fromEmailAddress)) {
+                    fromEmailAddressId = fromEmailAddress.Id;
+                    cachedFromColor = fromEmailAddress.ColorIndex;
+                }
+                if (emailMessage.cachedFromLetters != cachedFromLetters ||
+                    emailMessage.cachedFromColor != cachedFromColor ||
+                    emailMessage.FromEmailAddressId != fromEmailAddressId) {
+                    if (updateDb) {
+                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var target = (McEmailMessage)record;
+                            target.cachedFromLetters = cachedFromLetters;
+                            target.cachedFromColor = cachedFromColor;
+                            target.FromEmailAddressId = fromEmailAddressId;
+                            return true;
+                        });
+                    } else {
+                        emailMessage.cachedFromLetters = cachedFromLetters;
+                        emailMessage.cachedFromColor = cachedFromColor;
+                        emailMessage.FromEmailAddressId = fromEmailAddressId;
+                    }
+                }
+                changed = true;
+            }
+            return emailMessage;
         }
 
         public static McEmailMessage ParseEmail (int accountId, string ServerId, MessageSummary summary)
@@ -522,19 +583,6 @@ namespace NachoCore.IMAP
                             emailMessage.From = string.Empty; // make sure it's at least empty, not null.
                         }
                     }
-                }
-                if (!string.IsNullOrEmpty (emailMessage.From)) {
-                    try {
-                        emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
-                    } catch (Exception ex) {
-                        Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
-                    }
-                }
-
-                McEmailAddress fromEmailAddress;
-                if (null != fromAddr && McEmailAddress.Get (accountId, fromAddr, out fromEmailAddress)) {
-                    emailMessage.FromEmailAddressId = fromEmailAddress.Id;
-                    emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
                 }
             }
             if (summary.Envelope.ReplyTo.Count > 0) {
@@ -606,7 +654,7 @@ namespace NachoCore.IMAP
             }
             emailMessage.IsIncomplete = false;
 
-            return emailMessage;
+            return FixupFromInfo (emailMessage, false);
         }
 
         private string FetchHeaders (NcImapFolder mailKitFolder, MessageSummary summary)
@@ -712,7 +760,7 @@ namespace NachoCore.IMAP
 
             if (string.Empty == preview) {
                 // This can happen if there's only attachments in the message.
-                Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId);
+                //Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId);
             }
             return preview;
         }

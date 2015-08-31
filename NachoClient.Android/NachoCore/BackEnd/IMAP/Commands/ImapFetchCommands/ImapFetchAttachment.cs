@@ -37,7 +37,7 @@ namespace NachoCore.IMAP
 
         private NcResult FetchAttachment (McPending pending)
         {
-            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
+            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, pending.ServerId);
             if (null == email) {
                 Log.Error (Log.LOG_IMAP, "Could not find email for ServerId {0}", pending.ServerId);
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.BadOrMalformed);
@@ -63,7 +63,7 @@ namespace NachoCore.IMAP
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.MissingOnServer);
             }
 
-            var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
+            var tmp = NcModel.Instance.TmpPath (AccountId);
             mailKitFolder.SetStreamContext (new UniqueId (email.ImapUid), tmp);
             try {
                 Stream st = mailKitFolder.GetStream (new UniqueId (email.ImapUid), attachment.FileReference, Cts.Token, this);

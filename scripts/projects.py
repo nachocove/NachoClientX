@@ -110,8 +110,8 @@ projects = {
             'identity_pool_id': 'us-east-1:2e5f8d44-3f75-4f94-9539-696849b9bca5',
             'unauth_role_arn': 'arn:aws:iam::610813048224:role/nachomail/cognito/nachomail_prod_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
-            's3_bucket': '',
-            'support_s3_bucket': '',
+            's3_bucket': '59f1d07a-prod-t3-',
+            'support_s3_bucket': '59f1d07a-prod-t3-trouble-tickets',
         },
         'pinger': {
             'hostname': 'p745x.pxs001.com',

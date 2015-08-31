@@ -25,6 +25,7 @@ namespace NachoCore.IMAP
     {
         const int KAuthRetries = 2;
 
+        protected int AccountId { get; set; }
         protected NcImapClient Client { get; set; }
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
@@ -34,6 +35,7 @@ namespace NachoCore.IMAP
         {
             Client = imapClient;
             RedactProtocolLogFunc = null;
+            AccountId = BEContext.Account.Id;
         }
 
         // MUST be overridden by subclass.
@@ -55,7 +57,7 @@ namespace NachoCore.IMAP
                 try {
                     TryLock (Client.SyncRoot, KLockTimeout);
                 } catch (CommandLockTimeOutException ex) {
-                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
+                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, AccountId, ex.Message);
                 }
             }
         }
@@ -97,7 +99,7 @@ namespace NachoCore.IMAP
         {
             Event evt;
             Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             try {
                 evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
@@ -155,10 +157,10 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             }
             if (Cts.Token.IsCancellationRequested) {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, BEContext.Account.Id);
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
                 return;
             }
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             switch (action.Item1) {
             case ResolveAction.None:
                 break;
@@ -176,7 +178,6 @@ namespace NachoCore.IMAP
         {
             if (!Client.IsConnected) {
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
-                Log.Info (Log.LOG_IMAP, "IMAP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
                 var capUnauth = McProtocolState.FromImapCapabilities (Client.Capabilities);
 
                 if (capUnauth != BEContext.ProtocolState.ImapServerCapabilities) {
@@ -229,7 +230,6 @@ namespace NachoCore.IMAP
                     throw ex;
                 }
 
-                Log.Info (Log.LOG_IMAP, "IMAP Server capabilities: {0}", Client.Capabilities.ToString ());
                 var capAuth = McProtocolState.FromImapCapabilities (Client.Capabilities);
                 if (capAuth != BEContext.ProtocolState.ImapServerCapabilities) {
                     BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
@@ -248,9 +248,9 @@ namespace NachoCore.IMAP
                     OS = NachoPlatform.Device.Instance.BaseOs ().ToString (),
                     OSVersion = NachoPlatform.Device.Instance.Os (),
                 };
-                Log.Info (Log.LOG_IMAP, "Our Id: {0}", dumpImapImplementation(ourId));
+                //Log.Info (Log.LOG_IMAP, "Our Id: {0}", dumpImapImplementation(ourId));
                 var serverId = Client.Identify (ourId, Cts.Token);
-                Log.Info (Log.LOG_IMAP, "Server ID: {0}", dumpImapImplementation (serverId));
+                Log.Info (Log.LOG_IMAP, "IMAP Server {0}:{1} capabilities: {2} Id: {3}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString (), dumpImapImplementation (serverId));
             }
         }
 
@@ -310,9 +310,9 @@ namespace NachoCore.IMAP
             bool added_or_changed = false;
             var ParentId = GetParentId (mailKitFolder);
             if (isDisinguished) {
-                folder = McFolder.GetDistinguishedFolder (BEContext.Account.Id, folderType);
+                folder = McFolder.GetDistinguishedFolder (AccountId, folderType);
             } else {
-                folder = McFolder.GetUserFolders (BEContext.Account.Id, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
+                folder = McFolder.GetUserFolders (AccountId, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
             }
 
             if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
@@ -327,7 +327,7 @@ namespace NachoCore.IMAP
 
             if (null == folder) {
                 // Add it
-                folder = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
+                folder = McFolder.Create (AccountId, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
                 Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Adding folder {0} UidValidity {1}", folder.ImapFolderNameRedacted (), mailKitFolder.UidValidity.ToString ());
                 folder.ImapUidValidity = mailKitFolder.UidValidity;
                 folder.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
@@ -348,14 +348,10 @@ namespace NachoCore.IMAP
                     return true;
                 });
                 added_or_changed = true;
-            } else {
-                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0} unchanged", folder.ImapFolderNameRedacted ());
-
             }
 
             // Get the current list of UID's. Don't set added_or_changed. Sync will notice later.
             if (doFolderMetadata && !mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
-                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0} updating metadata", folder.ImapFolderNameRedacted ());
                 if (!GetFolderMetaData (ref folder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
                     Log.Error (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0}: Could not refresh folder metadata", folder.ImapFolderNameRedacted ());
                 }
@@ -399,9 +395,6 @@ namespace NachoCore.IMAP
         {
             NcCapture.AddKind (KCaptureFolderMetadata);
             using (var cap = NcCapture.CreateAndStart (KCaptureFolderMetadata)) {
-                // Just load UID with SELECT.
-                Log.Info (Log.LOG_IMAP, "GetFolderMetaData: {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
-
                 var query = SearchQuery.NotDeleted;
                 if (TimeSpan.Zero != timespan) {
                     query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
@@ -409,10 +402,6 @@ namespace NachoCore.IMAP
                 UniqueIdSet uids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query, Cts.Token));
 
                 Cts.Token.ThrowIfCancellationRequested ();
-
-                Log.Info (Log.LOG_IMAP, "GetFolderMetaData: {1}: Uids from last {2} days: {0}",
-                    uids.ToString (),
-                    folder.ImapFolderNameRedacted (), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
 
                 UpdateImapSetting (mailKitFolder, ref folder);
 
@@ -424,7 +413,6 @@ namespace NachoCore.IMAP
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     if (uidstring != target.ImapUidSet) {
-                        Log.Info (Log.LOG_IMAP, "GetFolderMetaData: Updating ImapUidSet");
                         target.ImapUidSet = uidstring;
                     }
                     target.ImapLastExamine = DateTime.UtcNow;

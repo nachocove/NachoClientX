@@ -432,8 +432,6 @@ namespace NachoCore.IMAP
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new ImapStrategy (this);
             PushAssist = new PushAssist (this);
-            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
             NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
@@ -463,42 +461,6 @@ namespace NachoCore.IMAP
             LastIsDoNotDelayOk = IsDoNotDelayOk;
         }
 
-        #region NcCommStatus
-
-        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
-        {
-            if (e.ServerId == Server.Id) {
-                switch (e.Quality) {
-                case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_IMAP, "Server {0} communication quality OK.", Server.Host);
-                    Execute ();
-                    break;
-
-                default:
-                case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_IMAP, "Server {0} communication quality degraded.", Server.Host);
-                    break;
-
-                case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_IMAP, "Server {0} communication quality unusable.", Server.Host);
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
-                    break;
-                }
-            }
-        }
-
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
-        {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                Execute ();
-            } else {
-                // The "Down" case.
-                Sm.PostEvent ((uint)PcEvt.E.Park, "IMEHPARK");
-            }
-        }
-
-        #endregion
-
         public void StatusIndEventHandler (Object sender, EventArgs ea)
         {
             var siea = (StatusIndEventArgs)ea;
@@ -507,7 +469,9 @@ namespace NachoCore.IMAP
             }
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_DaysToSyncChanged:
-                Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
+                if (!ForceStopped) {
+                    Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
+                }
                 break;
             }
         }
@@ -534,8 +498,6 @@ namespace NachoCore.IMAP
                 Log.Warn (Log.LOG_IMAP, "ImapProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
             }
             // TODO cleanup stuff on disk like for wipe.
-            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();

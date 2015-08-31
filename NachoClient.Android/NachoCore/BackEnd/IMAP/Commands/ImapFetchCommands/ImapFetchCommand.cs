@@ -197,9 +197,14 @@ namespace NachoCore.IMAP
         long lastSize = 0;
         float lastElapsed = 0;
         long lastReportBytes = 0;
+        bool Enabled = false;
 
         public void Report (long bytesTransferred, long totalSize)
         {
+            if (!Enabled) {
+                return;
+            }
+
             if (null == ReportWatch) {
                 ReportWatch = new Stopwatch ();
             }
@@ -236,7 +241,7 @@ namespace NachoCore.IMAP
                                          kSecSinceLast,
                                          kSecTotal);
                     } else {
-                                Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {2} ({3:0.000} k/sec / {4:0.000} k/sec)",
+                        Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {2} ({3:0.000} k/sec / {4:0.000} k/sec)",
                             this.GetType ().Name,
                             bytesTransferred,
                             kSecSinceLast,

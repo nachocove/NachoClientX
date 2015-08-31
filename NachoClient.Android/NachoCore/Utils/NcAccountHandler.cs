@@ -153,33 +153,33 @@ namespace NachoCore.Model
                 return false;
             case McAccount.AccountServiceEnum.GoogleDefault:
                 imapServerPort = 993;
-                imapServerName = "imap.gmail.com";
+                imapServerName = McServer.IMAP_GMail_Host;
                 smtpServerPort = 587;
-                smtpServerName = "smtp.gmail.com";
+                smtpServerName = McServer.SMTP_GMail_Host;
                 break;
             case McAccount.AccountServiceEnum.HotmailDefault:
                 imapServerPort = 993;
-                imapServerName = "imap-mail.outlook.com";
+                imapServerName = McServer.IMAP_Hotmail_Host;
                 smtpServerPort = 587;
-                smtpServerName = "smtp.live.com";
+                smtpServerName = McServer.SMTP_Hotmail_Host;
                 break;
             case McAccount.AccountServiceEnum.Aol:
                 imapServerPort = 993;
-                imapServerName = "imap.aol.com";
+                imapServerName = McServer.IMAP_Aol_Host;
                 smtpServerPort = 587;
-                smtpServerName = "smtp.aol.com";
+                smtpServerName = McServer.SMTP_Aol_Host;
                 break;
             case McAccount.AccountServiceEnum.Yahoo:
                 imapServerPort = 993;
-                imapServerName = "imap.mail.yahoo.com";
+                imapServerName = McServer.IMAP_Yahoo_Host;
                 smtpServerPort = 587;
-                smtpServerName = "smtp.mail.yahoo.com";
+                smtpServerName = McServer.SMTP_Yahoo_Host;
                 break;
             case McAccount.AccountServiceEnum.iCloud:
                 imapServerPort = 993;
-                imapServerName = "imap.mail.me.com";
+                imapServerName = McServer.IMAP_iCloud_Host;
                 smtpServerPort = 587;
-                smtpServerName = "smtp.mail.me.com";
+                smtpServerName = McServer.SMTP_iCloud_Host;
                 break;
             default:
                 NcAssert.CaseError ();
@@ -187,7 +187,9 @@ namespace NachoCore.Model
             }
 
             var imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
+            imapServer.IsHardWired = true;
             var smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
+            smtpServer.IsHardWired = true;
             NcModel.Instance.RunInTransaction (() => {
                 imapServer.Insert ();
                 smtpServer.Insert ();

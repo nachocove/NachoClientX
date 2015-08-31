@@ -28,8 +28,8 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
-            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
+            McFolder folder = McFolder.QueryByServerId (AccountId, PendingSingle.ParentId);
+            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, PendingSingle.ServerId);
             IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADOPEN");

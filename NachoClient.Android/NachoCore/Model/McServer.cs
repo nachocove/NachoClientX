@@ -21,9 +21,21 @@ namespace NachoCore.Model
 
         public const string Default_Path = "/Microsoft-Server-ActiveSync";
         public const string EWS_Path_Substring = "EWS/Exchange.asmx";
-        // Well known server/host values:
-        public const string GMail_Host = "m.google.com";
-        public const string HotMail_Host = "s.outlook.com";
+        // Well known ActiveSync server/host values:
+        public const string AS_GMail_Host = "m.google.com";
+        public const string AS_HotMail_Host = "s.outlook.com";
+        // Well known IMAP server/host values:
+        public const string IMAP_GMail_Host = "imap.gmail.com";
+        public const string IMAP_Hotmail_Host = "imap-mail.outlook.com";
+        public const string IMAP_Aol_Host = "imap.aol.com";
+        public const string IMAP_Yahoo_Host = "imap.mail.yahoo.com";
+        public const string IMAP_iCloud_Host = "imap.mail.me.com";
+        // Well known SMTP server/host values:
+        public const string SMTP_GMail_Host = "smtp.gmail.com";
+        public const string SMTP_Hotmail_Host = "smtp.live.com";
+        public const string SMTP_Aol_Host = "smtp.aol.com";
+        public const string SMTP_Yahoo_Host = "smtp.mail.yahoo.com";
+        public const string SMTP_iCloud_Host = "smtp.mail.me.com";
         // Well known MX record values:
         public const string GMail_MX_Suffix = "aspmx.l.google.com";
         public const string GMail_MX_Suffix2 = "googlemail.com";
@@ -79,15 +91,15 @@ namespace NachoCore.Model
             return dummy.BaseUri ();
         }
 
-        public bool HostIsWellKnown ()
+        public bool AsHostIsWellKnown ()
         {
-            return HostIsGMail () || HostIsHotMail ();
+            return HostIsAsGMail () || HostIsAsHotMail ();
         }
 
         /// <summary>
         /// Host is a hotmail server. Not intended as an email domain check.
         /// </summary>
-        public bool HostIsHotMail ()
+        public bool HostIsAsHotMail ()
         {
             // Includes s.outlook.com, blu403-m.outlook.com, etc.
             var domain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Host);
@@ -95,9 +107,9 @@ namespace NachoCore.Model
                 domain.Equals (McServer.Outlook_Suffix, StringComparison.OrdinalIgnoreCase);
         }
 
-        public bool HostIsGMail ()
+        public bool HostIsAsGMail ()
         {
-            return Host.EndsWith (McServer.GMail_Host, StringComparison.OrdinalIgnoreCase);
+            return Host.EndsWith (McServer.AS_GMail_Host, StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool PathIsEWS (string path)

@@ -42,7 +42,7 @@ namespace NachoCore.IMAP
 
         private NcResult FetchOneBody (string ServerId, string ParentId)
         {
-            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ServerId);
+            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, ServerId);
             if (null == email) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", ServerId);
                 return NcResult.Error ("Unknown email ServerId");
@@ -50,7 +50,7 @@ namespace NachoCore.IMAP
             Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
             NcResult result;
-            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, ParentId);
+            McFolder folder = McFolder.QueryByServerId (AccountId, ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
             UniqueId uid = new UniqueId (email.ImapUid);
@@ -68,7 +68,7 @@ namespace NachoCore.IMAP
                     bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
                 }
                 body = new McBody () {
-                    AccountId = BEContext.Account.Id,
+                    AccountId = AccountId,
                     BodyType = bodyType,
                 };
                 body.Insert ();
@@ -85,7 +85,7 @@ namespace NachoCore.IMAP
             }
 
             try {
-                var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
+                var tmp = NcModel.Instance.TmpPath (AccountId);
                 mailKitFolder.SetStreamContext (uid, tmp);
                 NcCapture.AddKind (KImapFetchBodyCommandFetch);
                 long bytes;
@@ -154,7 +154,6 @@ namespace NachoCore.IMAP
                         StatusInd (status);
                     }
                 }
-                Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Fetched body for email {0}:{1} type {2}", email.Id, email.ServerId, body.BodyType);
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
             } catch (ImapCommandException ex) {
                 Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand ImapCommandException: {0}", ex.Message);
@@ -201,10 +200,7 @@ namespace NachoCore.IMAP
                     }
                 }
             } catch (ArgumentException) {
-                // happens if there was nothing written to the stream.
-                if (bytes_written != 0) {
-                    throw;
-                }
+                // happens if there was nothing written to the stream, or MimeKit tries to convert with an empty buffer
             }
         }
 

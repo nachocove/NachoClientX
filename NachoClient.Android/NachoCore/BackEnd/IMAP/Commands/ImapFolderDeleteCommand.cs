@@ -23,7 +23,7 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            McFolder folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
+            McFolder folder = McFolder.QueryByServerId<McFolder> (AccountId, PendingSingle.ServerId);
             var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
             NcAssert.NotNull (mailKitFolder);
             if (mailKitFolder.IsOpen) {

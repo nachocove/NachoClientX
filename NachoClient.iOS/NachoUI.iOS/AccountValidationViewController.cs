@@ -360,7 +360,7 @@ namespace NachoClient.iOS
         {
             HideStatusView ();
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if (null != creds) {
+            if ((null != creds) && (McCred.CredTypeEnum.Password == creds.CredType)) {
                 Log.Info (Log.LOG_HTTP, "AccountValidationViewcontroller: Saving new password - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, passwordField.Text));              
                 creds.UpdatePassword (passwordField.Text);
                 creds.Update ();
