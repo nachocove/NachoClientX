@@ -120,10 +120,8 @@ namespace NachoClient.iOS
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
-            hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Grouped);
+            hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Plain);
             hotListView.BackgroundColor = A.Color_NachoBackgroundGray;
-            hotListView.TableHeaderView = new UIView (new CGRect (0, 0, 0, 0));
-            hotListView.ContentInset = new UIEdgeInsets (-A.Card_Vertical_Indent, 0, 0, 0);
             hotListView.DecelerationRate = UIScrollView.DecelerationRateFast;
             hotListView.SeparatorStyle = UITableViewCellSeparatorStyle.None;
             hotListView.AccessibilityLabel = "Hot list";
@@ -363,7 +361,6 @@ namespace NachoClient.iOS
 
         protected void MaybeRefreshPriorityInbox ()
         {
-            bool callReconfigure = true;
             NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
 
             if (NcApplication.Instance.Account.Id != currentAccount.Id) {
@@ -378,14 +375,9 @@ namespace NachoClient.iOS
                 ReloadCapture.Start ();
                 if (priorityInbox.Refresh (out adds, out deletes)) {
                     Util.UpdateTable (hotListView, adds, deletes);
-                    callReconfigure = false;
                 }
                 ReloadCapture.Stop ();
             }
-            if (callReconfigure) {
-                hotListSource.ReconfigureVisibleCells (hotListView);
-            }
-            hotListSource.ConfigureFooter (hotListView);
             NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
         }
 
@@ -398,8 +390,14 @@ namespace NachoClient.iOS
                 priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
                 hotListSource = new HotListTableViewSource (this, priorityInbox);
                 hotListView.Source = hotListSource;
+                hotListView.RowHeight = hotListView.Frame.Height - hotListSource.CardPeekDistance * 2.0f - hotListSource.CellCardInset.Top - hotListSource.CellCardInset.Bottom;
+                hotListView.ContentInset = new UIEdgeInsets (
+                    hotListSource.CardPeekDistance + hotListSource.CellCardInset.Top,
+                    0,
+                    hotListSource.CardPeekDistance + hotListSource.CellCardInset.Bottom,
+                    0
+                );
                 hotListView.ReloadData ();
-                hotListSource.ConfigureFooter (hotListView);
                 switchAccountButton.SetAccountImage (account);
                 NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController SwitchToAccount");
             }
@@ -411,7 +409,13 @@ namespace NachoClient.iOS
         protected void LayoutView ()
         {
             hotListView.Frame = carouselNormalSize ();
-            hotListSource.ReconfigureVisibleCells (hotListView);
+            var newRowHeight = hotListView.Frame.Height - hotListSource.CardPeekDistance * 2.0f - hotListSource.CellCardInset.Top - hotListSource.CellCardInset.Bottom;
+            if (Math.Abs (newRowHeight - hotListView.RowHeight) > 0.5) {
+                var cardIndex = hotListSource.CurrentCardIndex (hotListView);
+                hotListView.RowHeight = newRowHeight;
+                hotListView.ReloadData ();
+                hotListSource.ScrollTableViewToCardIndex (hotListView, cardIndex, false);
+            }
         }
 
         public override void ViewDidLayoutSubviews ()
