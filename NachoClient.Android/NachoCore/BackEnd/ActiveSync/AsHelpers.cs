@@ -71,10 +71,6 @@ namespace NachoCore.ActiveSync
                     var bodyAttachments = MimeHelpers.AllAttachmentsIncludingInline (MimeHelpers.LoadMessage (body));
                     if (0 < bodyAttachments.Count) {
 
-                        foreach (var ba in bodyAttachments) {
-                            Log.Info (Log.LOG_AS, "ATB: MIME attachment: Name {0}, FileName {1}, ContentID {2}", ba.ContentType.Name, ba.ContentDisposition.FileName, ba.ContentId);
-                        }
-
                         foreach (var itemAttachment in McAttachment.QueryByItemId(item)) {
                             if (McAttachment.FilePresenceEnum.Complete == itemAttachment.FilePresence) {
                                 // Attachment already downloaded.
