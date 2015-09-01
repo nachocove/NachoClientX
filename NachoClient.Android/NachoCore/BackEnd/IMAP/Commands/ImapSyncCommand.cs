@@ -191,6 +191,7 @@ namespace NachoCore.IMAP
                 }
             }
             // Update the sync count and last attempt and set the Highest and lowest sync'd
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 if (MaxSynced != 0) {
@@ -204,6 +205,10 @@ namespace NachoCore.IMAP
                 }
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
+                if (Synckit.Method == SyncKit.MethodEnum.QuickSync && exeCtxt == NcApplication.ExecutionContextEnum.Foreground) {
+                    // After a quick sync we really need to do a full sync to capture deleted and changed messages
+                    target.ImapNeedFullSync = true;
+                }
                 return true;
             });
 
