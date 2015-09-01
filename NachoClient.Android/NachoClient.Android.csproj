@@ -506,6 +506,8 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs" />
     <Compile Include="NachoCore\Utils\TestMode.cs" />
+    <Compile Include="NachoCore\Utils\NcPreFetchHints.cs" />
+    <Compile Include="NachoCore\Utils\NcCircularBuffer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

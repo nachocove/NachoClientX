@@ -1625,6 +1625,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TestMode.cs">
       <Link>NachoCore\Utils\TestMode.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcPreFetchHints.cs">
+      <Link>NachoCore\Utils\NcPreFetchHints.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcCircularBuffer.cs">
+      <Link>NachoCore\Utils\NcCircularBuffer.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
