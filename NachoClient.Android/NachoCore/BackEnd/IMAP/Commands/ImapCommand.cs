@@ -523,6 +523,12 @@ namespace NachoCore.IMAP
         }
 
         #endregion
+
+        protected bool IsComcast (McServer server)
+        {
+            return server.Host.EndsWith (".comcast.net") ||
+                server.Host.EndsWith (".comcast.com");
+        }
     }
 
     public class ImapWaitCommand : ImapCommand
