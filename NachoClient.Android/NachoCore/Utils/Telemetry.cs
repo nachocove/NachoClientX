@@ -329,6 +329,10 @@ namespace NachoCore.Utils
 
         public static void RecordAccountEmailAddress (McAccount account)
         {
+            if (!(BuildInfoHelper.IsAlpha || BuildInfoHelper.IsDev)) {
+                return;
+            }
+                
             string emailAddress = account.EmailAddr;
             if (String.IsNullOrEmpty (emailAddress)) {
                 return;
