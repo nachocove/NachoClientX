@@ -70,6 +70,14 @@ namespace NachoClient.iOS
                     maxResults = 20;
                 }
                 var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
+
+                // Cull low scores
+                var maxScore = 0f;
+                foreach (var m in matches) {
+                    maxScore = Math.Max (maxScore, m.Score);
+                }
+                matches.RemoveAll (x => x.Score < (maxScore / 2));
+
                 if (curVersion == searcher.Version) {
                     InvokeOnUIThread.Instance.Invoke (() => {
                         searchResultsMessages.UpdateMatches (matches);
@@ -699,9 +707,6 @@ namespace NachoClient.iOS
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
-            // buggy?
-            return;
-
             if(String.IsNullOrEmpty(forSearchString) || (4 > forSearchString.Length)) {
                 searchResultsMessages.UpdateServerMatches (null);
                 return;
