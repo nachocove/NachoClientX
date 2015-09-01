@@ -82,9 +82,7 @@ namespace NachoCore.Model
                 account.Insert ();
                 var cred = makeCred (account.Id);
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
-                if (BuildInfoHelper.IsAlpha || BuildInfoHelper.IsDev) {
-                    Telemetry.RecordAccountEmailAddress (account);
-                }
+                Telemetry.RecordAccountEmailAddress (account);
             });
             return account;
         }
