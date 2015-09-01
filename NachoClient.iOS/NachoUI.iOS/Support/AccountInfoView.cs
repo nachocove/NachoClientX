@@ -22,6 +22,10 @@ namespace NachoClient.iOS
         UILabel accountEmailAddress;
         UIImageView accountSettingsIndicatorArrow;
         UILabel unreadCountLabel;
+        static nfloat UNREAD_COUNT_HEIGHT = 26.0f;
+        static nfloat UNREAD_COUNT_PADDING = 4.0f;
+        static nfloat UNREAD_COUNT_MARGIN_RIGHT = 15.0f;
+        static nfloat UNREAD_COUNT_MARGIN_LEFT = 5.0f;
 
         public AccountInfoView (CGRect frame) : base (frame)
         {
@@ -69,11 +73,12 @@ namespace NachoClient.iOS
             accountSettingsIndicatorArrow.Frame = new CGRect (accountInfoView.Frame.Width - (accountSettingsIndicatorArrow.Frame.Width + 10), accountInfoView.Frame.Height / 2 - accountSettingsIndicatorArrow.Frame.Height / 2, accountSettingsIndicatorArrow.Frame.Width, accountSettingsIndicatorArrow.Frame.Height);
             accountInfoView.AddSubview (accountSettingsIndicatorArrow);
 
-            unreadCountLabel = new UILabel (new CGRect (0, 0, 0, 0));
+            unreadCountLabel = new UILabel (new CGRect (frame.Width - UNREAD_COUNT_HEIGHT - UNREAD_COUNT_MARGIN_RIGHT, (frame.Height - UNREAD_COUNT_HEIGHT) / 2.0f, UNREAD_COUNT_HEIGHT, UNREAD_COUNT_HEIGHT));
+            unreadCountLabel.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin | UIViewAutoresizing.FlexibleLeftMargin;
             unreadCountLabel.Font = A.Font_AvenirNextDemiBold14;
             unreadCountLabel.TextColor = UIColor.White;
             unreadCountLabel.TextAlignment = UITextAlignment.Center;
-            unreadCountLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            unreadCountLabel.LineBreakMode = UILineBreakMode.Clip;
             unreadCountLabel.BackgroundColor = UIColor.Red;
             unreadCountLabel.Layer.MasksToBounds = true;
             accountInfoView.AddSubview (unreadCountLabel);
@@ -108,12 +113,8 @@ namespace NachoClient.iOS
         {
             unreadCountLabel.Hidden = false;
             unreadCountLabel.Layer.CornerRadius = 4;
-            unreadCountLabel.Text = "000";
-            unreadCountLabel.SizeToFit ();
-            ViewFramer.Create (unreadCountLabel).Square ();
             unreadCountLabel.Text = "";
-            var unreadCountLabelX = this.Frame.Width - unreadCountLabel.Frame.Width - 15;
-            ViewFramer.Create (unreadCountLabel).CenterY (0, this.Frame.Height).X (unreadCountLabelX);
+            SetUnreadCountWidth (UNREAD_COUNT_HEIGHT);
 
             NcTask.Run (() => {
                 var inboxFolder = NcEmailManager.InboxFolder (accountId);
@@ -122,13 +123,40 @@ namespace NachoClient.iOS
                     unreadMessageCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
                 }
                 InvokeOnUIThread.Instance.Invoke (() => {
-                    if (1000 > unreadMessageCount) {
-                        unreadCountLabel.Text = unreadMessageCount.ToString ();
+                    if (100000 > unreadMessageCount) {
+                        unreadCountLabel.Text = String.Format("{0:N0}", unreadMessageCount);
                     } else {
-                        unreadCountLabel.Text = "...";
+                        unreadCountLabel.Text = "> 100K";
                     }
+                    unreadCountLabel.SizeToFit();
+                    SetUnreadCountWidth((nfloat)Math.Max((double)UNREAD_COUNT_HEIGHT, (double)(unreadCountLabel.Frame.Width + 2.0f * UNREAD_COUNT_PADDING)));
                 });
             }, "UpdateUnreadMessageCount");
+        }
+
+        void SetUnreadCountWidth (nfloat width)
+        {
+            Log.Info (Log.LOG_UI, "SetUnreadCountWidth {0}", width);
+            unreadCountLabel.Frame = new CGRect (
+                Frame.Width - width - UNREAD_COUNT_MARGIN_RIGHT,
+                unreadCountLabel.Frame.Top,
+                width,
+                UNREAD_COUNT_HEIGHT
+            );
+
+            nameLabel.Frame = new CGRect (
+                nameLabel.Frame.Left,
+                nameLabel.Frame.Top,
+                unreadCountLabel.Frame.Left - nameLabel.Frame.Left - UNREAD_COUNT_MARGIN_LEFT,
+                nameLabel.Frame.Height
+            );
+
+            accountEmailAddress.Frame = new CGRect (
+                accountEmailAddress.Frame.Left,
+                accountEmailAddress.Frame.Top,
+                unreadCountLabel.Frame.Left - accountEmailAddress.Frame.Left - UNREAD_COUNT_MARGIN_LEFT,
+                accountEmailAddress.Frame.Height
+            );
         }
 
         void HighlightError ()
