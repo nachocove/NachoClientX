@@ -42,7 +42,7 @@ namespace NachoCore
             List<int> adds;
             List<int> deletes;
 
-            list = new List<McEmailMessageThread> ();
+            var combined = new List<McEmailMessageThread> ();
 
             if (null != matches) {
                 foreach (var match in matches) {
@@ -50,21 +50,21 @@ namespace NachoCore
                         var thread = new McEmailMessageThread ();
                         thread.FirstMessageId = int.Parse (match.Id);
                         thread.MessageCount = 1;
-                        list.Add (thread);
+                        combined.Add (thread);
                     }
                 }
             }
             if (null != serverMatches) {
                 foreach (var serverMatch in serverMatches) {
-                    if (!list.Contains (serverMatch, new McEmailMessageThreadIndexComparer ())) {
-                        list.Add (serverMatch);
+                    if (!combined.Contains (serverMatch, new McEmailMessageThreadIndexComparer ())) {
+                        combined.Add (serverMatch);
                     }
                 }
             }
 
             var messageIdSet = new HashSet<string> ();
 
-            list.RemoveAll ((McEmailMessageThread messageIndex) => {
+            combined.RemoveAll ((McEmailMessageThread messageIndex) => {
                 // As messages are moved, they change index & become
                 // unavailable.  Deferred messages should be hidden.
                 var message = messageIndex.FirstMessageSpecialCase ();
@@ -76,6 +76,13 @@ namespace NachoCore
                 }
                 return !messageIdSet.Add (message.MessageID);
             });
+
+            // Sort by date
+            var idList = new List<int> (messageIdSet.Count);
+            foreach (var m in combined) {
+                idList.Add (m.FirstMessageId);
+            }
+            list = McEmailMessage.QueryForMessageThreadSet (idList);
 
             Refresh (out adds, out deletes);
         }
