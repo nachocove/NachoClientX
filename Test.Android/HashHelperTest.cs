@@ -59,7 +59,7 @@ namespace Test.iOS
             var urlTemplate = "https://mail.d2.officeburrito.com/Microsoft-Server-ActiveSync?Cmd=ItemOperations&User={0}&DeviceId=Nchob8f6b1150c41&DeviceType=iPhone";
             foreach (string emailAddress in emailAddresses) {
                 string plainUrl = string.Format (urlTemplate, emailAddress);
-                string expectedUrl = string.Format (urlTemplate, HashHelper.Sha256 (emailAddress));
+                string expectedUrl = string.Format (urlTemplate, "REDACTED");
                 string hashedUrl = HashHelper.HashEmailAddressesInUrl (plainUrl);
                 Assert.AreEqual (expectedUrl, hashedUrl, "Hashed Email does not match.");
             }
@@ -75,7 +75,7 @@ namespace Test.iOS
             foreach (var template in ImapIdStringTempls) {
                 foreach (string emailAddress in emailAddresses) {
                     string plainId = string.Format (template, emailAddress);
-                    string expectedId = string.Format (template, HashHelper.Sha256 (emailAddress));
+                    string expectedId = string.Format (template, "REDACTED");
                     string hashedId = HashHelper.HashEmailAddressesInImapId (plainId);
                     Assert.AreEqual (expectedId, hashedId, "Hashed Id does not match.");
                 }
