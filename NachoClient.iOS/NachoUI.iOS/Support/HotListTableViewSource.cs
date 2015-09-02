@@ -191,6 +191,7 @@ namespace NachoClient.iOS
             view.AddSubview (unreadMessageView);
 
             var messageHeaderView = new MessageHeaderView (new CGRect (65, 0, frame.Width - 65, 75));
+            messageHeaderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             messageHeaderView.CreateView ();
             messageHeaderView.Tag = MESSAGE_HEADER_TAG;
             messageHeaderView.SetAllBackgroundColors (UIColor.White);
@@ -211,7 +212,7 @@ namespace NachoClient.iOS
             view.AddSubview (reminderLabelView);
 
             var toolbar = new MessageToolbar (new CGRect (0, frame.Height - 44, frame.Width, 44));
-            toolbar.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin;
+            toolbar.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth;
             toolbar.Tag = TOOLBAR_TAG;
             view.AddSubview (toolbar);
 
@@ -265,6 +266,7 @@ namespace NachoClient.iOS
             // Nacho Mail icon
             var nachoMailIcon = new UIImageView ();
             nachoMailIcon.Frame = (isSixOrGreater ? new CGRect (frame.Width / 2 - 32.5f, A.Card_Vertical_Indent, 65, 65) : new CGRect (frame.Width / 2 - 22.5f, A.Card_Horizontal_Indent, 45, 45));
+            nachoMailIcon.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleRightMargin;
             nachoMailIcon.Image = UIImage.FromBundle ("Bootscreen-1");
             nachoMailIcon.Hidden = isFourS;
             noMessagesView.AddSubview (nachoMailIcon);
@@ -279,7 +281,7 @@ namespace NachoClient.iOS
 
             // Chips right
             var chipsRightIcon = new UIImageView ();
-            chipsRightIcon.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin;
+            chipsRightIcon.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleLeftMargin;
             chipsRightIcon.Frame = (isSixOrGreater ? new CGRect (frame.Width - 115, messageFrameHeight - 45, 115, 45) : new CGRect (frame.Width - 85, messageFrameHeight - 33, 85, 33));
             chipsRightIcon.Image = UIImage.FromBundle ("gen-nachoright");
             chipsRightIcon.Hidden = isFourS;
@@ -319,7 +321,7 @@ namespace NachoClient.iOS
             hotListLabel.SizeToFit ();
             var hotListLabelYOffset = (isFourS ? messageFrameHeight / 2 : ((chipsLeftIcon.Frame.Top - nachoMailIcon.Frame.Bottom) / 2) + nachoMailIcon.Frame.Bottom + 5);
             hotListLabel.Center = new CGPoint (noMessagesView.Frame.Width / 2, hotListLabelYOffset); 
-            hotListLabel.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin;
+            hotListLabel.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin | UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleRightMargin;
             hotListLabel.Tag = HOT_LIST_LABEL;
 
             noMessagesView.AddSubview (hotListLabel);
@@ -328,7 +330,7 @@ namespace NachoClient.iOS
             var unreadMessageViewFrame = new CGRect (A.Card_Horizontal_Indent, messageFrameHeight, frame.Width - A.Card_Horizontal_Indent, cellHeight);
             var unreadMessagesView = new UnreadMessagesView (unreadMessageViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked);
             unreadMessagesView.Tag = UNREAD_MESSAGES_VIEW;
-            unreadMessagesView.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin;
+            unreadMessagesView.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth;
 
             var cellFont = (isSixPlusOrGreater ? A.Font_AvenirNextMedium17 : A.Font_AvenirNextMedium14);
             unreadMessagesView.SetFont (cellFont);

@@ -388,6 +388,7 @@ namespace NachoClient.iOS
         public void SetVisibleArea (CGSize size)
         {
             visibleArea = size;
+            preferredWidth = size.Width;
             if (childViews.Count > 0) {
                 LayoutQuietly ();
             }

@@ -31,6 +31,7 @@ namespace NachoClient.iOS
                 rightMargin = rightMargin - disclosureArrowImageView.Frame.Width;
                 disclosureArrowImageView.Frame = new CGRect (rightMargin, 0, disclosureArrowImageView.Frame.Width, disclosureArrowImageView.Frame.Height);
                 disclosureArrowImageView.Center = new CGPoint (disclosureArrowImageView.Center.X, rect.Height / 2);
+                disclosureArrowImageView.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
                 this.AddSubview (disclosureArrowImageView);
                 rightMargin -= 5;
             }
@@ -47,6 +48,7 @@ namespace NachoClient.iOS
             leftMargin += iconView.Frame.Width + SPACER;
 
             valueLabel = new UILabel (new CGRect (leftMargin, 0, rightMargin - leftMargin, rect.Height));
+            valueLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             valueLabel.Font = valueFont;
             valueLabel.TextColor = valueColor;
             valueLabel.TextAlignment = UITextAlignment.Left;
@@ -56,6 +58,7 @@ namespace NachoClient.iOS
 
             if (null != onSelected) {
                 overlayView = new UIView (new CGRect (0, 0, rect.Width, rect.Height));
+                overlayView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
                 overlayView.BackgroundColor = UIColor.Clear;
                 overlayView.UserInteractionEnabled = true;
                 this.AddSubview (overlayView);
