@@ -7,6 +7,9 @@ using System.Collections;
 namespace NachoCore.Utils
 {
     #region CircularBuffer
+    /// <summary>
+    /// Shamelessly filched from http://geekswithblogs.net/blackrob/archive/2014/09/01/circular-buffer-in-c.aspx
+    /// </summary>
     public interface INcCircularBuffer<T>
     {
         int Count { get; }
