@@ -438,7 +438,7 @@ namespace NachoCore.Model
             return hash.Substring (hash.Length - 3); // e.g. "f47"
         }
 
-        public async void PopulateProfilePhotoFromURL (Foundation.NSUrl imageUrl)
+        public async void PopulateProfilePhotoFromURL (Uri imageUrl)
         {
             try {
                 var httpClient = new System.Net.Http.HttpClient ();
