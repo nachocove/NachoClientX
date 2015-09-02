@@ -66,6 +66,7 @@ namespace NachoCore
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
         private Dictionary<int, bool> CredReqActive;
+        private NcPreFetchHints BodyFetchHints { get; set; }
 
         public IBackEndOwner Owner { set; private get; }
 
@@ -130,6 +131,7 @@ namespace NachoCore
 
             Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
             CredReqActive = new Dictionary<int, bool> ();
+            BodyFetchHints = new NcPreFetchHints ();
         }
 
         public void CreateServices ()
@@ -730,5 +732,11 @@ namespace NachoCore
                 Owner.SendEmailResp (sender.AccountId, emailMessageId, didSend);
             });
         }
+
+        public void SendEmailBodyFetchHint (int accountId, int emailMessageId)
+        {
+            BodyFetchHints.AddHint (accountId, emailMessageId);
+        }
+
     }
 }

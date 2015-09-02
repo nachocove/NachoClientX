@@ -142,6 +142,7 @@ namespace NachoCore
         BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities);
         AutoDInfoEnum AutoDInfo (int accountId, McAccount.AccountCapabilityEnum capabilities);
         X509Certificate2 ServerCertToBeExamined (int accountId, McAccount.AccountCapabilityEnum capabilities);
+        void SendEmailBodyFetchHint (int accountId, int emailMessageId);
     }
 }
 
