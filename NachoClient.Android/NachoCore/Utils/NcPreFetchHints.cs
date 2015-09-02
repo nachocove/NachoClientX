@@ -19,11 +19,6 @@ namespace NachoCore.Utils
             Hints = new ConcurrentDictionary<int, PerAccountFetchHints> ();
         }
 
-        public void AddHint (int AccountId, McEmailMessage email)
-        {
-            AddHint (AccountId, email.Id);
-        }
-
         public void AddHint (int AccountId, int Id)
         {
             PerAccountFetchHints accountHints;
