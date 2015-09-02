@@ -386,11 +386,12 @@ namespace Test.iOS
             var protocolState = ProtocolState;
             TestFolder = resetFolder (TestFolder);
             uint UidNext = 100;
-            uint HighestSynced = 98;
+            uint HighestSynced = 97;
 
             MakeFakeEmails (TestFolder.Id, 1, HighestSynced);
             TestFolder = DoFakeFolderOpen (TestFolder, UidNext, DateTime.UtcNow.AddMinutes (-(6*60)));
             TestFolder.ImapUidHighestUidSynced = HighestSynced;
+            TestFolder.ImapUidSet = string.Format ("{0}:{1}", 1, HighestSynced);
             var syncSet = ImapStrategy.SyncSet (TestFolder, ref protocolState, 10);
             Assert.NotNull (syncSet);
             Assert.AreEqual (UidNext-1, syncSet.Max ().Id);
