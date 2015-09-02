@@ -79,6 +79,14 @@ namespace NachoCore.Utils
             }
         }
 
+        public void RemoveHint (int AccountId, int Id)
+        {
+            PerAccountFetchHints accountHints;
+            if (Hints.TryGetValue (AccountId, out accountHints)) {
+                accountHints.RemoveHint (Id);
+            }            
+        }
+
         #region PerAccountFetchHints
 
         public class PerAccountFetchHints
@@ -137,6 +145,19 @@ namespace NachoCore.Utils
                         AccountHints.Remove (h);
                     }
                     return hintList;
+                }
+            }
+
+            public void RemoveHint (int Id)
+            {
+                lock (AccountHints) {
+                    for (var i = 0; i<AccountHints.Count; i++) {
+                        Hint h = AccountHints [i];
+                        if (h.Id == Id) {
+                            AccountHints.Remove (h);
+                            break;
+                        }
+                    }
                 }
             }
 

@@ -277,6 +277,7 @@ namespace NachoCore.ActiveSync
                                 } else {
                                     Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) for email {1}", item.AccountId, item.Id);
                                 }
+                                BackEnd.Instance.BodyFetchHints.RemoveHint (BEContext.Account.Id, item.Id);
                                 break;
                             case McPending.Operations.CalBodyDownload:
                                 item = McCalendar.QueryByServerId<McCalendar> (BEContext.Account.Id, serverId);
