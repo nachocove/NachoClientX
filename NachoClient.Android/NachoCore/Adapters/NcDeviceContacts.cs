@@ -77,10 +77,10 @@ namespace NachoCore
             var contact = result.GetValue<McContact> ();
             if (null == existing) {
                 inserter.Invoke (contact);
-                ++ InsertCount;
+                ++InsertCount;
             } else {
                 updater.Invoke (contact);
-                ++ UpdateCount;
+                ++UpdateCount;
             }
             return false;
         }
@@ -117,9 +117,10 @@ namespace NachoCore
 
         public void Report ()
         {
-            NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_ContactSetChanged);
-            Log.Info (Log.LOG_SYS, "NcDeviceContacts: {0} inserted, {1} updated, cleaning up {2} dead links.", 
-                InsertCount, UpdateCount, PresentCount);
+            if ((0 < InsertCount) || (0 < UpdateCount)) {
+                NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_ContactSetChanged);
+            }
+            Log.Info (Log.LOG_SYS, "NcDeviceContacts: {0} inserted, {1} updated, cleaning up {2} dead links.", InsertCount, UpdateCount, PresentCount);
         }
     }
 }
