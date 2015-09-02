@@ -31,8 +31,19 @@ namespace NachoCore.IMAP
             }
             var remaining = KBaseFetchSize;
             var fetchBodies = new List<FetchKit.FetchBody> ();
-            var emails = McEmailMessage.QueryNeedsFetch (AccountId, remaining, McEmailMessage.minHotScore).ToList ();
-            foreach (var email in emails) {
+            var EmailList = new List<McEmailMessage> ();
+            if (AccountId == NcApplication.Instance.Account.Id) {
+                var hints = BackEnd.Instance.BodyFetchHints.GetHints (AccountId, remaining);
+                foreach (var id in hints) {
+                    var email = McEmailMessage.QueryById<McEmailMessage> (id);
+                    if (null != email) {
+                        EmailList.Add (email);
+                    }
+                }
+            }
+
+            EmailList.AddRange (McEmailMessage.QueryNeedsFetch (AccountId, remaining - EmailList.Count, McEmailMessage.minHotScore).ToList ());
+            foreach (var email in EmailList) {
                 // TODO: all this can be one SQL JOIN.
                 var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (AccountId, email.Id);
                 if (0 == folders.Count) {
@@ -51,14 +62,14 @@ namespace NachoCore.IMAP
                 fetchAtts = McAttachment.QueryNeedsFetch (AccountId, remaining, 0.9, (int)maxAttachmentSize).ToList ();
             }
             if (0 < fetchBodies.Count || 0 < fetchAtts.Count) {
-                Log.Info (Log.LOG_AS, "GenFetchKit: {0} emails, {1} attachments.", fetchBodies.Count, fetchAtts.Count);
+                Log.Info (Log.LOG_IMAP, "GenFetchKit: {0} emails, {1} attachments.", fetchBodies.Count, fetchAtts.Count);
                 return new FetchKit () {
                     FetchBodies = fetchBodies,
                     FetchAttachments = fetchAtts,
                     Pendings = new List<FetchKit.FetchPending> (),
                 };
             }
-            Log.Info (Log.LOG_AS, "GenFetchKit: nothing to do.");
+            Log.Info (Log.LOG_IMAP, "GenFetchKit: nothing to do.");
             return null;
         }
 

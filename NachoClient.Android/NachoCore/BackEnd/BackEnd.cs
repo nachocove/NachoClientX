@@ -66,7 +66,7 @@ namespace NachoCore
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
         private Dictionary<int, bool> CredReqActive;
-        private NcPreFetchHints BodyFetchHints { get; set; }
+        public NcPreFetchHints BodyFetchHints { get; set; }
 
         public IBackEndOwner Owner { set; private get; }
 
@@ -165,6 +165,7 @@ namespace NachoCore
             ApplyAcrossAccounts ("Stop", (accountId) => {
                 Stop (accountId);
             });
+            BodyFetchHints.Reset ();
         }
 
         public void Stop (int accountId)
