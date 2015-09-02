@@ -62,6 +62,15 @@ namespace NachoCore.Utils
             return count;
         }
 
+        public int OverrunCounter ()
+        {
+            int count = 0;
+            foreach (PerAccountFetchHints accountHints in Hints.Values) {
+                count += accountHints.OverrunCounter;
+            }
+            return count;
+        }
+
         #region PerAccountFetchHints
 
         public class PerAccountFetchHints
@@ -79,6 +88,7 @@ namespace NachoCore.Utils
 
             readonly NcCircularBuffer<Hint> AccountHints;
             int HintCounter;
+            public int OverrunCounter { get; protected set; }
 
             public PerAccountFetchHints (int maxSize)
             {
@@ -100,7 +110,9 @@ namespace NachoCore.Utils
                     }
 
                     // We didn't find an item on the list. Add it.
-                    AccountHints.Enqueue (new Hint (Id, HintCounter));
+                    if (null != AccountHints.Enqueue (new Hint (Id, HintCounter))) {
+                        OverrunCounter++;
+                    }
                 }
             }
 
