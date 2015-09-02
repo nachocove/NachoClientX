@@ -71,6 +71,14 @@ namespace NachoCore.Utils
             return count;
         }
 
+        public void Reset ()
+        {
+            foreach (var i in Hints.Keys) {
+                PerAccountFetchHints x;
+                Hints.TryRemove (i, out x);
+            }
+        }
+
         #region PerAccountFetchHints
 
         public class PerAccountFetchHints
@@ -122,7 +130,7 @@ namespace NachoCore.Utils
                     var hintList = new List<int> ();
                     List<Hint> hints = AccountHints.ToList ();
                     hints.Sort ((h1, h2) => {
-                        return h1.Priority - h2.Priority;
+                        return h2.Priority - h1.Priority;
                     });
                     foreach (Hint h in hints.Take(count)) {
                         hintList.Add (h.Id);

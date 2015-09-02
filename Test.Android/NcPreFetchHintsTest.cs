@@ -26,8 +26,8 @@ namespace Test.Common
             Assert.AreEqual (2, hints.Count (1));
             hs = hints.GetHints (1, 5);
             Assert.AreEqual (2, hs.Count);
-            Assert.AreEqual (100, hs [0]);
-            Assert.AreEqual (101, hs [1]);
+            Assert.AreEqual (101, hs [0]);  // 101 was added last, so should be first on the list.
+            Assert.AreEqual (100, hs [1]);
             Assert.AreEqual (0, hints.Count ());
 
             hints.AddHint (1, 10);
