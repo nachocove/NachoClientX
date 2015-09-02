@@ -15,19 +15,16 @@ namespace NachoCore.Model
     {
         public override int GetNumberOfObjects ()
         {
-            return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).Count ();
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange && x.AccountCapability == 0).Count ();
         }
 
         public override void Run (System.Threading.CancellationToken token)
         {
-            foreach (var exchangeAccount in NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange)) {
+            foreach (var oldExchangeAccount in NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange && x.AccountCapability == 0)) {
                 token.ThrowIfCancellationRequested ();
-                if (0 == exchangeAccount.AccountCapability) {
-                    // An older account that needs to be migrated.
-                    exchangeAccount.AccountCapability = McAccount.ActiveSyncCapabilities;
-                    exchangeAccount.Update ();
-                    UpdateProgress (1);
-                }
+                oldExchangeAccount.AccountCapability = McAccount.ActiveSyncCapabilities;
+                oldExchangeAccount.Update ();
+                UpdateProgress (1);
             }
         }
     }
