@@ -888,7 +888,7 @@ namespace NachoCore.ActiveSync
         {
             var fetchBodies = FetchBodiesFromEmailList (FetchBodyHintList (KBaseFetchSize), MaxAttachmentSize ());
             if (fetchBodies.Any ()) {
-                Log.Info (Log.LOG_IMAP, "GenFetchKitHints: {0} emails", fetchBodies.Count);
+                Log.Info (Log.LOG_AS, "GenFetchKitHints: {0} emails", fetchBodies.Count);
                 return new FetchKit () {
                     FetchBodies = fetchBodies,
                     FetchAttachments = new List<McAttachment> (),
@@ -1253,7 +1253,7 @@ namespace NachoCore.ActiveSync
                 if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                     var fetchKit = GenFetchKitHints ();
                     if (null != fetchKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch(Hints)");
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
                             new AsItemOperationsCommand (BEContext, fetchKit));
                     }
