@@ -109,8 +109,7 @@ namespace NachoClient.iOS
                     Newtonsoft.Json.Linq.JToken picture;
                     if (userInfo.TryGetValue ("picture", out picture)) {
                         var imageUrlString = ((string)picture).Replace ("/photo.jpg", "/s200-c-k/photo.jpg");
-                        var imageUrl = new NSUrl (imageUrlString);
-                        Account.PopulateProfilePhotoFromURL (imageUrl);
+                        Account.PopulateProfilePhotoFromURL (new Uri (imageUrlString));
                     }
                     AccountDelegate.AccountCredentialsViewControllerDidValidateAccount (this, Account);
                 }
