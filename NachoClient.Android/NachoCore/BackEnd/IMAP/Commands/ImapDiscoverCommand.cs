@@ -123,8 +123,8 @@ namespace NachoCore.IMAP
             string username = BEContext.Cred.Username;
 
             // See if we can identify the service type
-            switch (BEContext.Account.AccountService) {
-            case McAccount.AccountServiceEnum.IMAP_SMTP:
+            switch (BEContext.Account.AccountType) {
+            case McAccount.AccountTypeEnum.IMAP_SMTP:
                 if (isiCloud (username)) {
                     service = McAccount.AccountServiceEnum.iCloud;
                 } else if (isYahoo (username)) {
