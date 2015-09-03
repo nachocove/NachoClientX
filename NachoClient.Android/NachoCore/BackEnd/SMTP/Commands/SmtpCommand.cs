@@ -157,6 +157,7 @@ namespace NachoCore.SMTP
                 Cts.Token.ThrowIfCancellationRequested ();
             }
             if (!Client.IsAuthenticated) {
+                ImapDiscoverCommand.possiblyFixUsername (BEContext);
                 RedactProtocolLogFuncDel RestartLog = null;
                 if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
                     ProtocolLoggerStopAndLog ();
