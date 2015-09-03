@@ -290,6 +290,16 @@ namespace NachoCore
             });
         }
 
+        public void PendQInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            ApplyAcrossServices (accountId, "PendQInd", (service) => {
+                if (0 != (capabilities & service.Capabilities)) {
+                    service.PendQInd ();
+                }
+                return NcResult.OK ();
+            });
+        }
+
         private NcResult CmdInDoNotDelayContext (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> cmd)
         {
             return ApplyToService (accountId, capability, (service) => {
@@ -736,7 +746,12 @@ namespace NachoCore
 
         public void SendEmailBodyFetchHint (int accountId, int emailMessageId)
         {
+            bool needInd = BodyFetchHints.Count (accountId) > 0;
+            Log.Info (Log.LOG_BACKEND, "SendEmailBodyFetchHint: {0} hints in queue", BodyFetchHints.Count (accountId));
             BodyFetchHints.AddHint (accountId, emailMessageId);
+            if (needInd) {
+                PendQInd (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+            }
         }
 
     }
