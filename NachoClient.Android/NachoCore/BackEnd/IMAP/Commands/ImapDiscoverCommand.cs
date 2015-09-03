@@ -123,8 +123,8 @@ namespace NachoCore.IMAP
             string username = BEContext.Cred.Username;
 
             // See if we can identify the service type
-            switch (BEContext.Account.AccountType) {
-            case McAccount.AccountTypeEnum.IMAP_SMTP:
+            switch (BEContext.Account.AccountService) {
+            case McAccount.AccountServiceEnum.IMAP_SMTP:
                 if (isiCloud (username)) {
                     service = McAccount.AccountServiceEnum.iCloud;
                 } else if (isYahoo (username)) {
@@ -146,9 +146,12 @@ namespace NachoCore.IMAP
                     return true;
                 });
             }
+        }
 
-            // Now that we know (perhaps) the service type, see if we need to do anything with the username
-            switch (service) {
+        public static void possiblyFixUsername (IBEContext BEContext)
+        {
+            string username = BEContext.Cred.Username;
+            switch (BEContext.ProtocolState.ImapServiceType) {
             case McAccount.AccountServiceEnum.iCloud:
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
