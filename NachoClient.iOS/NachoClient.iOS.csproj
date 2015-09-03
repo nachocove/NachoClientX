@@ -156,7 +156,6 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
-    <MtouchDebug>true</MtouchDebug>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
     <DebugType>full</DebugType>
@@ -1653,6 +1652,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TestMode.cs">
       <Link>NachoCore\Utils\TestMode.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration42.cs">
+      <Link>NachoCore\Model\Migration\NcMigration42.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

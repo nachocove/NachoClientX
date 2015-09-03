@@ -1,11 +1,4 @@
-Nacho Mail 2.0 beta
+Nacho Mail 2.0 adds support for multiple email accounts.  Now you can add your Gmail, Yahoo, iCloud email account, or any email account that supports IMAP like AOL, to Nacho Mail.  It's easy to add or switch accounts -- just press the button in the middle of the top of the screen.  Of course, Nacho Mail continues to support Exchange, Hotmail, Office 365, and Google Apps for Work.
 
-. Notifications tuned to new inbox messages only.
+Calendar and Contacts now sync with your phone to give you a single unified view of people and events from Nacho Mail. 
 
-. Improved Gmail performance.
-
-. Better contact handling.
-
-Known limitations:
-
-. No calendar or contact support for IMAP servers.

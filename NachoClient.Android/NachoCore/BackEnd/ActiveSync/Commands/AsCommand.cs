@@ -147,7 +147,7 @@ namespace NachoCore.ActiveSync
             string username;
 
             if (isEmailRedacted) {
-                username = HashHelper.Sha256 (BEContext.Cred.Username);
+                username = "REDACTED";
             } else {
                 username = BEContext.Cred.Username;
             }

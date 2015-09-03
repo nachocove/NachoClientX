@@ -413,7 +413,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (UIGestureRecognizerState.Ended == obj.State) {
+            if (UIGestureRecognizerState.Ended == obj.State || UIGestureRecognizerState.Cancelled == obj.State) {
                 if (xOffset < -(DateDotView.Frame.Width / 3) || obj.VelocityInView (DateDotView).X < -500) { 
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
@@ -542,7 +542,7 @@ namespace NachoClient.iOS
                     return;
                 }
             }
-            if (UIGestureRecognizerState.Ended == obj.State) {
+            if (UIGestureRecognizerState.Ended == obj.State || UIGestureRecognizerState.Cancelled == obj.State) {
                 if (isClosing) {
                     if ((yOffset < -60) || (obj.VelocityInView (DateDotView).Y < -500)) {
                         UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
@@ -668,7 +668,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (UIGestureRecognizerState.Ended == obj.State) {
+            if (UIGestureRecognizerState.Ended == obj.State || UIGestureRecognizerState.Cancelled == obj.State) {
                 if (yOffset > 60 || obj.VelocityInView (DateDotView).Y > 500) {
                     UIView.Animate (.3, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
