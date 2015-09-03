@@ -1631,6 +1631,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcCircularBuffer.cs">
       <Link>NachoCore\Utils\NcCircularBuffer.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration42.cs">
+      <Link>NachoCore\Model\Migration\NcMigration42.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

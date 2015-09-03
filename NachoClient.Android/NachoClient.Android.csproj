@@ -508,6 +508,7 @@
     <Compile Include="NachoCore\Utils\TestMode.cs" />
     <Compile Include="NachoCore\Utils\NcPreFetchHints.cs" />
     <Compile Include="NachoCore\Utils\NcCircularBuffer.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration42.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

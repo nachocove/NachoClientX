@@ -188,6 +188,7 @@ namespace NachoCore.IMAP
                 Cts.Token.ThrowIfCancellationRequested ();
             }
             if (!Client.IsAuthenticated) {
+                ImapDiscoverCommand.possiblyFixUsername (BEContext);
                 string username = BEContext.Cred.Username;
                 string cred;
                 if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
