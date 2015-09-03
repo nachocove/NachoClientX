@@ -184,7 +184,7 @@ namespace NachoCore.IMAP
                 if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                     fetchKit = GenFetchKitHints ();
                     if (null != fetchKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch(Hints)");
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fetch(Hints)");
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Fetch, 
                             new ImapFetchCommand (BEContext, Client, fetchKit));
                     }
