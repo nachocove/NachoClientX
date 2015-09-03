@@ -450,10 +450,17 @@
                             <constraint firstItem="M8S-2S-EAE" firstAttribute="leading" secondItem="jrP-0h-mMa" secondAttribute="leadingMargin" id="tN4-db-PBL"/>
                         </constraints>
                     </view>
-                    <navigationItem key="navigationItem" title="Syncing..." id="PQQ-JP-jvc"/>
+                    <navigationItem key="navigationItem" title="Syncing..." id="PQQ-JP-jvc">
+                        <barButtonItem key="rightBarButtonItem" title="Skip" id="JWR-di-rh6">
+                            <connections>
+                                <action selector="Skip:" destination="8ga-kc-szm" id="22I-aJ-1j8"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <outlet property="activityIndicatorView" destination="zof-nk-cwK" id="iuO-gT-o1z"/>
+                        <outlet property="skipButton" destination="JWR-di-rh6" id="JRc-SH-DsA"/>
                         <outlet property="statusLabel" destination="3FB-pb-3iF" id="iqC-Nn-2TB"/>
                     </connections>
                 </viewController>

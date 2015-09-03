@@ -228,7 +228,6 @@ namespace NachoClient.iOS
         public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
         {
             Log.Info (Log.LOG_UI, "GettingStartedViewController syncing complete");
-            // FIXME: Only set if null or device
             if (vc.Account != null) {
                 NcApplication.Instance.Account = vc.Account;
                 LoginHelpers.SetSwitchToTime (vc.Account);

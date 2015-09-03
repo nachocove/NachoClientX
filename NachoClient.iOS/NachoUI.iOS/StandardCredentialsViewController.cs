@@ -337,30 +337,39 @@ namespace NachoClient.iOS
                 return;
             }
             var s = (StatusIndEventArgs)e;
-            if (s.Account != null && s.Account.Id == Account.Id) {
+            if (NcResult.SubKindEnum.Info_BackEndStateChanged == s.Status.SubKind) {
+                if (s.Account != null && s.Account.Id == Account.Id) {
 
-//                if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-//                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.NoNetwork, "avl: EventFromEnum no network");
-//                }
+                    var senderState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+                    var readerState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
 
-                var senderState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
-                var readerState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController senderState {0}, readerState {1}", senderState, readerState);
 
-                Log.Info (Log.LOG_UI, "AccountCredentialsViewController senderState {0}, readerState {1}", senderState, readerState);
-
-                if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
-                    StopListeningForApplicationStatus ();
-                    HandleServerError ();
-                } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
-                    StopListeningForApplicationStatus ();
-                    HandleCredentialError ();
-                } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
-                    HandleCertificateAsk ();
-                } else if ((senderState >= BackEndStateEnum.PostAutoDPreInboxSync) && (readerState >= BackEndStateEnum.PostAutoDPreInboxSync)) {
-                    StopListeningForApplicationStatus ();
-                    HandleAccountVerified ();
+                    if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
+                        StopListeningForApplicationStatus ();
+                        HandleServerError ();
+                    } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
+                        StopListeningForApplicationStatus ();
+                        HandleCredentialError ();
+                    } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
+                        HandleCertificateAsk ();
+                    } else if ((senderState >= BackEndStateEnum.PostAutoDPreInboxSync) && (readerState >= BackEndStateEnum.PostAutoDPreInboxSync)) {
+                        StopListeningForApplicationStatus ();
+                        HandleAccountVerified ();
+                    }
                 }
+            } else if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
+                StopListeningForApplicationStatus ();
+                HandleNetworkUnavailableError ();
             }
+        }
+
+        private void HandleNetworkUnavailableError ()
+        {
+            IsSubmitting = false;
+            BackEnd.Instance.Stop (Account.Id);
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController got network unavailable while verifying");
+            ShowCredentialsError ("We were unable to verify your information because your device is offline.  Please try again when your device is online");
         }
 
         private void HandleServerError ()
@@ -395,6 +404,7 @@ namespace NachoClient.iOS
                 NcApplication.Instance.CertAskResp (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, true);
             } else {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CertAskWait for service {0}, user must approve", Service);
+                StopListeningForApplicationStatus ();
                 PerformSegue ("cert-ask", null);
             }
         }
@@ -411,7 +421,6 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController certificate rejected by user");
             IsSubmitting = false;
-            StopListeningForApplicationStatus ();
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
             LoginHelpers.UserInterventionStateChanged (accountId);
             UpdateForSubmitting ();
@@ -423,9 +432,15 @@ namespace NachoClient.iOS
         public void AcceptCertificate (int accountId)
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController certificate accepted by user");
-            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
             LoginHelpers.UserInterventionStateChanged (accountId);
             DismissViewController (true, null);
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                Log.Info (Log.LOG_UI, "AccountCredentialsViewController no network after certficate accepted by user");
+                HandleNetworkUnavailableError ();
+            } else {
+                StartListeningForApplicationStatus ();
+                NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
+            }
         }
 
 

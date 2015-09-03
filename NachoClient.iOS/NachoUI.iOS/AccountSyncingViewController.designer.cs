@@ -16,13 +16,24 @@ namespace NachoClient.iOS
 		NachoClient.iOS.NcActivityIndicatorView activityIndicatorView { get; set; }
 
 		[Outlet]
+		UIKit.UIBarButtonItem skipButton { get; set; }
+
+		[Outlet]
 		UIKit.UILabel statusLabel { get; set; }
+
+		[Action ("Skip:")]
+		partial void Skip (Foundation.NSObject sender);
 		
 		void ReleaseDesignerOutlets ()
 		{
 			if (activityIndicatorView != null) {
 				activityIndicatorView.Dispose ();
 				activityIndicatorView = null;
+			}
+
+			if (skipButton != null) {
+				skipButton.Dispose ();
+				skipButton = null;
 			}
 
 			if (statusLabel != null) {

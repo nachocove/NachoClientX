@@ -20,13 +20,32 @@ namespace NachoClient.iOS
     public partial class AccountSyncingViewController : UIViewController
     {
 
+        private class AccountSyncingStatusMessage {
+            public string Title;
+            public string Details;
+            public bool IsWorking;
+
+            public AccountSyncingStatusMessage (string title, string details, bool isWorking)
+            {
+                Title = title;
+                Details = details;
+                IsWorking = isWorking;
+            }
+        }
+
         public AccountSyncingViewControllerDelegate AccountDelegate;
         private bool StatusIndCallbackIsSet;
         private McAccount account;
-        private bool IsSyncingComplete;
         private bool IsVisible;
         private bool DismissOnVisible;
         private NcTimer DismissTimer;
+
+        private static AccountSyncingStatusMessage SyncingMessage = new AccountSyncingStatusMessage ("Syncing...", "Syncing your inbox...", true);
+        private static AccountSyncingStatusMessage SuccessMessage = new AccountSyncingStatusMessage ("Account Created", "Your account is ready!", false);
+        private static AccountSyncingStatusMessage ErrorMessage = new AccountSyncingStatusMessage ("Account Created", "Sorry, we could not fully sync your inbox.  Please see Settings for more information", false);
+        private static AccountSyncingStatusMessage NetworkMessage = new AccountSyncingStatusMessage ("Account Created", "Syncing will complete when network connectivity is restored", false);
+
+        private AccountSyncingStatusMessage Message = SyncingMessage;
 
         public McAccount Account {
             get {
@@ -60,6 +79,15 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            var attrs = new UITextAttributes ();
+            attrs.Font = A.Font_AvenirNextMedium17;
+            attrs.TextColor = A.Color_NachoSubmitButton;
+            skipButton.SetTitleTextAttributes(attrs, UIControlState.Normal);
+        }
+
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
@@ -70,7 +98,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidAppear (animated);
             IsVisible = true;
-            if (!IsSyncingComplete) {
+            if (Message.IsWorking) {
                 activityIndicatorView.StartAnimating ();
             }
             if (DismissOnVisible) {
@@ -85,14 +113,19 @@ namespace NachoClient.iOS
             activityIndicatorView.StopAnimating ();
         }
 
-        public void Complete ()
+        private void CompleteAccount ()
         {
-            IsSyncingComplete = true;
             if (Account != null) {
                 Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
                 Account.Update ();
-                StopListeningForApplicationStatus ();
             }
+        }
+
+        private void CompleteWithMessage (AccountSyncingStatusMessage message)
+        {
+            StopListeningForApplicationStatus ();
+            CompleteAccount ();
+            Message = message;
             Update ();
             if (IsVisible) {
                 Log.Info (Log.LOG_UI, "AccountSyncingViewController will set dismiss delay immediately");
@@ -103,21 +136,35 @@ namespace NachoClient.iOS
             }
         }
 
+        public void Complete ()
+        {
+            CompleteWithMessage (SuccessMessage);
+        }
+
+        partial void Skip (NSObject sender)
+        {
+            Log.Info (Log.LOG_UI, "AccountSyncingViewController user did skip, dismissing as if we were done");
+            StopListeningForApplicationStatus ();
+            CompleteAccount ();
+            Dismiss ();
+        }
+
         void Update ()
         {
             if (IsViewLoaded) {
-                if (IsSyncingComplete) {
-                    if (IsVisible) {
+                NavigationItem.Title = Message.Title;
+                statusLabel.Text = Message.Details;
+                if (IsVisible) {
+                    if (Message.IsWorking) {
+                        activityIndicatorView.StartAnimating ();
+                    } else {
                         activityIndicatorView.StopAnimating ();
                     }
-                    NavigationItem.Title = "Account Created";
-                    statusLabel.Text = "Your account is ready!";
+                }
+                if (Message.IsWorking) {
+                    NavigationItem.RightBarButtonItem = skipButton;
                 } else {
-                    if (IsVisible) {
-                        activityIndicatorView.StopAnimating ();
-                    }
-                    NavigationItem.Title = "Syncing...";
-                    statusLabel.Text = "Syncing your inbox...";
+                    NavigationItem.RightBarButtonItem = null;
                 }
             }
         }
@@ -136,8 +183,10 @@ namespace NachoClient.iOS
         private void Dismiss ()
         {
             Log.Info (Log.LOG_UI, "AccountSyncingViewController dismissing by calling delegate");
-            DismissTimer.Dispose ();
-            DismissTimer = null;
+            if (DismissTimer != null) {
+                DismissTimer.Dispose ();
+                DismissTimer = null;
+            }
             AccountDelegate.AccountSyncingViewControllerDidComplete (this);
         }
 
@@ -148,14 +197,28 @@ namespace NachoClient.iOS
                 return;
             }
             var s = (StatusIndEventArgs)e;
-            if (s.Account != null && s.Account.Id == Account.Id) {
-                var senderState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
-                var readerState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
-                Log.Info (Log.LOG_UI, "AccountSyncingViewController senderState {0}, readerState {1}", senderState, readerState);
-                if ((senderState == BackEndStateEnum.PostAutoDPostInboxSync) && (readerState == BackEndStateEnum.PostAutoDPostInboxSync)) {
-                    Log.Info (Log.LOG_UI, "AccountSyncingViewController saw PostAutoDBPostInboxSync for both sender and reader, account ID{0}", Account.Id);
-                    Complete ();
+            if (NcResult.SubKindEnum.Info_BackEndStateChanged == s.Status.SubKind) {
+                if (s.Account != null && s.Account.Id == Account.Id) {
+                    var senderState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+                    var readerState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                    Log.Info (Log.LOG_UI, "AccountSyncingViewController senderState {0}, readerState {1} for account {2}", senderState, readerState, Account.Id);
+                    if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
+                        StopListeningForApplicationStatus ();
+                        CompleteWithMessage (ErrorMessage);
+                    } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
+                        StopListeningForApplicationStatus ();
+                        CompleteWithMessage (ErrorMessage);
+                    } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
+                        StopListeningForApplicationStatus ();
+                        CompleteWithMessage (ErrorMessage);
+                    }else if ((senderState == BackEndStateEnum.PostAutoDPostInboxSync) && (readerState == BackEndStateEnum.PostAutoDPostInboxSync)) {
+                        Log.Info (Log.LOG_UI, "AccountSyncingViewController saw PostAutoDBPostInboxSync for both sender and reader, account ID{0}", Account.Id);
+                        CompleteWithMessage (SuccessMessage);
+                    }
                 }
+            } else if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
+                StopListeningForApplicationStatus ();
+                CompleteWithMessage (NetworkMessage);
             }
         }
     }
