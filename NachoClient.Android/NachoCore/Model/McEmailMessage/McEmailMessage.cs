@@ -301,6 +301,7 @@ namespace NachoCore.Model
         // Whether the email should be notified subjected to the current notification settings.
         // Note that this boolean is only meaningful within the context of a background duration;
         // as the settings can change during foreground.
+        [Indexed]
         public bool ShouldNotify { get; set; }
 
         /// True if its InReplyTo matches the MessageID of another McEmailMessage whose From
@@ -612,15 +613,15 @@ namespace NachoCore.Model
                 accountId, threadId, "Defer until");
         }
 
-        public static List<McEmailMessageThread> QueryForMessageThreadSet(List<int> indexList)
+        public static List<McEmailMessageThread> QueryForMessageThreadSet (List<int> indexList)
         {
             var set = String.Format ("( {0} )", String.Join (",", indexList.ToArray<int> ()));
             var cmd = String.Format (
-                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
-                "WHERE " +
-                "e.ID IN {0} " +
-                " ORDER BY e.DateReceived DESC ",
-                set);
+                          "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+                          "WHERE " +
+                          "e.ID IN {0} " +
+                          " ORDER BY e.DateReceived DESC ",
+                          set);
             return NcModel.Instance.Db.Query<McEmailMessageThread> (cmd); 
         }
 

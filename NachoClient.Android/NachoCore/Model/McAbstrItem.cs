@@ -32,6 +32,7 @@ namespace NachoCore.Model
         public uint PendingRefCount { get; set; }
 
         // Platform-specific code sets this when a user-notification is sent.
+        [Indexed]
         public bool HasBeenNotified { get; set; }
 
         /// The parser blew up when parsing this item, so we know it is missing some fields.
