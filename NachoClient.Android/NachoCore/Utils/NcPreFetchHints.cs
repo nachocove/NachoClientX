@@ -137,7 +137,10 @@ namespace NachoCore.Utils
                     });
                     foreach (Hint h in hints.Take(count)) {
                         hintList.Add (h.Id);
-                        AccountHints.Remove (h);
+                        var idx = AccountHints.IndexOf (h);
+                        if (idx >= 0) {
+                            AccountHints.RemoveAt (idx);
+                        }
                     }
                     return hintList;
                 }
@@ -149,7 +152,10 @@ namespace NachoCore.Utils
                     for (var i = 0; i<AccountHints.Count; i++) {
                         Hint h = AccountHints [i];
                         if (h.Id == Id) {
-                            AccountHints.Remove (h);
+                            var idx = AccountHints.IndexOf (h);
+                            if (idx >= 0) {
+                                AccountHints.RemoveAt (idx);
+                            }
                             break;
                         }
                     }

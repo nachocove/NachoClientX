@@ -29,8 +29,6 @@ namespace NachoCore.Utils
         void Insert (int index, T item);
 
         void RemoveAt (int index);
-
-        void Remove (T item);
     }
 
     public class NcCircularBuffer<T> : INcCircularBuffer<T>, IEnumerable<T>
@@ -147,14 +145,6 @@ namespace NachoCore.Utils
             for (var i = index; i > 0; --i)
                 this [i] = this [i - 1];
             Dequeue ();
-        }
-
-        public void Remove (T item)
-        {
-            var index = IndexOf (item);
-            if (index >= 0) {
-                RemoveAt (index);
-            }
         }
 
         public IEnumerator<T> GetEnumerator ()
