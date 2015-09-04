@@ -13,6 +13,8 @@ namespace NachoClient.iOS
     public partial class StartupViewController : NcUIViewController, GettingStartedViewControllerDelegate
     {
 
+        #region Properties
+
         bool StatusIndCallbackIsSet = false;
 
         enum StartupViewState
@@ -28,25 +30,17 @@ namespace NachoClient.iOS
 
         StartupViewState currentState = StartupViewState.Startup;
 
+        #endregion
+
+        #region Constructors
+
         public StartupViewController (IntPtr handle) : base (handle)
         {
         }
 
-        void StartListeningForApplicationStatus ()
-        {
-            if (!StatusIndCallbackIsSet) {
-                StatusIndCallbackIsSet = true;
-                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            }
-        }
+        #endregion
 
-        void StopListeningForApplicationStatus ()
-        {
-            if (StatusIndCallbackIsSet) {
-                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-                StatusIndCallbackIsSet = false;
-            }
-        }
+        #region iOS View Lifecycle
 
         public override void ViewDidLoad ()
         {
@@ -78,6 +72,30 @@ namespace NachoClient.iOS
                 ShowScreenForApplicationState ();
             }
         }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "migration") {
+                var vc = (StartupMigrationViewController)segue.DestinationViewController;
+                if (currentState == StartupViewState.Startup) {
+                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
+                }
+                return;
+            }
+            if (segue.Identifier == "recovery") {
+                var vc = (StartupRecoveryViewController)segue.DestinationViewController;
+                if (currentState == StartupViewState.Startup) {
+                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
+                }
+                return;
+            }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
+        }
+
+        #endregion
+
+        #region Auto-Navigations
 
         void ShowScreenForApplicationState ()
         {
@@ -215,6 +233,26 @@ namespace NachoClient.iOS
             });
         }
 
+        #endregion
+
+        #region Backend Events
+
+        void StartListeningForApplicationStatus ()
+        {
+            if (!StatusIndCallbackIsSet) {
+                StatusIndCallbackIsSet = true;
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+        }
+
+        void StopListeningForApplicationStatus ()
+        {
+            if (StatusIndCallbackIsSet) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                StatusIndCallbackIsSet = false;
+            }
+        }
+
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
@@ -226,30 +264,16 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier == "migration") {
-                var vc = (StartupMigrationViewController)segue.DestinationViewController;
-                if (currentState == StartupViewState.Startup) {
-                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
-                }
-                return;
-            }
-            if (segue.Identifier == "recovery") {
-                var vc = (StartupRecoveryViewController)segue.DestinationViewController;
-                if (currentState == StartupViewState.Startup) {
-                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
-                }
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
+        #endregion
+
+        #region Getting Started Delegate
 
         public void GettingStartedViewControllerDidComplete (GettingStartedViewController vc)
         {
             Log.Info (Log.LOG_UI, "StartupViewController tutorial was dismissed, going direct to application");
             ShowApplication ();
         }
+
+        #endregion
     }
 }

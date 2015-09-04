@@ -15,14 +15,24 @@ namespace NachoClient.iOS
     public partial class GoogleCredentialsViewController : AccountCredentialsViewController
     {
 
+        #region Properties
+
         GoogleOAuth2Authenticator Authenticator;
         UIView AuthView;
+
+        #endregion
+
+        #region Constructors
 
         public GoogleCredentialsViewController (IntPtr handle) : base (handle)
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
         }
+
+        #endregion
+
+        #region iOS View Lifecycle
 
         public override void ViewDidLoad ()
         {
@@ -62,6 +72,10 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             AuthView.Frame = View.Bounds;
         }
+
+        #endregion
+
+        #region OAuth Events
 
         public void AuthCompleted (object sender, AuthenticatorCompletedEventArgs e)
         {
@@ -124,5 +138,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "GoogleCredentialsViewController auth error");
             NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
         }
+
+        #endregion
     }
 }

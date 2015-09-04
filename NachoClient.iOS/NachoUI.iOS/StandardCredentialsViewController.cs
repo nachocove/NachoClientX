@@ -15,7 +15,9 @@ namespace NachoClient.iOS
 
     public partial class StandardCredentialsViewController : AccountCredentialsViewController, INachoCertificateResponderParent, AccountAdvancedFieldsViewControllerDelegate, IUITextFieldDelegate
     {
-        
+
+        #region Properties
+
         private bool StatusIndCallbackIsSet;
         private bool IsShowingAdvanced;
         private bool IsSubmitting;
@@ -25,6 +27,9 @@ namespace NachoClient.iOS
         private bool HideAdvancedButton = false;
         private bool LockEmailField = false;
 
+        #endregion
+
+        #region Constructors
 
         public StandardCredentialsViewController (IntPtr handle) : base (handle)
         {
@@ -32,21 +37,9 @@ namespace NachoClient.iOS
             NavigationItem.BackBarButtonItem.Title = "";
         }
 
-        void StartListeningForApplicationStatus ()
-        {
-            if (!StatusIndCallbackIsSet) {
-                StatusIndCallbackIsSet = true;
-                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            }
-        }
+        #endregion
 
-        void StopListeningForApplicationStatus ()
-        {
-            if (StatusIndCallbackIsSet) {
-                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-                StatusIndCallbackIsSet = false;
-            }
-        }
+        #region iOS View Lifecycle
 
         public override void ViewDidLoad ()
         {
@@ -64,7 +57,7 @@ namespace NachoClient.iOS
                 using (var image = Util.ImageForAccount (Account)) {
                     accountIconView.Image = image;
                 }
-            }else{
+            } else {
                 var imageName = Util.GetAccountServiceImageName (Service);
                 using (var image = UIImage.FromBundle (imageName)) {
                     accountIconView.Image = image;
@@ -128,6 +121,20 @@ namespace NachoClient.iOS
             }
         }
 
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "cert-ask") {
+                var vc = (CertAskViewController)segue.DestinationViewController;
+                vc.Setup (Account, McAccount.AccountCapabilityEnum.EmailSender);
+                vc.CertificateDelegate = this;
+            }
+        }
+
+        #endregion
+
+        #region User Actions
+
         partial void Submit (NSObject sender)
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController submitting");
@@ -170,33 +177,6 @@ namespace NachoClient.iOS
             }
         }
 
-        String IssueWithCredentials (String email, String password)
-        {
-            if (!email.Contains ("@")) {
-                return "Your email address must include an @.  For Example, username@company.com";
-            }
-            if (!EmailHelper.IsValidEmail (email)) {
-                return "Your email address is not valid.\nFor example, username@company.com";
-            }
-            String serviceName = null;
-            if (NcServiceHelper.IsServiceUnsupported (email, out serviceName)) {
-                return String.Format ("Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (Service));
-            }
-            if (!NcServiceHelper.DoesAddressMatchService (email, Service)) {
-                return String.Format ("The email address does not match the service. Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (Service));
-            }
-            if (LoginHelpers.ConfiguredAccountExists (email)) {
-                return "An account with that email address already exists. Duplicate accounts are not supported.";
-            }
-            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                return "No network connection. Please check that you have internet access.";
-            }
-            if (IsShowingAdvanced) {
-                return advancedFieldsViewController.IssueWithFields ();
-            }
-            return null;
-        }
-
         partial void Support (NSObject sender)
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController showing support");
@@ -216,6 +196,20 @@ namespace NachoClient.iOS
         {
             UpdateSubmitEnabled ();
         }
+
+        protected override void OnKeyboardChanged ()
+        {
+            scrollView.ContentInset = new UIEdgeInsets (0, 0, keyboardHeight, 0);
+            if (keyboardHeight > 0) {
+                if (scrollView.Frame.Height - keyboardHeight < submitButton.Frame.Bottom) {
+                    scrollView.SetContentOffset (new CGPoint (0, statusLabel.Frame.Top - 18), false);
+                }
+            }
+        }
+
+        #endregion
+
+        #region View Helpers
 
         void ToggleAdvancedFields ()
         {
@@ -320,13 +314,61 @@ namespace NachoClient.iOS
             }
         }
 
-        protected override void OnKeyboardChanged ()
+        String IssueWithCredentials (String email, String password)
         {
-            scrollView.ContentInset = new UIEdgeInsets (0, 0, keyboardHeight, 0);
-            if (keyboardHeight > 0) {
-                if (scrollView.Frame.Height - keyboardHeight < submitButton.Frame.Bottom) {
-                    scrollView.SetContentOffset (new CGPoint (0, statusLabel.Frame.Top - 18), false);
-                }
+            if (!email.Contains ("@")) {
+                return "Your email address must include an @.  For Example, username@company.com";
+            }
+            if (!EmailHelper.IsValidEmail (email)) {
+                return "Your email address is not valid.\nFor example, username@company.com";
+            }
+            String serviceName = null;
+            if (NcServiceHelper.IsServiceUnsupported (email, out serviceName)) {
+                return String.Format ("Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (Service));
+            }
+            if (!NcServiceHelper.DoesAddressMatchService (email, Service)) {
+                return String.Format ("The email address does not match the service. Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (Service));
+            }
+            if (LoginHelpers.ConfiguredAccountExists (email)) {
+                return "An account with that email address already exists. Duplicate accounts are not supported.";
+            }
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                return "No network connection. Please check that you have internet access.";
+            }
+            if (IsShowingAdvanced) {
+                return advancedFieldsViewController.IssueWithFields ();
+            }
+            return null;
+        }
+
+        [Export ("textFieldShouldReturn:")]
+        public bool ShouldReturn (UITextField textField)
+        {
+            if (submitButton.Enabled) {
+                textField.ResignFirstResponder ();
+                Submit (textField);
+                return true;
+            }
+            return false;
+        }
+
+        #endregion
+
+        #region Backend Events
+
+        void StartListeningForApplicationStatus ()
+        {
+            if (!StatusIndCallbackIsSet) {
+                StatusIndCallbackIsSet = true;
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+        }
+
+        void StopListeningForApplicationStatus ()
+        {
+            if (StatusIndCallbackIsSet) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                StatusIndCallbackIsSet = false;
             }
         }
 
@@ -416,6 +458,10 @@ namespace NachoClient.iOS
             AccountDelegate.AccountCredentialsViewControllerDidValidateAccount (this, Account);
         }
 
+        #endregion
+
+        #region Cert Ask Interface
+
         // INachoCertificateResponderParent
         public void DontAcceptCertificate (int accountId)
         {
@@ -443,31 +489,16 @@ namespace NachoClient.iOS
             }
         }
 
+        #endregion
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier == "cert-ask") {
-                var vc = (CertAskViewController)segue.DestinationViewController;
-                vc.Setup (Account, McAccount.AccountCapabilityEnum.EmailSender);
-                vc.CertificateDelegate = this;
-            }
-        }
+        #region Advanced Fields Delegate
 
         public void AdvancedFieldsControllerDidChange (AccountAdvancedFieldsViewController vc)
         {
             UpdateSubmitEnabled ();
         }
 
-        [Export ("textFieldShouldReturn:")]
-        public bool ShouldReturn (UITextField textField)
-        {
-            if (submitButton.Enabled) {
-                textField.ResignFirstResponder ();
-                Submit (textField);
-                return true;
-            }
-            return false;
-        }
+        #endregion
            
     }
 }

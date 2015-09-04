@@ -80,7 +80,6 @@ namespace NachoClient.iOS
 
         public override string IssueWithFields ()
         {
-            String serviceName;
             if (!EmailHelper.IsValidHost (incomingServerField.Text)) {
                 return "Invalid incoming server name. Please check that you typed it in correctly.";
             }

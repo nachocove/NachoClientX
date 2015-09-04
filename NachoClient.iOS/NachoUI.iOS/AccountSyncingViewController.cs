@@ -12,15 +12,22 @@ using NachoPlatform;
 namespace NachoClient.iOS
 {
 
+    #region Delegate
+
     public interface AccountSyncingViewControllerDelegate
     {
         void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc);
     }
 
+    #endregion
+
     public partial class AccountSyncingViewController : UIViewController
     {
 
-        private class AccountSyncingStatusMessage {
+        #region Properties
+
+        private class AccountSyncingStatusMessage
+        {
             public string Title;
             public string Details;
             public bool IsWorking;
@@ -58,26 +65,18 @@ namespace NachoClient.iOS
             }
         }
 
+        #endregion
+
+        #region Constructors
+
         public AccountSyncingViewController (IntPtr handle) : base (handle)
         {
             NavigationItem.HidesBackButton = true;
         }
 
-        void StartListeningForApplicationStatus ()
-        {
-            if (!StatusIndCallbackIsSet) {
-                StatusIndCallbackIsSet = true;
-                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            }
-        }
+        #endregion
 
-        void StopListeningForApplicationStatus ()
-        {
-            if (StatusIndCallbackIsSet) {
-                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-                StatusIndCallbackIsSet = false;
-            }
-        }
+        #region iOS View Lifecycle
 
         public override void ViewDidLoad ()
         {
@@ -85,7 +84,7 @@ namespace NachoClient.iOS
             var attrs = new UITextAttributes ();
             attrs.Font = A.Font_AvenirNextMedium17;
             attrs.TextColor = A.Color_NachoSubmitButton;
-            skipButton.SetTitleTextAttributes(attrs, UIControlState.Normal);
+            skipButton.SetTitleTextAttributes (attrs, UIControlState.Normal);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -113,33 +112,9 @@ namespace NachoClient.iOS
             activityIndicatorView.StopAnimating ();
         }
 
-        private void CompleteAccount ()
-        {
-            if (Account != null) {
-                Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
-                Account.Update ();
-            }
-        }
+        #endregion
 
-        private void CompleteWithMessage (AccountSyncingStatusMessage message)
-        {
-            StopListeningForApplicationStatus ();
-            CompleteAccount ();
-            Message = message;
-            Update ();
-            if (IsVisible) {
-                Log.Info (Log.LOG_UI, "AccountSyncingViewController will set dismiss delay immediately");
-                DismissAfterDelay ();
-            } else {
-                Log.Info (Log.LOG_UI, "AccountSyncingViewController will set dismiss delay on visible");
-                DismissOnVisible = true;
-            }
-        }
-
-        public void Complete ()
-        {
-            CompleteWithMessage (SuccessMessage);
-        }
+        #region User Actions
 
         partial void Skip (NSObject sender)
         {
@@ -148,6 +123,10 @@ namespace NachoClient.iOS
             CompleteAccount ();
             Dismiss ();
         }
+
+        #endregion
+
+        #region View Helpers
 
         void Update ()
         {
@@ -167,6 +146,19 @@ namespace NachoClient.iOS
                     NavigationItem.RightBarButtonItem = null;
                 }
             }
+        }
+
+        private void CompleteAccount ()
+        {
+            if (Account != null) {
+                Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
+                Account.Update ();
+            }
+        }
+
+        public void Complete ()
+        {
+            CompleteWithMessage (SuccessMessage);
         }
 
         void DismissAfterDelay ()
@@ -190,6 +182,26 @@ namespace NachoClient.iOS
             AccountDelegate.AccountSyncingViewControllerDidComplete (this);
         }
 
+        #endregion
+
+        #region Backend Events
+
+        void StartListeningForApplicationStatus ()
+        {
+            if (!StatusIndCallbackIsSet) {
+                StatusIndCallbackIsSet = true;
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+        }
+
+        void StopListeningForApplicationStatus ()
+        {
+            if (StatusIndCallbackIsSet) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                StatusIndCallbackIsSet = false;
+            }
+        }
+
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
             if (!StatusIndCallbackIsSet) {
@@ -211,7 +223,7 @@ namespace NachoClient.iOS
                     } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
                         StopListeningForApplicationStatus ();
                         CompleteWithMessage (ErrorMessage);
-                    }else if ((senderState == BackEndStateEnum.PostAutoDPostInboxSync) && (readerState == BackEndStateEnum.PostAutoDPostInboxSync)) {
+                    } else if ((senderState == BackEndStateEnum.PostAutoDPostInboxSync) && (readerState == BackEndStateEnum.PostAutoDPostInboxSync)) {
                         Log.Info (Log.LOG_UI, "AccountSyncingViewController saw PostAutoDBPostInboxSync for both sender and reader, account ID{0}", Account.Id);
                         CompleteWithMessage (SuccessMessage);
                     }
@@ -221,5 +233,22 @@ namespace NachoClient.iOS
                 CompleteWithMessage (NetworkMessage);
             }
         }
+
+        private void CompleteWithMessage (AccountSyncingStatusMessage message)
+        {
+            StopListeningForApplicationStatus ();
+            CompleteAccount ();
+            Message = message;
+            Update ();
+            if (IsVisible) {
+                Log.Info (Log.LOG_UI, "AccountSyncingViewController will set dismiss delay immediately");
+                DismissAfterDelay ();
+            } else {
+                Log.Info (Log.LOG_UI, "AccountSyncingViewController will set dismiss delay on visible");
+                DismissOnVisible = true;
+            }
+        }
+
+        #endregion
     }
 }

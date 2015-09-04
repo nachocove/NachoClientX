@@ -13,6 +13,8 @@ using CoreGraphics;
 namespace NachoClient.iOS
 {
 
+    #region Delegate
+
     public interface AccountTypeViewControllerDelegate
     {
 
@@ -20,8 +22,12 @@ namespace NachoClient.iOS
 
     }
 
+    #endregion
+
     public partial class AccountTypeViewController : UICollectionViewController
     {
+
+        #region Properties
 
         public AccountTypeViewControllerDelegate AccountDelegate;
 
@@ -41,12 +47,20 @@ namespace NachoClient.iOS
 
         private McAccount.AccountServiceEnum[] accountTypes;
 
+        #endregion
+
+        #region Constructors
+
         public AccountTypeViewController (IntPtr handle) : base (handle)
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
             accountTypes = DefaultAccountTypes;
         }
+
+        #endregion
+
+        #region Collection View Delegate & Data Source
 
         public override nint NumberOfSections (UICollectionView collectionView)
         {
@@ -92,6 +106,10 @@ namespace NachoClient.iOS
             }
         }
 
+        #endregion
+
+        #region Public Helpers
+
         public AccountCredentialsViewController SuggestedCredentialsViewController (McAccount.AccountServiceEnum service)
         {
             if (service == McAccount.AccountServiceEnum.GoogleDefault) {
@@ -102,6 +120,8 @@ namespace NachoClient.iOS
                 return (AccountCredentialsViewController)Storyboard.InstantiateViewController ("AccountCredentialsViewController");
             }
         }
+
+        #endregion
 
     }
 

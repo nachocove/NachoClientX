@@ -13,18 +13,26 @@ using System.Linq;
 namespace NachoClient.iOS
 {
 
+    #region Delegate
+
     public interface GettingStartedViewControllerDelegate
     {
         void GettingStartedViewControllerDidComplete (GettingStartedViewController vc);
     }
 
+    #endregion
+
     public partial class GettingStartedViewController : UIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, HomeViewControllerDelegate
     {
+
+        #region Properties
+
         public GettingStartedViewControllerDelegate AccountDelegate;
         public CGRect? AnimateFromLaunchImageFrame = null;
         private CGSize originalCircleImageSize;
         private nfloat originalCircleImageOffset;
         private UIStoryboard _accountStoryboard;
+
         private UIStoryboard accountStoryboard {
             get { 
                 if (_accountStoryboard == null) {
@@ -33,16 +41,25 @@ namespace NachoClient.iOS
                 return _accountStoryboard;
             }
         }
+
         public bool StartWithTutorial;
         AccountSyncingViewController syncingViewController;
         EventHandler StartEventHandler;
         byte[] prefetchedImageBytes = null;
+
+        #endregion
+
+        #region Constructors
 
         public GettingStartedViewController (IntPtr handle) : base (handle)
         {
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
         }
+
+        #endregion
+
+        #region iOS View Lifecycle
 
         public override void ViewDidLoad ()
         {
@@ -67,7 +84,7 @@ namespace NachoClient.iOS
                 } else {
                     startEventHandler = ShowTutorial;
                 }
-            }else if (NcMdmConfig.Instance.IsPopulated && mdmAccount == null){
+            } else if (NcMdmConfig.Instance.IsPopulated && mdmAccount == null) {
                 if (NcMdmConfig.Instance.IsValid) {
                     Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with mdm account");
                     var companyName = NcMdmConfig.Instance.BrandingName;
@@ -136,6 +153,19 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "tutorial") {
+                var vc = (HomeViewController)segue.DestinationViewController;
+                vc.AccountDelegate = this;
+                vc.Service = (McAccount.AccountServiceEnum)((SegueHolder)sender).value;
+            }
+        }
+
+        #endregion
+
+        #region User Actions
+
         private void ShowAccountBeingConfigured (object sender, EventArgs e)
         {
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
@@ -160,8 +190,8 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue with tutorial");
             syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
             syncingViewController.AccountDelegate = this;
-            syncingViewController.Complete();
-            PerformSegue ("tutorial", new SegueHolder(NcApplication.Instance.Account.AccountService));
+            syncingViewController.Complete ();
+            PerformSegue ("tutorial", new SegueHolder (NcApplication.Instance.Account.AccountService));
         }
 
         private void ShowMDMAccount (object sender, EventArgs e)
@@ -179,6 +209,28 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (vc, true);
         }
 
+        #endregion
+
+        #region View Helpers
+
+        public async void PrefetchAccountImageUrl (NSUrl url)
+        {
+            try {
+                var httpClient = new System.Net.Http.HttpClient ();
+                byte[] imageBytes = await httpClient.GetByteArrayAsync (url);
+                // this line will throw an exception if the native UIImage can't be constructed
+                new UIImage (NSData.FromArray (imageBytes));
+                // so if we get here, we know the bytes are a valid image
+                prefetchedImageBytes = imageBytes;
+            } catch (Exception e) {
+                Log.Info (Log.LOG_DB, "GettingStartedViewController: PrefetchAccountImageUrl exception: {0}", e);
+            }
+        }
+
+        #endregion
+
+        #region Account Type Delegate
+
         public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)
         {
             var credentialsViewController = vc.SuggestedCredentialsViewController (service);
@@ -186,6 +238,10 @@ namespace NachoClient.iOS
             credentialsViewController.AccountDelegate = this;
             NavigationController.PushViewController (credentialsViewController, true);
         }
+
+        #endregion
+
+        #region Account Credentials Delegate
 
         public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
         {
@@ -199,18 +255,13 @@ namespace NachoClient.iOS
                 NavigationController.PushViewController (syncingViewController, true);
             } else {
                 Log.Info (Log.LOG_UI, "GettingStartedViewController showing tutorial over sync");
-                PerformSegue ("tutorial", new SegueHolder(account.AccountService)); 
+                PerformSegue ("tutorial", new SegueHolder (account.AccountService)); 
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier == "tutorial") {
-                var vc = (HomeViewController)segue.DestinationViewController;
-                vc.AccountDelegate = this;
-                vc.Service = (McAccount.AccountServiceEnum)((SegueHolder)sender).value;
-            }
-        }
+        #endregion
+
+        #region Home View Delegate
 
         public void HomeViewControllerDidAppear (HomeViewController vc)
         {
@@ -225,6 +276,10 @@ namespace NachoClient.iOS
             NavigationController.SetViewControllers (viewControllers, false);
         }
 
+        #endregion
+
+        #region Account Syncing Delegate
+
         public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
         {
             Log.Info (Log.LOG_UI, "GettingStartedViewController syncing complete");
@@ -235,17 +290,6 @@ namespace NachoClient.iOS
             AccountDelegate.GettingStartedViewControllerDidComplete (this);
         }
 
-        public async void PrefetchAccountImageUrl (NSUrl url){
-            try {
-                var httpClient = new System.Net.Http.HttpClient ();
-                byte[] imageBytes = await httpClient.GetByteArrayAsync (url);
-                // this line will throw an exception if the native UIImage can't be constructed
-                new UIImage(NSData.FromArray(imageBytes));
-                // so if we get here, we know the bytes are a valid image
-                prefetchedImageBytes = imageBytes;
-            } catch (Exception e) {
-                Log.Info (Log.LOG_DB, "GettingStartedViewController: PrefetchAccountImageUrl exception: {0}", e);
-            }
-        }
+        #endregion
     }
 }
