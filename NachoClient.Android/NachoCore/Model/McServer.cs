@@ -42,8 +42,19 @@ namespace NachoCore.Model
         // Well know email domain name suffixes:
         public const string HotMail_Suffix = "hotmail.com";
         public const string Outlook_Suffix = "outlook.com";
+        public const string Live_Suffix = "live.com";
+        public const string Msn_Suffix = "msn.com";
+
         public const string GMail_Suffix = "gmail.com";
         public const string GMail_Suffix2 = "googlemail.com";
+        public const string ICloud_Suffix = "icloud.com";
+        public const string ICloud_Suffix2 = "me.com";
+        public const string ICloud_Suffix3 = "mac.com";
+        public const string Yahoo_Suffix = "yahoo.com";
+        public const string Yahoo_Suffix2 = "yahoo.net";
+        public const string Yahoo_Suffix3 = "ymail.com";
+        public const string Yahoo_Suffix4 = "rocketmail.com";
+        public const string Aol_Suffix = "aol.com";
 
         public string Path { get; set; }
 
