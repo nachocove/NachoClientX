@@ -74,6 +74,7 @@ namespace NachoCore.IMAP
                         st.CopyTo(filtered);
                     }
                 }
+                attachment.ContentType = part.ContentType.MimeType;
                 attachment.Truncated = false;
                 attachment.UpdateSaveFinish ();
                 return NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate);
