@@ -44,6 +44,7 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             var orderBy = new [] { OrderBy.ReverseArrival };
+            var timespan = BEContext.Account.DaysSyncEmailSpan ();
 
             var query = SearchQuery.SubjectContains (PendingSingle.Search_Prefix)
                 .Or (SearchQuery.BodyContains (PendingSingle.Search_Prefix))
@@ -53,6 +54,9 @@ namespace NachoCore.IMAP
                 .Or (SearchQuery.CcContains (PendingSingle.Search_Prefix));
             if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.GMailExt1)) {
                 query = query.Or (SearchQuery.GMailRawSearch (PendingSingle.Search_Prefix));
+            }
+            if (TimeSpan.Zero != timespan) {
+                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
             }
 
             var folderList = McFolder.QueryByIsClientOwned (AccountId, false);
@@ -76,11 +80,17 @@ namespace NachoCore.IMAP
                         }
                         var idList = McEmailMessage.QueryByServerIdList (AccountId, serverIdList);
                         if (idList.Any ()) {
-                            // TODO Should we post an indication to the UI for each searched folder?
-                            Log.Info (Log.LOG_IMAP, "ImapSearchCommand {0}: Found {1} item(s)", folder.ImapFolderNameRedacted (), idList.Count);
-                            emailList.AddRange (idList);
+                            foreach (var id in idList) {
+                                emailList.Add(id);
+                                if (emailList.Count > PendingSingle.Search_MaxResults) {
+                                   break;
+                                }
+                            }
                         }
                     }
+                }
+                if (emailList.Count > PendingSingle.Search_MaxResults) {
+                    break;
                 }
             }
             var result = NcResult.Info (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded);

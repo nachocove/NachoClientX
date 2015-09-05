@@ -91,9 +91,6 @@ namespace NachoCore.IMAP
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
             }
-            cap.Pause ();
-            Log.Info (Log.LOG_IMAP, "{0} Sync took {1}ms", Synckit.Folder.ImapFolderNameRedacted (), cap.ElapsedMilliseconds);
-            cap.Stop ();
             cap.Dispose ();
             return evt;
         }
@@ -191,11 +188,10 @@ namespace NachoCore.IMAP
                 MinSynced = Math.Min (Synckit.SyncSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced);
                 if (MaxSynced != 0 && MaxSynced != Synckit.Folder.ImapUidHighestUidSynced ||
                     MinSynced != 0 && MinSynced != Synckit.Folder.ImapUidLowestUidSynced) {
-                    Log.Info (Log.LOG_IMAP, "{0}: Set ImapUidHighestUidSynced {1} ImapUidLowestUidSynced {2}",
-                        Synckit.Folder.ImapFolderNameRedacted (), MaxSynced, MinSynced);
                 }
             }
             // Update the sync count and last attempt and set the Highest and lowest sync'd
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 if (MaxSynced != 0) {
@@ -209,6 +205,10 @@ namespace NachoCore.IMAP
                 }
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
+                if (Synckit.Method == SyncKit.MethodEnum.QuickSync && exeCtxt == NcApplication.ExecutionContextEnum.Foreground) {
+                    // After a quick sync we really need to do a full sync to capture deleted and changed messages
+                    target.ImapNeedFullSync = true;
+                }
                 return true;
             });
 
@@ -282,9 +282,6 @@ namespace NachoCore.IMAP
                         }
                         summaryUids.Add (imapSummary.UniqueId);
                     }
-                    cap.Pause ();
-                    Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms ({3} new or changed)", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds, newOrChanged.Count);
-                    cap.Stop ();
                 }
             }
             vanished = SyncKit.MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
@@ -305,9 +302,6 @@ namespace NachoCore.IMAP
                     } else {
                         imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Cts.Token);
                     }
-                    cap.Pause ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
-                    cap.Stop ();
                 }
             } catch (ImapProtocolException) {
                 // try one-by-one so we can at least get a few.
@@ -445,7 +439,6 @@ namespace NachoCore.IMAP
             foreach (var uid in uids) {
                 var email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, ImapProtoControl.MessageServerId (Synckit.Folder, uid));
                 if (null != email) {
-                    Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", Synckit.Folder.ImapFolderNameRedacted (), email.ImapUid);
                     email.Delete ();
                     messagesDeleted.Add (uid);
                 }
@@ -772,7 +765,7 @@ namespace NachoCore.IMAP
 
             if (string.Empty == preview) {
                 // This can happen if there's only attachments in the message.
-                Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId);
+                //Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId);
             }
             return preview;
         }

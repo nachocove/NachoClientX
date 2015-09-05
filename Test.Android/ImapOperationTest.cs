@@ -371,6 +371,33 @@ namespace Test.iOS
             Assert.Null (syncKit.SyncSet);
         }
 
+        [Test]
+        public void TestSyncHoleAtTop ()
+        {
+            // This is a bug that pops up periodically, so let's make sure we test for it:
+            // If there's a 'hole' at the top of the sync range, we tend to sync forever.
+            // Conditions:
+            // ImapUidNext = X, but there's no messages there for at least 1 entry, i.e
+            // There were new messages at one point, but they got deleted from the mailbox.
+            // ImapUidHighestUidSynced = X -Y, where Y > 1, and no matter how often we try,
+            // We will never make ImapUidHighestUidSynced == ImapUidNext, because there's no messages
+            // to sync.
+            // 
+            var protocolState = ProtocolState;
+            TestFolder = resetFolder (TestFolder);
+            uint UidNext = 100;
+            uint HighestSynced = 97;
+
+            MakeFakeEmails (TestFolder.Id, 1, HighestSynced);
+            TestFolder = DoFakeFolderOpen (TestFolder, UidNext, DateTime.UtcNow.AddMinutes (-(6*60)));
+            TestFolder.ImapUidHighestUidSynced = HighestSynced;
+            TestFolder.ImapUidSet = string.Format ("{0}:{1}", 1, HighestSynced);
+            var syncSet = ImapStrategy.SyncSet (TestFolder, ref protocolState, 10);
+            Assert.NotNull (syncSet);
+            Assert.AreEqual (UidNext-1, syncSet.Max ().Id);
+            Assert.AreEqual (10, syncSet.Count);
+        }
+
         private void DeleteAllTestMail()
         {
             foreach (var email in McEmailMessage.QueryByAccountId<McEmailMessage> (Account.Id)) {
@@ -411,29 +438,7 @@ namespace Test.iOS
 
         private McFolder DoFakeSync(McFolder testFolder, IList<UniqueId> SyncSet)
         {
-            McEmailMessage emailMessage;
-            foreach (var uid in SyncSet) {
-                var ServerId = ImapProtoControl.MessageServerId (testFolder, uid);
-                emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (Account.Id, ServerId);
-                if (null == emailMessage) {
-                    emailMessage = new McEmailMessage () {
-                        AccountId = Account.Id,
-                        From = "test@example.com",
-                        ServerId = ServerId,
-                        IsIncomplete = true,
-                        ImapUid = uid.Id,
-                    };
-                    emailMessage.Insert ();
-                    var map = new McMapFolderFolderEntry (Account.Id) {
-                        AccountId = Account.Id,
-                        FolderId = testFolder.Id,
-                        FolderEntryId = emailMessage.Id,
-                        ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email,
-                        AsSyncEpoch = 1,
-                    };
-                    map.Insert ();
-                }
-            }
+            MakeFakeEmails (testFolder.Id, SyncSet.Min ().Id, SyncSet.Max ().Id);
             return testFolder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 target.ImapUidHighestUidSynced = Math.Max (target.ImapUidHighestUidSynced, SyncSet.Max ().Id);
@@ -442,6 +447,33 @@ namespace Test.iOS
                 target.ImapLastExamine = DateTime.UtcNow;
                 return true;
             });
+        }
+
+        private void MakeFakeEmails(int folderId, uint min, uint max)
+        {
+            McEmailMessage emailMessage;
+            for(var id = min; id<max; id++) {
+                var ServerId = string.Format ("{0}:{1}", folderId, id);
+                emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (Account.Id, ServerId);
+                if (null == emailMessage) {
+                    emailMessage = new McEmailMessage () {
+                        AccountId = Account.Id,
+                        From = "test@example.com",
+                        ServerId = ServerId,
+                        IsIncomplete = true,
+                        ImapUid = id,
+                    };
+                    emailMessage.Insert ();
+                    var map = new McMapFolderFolderEntry (Account.Id) {
+                        AccountId = Account.Id,
+                        FolderId = folderId,
+                        FolderEntryId = emailMessage.Id,
+                        ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email,
+                        AsSyncEpoch = 1,
+                    };
+                    map.Insert ();
+                }
+            }
         }
 
         private McFolder resetFolder(McFolder folder)

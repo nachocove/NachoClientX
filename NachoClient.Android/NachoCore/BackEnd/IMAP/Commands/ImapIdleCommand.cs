@@ -41,7 +41,7 @@ namespace NachoCore.IMAP
             if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
             }
-            if (ENABLED && Client.Capabilities.HasFlag (ImapCapabilities.Idle)) {
+            if (ENABLED && Client.Capabilities.HasFlag (ImapCapabilities.Idle) && !IsComcast (BEContext.Server)) {
                 IdleIdle(mailKitFolder, done);
             } else {
                 NoopIdle(mailKitFolder, done);

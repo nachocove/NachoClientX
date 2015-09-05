@@ -86,9 +86,10 @@ namespace NachoPlatform
             return StringFromNSData (data);
         }
 
-        public bool SetStringForKey (string key, string value)
+        public bool SetStringForKey (string key, string value,
+            SecAccessible accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly)
         {
-            return Setter (CreateQuery (key), NSData.FromString (value));
+            return Setter (CreateQuery (key), NSData.FromString (value), accessible);
         }
 
         public string GetLogSalt (int handle)
@@ -114,7 +115,7 @@ namespace NachoPlatform
 
         public bool SetIdentifierForVendor (string ident)
         {
-            return SetStringForKey (KIdentifierForVendor, ident);
+            return SetStringForKey (KIdentifierForVendor, ident, accessible:SecAccessible.AlwaysThisDeviceOnly);
         }
 
         public string GetUserId ()
@@ -193,7 +194,8 @@ namespace NachoPlatform
             }
         }
 
-        private bool Setter (SecRecord query, NSData value)
+        private bool Setter (SecRecord query, NSData value, 
+            SecAccessible accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly)
         {
             SecStatusCode res;
             var match = SecKeyChain.QueryAsRecord (query, out res);
@@ -206,7 +208,7 @@ namespace NachoPlatform
                 }
             } else {
                 query.ValueData = value;
-                query.Accessible = SecAccessible.AlwaysThisDeviceOnly;
+                query.Accessible = accessible;
                 res = SecKeyChain.Add (query);
                 if (SecStatusCode.Success != res) {
                     Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Add returned {0}", res.ToString ());

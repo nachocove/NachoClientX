@@ -138,7 +138,6 @@ namespace NachoCore.ActiveSync
              * State Machine design:
              * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
              * * ForceStop can happen at any time, and must Cancel anything that is going on immediately.
-             * * ForceSync can happen at any time, and must Cancel anything that is going on immediately and initiate Sync.
              * * Objects can be added to the McPending Q at any time.
              * * All other events must come from the orderly completion of commands or internal forced transitions.
              * 
@@ -1149,7 +1148,7 @@ namespace NachoCore.ActiveSync
                 Validator = null;
             }
         }
-            
+
         public void StatusIndEventHandler (Object sender, EventArgs ea)
         {
             var siea = (StatusIndEventArgs)ea;

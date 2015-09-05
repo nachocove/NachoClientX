@@ -58,13 +58,26 @@ namespace NachoClient.iOS
             searcher = new SearchHelper ("MessageListViewController", (searchString) => {
                 if (String.IsNullOrEmpty (searchString)) {
                     searchResultsMessages.UpdateMatches (null);
+                    searchResultsMessages.UpdateServerMatches(null);
                     return; 
                 }
                 // On-device index
                 int curVersion = searcher.Version;
                 var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
                 var index = new NachoCore.Index.NcIndex (indexPath);
-                var matches = index.SearchAllEmailMessageFields (searchString, 100);
+                int maxResults = 1000;
+                if(String.IsNullOrEmpty(searchString) || (4 > searchString.Length)) {
+                    maxResults = 20;
+                }
+                var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
+
+                // Cull low scores
+                var maxScore = 0f;
+                foreach (var m in matches) {
+                    maxScore = Math.Max (maxScore, m.Score);
+                }
+                matches.RemoveAll (x => x.Score < (maxScore / 2));
+
                 if (curVersion == searcher.Version) {
                     InvokeOnUIThread.Instance.Invoke (() => {
                         searchResultsMessages.UpdateMatches (matches);
@@ -694,6 +707,10 @@ namespace NachoClient.iOS
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
+            if(String.IsNullOrEmpty(forSearchString) || (4 > forSearchString.Length)) {
+                searchResultsMessages.UpdateServerMatches (null);
+                return;
+            }
             if (String.IsNullOrEmpty (searchToken)) {
                 searchToken = BackEnd.Instance.StartSearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null).GetValue<string> ();
             } else {

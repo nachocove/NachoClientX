@@ -688,7 +688,7 @@ namespace NachoCore.Utils
             if (null != entity.ContentDisposition &&
                 ((includeInline && ContentDisposition.Inline == entity.ContentDisposition.Disposition) ||
                     entity.ContentDisposition.IsAttachment) &&
-                (!insideTnef || !entity.ContentType.Matches ("application", "vnd.ms-tnef") || entity.ContentType.Name != "winmail.dat"))
+                (!insideTnef || !entity.ContentType.Matches ("application", "vnd.ms-tnef")))
             {
                 // It's an attachment that we are interested in.
                 result.Add (entity);

@@ -102,43 +102,9 @@ namespace NachoCore
             ForceStopped = false;
             ProtoControl = this;
             SetupAccount ();
-            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
-        }
-
-        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
-        {
-            if (null == Server) {
-                // This can happen when we're in AUTO-D and another account's server goes sideways.
-                return;
-            }
-            if (e.ServerId == Server.Id) {
-                switch (e.Quality) {
-                case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality OK.", Server.Host);
-                    Execute ();
-                    break;
-
-                default:
-                case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality degraded.", Server.Host);
-                    break;
-
-                case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality unusable.", Server.Host);
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
-                    break;
-                }
-            }
-        }
-
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
-        {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                Execute ();
-            } else {
-                // The "Down" case.
-                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
+            if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
+                NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
+                NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
             }
         }
 
@@ -215,6 +181,51 @@ namespace NachoCore
             // Create file directories.
             NcModel.Instance.InitializeDirs (AccountId);
         }
+
+        #region NcCommStatus
+
+        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
+        {
+            if (null == Server) {
+                // This can happen when we're in AUTO-D and another account's server goes sideways.
+                return;
+            }
+            if (e.ServerId == Server.Id) {
+                switch (e.Quality) {
+                case NcCommStatus.CommQualityEnum.OK:
+                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality OK.", Server.Host);
+                    if (!ForceStopped) {
+                        Execute ();
+                    }
+                    break;
+
+                default:
+                case NcCommStatus.CommQualityEnum.Degraded:
+                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality degraded.", Server.Host);
+                    break;
+
+                case NcCommStatus.CommQualityEnum.Unusable:
+                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality unusable.", Server.Host);
+                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
+                    break;
+                }
+            }
+        }
+
+        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
+        {
+            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
+                if (!ForceStopped) {
+                    Execute ();
+                }
+            } else {
+                // The "Down" case.
+                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
+            }
+        }
+
+        #endregion
+
 
         public NcStateMachine Sm { set; get; }
 
@@ -374,8 +385,10 @@ namespace NachoCore
 
         public virtual void Remove ()
         {
-            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
+                NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
+                NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            }
         }
 
         public virtual void CertAskResp (bool isOkay)
