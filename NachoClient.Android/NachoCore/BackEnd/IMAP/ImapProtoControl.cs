@@ -134,7 +134,9 @@ namespace NachoCore.IMAP
 
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
+            ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
+            SetupAccount ();
             MainClient = new NcImapClient ();
             NcCapture.AddKind (KImapStrategyPick);
 

@@ -100,8 +100,6 @@ namespace NachoCore
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
             ForceStopped = false;
-            ProtoControl = this;
-            SetupAccount ();
             if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
                 NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
                 NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;

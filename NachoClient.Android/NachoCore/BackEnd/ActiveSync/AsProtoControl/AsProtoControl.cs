@@ -1,8 +1,12 @@
 // # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using System.Threading.Tasks;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -133,7 +137,9 @@ namespace NachoCore.ActiveSync
 
         public AsProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
+            ProtoControl = this;
             Capabilities = McAccount.ActiveSyncCapabilities;
+            SetupAccount ();
             /*
              * State Machine design:
              * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
