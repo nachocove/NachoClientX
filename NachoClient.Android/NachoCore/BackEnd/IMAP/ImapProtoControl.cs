@@ -541,13 +541,11 @@ namespace NachoCore.IMAP
         private void DoDiscTempFail ()
         {
             Log.Info (Log.LOG_SMTP, "IMAP DoDisc Attempt {0}", DiscoveryRetries++);
-            if (DiscoveryRetries >= KDiscoveryMaxRetries) {
-                if (!ProtocolState.ImapDiscoveryDone) {
-                    var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
-                    err.Message = "Too many failures";
-                    StatusInd (err);
-                    Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC");
-                }
+            if (DiscoveryRetries >= KDiscoveryMaxRetries && !ProtocolState.ImapDiscoveryDone) {
+                var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+                err.Message = "Too many failures";
+                StatusInd (err);
+                Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC");
             } else {
                 DoDisc ();
             }

@@ -116,7 +116,9 @@ namespace NachoCore.SMTP
 
         public SmtpProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
+            ProtoControl = this;
             Capabilities = McAccount.SmtpCapabilities;
+            SetupAccount ();
             SmtpClient = new NcSmtpClient ();
 
             Sm = new NcStateMachine ("SMTPPC") { 
@@ -464,7 +466,7 @@ namespace NachoCore.SMTP
         private void DoDiscTempFail ()
         {
             Log.Info (Log.LOG_SMTP, "SMTP DoDisc Attempt {0}", DiscoveryRetries++);
-            if (DiscoveryRetries >= KDiscoveryMaxRetries) {
+            if (DiscoveryRetries >= KDiscoveryMaxRetries && !ProtocolState.SmtpDiscoveryDone) {
                 var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
                 err.Message = "Too many failures";
                 StatusInd (err);
