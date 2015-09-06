@@ -290,6 +290,34 @@ namespace NachoCore
             });
         }
 
+        /// <summary>
+        /// Sends a status Indication of a PendQ event to all services in the account
+        /// </summary>
+        /// <description>
+        /// This function is identical to HintInd at the moment, and exists mainly for completeness.
+        /// Should we ever split the PendQOrHint event, we won't have to change anyone using the PendQInd.
+        /// </description>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="capabilities">Capabilities.</param>
+        public void PendQInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            ApplyAcrossServices (accountId, "PendQInd", (service) => {
+                if (0 != (capabilities & service.Capabilities)) {
+                    service.PendQOrHintInd ();
+                }
+                return NcResult.OK ();
+            });
+        }
+
+        /// <summary>
+        /// Sends a status Indication of a Hint event to all services in the account
+        /// </summary>
+        /// <description>
+        /// This function is identical to PendQInd at the moment.
+        /// Should we ever split the PendQOrHint event, we won't have to change anyone using the PendQInd.
+        /// </description>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="capabilities">Capabilities.</param>
         public void HintInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             ApplyAcrossServices (accountId, "HintInd", (service) => {
