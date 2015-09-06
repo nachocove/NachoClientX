@@ -56,7 +56,7 @@ namespace NachoCore
 
         private NcDeviceContacts DeviceContacts = null;
         private NcDeviceCalendars DeviceCalendars = null;
-        private CancellationTokenSource Cts = null;
+        private CancellationTokenSource DPCts = null;
         private object CtsLock = new object ();
 
         public DeviceProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
@@ -324,7 +324,7 @@ namespace NachoCore
             }
             var abateTokenSource = new CancellationTokenSource ();
             lock (CtsLock) {
-                Cts = abateTokenSource;
+                DPCts = abateTokenSource;
             }
             var abateToken = abateTokenSource.Token;
             NcTask.Run (() => {
@@ -400,8 +400,8 @@ namespace NachoCore
                 } finally {
                     linkedCancel.Dispose ();
                     lock (CtsLock) {
-                        if (Cts == abateTokenSource) {
-                            Cts = null;
+                        if (DPCts == abateTokenSource) {
+                            DPCts = null;
                         }
                     }
                     abateTokenSource.Dispose ();
@@ -415,9 +415,9 @@ namespace NachoCore
             // the SyncCancelled event, then Cts will be null.  This is not an error, since the in-progress
             // sync has already been notified and there is nothing else that needs to be cancelled.
             lock (CtsLock) {
-                if (null != Cts) {
-                    Cts.Cancel ();
-                    Cts = null;
+                if (null != DPCts) {
+                    DPCts.Cancel ();
+                    DPCts = null;
                 }
             }
         }
