@@ -50,6 +50,7 @@ namespace NachoClient.iOS
             // From label shares a line with the chili
             var fromLabelWidth = parentWidth - CHILI_WIDTH - CHILI_PADDING - rightMargin;
             var fromLabelView = new UILabel (new CGRect (leftMargin, yOffset, fromLabelWidth, 20));
+            fromLabelView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             fromLabelView.Font = A.Font_AvenirNextDemiBold17;
             fromLabelView.TextColor = A.Color_0F424C;
             fromLabelView.Tag = FROM_TAG;
@@ -58,6 +59,7 @@ namespace NachoClient.iOS
             // Chili image view, to the far right of From
             var chiliX = parentWidth - rightMargin - CHILI_WIDTH;
             var chiliImageView = new UIImageView (new CGRect (chiliX, yOffset, CHILI_WIDTH, CHILI_WIDTH));
+            chiliImageView.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
             chiliImageView.Tag = USER_CHILI_TAG;
             this.AddSubview (chiliImageView);
 
@@ -74,6 +76,7 @@ namespace NachoClient.iOS
 
             // Make the chili touch area kind of biggish
             var chiliHitBox = new UIView (new CGRect (chiliX - 20, 0, parentWidth - chiliX + 20, chiliImageView.Frame.Bottom + 20));
+            chiliHitBox.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
             chiliHitBox.AddGestureRecognizer (chiliTapGestureRecognizer);
             chiliHitBox.BackgroundColor = UIColor.Clear;
             this.AddSubview (chiliHitBox);
@@ -82,6 +85,7 @@ namespace NachoClient.iOS
 
             // Subject label view has a line to itself
             var subjectLabelView = new UILabel (new CGRect (leftMargin, yOffset, parentWidth - leftMargin - rightMargin, 20));
+            subjectLabelView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
             subjectLabelView.Font = A.Font_AvenirNextMedium14;
             subjectLabelView.TextColor = A.Color_0F424C;
@@ -100,6 +104,7 @@ namespace NachoClient.iOS
             // Attachment image view goes near the received label
             var attachmentX = parentWidth - rightMargin - ATTACHMENT_WIDTH;
             var attachmentImageView = new UIImageView (new CGRect (attachmentX, yOffset + 2, 16, 16));
+            attachmentImageView.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
             attachmentImageView.Tag = ATTACHMENT_TAG;
             this.AddSubview (attachmentImageView);
 

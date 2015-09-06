@@ -186,14 +186,6 @@ namespace NachoClient.iOS
             LayoutQuietly ();
         }
 
-        public void ConfigureAndResize (McAbstrItem item, bool isRefresh, CGSize newSize)
-        {
-            NcAssert.True (!variableHeight, "ConfigureAndResize should only be used for fixed size BodyViews");
-            preferredWidth = newSize.Width;
-            visibleArea = newSize;
-            Configure (item, isRefresh);
-        }
-
         private McAbstrItem RefreshItem ()
         {
             McAbstrItem refreshedItem;
@@ -391,6 +383,15 @@ namespace NachoClient.iOS
         public void LayoutQuietly ()
         {
             LayoutAndDetectSizeChange ();
+        }
+
+        public void SetVisibleArea (CGSize size)
+        {
+            visibleArea = size;
+            preferredWidth = size.Width;
+            if (childViews.Count > 0) {
+                LayoutQuietly ();
+            }
         }
 
         /// <summary>
@@ -703,20 +704,21 @@ namespace NachoClient.iOS
             AddSubview (bodyView);
         }
 
-        /// <summary>
-        /// Change the location and size of the scroll view's frame.  Configure the
-        /// BodyView with the given item.
-        /// </summary>
-        public void ConfigureAndResize (McAbstrItem item, bool isRefresh, CGRect newFrame)
+        public void SetItem (McAbstrItem item)
         {
-            this.Frame = newFrame;
             if (0 == displayedBodyId || item.BodyId != displayedBodyId) {
                 // Displaying a different message. Scroll back to the top.
                 ContentOffset = new CGPoint (0, 0);
                 displayedBodyId = item.BodyId;
+                bodyView.Configure (item, false);
+                ContentSize = bodyView.Frame.Size;
             }
-            bodyView.ConfigureAndResize (item, isRefresh, newFrame.Size);
-            ContentSize = bodyView.Frame.Size;
+        }
+
+        public override void LayoutSubviews ()
+        {
+            base.LayoutSubviews ();
+            bodyView.SetVisibleArea (Bounds.Size);
         }
 
         protected override void Dispose (bool disposing)

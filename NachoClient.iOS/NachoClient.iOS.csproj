@@ -2601,6 +2601,10 @@
       <Project>{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}</Project>
       <Name>Xamarin.Auth.iOS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\JetBlack.Caching\JetBlack.Caching.iOS\JetBlack.Caching.iOS.csproj">
+      <Project>{63F04FFB-A98F-4DAA-9870-80527037DD61}</Project>
+      <Name>JetBlack.Caching.iOS</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Welcome to Taco Mail.pdf" />

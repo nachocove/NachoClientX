@@ -22,16 +22,22 @@ namespace NachoClient.iOS
             var cellHeight = rect.Height;
             var lineWidth = rect.Width + (2 * A.Card_Horizontal_Indent);
 
-            Util.AddHorizontalLine (-A.Card_Horizontal_Indent, 0, lineWidth, A.Color_NachoBorderGray, this);
+            var line = Util.AddHorizontalLine (-A.Card_Horizontal_Indent, 0, lineWidth, A.Color_NachoBorderGray, this);
+            line.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             unreadMessages = new UcIconLabelPair (new CGRect (0, 0, rect.Width, cellHeight), "gen-inbox", 0, 15, onUnreadSelected);
+            unreadMessages.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             unreadMessages.SetValue ("Go to Inbox");
 
-            Util.AddHorizontalLine (-A.Card_Horizontal_Indent, cellHeight, lineWidth, A.Color_NachoBorderGray, this);
+            line = Util.AddHorizontalLine (-A.Card_Horizontal_Indent, cellHeight, lineWidth, A.Color_NachoBorderGray, this);
+            line.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             deadlineMessages = new UcIconLabelPair (new CGRect (0, cellHeight, rect.Width, cellHeight), "gen-deadline", 0, 15, onDeadlineSelected);
+            deadlineMessages.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             deadlineMessages.SetValue ("Go to Deadlines");
 
-            Util.AddHorizontalLine (-A.Card_Horizontal_Indent, 2 * cellHeight, lineWidth, A.Color_NachoBorderGray, this);
+            line = Util.AddHorizontalLine (-A.Card_Horizontal_Indent, 2 * cellHeight, lineWidth, A.Color_NachoBorderGray, this);
+            line.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             deferredMessages = new UcIconLabelPair (new CGRect (0, 2 * cellHeight, rect.Width, cellHeight), "gen-deferred-msgs", 0, 15, onDeferredSelected);
+            deferredMessages.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             deferredMessages.SetValue ("Go to Deferred Messages");
 
             this.AddSubviews (new UIView[] { unreadMessages, deferredMessages, deadlineMessages, });
@@ -53,9 +59,9 @@ namespace NachoClient.iOS
                 int deadlineMessageCount;
                 EmailHelper.GetMessageCounts (account, out unreadMessageCount, out deferredMessageCount, out deadlineMessageCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
-                    unreadMessages.SetValue ("Go to Inbox (" + unreadMessageCount + " unread)");
-                    deadlineMessages.SetValue ("Go to Deadlines (" + deadlineMessageCount + ")");
-                    deferredMessages.SetValue ("Go to Deferred Messages (" + deferredMessageCount + ")");
+                    unreadMessages.SetValue (String.Format("Go to Inbox ({0:N0} unread)", unreadMessageCount));
+                    deadlineMessages.SetValue (String.Format("Go to Deadlines ({0:N0})", deadlineMessageCount));
+                    deferredMessages.SetValue (String.Format("Go to Deferred Messages ({0:N0})", deferredMessageCount));
                 });
             }, "UpdateUnreadMessageView");
         }
