@@ -48,6 +48,19 @@ namespace NachoCore
             Cts = CancellationTokenSource.CreateLinkedTokenSource (new [] { BEContext.ProtoControl.Cts.Token });
         }
 
+        /// <summary>
+        /// Releases unmanaged resources and performs other cleanup operations before the
+        /// <see cref="NachoCore.NcCommand"/> is reclaimed by garbage collection.
+        /// </summary>
+        /// <description>
+        /// https://msdn.microsoft.com/en-us/library/dd997364(v=vs.110).aspx
+        /// Notice that you must call Dispose on the linked token source when you are done with it. For a more complete example, see How to: Listen for Multiple Cancellation Requests.
+        /// </description>
+        ~NcCommand()
+        {
+            Cts.Dispose ();
+        }
+
         public virtual void Execute (NcStateMachine sm)
         {
         }
