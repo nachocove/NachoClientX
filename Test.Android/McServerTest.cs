@@ -116,19 +116,19 @@ namespace Test.Android
         {
             var serv = new McServer ();
             serv.Host = "s.outlook.com";
-            Assert.IsTrue (serv.HostIsHotMail ());
+            Assert.IsTrue (serv.HostIsAsHotMail ());
             serv.Host = "blu403-m.outlook.com";
-            Assert.IsTrue (serv.HostIsHotMail ());
+            Assert.IsTrue (serv.HostIsAsHotMail ());
             serv.Host = "poutlook.com";
-            Assert.IsFalse (serv.HostIsHotMail ());
+            Assert.IsFalse (serv.HostIsAsHotMail ());
             serv.Host = "blu403-moutlook.com";
-            Assert.IsFalse (serv.HostIsHotMail ());
+            Assert.IsFalse (serv.HostIsAsHotMail ());
             serv.Host = "gmail.com";
-            Assert.IsFalse (serv.HostIsHotMail ());
+            Assert.IsFalse (serv.HostIsAsHotMail ());
             serv.Host = "outlook.com";
-            Assert.IsTrue (serv.HostIsHotMail ());
+            Assert.IsTrue (serv.HostIsAsHotMail ());
             serv.Host = "hotmail.com";
-            Assert.IsTrue (serv.HostIsHotMail ());
+            Assert.IsTrue (serv.HostIsAsHotMail ());
         }
 
         [Test]

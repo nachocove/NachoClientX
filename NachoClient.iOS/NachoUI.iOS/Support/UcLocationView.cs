@@ -15,14 +15,16 @@ namespace NachoClient.iOS
     /// </summary>
     public class UcLocationView : UITextView
     {
-        protected BodyView.LinkSelectedCallback onLinkSelected;
+        protected BodyWebView.LinkSelectedCallback onLinkSelected;
 
-        public UcLocationView (nfloat Y, nfloat preferredWidth, BodyView.LinkSelectedCallback onLinkSelected)
-            : base (new CGRect (0, Y, preferredWidth, 1))
+        public UcLocationView (nfloat X, nfloat Y, nfloat preferredWidth, BodyWebView.LinkSelectedCallback onLinkSelected)
+            : base (new CGRect (X, Y, preferredWidth, 1))
         {
             this.onLinkSelected = onLinkSelected;
 
-            DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
+            TextContainerInset = new UIEdgeInsets (0, 0, 0, 0);
+
+            DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber | UIDataDetectorType.Address;
             Delegate = new UcLocationViewDelegate (this);
 
             Editable = false;
@@ -59,6 +61,12 @@ namespace NachoClient.iOS
 
             public override bool ShouldInteractWithUrl (UITextView textView, NSUrl URL, NSRange characterRange)
             {
+                if (URL.Scheme == "x-apple-data-detectors") {
+                    // That scheme is used for addresses that should be opened in the Maps app.  But the
+                    // important data is missing from the URL, so passing it to UIApplication.OpenURL()
+                    // won't work.  The OS needs to handle this one directly.
+                    return true;
+                }
                 if ((null != owner) && (null != owner.onLinkSelected)) {
                     owner.onLinkSelected (URL);
                 }

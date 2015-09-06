@@ -147,7 +147,7 @@ namespace NachoCore.ActiveSync
                     TransTable = new [] {
                         new Node {State = (uint)RobotLst.PostWait, 
                             Invalid = new [] {
-                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                                 (uint)NcProtoControl.PcEvt.E.PendQHot,
                                 (uint)NcProtoControl.PcEvt.E.Park,
                                 (uint)SharedEvt.E.SrvCertN, 
@@ -211,7 +211,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.GetWait,
                             Invalid = new [] {
-                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                                 (uint)NcProtoControl.PcEvt.E.PendQHot,
                                 (uint)NcProtoControl.PcEvt.E.Park,
                                 (uint)AsProtoControl.AsEvt.E.AuthFail,
@@ -267,7 +267,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.SrvDnsWait,
                             Invalid = new [] {
-                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                                 (uint)NcProtoControl.PcEvt.E.PendQHot,
                                 (uint)NcProtoControl.PcEvt.E.Park,
                                 (uint)AsProtoControl.AsEvt.E.ReDisc, 
@@ -307,7 +307,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.MxDnsWait,
                             Invalid = new [] {
-                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                                 (uint)NcProtoControl.PcEvt.E.PendQHot,
                                 (uint)NcProtoControl.PcEvt.E.Park,
                                 (uint)AsProtoControl.AsEvt.E.ReDisc,
@@ -347,7 +347,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.CertWait,
                             Invalid = new [] {
-                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                                 (uint)NcProtoControl.PcEvt.E.PendQHot,
                                 (uint)NcProtoControl.PcEvt.E.Park,
                                 (uint)AsProtoControl.AsEvt.E.ReDisc, 
@@ -387,7 +387,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.OkWait,
                             Invalid = new [] {
-                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                                 (uint)NcProtoControl.PcEvt.E.PendQHot,
                                 (uint)NcProtoControl.PcEvt.E.Park,
                                 (uint)SmEvt.E.Success,
@@ -423,7 +423,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.ReDirWait,
                             Invalid = new [] {
-                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                                 (uint)NcProtoControl.PcEvt.E.PendQHot,
                                 (uint)NcProtoControl.PcEvt.E.Park,
                                 (uint)SharedEvt.E.SrvCertN, 
@@ -1205,7 +1205,7 @@ namespace NachoCore.ActiveSync
                         if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase) ||
                             aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix2, StringComparison.OrdinalIgnoreCase)) {
                             Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundGoogle;
-                            SrServerUri = McServer.BaseUriForHost (McServer.GMail_Host);
+                            SrServerUri = McServer.BaseUriForHost (McServer.AS_GMail_Host);
                             return Event.Create ((uint)SmEvt.E.Success, "SRPRMXSUCCESS");
                         } else {
                             Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundNonGoogle;

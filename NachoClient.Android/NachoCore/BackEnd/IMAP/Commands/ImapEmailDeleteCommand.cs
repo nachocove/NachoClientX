@@ -41,7 +41,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELPARSEFAIL");
             }
 
-            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
+            McFolder folder = McFolder.QueryByServerId (AccountId, PendingSingle.ParentId);
             if (null == folder) {
                 Log.Error (Log.LOG_IMAP, "No server for {0}", PendingSingle.ParentId);
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL");

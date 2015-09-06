@@ -943,11 +943,8 @@ namespace NachoClient.iOS
                 icon = "contacts-icn-address";
                 break;
             case Xml.Contacts.Birthday:
-                value = contact.GetDateAttribute (whatType).ToLongDateString ();
-                icon = "contacts-icn-bday";
-                break;
             case Xml.Contacts.Anniversary:
-                value = contact.GetDateAttribute (whatType).ToLongDateString ();
+                value = Pretty.BirthdayOrAnniversary (contact.GetDateAttribute (whatType));
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.Spouse:

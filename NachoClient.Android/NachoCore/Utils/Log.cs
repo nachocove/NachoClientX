@@ -91,6 +91,9 @@ namespace NachoCore.Utils
             bool debugCallInfo = GetOptionalBool ("DEBUG_CALLERINFO");
 
             ulong infoConsoleSettings = GetOptionalUlong ("INFO_CONSOLE_SETTINGS");
+            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
+                infoConsoleSettings = GetOptionalUlong ("INFO_DEV_CONSOLE_SETTINGS");
+            }
             ulong infoTelemetrySettings = GetOptionalUlong ("INFO_TELEMETRY_SETTINGS");
             bool infoCallInfo = GetOptionalBool ("INFO_CALLERINFO");
 

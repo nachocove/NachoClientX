@@ -88,9 +88,9 @@ namespace NachoCore.ActiveSync
         // HttpClient factory stuff.
         private static object LockObj = new object ();
         public static Type HttpClientType = typeof(MockableHttpClient);
-        private static IHttpClient EncryptedClient;
-        private static string LastUsername;
-        private static string LastPassword;
+        private static Dictionary<int,IHttpClient> EncryptedClients = new Dictionary<int, IHttpClient> ();
+        private static Dictionary<int,string> LastUsernames = new Dictionary<int, string> ();
+        private static Dictionary<int,string> LastPasswords = new Dictionary<int, string> ();
         private static IHttpClient ClearClient;
 
         private IBEContext BEContext;
@@ -106,6 +106,7 @@ namespace NachoCore.ActiveSync
         private Stream ContentData;
         private string ContentType;
         private uint ConsecThrottlePriorDelaySecs;
+        private bool ExtraRetry451Consumed;
 
         // Properties.
         // User for mocking.
@@ -121,27 +122,30 @@ namespace NachoCore.ActiveSync
 
         public bool DontReUseHttpClient { set; get; }
 
-        private IHttpClient GetEncryptedClient (string username, string password)
+        private IHttpClient GetEncryptedClient (int accountId, string username, string password)
         {
             lock (LockObj) {
-                if (DontReUseHttpClient || null == EncryptedClient ||
-                    null == LastUsername || null == LastPassword ||
-                    LastUsername != username || LastPassword != password) {
+                if (DontReUseHttpClient || 
+                    (!EncryptedClients.ContainsKey (accountId)) ||
+                    (!LastUsernames.ContainsKey (accountId)) || 
+                    (!LastPasswords.ContainsKey (accountId)) ||
+                    LastUsernames[accountId] != username || 
+                    LastPasswords[accountId] != password) {
                     var handler = new NativeMessageHandler () {
                         AllowAutoRedirect = false,
                         PreAuthenticate = true,
                     };
-                    LastUsername = username;
-                    LastPassword = password;
+                    LastUsernames[accountId] = username;
+                    LastPasswords[accountId] = password;
                     handler.Credentials = new NetworkCredential (username, password);
                     var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
                     client.Timeout = new TimeSpan (0, 0, KMaxTimeoutSeconds);
                     // Don't Dispose () HttpClient nor HttpClientHandler. We don't have
                     // a ref-count to know when we CAN Dispose(). As we are almost always
                     // re-using, this should not be an issue.
-                    EncryptedClient = client;
+                    EncryptedClients[accountId] = client;
                 }
-                return EncryptedClient;
+                return EncryptedClients[accountId];
             }
         }
 
@@ -288,6 +292,7 @@ namespace NachoCore.ActiveSync
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 // Remove NcTask.Run once #1313 solved.
                 // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
+                Cts = new CancellationTokenSource ();
                 NcTask.Run (AttemptHttp, "AttemptHttp");
             } else {
                 Owner.ResolveAllDeferred ();
@@ -399,7 +404,9 @@ namespace NachoCore.ActiveSync
                             }
                         },
                         cToken, 
-                        ((Owner.IsContentLarge (this)) ? 10 : 2) * 1000, 
+                        // We only want to see this Error if truly wedged.
+                        // This timer doesn't perform any recovery action.
+                        ((Owner.IsContentLarge (this)) ? 60 : 30) * 1000, 
                         System.Threading.Timeout.Infinite);
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
@@ -437,14 +444,19 @@ namespace NachoCore.ActiveSync
         private async void AttemptHttp ()
         {
             IHttpClient client;
-            Cts = new CancellationTokenSource ();
             var cToken = Cts.Token;
+
+            if (cToken.IsCancellationRequested) {
+                // Because of #1313, we are using Task.Run to start AttemptHttp. 
+                // Sometimes there is a big delay.
+                return;
+            }
 
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
                 string password = BEContext.Cred.GetPassword ();
                 Log.Info (Log.LOG_HTTP, "AsHttpOperation: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, password));              
-                client = GetEncryptedClient (BEContext.Cred.Username, password);
+                client = GetEncryptedClient (BEContext.Account.Id, BEContext.Cred.Username, password);
             } else {
                 client = GetClearClient ();
             }
@@ -828,7 +840,7 @@ namespace NachoCore.ActiveSync
                 // We are following the (iffy) auto-d directive, but failing pending to avoid possible loop.
                 Owner.ResolveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
                 // If we get a 403 on a Provision from GFE, this is them saying that EAS isn't paid-for.
-                if (BEContext.Server.HostIsGMail () && (null != Owner as AsProvisionCommand)) {
+                if (BEContext.Server.HostIsAsGMail () && (null != Owner as AsProvisionCommand)) {
                     BEContext.ProtoControl.AutoDInfo = AutoDInfoEnum.GoogleForbids;
                 }
                 return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP403F");
@@ -853,6 +865,10 @@ namespace NachoCore.ActiveSync
 
             case (HttpStatusCode)451:
                 ReportCommResult (ServerUri.Host, false);
+                if (!ExtraRetry451Consumed) {
+                    ++TriesLeft;
+                    ExtraRetry451Consumed = true;
+                }
                 if (!Allow451Follow) {
                     return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOP451A", null, "HttpStatusCode.451 follow not allowed.");
                 }
@@ -915,7 +931,7 @@ namespace NachoCore.ActiveSync
                 // We are following the (iffy) auto-d directive, but failing pending to avoid possible loop.
                 Owner.ResolveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
                 // if the mail server host is well-known (e.g google.com, hotmail.com) , do not do ReDiscovery.
-                if (BEContext.Server.HostIsWellKnown ()) {
+                if (BEContext.Server.AsHostIsWellKnown ()) {
                     return Final ((uint)SmEvt.E.TempFail, "HTTPOP500A");
                 }
                 else{

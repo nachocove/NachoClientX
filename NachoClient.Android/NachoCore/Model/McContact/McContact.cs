@@ -1458,46 +1458,53 @@ namespace NachoCore.Model
         public static List<McContactEmailAddressAttribute> SearchIndexAllContacts (string searchFor, bool onlyWithEmailAddresses, bool withEclipsing)
         {
             const int maxResults = 30;
-            var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
             var trimmedSearchFor = searchFor.Trim ();
+
+            var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
             if (String.IsNullOrEmpty (trimmedSearchFor)) {
                 return emailAddressAttributes;
             }
 
-            // Query the index for contacts up to 100 of them
+            // Special case short strings for speed
+            if (onlyWithEmailAddresses && (4 > searchFor.Length)) {
+                return SearchAllContactsWithEmailAddresses (searchFor, withEclipsing);
+            }
+
+            var allMatches = new List<MatchedItem> ();
             var allContacts = new List<McContact> ();
             foreach (var account in McAccount.GetAllAccounts()) {
                 var index = NcBrain.SharedInstance.Index (account.Id);
                 var matches = index.SearchAllContactFields (searchFor, maxResults);
-                if (0 == matches.Count) {
-                    continue;
-                }
-                var idList = matches.Select (x => x.Id).Distinct ().ToList ();
-                var contacts = McContact.QueryByIds (idList);
-                if (idList.Count > contacts.Count) {
-                    // Some ids in the index are no longer value. We need to remove those entries in the index
-                    var hash = new HashSet<int> ();
-                    contacts.ForEach ((x) => {
-                        hash.Add (x.Id);
-                    });
-                    foreach (var match in matches) {
-                        var id = int.Parse (match.Id);
-                        if (!hash.Contains (id)) {
-                            NcBrain.UnindexContact (new McContact () {
-                                Id = int.Parse (match.Id),
-                                AccountId = account.Id,
-                            });
-                        }
-                    }
-                } else {
-                    NcAssert.True (idList.Count == contacts.Count);
-                }
-                allContacts.AddRange (contacts);
+                allMatches.AddRange (matches);
             }
+            if (0 == allMatches.Count) {
+                return emailAddressAttributes;
+            }
+
+            // Cull low scores
+            var maxScore = 0f;
+            foreach (var m in allMatches) {
+                maxScore = Math.Max (maxScore, m.Score);
+            }
+            allMatches.RemoveAll (x => x.Score < (maxScore / 2));
+
+            // Shrink long list, keeping highest scores
+            allMatches.Sort (new MatchedItemScoreComparer ());
+            allMatches = allMatches.GetRange (0, Math.Min (allMatches.Count, maxResults));
+
+            var idList = allMatches.Select (x => x.Id).Distinct ().ToList ();
+            var matchingContacts = McContact.QueryByIds (idList);
+            foreach (var id in idList) {
+                var match = matchingContacts.Where (x => x.Id == int.Parse (id)).SingleOrDefault ();
+                if (null != match) {
+                    allContacts.Add (match);
+                }
+            }
+
+            // FIXME: Do not sort for contact auto-complete?
             allContacts.Sort (new McContactNameComparer ());
 
             // Get all matching email addresses
-            int count = 0;
             foreach (var contact in allContacts) {
                 if (withEclipsing && contact.EmailAddressesEclipsed) {
                     continue;
@@ -1511,16 +1518,10 @@ namespace NachoCore.Model
                         ContactId = contact.Id
                     };
                     emailAddressAttributes.Add (addressAttr);
-                    count += 1;
                 } else {
                     emailAddressAttributes.AddRange (contact.EmailAddresses);
-                    count += contact.EmailAddresses.Count;
-                }
-                if (maxResults < count) {
-                    break;
                 }
             }
-
             return emailAddressAttributes;
         }
 

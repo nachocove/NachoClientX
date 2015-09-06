@@ -31,7 +31,7 @@ namespace NachoCore.Utils
                     prefix + EmailRegex + suffix,
                     delegate(Match match) {
                         // not doing a short hash here since email address can be long
-                        return (prefix + HashHelper.Sha256 (match.Groups["username"].Value + "@" + match.Groups["domain"].Value) + suffix);
+                        return (prefix + "REDACTED" + suffix);
                 }, options);
             return hashed;
         }

@@ -33,7 +33,6 @@ namespace NachoCore.IMAP
         private static uint[] KRungSyncWindowSize = new uint[] { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
 
         private Random CoinToss;
-
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
             CoinToss = new Random ();
@@ -44,13 +43,12 @@ namespace NachoCore.IMAP
 
         public Tuple<PickActionEnum, ImapCommand> PickUserDemand (NcImapClient Client)
         {
-            var accountId = BEContext.Account.Id;
             var protocolState = BEContext.ProtocolState;
 
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
-                var search = McPending.QueryEligible (accountId, McAccount.ImapCapabilities).
+                var search = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities).
                     Where (x => McPending.Operations.EmailSearch == x.Operation).FirstOrDefault ();
                 if (null != search) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:EmailSearch");
@@ -58,7 +56,7 @@ namespace NachoCore.IMAP
                         new ImapSearchCommand (BEContext, Client, search));
                 }
                 // (FG) If the user has initiated a Sync, we do that.
-                var sync = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ImapCapabilities).
+                var sync = McPending.QueryEligibleOrderByPriorityStamp (AccountId, McAccount.ImapCapabilities).
                     Where (x => McPending.Operations.Sync == x.Operation).FirstOrDefault ();
                 if (null != sync) {
                     SyncKit syncKit = GenSyncKit (ref protocolState, sync);
@@ -69,7 +67,7 @@ namespace NachoCore.IMAP
                     }
                 }
                 // (FG) If the user has initiated a body Fetch, we do that.
-                var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ImapCapabilities).
+                var fetch = McPending.QueryEligibleOrderByPriorityStamp (AccountId, McAccount.ImapCapabilities).
                     Where (x => McPending.Operations.EmailBodyDownload == x.Operation).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:EmailBodyDownload");
@@ -77,7 +75,7 @@ namespace NachoCore.IMAP
                         new ImapFetchCommand (BEContext, Client, fetch));
                 }
                 // (FG) If the user has initiated an attachment Fetch, we do that.
-                fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ImapCapabilities).
+                fetch = McPending.QueryEligibleOrderByPriorityStamp (AccountId, McAccount.ImapCapabilities).
                     Where (x => McPending.Operations.AttachmentDownload == x.Operation).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:AttachmentDownload");
@@ -90,7 +88,6 @@ namespace NachoCore.IMAP
 
         public Tuple<PickActionEnum, ImapCommand> Pick (NcImapClient Client)
         {
-            var accountId = BEContext.Account.Id;
             var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             if (NcApplication.ExecutionContextEnum.Initializing == exeCtxt) {
@@ -114,7 +111,7 @@ namespace NachoCore.IMAP
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
-                var next = McPending.QueryEligible (accountId, McAccount.ImapCapabilities).FirstOrDefault ();
+                var next = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities).FirstOrDefault ();
                 if (null != next) {
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
@@ -182,12 +179,23 @@ namespace NachoCore.IMAP
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext, Client));
                 }
 
+                FetchKit fetchKit;
+                // (FG) See if there's bodies to download
+                if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                    fetchKit = GenFetchKitHints ();
+                    if (null != fetchKit) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Fetch, 
+                            new ImapFetchCommand (BEContext, Client, fetchKit));
+                    }
+                }
+
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
-                FetchKit fetchKit = null;
+                fetchKit = null;
                 if (protocolState.ImapSyncRung >= 2 &&
                     NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed &&
                     PowerPermitsSpeculation ()) {
-                    fetchKit = GenFetchKit (accountId);
+                    fetchKit = GenFetchKit ();
                 }
                 SyncKit syncKit = GenSyncKit (ref protocolState, exeCtxt, null);
                 if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {

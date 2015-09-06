@@ -268,16 +268,16 @@ namespace NachoCore.Wbxml
             writer.Write (publicIdentifierByte);
             writer.Write (characterSetByte);
             writer.Write (stringTableLengthByte);
-            Log.Info (Log.LOG_HTTP, "ToWbxmlStream: EmitNode (#1313)");
+            Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitNode (#1313)");
             EmitNode (writer, XmlDoc.Root, 0, filter);
-            Log.Info (Log.LOG_HTTP, "ToWbxmlStream: EmitNode done (#1313)");
+            Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitNode done (#1313)");
 
             if (doFiltering ?? DEFAULT_FILTERING) {
                 // TODO - Need to feed the redacted XML into a storage that
                 // can hold and forward to the telemetry server.
                 Log.Info (Log.LOG_XML, "request_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
-                Log.Info (Log.LOG_HTTP, "ToWbxmlStream: RecordWbxmlEvent (#1313)");
+                Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: RecordWbxmlEvent (#1313)");
                 Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
             }
         }

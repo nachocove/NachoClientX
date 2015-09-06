@@ -51,18 +51,19 @@ namespace NachoCore.IMAP
                 result = NcResult.Error ("Unknown operation");
             }
 
-            if (result.isInfo ()) {
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl, result);
-                });
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
-            } else {
-                NcAssert.True (result.isError ());
+            if (result.isError ()) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result.Message);
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, result);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
+            } else {
+                if (result.isInfo ()) {
+                    PendingResolveApply ((pending) => {
+                        pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                    });
+                }
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
             }
         }
 
@@ -196,9 +197,14 @@ namespace NachoCore.IMAP
         long lastSize = 0;
         float lastElapsed = 0;
         long lastReportBytes = 0;
+        bool Enabled = false;
 
         public void Report (long bytesTransferred, long totalSize)
         {
+            if (!Enabled) {
+                return;
+            }
+
             if (null == ReportWatch) {
                 ReportWatch = new Stopwatch ();
             }
@@ -235,7 +241,7 @@ namespace NachoCore.IMAP
                                          kSecSinceLast,
                                          kSecTotal);
                     } else {
-                                Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {2} ({3:0.000} k/sec / {4:0.000} k/sec)",
+                        Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {2} ({3:0.000} k/sec / {4:0.000} k/sec)",
                             this.GetType ().Name,
                             bytesTransferred,
                             kSecSinceLast,

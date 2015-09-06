@@ -12,14 +12,13 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public class HotListTableViewSource : UITableViewSource, INachoMessageEditorParent, INachoFolderChooserParent
+    public class HotListTableViewSource : UITableViewSource, INachoMessageEditorParent, INachoFolderChooserParent, IBodyViewOwner
     {
         INachoEmailMessages messageThreads;
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
+        protected const string AccountReuseIdentifier = "Account";
 
         protected IMessageTableViewSourceDelegate owner;
-
-        public UIView footer;
 
         bool scrolling;
         // to control whether swiping is allowed or not
@@ -55,9 +54,14 @@ namespace NachoClient.iOS
         protected const int UNREAD_IMAGE_TAG = 99111;
         protected const int CARD_VIEW_TAG = 99112;
 
-        protected const int NO_MESSAGES_VIEW = 99113;
         protected const int HOT_LIST_LABEL = 99114;
         protected const int UNREAD_MESSAGES_VIEW = 99115;
+
+        public UIEdgeInsets CellCardInset = new UIEdgeInsets (5.0f, 7.0f, 5.0f, 8.0f);
+        public UIEdgeInsets PreviewInset = new UIEdgeInsets (5.0f, 12.0f, 5.0f, 12.0f);
+        public nfloat CardPeekDistance = 10.0f;
+        protected CGPoint? expectedScrollEndOffset;
+        protected int cardIndexAtScrollStart;
 
         public HotListTableViewSource (IMessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
         {
@@ -79,46 +83,74 @@ namespace NachoClient.iOS
         /// The number of rows in the specified section.
         public override nint RowsInSection (UITableView tableview, nint section)
         {
-            return messageThreads.Count ();
-        }
-
-        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
-        {
-            return (tableView.Frame.Height - 30);
+            return messageThreads.Count () + 1;
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            var cell = tableView.DequeueReusableCell (EmailMessageReuseIdentifier);
-            if (null == cell) {
-                cell = CreateCell (tableView);
+            UITableViewCell cell = null;
+            if (indexPath.Row < messageThreads.Count ()) {
+                cell = tableView.DequeueReusableCell (EmailMessageReuseIdentifier);
+                if (null == cell) {
+                    cell = CreateMessageCell (tableView);
+                }
+                ConfigureMessageCell (tableView, cell, indexPath);
+            } else {
+                cell = tableView.DequeueReusableCell (AccountReuseIdentifier);
+                if (null == cell) {
+                    cell = CreateAccountCell (tableView);
+                }
+                ConfigureAccountCell (tableView, cell, indexPath);
             }
-            ConfigureCell (tableView, cell, indexPath, false);
             return cell;
         }
 
-        /// <summary>
-        /// Create the views, not the values, of the cell.
-        /// </summary>
-        protected UITableViewCell CreateCell (UITableView tableView)
+        protected UITableViewCell CreateCardCell (UITableView tableView, string reuseIdentifier)
         {
-            var cell = new UITableViewCell (UITableViewCellStyle.Default, EmailMessageReuseIdentifier);
+            var cell = new UITableViewCell (UITableViewCellStyle.Default, reuseIdentifier);
+            if (cell.Frame.Height < 300) {
+                // The table view will change this height anyway, but we need to ensure that subsequent
+                // calculations don't end up generating a negative height for a web view, which
+                // will crash if given a negative height.  So just pick a number big enough and rely on 
+                // autoresizing masks to set everything right when the cell is actually laid out at the correct height.
+                cell.Frame = new CGRect (cell.Frame.X, cell.Frame.Y, cell.Frame.Width, 300.0f);
+                cell.LayoutIfNeeded ();
+            }
             if (cell.RespondsToSelector (new ObjCRuntime.Selector ("setSeparatorInset:"))) {
                 cell.SeparatorInset = UIEdgeInsets.Zero;
             }
             cell.SelectionStyle = UITableViewCellSelectionStyle.None;
             cell.ContentView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            var cellWidth = tableView.Frame.Width;
-
-            var cardFrame = new CGRect (7, 10, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 30);
+            var cardFrame = new CGRect (
+                CellCardInset.Left,
+                CellCardInset.Top,
+                cell.ContentView.Frame.Width - CellCardInset.Left - CellCardInset.Right,
+                cell.ContentView.Frame.Height - CellCardInset.Top - CellCardInset.Bottom
+            );
             var cardView = new UIView (cardFrame);
-            cardView.BackgroundColor = A.Color_NachoBackgroundGray;
+            cardView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
+            cardView.BackgroundColor = UIColor.White;
             cardView.Tag = CARD_VIEW_TAG;
+            cardView.Layer.CornerRadius = 6.0f;
+            cardView.ClipsToBounds = true;
+            cardView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            cardView.Layer.BorderWidth = .5f;
             cell.ContentView.AddSubview (cardView);
+            return cell;
+        }
 
-            var frame = new CGRect (0, 0, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 40);
+        /// <summary>
+        /// Create the views, not the values, of the cell.
+        /// </summary>
+        protected UITableViewCell CreateMessageCell (UITableView tableView)
+        {
+            var cell = CreateCardCell (tableView, EmailMessageReuseIdentifier);
+            var cardView = cell.ViewWithTag (CARD_VIEW_TAG);
+
+            var frame = new CGRect (0, 0, cardView.Frame.Width, cardView.Frame.Height);
             var view = new SwipeActionView (frame);
+            view.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
             view.Tag = SWIPE_TAG;
             view.BackgroundColor = UIColor.White;
 
@@ -129,15 +161,7 @@ namespace NachoClient.iOS
             view.SetAction (SAVE_BUTTON, SwipeSide.LEFT);
             view.SetAction (DEFER_BUTTON, SwipeSide.LEFT);
 
-            view.BackgroundColor = UIColor.White;
-            view.AutoresizingMask = UIViewAutoresizing.None;
             view.ContentMode = UIViewContentMode.Center;
-            view.Layer.CornerRadius = 6;
-            view.Layer.MasksToBounds = true;
-            view.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            view.Layer.BorderWidth = .5f;
-
-            var viewWidth = view.Frame.Width;
 
             // User image view
             var userImageView = new UIImageView (new CGRect (15, 15, 40, 40));
@@ -166,7 +190,8 @@ namespace NachoClient.iOS
             unreadMessageView.Tag = UNREAD_IMAGE_TAG;
             view.AddSubview (unreadMessageView);
 
-            var messageHeaderView = new MessageHeaderView (new CGRect (65, 0, viewWidth - 65, 75));
+            var messageHeaderView = new MessageHeaderView (new CGRect (65, 0, frame.Width - 65, 75));
+            messageHeaderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             messageHeaderView.CreateView ();
             messageHeaderView.Tag = MESSAGE_HEADER_TAG;
             messageHeaderView.SetAllBackgroundColors (UIColor.White);
@@ -175,6 +200,7 @@ namespace NachoClient.iOS
             var reminderImageView = new UIImageView (new CGRect (65, 75 + 4, 12, 12));
             reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
             reminderImageView.Tag = REMINDER_ICON_TAG;
+            reminderImageView.Hidden = true;
             view.AddSubview (reminderImageView);
 
             // Reminder label view
@@ -182,19 +208,23 @@ namespace NachoClient.iOS
             reminderLabelView.Font = A.Font_AvenirNextRegular14;
             reminderLabelView.TextColor = A.Color_9B9B9B;
             reminderLabelView.Tag = REMINDER_TEXT_TAG;
+            reminderLabelView.Hidden = true;
             view.AddSubview (reminderLabelView);
 
-            // Preview label view
-            // Size fields will be recalculated after text is known
-            var previewLabelView = new ScrollableBodyView (new CGRect (12, 75, viewWidth - 15 - 12, view.Frame.Height - 128), onLinkSelected);
-            previewLabelView.Tag = PREVIEW_TAG;
-            view.AddSubview (previewLabelView);
-
             var toolbar = new MessageToolbar (new CGRect (0, frame.Height - 44, frame.Width, 44));
+            toolbar.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth;
             toolbar.Tag = TOOLBAR_TAG;
             view.AddSubview (toolbar);
 
+            // Preview label view
+            var previewFrame = PreviewFrame (cell);
+            var previewLabelView = new ScrollableBodyView (previewFrame, this);
+            previewLabelView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            previewLabelView.Tag = PREVIEW_TAG;
+            view.InsertSubviewBelow (previewLabelView, toolbar);
+
             var moreImageView = new UIImageView (new CGRect (view.Frame.Width - 40, frame.Height - 44 - 32, 18, 10));
+            moreImageView.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleTopMargin;
             moreImageView.ContentMode = UIViewContentMode.Center;
             moreImageView.Image = UIImage.FromBundle ("gen-readmore");
             moreImageView.Tag = USER_MORE_TAG;
@@ -206,19 +236,132 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        /// <summary>
-        /// The height of the parent table view can change after some of the cells have been created.
-        /// Adjust the height or location of any views as necessary to react to the change.
-        /// </summary>
-        protected void AdjustHeight (UITableViewCell cell, nfloat rowHeight)
+        protected UITableViewCell CreateAccountCell (UITableView tableView)
         {
-            if (rowHeight != cell.Frame.Height) {
-                ViewFramer.Create (cell).Height (rowHeight);
-                ViewFramer.Create (cell.ViewWithTag (CARD_VIEW_TAG)).Height (rowHeight);
-                ViewFramer.Create (cell.ViewWithTag (SWIPE_TAG)).Height (rowHeight - 10);
-                ViewFramer.Create (cell.ViewWithTag (TOOLBAR_TAG)).Y (rowHeight - 54);
-                ViewFramer.Create (cell.ViewWithTag (USER_MORE_TAG)).Y (rowHeight - 86);
+            var cell = CreateCardCell (tableView, AccountReuseIdentifier);
+            var cardView = cell.ViewWithTag (CARD_VIEW_TAG);
+            var frame = new CGRect (0, 0, cardView.Frame.Width, cardView.Frame.Height);
+
+            var noMessagesView = new UIView (frame);
+            noMessagesView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
+
+            var minButtonsFrame = ((40 * 3) + (2 * A.Card_Vertical_Indent));
+            var messageFrameHeight = noMessagesView.Frame.Height - minButtonsFrame;
+
+            var isFourS = false;
+            var isSixOrGreater = false;
+            var isSixPlusOrGreater = false;
+
+            if (260 > noMessagesView.Frame.Height) {
+                isFourS = true;
+            } else {
+                if (360 <= noMessagesView.Frame.Width) {
+                    isSixOrGreater = true;
+                }
+                if (390 < noMessagesView.Frame.Width) {
+                    isSixPlusOrGreater = true;
+                }
             }
+
+            // Nacho Mail icon
+            var nachoMailIcon = new UIImageView ();
+            nachoMailIcon.Frame = (isSixOrGreater ? new CGRect (frame.Width / 2 - 32.5f, A.Card_Vertical_Indent, 65, 65) : new CGRect (frame.Width / 2 - 22.5f, A.Card_Horizontal_Indent, 45, 45));
+            nachoMailIcon.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleRightMargin;
+            nachoMailIcon.Image = UIImage.FromBundle ("Bootscreen-1");
+            nachoMailIcon.Hidden = isFourS;
+            noMessagesView.AddSubview (nachoMailIcon);
+
+            // Chips left
+            var chipsLeftIcon = new UIImageView ();
+            chipsLeftIcon.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin;
+            chipsLeftIcon.Frame = (isSixOrGreater ? new CGRect (0, messageFrameHeight - 45, 115, 45) : new CGRect (0, messageFrameHeight - 33, 85, 33));
+            chipsLeftIcon.Image = UIImage.FromBundle ("gen-nacholeft");
+            chipsLeftIcon.Hidden = isFourS;
+            noMessagesView.AddSubview (chipsLeftIcon);
+
+            // Chips right
+            var chipsRightIcon = new UIImageView ();
+            chipsRightIcon.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleLeftMargin;
+            chipsRightIcon.Frame = (isSixOrGreater ? new CGRect (frame.Width - 115, messageFrameHeight - 45, 115, 45) : new CGRect (frame.Width - 85, messageFrameHeight - 33, 85, 33));
+            chipsRightIcon.Image = UIImage.FromBundle ("gen-nachoright");
+            chipsRightIcon.Hidden = isFourS;
+            noMessagesView.AddSubview (chipsRightIcon);
+
+            // Empty Hot list label
+            var stringAttributes = new UIStringAttributes {
+                ForegroundColor = A.Color_NachoGreen,
+                BackgroundColor = UIColor.White,
+                Font = (isSixPlusOrGreater ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextDemiBold14)
+            };
+
+            NSMutableAttributedString lastCardMessage = null;
+
+            if (NoMessageThreads ()) {
+                lastCardMessage = new NSMutableAttributedString ("You do not have any Hot messages. \n \nYou can add Hot messages by tapping on the  ", stringAttributes);
+            } else {
+                lastCardMessage = new NSMutableAttributedString ("You can add Hot messages by tapping on the  ", stringAttributes);
+            }
+            var lastCardMessagePartTwo = new NSAttributedString ("  icon in your mail.", stringAttributes);
+
+            var inlineIcon = new NachoInlineImageTextAttachment ();
+            inlineIcon.Image = UIImage.FromBundle ("email-not-hot");
+
+            var stringWithImage = NSAttributedString.CreateFrom (inlineIcon);
+            lastCardMessage.Append (stringWithImage);
+            lastCardMessage.Append (lastCardMessagePartTwo);
+
+            var messageWidth = (isSixPlusOrGreater ? noMessagesView.Frame.Width - 4 * A.Card_Horizontal_Indent : 320 - 4 * A.Card_Horizontal_Indent);
+
+            var hotListLabel = new UILabel (new CGRect (0, 0, messageWidth, 50));
+            hotListLabel.TextAlignment = UITextAlignment.Center;
+            hotListLabel.BackgroundColor = UIColor.White;
+            hotListLabel.Lines = 0;
+            hotListLabel.LineBreakMode = UILineBreakMode.WordWrap;            
+            hotListLabel.AttributedText = lastCardMessage;
+            hotListLabel.SizeToFit ();
+            var hotListLabelYOffset = (isFourS ? messageFrameHeight / 2 : ((chipsLeftIcon.Frame.Top - nachoMailIcon.Frame.Bottom) / 2) + nachoMailIcon.Frame.Bottom + 5);
+            hotListLabel.Center = new CGPoint (noMessagesView.Frame.Width / 2, hotListLabelYOffset); 
+            hotListLabel.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin | UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleRightMargin;
+            hotListLabel.Tag = HOT_LIST_LABEL;
+
+            noMessagesView.AddSubview (hotListLabel);
+
+            var cellHeight = (noMessagesView.Frame.Height - messageFrameHeight) / 3;
+            var unreadMessageViewFrame = new CGRect (A.Card_Horizontal_Indent, messageFrameHeight, frame.Width - A.Card_Horizontal_Indent, cellHeight);
+            var unreadMessagesView = new UnreadMessagesView (unreadMessageViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked);
+            unreadMessagesView.Tag = UNREAD_MESSAGES_VIEW;
+            unreadMessagesView.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth;
+
+            var cellFont = (isSixPlusOrGreater ? A.Font_AvenirNextMedium17 : A.Font_AvenirNextMedium14);
+            unreadMessagesView.SetFont (cellFont);
+
+            noMessagesView.AddSubview (unreadMessagesView);
+
+            cardView.AddSubview (noMessagesView);
+
+            return cell;
+        }
+
+        private void ConfigureAccountCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            var unreadMessagesView = (UnreadMessagesView)cell.ViewWithTag (UNREAD_MESSAGES_VIEW);
+            unreadMessagesView.Update (NcApplication.Instance.Account);
+        }
+
+        private CGRect PreviewFrame (UITableViewCell cell)
+        {
+            var view = cell.ContentView.ViewWithTag (SWIPE_TAG);
+            var messageHeaderView = view.ViewWithTag (MESSAGE_HEADER_TAG);
+            var frame = view.Frame;
+            var toolbar = view.ViewWithTag (TOOLBAR_TAG);
+            var reminderLabelView = view.ViewWithTag (REMINDER_TEXT_TAG);
+            nfloat top = reminderLabelView.Hidden ? messageHeaderView.Frame.Bottom : reminderLabelView.Frame.Bottom;
+            return new CGRect (
+                PreviewInset.Left,
+                top + PreviewInset.Top,
+                frame.Width - PreviewInset.Left - PreviewInset.Right,
+                toolbar.Frame.Top - top - PreviewInset.Top - PreviewInset.Bottom
+            );
         }
 
         protected void ConfigureAsUnavailable (UITableViewCell cell)
@@ -238,18 +381,13 @@ namespace NachoClient.iOS
         /// <summary>
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
-        protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath, bool isRefresh)
+        protected void ConfigureMessageCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-            AdjustHeight (cell, GetHeightForRow (tableView, indexPath));
 
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
             view.DisableSwipe ();
             view.OnSwipe = null;
             view.OnClick = null;
-
-            if (NoMessageThreads ()) {
-                return;
-            }
 
             var messageThreadIndex = indexPath.Row;
             var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
@@ -271,8 +409,6 @@ namespace NachoClient.iOS
             foreach (var v in cell.ContentView.Subviews) {
                 v.Hidden = false;
             }
-
-            var cellWidth = tableView.Frame.Width;
 
             if (!scrolling) {
                 view.EnableSwipe (true);
@@ -314,8 +450,6 @@ namespace NachoClient.iOS
             };
 
             var toolbar = (MessageToolbar)cell.ContentView.ViewWithTag (TOOLBAR_TAG);
-            var frame = new CGRect (0, 0, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 40);
-            ViewFramer.Create (toolbar).Y (frame.Height - 44);
 
             toolbar.OnClick = (object sender, EventArgs e) => {
                 var toolbarEventArgs = e as MessageToolbarEventArgs;
@@ -368,8 +502,6 @@ namespace NachoClient.iOS
                 messageHeaderView.ConfigureMessageView (messageThread, message);
             };
 
-            nfloat previewViewTop;
-
             // Reminder image view and label
             var reminderImageView = view.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
             var reminderLabelView = view.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
@@ -377,233 +509,27 @@ namespace NachoClient.iOS
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
                 reminderLabelView.Text = Pretty.ReminderText (message);
-                previewViewTop = reminderLabelView.Frame.Bottom;
             } else {
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
-                previewViewTop = messageHeaderView.Frame.Bottom;
             }
-
-            // Five points of padding between the header and the body.
-            previewViewTop += 5;
-
-            // The "more" image overlays the preview view
-            nfloat previewViewBottom = view.Frame.Bottom - 44 - 5;
 
             var previewView = (ScrollableBodyView)view.ViewWithTag (PREVIEW_TAG);
-            // X and Width remain the same, but Y and Height might change.
-            previewView.ConfigureAndResize (message, isRefresh,
-                new CGRect (previewView.Frame.X, previewViewTop, previewView.Frame.Width, previewViewBottom - previewViewTop));
+            previewView.Frame = PreviewFrame (cell);
+            previewView.SetItem (message);
         }
 
-        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
+        public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
         {
-            return 0;
-        }
-
-        public override UIView GetViewForHeader (UITableView tableView, nint section)
-        {
-            return new UIView (new CGRect (0, 0, 0, 0));
-        }
-
-        public override nfloat GetHeightForFooter (UITableView tableView, nint section)
-        {
-            return (tableView.Frame.Height - 30);
-        }
-
-        private nfloat GetFooterCardHeight (UITableView tableView)
-        {
-            return tableView.Frame.Height - 40;
-        }
-
-        public override UIView GetViewForFooter (UITableView tableView, nint section)
-        {
-            var noMessagesView = new UIView ();
-            noMessagesView.Frame = new CGRect (7.5f, 10, tableView.Frame.Width - 15.0f, GetFooterCardHeight (tableView));
-            noMessagesView.BackgroundColor = UIColor.White;
-            noMessagesView.AutoresizingMask = UIViewAutoresizing.None;
-            noMessagesView.ContentMode = UIViewContentMode.Center;
-            noMessagesView.Layer.CornerRadius = A.Card_Corner_Radius;
-            noMessagesView.Layer.MasksToBounds = true;
-            noMessagesView.Layer.BorderColor = A.Card_Border_Color;
-            noMessagesView.Layer.BorderWidth = A.Card_Border_Width;
-            noMessagesView.Tag = NO_MESSAGES_VIEW;
-
-            var cardWidth = noMessagesView.Frame.Width;
-
-            var minButtonsFrame = ((40 * 3) + (2 * A.Card_Vertical_Indent));
-            var messageFrameHeight = noMessagesView.Frame.Height - minButtonsFrame;
-
-            var isFourS = false;
-            var isSixOrGreater = false;
-            var isSixPlusOrGreater = false;
-
-            if (260 > noMessagesView.Frame.Height) {
-                isFourS = true;
-            } else {
-                if (360 <= noMessagesView.Frame.Width) {
-                    isSixOrGreater = true;
-                }
-                if (390 < noMessagesView.Frame.Width) {
-                    isSixPlusOrGreater = true;
-                }
+            if (indexPath.Row < messageThreads.Count ()) {
+                return indexPath;
             }
-
-            // Nacho Mail icon
-            var nachoMailIcon = new UIImageView ();
-            nachoMailIcon.Frame = (isSixOrGreater ? new CGRect (cardWidth / 2 - 32.5f, A.Card_Vertical_Indent, 65, 65) : new CGRect (cardWidth / 2 - 22.5f, A.Card_Horizontal_Indent, 45, 45));
-            nachoMailIcon.Image = UIImage.FromBundle ("Bootscreen-1");
-            nachoMailIcon.Hidden = isFourS;
-            noMessagesView.AddSubview (nachoMailIcon);
-
-            // Chips left
-            var chipsLeftIcon = new UIImageView ();
-            chipsLeftIcon.Frame = (isSixOrGreater ? new CGRect (0, messageFrameHeight - 45, 115, 45) : new CGRect (0, messageFrameHeight - 33, 85, 33));
-            chipsLeftIcon.Image = UIImage.FromBundle ("gen-nacholeft");
-            chipsLeftIcon.Hidden = isFourS;
-            noMessagesView.AddSubview (chipsLeftIcon);
-
-            // Chips right
-            var chipsRightIcon = new UIImageView ();
-            chipsRightIcon.Frame = (isSixOrGreater ? new CGRect (cardWidth - 115, messageFrameHeight - 45, 115, 45) : new CGRect (cardWidth - 85, messageFrameHeight - 33, 85, 33));
-            chipsRightIcon.Image = UIImage.FromBundle ("gen-nachoright");
-            chipsRightIcon.Hidden = isFourS;
-            noMessagesView.AddSubview (chipsRightIcon);
-
-            // Empty Hot list label
-            var stringAttributes = new UIStringAttributes {
-                ForegroundColor = A.Color_NachoGreen,
-                BackgroundColor = UIColor.White,
-                Font = (isSixPlusOrGreater ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextDemiBold14)
-            };
-
-            NSMutableAttributedString lastCardMessage = null;
-
-            if (NoMessageThreads ()) {
-                lastCardMessage = new NSMutableAttributedString ("You do not have any Hot messages. \n \nYou can add Hot messages by tapping on the  ", stringAttributes);
-            } else {
-                lastCardMessage = new NSMutableAttributedString ("You can add Hot messages by tapping on the  ", stringAttributes);
-            }
-            var lastCardMessagePartTwo = new NSAttributedString ("  icon in your mail.", stringAttributes);
-
-            var inlineIcon = new NachoInlineImageTextAttachment ();
-            inlineIcon.Image = UIImage.FromBundle ("email-not-hot");
-
-            var stringWithImage = NSAttributedString.CreateFrom (inlineIcon);
-            lastCardMessage.Append (stringWithImage);
-            lastCardMessage.Append (lastCardMessagePartTwo);
-
-            var messageWidth = (isSixPlusOrGreater ? noMessagesView.Frame.Width - 4 * A.Card_Horizontal_Indent : 320 - 4 * A.Card_Horizontal_Indent);
-
-            var hotListLabel = new UILabel (new CGRect (0, 0, messageWidth, 50));
-            hotListLabel.TextAlignment = UITextAlignment.Center;
-            hotListLabel.BackgroundColor = UIColor.White;
-            hotListLabel.Lines = 0;
-            hotListLabel.LineBreakMode = UILineBreakMode.WordWrap;            
-            hotListLabel.AttributedText = lastCardMessage;
-            hotListLabel.SizeToFit ();
-            var hotListLabelYOffset = (isFourS ? messageFrameHeight / 2 : ((chipsLeftIcon.Frame.Top - nachoMailIcon.Frame.Bottom) / 2) + nachoMailIcon.Frame.Bottom + 5);
-            hotListLabel.Center = new CGPoint (noMessagesView.Frame.Width / 2, hotListLabelYOffset); 
-            hotListLabel.Hidden = true;
-            hotListLabel.Tag = HOT_LIST_LABEL;
-
-            noMessagesView.AddSubview (hotListLabel);
-
-            var cellHeight = (noMessagesView.Frame.Height - messageFrameHeight) / 3;
-            var unreadMessageViewFrame = new CGRect (A.Card_Horizontal_Indent, messageFrameHeight, cardWidth - A.Card_Horizontal_Indent, cellHeight);
-            var unreadMessagesView = new UnreadMessagesView (unreadMessageViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked);
-            unreadMessagesView.Tag = UNREAD_MESSAGES_VIEW;
-
-            var cellFont = (isSixPlusOrGreater ? A.Font_AvenirNextMedium17 : A.Font_AvenirNextMedium14);
-            unreadMessagesView.SetFont (cellFont);
-
-            noMessagesView.AddSubview (unreadMessagesView);
-
-            footer = new UIView ();
-            footer.BackgroundColor = A.Color_NachoBackgroundGray;
-            footer.AddSubview (noMessagesView);
-
-            ConfigureFooter (tableView);
-
-            return footer;
-        }
-
-        public void ConfigureFooter (UITableView tableView)
-        {
-            if (null == footer) {
-                return;
-            }
-            footer.ViewWithTag (HOT_LIST_LABEL).Hidden = false;
-            var unreadMessagesView = (UnreadMessagesView)footer.ViewWithTag (UNREAD_MESSAGES_VIEW);
-            unreadMessagesView.Update (NcApplication.Instance.Account);
-        }
-
-        /// <summary>
-        /// Reconfigures the visible cells.
-        /// Enables, disables scrolling too.
-        /// </summary>
-        public void ReconfigureVisibleCells (UITableView tableView)
-        {
-            if (null == tableView) {
-                return;
-            }
-            var paths = tableView.IndexPathsForVisibleRows;
-            if (null != paths) {
-                foreach (var path in paths) {
-                    var cell = tableView.CellAt (path);
-                    if (null != cell) {
-                        ConfigureCell (tableView, cell, path, true);
-                    }
-                }
-            }
-        }
-
-        private int VisibleRow (UITableView tableView)
-        {
-            var visibleRows = tableView.IndexPathsForVisibleRows;
-            if (1 == visibleRows.Length) {
-                // Only one entry in the hot view.
-                return visibleRows [0].Row;
-            }
-            if (2 == visibleRows.Length) {
-                if (2 == messageThreads.Count ()) {
-                    // There isn't an easy way to tell which row is fully visible and which is only partially visible.
-                    // Pretend that no row is visible, so the caller will use the indexPath passed into RowSelected.
-                    return -1;
-                }
-                if (0 == visibleRows [0].Row) {
-                    // At the beginning.
-                    return 0;
-                } else {
-                    // At the end of the list.
-                    return visibleRows [1].Row;
-                }
-            }
-            if (3 == visibleRows.Length) {
-                // The normal case.  We are somewhere in the middle of the list.
-                return visibleRows [1].Row;
-            }
-            return -1;
+            return null;
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            // There appears to be a bug in Xamarin or iOS where the indexPath that is passed into RowSelected
-            // is sometimes incorrect.  I have not found the pattern for when the bug happens.  So we ignore
-            // the row that is passed in and figure out the message that is currently visible.  (This only works
-            // because the Hot view shows only one message at a time.  If the Hot view changes, this code will
-            // have to change.)
-            int selectedRow = VisibleRow (tableView);
-            if (0 > selectedRow) {
-                selectedRow = indexPath.Row;
-            }
-            if (selectedRow != indexPath.Row) {
-                Log.Warn (Log.LOG_UI, "HotListTableViewSource.RowSelected was passed a row index, {0}, that is not the currently visible cell, {1}", indexPath.Row, selectedRow);
-            }
-            if (NoMessageThreads ()) {
-                return;
-            }
-            var messageThread = messageThreads.GetEmailThread (selectedRow);
+            var messageThread = messageThreads.GetEmailThread (indexPath.Row);
             if (null == messageThread) {
                 return;
             }
@@ -713,24 +639,17 @@ namespace NachoClient.iOS
             NcEmailArchiver.Delete (messageThread);
         }
 
-        protected CGPoint startingPoint;
-
         public override void DraggingStarted (UIScrollView scrollView)
         {
+            cardIndexAtScrollStart = CardIndexNearestOffset ((UITableView)scrollView, scrollView.ContentOffset);
             scrolling = true;
-            var tableView = (UITableView)scrollView;
-            ReconfigureVisibleCells (tableView);
-
-            startingPoint = scrollView.ContentOffset;
             NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
             scrolling = false;
-            var tableView = (UITableView)scrollView;
-            ReconfigureVisibleCells (tableView);
-
+            EnsureScrollEndIsAsExpected (scrollView);
             NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
         }
 
@@ -738,49 +657,89 @@ namespace NachoClient.iOS
         {
             if (!willDecelerate) {
                 scrolling = false;
-                var tableView = (UITableView)scrollView;
-                ReconfigureVisibleCells (tableView);
+                EnsureScrollEndIsAsExpected (scrollView);
                 NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
             }
         }
 
         public override void WillEndDragging (UIScrollView scrollView, CGPoint velocity, ref CGPoint targetContentOffset)
         {
-            if (NoMessageThreads ()) {
-                return;
-            }
-
             var tableView = (UITableView)scrollView;
-            var totalContentY = tableView.ContentSize.Height;
-
-            var pathForTargetTopCell = tableView.IndexPathForRowAtPoint (new CGPoint (tableView.Frame.X / 2, targetContentOffset.Y + 10));
-
-            if (null == pathForTargetTopCell) {
-                return;
+            var index = cardIndexAtScrollStart;
+            var startCardOffset = OffsetForCardIndex (tableView, index);
+            if (velocity.Y > 0) {
+                index += 1;
+            } else if (velocity.Y < 0) {
+                index -= 1;
+            } else if (scrollView.ContentOffset.Y > startCardOffset.Y + 25.0) {
+                index += 1;
+            } else if (scrollView.ContentOffset.Y < startCardOffset.Y - 25.0) {
+                index -= 1;
             }
-
-            // pull down, go to previous cell
-            if (startingPoint.Y >= targetContentOffset.Y) {
-                targetContentOffset.Y = tableView.RectForRowAtIndexPath (pathForTargetTopCell).Location.Y - 10;
-                return;
-            }
-
-            var nextRow = pathForTargetTopCell.Row + 1;
-
-            // push up, go to table footer if past the end
-            if (nextRow >= RowsInSection (tableView, pathForTargetTopCell.Section)) {
-                targetContentOffset.Y = tableView.RectForFooterInSection (0).Location.Y - 10;
-                return;
-            }
-
-            var next = NSIndexPath.FromRowSection (nextRow, pathForTargetTopCell.Section);
-            if (null == next) {
-                return;
-            }
-            targetContentOffset.Y = tableView.RectForRowAtIndexPath (next).Location.Y - 10;
+            var offset = OffsetForCardIndex (tableView, index);
+            targetContentOffset.Y = offset.Y;
+            expectedScrollEndOffset = offset;
         }
 
-        public void onLinkSelected (NSUrl url)
+        private void EnsureScrollEndIsAsExpected (UIScrollView scrollView)
+        {
+            if (expectedScrollEndOffset.HasValue) {
+                if (expectedScrollEndOffset.Value.Y != scrollView.ContentOffset.Y) {
+                    Log.Warn (Log.LOG_UI, "HotList EnsureScrollEndIsAsExpected correcting offset from {0} to {1}", scrollView.ContentOffset, expectedScrollEndOffset.Value);
+                    scrollView.SetContentOffset (expectedScrollEndOffset.Value, false);
+                }
+                expectedScrollEndOffset = null;
+            } else {
+                Log.Error (Log.LOG_UI, "HotList EnsureScrollEndIsAsExpected called without expectedScrollEndOffset");
+            }
+        }
+
+        private int CardIndexNearestOffset (UITableView tableView, CGPoint offset)
+        {
+            if (offset.Y < -tableView.ContentInset.Top) {
+                return 0;
+            }
+            var index = (int)((offset.Y + tableView.ContentInset.Top + tableView.RowHeight / 2.0f) / tableView.RowHeight);
+            var maxIndex = (int)RowsInSection(tableView, 0) - 1;
+            if (index > maxIndex){
+                return maxIndex;
+            }
+            return index;
+        }
+
+        public int CurrentCardIndex (UITableView tableView)
+        {
+            return CardIndexNearestOffset (tableView, tableView.ContentOffset);
+        }
+
+        private CGPoint OffsetForCardIndex (UITableView tableView, int index)
+        {
+            var maxIndex = (int)RowsInSection(tableView, 0) - 1;
+            if (index < 0) {
+                index = 0;
+            } else if (index > maxIndex) {
+                index = maxIndex;
+            }
+            CGPoint offset = new CGPoint(0.0, (nfloat)index * tableView.RowHeight - tableView.ContentInset.Top);
+            return offset;
+        }
+
+        public void ScrollTableViewToCardIndex (UITableView tableView, int index, bool animated)
+        {
+            var offset = OffsetForCardIndex (tableView, index);
+            tableView.SetContentOffset (offset, animated);
+        }
+
+        #region IBodyViewOwner implementation
+
+        // Items in the hot list can't react to size changes or be dismissed, so those implementations are empty.
+        // We do need to react to URL that are tapped.
+
+        void IBodyViewOwner.SizeChanged ()
+        {
+        }
+
+        void IBodyViewOwner.LinkSelected (NSUrl url)
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 owner.PerformSegueForDelegate ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
@@ -789,6 +748,11 @@ namespace NachoClient.iOS
             }
         }
 
+        void IBodyViewOwner.DismissView ()
+        {
+        }
+
+        #endregion
     }
 
 }

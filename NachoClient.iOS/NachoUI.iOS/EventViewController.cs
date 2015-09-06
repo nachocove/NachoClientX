@@ -25,7 +25,7 @@ using MapKit;
 
 namespace NachoClient.iOS
 {
-    public partial class EventViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent
+    public partial class EventViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent, IBodyViewOwner
     {
         // Model information
         protected McEvent e;
@@ -308,7 +308,7 @@ namespace NachoClient.iOS
 
             // Location label, image, and detail
             Util.AddTextLabelWithImageView (yOffset, "LOCATION", "event-location", TagType.EVENT_LOCATION_TITLE_TAG, eventCardView);
-            locationView = new UcLocationView (yOffset, EVENT_CARD_WIDTH - 60, onLinkSelected);
+            locationView = new UcLocationView (0, yOffset, EVENT_CARD_WIDTH - 60, LinkSelected);
             locationView.Tag = (int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG;
             locationView.Font = A.Font_AvenirNextRegular14;
             locationView.TextColor = A.Color_NachoDarkText;
@@ -318,7 +318,7 @@ namespace NachoClient.iOS
             // Description, for which we use a BodyView.
             Util.AddTextLabelWithImageView (yOffset, "DESCRIPTION", "event-description", TagType.EVENT_DESCRIPTION_TITLE_TAG, eventCardView);
             yOffset += 16 + 6;
-            descriptionView = BodyView.VariableHeightBodyView (new CGPoint (42, yOffset), EVENT_CARD_WIDTH - 60, scrollView.Frame.Size, LayoutView, onLinkSelected);
+            descriptionView = BodyView.VariableHeightBodyView (new CGPoint (42, yOffset), EVENT_CARD_WIDTH - 60, scrollView.Frame.Size, this);
             descriptionView.Tag = (int)TagType.EVENT_DESCRIPTION_LABEL_TAG;
             eventCardView.AddSubview (descriptionView);
 
@@ -838,7 +838,7 @@ namespace NachoClient.iOS
 
         public override bool HidesBottomBarWhenPushed {
             get {
-                return this.NavigationController.TopViewController == this;
+                return true;
             }
         }
 
@@ -981,7 +981,7 @@ namespace NachoClient.iOS
 
             if (hasLocation) {
                 AdjustViewLayout (TagType.EVENT_LOCATION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
-                AdjustViewLayout (TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
+                AdjustViewLayout (TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, 37, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
             }
 
             AdjustViewLayout (TagType.EVENT_DESCRIPTION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
@@ -1551,7 +1551,14 @@ namespace NachoClient.iOS
             scrollView.SetContentOffset (new CGPoint (0, contentView.Frame.Height - scrollView.Frame.Height), true);
         }
 
-        public void onLinkSelected (NSUrl url)
+        #region IBodyViewOwner implementation
+
+        void IBodyViewOwner.SizeChanged ()
+        {
+            LayoutView ();
+        }
+
+        public void LinkSelected (NSUrl url)
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
@@ -1559,5 +1566,12 @@ namespace NachoClient.iOS
                 UIApplication.SharedApplication.OpenUrl (url);
             }
         }
+
+        void IBodyViewOwner.DismissView ()
+        {
+            NavigationController.PopViewController (true);
+        }
+
+        #endregion
     }
 }

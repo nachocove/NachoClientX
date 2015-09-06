@@ -14,21 +14,26 @@ using System.Net.Sockets;
 using HtmlAgilityPack;
 using MailKit.Search;
 using System.Threading;
+using NachoClient.Build;
+using MimeKit.IO;
+using MimeKit.IO.Filters;
+using MimeKit;
 
 namespace NachoCore.IMAP
 {
     public class ImapCommand : NcCommand
     {
+        protected int AccountId { get; set; }
         protected NcImapClient Client { get; set; }
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
         private const string KCaptureFolderMetadata = "ImapCommand.FolderMetadata";
-        protected const int KLockTimeout = 10000;
 
         public ImapCommand (IBEContext beContext, NcImapClient imapClient) : base (beContext)
         {
             Client = imapClient;
             RedactProtocolLogFunc = null;
+            AccountId = BEContext.Account.Id;
         }
 
         // MUST be overridden by subclass.
@@ -36,35 +41,6 @@ namespace NachoCore.IMAP
         {
             NcAssert.True (false);
             return null;
-        }
-
-        public class ImapCommandLockTimeOutException : Exception
-        {
-            public ImapCommandLockTimeOutException (string message) : base(message)
-            {
-                
-            }
-        }
-
-        public static Event TryLock (object lockObj, int timeout, Func<Event> func = null)
-        {
-            if (Monitor.TryEnter(lockObj, timeout))
-            {
-                try
-                {
-                    if (null != func) {
-                        return func();
-                    } else {
-                        return null;
-                    }
-                }
-                finally
-                {
-                    Monitor.Exit(lockObj);
-                }
-            } else {
-                throw new ImapCommandLockTimeOutException (string.Format ("Could not acquire lock object after {0:n0}ms", timeout));
-            }
         }
 
         public override void Cancel ()
@@ -78,8 +54,8 @@ namespace NachoCore.IMAP
                 // When MailKit is fixed, this code should be adjusted.
                 try {
                     TryLock (Client.SyncRoot, KLockTimeout);
-                } catch (ImapCommandLockTimeOutException ex) {
-                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
+                } catch (CommandLockTimeOutException ex) {
+                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, AccountId, ex.Message);
                 }
             }
         }
@@ -93,6 +69,7 @@ namespace NachoCore.IMAP
 
         public Event ExecuteConnectAndAuthEvent()
         {
+            Cts.Token.ThrowIfCancellationRequested ();
             NcCapture.AddKind (this.GetType ().Name);
             ImapDiscoverCommand.guessServiceType (BEContext);
 
@@ -102,8 +79,7 @@ namespace NachoCore.IMAP
                         Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
                     }
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        var authy = new ImapAuthenticateCommand (BEContext, Client);
-                        authy.ConnectAndAuthenticate ();
+                        ConnectAndAuthenticate ();
                     }
                     using (var cap = NcCapture.CreateAndStart (this.GetType ().Name)) {
                         var evt = ExecuteCommand ();
@@ -121,64 +97,153 @@ namespace NachoCore.IMAP
         {
             var AccountId = BEContext.Account.Id;
             Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
+            Event evt;
+            Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             try {
                 Cts.Token.ThrowIfCancellationRequested ();
-                Event evt = ExecuteConnectAndAuthEvent();
+                evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
-                sm.PostEvent (evt);
-            } catch (ImapCommandLockTimeOutException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapCommandLockTimeOutException: {0}", ex.Message);
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
+                Cts.Token.ThrowIfCancellationRequested ();
             } catch (OperationCanceledException) {
                 Log.Info (Log.LOG_IMAP, "OperationCanceledException");
                 ResolveAllDeferred ();
                 // No event posted to SM if cancelled.
+                return;
+            } catch (CommandLockTimeOutException ex) {
+                Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
             } catch (ServiceNotConnectedException) {
                 // FIXME - this needs to feed into NcCommStatus, not loop forever.
                 Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
             } catch (AuthenticationException) {
                 Log.Info (Log.LOG_IMAP, "AuthenticationException");
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
             } catch (ServiceNotAuthenticatedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
             } catch (IOException ex) {
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPIO");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIO");
             } catch (ImapProtocolException ex) {
                 // From MailKit: The exception that is thrown when there is an error communicating with an IMAP server. A
                 // <see cref="ImapProtocolException"/> is typically fatal and requires the <see cref="ImapClient"/>
                 // to be reconnected.
                 Log.Info (Log.LOG_IMAP, "ImapProtocolException: {0}", ex.ToString ());
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPPROTOTEMPFAIL");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOTEMPFAIL");
             } catch (SocketException ex) {
                 // We check the server connectivity pretty well in Discovery. If this happens with
                 // other commands, it's probably a temporary failure.
                 Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
-                ResolveAllDeferred ();
-                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
             } catch (InvalidOperationException ex) {
                 Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
-                ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD1");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD1");
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
-                ResolveAllFailed (NcResult.WhyEnum.Unknown);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             } finally {
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
+            if (Cts.Token.IsCancellationRequested) {
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
+                return;
+            }
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
+            switch (action.Item1) {
+            case ResolveAction.None:
+                break;
+            case ResolveAction.DeferAll:
+                ResolveAllDeferred ();
+                break;
+            case ResolveAction.FailAll:
+                ResolveAllFailed (action.Item2);
+                break;
+            }
+            sm.PostEvent (evt);
+        }
+
+        public void ConnectAndAuthenticate ()
+        {
+            if (!Client.IsConnected) {
+                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
+                var capUnauth = McProtocolState.FromImapCapabilities (Client.Capabilities);
+
+                if (capUnauth != BEContext.ProtocolState.ImapServerCapabilities) {
+                    BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.ImapServerCapabilitiesUnAuth = capUnauth;
+                        return true;
+                    });
+                }
+                Cts.Token.ThrowIfCancellationRequested ();
+            }
+            if (!Client.IsAuthenticated) {
+                ImapDiscoverCommand.possiblyFixUsername (BEContext);
+                string username = BEContext.Cred.Username;
+                string cred;
+                if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => !m.Contains ("XOAUTH2"));
+                    cred = BEContext.Cred.GetAccessToken ();
+                } else {
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => m.Contains ("XOAUTH"));
+                    cred = BEContext.Cred.GetPassword ();
+                }
+
+                Cts.Token.ThrowIfCancellationRequested ();
+                try {
+                    Client.Authenticate (username, cred, Cts.Token);
+                } catch (ImapProtocolException e) {
+                    Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", e);
+                    if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.iCloud) {
+                        // some servers (icloud.com) seem to close the connection on a bad password/username.
+                        throw new AuthenticationException (e.Message);
+                    } else {
+                        throw;
+                    }
+                }
+
+                var capAuth = McProtocolState.FromImapCapabilities (Client.Capabilities);
+                if (capAuth != BEContext.ProtocolState.ImapServerCapabilities) {
+                    BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.ImapServerCapabilities = capAuth;
+                        return true;
+                    });
+                }
+
+                ImapImplementation ourId = new ImapImplementation () {
+                    Name = "Nacho Mail",
+                    Version = string.Format ("{0}:{1}", BuildInfo.Version, BuildInfo.BuildNumber),
+                    ReleaseDate = BuildInfo.Time,
+                    SupportUrl = "https://support.nachocove.com/",
+                    Vendor = "Nacho Cove, Inc",
+                    OS = NachoPlatform.Device.Instance.BaseOs ().ToString (),
+                    OSVersion = NachoPlatform.Device.Instance.Os (),
+                };
+                //Log.Info (Log.LOG_IMAP, "Our Id: {0}", dumpImapImplementation(ourId));
+                var serverId = Client.Identify (ourId, Cts.Token);
+                Log.Info (Log.LOG_IMAP, "IMAP Server {0}:{1} capabilities: {2} Id: {3}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString (), dumpImapImplementation (serverId));
+            }
+        }
+
+        private string dumpImapImplementation (ImapImplementation imapId)
+        {
+            return HashHelper.HashEmailAddressesInImapId (string.Join (", ", imapId.Properties));
         }
 
         protected void ProtocolLoggerStopAndPostTelemetry ()
@@ -232,9 +297,9 @@ namespace NachoCore.IMAP
             bool added_or_changed = false;
             var ParentId = GetParentId (mailKitFolder);
             if (isDisinguished) {
-                folder = McFolder.GetDistinguishedFolder (BEContext.Account.Id, folderType);
+                folder = McFolder.GetDistinguishedFolder (AccountId, folderType);
             } else {
-                folder = McFolder.GetUserFolders (BEContext.Account.Id, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
+                folder = McFolder.GetUserFolders (AccountId, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
             }
 
             if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
@@ -249,7 +314,7 @@ namespace NachoCore.IMAP
 
             if (null == folder) {
                 // Add it
-                folder = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
+                folder = McFolder.Create (AccountId, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
                 Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Adding folder {0} UidValidity {1}", folder.ImapFolderNameRedacted (), mailKitFolder.UidValidity.ToString ());
                 folder.ImapUidValidity = mailKitFolder.UidValidity;
                 folder.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
@@ -270,14 +335,10 @@ namespace NachoCore.IMAP
                     return true;
                 });
                 added_or_changed = true;
-            } else {
-                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0} unchanged", folder.ImapFolderNameRedacted ());
-
             }
 
             // Get the current list of UID's. Don't set added_or_changed. Sync will notice later.
             if (doFolderMetadata && !mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
-                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0} updating metadata", folder.ImapFolderNameRedacted ());
                 if (!GetFolderMetaData (ref folder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
                     Log.Error (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0}: Could not refresh folder metadata", folder.ImapFolderNameRedacted ());
                 }
@@ -321,9 +382,6 @@ namespace NachoCore.IMAP
         {
             NcCapture.AddKind (KCaptureFolderMetadata);
             using (var cap = NcCapture.CreateAndStart (KCaptureFolderMetadata)) {
-                // Just load UID with SELECT.
-                Log.Info (Log.LOG_IMAP, "GetFolderMetaData: {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
-
                 var query = SearchQuery.NotDeleted;
                 if (TimeSpan.Zero != timespan) {
                     query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
@@ -331,10 +389,6 @@ namespace NachoCore.IMAP
                 UniqueIdSet uids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query, Cts.Token));
 
                 Cts.Token.ThrowIfCancellationRequested ();
-
-                Log.Info (Log.LOG_IMAP, "GetFolderMetaData: {1}: Uids from last {2} days: {0}",
-                    uids.ToString (),
-                    folder.ImapFolderNameRedacted (), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
 
                 UpdateImapSetting (mailKitFolder, ref folder);
 
@@ -346,7 +400,6 @@ namespace NachoCore.IMAP
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     if (uidstring != target.ImapUidSet) {
-                        Log.Info (Log.LOG_IMAP, "GetFolderMetaData: Updating ImapUidSet");
                         target.ImapUidSet = uidstring;
                     }
                     target.ImapLastExamine = DateTime.UtcNow;
@@ -354,6 +407,28 @@ namespace NachoCore.IMAP
                 });
                 McPending.MakeEligibleOnFMetaData (folder);
                 return true;
+            }
+        }
+
+        protected void CopyFilteredStream (Stream inStream, Stream outStream, 
+            string CharSet, string TransferEncoding, Action<Stream, Stream> func)
+        {
+            using (var filtered = new FilteredStream (outStream)) {
+                filtered.Add (DecoderFilter.Create (TransferEncoding));
+                if (!string.IsNullOrEmpty (CharSet)) {
+                    try {
+                        filtered.Add (new CharsetFilter (CharSet, "utf-8"));
+                    } catch (NotSupportedException ex) {
+                        // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
+                        Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", CharSet, ex);
+                        // continue without the filter
+                    } catch (ArgumentException ex) {
+                        // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
+                        Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", CharSet, ex);
+                        // continue without the filter
+                    }
+                }
+                func (inStream, filtered);
             }
         }
 
@@ -435,6 +510,12 @@ namespace NachoCore.IMAP
         }
 
         #endregion
+
+        protected bool IsComcast (McServer server)
+        {
+            return server.Host.EndsWith (".comcast.net") ||
+                server.Host.EndsWith (".comcast.com");
+        }
     }
 
     public class ImapWaitCommand : ImapCommand

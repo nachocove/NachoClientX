@@ -24,34 +24,43 @@ namespace NachoClient.iOS
     {
         public const int CALENDAR_PART_TAG = 400;
 
-        public enum TagType
-        {
-            CALENDAR_PART_TAG = 400,
-            CALENDAR_MONTH_TAG = 401,
-            CALENDAR_DATE_TAG = 402,
-            CALENDAR_TITLE_TAG = 403,
-            CALENDAR_DURATION_TAG = 404,
-            CALENDAR_LOCATION_TAG = 405,
-            CALENDAR_LINE_TAG = 406
-        }
-
         private McMeetingRequest meetingInfo;
         private McEmailMessage parentMessage;
         private McCalendar calendarItem;
         private bool requestActions = false;
         private bool cancelActions = false;
-        private nfloat viewWidth;
         private string organizerEmail;
+        private Action dismissView;
+        private BodyWebView.LinkSelectedCallback onLinkSelected;
 
-        public BodyCalendarView (nfloat Y, nfloat width, McEmailMessage parentMessage, bool isOnHot)
+        private UIView topLineView;
+        private UIView whenHeadingView;
+        private UILabel whenLabel;
+        private UILabel durationLabel;
+        private UIView locationHeadingView;
+        private UcLocationView locationView;
+        private UIView bottomLineView;
+        private UIView organizerView;
+        private UILabel organizerNameLabel;
+        private UILabel organizerEmailLabel;
+        private UIImageView organizerPhotoView;
+        private UILabel organizerPhotoFallbackView;
+        private UIView attendeesView;
+        private UIView attendessListView;
+
+        private nfloat preferredHeight;
+
+        public BodyCalendarView (nfloat Y, nfloat width, McEmailMessage parentMessage, bool isOnHot, Action dismissView, BodyWebView.LinkSelectedCallback onLinkSelected)
             : base (new CGRect (0, Y, width, 150))
         {
             this.parentMessage = parentMessage;
             meetingInfo = parentMessage.MeetingRequest;
             NcAssert.NotNull (meetingInfo, "BodyCalendarView was given a message without a MeetingRequest.");
             calendarItem = McCalendar.QueryByUID (parentMessage.AccountId, meetingInfo.GetUID ());
+            this.dismissView = dismissView;
+            this.onLinkSelected = onLinkSelected;
+            preferredHeight = Bounds.Height;
 
-            viewWidth = width;
             Tag = CALENDAR_PART_TAG;
 
             // The contents of the action/info bar depends on whether this is a request,
@@ -68,6 +77,7 @@ namespace NachoClient.iOS
                 ShowRequestChoicesBar (isOnHot);
             }
 
+            CreateSubviews ();
             ShowEventInfo ();
         }
 
@@ -84,9 +94,88 @@ namespace NachoClient.iOS
 
         public void ScrollingAdjustment (CGRect frame, CGPoint contentOffset)
         {
-            // The calendar section does not scroll or resize.
-            // The only thing that can be adjusted is the view's origin.
-            ViewFramer.Create (this).X (frame.X - contentOffset.X).Y (frame.Y - contentOffset.Y);
+            // The calendar section does not scroll or resize vertically.
+            ViewFramer.Create (this).X (frame.X - contentOffset.X).Y (frame.Y - contentOffset.Y).Width(frame.Width);
+        }
+
+        private void CreateSubviews ()
+        {
+            topLineView = Util.AddHorizontalLine (0, 0, Bounds.Width, A.Color_NachoBorderGray, this);
+            topLineView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+
+            whenHeadingView = Util.AddTextLabelWithImageView (0, "WHEN", "event-when", 0, this);
+            whenHeadingView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            whenLabel = Util.AddDetailTextLabel (42, 0, Bounds.Width - 90, 20, 0, this);
+            whenLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            durationLabel = Util.AddDetailTextLabel (42, 0, Bounds.Width - 90, 20, 0, this);
+            durationLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            durationLabel.Lines = 0;
+            durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
+
+            locationHeadingView = Util.AddTextLabelWithImageView (0, "LOCATION", "event-location", 0, this);
+            locationHeadingView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            locationView = new UcLocationView (37, 0, Bounds.Width - 37, onLinkSelected);
+            locationView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            locationView.Font = A.Font_AvenirNextRegular14;
+            locationView.TextColor = A.Color_NachoDarkText;
+            this.AddSubview (locationView);
+
+            // The organizer view should probably be its own simple UIView subclass
+            CreateOrganizerSubview ();
+
+            attendeesView = new UIView (new CGRect (0, 0, Bounds.Width, 96 + 16));
+            attendeesView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            Util.AddTextLabelWithImageView (0, "ATTENDEES", "event-attendees", 0, attendeesView);
+            attendeesView.BackgroundColor = UIColor.White;
+            this.AddSubview (attendeesView);
+            attendessListView = new UIView (new CGRect(0.0, 16f, attendeesView.Bounds.Width, attendeesView.Bounds.Height - 16f));
+            attendessListView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            attendessListView.BackgroundColor = UIColor.Clear;
+            attendeesView.AddSubview (attendessListView);
+
+            bottomLineView = Util.AddHorizontalLine (0, 0, Bounds.Width, A.Color_NachoBorderGray, this);
+            bottomLineView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+        }
+
+        private void CreateOrganizerSubview ()
+        {
+            organizerView = new UIView (new CGRect (0, 0, Bounds.Width, 44 + 16 + 16));
+            organizerView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            organizerView.BackgroundColor = UIColor.White;
+            this.AddSubview (organizerView);
+            Util.AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", 0, organizerView);
+
+            organizerNameLabel = new UILabel (new CGRect (92, 16 + 10, organizerView.Frame.Width - 92 - 18, 20));
+            organizerNameLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            organizerNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            organizerNameLabel.TextColor = UIColor.LightGray;
+            organizerNameLabel.Font = A.Font_AvenirNextRegular14;
+            organizerView.AddSubview (organizerNameLabel);
+
+            organizerEmailLabel = new UILabel (new CGRect (92, 46f, organizerView.Frame.Width - 92 - 18, 20));
+            organizerEmailLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            organizerEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            organizerEmailLabel.TextColor = UIColor.LightGray;
+            organizerEmailLabel.Font = A.Font_AvenirNextRegular14;
+            organizerEmailLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_EMAIL_LABEL;
+            organizerView.AddSubview (organizerEmailLabel);
+
+            // The photo view and fallback should probably be combined in a subclass that can automatically switch display
+            organizerPhotoView = new UIImageView (new CGRect (42, 10 + 16, 40, 40));
+            organizerPhotoView.Layer.CornerRadius = (40.0f / 2.0f);
+            organizerPhotoView.Layer.MasksToBounds = true;
+            organizerPhotoView.Layer.BorderWidth = .25f;
+            organizerPhotoView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            organizerView.AddSubview (organizerPhotoView);
+
+            organizerPhotoFallbackView = new UILabel (organizerPhotoView.Frame);
+            organizerPhotoFallbackView.Font = A.Font_AvenirNextRegular17;
+            organizerPhotoFallbackView.TextColor = UIColor.White;
+            organizerPhotoFallbackView.TextAlignment = UITextAlignment.Center;
+            organizerPhotoFallbackView.LineBreakMode = UILineBreakMode.Clip;
+            organizerPhotoFallbackView.Layer.CornerRadius = (40 / 2);
+            organizerPhotoFallbackView.Layer.MasksToBounds = true;
+            organizerView.AddSubview (organizerPhotoFallbackView);
         }
 
         /// <summary>
@@ -97,21 +186,8 @@ namespace NachoClient.iOS
             DateTime start = meetingInfo.StartTime;
             DateTime end = meetingInfo.EndTime;
             string location = meetingInfo.Location;
-            nfloat yOffset = 60f + 18f;
-
-            Util.AddHorizontalLine (0, 60, viewWidth, A.Color_NachoBorderGray, this).Tag =
-                (int)TagType.CALENDAR_LINE_TAG;
-
             // When label, image, and detail
-            Util.AddTextLabelWithImageView (yOffset, "WHEN", "event-when", EventViewController.TagType.EVENT_WHEN_TITLE_TAG, this);
-            yOffset += 16 + 6;
-            Util.AddDetailTextLabel (42, yOffset, viewWidth - 90, 20, EventViewController.TagType.EVENT_WHEN_DETAIL_LABEL_TAG, this);
-            yOffset += 20;
-            Util.AddDetailTextLabel (42, yOffset, viewWidth - 90, 20, EventViewController.TagType.EVENT_WHEN_DURATION_TAG, this);
-
-            var whenLabel = this.ViewWithTag ((int)EventViewController.TagType.EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
             whenLabel.Text = Pretty.ExtendedDateString (start);
-            var durationLabel = this.ViewWithTag ((int)EventViewController.TagType.EVENT_WHEN_DURATION_TAG) as UILabel;
             if (meetingInfo.AllDayEvent) {
                 durationLabel.Text = "all day event";
                 if ((start.LocalT ().DayOfYear) + 1 != end.LocalT ().DayOfYear) {
@@ -127,119 +203,63 @@ namespace NachoClient.iOS
                         Pretty.FullTimeString (start), Pretty.FullDateTimeString (end));
                 }
             }
-            durationLabel.Lines = 0;
-            durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            durationLabel.SizeToFit ();
-
-            yOffset += NMath.Max (20, durationLabel.Frame.Height);
-            yOffset += 20;
 
             if (!string.IsNullOrEmpty (location)) {
-                // Location label, image, and detail
-                Util.AddTextLabelWithImageView (yOffset, "LOCATION", "event-location", EventViewController.TagType.EVENT_LOCATION_TITLE_TAG, this);
-                yOffset += 16 + 6;
-                Util.AddDetailTextLabel (42, yOffset, viewWidth - 90, 20, EventViewController.TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, this);
-                yOffset += 20 + 20;
-                this.ViewWithTag ((int)EventViewController.TagType.EVENT_LOCATION_TITLE_TAG).Hidden = false;
-                var locationLabel = this.ViewWithTag ((int)EventViewController.TagType.EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
-                locationLabel.Hidden = false;
-                locationLabel.Text = location;
-                locationLabel.Lines = 0;
-                locationLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                locationLabel.SizeToFit ();
+                locationHeadingView.Hidden = false;
+                locationView.Hidden = false;
+                locationView.SetText (location);
+            } else {
+                locationHeadingView.Hidden = true;
+                locationView.Hidden = true;
             }
 
             var accountId = parentMessage.AccountId;
 
             var organizerAddress = NcEmailAddress.ParseMailboxAddressString (meetingInfo.Organizer);
             if (null != organizerAddress) {
-
+                organizerView.Hidden = false;
                 organizerEmail = organizerAddress.Address;
                 var organizerName = organizerAddress.Name;
-
                 if (null != organizerEmail) {
-                    // Organizer
-                    var eventOrganizerView = new UIView (new CGRect (0, yOffset, viewWidth, 44 + 16 + 16));
-                    eventOrganizerView.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_VIEW_TAG;
-                    eventOrganizerView.BackgroundColor = UIColor.White;
-                    this.AddSubview (eventOrganizerView);
-
-                    Util.AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", EventViewController.TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
-
-                    nfloat emailOffset = 46f;
-
                     if (null != organizerName) {
-                        // Organizer Name
-                        var userNameLabel = new UILabel (new CGRect (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
-                        userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-                        userNameLabel.TextColor = UIColor.LightGray;
-                        userNameLabel.Font = A.Font_AvenirNextRegular14;
-                        userNameLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_NAME_LABEL;
-                        userNameLabel.Text = organizerName;
-                        eventOrganizerView.AddSubview (userNameLabel);
+                        organizerNameLabel.Text = organizerName;
                     } else {
-                        emailOffset = (eventOrganizerView.Frame.Height / 2) - 3;
+                        organizerNameLabel.Text = "";
                     }
-
-                    var userEmailLabel = new UILabel (new CGRect (92, emailOffset, eventOrganizerView.Frame.Width - 92 - 18, 20));
-                    userEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-                    userEmailLabel.TextColor = UIColor.LightGray;
-                    userEmailLabel.Font = A.Font_AvenirNextRegular14;
-                    userEmailLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_EMAIL_LABEL;
-                    userEmailLabel.Text = organizerEmail;
-                    eventOrganizerView.AddSubview (userEmailLabel);
+                    organizerEmailLabel.Text = organizerEmail;
 
                     var userImage = Util.ImageOfSender (accountId, organizerEmail);
 
                     if (null != userImage) {
+                        organizerPhotoView.Hidden = false;
+                        organizerPhotoFallbackView.Hidden = true;
                         using (var rawImage = userImage) {
                             using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                                // User image
-                                var userImageView = new UIImageView (new CGRect (42, 10 + 16, 40, 40));
-                                userImageView.Layer.CornerRadius = (40.0f / 2.0f);
-                                userImageView.Layer.MasksToBounds = true;
-                                userImageView.Image = originalImage;
-                                userImageView.Layer.BorderWidth = .25f;
-                                userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-                                eventOrganizerView.AddSubview (userImageView);
+                                organizerPhotoView.Image = originalImage;
                             }
                         }
                     } else {
-
                         // User userLabelView view, if no image
-                        var userLabelView = new UILabel (new CGRect (42, 10 + 16, 40, 40));
-                        userLabelView.Font = A.Font_AvenirNextRegular17;
-                        userLabelView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, accountId);
-                        userLabelView.TextColor = UIColor.White;
-                        userLabelView.TextAlignment = UITextAlignment.Center;
-                        userLabelView.LineBreakMode = UILineBreakMode.Clip;
-                        userLabelView.Layer.CornerRadius = (40 / 2);
-                        userLabelView.Layer.MasksToBounds = true;
+                        organizerPhotoView.Hidden = true;
+                        organizerPhotoFallbackView.Hidden = false;
+                        organizerPhotoFallbackView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, accountId);
                         var nameString = (null != organizerName ? organizerName : organizerEmail);
-                        userLabelView.Text = Util.NameToLetters (nameString);
-                        eventOrganizerView.AddSubview (userLabelView);
+                        organizerPhotoFallbackView.Text = Util.NameToLetters (nameString);
                     }
 
-                    yOffset += 44 + 20 + 16;
                 }
+            } else {
+                organizerView.Hidden = true;
             }
 
             // Only display the attendees when it is a meeting request
             if ("IPM.Schedule.Meeting.Request" == parentMessage.MessageClass) {
-
-                // Attendees label, image, and detail
-                var eventAttendeeView = new UIView (new CGRect (0, yOffset, viewWidth, 96 + 16));
-                eventAttendeeView.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_VIEW_TAG;
-                Util.AddTextLabelWithImageView (0, "ATTENDEES", "event-attendees", EventViewController.TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
-                this.AddSubview (eventAttendeeView);
-
-                yOffset += 96 + 20;
-
-                eventAttendeeView.BackgroundColor = UIColor.White;
-                Util.AddTextLabelWithImageView (0, "ATTENDEES", "event-attendees", EventViewController.TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
-                var titleOffset = 16;
+                attendeesView.Hidden = false;
+                for (int i = attendessListView.Subviews.Length - 1; i >= 0; --i) {
+                    attendeesView.Subviews [i].RemoveFromSuperview ();
+                }
                 var attendeeImageDiameter = 40;
-                var iconSpace = viewWidth - 60;
+                var iconSpace = Bounds.Width - 60;
                 var iconPadding = (iconSpace - (attendeeImageDiameter * 5)) / 4;
                 nfloat spacing = 0;
                 int attendeeNum = 0;
@@ -250,7 +270,7 @@ namespace NachoClient.iOS
                     attendee.AccountId = accountId;
                     attendee.Name = attendeeAddress.Name;
                     attendee.Email = null == attendeeMailbox ? null : attendeeMailbox.Address;
-                    Util.CreateAttendeeButton (attendeeImageDiameter, spacing, titleOffset, attendee, attendeeNum, false, eventAttendeeView);
+                    Util.CreateAttendeeButton (attendeeImageDiameter, spacing, 0, attendee, attendeeNum, false, attendessListView);
 
                     spacing += (attendeeImageDiameter + iconPadding);
                     if (4 <= ++attendeeNum && 5 < allAttendees.Count) {
@@ -266,19 +286,70 @@ namespace NachoClient.iOS
                     extraAttendeesButton.Layer.MasksToBounds = true;
                     extraAttendeesButton.Layer.BorderColor = A.Color_NachoGreen.CGColor;
                     extraAttendeesButton.Layer.BorderWidth = 1;
-                    extraAttendeesButton.Frame = new CGRect (42 + iconSpace - 39, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
+                    extraAttendeesButton.Frame = new CGRect (42 + iconSpace - 39, 10, attendeeImageDiameter, attendeeImageDiameter);
                     extraAttendeesButton.Font = A.Font_AvenirNextRegular14;
                     extraAttendeesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                     extraAttendeesButton.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_DETAIL_TAG;
                     extraAttendeesButton.SetTitle (string.Format ("+{0}", allAttendees.Count - 4), UIControlState.Normal);
                     extraAttendeesButton.AccessibilityLabel = "More";
-                    eventAttendeeView.AddSubview (extraAttendeesButton);
+                    attendessListView.AddSubview (extraAttendeesButton);
                 }
+            } else {
+                attendeesView.Hidden = true;
             }
 
-            Util.AddHorizontalLine (0, yOffset, viewWidth, A.Color_NachoBorderGray, this).Tag =
-                (int)TagType.CALENDAR_LINE_TAG;
-            this.Frame = new CGRect (this.Frame.X, this.Frame.Y, this.Frame.Width, yOffset + 20);
+            SetNeedsLayout ();
+            LayoutIfNeeded ();
+            this.Frame = new CGRect (this.Frame.X, this.Frame.Y, this.Frame.Width, preferredHeight);
+        }
+
+        public override void LayoutSubviews ()
+        {
+            // First have the base class handle any autoresizing mask layouts
+            base.LayoutSubviews ();
+
+            // Then layout our known views in a vertical stack
+            nfloat y = 60f;
+            nfloat generalMaxHeight = 100000f;
+            y += LayoutSubviewAtYPosition (topLineView, y, 17f);
+            y += LayoutSubviewAtYPosition (whenHeadingView, y, 6f);
+            y += LayoutSubviewAtYPosition (whenLabel, y);
+            y += LayoutSubviewAtYPosition (durationLabel, y, 20f, generalMaxHeight);
+            y += LayoutSubviewAtYPosition (locationHeadingView, y, 6f);
+            y += LayoutSubviewAtYPosition (locationView, y, 20f);
+            y += LayoutSubviewAtYPosition (organizerView, y, 4f);
+            y += LayoutSubviewAtYPosition (attendeesView, y, 4f);
+            y += LayoutSubviewAtYPosition (bottomLineView, y, 20f);
+
+            preferredHeight = y;
+
+            // Finally do a little bit of layout without certain subviews
+            // Ideally the subview would be made into a class and take care of its own layout, but this works for now
+            if (!organizerView.Hidden) {
+                nfloat emailOffset = 46f;
+                if (organizerNameLabel.Text.Equals ("")) {
+                    emailOffset = (organizerView.Bounds.Height / 2) - 3;
+                }
+                if (emailOffset != organizerEmailLabel.Frame.Y) {
+                    organizerEmailLabel.Frame = new CGRect (organizerEmailLabel.Frame.X, emailOffset, organizerEmailLabel.Frame.Width, organizerEmailLabel.Frame.Height);
+                }
+            }
+        }
+
+        private nfloat LayoutSubviewAtYPosition(UIView subview, nfloat y, float padding = 0f, nfloat? maxHeight = null, float minHeight = 0f)
+        {
+            if (subview.Hidden){
+                return 0f;
+            }
+            var layoutHeight = subview.Frame.Height;
+            if (maxHeight.HasValue) {
+                layoutHeight = subview.SizeThatFits (new CGSize (durationLabel.Frame.Width, maxHeight.Value)).Height;
+            }
+            if (layoutHeight < minHeight) {
+                layoutHeight = minHeight;
+            }
+            subview.Frame = new CGRect (subview.Frame.X, y, subview.Frame.Width, layoutHeight);
+            return layoutHeight + padding;
         }
 
         UIButton acceptButton;
@@ -349,7 +420,7 @@ namespace NachoClient.iOS
             responseView.AddSubview (declineLabel);
 
             nfloat messageX = 18 + 24 + 10;
-            messageLabel = new UILabel (new CGRect (messageX, 18, viewWidth - messageX, 24));
+            messageLabel = new UILabel (new CGRect (messageX, 18, Bounds.Width - messageX, 24));
             messageLabel.TextColor = A.Color_NachoBlack;
             messageLabel.TextAlignment = UITextAlignment.Left;
             messageLabel.Font = A.Font_AvenirNextRegular12;
@@ -377,7 +448,7 @@ namespace NachoClient.iOS
         /// </summary>
         private void ShowRequestChoicesBar (bool isOnHot)
         {
-            UIView responseView = new UIView (new CGRect (0, 0, viewWidth, 60));
+            UIView responseView = new UIView (new CGRect (0, 0, Bounds.Width, 60));
             responseView.BackgroundColor = UIColor.White;
 
             CreateActionBarViews (responseView);
@@ -490,7 +561,7 @@ namespace NachoClient.iOS
         /// </summary>
         private void ShowAttendeeResponseBar ()
         {
-            UIView responseView = new UIView (new CGRect (0, 0, viewWidth, 60));
+            UIView responseView = new UIView (new CGRect (0, 0, Bounds.Width, 60));
             responseView.BackgroundColor = UIColor.Clear;
 
             CreateActionBarViews (responseView);
@@ -545,7 +616,7 @@ namespace NachoClient.iOS
         /// </summary>
         private void ShowCancellationBar (bool isOnHot)
         {
-            UIView responseView = new UIView (new CGRect (0, 0, viewWidth, 60));
+            UIView responseView = new UIView (new CGRect (0, 0, Bounds.Width, 60));
             responseView.BackgroundColor = UIColor.Clear;
 
             CreateActionBarViews (responseView);
@@ -589,7 +660,7 @@ namespace NachoClient.iOS
         /// </summary>
         private CGRect MessageFrameWithDot ()
         {
-            return new CGRect (42, 18, viewWidth - 42, 24);
+            return new CGRect (42, 18, Bounds.Width - 42, 24);
         }
 
         /// <summary>
@@ -638,6 +709,8 @@ namespace NachoClient.iOS
                 () => {
                     declineButton.Hidden = true;
                     removeFromCalendarButton.Hidden = true;
+                    // Dismiss the entire view once the animation is done.
+                    dismissView ();
                 });
 
             // Remove the item from the calendar.
@@ -667,18 +740,21 @@ namespace NachoClient.iOS
         {
             MarkSelectedButton (NcResponseType.Accepted);
             UpdateMeetingStatus (NcResponseType.Accepted);
+            dismissView ();
         }
 
         private void TentativeButtonClicked (object sender, EventArgs e)
         {
             MarkSelectedButton (NcResponseType.Tentative);
             UpdateMeetingStatus (NcResponseType.Tentative);
+            dismissView ();
         }
 
         private void DeclineButtonClicked (object sender, EventArgs e)
         {
             MarkSelectedButton (NcResponseType.Declined);
             UpdateMeetingStatus (NcResponseType.Declined);
+            dismissView ();
         }
     }
 }

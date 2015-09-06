@@ -135,7 +135,7 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)St.Start,
                         Drop = new uint[] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)SmtpEvt.E.UiSetCred,
                             (uint)SmtpEvt.E.UiSetServConf,
@@ -160,7 +160,7 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.UiCertOkW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                         },
                         Invalid = new [] {
@@ -185,7 +185,7 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.DiscW,
                         Drop = new uint[] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
@@ -210,7 +210,7 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.UiCrdW,
                         Drop = new uint[] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                         },
                         Invalid = new uint[] {
@@ -235,7 +235,7 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.UiServConfW,
                         Drop = new uint[] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                         },
                         Invalid = new uint[] {
@@ -276,7 +276,7 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoPick, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
                         }
@@ -284,7 +284,7 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.IdleW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)SmtpEvt.E.UiSetCred,
                             (uint)SmtpEvt.E.UiSetServConf,
                         },
@@ -309,7 +309,7 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.QOpW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)SmtpEvt.E.UiSetCred,
                             (uint)SmtpEvt.E.UiSetServConf,
                         },
@@ -334,7 +334,7 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.HotQOpW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)SmtpEvt.E.UiSetCred,
                             (uint)SmtpEvt.E.UiSetServConf,
                         },
@@ -362,7 +362,6 @@ namespace NachoCore.SMTP
                             (uint)PcEvt.E.Park,
                         },
                         Invalid = new uint[] {
-                            (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmtpEvt.E.AuthFail,
@@ -372,7 +371,8 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.GetServConf,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
                             new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
@@ -389,8 +389,6 @@ namespace NachoCore.SMTP
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             //SyncStrategy = new SmtpStrategy (this);
             //PushAssist = new PushAssist (this);
-            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
 
         public override void ForceStop ()
@@ -406,8 +404,6 @@ namespace NachoCore.SMTP
                 Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
             }
             // TODO cleanup stuff on disk like for wipe.
-            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             base.Remove ();
         }
 
@@ -459,8 +455,8 @@ namespace NachoCore.SMTP
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
             BackEndStatePreset = BackEndStateEnum.Running;
-            var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
-            cmd.Execute (Sm);
+            SetCmd (new SmtpDiscoveryCommand (this, SmtpClient));
+            ExecuteCmd ();
         }
 
         private int DiscoveryRetries = 0;
@@ -523,8 +519,8 @@ namespace NachoCore.SMTP
         private void DoConn ()
         {
             DiscoveryRetries = 0;
-            var cmd = new SmtpAuthenticateCommand(this, SmtpClient);
-            cmd.Execute (Sm);
+            SetCmd (new SmtpAuthenticateCommand (this, SmtpClient));
+            ExecuteCmd ();
         }
 
         private void CancelCmd ()
@@ -600,9 +596,9 @@ namespace NachoCore.SMTP
             // pending that aren't allowed to be delayed.
             SetCmd (null);
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            lock (SmtpClient.SyncRoot) {
-                SmtpClient.Disconnect (true);
-            }
+
+            var disconnect = new SmtpDisconnectCommand (this, SmtpClient);
+            disconnect.Execute (this.Sm);
         }
 
         private void DoDrive ()
@@ -646,38 +642,6 @@ namespace NachoCore.SMTP
                 ResolveDoNotDelayAsHardFail ();
             }
             LastIsDoNotDelayOk = IsDoNotDelayOk;
-        }
-
-        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
-        {
-            if (e.ServerId == Server.Id) {
-                switch (e.Quality) {
-                case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_SMTP, "Server {0} communication quality OK.", Server.Host);
-                    Execute ();
-                    break;
-
-                default:
-                case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_SMTP, "Server {0} communication quality degraded.", Server.Host);
-                    break;
-
-                case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_SMTP, "Server {0} communication quality unusable.", Server.Host);
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
-                    break;
-                }
-            }
-        }
-
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
-        {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                Execute ();
-            } else {
-                // The "Down" case.
-                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
-            }
         }
 
         #region ValidateConfig

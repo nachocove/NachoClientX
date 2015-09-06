@@ -20,7 +20,7 @@ namespace NachoCore.IMAP
         {
             // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
             // for more inspiration
-            IdleFolder = McFolder.GetDefaultInboxFolder(BEContext.Account.Id);
+            IdleFolder = McFolder.GetDefaultInboxFolder(AccountId);
             NcAssert.NotNull (IdleFolder);
             RedactProtocolLogFunc = RedactProtocolLog;
         }
@@ -41,7 +41,7 @@ namespace NachoCore.IMAP
             if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
             }
-            if (ENABLED && Client.Capabilities.HasFlag (ImapCapabilities.Idle)) {
+            if (ENABLED && Client.Capabilities.HasFlag (ImapCapabilities.Idle) && !IsComcast (BEContext.Server)) {
                 IdleIdle(mailKitFolder, done);
             } else {
                 NoopIdle(mailKitFolder, done);
@@ -53,8 +53,13 @@ namespace NachoCore.IMAP
             if (mailDeleted) {
                 Log.Info (Log.LOG_IMAP, "{0}: Mail Deleted during idle", IdleFolder.ImapFolderNameRedacted ());
             }
-            mailKitFolder.Close (false, Cts.Token); // close and then reopen to pull in the latest values
-            mailKitFolder = GetOpenMailkitFolder (IdleFolder);
+            mailKitFolder.Status (
+                StatusItems.Count |
+                StatusItems.Recent |
+                StatusItems.UidValidity |
+                StatusItems.UidNext |
+                StatusItems.HighestModSeq |
+                StatusItems.Unread);
             UpdateImapSetting (mailKitFolder, ref IdleFolder);
             if (mailArrived || mailDeleted || needResync) {
                 if (!GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
@@ -96,7 +101,7 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "{0}: flags for message {1} have changed to: {2}.",
                         IdleFolder.ImapFolderNameRedacted (), e.UniqueId, e.Flags);
                     McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (
-                        BEContext.Account.Id,
+                        AccountId,
                         ImapProtoControl.MessageServerId (IdleFolder, e.UniqueId.Value));
                     if (null != emailMessage) {
                         if (emailMessage.IsRead != e.Flags.HasFlag (MessageFlags.Seen)) {

@@ -144,7 +144,6 @@ namespace NachoCore.ActiveSync
              * State Machine design:
              * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
              * * ForceStop can happen at any time, and must Cancel anything that is going on immediately.
-             * * ForceSync can happen at any time, and must Cancel anything that is going on immediately and initiate Sync.
              * * Objects can be added to the McPending Q at any time.
              * * All other events must come from the orderly completion of commands or internal forced transitions.
              * 
@@ -166,7 +165,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)St.Start,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiSetCred,
@@ -195,7 +194,7 @@ namespace NachoCore.ActiveSync
                         // There is no HardFail. Can't pass DiscW w/out a working server - period.
                         State = (uint)Lst.DiscW, 
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -239,7 +238,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.UiDCrdW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -271,7 +270,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.UiPCrdW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -302,7 +301,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.UiServConfW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiSetCred,
@@ -334,7 +333,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.UiCertOkW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiSetCred,
@@ -370,7 +369,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.OptW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -398,7 +397,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.ProvW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -426,7 +425,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.SettingsW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -455,7 +454,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.FSyncW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
@@ -483,7 +482,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.FSync2W,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -511,7 +510,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.SyncW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -553,7 +552,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, ActSetsState = true },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoPick, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -567,7 +566,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.QOpW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -595,7 +594,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.HotQOpW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -623,7 +622,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.FetchW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -666,7 +665,7 @@ namespace NachoCore.ActiveSync
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, ActSetsState = true },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoPick, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -679,7 +678,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.Parked,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)PcEvt.E.Park,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -711,8 +710,6 @@ namespace NachoCore.ActiveSync
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new AsStrategy (this);
             PushAssist = new PushAssist (this);
-            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
             NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
@@ -722,8 +719,6 @@ namespace NachoCore.ActiveSync
                 Log.Warn (Log.LOG_IMAP, "AsProtoControl.Remove called while state is {0}", Sm.State);
             }
             // TODO cleanup stuff on disk like for wipe.
-            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
-            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();
@@ -946,7 +941,7 @@ namespace NachoCore.ActiveSync
                             new Node {
                                 State = (uint)St.Start,
                                 Invalid = new [] {
-                                    (uint)NcProtoControl.PcEvt.E.PendQ,
+                                    (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                                     (uint)NcProtoControl.PcEvt.E.PendQHot,
                                     (uint)NcProtoControl.PcEvt.E.Park,
                                 },
@@ -1159,42 +1154,6 @@ namespace NachoCore.ActiveSync
             if (null != Validator) {
                 Validator.Cancel ();
                 Validator = null;
-            }
-        }
-
-        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
-        {
-            if (null == Server) {
-                // This can happen when we're in AUTO-D and another account's server goes sideways.
-                return;
-            }
-            if (e.ServerId == Server.Id) {
-                switch (e.Quality) {
-                case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality OK.", Server.Host);
-                    Execute ();
-                    break;
-
-                default:
-                case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality degraded.", Server.Host);
-                    break;
-
-                case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality unusable.", Server.Host);
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
-                    break;
-                }
-            }
-        }
-
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
-        {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                Execute ();
-            } else {
-                // The "Down" case.
-                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
             }
         }
 

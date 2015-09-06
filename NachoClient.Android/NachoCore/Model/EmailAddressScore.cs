@@ -136,13 +136,21 @@ namespace NachoCore.Model
         public void IncrementEmailsRead (int count = 1)
         {
             ScoreStates.EmailsRead += count;
-            MarkDependencies (NcEmailAddress.Kind.From);
+            if (ScoreStates.CheckStatistics ("IncrementEmailsRead")) {
+                MarkDependencies (NcEmailAddress.Kind.From);
+            } else {
+                ScoreStates.EmailsRead -= count;
+            }
         }
 
         public void IncrementEmailsReplied (int count = 1)
         {
             ScoreStates.EmailsReplied += count;
-            MarkDependencies (NcEmailAddress.Kind.From);
+            if (ScoreStates.CheckStatistics ("IncrementEmailsReplied")) {
+                MarkDependencies (NcEmailAddress.Kind.From);
+            } else {
+                ScoreStates.EmailsReplied -= count;
+            }
         }
 
         public void IncrementEmailsArchived (int count = 1)
@@ -176,16 +184,24 @@ namespace NachoCore.Model
         public void IncrementToEmailsRead (int count = 1, bool markDependencies = true)
         {
             ScoreStates.ToEmailsRead += count;
-            if (markDependencies) {
-                MarkDependencies (NcEmailAddress.Kind.To);
+            if (ScoreStates.CheckToStatistics ("IncrementToEmailsRead")) {
+                if (markDependencies) {
+                    MarkDependencies (NcEmailAddress.Kind.To);
+                }
+            } else {
+                ScoreStates.ToEmailsRead -= count;
             }
         }
 
         public void IncrementToEmailsReplied (int count = 1, bool markDependencies = true)
         {
             ScoreStates.ToEmailsReplied += count;
-            if (markDependencies) {
-                MarkDependencies (NcEmailAddress.Kind.To);
+            if (ScoreStates.CheckToStatistics ("IncrementToEmailsReplied")) {
+                if (markDependencies) {
+                    MarkDependencies (NcEmailAddress.Kind.To);
+                }
+            } else {
+                ScoreStates.ToEmailsReplied -= count;
             }
         }
 
@@ -217,16 +233,24 @@ namespace NachoCore.Model
         public void IncrementCcEmailsRead (int count = 1, bool markDependencies = true)
         {
             ScoreStates.CcEmailsRead += count;
-            if (markDependencies) {
-                MarkDependencies (NcEmailAddress.Kind.Cc);
+            if (ScoreStates.CheckCcStatistics ("IncrementCcEmailsRead")) {
+                if (markDependencies) {
+                    MarkDependencies (NcEmailAddress.Kind.Cc);
+                }
+            } else {
+                ScoreStates.CcEmailsRead -= count;
             }
         }
 
         public void IncrementCcEmailsReplied (int count = 1, bool markDependencies = true)
         {
             ScoreStates.CcEmailsReplied += count;
-            if (markDependencies) {
-                MarkDependencies (NcEmailAddress.Kind.Cc);
+            if (ScoreStates.CheckCcStatistics ("IncrementCcEmailsReplied")) {
+                if (markDependencies) {
+                    MarkDependencies (NcEmailAddress.Kind.Cc);
+                }
+            } else {
+                ScoreStates.CcEmailsReplied -= count;
             }
         }
 

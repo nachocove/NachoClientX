@@ -10,6 +10,8 @@ namespace NachoCore
 {
     public class NcCommand : INcCommand
     {
+        protected const int KLockTimeout = 10000;
+
         protected IBEContext BEContext;
         protected CancellationTokenSource Cts { get; set; }
         // PendingSingle is for commands that process 1-at-a-time. Pending list is for N-at-a-time commands.
@@ -31,6 +33,12 @@ namespace NachoCore
             CannotConnectToServer,
             CannotFindServer
         };
+
+        protected enum ResolveAction {
+            None,
+            DeferAll,
+            FailAll,
+        }
 
         public NcCommand (IBEContext beContext)
         {
@@ -108,6 +116,35 @@ namespace NachoCore
                 if (null != FailureInd) {
                     BEContext.Owner.StatusInd (BEContext.ProtoControl, FailureInd);
                 }
+            }
+        }
+
+        public class CommandLockTimeOutException : Exception
+        {
+            public CommandLockTimeOutException (string message) : base(message)
+            {
+
+            }
+        }
+
+        public static Event TryLock (object lockObj, int timeout, Func<Event> func = null)
+        {
+            if (Monitor.TryEnter(lockObj, timeout))
+            {
+                try
+                {
+                    if (null != func) {
+                        return func();
+                    } else {
+                        return null;
+                    }
+                }
+                finally
+                {
+                    Monitor.Exit(lockObj);
+                }
+            } else {
+                throw new CommandLockTimeOutException (string.Format ("Could not acquire lock object after {0:n0}ms", timeout));
             }
         }
     }

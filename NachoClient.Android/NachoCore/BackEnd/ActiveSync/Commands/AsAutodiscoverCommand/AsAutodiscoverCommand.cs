@@ -125,7 +125,7 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail, 
                             (uint)SmEvt.E.HardFail, 
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, 
@@ -150,7 +150,7 @@ namespace NachoCore.ActiveSync
                     new Node {State = (uint)Lst.RobotW,
                         Invalid = new [] {
                             (uint)SmEvt.E.TempFail,
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, 
@@ -211,7 +211,7 @@ namespace NachoCore.ActiveSync
                     new Node {State = (uint)Lst.AskW,
                         Invalid = new [] {
                             (uint)SmEvt.E.TempFail,
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, 
@@ -260,7 +260,7 @@ namespace NachoCore.ActiveSync
                     new Node {State = (uint)Lst.TestW1,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
                         Invalid = new [] {
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SharedEvt.E.ReStart,
@@ -327,7 +327,7 @@ namespace NachoCore.ActiveSync
                     new Node {State = (uint)Lst.TestW2,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
                         Invalid = new [] {
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SharedEvt.E.ReStart,
@@ -397,7 +397,7 @@ namespace NachoCore.ActiveSync
                         Invalid = new [] {
                             (uint)SmEvt.E.Success, 
                             (uint)SmEvt.E.TempFail, 
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, 
@@ -437,7 +437,7 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, 
@@ -467,7 +467,7 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.Success, 
                             (uint)SmEvt.E.HardFail,
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc,
@@ -497,7 +497,7 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success, 
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc,
@@ -530,7 +530,104 @@ namespace NachoCore.ActiveSync
             case "live.com":
             case "hotmail.com":
             case "msn.com":
-                return McServer.HotMail_Host;
+            case "outlook.sa":
+            case "hotmail.com.ar":
+            case "outlook.com.ar":
+            case "live.com.ar":
+            case "hotmail.com.au":
+            case "outlook.com.au":
+            case "live.com.au":
+            case "windowslive.com":
+            case "outlook.at":
+            case "live.at":
+            case "hotmail.be":
+            case "outlook.be":
+            case "live.be":
+            case "hotmail.com.br":
+            case "outlook.com.br":
+            case "hotmail.ca":
+            case "live.ca":
+            case "hotmail.cz":
+            case "outlook.cz":
+            case "hotmail.cl":
+            case "outlook.cl":
+            case "live.cl":
+            case "live.cn":
+            case "hotmail.dk":
+            case "outlook.dk":
+            case "live.dk":
+            case "hotmail.fi":
+            case "live.fi":
+            case "hotmail.fr":
+            case "outlook.fr":
+            case "live.fr":
+            case "hotmail.gr":
+            case "outlook.com.gr":
+            case "hotmail.de":
+            case "outlook.de":
+            case "live.de":
+            case "hotmail.com.hk":
+            case "live.hk":
+            case "hotmail.hu":
+            case "outlook.hu":
+            case "hotmail.co.in":
+            case "outlook.in":
+            case "live.in":
+            case "hotmail.co.id":
+            case "outlook.co.id":
+            case "outlook.ie":
+            case "live.ie":
+            case "hotmail.co.il":
+            case "outlook.co.il":
+            case "hotmail.it":
+            case "outlook.it":
+            case "live.it":
+            case "hotmail.co.jp":
+            case "outlook.jp":
+            case "live.jp":
+            case "hotmail.co.kr":
+            case "outlook.kr":
+            case "live.co.kr":
+            case "hotmail.lv":
+            case "outlook.lv":
+            case "hotmail.lt":
+            case "hotmail.my":
+            case "outlook.my":
+            case "live.com.my":
+            case "live.com.mx":
+            case "hotmail.nl":
+            case "live.nl":
+            case "hotmail.no":
+            case "live.no":
+            case "hotmail.ph":
+            case "outlook.ph":
+            case "live.com.ph":
+            case "outlook.pt":
+            case "live.com.pt":
+            case "live.ru":
+            case "hotmail.rs":
+            case "hotmail.sg":
+            case "outlook.sg":
+            case "live.com.sg":
+            case "hotmail.sk":
+            case "outlook.sk":
+            case "hotmail.co.za":
+            case "live.co.za":
+            case "hotmail.es":
+            case "outlook.es":
+            case "hotmail.se":
+            case "live.se":
+            case "hotmail.com.tw":
+            case "livemail.tw":
+            case "hotmail.co.th":
+            case "outlook.co.th":
+            case "hotmail.com.tr":
+            case "outlook.com.tr":
+            case "hotmail.com.vn":
+            case "outlook.com.vn":
+            case "hotmail.co.uk":
+            case "live.co.uk":
+                return McServer.AS_HotMail_Host;
             }
             return null;
         }
@@ -546,6 +643,7 @@ namespace NachoCore.ActiveSync
                 var server = new McServer () {
                     AccountId = Account.Id,
                     Capabilities = McAccount.ActiveSyncCapabilities,
+                    IsHardWired = true,
                     Host = known,
                 };
                 server.Insert ();
@@ -829,7 +927,7 @@ namespace NachoCore.ActiveSync
                 MaxTries = 2,
             };
             // HotMail/GMail doesn't WWW-Authenticate on OPTIONS.
-            Sm.State = (ServerCandidate.HostIsGMail () || ServerCandidate.HostIsHotMail ())
+            Sm.State = (ServerCandidate.HostIsAsGMail () || ServerCandidate.HostIsAsHotMail ())
                 ? (uint)Lst.TestW2 : (uint)Lst.TestW1;
 
             TestCmd.Execute (Sm);
@@ -849,6 +947,11 @@ namespace NachoCore.ActiveSync
             var robot = (StepRobot)Sm.Arg;
             NcAssert.NotNull (robot);
             ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, robot.SrServerUri);
+            if (ServerCandidate.HostIsAsGMail ()) {
+                // Robot can do this because of MX record. Not that if the user had entered this value, we would 
+                // not want IsHardWired to be true.
+                ServerCandidate.IsHardWired = true;
+            }
             // Must shut down any remaining robots so they don't post events to TL SM.
             KillAllRobots ();
             // Must clear event Q for TL SM of anything a robot may have posted (threads).
@@ -864,7 +967,8 @@ namespace NachoCore.ActiveSync
         {
             AutoDSucceeded = false;
             ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, 
-                McServer.BaseUriForHost (McServer.GMail_Host));
+                McServer.BaseUriForHost (McServer.AS_GMail_Host));
+            ServerCandidate.IsHardWired = true;
             DoTest ();
         }
 

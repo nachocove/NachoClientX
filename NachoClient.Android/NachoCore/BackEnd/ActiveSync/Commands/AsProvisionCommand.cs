@@ -48,7 +48,7 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc,
@@ -64,7 +64,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.GetWait,
                         Invalid = new [] {
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                         },
@@ -99,7 +99,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.AckWait,
                         Invalid = new [] {
-                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                         },

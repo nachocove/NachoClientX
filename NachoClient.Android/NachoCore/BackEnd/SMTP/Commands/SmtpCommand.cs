@@ -7,11 +7,14 @@ using MailKit;
 using System.IO;
 using System.Net.Sockets;
 using MailKit.Net.Smtp;
+using NachoCore.IMAP;
+using NachoCore.Model;
 
 namespace NachoCore.SMTP
 {
     public abstract class SmtpCommand : NcCommand
     {
+        protected int AccountId { get; set; }
         public NcSmtpClient Client { get; set; }
 
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
@@ -20,6 +23,7 @@ namespace NachoCore.SMTP
         {
             Client = smtpClient;
             RedactProtocolLogFunc = null;
+            AccountId = BEContext.Account.Id;
         }
 
         // MUST be overridden by subclass.
@@ -32,20 +36,25 @@ namespace NachoCore.SMTP
         public override void Cancel ()
         {
             base.Cancel ();
-            lock (Client.SyncRoot) {
+            if (!BEContext.ProtoControl.ForceStopped) {
+                try {
+                    TryLock (Client.SyncRoot, KLockTimeout);
+                } catch (CommandLockTimeOutException ex) {
+                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, AccountId, ex.Message);
+                }
             }
         }
 
         public virtual Event ExecuteConnectAndAuthEvent ()
         {
-            lock (Client.SyncRoot) {
+            Cts.Token.ThrowIfCancellationRequested ();
+            return TryLock (Client.SyncRoot, KLockTimeout, () => {
                 try {
                     if (null != Client.MailKitProtocolLogger && null != RedactProtocolLogFunc) {
                         Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
                     }
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        var authy = new SmtpAuthenticateCommand (BEContext, Client);
-                        authy.ConnectAndAuthenticate ();
+                        ConnectAndAuthenticate ();
                     }
                     if (null != Client.MailKitProtocolLogger) {
                         Client.MailKitProtocolLogger.ResetBuffers ();
@@ -56,69 +65,133 @@ namespace NachoCore.SMTP
                         ProtocolLoggerStopAndLog ();
                     }
                 }
-            }
+            });
         }
 
         public override void Execute (NcStateMachine sm)
         {
             var cmdname = this.GetType ().Name;
             NcTask.Run (() => {
-                Log.Info (Log.LOG_SMTP, "{0}({1}): Started", cmdname, BEContext.Account.Id);
+                Event evt;
+                Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
+
+                Log.Info (Log.LOG_SMTP, "{0}({1}): Started", cmdname, AccountId);
                 try {
-                    Event evt = ExecuteConnectAndAuthEvent ();
+                    evt = ExecuteConnectAndAuthEvent ();
                     // In the no-exception case, ExecuteCommand is resolving McPending.
-                    sm.PostEvent (evt);
-                } catch (SocketException ex) {
-                    Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", cmdname, ex.Message);
-                    ResolveAllFailed (NcResult.WhyEnum.InvalidDest);
-                    var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
-                    errResult.Message = ex.Message;
-                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                    Cts.Token.ThrowIfCancellationRequested ();
                 } catch (OperationCanceledException) {
                     Log.Info (Log.LOG_SMTP, "{0}: OperationCanceledException", cmdname);
                     ResolveAllDeferred ();
                     // No event posted to SM if cancelled.
+                    return;
+                } catch (SocketException ex) {
+                    Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", cmdname, ex.Message);
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.InvalidDest);
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
                 } catch (ServiceNotConnectedException) {
                     // FIXME - this needs to feed into NcCommStatus, not loop forever.
                     Log.Info (Log.LOG_SMTP, "{0}: ServiceNotConnectedException", cmdname);
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.ReDisc, "SMTPCONN");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.ReDisc, "SMTPCONN");
                 } catch (AuthenticationException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: AuthenticationException: {1}", cmdname, ex.Message);
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH1");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH1");
                 } catch (ServiceNotAuthenticatedException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: ServiceNotAuthenticatedException: {1}", cmdname, ex.Message);
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH2");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH2");
                 } catch (SmtpProtocolException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: SmtpProtocolException: {1}", cmdname, ex.Message);
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)SmEvt.E.TempFail, "SMTPPROTOEX");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPPROTOEX");
                 } catch (SmtpCommandException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: SmtpCommandException: {1}", cmdname, ex.Message);
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)SmEvt.E.TempFail, "SMTPCMDEX");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCMDEX");
                 } catch (InvalidOperationException ex) {
                     Log.Error (Log.LOG_SMTP, "{0}: InvalidOperationException: {1}", cmdname, ex.Message);
-                    ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPHARD1");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPHARD1");
                 } catch (FormatException ex) {
                     Log.Error (Log.LOG_SMTP, "FormatException: {0}", ex.ToString ());
-                    ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPFORMATHARD");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPFORMATHARD");
                 } catch (IOException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: IOException: {1}", cmdname, ex.ToString ());
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)SmEvt.E.TempFail, "SMTPIO");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPIO");
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_SMTP, "{0}: Exception : {1}", cmdname, ex.ToString ());
-                    ResolveAllFailed (NcResult.WhyEnum.Unknown);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPHARD2");
-                } finally {
-                    Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", cmdname, BEContext.Account.Id);
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPHARD2");
                 }
+
+                if (Cts.Token.IsCancellationRequested) {
+                    Log.Info (Log.LOG_SMTP, "{0}({1}): Cancelled", cmdname, AccountId);
+                    return;
+                }
+                Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", cmdname, AccountId);
+                switch (action.Item1) {
+                case ResolveAction.None:
+                    break;
+                case ResolveAction.DeferAll:
+                    ResolveAllDeferred ();
+                    break;
+                case ResolveAction.FailAll:
+                    ResolveAllFailed (action.Item2);
+                    break;
+                }
+                sm.PostEvent (evt);
             }, cmdname);
+        }
+
+        public void ConnectAndAuthenticate ()
+        {
+            ImapDiscoverCommand.guessServiceType (BEContext);
+
+            if (!Client.IsConnected) {
+                //client.ClientCertificates = new X509CertificateCollection ();
+                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
+                Cts.Token.ThrowIfCancellationRequested ();
+            }
+            if (!Client.IsAuthenticated) {
+                ImapDiscoverCommand.possiblyFixUsername (BEContext);
+                RedactProtocolLogFuncDel RestartLog = null;
+                if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
+                    ProtocolLoggerStopAndLog ();
+                    RestartLog = Client.MailKitProtocolLogger.RedactProtocolLogFunc;
+                }
+
+                string username = BEContext.Cred.Username;
+                string cred;
+                if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => !m.Contains ("XOAUTH2"));
+                    cred = BEContext.Cred.GetAccessToken ();
+                } else {
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => m.Contains ("XOAUTH"));
+                    cred = BEContext.Cred.GetPassword ();
+                }
+
+                Cts.Token.ThrowIfCancellationRequested ();
+                try {
+                    Client.Authenticate (username, cred, Cts.Token);
+                } catch (SmtpProtocolException e) {
+                    Log.Info (Log.LOG_SMTP, "Protocol Error during auth: {0}", e);
+                    if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.iCloud) {
+                        // some servers (icloud.com) seem to close the connection on a bad password/username.
+                        throw new AuthenticationException (e.Message);
+                    } else {
+                        throw;
+                    }
+                }
+
+                Log.Info (Log.LOG_SMTP, "SMTP Server {0}:{1} capabilities: {2}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString ());
+                if (null != Client.MailKitProtocolLogger && null != RestartLog) {
+                    Client.MailKitProtocolLogger.Start (RestartLog);
+                }
+            }
         }
 
         protected void ProtocolLoggerStopAndLog ()

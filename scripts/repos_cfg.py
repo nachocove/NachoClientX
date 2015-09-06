@@ -23,6 +23,7 @@ repos = (
     'Google.iOS',
     'Xamarin.Auth',
     'Portable.Text.Encoding',
+    'JetBlack.Caching',
     # This is always the last one
     'NachoClientX'
 )

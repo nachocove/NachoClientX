@@ -48,7 +48,6 @@ namespace NachoCore.IMAP
                         if (UpdateImapSetting (mailKitFolder, ref folder)) {
                             // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
                             // Strategy will notice that modseq and/or noselect etc has changed, and resync.
-                            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: {0}:{1} imap settings changed", debugTag, folder.ImapFolderNameRedacted ());
                         }
                     }
                     foldernames.Add (mailKitFolder.FullName);
@@ -91,7 +90,6 @@ namespace NachoCore.IMAP
             bool haveNotes = false;
 
             // First, look for the Inbox
-            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for inbox");
             added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "Inbox", mailKitFolder => {
                 if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Inbox) || Client.Inbox == mailKitFolder) {
                     return Tuple.Create<ActiveSync.Xml.FolderHierarchy.TypeCode, string, bool> (ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2, mailKitFolder.Name, true);
@@ -101,7 +99,6 @@ namespace NachoCore.IMAP
 
             if (protocolState.ImapSyncRung > 0) {
                 // Then, look for all 'directory' (hasChildren) folders.
-                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Folders with Children");
                 added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "Dir Folder", mailKitFolder => {
                     if (mailKitFolder.Attributes.HasFlag (FolderAttributes.HasChildren)) {
                         return Tuple.Create<ActiveSync.Xml.FolderHierarchy.TypeCode, string, bool> (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
@@ -110,7 +107,6 @@ namespace NachoCore.IMAP
                 });
 
                 // second, look for some folders we don't want to misidentify
-                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Special Folders");
                 added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "Special Folder", mailKitFolder => {
                     ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
                     bool isDistinguished;
@@ -133,7 +129,6 @@ namespace NachoCore.IMAP
                 });
 
                 // look again and process the rest.
-                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for General Folders");
                 added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "General Folder", mailKitFolder => {
                     ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
                     bool isDistinguished;
@@ -178,8 +173,7 @@ namespace NachoCore.IMAP
                 }
 
                 // Compare the incoming folders to the ones we know about. Delete any that disappeared.
-                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Deleted Folders");
-                foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
+                foreach (var folder in McFolder.QueryByIsClientOwned (AccountId, false)) {
                     Cts.Token.ThrowIfCancellationRequested ();
                     if (!foldernames.Contains (folder.ServerId)) {
                         Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Deleting folder {0} due to disappearance from server", folder.ImapFolderNameRedacted ());
@@ -191,7 +185,6 @@ namespace NachoCore.IMAP
                 }
             }
             Finish (added_or_changed, ref protocolState);
-            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Done");
             return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
         }
 
