@@ -85,7 +85,8 @@ namespace NachoCore.Utils
 
         public class PerAccountFetchHints
         {
-            public class Hint {
+            public class Hint
+            {
                 public int Id;
                 public int Priority;
 
