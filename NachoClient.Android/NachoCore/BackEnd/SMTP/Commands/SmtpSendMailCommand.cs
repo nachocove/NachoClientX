@@ -22,23 +22,12 @@ namespace NachoCore.SMTP
 
         protected virtual MimeMessage CreateMimeMessage()
         {
-            // TODO Deal with memory issues, i.e. don't read everything into memory
             long length;
-            var BodyParser = new MimeParser (EmailMessage.ToMime (out length), true);
-            MimeMessage message = BodyParser.ParseMessage ();
             switch (PendingSingle.Operation) {
             case McPending.Operations.EmailForward:
             case McPending.Operations.EmailReply:
                 if (!PendingSingle.Smart_OriginalEmailIsEmbedded) {
-                    McEmailMessage referencedEmail = McEmailMessage.QueryByServerId<McEmailMessage> (EmailMessage.AccountId, PendingSingle.ServerId);
-                    var ReferencedParser = new MimeParser (referencedEmail.ToMime (out length), true);
-                    MimeMessage referencedMime = ReferencedParser.ParseMessage ();
-                    Multipart mixed = new Multipart ("mixed");
-                    if (null != message.Body) {
-                        mixed.Add (message.Body);
-                    }
-                    mixed.Add (new MessagePart { Message = referencedMime});
-                    message.Body = mixed;
+                    EmailMessage = EmailMessage.ConvertToRegularSend ();
                 }
                 break;
 
@@ -49,6 +38,8 @@ namespace NachoCore.SMTP
                 NcAssert.CaseError (string.Format ("Unknown McPending.Operations: {0}", PendingSingle.Operation));
                 break;
             }
+            var BodyParser = new MimeParser (EmailMessage.ToMime (out length), true);
+            MimeMessage message = BodyParser.ParseMessage ();
             return message;
         }
 

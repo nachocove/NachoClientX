@@ -357,17 +357,17 @@ namespace NachoCore.Model
             });
         }
 
-        public void ConvertToRegularSend ()
+        public McEmailMessage ConvertToRegularSend ()
         {
             if (ReferencedEmailId == 0 ||
                 (ReferencedBodyIsIncluded && (!ReferencedIsForward || !WaitingForAttachmentsToDownload))) {
                 // No conversion necessary.
-                return;
+                return this;
             }
             var originalMessage = McEmailMessage.QueryById<McEmailMessage> (ReferencedEmailId);
             if (null == originalMessage) {
                 // Original message no longer exists.  There is nothing we can do.
-                return;
+                return this;
             }
             var body = McBody.QueryById<McBody> (BodyId);
             var outgoingMime = MimeHelpers.LoadMessage (body);
@@ -386,7 +386,7 @@ namespace NachoCore.Model
             body.UpdateData ((FileStream stream) => {
                 outgoingMime.WriteTo (stream);
             });
-            UpdateWithOCApply<McEmailMessage> ((record) => {
+            return UpdateWithOCApply<McEmailMessage> ((record) => {
                 var target = (McEmailMessage)record;
                 target.ReferencedEmailId = 0;
                 target.ReferencedBodyIsIncluded = false;
