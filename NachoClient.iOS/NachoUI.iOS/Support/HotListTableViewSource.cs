@@ -666,12 +666,15 @@ namespace NachoClient.iOS
         {
             var tableView = (UITableView)scrollView;
             var index = cardIndexAtScrollStart;
+            var startCardOffset = OffsetForCardIndex (tableView, index);
             if (velocity.Y > 0) {
                 index += 1;
             } else if (velocity.Y < 0) {
                 index -= 1;
-            } else {
-                index = CardIndexNearestOffset (tableView, scrollView.ContentOffset);
+            } else if (scrollView.ContentOffset.Y > startCardOffset.Y + 25.0) {
+                index += 1;
+            } else if (scrollView.ContentOffset.Y < startCardOffset.Y - 25.0) {
+                index -= 1;
             }
             var offset = OffsetForCardIndex (tableView, index);
             targetContentOffset.Y = offset.Y;
