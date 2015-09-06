@@ -101,7 +101,7 @@ namespace Test.iOS
                     new Node {State = (uint)St.Start,
                         On = new [] {
                             new Trans { 
-                                Event = (uint)NcProtoControl.PcEvt.E.PendQ, 
+                                Event = (uint)NcProtoControl.PcEvt.E.PendQOrHint, 
                                 Act = delegate () {
                                     // DoPick happens here in AsProtoControl
                                     // Stop the operation here: We don't need to go any further (item has already been added to pending queue)

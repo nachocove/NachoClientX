@@ -1628,6 +1628,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration42.cs">
       <Link>NachoCore\Model\Migration\NcMigration42.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcPreFetchHints.cs">
+      <Link>NachoCore\BackEnd\NcPreFetchHints.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

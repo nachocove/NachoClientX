@@ -166,6 +166,7 @@ namespace NachoCore.IMAP
         SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McPending pending);
         SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync);
 
-        FetchKit GenFetchKit (int accountId);
+        FetchKit GenFetchKit ();
+        FetchKit GenFetchKitHints ();
     }
 }
