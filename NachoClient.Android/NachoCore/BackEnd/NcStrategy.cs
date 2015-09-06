@@ -39,8 +39,15 @@ namespace NachoCore
                 var hints = BackEnd.Instance.BodyFetchHints.GetHints (AccountId, count);
                 foreach (var id in hints) {
                     var email = McEmailMessage.QueryById<McEmailMessage> (id);
-                    if (null != email && 0 == email.BodyId) {
-                        EmailList.Add (email);
+                    if (null != email) {
+                        if (0 == email.BodyId) {
+                            EmailList.Add (email);
+                        } else {
+                            var body = McBody.QueryById<McBody> (email.BodyId);
+                            if (body.FilePresence != McAbstrFileDesc.FilePresenceEnum.Complete) {
+                                EmailList.Add (email);
+                            }
+                        }
                     }
                 }
             }
