@@ -1,11 +1,10 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using NachoCore.Model;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Collections.Generic;
-using System.Collections;
+using JetBlack.Caching.Collections.Generic;
 
 namespace NachoCore.Utils
 {
@@ -97,13 +96,13 @@ namespace NachoCore.Utils
                 }
             }
 
-            readonly NcCircularBuffer<Hint> AccountHints;
+            readonly CircularBuffer<Hint> AccountHints;
             int HintCounter;
             public int OverrunCounter { get; protected set; }
 
             public PerAccountFetchHints (int maxSize)
             {
-                AccountHints = new NcCircularBuffer<Hint> (maxSize);
+                AccountHints = new CircularBuffer<Hint> (maxSize);
                 HintCounter = 0;
             }
 

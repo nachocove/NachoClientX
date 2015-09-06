@@ -1625,14 +1625,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TestMode.cs">
       <Link>NachoCore\Utils\TestMode.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcPreFetchHints.cs">
-      <Link>NachoCore\Utils\NcPreFetchHints.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcCircularBuffer.cs">
-      <Link>NachoCore\Utils\NcCircularBuffer.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration42.cs">
       <Link>NachoCore\Model\Migration\NcMigration42.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcPreFetchHints.cs">
+      <Link>NachoCore\BackEnd\NcPreFetchHints.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
