@@ -142,7 +142,6 @@
     <Compile Include="McEmailAddressTest.cs" />
     <Compile Include="ImapBodyDownloadTests.cs" />
     <Compile Include="NcPreFetchHintsTest.cs" />
-    <Compile Include="NcCircularBufferTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

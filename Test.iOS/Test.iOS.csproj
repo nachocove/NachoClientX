@@ -332,9 +332,6 @@
     <Compile Include="..\Test.Android\NcPreFetchHintsTest.cs">
       <Link>NcPreFetchHintsTest.cs</Link>
     </Compile>
-    <Compile Include="..\Test.Android\NcCircularBufferTests.cs">
-      <Link>NcCircularBufferTests.cs</Link>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

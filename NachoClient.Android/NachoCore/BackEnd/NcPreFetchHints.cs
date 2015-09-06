@@ -120,6 +120,19 @@ namespace NachoCore.Utils
                     }
 
                     // We didn't find an item on the list. Add it.
+                    if (AccountHints.Count == AccountHints.Capacity) {
+                        // need to remove the lowest priority element
+                        int lowestPrioIdx = -1;
+                        for (var i = 0; i<AccountHints.Count; i++) {
+                            if (lowestPrioIdx < 0 || AccountHints[lowestPrioIdx].Priority > AccountHints[i].Priority) {
+                                lowestPrioIdx = i;
+                            }
+                        }
+                        if (lowestPrioIdx >= 0) {
+                            AccountHints.RemoveAt (lowestPrioIdx);
+                        }
+                    }
+                    NcAssert.True (AccountHints.Count < AccountHints.Capacity);
                     if (null != AccountHints.Enqueue (new Hint (Id, HintCounter))) {
                         OverrunCounter++;
                     }
@@ -138,6 +151,8 @@ namespace NachoCore.Utils
                         hintList.Add (h.Id);
                         var idx = AccountHints.IndexOf (h);
                         if (idx >= 0) {
+                            // NOTE: This is an O(n) operation, since elements will get moved to
+                            // possibly fill the hole left by the removal.
                             AccountHints.RemoveAt (idx);
                         }
                     }
@@ -153,6 +168,8 @@ namespace NachoCore.Utils
                         if (h.Id == Id) {
                             var idx = AccountHints.IndexOf (h);
                             if (idx >= 0) {
+                                // NOTE: This is an O(n) operation, since elements will get moved to
+                                // possibly fill the hole left by the removal.
                                 AccountHints.RemoveAt (idx);
                             }
                             break;
