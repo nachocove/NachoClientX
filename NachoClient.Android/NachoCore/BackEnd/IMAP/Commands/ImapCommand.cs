@@ -48,7 +48,7 @@ namespace NachoCore.IMAP
             base.Cancel ();
             // When the back end is being shut down, we can't afford to wait for the cancellation
             // to be processed.
-            if (!Cts.IsCancellationRequested) {
+            if (!BEContext.ProtoControl.Cts.IsCancellationRequested) {
                 // Wait for the command to notice the cancellation and release the lock.
                 // TODO MailKit is not always good about cancelling in a timely manner.
                 // When MailKit is fixed, this code should be adjusted.
