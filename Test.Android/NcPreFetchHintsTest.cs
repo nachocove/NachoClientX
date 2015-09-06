@@ -33,6 +33,9 @@ namespace Test.Common
             Assert.AreEqual (1, hints.Count (2));
             Assert.AreEqual (3, hints.Count (3));
 
+            // add a bunch (> NcPreFetchHints.KMaxFetchHintsPerAccount), and make sure that once
+            // we hit NcPreFetchHints.KMaxFetchHintsPerAccount, the Count no longer grows.
+            int lastAdded = -1;
             for (var i = 1; i < NcPreFetchHints.KMaxFetchHintsPerAccount * 2; i++) {
                 hints.AddHint (4, i);
                 int expectCount;
@@ -43,6 +46,14 @@ namespace Test.Common
                 }
                 Console.WriteLine ("expecting size {0}", expectCount);
                 Assert.AreEqual (expectCount, hints.Count (4));
+                lastAdded = i;
+            }
+
+            // make sure that the most recently added are the first in the list.
+            List<int> hs;
+            hs = hints.GetHints (4, 5);
+            for (var i = 0; i<5; i++) {
+                Assert.AreEqual (hs[i], lastAdded-i);
             }
         }
 
