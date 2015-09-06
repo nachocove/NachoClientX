@@ -469,7 +469,7 @@ namespace NachoCore.IMAP
             }
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_DaysToSyncChanged:
-                if (!ForceStopped) {
+                if (!Cts.IsCancellationRequested) {
                     Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
                 }
                 break;
