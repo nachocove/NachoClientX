@@ -34,7 +34,8 @@ namespace NachoCore
         protected List<McEmailMessage> FetchBodyHintList (int count)
         {
             var EmailList = new List<McEmailMessage> ();
-            if (AccountId == NcApplication.Instance.Account.Id &&
+            if (null != NcApplication.Instance.Account &&
+                AccountId == NcApplication.Instance.Account.Id &&
                 NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Foreground) {
                 var hints = BackEnd.Instance.BodyFetchHints.GetHints (AccountId, count);
                 foreach (var id in hints) {
