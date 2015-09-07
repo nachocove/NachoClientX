@@ -469,7 +469,7 @@ namespace NachoCore.IMAP
             }
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_DaysToSyncChanged:
-                if (!ForceStopped) {
+                if (!Cts.IsCancellationRequested) {
                     Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
                 }
                 break;
@@ -643,7 +643,9 @@ namespace NachoCore.IMAP
             Interlocked.Decrement (ref ConcurrentExtraRequests);
             // Send the PendQHot so that the ProtoControl SM looks to see if there is another hot op
             // to run in parallel.
-            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
+            if (!Cts.IsCancellationRequested) {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
+            }
         }
 
         private const int MaxConcurrentExtraRequests = 4;

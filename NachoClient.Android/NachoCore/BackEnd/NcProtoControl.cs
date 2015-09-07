@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
+using System.Threading;
 using NachoPlatform;
 
 namespace NachoCore
@@ -94,12 +95,13 @@ namespace NachoCore
             }
         }
 
+        public CancellationTokenSource Cts { get; protected set; }
         public NcProtoControl (INcProtoControlOwner owner, int accountId)
         {
             Owner = owner;
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
-            ForceStopped = false;
+            Cts = new CancellationTokenSource ();
             if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
                 NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
                 NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
@@ -192,7 +194,7 @@ namespace NachoCore
                 switch (e.Quality) {
                 case NcCommStatus.CommQualityEnum.OK:
                     Log.Info (Log.LOG_BACKEND, "Server {0} communication quality OK.", Server.Host);
-                    if (!ForceStopped) {
+                    if (!Cts.IsCancellationRequested) {
                         Execute ();
                     }
                     break;
@@ -212,8 +214,8 @@ namespace NachoCore
 
         public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
         {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                if (!ForceStopped) {
+            if (NetStatusStatusEnum.Up == e.Status) {
+                if (!Cts.IsCancellationRequested) {
                     Execute ();
                 }
             } else {
@@ -366,19 +368,19 @@ namespace NachoCore
         // Returns false if sub-class override should not continue.
         public virtual bool Execute ()
         {
-            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+            if (NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
                 Log.Warn (Log.LOG_BACKEND, "Execute called while network is down.");
                 return false;
             }
-            ForceStopped = false;
-            // TODO - extract more from the EAS class and stuff here.
+            if (Cts.IsCancellationRequested) {
+                Cts = new CancellationTokenSource ();
+            }
             return true;
         }
 
-        public bool ForceStopped { get; protected set; }
         public virtual void ForceStop ()
         {
-            ForceStopped = true;
+            Cts.Cancel ();
         }
 
         public virtual void Remove ()

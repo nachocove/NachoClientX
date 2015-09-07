@@ -912,7 +912,9 @@ namespace NachoCore.ActiveSync
             Interlocked.Decrement (ref ConcurrentExtraRequests);
             // Send the PendQHot so that the ProtoControl SM looks to see if there is another hot op
             // to run in parallel.
-            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
+            if (!Cts.IsCancellationRequested) {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
+            }
         }
 
         private void DoExtraOrDont ()
