@@ -380,6 +380,7 @@ namespace NachoCore
 
         public virtual void ForceStop ()
         {
+            Cts.Cancel ();
         }
 
         public virtual void Remove ()
