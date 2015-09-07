@@ -57,9 +57,8 @@ namespace NachoCore
         public enum AutoDFailureReason : uint
         {
             CannotConnectToServer,
-            CannotFindServer}
-
-        ;
+            CannotFindServer
+        }
 
         protected enum ResolveAction
         {

@@ -161,7 +161,6 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
                 return;
             }
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             switch (action.Item1) {
             case ResolveAction.None:
                 break;
