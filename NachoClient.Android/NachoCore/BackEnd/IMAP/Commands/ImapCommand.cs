@@ -95,8 +95,6 @@ namespace NachoCore.IMAP
 
         public void ExecuteNoTask(NcStateMachine sm)
         {
-            var AccountId = BEContext.Account.Id;
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             Event evt;
             Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
             Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
