@@ -844,27 +844,19 @@ namespace NachoCore.ActiveSync
         }
 
         // Returns null if nothing to do.
-        public FetchKit GenFetchKit (int accountId)
+        public FetchKit GenFetchKit ()
         {
             // The maximum attachment size to fetch depends on the quality of the network connection.
-            long maxAttachmentSize = 0;
-            switch (NcCommStatus.Instance.Speed) {
-            case NetStatusSpeedEnum.WiFi_0:
-                maxAttachmentSize = 1024 * 1024;
-                break;
-            case NetStatusSpeedEnum.CellFast_1:
-                maxAttachmentSize = 200 * 1024;
-                break;
-            case NetStatusSpeedEnum.CellSlow_2:
-                maxAttachmentSize = 50 * 1024;
-                break;
-            }
+            long maxAttachmentSize = MaxAttachmentSize ();
             var remaining = KBaseFetchSize;
-            var fetchBodies = new List<FetchKit.FetchBody> ();
-            var emails = McEmailMessage.QueryNeedsFetch (accountId, remaining, McEmailMessage.minHotScore).ToList ();
+
+            var fetchBodies = FetchBodiesFromEmailList (FetchBodyHintList (remaining), maxAttachmentSize);
+            remaining -= fetchBodies.Count;
+
+            var emails = McEmailMessage.QueryNeedsFetch (AccountId, remaining, McEmailMessage.minHotScore).ToList ();
             foreach (var email in emails) {
                 // TODO: all this can be one SQL JOIN.
-                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
+                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (AccountId, email.Id);
                 if (0 == folders.Count) {
                     // This can happen - we score a message, and then it gets moved to a client-owned folder.
                     continue;
@@ -878,7 +870,7 @@ namespace NachoCore.ActiveSync
             remaining -= fetchBodies.Count;
             List<McAttachment> fetchAtts = new List<McAttachment> ();
             if (0 < remaining) {
-                fetchAtts = McAttachment.QueryNeedsFetch (accountId, remaining, 0.9, (int)maxAttachmentSize).ToList ();
+                fetchAtts = McAttachment.QueryNeedsFetch (AccountId, remaining, 0.9, (int)maxAttachmentSize).ToList ();
             }
             if (0 < fetchBodies.Count || 0 < fetchAtts.Count) {
                 Log.Info (Log.LOG_AS, "GenFetchKit: {0} emails, {1} attachments.", fetchBodies.Count, fetchAtts.Count);
@@ -890,6 +882,40 @@ namespace NachoCore.ActiveSync
             }
             Log.Info (Log.LOG_AS, "GenFetchKit: nothing to do.");
             return null;
+        }
+
+        public FetchKit GenFetchKitHints ()
+        {
+            var fetchBodies = FetchBodiesFromEmailList (FetchBodyHintList (KBaseFetchSize), MaxAttachmentSize ());
+            if (fetchBodies.Any ()) {
+                Log.Info (Log.LOG_AS, "GenFetchKitHints: {0} emails", fetchBodies.Count);
+                return new FetchKit () {
+                    FetchBodies = fetchBodies,
+                    FetchAttachments = new List<McAttachment> (),
+                    Pendings = new List<FetchKit.FetchPending> (),
+                };
+            } else {
+                return null;
+            }
+        }
+
+        private List<FetchKit.FetchBody> FetchBodiesFromEmailList (List<McEmailMessage> emails, long maxAttachmentSize)
+        {
+            var fetchBodies = new List<FetchKit.FetchBody> ();
+            foreach (var email in emails) {
+                // TODO: all this can be one SQL JOIN.
+                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (AccountId, email.Id);
+                if (0 == folders.Count) {
+                    // This can happen - we score a message, and then it gets moved to a client-owned folder.
+                    continue;
+                }
+                fetchBodies.Add (new FetchKit.FetchBody () {
+                    ServerId = email.ServerId,
+                    ParentId = folders [0].ServerId,
+                    BodyPref = BodyPref (email, maxAttachmentSize),
+                });
+            }
+            return fetchBodies;
         }
 
         private Xml.AirSync.TypeCode BodyPref (McEmailMessage message, long maxAttachmentSize)
@@ -985,11 +1011,10 @@ namespace NachoCore.ActiveSync
 
         public Tuple<PickActionEnum, AsCommand> PickUserDemand ()
         {
-            var accountId = BEContext.Account.Id;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
-                var search = McPending.QueryEligible (accountId, McAccount.ActiveSyncCapabilities).
+                var search = McPending.QueryEligible (AccountId, McAccount.ActiveSyncCapabilities).
                     Where (x => McPending.Operations.ContactSearch == x.Operation ||
                         McPending.Operations.EmailSearch == x.Operation).FirstOrDefault ();
                 if (null != search) {
@@ -998,7 +1023,7 @@ namespace NachoCore.ActiveSync
                         new AsSearchCommand (BEContext, search));
                 }
                 // (FG) If the user has initiated a ItemOperations Fetch (body or attachment), we do that.
-                var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ActiveSyncCapabilities).
+                var fetch = McPending.QueryEligibleOrderByPriorityStamp (AccountId, McAccount.ActiveSyncCapabilities).
                     Where (x => 
                         McPending.Operations.AttachmentDownload == x.Operation ||
                         McPending.Operations.EmailBodyDownload == x.Operation ||
@@ -1027,15 +1052,14 @@ namespace NachoCore.ActiveSync
 
         public Tuple<PickActionEnum, AsCommand> Pick ()
         {
-            var accountId = BEContext.Account.Id;
             var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             if (NcApplication.ExecutionContextEnum.Initializing == exeCtxt) {
                 // ExecutionContext is not set until after BE is started.
                 exeCtxt = NcApplication.Instance.PlatformIndication;
             }
-            AdvanceIfPossible (accountId, Scope.StrategyRung (protocolState));
-            var stillHaveUnsyncedFolders = ScrubSyncedFolders (accountId);
+            AdvanceIfPossible (AccountId, Scope.StrategyRung (protocolState));
+            var stillHaveUnsyncedFolders = ScrubSyncedFolders (AccountId);
             var userDemand = PickUserDemand ();
             if (null != userDemand) {
                 return userDemand;
@@ -1044,7 +1068,7 @@ namespace NachoCore.ActiveSync
             // (FG, BG) If there is a SendMail, SmartForward or SmartReply in the pending queue, send it.
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
-                var send = McPending.QueryEligible (accountId, McAccount.ActiveSyncCapabilities).
+                var send = McPending.QueryEligible (AccountId, McAccount.ActiveSyncCapabilities).
                     Where (x => 
                         McPending.Operations.EmailSend == x.Operation ||
                            McPending.Operations.EmailForward == x.Operation ||
@@ -1084,7 +1108,7 @@ namespace NachoCore.ActiveSync
             // we can squeeze it in.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-60)) {
-                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow);
+                    var nSyncKit = GenSyncKit (AccountId, protocolState, SyncMode.Narrow);
                     Log.Info (Log.LOG_AS, "Strategy:QS:Narrow Sync...");
                     if (null != nSyncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:QS:...SyncKit");
@@ -1100,9 +1124,9 @@ namespace NachoCore.ActiveSync
                 var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
                 if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
                     protocolState.LastNarrowSync < needNarrowSyncMarker &&
-                    (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
+                    (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (AccountId))) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
-                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow);
+                    var nSyncKit = GenSyncKit (AccountId, protocolState, SyncMode.Narrow);
                     if (null != nSyncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
@@ -1110,7 +1134,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
-                var next = McPending.QueryEligible (accountId, McAccount.ActiveSyncCapabilities).FirstOrDefault ();
+                var next = McPending.QueryEligible (AccountId, McAccount.ActiveSyncCapabilities).FirstOrDefault ();
                 if (null != next) {
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
@@ -1131,7 +1155,7 @@ namespace NachoCore.ActiveSync
                     case McPending.Operations.CalMove:
                     case McPending.Operations.ContactMove:
                     case McPending.Operations.TaskMove:
-                        cmd = new AsMoveItemsCommand (BEContext, GenMoveKit (accountId));
+                        cmd = new AsMoveItemsCommand (BEContext, GenMoveKit (AccountId));
                         break;
                     // ... however one of these below, which would have been handled above, could have been
                     // inserted into the Q while Pick() is in the middle of running.
@@ -1170,7 +1194,7 @@ namespace NachoCore.ActiveSync
                             });
                         break;
                     case McPending.Operations.Sync:
-                        var uSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Directed, next);
+                        var uSyncKit = GenSyncKit (AccountId, protocolState, SyncMode.Directed, next);
                         if (null != uSyncKit) {
                             cmd = new AsSyncCommand (BEContext, uSyncKit);
                             action = PickActionEnum.Sync;
@@ -1184,7 +1208,7 @@ namespace NachoCore.ActiveSync
                     default:
                         if (AsSyncCommand.IsSyncCommand (next.Operation)) {
                             Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand:{0}", next.Operation.ToString ());
-                            var syncKit = GenSyncKit (accountId, protocolState, SyncMode.Wide);
+                            var syncKit = GenSyncKit (AccountId, protocolState, SyncMode.Wide);
                             if (null != syncKit) {
                                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
                                     new AsSyncCommand (BEContext, syncKit));
@@ -1211,7 +1235,7 @@ namespace NachoCore.ActiveSync
                     BEContext.ProtocolState.HasBeenRateLimited &&
                     !BEContext.Server.HostIsAsHotMail () &&
                     !BEContext.Server.HostIsAsGMail ()) {
-                    var rlPingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders, false);
+                    var rlPingKit = GenPingKit (AccountId, protocolState, true, stillHaveUnsyncedFolders, false);
                     if (null != rlPingKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
@@ -1225,6 +1249,15 @@ namespace NachoCore.ActiveSync
                             new AsWaitCommand (BEContext, 120, false));
                     }
                 }
+                // (FG) See if there's bodies to download
+                if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                    var fetchKit = GenFetchKitHints ();
+                    if (null != fetchKit) {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
+                            new AsItemOperationsCommand (BEContext, fetchKit));
+                    }
+                }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.IgnorePower) ||
                     PowerPermitsSpeculation () ||
@@ -1232,9 +1265,9 @@ namespace NachoCore.ActiveSync
                     FetchKit fetchKit = null;
                     SyncKit syncKit = null;
                     if (NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed && PowerPermitsSpeculation ()) {
-                        fetchKit = GenFetchKit (accountId);
+                        fetchKit = GenFetchKit ();
                     }
-                    syncKit = GenSyncKit (accountId, protocolState, SyncMode.Wide);
+                    syncKit = GenSyncKit (AccountId, protocolState, SyncMode.Wide);
                     if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
@@ -1253,11 +1286,11 @@ namespace NachoCore.ActiveSync
                 PingKit pingKit = null;
                 if (0.8 < CoinToss.NextDouble ()) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit try generating wide PingKit.");
-                    pingKit = GenPingKit (accountId, protocolState, false, stillHaveUnsyncedFolders, false);
+                    pingKit = GenPingKit (AccountId, protocolState, false, stillHaveUnsyncedFolders, false);
                 }
                 if (null == pingKit) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit will be narrow.");
-                    pingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders, false);
+                    pingKit = GenPingKit (AccountId, protocolState, true, stillHaveUnsyncedFolders, false);
                 }
                 if (null != pingKit) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping");

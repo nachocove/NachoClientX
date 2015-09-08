@@ -156,7 +156,7 @@ namespace NachoCore.IMAP
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
                     var parts = username.Split ('@');
-                    if (DomainIsOrEndsWith(parts [1].ToLowerInvariant (), "icloud.com")) {
+                    if (DomainIsOrEndsWith(parts [1].ToLowerInvariant (), McServer.ICloud_Suffix)) {
                         username = parts [0];
                     }
                 }
@@ -182,8 +182,9 @@ namespace NachoCore.IMAP
             }
             if (emailAddress.Contains ("@")) {
                 var domain = emailAddress.Split ('@') [1].ToLowerInvariant ();
-                if (DomainIsOrEndsWith (domain, "icloud.com") ||
-                    DomainIsOrEndsWith (domain, "me.com")) {
+                if (DomainIsOrEndsWith (domain, McServer.ICloud_Suffix) ||
+                    DomainIsOrEndsWith (domain, McServer.ICloud_Suffix2) ||
+                    DomainIsOrEndsWith (domain, McServer.ICloud_Suffix3)) {
                     return true;
                 }
             }
@@ -200,10 +201,10 @@ namespace NachoCore.IMAP
             // new discovery statemachine. We'll see if this gets us far enough along.
             if (emailAddress.Contains ("@")) {
                 var domain = emailAddress.Split ('@') [1].ToLowerInvariant ();
-                if (DomainIsOrEndsWith (domain, "yahoo.com") ||
-                    DomainIsOrEndsWith (domain, "yahoo.net") ||
-                    DomainIsOrEndsWith (domain, "ymail.com") ||
-                    DomainIsOrEndsWith (domain, "rocketmail.com")) {
+                if (DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix) ||
+                    DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix2) ||
+                    DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix3) ||
+                    DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix4)) {
                     return true;
                 }
             }

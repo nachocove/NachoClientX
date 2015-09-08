@@ -27,6 +27,7 @@ namespace NachoClient.iOS
 
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
+        private bool skipNextLayout = false;
 
         McAccount currentAccount;
 
@@ -120,17 +121,16 @@ namespace NachoClient.iOS
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
-            hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Grouped);
+            hotEventView = new HotEventView (new CGRect (0, 0, View.Frame.Width, 69));
+            View.AddSubview (hotEventView);
+
+            hotListView = new UITableView (new CGRect(0, hotEventView.Frame.Bottom, View.Frame.Width, View.Frame.Height - hotEventView.Frame.Bottom), UITableViewStyle.Plain);
+            hotListView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             hotListView.BackgroundColor = A.Color_NachoBackgroundGray;
-            hotListView.TableHeaderView = new UIView (new CGRect (0, 0, 0, 0));
-            hotListView.ContentInset = new UIEdgeInsets (-A.Card_Vertical_Indent, 0, 0, 0);
             hotListView.DecelerationRate = UIScrollView.DecelerationRateFast;
             hotListView.SeparatorStyle = UITableViewCellSeparatorStyle.None;
             hotListView.AccessibilityLabel = "Hot list";
-            View.AddSubview (hotListView);
-
-            hotEventView = new HotEventView (new CGRect (0, 0, View.Frame.Width, 69));
-            View.AddSubview (hotEventView);
+            View.InsertSubviewBelow (hotListView, hotEventView);
 
             hotEventView.OnClick = ((int tag, int eventId) => {
                 switch (tag) {
@@ -247,16 +247,12 @@ namespace NachoClient.iOS
                 var c = holder.value as McCalendar;
                 vc.SetCalendarItem (c);
                 vc.SetOwner (this);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToEventView") {
+            } else if (segue.Identifier == "NachoNowToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var e = holder.value as McEvent;
                 vc.SetCalendarItem (e);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToCompose") {
+            } else if (segue.Identifier == "NachoNowToCompose") {
                 var vc = (MessageComposeViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
                 if (null == h) {
@@ -266,16 +262,12 @@ namespace NachoClient.iOS
                     vc.SetAction ((McEmailMessageThread)h.value2, (string)h.value);
                 }
                 vc.SetOwner (this);
-                return;
-            }
-            if (segue.Identifier == "SegueToMailTo") {
+            } else if (segue.Identifier == "SegueToMailTo") {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var url = (string)holder.value;
                 dc.SetMailToUrl (url);
-                return;
-            }
-            if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
+            } else if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
@@ -285,44 +277,37 @@ namespace NachoClient.iOS
                 } else {
                     dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
                 }
-                return;
-            }
-            if (segue.Identifier == "NachoNowToMessageList") {
+            } else if (segue.Identifier == "NachoNowToMessageList") {
                 var holder = (SegueHolder)sender;
                 var messageList = (INachoEmailMessages)holder.value;
                 var messageListViewController = (MessageListViewController)segue.DestinationViewController;
                 messageListViewController.SetEmailMessages (messageList);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToMessageView") {
+            } else if (segue.Identifier == "NachoNowToMessageView") {
                 var vc = (INachoMessageViewer)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
                 var thread = holder.value as McEmailMessageThread;
                 vc.SetSingleMessageThread (thread);
-                return;
-            }
-            if (segue.Identifier == "SegueToMessageThreadView") {
+            } else if (segue.Identifier == "SegueToMessageThreadView") {
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
                 var vc = (MessageListViewController)segue.DestinationViewController;
                 vc.SetEmailMessages (priorityInbox.GetAdapterForThread (thread.GetThreadId ()));
-                return;
-            }
-            if (segue.Identifier == "NachoNowToMessagePriority") {
+            } else if (segue.Identifier == "NachoNowToMessagePriority") {
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
                 var vc = (INachoDateController)segue.DestinationViewController;
                 vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-                return;
-            }
-            if (segue.Identifier == "NachoNowToFolders") {
+            } else if (segue.Identifier == "NachoNowToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = sender as SegueHolder;
                 vc.SetOwner (this, true, h);
-                return;
+            } else {
+                Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+                NcAssert.CaseError ();
             }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+            if (segue.DestinationViewController.HidesBottomBarWhenPushed) {
+                skipNextLayout = true;
+            }
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -360,7 +345,6 @@ namespace NachoClient.iOS
 
         protected void MaybeRefreshPriorityInbox ()
         {
-            bool callReconfigure = true;
             NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
 
             if (NcApplication.Instance.Account.Id != currentAccount.Id) {
@@ -375,14 +359,9 @@ namespace NachoClient.iOS
                 ReloadCapture.Start ();
                 if (priorityInbox.Refresh (out adds, out deletes)) {
                     Util.UpdateTable (hotListView, adds, deletes);
-                    callReconfigure = false;
                 }
                 ReloadCapture.Stop ();
             }
-            if (callReconfigure) {
-                hotListSource.ReconfigureVisibleCells (hotListView);
-            }
-            hotListSource.ConfigureFooter (hotListView);
             NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
         }
 
@@ -395,8 +374,14 @@ namespace NachoClient.iOS
                 priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
                 hotListSource = new HotListTableViewSource (this, priorityInbox);
                 hotListView.Source = hotListSource;
+                hotListView.RowHeight = hotListView.Frame.Height - hotListSource.CardPeekDistance * 2.0f - hotListSource.CellCardInset.Top - hotListSource.CellCardInset.Bottom;
+                hotListView.ContentInset = new UIEdgeInsets (
+                    hotListSource.CardPeekDistance + hotListSource.CellCardInset.Top,
+                    0,
+                    hotListSource.CardPeekDistance + hotListSource.CellCardInset.Bottom,
+                    0
+                );
                 hotListView.ReloadData ();
-                hotListSource.ConfigureFooter (hotListView);
                 switchAccountButton.SetAccountImage (account);
                 NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController SwitchToAccount");
             }
@@ -407,34 +392,23 @@ namespace NachoClient.iOS
         /// </summary>
         protected void LayoutView ()
         {
-            hotListView.Frame = carouselNormalSize ();
-            hotListSource.ReconfigureVisibleCells (hotListView);
+            var newRowHeight = hotListView.Frame.Height - hotListSource.CardPeekDistance * 2.0f - hotListSource.CellCardInset.Top - hotListSource.CellCardInset.Bottom;
+            if (Math.Abs (newRowHeight - hotListView.RowHeight) > 0.5) {
+                var cardIndex = hotListSource.CurrentCardIndex (hotListView);
+                hotListView.RowHeight = newRowHeight;
+                hotListView.ReloadData ();
+                hotListSource.ScrollTableViewToCardIndex (hotListView, cardIndex, false);
+            }
         }
 
         public override void ViewDidLayoutSubviews ()
         {
             base.ViewDidLayoutSubviews ();
-            LayoutView ();
-        }
-
-        int CALENDAR_VIEW_HEIGHT = (69);
-
-        protected CGRect carouselNormalSize ()
-        {
-            var rect = new CGRect (0, CALENDAR_VIEW_HEIGHT, View.Frame.Width, View.Frame.Height - CALENDAR_VIEW_HEIGHT);
-            return rect;
-        }
-
-        /// Grows from top of View
-        protected CGRect calendarSmallSize ()
-        {
-            var parentFrame = View.Frame;
-            var inboxFrame = new CGRect ();
-            inboxFrame.Y = 0;
-            inboxFrame.Height = CALENDAR_VIEW_HEIGHT;
-            inboxFrame.X = parentFrame.X;
-            inboxFrame.Width = parentFrame.Width;
-            return inboxFrame;
+            if (skipNextLayout) {
+                skipNextLayout = false;
+            } else {
+                LayoutView ();
+            }
         }
 
         ///  IMessageTableViewSourceDelegate

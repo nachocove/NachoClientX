@@ -56,7 +56,8 @@ namespace NachoCore.ActiveSync
     public interface IAsStrategy
     {
         MoveKit GenMoveKit (int accountId);
-        FetchKit GenFetchKit (int accountId);
+        FetchKit GenFetchKit ();
+        FetchKit GenFetchKitHints ();
         SyncKit GenSyncKit (int accountId, McProtocolState protocolState);
         PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected);
         Tuple<PickActionEnum, AsCommand> Pick ();

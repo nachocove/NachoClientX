@@ -33,11 +33,9 @@ namespace NachoCore.IMAP
         private static uint[] KRungSyncWindowSize = new uint[] { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
 
         private Random CoinToss;
-        int AccountId { get; set; }
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
             CoinToss = new Random ();
-            AccountId = BEContext.Account.Id;
         }
 
 
@@ -181,12 +179,23 @@ namespace NachoCore.IMAP
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext, Client));
                 }
 
+                FetchKit fetchKit;
+                // (FG) See if there's bodies to download
+                if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                    fetchKit = GenFetchKitHints ();
+                    if (null != fetchKit) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Fetch, 
+                            new ImapFetchCommand (BEContext, Client, fetchKit));
+                    }
+                }
+
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
-                FetchKit fetchKit = null;
+                fetchKit = null;
                 if (protocolState.ImapSyncRung >= 2 &&
                     NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed &&
                     PowerPermitsSpeculation ()) {
-                    fetchKit = GenFetchKit (AccountId);
+                    fetchKit = GenFetchKit ();
                 }
                 SyncKit syncKit = GenSyncKit (ref protocolState, exeCtxt, null);
                 if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {

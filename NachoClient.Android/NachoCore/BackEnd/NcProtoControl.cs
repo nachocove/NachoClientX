@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
+using System.Threading;
 using NachoPlatform;
 
 namespace NachoCore
@@ -17,7 +18,7 @@ namespace NachoCore
             // Every subclass of ProtoControl must be able to handle these events. Generic code uses them.
             new public enum E : uint
             {
-                PendQ = (SmEvt.E.Last + 1),
+                PendQOrHint = (SmEvt.E.Last + 1),
                 PendQHot,
                 Park,
                 Last = Park,
@@ -94,12 +95,13 @@ namespace NachoCore
             }
         }
 
+        public CancellationTokenSource Cts { get; protected set; }
         public NcProtoControl (INcProtoControlOwner owner, int accountId)
         {
             Owner = owner;
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
-            ForceStopped = false;
+            Cts = new CancellationTokenSource ();
             if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
                 NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
                 NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
@@ -192,7 +194,7 @@ namespace NachoCore
                 switch (e.Quality) {
                 case NcCommStatus.CommQualityEnum.OK:
                     Log.Info (Log.LOG_BACKEND, "Server {0} communication quality OK.", Server.Host);
-                    if (!ForceStopped) {
+                    if (!Cts.IsCancellationRequested) {
                         Execute ();
                     }
                     break;
@@ -212,8 +214,8 @@ namespace NachoCore
 
         public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
         {
-            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
-                if (!ForceStopped) {
+            if (NetStatusStatusEnum.Up == e.Status) {
+                if (!Cts.IsCancellationRequested) {
                     Execute ();
                 }
             } else {
@@ -356,7 +358,7 @@ namespace NachoCore
             if (lastInSeq) {
                 StatusInd (NcResult.Info (subKind));
                 NcTask.Run (delegate {
-                    Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCMOVMSG");
+                    Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCMOVMSG");
                 }, "MoveItemCmd");
             }
             return result;
@@ -366,19 +368,19 @@ namespace NachoCore
         // Returns false if sub-class override should not continue.
         public virtual bool Execute ()
         {
-            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+            if (NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
                 Log.Warn (Log.LOG_BACKEND, "Execute called while network is down.");
                 return false;
             }
-            ForceStopped = false;
-            // TODO - extract more from the EAS class and stuff here.
+            if (Cts.IsCancellationRequested) {
+                Cts = new CancellationTokenSource ();
+            }
             return true;
         }
 
-        public bool ForceStopped { get; protected set; }
         public virtual void ForceStop ()
         {
-            ForceStopped = true;
+            Cts.Cancel ();
         }
 
         public virtual void Remove ()
@@ -404,6 +406,11 @@ namespace NachoCore
         public virtual void PendQHotInd ()
         {
             Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPENDQHOTIND");
+        }
+
+        public virtual void PendQOrHintInd ()
+        {
+            Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPENDQORHINTIND");
         }
 
         public virtual NcResult StartSearchEmailReq (string keywords, uint? maxResults)
@@ -527,7 +534,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCSENDCAL");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCSENDCAL");
             }, "SendEmailCmd(cal)");
             Log.Info (Log.LOG_BACKEND, "SendEmailCmd({0},{1}) returning {2}", emailMessageId, calId, result.Value as string);
             return result;
@@ -658,7 +665,7 @@ namespace NachoCore
                     StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                     Log.Debug (Log.LOG_BACKEND, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
                     NcTask.Run (delegate {
-                        Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCDELMSG");
+                        Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCDELMSG");
                     }, "DeleteEmailCmd");
                 }
             }
@@ -690,7 +697,7 @@ namespace NachoCore
                 });
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCMRMSG");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCMRMSG");
             }, "MarkEmailReadCmd");
             return result;
         }
@@ -838,7 +845,7 @@ namespace NachoCore
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCCRECAL");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCCRECAL");
             }, "CreateCalCmd");
             return result;
         }
@@ -869,7 +876,7 @@ namespace NachoCore
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCCHGCAL");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCCHGCAL");
             }, "UpdateCalCmd");
             return result;
         }
@@ -901,7 +908,7 @@ namespace NachoCore
             if (lastInSeq) {
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
                 NcTask.Run (delegate {
-                    Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCDELCAL");
+                    Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCDELCAL");
                 }, "DeleteCalCmd");
             }
             return result;
@@ -964,7 +971,7 @@ namespace NachoCore
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCCRECNT");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCCRECNT");
             }, "CreateContactCmd");
             return result;
         }
@@ -994,7 +1001,7 @@ namespace NachoCore
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCCHGCTC");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCCHGCTC");
             }, "UpdateContactCmd");
             return result;
         }
@@ -1026,7 +1033,7 @@ namespace NachoCore
             if (lastInSeq) {
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
                 NcTask.Run (delegate {
-                    Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCDELCTC");
+                    Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCDELCTC");
                 }, "DeleteContactCmd");
             }
             return result;
@@ -1123,7 +1130,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCFCRE");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCFCRE");
             }, "CreateFolderCmd");
 
             return result;
@@ -1164,7 +1171,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCFDEL");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCFDEL");
             }, "DeleteFolderCmd");
             return result;
         }
@@ -1210,7 +1217,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCFUP1");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCFUP1");
             }, "MoveFolderCmd");
             return result;
         }
@@ -1254,7 +1261,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCFUP2");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "PCPCFUP2");
             }, "RenameFolderCmd");
             return result;
         }

@@ -63,7 +63,7 @@ namespace NachoCore.ActiveSync
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCSF");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "ASPCSF");
             }, "SetEmailFlagCmd");
             return result;
         }
@@ -95,7 +95,7 @@ namespace NachoCore.ActiveSync
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCF");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "ASPCCF");
             }, "ClearEmailFlagCmd");
             return result;
         }
@@ -130,7 +130,7 @@ namespace NachoCore.ActiveSync
                 });
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCF");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "ASPCCF");
             }, "MarkEmailFlagDone");
             return result;
         }
@@ -246,7 +246,7 @@ namespace NachoCore.ActiveSync
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCRETSK");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "ASPCCRETSK");
             }, "CreateTaskCmd");
             return result;
         }
@@ -280,7 +280,7 @@ namespace NachoCore.ActiveSync
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCHGTSK");
+                Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "ASPCCHGTSK");
             }, "UpdateTaskCmd");
             return result;
         }
@@ -317,7 +317,7 @@ namespace NachoCore.ActiveSync
             if (lastInSeq) {
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
                 NcTask.Run (delegate {
-                    Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCDELTSK");
+                    Sm.PostEvent ((uint)PcEvt.E.PendQOrHint, "ASPCDELTSK");
                 }, "DeleteTaskCmd");
             }
             return result;

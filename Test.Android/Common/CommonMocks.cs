@@ -348,7 +348,12 @@ namespace Test.iOS
             return null;
         }
 
-        public FetchKit GenFetchKit (int accountId)
+        public FetchKit GenFetchKit ()
+        {
+            return null;
+        }
+
+        public FetchKit GenFetchKitHints ()
         {
             return null;
         }

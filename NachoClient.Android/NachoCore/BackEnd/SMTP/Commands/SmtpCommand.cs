@@ -36,7 +36,7 @@ namespace NachoCore.SMTP
         public override void Cancel ()
         {
             base.Cancel ();
-            if (!BEContext.ProtoControl.ForceStopped) {
+            if (!BEContext.ProtoControl.Cts.IsCancellationRequested) {
                 try {
                     TryLock (Client.SyncRoot, KLockTimeout);
                 } catch (CommandLockTimeOutException ex) {

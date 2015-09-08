@@ -413,7 +413,7 @@ namespace NachoClient.iOS
 
         public override bool HidesBottomBarWhenPushed {
             get {
-                return this.NavigationController.TopViewController == this;
+                return true;
             }
         }
 
