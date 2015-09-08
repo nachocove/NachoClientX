@@ -24,14 +24,6 @@ namespace NachoCore.SMTP
             NcTask.Run (() => {
                 Event evt = ExecuteCommand ();
                 if (!Cts.Token.IsCancellationRequested) {
-                    var protocolState = BEContext.ProtocolState;
-                    if (!protocolState.SmtpDiscoveryDone) {
-                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                            var target = (McProtocolState)record;
-                            target.SmtpDiscoveryDone = true;
-                            return true;
-                        });
-                    }
                     sm.PostEvent (evt);
                 }
             }, "SmtpDiscoveryCommand");

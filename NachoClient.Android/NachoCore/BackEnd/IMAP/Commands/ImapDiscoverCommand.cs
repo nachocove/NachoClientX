@@ -29,14 +29,6 @@ namespace NachoCore.IMAP
             NcTask.Run (() => {
                 Event evt = ExecuteCommandInternal ();
                 if (!Cts.Token.IsCancellationRequested) {
-                    var protocolState = BEContext.ProtocolState;
-                    if (!protocolState.ImapDiscoveryDone) {
-                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                            var target = (McProtocolState)record;
-                            target.ImapDiscoveryDone = true;
-                            return true;
-                        });
-                    }
                     sm.PostEvent (evt);
                 }
             }, "ImapDiscoverCommand");

@@ -392,8 +392,7 @@ namespace NachoCore.SMTP
             Sm.State = ProtocolState.SmtpProtoControlState;
             LastBackEndState = BackEndState;
             LastIsDoNotDelayOk = IsDoNotDelayOk;
-            //SyncStrategy = new SmtpStrategy (this);
-            //PushAssist = new PushAssist (this);
+            NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
         public override void ForceStop ()
@@ -407,6 +406,7 @@ namespace NachoCore.SMTP
             if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
                 Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
             }
+            NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             base.Remove ();
         }
 
@@ -654,6 +654,30 @@ namespace NachoCore.SMTP
                 ResolveDoNotDelayAsHardFail ();
             }
             LastIsDoNotDelayOk = IsDoNotDelayOk;
+        }
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            if (null == siea.Account || siea.Account.Id != AccountId) {
+                return;
+            }
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_BackEndStateChanged:
+                var senderState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailSender);
+                var readerState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                if (!ProtocolState.SmtpDiscoveryDone &&
+                    ((BackEndStateEnum.PostAutoDPreInboxSync == senderState && BackEndStateEnum.PostAutoDPreInboxSync == readerState) ||
+                    (BackEndStateEnum.PostAutoDPostInboxSync == senderState && BackEndStateEnum.PostAutoDPostInboxSync == readerState))) {
+                    var protocolState = ProtocolState;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.SmtpDiscoveryDone = true;
+                        return true;
+                    });
+                }
+                break;
+            }
         }
 
         #region ValidateConfig

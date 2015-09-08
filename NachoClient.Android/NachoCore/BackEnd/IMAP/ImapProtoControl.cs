@@ -473,6 +473,21 @@ namespace NachoCore.IMAP
                     Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
                 }
                 break;
+
+            case NcResult.SubKindEnum.Info_BackEndStateChanged:
+                var senderState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailSender);
+                var readerState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                if (!ProtocolState.ImapDiscoveryDone &&
+                    ((BackEndStateEnum.PostAutoDPreInboxSync == senderState && BackEndStateEnum.PostAutoDPreInboxSync == readerState) ||
+                        (BackEndStateEnum.PostAutoDPostInboxSync == senderState && BackEndStateEnum.PostAutoDPostInboxSync == readerState))) {
+                    var protocolState = ProtocolState;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.ImapDiscoveryDone = true;
+                        return true;
+                    });
+                }
+                break;
             }
         }
 
