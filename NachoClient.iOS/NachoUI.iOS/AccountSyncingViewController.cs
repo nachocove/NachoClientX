@@ -21,7 +21,7 @@ namespace NachoClient.iOS
 
     #endregion
 
-    public partial class AccountSyncingViewController : UIViewController
+    public partial class AccountSyncingViewController : NcUIViewController
     {
 
         #region Properties

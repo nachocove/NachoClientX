@@ -11,7 +11,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class StartupMigrationViewController : UIViewController
+    public partial class StartupMigrationViewController : NcUIViewController
     {
 
         bool StatusIndCallbackIsSet = false;

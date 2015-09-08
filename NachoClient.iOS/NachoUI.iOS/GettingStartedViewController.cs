@@ -22,7 +22,7 @@ namespace NachoClient.iOS
 
     #endregion
 
-    public partial class GettingStartedViewController : UIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, HomeViewControllerDelegate
+    public partial class GettingStartedViewController : NcUIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, HomeViewControllerDelegate
     {
 
         #region Properties

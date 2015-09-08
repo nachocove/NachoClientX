@@ -12,7 +12,7 @@ namespace NachoClient.iOS
         void AdvancedFieldsControllerDidChange (AccountAdvancedFieldsViewController vc);
     }
 
-    public abstract class AccountAdvancedFieldsViewController : UIViewController
+    public abstract class AccountAdvancedFieldsViewController : NcUIViewController
     {
 
         public AccountAdvancedFieldsViewControllerDelegate AccountDelegate;

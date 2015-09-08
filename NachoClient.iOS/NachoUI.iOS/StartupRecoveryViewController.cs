@@ -8,7 +8,7 @@ using UIKit;
 
 namespace NachoClient.iOS
 {
-    public partial class StartupRecoveryViewController : UIViewController
+    public partial class StartupRecoveryViewController : NcUIViewController
     {
 
         public CGRect? AnimateFromLaunchImageFrame = null;
