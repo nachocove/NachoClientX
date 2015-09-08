@@ -363,11 +363,12 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.Parked,
                         Drop = new uint[] {
-                            (uint)PcEvt.E.Park,
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
+                            (uint)PcEvt.E.Park,
                             (uint)SmtpEvt.E.UiSetCred,
                             (uint)SmtpEvt.E.UiSetServConf,
+                            (uint)SmtpEvt.E.ReConn,
                         },
                         Invalid = new uint[] {
                             (uint)SmEvt.E.HardFail,
@@ -382,9 +383,6 @@ namespace NachoCore.SMTP
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.ConnW }, // TODO FIXME
-                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                         }
                     }
