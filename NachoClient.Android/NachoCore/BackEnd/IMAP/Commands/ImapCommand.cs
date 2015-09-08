@@ -52,7 +52,7 @@ namespace NachoCore.IMAP
             base.Cancel ();
             // When the back end is being shut down, we can't afford to wait for the cancellation
             // to be processed.
-            if (!BEContext.ProtoControl.ForceStopped) {
+            if (!BEContext.ProtoControl.Cts.IsCancellationRequested) {
                 // Wait for the command to notice the cancellation and release the lock.
                 // TODO MailKit is not always good about cancelling in a timely manner.
                 // When MailKit is fixed, this code should be adjusted.
@@ -67,7 +67,7 @@ namespace NachoCore.IMAP
         public override void Execute (NcStateMachine sm)
         {
             NcTask.Run (() => {
-                ExecuteNoTask(sm);
+                ExecuteNoTask (sm);
             }, this.GetType ().Name);
         }
 
@@ -104,6 +104,7 @@ namespace NachoCore.IMAP
             Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
             Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             try {
+                Cts.Token.ThrowIfCancellationRequested ();
                 evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 Cts.Token.ThrowIfCancellationRequested ();
@@ -165,12 +166,12 @@ namespace NachoCore.IMAP
                 serverFailedGenerally = true;
             } finally {
                 ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
             if (Cts.Token.IsCancellationRequested) {
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
                 return;
             }
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             switch (action.Item1) {
             case ResolveAction.None:
                 break;

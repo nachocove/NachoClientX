@@ -56,7 +56,7 @@ namespace NachoCore
 
         private NcDeviceContacts DeviceContacts = null;
         private NcDeviceCalendars DeviceCalendars = null;
-        private CancellationTokenSource Cts = null;
+        private CancellationTokenSource DPCts = null;
         private object CtsLock = new object ();
 
         public DeviceProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
@@ -80,7 +80,7 @@ namespace NachoCore
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)DevEvt.E.SyncCancelled,
                             (uint)DevEvt.E.SyncStopped,
@@ -106,7 +106,7 @@ namespace NachoCore
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SyncW },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoNop, State = (uint)Lst.SyncWQd },
@@ -127,7 +127,7 @@ namespace NachoCore
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SyncWQd },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.Cancelling },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.Cancelling },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.Cancelling },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoNop, State = (uint)Lst.CancellingQd },
@@ -152,7 +152,7 @@ namespace NachoCore
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.Abated },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoNop, State = (uint)Lst.AbatedQd },
@@ -172,7 +172,7 @@ namespace NachoCore
                             (uint)SmEvt.E.TempFail,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.SyncWQd },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.SyncWQd },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.SyncWQd },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncCancelled, Act = DoSync, State = (uint)Lst.SyncW },
@@ -194,7 +194,7 @@ namespace NachoCore
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SyncWQd },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.CancellingQd },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.CancellingQd },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.CancellingQd },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncCancelled, Act = DoNop, State = (uint)Lst.AbatedQd },
@@ -219,7 +219,7 @@ namespace NachoCore
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncWQd },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.AbatedQd },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.AbatedQd },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.AbatedQd },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.AbateOff, Act = DoSync, State = (uint)Lst.SyncWQd },
@@ -240,7 +240,7 @@ namespace NachoCore
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.Idle },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.Idle },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.Idle },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoSync, State = (uint)Lst.SyncW },
@@ -262,7 +262,7 @@ namespace NachoCore
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.AbateIdle },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.AbateIdle },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.AbateIdle },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoNop, State = (uint)Lst.Abated },
@@ -324,7 +324,7 @@ namespace NachoCore
             }
             var abateTokenSource = new CancellationTokenSource ();
             lock (CtsLock) {
-                Cts = abateTokenSource;
+                DPCts = abateTokenSource;
             }
             var abateToken = abateTokenSource.Token;
             NcTask.Run (() => {
@@ -400,8 +400,8 @@ namespace NachoCore
                 } finally {
                     linkedCancel.Dispose ();
                     lock (CtsLock) {
-                        if (Cts == abateTokenSource) {
-                            Cts = null;
+                        if (DPCts == abateTokenSource) {
+                            DPCts = null;
                         }
                     }
                     abateTokenSource.Dispose ();
@@ -415,9 +415,9 @@ namespace NachoCore
             // the SyncCancelled event, then Cts will be null.  This is not an error, since the in-progress
             // sync has already been notified and there is nothing else that needs to be cancelled.
             lock (CtsLock) {
-                if (null != Cts) {
-                    Cts.Cancel ();
-                    Cts = null;
+                if (null != DPCts) {
+                    DPCts.Cancel ();
+                    DPCts = null;
                 }
             }
         }

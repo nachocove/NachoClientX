@@ -1628,6 +1628,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration42.cs">
       <Link>NachoCore\Model\Migration\NcMigration42.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcPreFetchHints.cs">
+      <Link>NachoCore\BackEnd\NcPreFetchHints.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2594,6 +2597,10 @@
     <ProjectReference Include="..\..\Xamarin.Auth\src\Xamarin.Auth.iOS\Xamarin.Auth.iOS.csproj">
       <Project>{19A091BD-B0E7-49FC-BF83-4118D91A7DC3}</Project>
       <Name>Xamarin.Auth.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\JetBlack.Caching\JetBlack.Caching.iOS\JetBlack.Caching.iOS.csproj">
+      <Project>{63F04FFB-A98F-4DAA-9870-80527037DD61}</Project>
+      <Name>JetBlack.Caching.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

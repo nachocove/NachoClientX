@@ -759,11 +759,11 @@ namespace Test.iOS
             };
             account.Insert ();
             var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
-            var result = strat.GenFetchKit (account.Id);
+            var result = strat.GenFetchKit ();
             Assert.IsNull (result);
 
             Fetch_InjectEmails (account.Id, 11);
-            result = strat.GenFetchKit (account.Id);
+            result = strat.GenFetchKit ();
             Assert.AreEqual (0, result.FetchAttachments.Count);
             Assert.AreEqual (AsStrategy.KBaseFetchSize, result.FetchBodies.Count);
             Assert.NotNull (result.Pendings);
@@ -771,7 +771,7 @@ namespace Test.iOS
             Fetch_DeleteEmails (account.Id);
 
             Fetch_InjectAtts (account.Id, 11);
-            result = strat.GenFetchKit (account.Id);
+            result = strat.GenFetchKit ();
             Assert.AreEqual (AsStrategy.KBaseFetchSize, result.FetchAttachments.Count);
             Assert.AreEqual (0, result.FetchBodies.Count);
             Assert.AreEqual (0, result.Pendings.Count);
@@ -779,7 +779,7 @@ namespace Test.iOS
 
             Fetch_InjectEmails (account.Id, AsStrategy.KBaseFetchSize / 2);
             Fetch_InjectAtts (account.Id, AsStrategy.KBaseFetchSize / 2);
-            result = strat.GenFetchKit (account.Id);
+            result = strat.GenFetchKit ();
             Assert.AreEqual (AsStrategy.KBaseFetchSize / 2, result.FetchAttachments.Count);
             Assert.AreEqual (AsStrategy.KBaseFetchSize / 2, result.FetchBodies.Count);
             Assert.AreEqual (0, result.Pendings.Count);

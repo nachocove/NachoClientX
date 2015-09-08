@@ -888,9 +888,9 @@ namespace NachoClient
             parentView.AddSubview (textLabel);
         }
 
-        public static void AddTextLabelWithImageView (nfloat yOffset, string text, string imageName, EventViewController.TagType tag, UIView parentView)
+        public static UIView AddTextLabelWithImageView (nfloat yOffset, string text, string imageName, EventViewController.TagType tag, UIView parentView)
         {
-            var view = new UIView (new CGRect (0, yOffset, parentView.Frame.Width, 16));
+            var view = new UIView (new CGRect (0, yOffset, parentView.Bounds.Width, 16));
             view.Tag = (int)tag;
 
             var textLabel = new UILabel (new CGRect (42, 0, 100, 16));
@@ -906,15 +906,17 @@ namespace NachoClient
             view.AddSubview (imageView);
 
             parentView.AddSubview (view);
+            return view;
         }
 
-        public static void AddDetailTextLabel (nfloat xOffset, nfloat yOffset, nfloat width, nfloat height, EventViewController.TagType tag, UIView parentView)
+        public static UILabel AddDetailTextLabel (nfloat xOffset, nfloat yOffset, nfloat width, nfloat height, EventViewController.TagType tag, UIView parentView)
         {
             var textLabel = new UILabel (new CGRect (xOffset, yOffset, width, height));
             textLabel.Font = A.Font_AvenirNextRegular14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.Tag = (int)tag;
             parentView.AddSubview (textLabel);
+            return textLabel;
         }
 
         public static void CreateAttendeeButton (nfloat attendeeImageDiameter, nfloat spacing, nfloat titleOffset, McAttendee attendee, int attendeeNum, bool isOrganizer, UIView parentView)

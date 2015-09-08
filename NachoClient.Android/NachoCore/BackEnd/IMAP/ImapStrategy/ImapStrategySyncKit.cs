@@ -285,8 +285,13 @@ namespace NachoCore.IMAP
                 syncKit = new SyncKit (folder);
             } else {
                 uint span = SpanSizeWithCommStatus (protocolState);
-                var syncSet = SyncSet (folder, ref protocolState, span);
                 var outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
+                IList<UniqueId> syncSet;
+                if (outMessages.Count < span) {
+                    syncSet = SyncSet (folder, ref protocolState, (uint)(span - outMessages.Count));
+                } else {
+                    syncSet = new UniqueIdSet ();
+                }
                 if (syncSet.Any () || outMessages.Any ()) {
                     syncKit = new SyncKit (folder, syncSet, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
                     syncKit.UploadMessages = outMessages;
@@ -325,8 +330,11 @@ namespace NachoCore.IMAP
 
         public static bool FillInQuickSyncKit (ref SyncKit Synckit, int AccountId, uint span)
         {
-            var syncSet = QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
             var uploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
+            UniqueIdRange syncSet = null;
+            if (uploadMessages.Count < span) {
+                syncSet = QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, (uint)(span - uploadMessages.Count));
+            }
             if ((null != syncSet && syncSet.Any ()) ||
                 (null != uploadMessages && uploadMessages.Any ())) {
                 Synckit.SyncSet = syncSet;

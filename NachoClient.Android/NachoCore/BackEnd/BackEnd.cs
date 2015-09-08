@@ -66,6 +66,7 @@ namespace NachoCore
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
         private Dictionary<int, bool> CredReqActive;
+        public NcPreFetchHints BodyFetchHints { get; set; }
 
         public IBackEndOwner Owner { set; private get; }
 
@@ -130,6 +131,7 @@ namespace NachoCore
 
             Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
             CredReqActive = new Dictionary<int, bool> ();
+            BodyFetchHints = new NcPreFetchHints ();
         }
 
         public void CreateServices ()
@@ -163,6 +165,7 @@ namespace NachoCore
             ApplyAcrossAccounts ("Stop", (accountId) => {
                 Stop (accountId);
             });
+            BodyFetchHints.Reset ();
         }
 
         public void Stop (int accountId)
@@ -282,6 +285,44 @@ namespace NachoCore
             ApplyAcrossServices (accountId, "PendQHotInd", (service) => {
                 if (0 != (capabilities & service.Capabilities)) {
                     service.PendQHotInd ();
+                }
+                return NcResult.OK ();
+            });
+        }
+
+        /// <summary>
+        /// Sends a status Indication of a PendQ event to all services in the account
+        /// </summary>
+        /// <description>
+        /// This function is identical to HintInd at the moment, and exists mainly for completeness.
+        /// Should we ever split the PendQOrHint event, we won't have to change anyone using the PendQInd.
+        /// </description>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="capabilities">Capabilities.</param>
+        public void PendQInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            ApplyAcrossServices (accountId, "PendQInd", (service) => {
+                if (0 != (capabilities & service.Capabilities)) {
+                    service.PendQOrHintInd ();
+                }
+                return NcResult.OK ();
+            });
+        }
+
+        /// <summary>
+        /// Sends a status Indication of a Hint event to all services in the account
+        /// </summary>
+        /// <description>
+        /// This function is identical to PendQInd at the moment.
+        /// Should we ever split the PendQOrHint event, we won't have to change anyone using the PendQInd.
+        /// </description>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="capabilities">Capabilities.</param>
+        public void HintInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            ApplyAcrossServices (accountId, "HintInd", (service) => {
+                if (0 != (capabilities & service.Capabilities)) {
+                    service.PendQOrHintInd ();
                 }
                 return NcResult.OK ();
             });
@@ -730,5 +771,16 @@ namespace NachoCore
                 Owner.SendEmailResp (sender.AccountId, emailMessageId, didSend);
             });
         }
+
+        public void SendEmailBodyFetchHint (int accountId, int emailMessageId)
+        {
+            bool needInd = BodyFetchHints.Count (accountId) > 0;
+            Log.Info (Log.LOG_BACKEND, "SendEmailBodyFetchHint: {0} hints in queue", BodyFetchHints.Count (accountId));
+            BodyFetchHints.AddHint (accountId, emailMessageId);
+            if (needInd) {
+                HintInd (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+            }
+        }
+
     }
 }

@@ -155,6 +155,7 @@ namespace NachoCore.IMAP
                     }
                 }
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
+                BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);
             } catch (ImapCommandException ex) {
                 Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand ImapCommandException: {0}", ex.Message);
                 // TODO Probably want to narrow this down. Pull in latest MailKit and make it compile.

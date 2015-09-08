@@ -140,9 +140,29 @@ namespace NachoCore.IMAP
             }
         }
 
+        /// <summary>
+        /// Syncs a folder.
+        /// </summary>
+        /// <description>
+        /// it is important that we upload messages first, because we want to immediately sync them back down
+        /// to get any server-side values that might have gotten set (ConversationId, for example, if any).
+        /// </description>
+        /// <returns>The folder.</returns>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
         private Event syncFolder (NcImapFolder mailKitFolder)
         {
             bool changed = false;
+            // start by uploading messages
+            if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
+                Synckit.SyncSet = SyncKit.MustUniqueIdSet (Synckit.SyncSet);
+                foreach (var messageId in Synckit.UploadMessages) {
+                    Cts.Token.ThrowIfCancellationRequested ();
+                    var emailMessage = AppendMessage (mailKitFolder, Synckit.Folder, messageId.Id);
+                    // add the uploaded email to the syncSet, so that we immedaitely sync it back down.
+                    Synckit.SyncSet.Add (new UniqueId (emailMessage.ImapUid));
+                    changed = true;
+                }
+            }
             if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
                 // First find all messages marked as /Deleted
                 UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
@@ -163,13 +183,6 @@ namespace NachoCore.IMAP
                 changed |= deleted.Any () || newOrChanged.Any ();
             }
 
-            if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
-                foreach (var messageId in Synckit.UploadMessages) {
-                    Cts.Token.ThrowIfCancellationRequested ();
-                    AppendMessage (mailKitFolder, Synckit.Folder, messageId.Id);
-                    changed = true;
-                }
-            }
             Finish (changed);
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
@@ -352,7 +365,7 @@ namespace NachoCore.IMAP
                 }
             } else {
                 try {
-                    emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary as MessageSummary);
+                    emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary);
                     updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                     changed = true;
                     justCreated = true;
@@ -446,7 +459,7 @@ namespace NachoCore.IMAP
             return messagesDeleted;
         }
 
-        public static bool UpdateEmailMetaData (McEmailMessage emailMessage, IMessageSummary summary)
+        public static bool UpdateEmailMetaData (McEmailMessage emailMessage, MessageSummary summary)
         {
             if (!summary.Flags.HasValue) {
                 Log.Error (Log.LOG_IMAP, "Trying to update email message without any flags");
@@ -459,9 +472,11 @@ namespace NachoCore.IMAP
             if (updateFlags (emailMessage, Flags, UserFlags)) {
                 changed = true;
             }
-            if (emailMessage.MessageID != summary.Envelope.MessageId) {
-                emailMessage.MessageID = summary.Envelope.MessageId;
-                changed = true;
+            if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
+                // this can happen for emails we've sent out.
+                if (SetConversationId (emailMessage, summary)) {
+                    changed = true;
+                }
             }
             bool ch;
             FixupFromInfo (emailMessage, false, out ch);
@@ -648,18 +663,27 @@ namespace NachoCore.IMAP
                 }
             }
 
-            if (summary.GMailThreadId.HasValue) {
-                emailMessage.ConversationId = summary.GMailThreadId.Value.ToString ();
-            }
-            if (string.Empty == emailMessage.MessageID && summary.GMailMessageId.HasValue) {
+            if (string.IsNullOrEmpty (emailMessage.MessageID) && summary.GMailMessageId.HasValue) {
                 emailMessage.MessageID = summary.GMailMessageId.Value.ToString ();
             }
-            if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
-                emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();
-            }
+            SetConversationId (emailMessage, summary);
             emailMessage.IsIncomplete = false;
 
             return FixupFromInfo (emailMessage, false);
+        }
+
+        private static bool SetConversationId (McEmailMessage emailMessage, MessageSummary summary)
+        {
+            bool changed = false;
+            if (summary.GMailThreadId.HasValue) {
+                emailMessage.ConversationId = summary.GMailThreadId.Value.ToString ();
+                changed = true;
+            }
+            if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
+                emailMessage.ConversationId = Guid.NewGuid ().ToString ();
+                changed = true;
+            }
+            return changed;
         }
 
         private string FetchHeaders (NcImapFolder mailKitFolder, MessageSummary summary)

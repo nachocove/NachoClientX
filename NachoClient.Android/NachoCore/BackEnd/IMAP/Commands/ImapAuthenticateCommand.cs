@@ -21,6 +21,7 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
+            Cts.Token.ThrowIfCancellationRequested ();
             try {
                 if (Client.IsConnected) {
                     Client.Disconnect (false, Cts.Token);

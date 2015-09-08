@@ -149,7 +149,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)St.Start,
                         Drop = new uint[] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
@@ -172,7 +172,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)Lst.DiscW,
                         Drop = new uint[] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                         },
                         Invalid = new uint[] {
@@ -195,7 +195,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)Lst.UiCrdW,
                         Drop = new uint[] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                         },
                         Invalid = new uint[] {
@@ -219,7 +219,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)Lst.UiServConfW,
                         Drop = new uint[] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                         },
                         Invalid = new uint[] {
@@ -243,7 +243,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)Lst.FSyncW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                         },
                         Invalid = new [] {
                             (uint)ImapEvt.E.ReFSync,
@@ -266,7 +266,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)Lst.SyncW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -300,7 +300,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, ActSetsState = true },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoPick, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -312,7 +312,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)Lst.QOpW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -335,7 +335,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)Lst.HotQOpW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -358,7 +358,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)Lst.FetchW,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -393,7 +393,7 @@ namespace NachoCore.IMAP
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, ActSetsState = true },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoPick, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -404,7 +404,7 @@ namespace NachoCore.IMAP
                     new Node {
                         State = (uint)Lst.Parked,
                         Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)PcEvt.E.Park,
                             (uint)ImapEvt.E.UiSetCred,
@@ -469,7 +469,7 @@ namespace NachoCore.IMAP
             }
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_DaysToSyncChanged:
-                if (!ForceStopped) {
+                if (!Cts.IsCancellationRequested) {
                     Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
                 }
                 break;
@@ -646,7 +646,9 @@ namespace NachoCore.IMAP
             Interlocked.Decrement (ref ConcurrentExtraRequests);
             // Send the PendQHot so that the ProtoControl SM looks to see if there is another hot op
             // to run in parallel.
-            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
+            if (!Cts.IsCancellationRequested) {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
+            }
         }
 
         private const int MaxConcurrentExtraRequests = 4;
@@ -677,7 +679,7 @@ namespace NachoCore.IMAP
                             new Node {
                                 State = (uint)St.Start,
                                 Invalid = new [] {
-                                    (uint)NcProtoControl.PcEvt.E.PendQ,
+                                    (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                                     (uint)NcProtoControl.PcEvt.E.PendQHot,
                                     (uint)NcProtoControl.PcEvt.E.Park,
                                     (uint)ImapEvt.E.UiSetCred,
