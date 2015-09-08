@@ -450,10 +450,13 @@ namespace NachoClient.iOS
         /// </summary>
         public delegate void SwipeCallback (SwipeActionView activeView, SwipeState state);
 
+        public delegate bool ShouldSwipeCallback ();
+
         public nfloat SnapAllShownThreshold = 0.5f;
 
         public ButtonCallback OnClick;
         public SwipeCallback OnSwipe;
+        public ShouldSwipeCallback ShouldSwipe;
 
         public SwipeActionButtonList LeftSwipeActionButtons { get; protected set; }
 
@@ -503,6 +506,9 @@ namespace NachoClient.iOS
                 return true;
             };
             swipeRecognizer.ShouldBegin = delegate(UIGestureRecognizer obj) {
+                if (ShouldSwipe != null && !ShouldSwipe()){
+                    return false;
+                }
                 var recognizer = (UIPanGestureRecognizer)obj;
                 var velocity = recognizer.VelocityInView (this);
                 return NMath.Abs (velocity.X) > NMath.Abs (velocity.Y); 
