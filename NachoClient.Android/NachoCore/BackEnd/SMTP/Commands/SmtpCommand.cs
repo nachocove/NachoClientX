@@ -176,6 +176,7 @@ namespace NachoCore.SMTP
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 try {
+                    Log.Info (Log.LOG_SMTP, "ConnectAndAuthenticate: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, cred));              
                     Client.Authenticate (username, cred, Cts.Token);
                 } catch (SmtpProtocolException e) {
                     Log.Info (Log.LOG_SMTP, "Protocol Error during auth: {0}", e);
