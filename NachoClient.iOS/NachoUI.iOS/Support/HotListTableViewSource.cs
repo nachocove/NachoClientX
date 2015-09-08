@@ -54,7 +54,6 @@ namespace NachoClient.iOS
         protected const int UNREAD_IMAGE_TAG = 99111;
         protected const int CARD_VIEW_TAG = 99112;
 
-        protected const int HOT_LIST_LABEL = 99114;
         protected const int UNREAD_MESSAGES_VIEW = 99115;
 
         public UIEdgeInsets CellCardInset = new UIEdgeInsets (5.0f, 7.0f, 5.0f, 8.0f);
@@ -242,60 +241,23 @@ namespace NachoClient.iOS
             var cardView = cell.ViewWithTag (CARD_VIEW_TAG);
             var frame = new CGRect (0, 0, cardView.Frame.Width, cardView.Frame.Height);
 
+            var cellFont = (UIScreen.MainScreen.Bounds.Width > 390 ? A.Font_AvenirNextMedium17 : A.Font_AvenirNextMedium14);
+
             var noMessagesView = new UIView (frame);
             noMessagesView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
 
             var minButtonsFrame = ((40 * 3) + (2 * A.Card_Vertical_Indent));
             var messageFrameHeight = noMessagesView.Frame.Height - minButtonsFrame;
 
-            var isFourS = false;
-            var isSixOrGreater = false;
-            var isSixPlusOrGreater = false;
+            var helpView = new HotHelpMessageView (new CGRect (0.0, 0.0, noMessagesView.Frame.Width, messageFrameHeight));
+            helpView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
 
-            if (260 > noMessagesView.Frame.Height) {
-                isFourS = true;
-            } else {
-                if (360 <= noMessagesView.Frame.Width) {
-                    isSixOrGreater = true;
-                }
-                if (390 < noMessagesView.Frame.Width) {
-                    isSixPlusOrGreater = true;
-                }
-            }
-
-            // Nacho Mail icon
-            var nachoMailIcon = new UIImageView ();
-            nachoMailIcon.Frame = (isSixOrGreater ? new CGRect (frame.Width / 2 - 32.5f, A.Card_Vertical_Indent, 65, 65) : new CGRect (frame.Width / 2 - 22.5f, A.Card_Horizontal_Indent, 45, 45));
-            nachoMailIcon.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleRightMargin;
-            nachoMailIcon.Image = UIImage.FromBundle ("Bootscreen-1");
-            nachoMailIcon.Hidden = isFourS;
-            noMessagesView.AddSubview (nachoMailIcon);
-
-            // Chips left
-            var chipsLeftIcon = new UIImageView ();
-            chipsLeftIcon.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin;
-            chipsLeftIcon.Frame = (isSixOrGreater ? new CGRect (0, messageFrameHeight - 45, 115, 45) : new CGRect (0, messageFrameHeight - 33, 85, 33));
-            chipsLeftIcon.Image = UIImage.FromBundle ("gen-nacholeft");
-            chipsLeftIcon.Hidden = isFourS;
-            noMessagesView.AddSubview (chipsLeftIcon);
-
-            // Chips right
-            var chipsRightIcon = new UIImageView ();
-            chipsRightIcon.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleLeftMargin;
-            chipsRightIcon.Frame = (isSixOrGreater ? new CGRect (frame.Width - 115, messageFrameHeight - 45, 115, 45) : new CGRect (frame.Width - 85, messageFrameHeight - 33, 85, 33));
-            chipsRightIcon.Image = UIImage.FromBundle ("gen-nachoright");
-            chipsRightIcon.Hidden = isFourS;
-            noMessagesView.AddSubview (chipsRightIcon);
-
-            // Empty Hot list label
+            NSMutableAttributedString lastCardMessage = null;
             var stringAttributes = new UIStringAttributes {
                 ForegroundColor = A.Color_NachoGreen,
                 BackgroundColor = UIColor.White,
-                Font = (isSixPlusOrGreater ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextDemiBold14)
+                Font = cellFont
             };
-
-            NSMutableAttributedString lastCardMessage = null;
-
             if (NoMessageThreads ()) {
                 lastCardMessage = new NSMutableAttributedString ("You do not have any Hot messages. \n \nYou can add Hot messages by tapping on the  ", stringAttributes);
             } else {
@@ -309,22 +271,9 @@ namespace NachoClient.iOS
             var stringWithImage = NSAttributedString.CreateFrom (inlineIcon);
             lastCardMessage.Append (stringWithImage);
             lastCardMessage.Append (lastCardMessagePartTwo);
+            helpView.hotListLabel.AttributedText = lastCardMessage;
 
-            var messageWidth = (isSixPlusOrGreater ? noMessagesView.Frame.Width - 4 * A.Card_Horizontal_Indent : 320 - 4 * A.Card_Horizontal_Indent);
-
-            var hotListLabel = new UILabel (new CGRect (0, 0, messageWidth, 50));
-            hotListLabel.TextAlignment = UITextAlignment.Center;
-            hotListLabel.BackgroundColor = UIColor.White;
-            hotListLabel.Lines = 0;
-            hotListLabel.LineBreakMode = UILineBreakMode.WordWrap;            
-            hotListLabel.AttributedText = lastCardMessage;
-            hotListLabel.SizeToFit ();
-            var hotListLabelYOffset = (isFourS ? messageFrameHeight / 2 : ((chipsLeftIcon.Frame.Top - nachoMailIcon.Frame.Bottom) / 2) + nachoMailIcon.Frame.Bottom + 5);
-            hotListLabel.Center = new CGPoint (noMessagesView.Frame.Width / 2, hotListLabelYOffset); 
-            hotListLabel.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin | UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleRightMargin;
-            hotListLabel.Tag = HOT_LIST_LABEL;
-
-            noMessagesView.AddSubview (hotListLabel);
+            noMessagesView.AddSubview (helpView);
 
             var cellHeight = (noMessagesView.Frame.Height - messageFrameHeight) / 3;
             var unreadMessageViewFrame = new CGRect (A.Card_Horizontal_Indent, messageFrameHeight, frame.Width - A.Card_Horizontal_Indent, cellHeight);
@@ -332,7 +281,6 @@ namespace NachoClient.iOS
             unreadMessagesView.Tag = UNREAD_MESSAGES_VIEW;
             unreadMessagesView.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth;
 
-            var cellFont = (isSixPlusOrGreater ? A.Font_AvenirNextMedium17 : A.Font_AvenirNextMedium14);
             unreadMessagesView.SetFont (cellFont);
 
             noMessagesView.AddSubview (unreadMessagesView);
@@ -385,9 +333,9 @@ namespace NachoClient.iOS
         {
 
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
-            view.DisableSwipe ();
             view.OnSwipe = null;
             view.OnClick = null;
+            view.ShouldSwipe = ShouldSwipeCell;
 
             var messageThreadIndex = indexPath.Row;
             var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
@@ -408,10 +356,6 @@ namespace NachoClient.iOS
             cell.TextLabel.Text = "";
             foreach (var v in cell.ContentView.Subviews) {
                 v.Hidden = false;
-            }
-
-            if (!scrolling) {
-                view.EnableSwipe (true);
             }
 
             view.OnClick = (int tag) => {
@@ -517,6 +461,11 @@ namespace NachoClient.iOS
             var previewView = (ScrollableBodyView)view.ViewWithTag (PREVIEW_TAG);
             previewView.Frame = PreviewFrame (cell);
             previewView.SetItem (message);
+        }
+
+        public bool ShouldSwipeCell ()
+        {
+            return !scrolling;
         }
 
         public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
