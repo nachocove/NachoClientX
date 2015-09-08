@@ -157,6 +157,7 @@ namespace NachoCore.IMAP
                 Synckit.SyncSet = SyncKit.MustUniqueIdSet (Synckit.SyncSet);
                 foreach (var messageId in Synckit.UploadMessages) {
                     Cts.Token.ThrowIfCancellationRequested ();
+                    mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadWrite);
                     var emailMessage = AppendMessage (mailKitFolder, Synckit.Folder, messageId.Id);
                     // add the uploaded email to the syncSet, so that we immedaitely sync it back down.
                     Synckit.SyncSet.Add (new UniqueId (emailMessage.ImapUid));
@@ -164,6 +165,7 @@ namespace NachoCore.IMAP
                 }
             }
             if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
+                mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadOnly);
                 // First find all messages marked as /Deleted
                 UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
 
@@ -431,6 +433,13 @@ namespace NachoCore.IMAP
                     return true;
                 });
                 EmailMessage = FixupFromInfo (EmailMessage, true);
+                Cts.Token.ThrowIfCancellationRequested ();
+
+                // If we uploaded a message to the sent folder, mark it as read.
+                var defSent = McFolder.GetDefaultSentFolder (AccountId);
+                if (defSent.Id == folder.Id) {
+                    mailKitFolder.AddFlags (uid.Value, MessageFlags.Seen, false, Cts.Token);
+                }
             } else {
                 Log.Error (Log.LOG_IMAP, "Append to Folder did not return a uid!");
             }
