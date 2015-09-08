@@ -758,6 +758,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
+            context.Account = account;
             var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var result = strat.GenFetchKit ();
             Assert.IsNull (result);
