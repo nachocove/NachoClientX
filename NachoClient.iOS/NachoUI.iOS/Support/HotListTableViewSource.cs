@@ -333,9 +333,9 @@ namespace NachoClient.iOS
         {
 
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
-            view.DisableSwipe ();
             view.OnSwipe = null;
             view.OnClick = null;
+            view.ShouldSwipe = ShouldSwipeCell;
 
             var messageThreadIndex = indexPath.Row;
             var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
@@ -356,10 +356,6 @@ namespace NachoClient.iOS
             cell.TextLabel.Text = "";
             foreach (var v in cell.ContentView.Subviews) {
                 v.Hidden = false;
-            }
-
-            if (!scrolling) {
-                view.EnableSwipe (true);
             }
 
             view.OnClick = (int tag) => {
@@ -465,6 +461,11 @@ namespace NachoClient.iOS
             var previewView = (ScrollableBodyView)view.ViewWithTag (PREVIEW_TAG);
             previewView.Frame = PreviewFrame (cell);
             previewView.SetItem (message);
+        }
+
+        public bool ShouldSwipeCell ()
+        {
+            return !scrolling;
         }
 
         public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)

@@ -1632,6 +1632,9 @@
       <Link>NachoCore\BackEnd\NcPreFetchHints.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\HotHelpMessageView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration43.cs">
+      <Link>NachoCore\Model\Migration\NcMigration43.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
