@@ -87,6 +87,8 @@ namespace NachoCore.Model
         /// Specifies the original format type of the item
         public int NativeBodyType { get; set; }
 
+        public string SerializedAttendeeList { get; set; }
+
         public virtual string GetSubject ()
         {
             return Subject;
@@ -141,6 +143,8 @@ namespace NachoCore.Model
         // until Insert() or Update() is called.
         private IList<McAttendee> appAttendees = null;
 
+        private const string OLD_STYLE_FLAG = "OldStyle";
+
         [Ignore]
         public virtual IList<McAttendee> attendees {
             get {
@@ -154,31 +158,44 @@ namespace NachoCore.Model
 
         private List<McAttendee> ReadDbAttendees ()
         {
-            var attendeeParentType = McAttendee.GetParentType (this);
-            return NcModel.Instance.Db.Table<McAttendee> ()
-                .Where (x => x.ParentId == this.Id && x.ParentType == attendeeParentType).ToList ();
+            if (OLD_STYLE_FLAG == SerializedAttendeeList) {
+                var attendeeParentType = McAttendee.GetParentType (this);
+                return NcModel.Instance.Db.Table<McAttendee> ()
+                    .Where (x => x.ParentId == this.Id && x.ParentType == attendeeParentType).ToList ();
+            } else {
+                if (string.IsNullOrEmpty (SerializedAttendeeList)) {
+                    return new List<McAttendee> ();
+                }
+                return McAttendee.Deserialize (SerializedAttendeeList);
+            }
         }
 
         private void DeleteDbAttendees ()
         {
-            DeleteAncillaryCollection (ref dbAttendees, ReadDbAttendees);
+            if (OLD_STYLE_FLAG == SerializedAttendeeList) {
+                DeleteAncillaryCollection (ref dbAttendees, ReadDbAttendees);
+            }
         }
 
         private void SaveAttendees ()
         {
-            var attendeeParentType = McAttendee.GetParentType (this);
-            SaveAncillaryCollection (ref appAttendees, ref dbAttendees, ReadDbAttendees, (McAttendee attendee) => {
-                attendee.SetParent (this);
-            }, (McAttendee attendee) => {
-                return attendee.ParentId == this.Id && attendee.ParentType == attendeeParentType;
-            });
+            if (null == appAttendees) {
+                return;
+            }
+            if (OLD_STYLE_FLAG == SerializedAttendeeList) {
+                DeleteDbAttendees ();
+            }
+            InsertAttendees ();
         }
 
         private void InsertAttendees ()
         {
-            InsertAncillaryCollection (ref appAttendees, ref dbAttendees, (McAttendee attendee) => {
-                attendee.SetParent (this);
-            });
+            if (null == appAttendees) {
+                return;
+            }
+            SerializedAttendeeList = McAttendee.Serialize (appAttendees);
+            dbAttendees = new List<McAttendee> (appAttendees);
+            appAttendees = null;
         }
 
         // Categories that are stored in the database.
@@ -439,8 +456,8 @@ namespace NachoCore.Model
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     UpdateDescription (); // Must be called before base.Insert()
-                    retval = base.Insert ();
                     InsertAttendees ();
+                    retval = base.Insert ();
                     InsertCategories ();
                     InsertAttachments ();
                 });
@@ -454,8 +471,8 @@ namespace NachoCore.Model
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     UpdateDescription (); // Must be called before base.Update()
-                    retval = base.Update ();
                     SaveAttendees ();
+                    retval = base.Update ();
                     SaveCategories ();
                     SaveAttachments ();
                 });
