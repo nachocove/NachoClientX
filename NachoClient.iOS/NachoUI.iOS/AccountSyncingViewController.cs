@@ -62,6 +62,7 @@ namespace NachoClient.iOS
             set {
                 account = value;
                 StartListeningForApplicationStatus ();
+                CheckBackendState ();
             }
         }
 
@@ -211,26 +212,28 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_BackEndStateChanged == s.Status.SubKind) {
                 if (s.Account != null && s.Account.Id == Account.Id) {
-                    var senderState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
-                    var readerState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
-                    Log.Info (Log.LOG_UI, "AccountSyncingViewController senderState {0}, readerState {1} for account {2}", senderState, readerState, Account.Id);
-                    if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
-                        StopListeningForApplicationStatus ();
-                        CompleteWithMessage (ErrorMessage);
-                    } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
-                        StopListeningForApplicationStatus ();
-                        CompleteWithMessage (ErrorMessage);
-                    } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
-                        StopListeningForApplicationStatus ();
-                        CompleteWithMessage (ErrorMessage);
-                    } else if ((senderState == BackEndStateEnum.PostAutoDPostInboxSync) && (readerState == BackEndStateEnum.PostAutoDPostInboxSync)) {
-                        Log.Info (Log.LOG_UI, "AccountSyncingViewController saw PostAutoDBPostInboxSync for both sender and reader, account ID{0}", Account.Id);
-                        CompleteWithMessage (SuccessMessage);
-                    }
+                    CheckBackendState ();
                 }
             } else if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
                 StopListeningForApplicationStatus ();
                 CompleteWithMessage (NetworkMessage);
+            }
+        }
+
+        private void CheckBackendState ()
+        {
+            var senderState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+            var readerState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+            Log.Info (Log.LOG_UI, "AccountSyncingViewController senderState {0}, readerState {1} for account {2}", senderState, readerState, Account.Id);
+            if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
+                CompleteWithMessage (ErrorMessage);
+            } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
+                CompleteWithMessage (ErrorMessage);
+            } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
+                CompleteWithMessage (ErrorMessage);
+            } else if ((senderState == BackEndStateEnum.PostAutoDPostInboxSync) && (readerState == BackEndStateEnum.PostAutoDPostInboxSync)) {
+                Log.Info (Log.LOG_UI, "AccountSyncingViewController saw PostAutoDBPostInboxSync for both sender and reader, account ID{0}", Account.Id);
+                CompleteWithMessage (SuccessMessage);
             }
         }
 
