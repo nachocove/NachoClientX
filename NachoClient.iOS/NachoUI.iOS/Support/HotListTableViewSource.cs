@@ -470,21 +470,28 @@ namespace NachoClient.iOS
 
         public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
         {
+            Log.Info (Log.LOG_UI, "HotList WillSelectRow {0} message count: {1}", indexPath, messageThreads.Count());
             if (indexPath.Row < messageThreads.Count ()) {
+                Log.Info (Log.LOG_UI, "Hot WillSelectRow returning {0}", indexPath);
                 return indexPath;
             }
+            Log.Info (Log.LOG_UI, "HotList WillSelectRow returning null", indexPath);
             return null;
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
+            Log.Info (Log.LOG_UI, "HotList RowSelected {0}", indexPath);
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
             if (null == messageThread) {
+                Log.Info (Log.LOG_UI, "HotList RowSelected got null messageThread");
                 return;
             }
             if (messageThread.HasMultipleMessages ()) {
+                Log.Info (Log.LOG_UI, "HotList RowSelected segue to message thread view");
                 owner.PerformSegueForDelegate ("SegueToMessageThreadView", new SegueHolder (messageThread));
             } else {
+                Log.Info (Log.LOG_UI, "HotList RowSelected segue to message thread view");
                 owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
             }
         }
