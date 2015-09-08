@@ -2815,11 +2815,11 @@ namespace Test.Android
 		public partial class String
 		{
 			
-			// aapt resource value: 0x7f070041
-			public const int ApplicationName = 2131165249;
+			// aapt resource value: 0x7f070042
+			public const int ApplicationName = 2131165250;
 			
-			// aapt resource value: 0x7f070040
-			public const int Hello = 2131165248;
+			// aapt resource value: 0x7f070041
+			public const int Hello = 2131165249;
 			
 			// aapt resource value: 0x7f07002e
 			public const int abc_action_bar_home_description = 2131165230;
@@ -2971,8 +2971,8 @@ namespace Test.Android
 			// aapt resource value: 0x7f070003
 			public const int decline = 2131165187;
 			
-			// aapt resource value: 0x7f070042
-			public const int library_name = 2131165250;
+			// aapt resource value: 0x7f070040
+			public const int library_name = 2131165248;
 			
 			// aapt resource value: 0x7f070023
 			public const int mr_media_route_button_content_description = 2131165219;

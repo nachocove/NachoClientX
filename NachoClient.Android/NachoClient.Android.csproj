@@ -657,6 +657,10 @@
       <Project>{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}</Project>
       <Name>Xamarin.Auth.Android</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\JetBlack.Caching\JetBlack.Caching.Android\JetBlack.Caching.Android.csproj">
+      <Project>{63F04FFB-A98F-4DAA-9870-80527037DD61}</Project>
+      <Name>JetBlack.Caching.Android</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\Bootscreen_1.png" />
