@@ -537,7 +537,7 @@ namespace Test.iOS
             autodCommand = null;
             mockContext = null;
 
-            mockContext = new MockContext ();
+            mockContext = new MockContext (null);
 
             // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
             var phonyServer = new McServer ();

@@ -1057,7 +1057,7 @@ namespace NachoCore.ActiveSync
         private void DoSync ()
         {
             AsSyncCommand cmd = null;
-            var syncKit = Strategy.GenSyncKit (AccountId, ProtocolState);
+            var syncKit = Strategy.GenSyncKit (ProtocolState);
             if (null != syncKit) {
                 cmd = new AsSyncCommand (this, syncKit);
             } else {
@@ -1087,7 +1087,7 @@ namespace NachoCore.ActiveSync
             SetCmd (null);
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
-            McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
+            McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, AccountId);
         }
 
         private void DoDrive ()
@@ -1178,7 +1178,7 @@ namespace NachoCore.ActiveSync
         // PushAssist support.
         public PushAssistParameters PushAssistParameters ()
         {
-            var pingKit = Strategy.GenPingKit (AccountId, ProtocolState, true, false, true);
+            var pingKit = Strategy.GenPingKit (ProtocolState, true, false, true);
             if (null == pingKit) {
                 return null; // should never happen
             }

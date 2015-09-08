@@ -14,7 +14,6 @@ namespace NachoCore.SMTP
 {
     public abstract class SmtpCommand : NcCommand
     {
-        protected int AccountId { get; set; }
         public NcSmtpClient Client { get; set; }
 
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
@@ -23,7 +22,6 @@ namespace NachoCore.SMTP
         {
             Client = smtpClient;
             RedactProtocolLogFunc = null;
-            AccountId = BEContext.Account.Id;
         }
 
         // MUST be overridden by subclass.

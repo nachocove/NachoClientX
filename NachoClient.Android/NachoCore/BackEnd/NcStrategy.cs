@@ -25,7 +25,7 @@ namespace NachoCore
                 (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2);
         }
 
-        public virtual bool ANarrowFolderHasToClientExpected (int accountId)
+        public virtual bool ANarrowFolderHasToClientExpected ()
         {
             NcAssert.True (false);
             return true;

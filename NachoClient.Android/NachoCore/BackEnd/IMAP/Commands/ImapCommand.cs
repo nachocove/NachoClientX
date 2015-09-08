@@ -23,7 +23,6 @@ namespace NachoCore.IMAP
 {
     public class ImapCommand : NcCommand
     {
-        protected int AccountId { get; set; }
         protected NcImapClient Client { get; set; }
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
@@ -33,7 +32,6 @@ namespace NachoCore.IMAP
         {
             Client = imapClient;
             RedactProtocolLogFunc = null;
-            AccountId = BEContext.Account.Id;
         }
 
         // MUST be overridden by subclass.
