@@ -428,9 +428,7 @@ namespace NachoCore.SMTP
 
         private void SetCmd (SmtpCommand nextCmd)
         {
-            if (null != Cmd) {
-                Cmd.Cancel ();
-            }
+            CancelCmd ();
             Cmd = nextCmd;
         }
 
@@ -615,9 +613,7 @@ namespace NachoCore.SMTP
 
         private void DoUiCredReq ()
         {
-            if (null != Cmd) {
-                Cmd.Cancel ();
-            }
+            CancelCmd ();
             BackEndStatePreset = BackEndStateEnum.CredWait;
             // Send the request toward the UI.
             Owner.CredReq (this);
