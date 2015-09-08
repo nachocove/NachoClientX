@@ -1,10 +1,12 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
-using SQLite;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Xml;
+using System.Xml.Linq;
 using NachoCore.Utils;
+using SQLite;
 
 namespace NachoCore.Model
 {
@@ -70,6 +72,102 @@ namespace NachoCore.Model
             AttendeeTypeIsSet = (NcAttendeeType.Unknown != type);
             AttendeeStatus = status;
             AttendeeStatusIsSet = (NcAttendeeStatus.NotResponded != status);
+        }
+
+        private static int ToInt (string s, int defaultValue = 0)
+        {
+            int result;
+            if (int.TryParse(s, out result)) {
+                return result;
+            }
+            return defaultValue;
+        }
+
+        private const int SERIALIZATION_VERSION = 1;
+
+        // Keeping the tags short results in a measurable performance improvement
+        // when a meeting has lots of attendees.
+        private const string ATTENDEES_TAG = "A";
+        private const string VERSION_ATTRIBUTE = "v";
+        private const string ATTENDEE_TAG = "a";
+        private const string EMAIL_TAG = "e";
+        private const string NAME_TAG = "n";
+        private const string TYPE_TAG = "t";
+        private const string STATUS_TAG = "s";
+
+        internal static string Serialize (IEnumerable<McAttendee> attendees)
+        {
+            var xRoot = new XElement (ATTENDEES_TAG);
+            xRoot.SetAttributeValue (VERSION_ATTRIBUTE, SERIALIZATION_VERSION);
+            foreach (var attendee in attendees) {
+                var xAttendee = new XElement (ATTENDEE_TAG,
+                    new XElement (EMAIL_TAG, attendee.Email),
+                    new XElement (NAME_TAG, attendee.Name));
+                if (attendee.AttendeeTypeIsSet) {
+                    xAttendee.Add (new XElement (TYPE_TAG, (int)attendee.AttendeeType));
+                }
+                if (attendee.AttendeeStatusIsSet) {
+                    xAttendee.Add (new XElement (STATUS_TAG, (int)attendee.AttendeeStatus));
+                }
+                xRoot.Add (xAttendee);
+            }
+            // Don't worry about indenting or other white space in the XML string.
+            // That just wastes space in the database.
+            return xRoot.ToString (SaveOptions.DisableFormatting);
+        }
+
+        internal static List<McAttendee> Deserialize (string xmlString)
+        {
+            var result = new List<McAttendee> ();
+            XElement xRoot = null;
+            try {
+                xRoot = XElement.Parse (xmlString);
+            } catch (Exception e) {
+                Log.Error (Log.LOG_CALENDAR, "Serialized attendee string couldn't be parsed as XML: {0}: {1}", e.GetType ().Name, e.Message);
+                return result;
+            }
+            if (ATTENDEES_TAG != xRoot.Name.LocalName) {
+                Log.Error (Log.LOG_CALENDAR, "Serialized attendee string has the wrong root tag, {0} instead of {1}", xRoot.Name.LocalName, ATTENDEES_TAG);
+                return result;
+            }
+            if (null == xRoot.Attribute (VERSION_ATTRIBUTE)) {
+                Log.Error (Log.LOG_CALENDAR, "Serialized attendee string doesn't have a {0} attribute on the root element.", VERSION_ATTRIBUTE);
+                return result;
+            }
+            if (SERIALIZATION_VERSION != ToInt (xRoot.Attribute (VERSION_ATTRIBUTE).Value, -1)) {
+                Log.Error (Log.LOG_CALENDAR, "Serialized attendee string has an unexpected value for the version attribute: {0}", xRoot.Attribute (VERSION_ATTRIBUTE).Value);
+                return result;
+            }
+            foreach (var xAttendee in xRoot.Elements ()) {
+                if (ATTENDEE_TAG != xAttendee.Name.LocalName) {
+                    Log.Error (Log.LOG_CALENDAR, "Serialized attendee string has a <{0}> element where <{1}> was expected.", xAttendee.Name.LocalName, ATTENDEE_TAG);
+                    continue;
+                }
+                var attendee = new McAttendee ();
+                foreach (var child in xAttendee.Elements ()) {
+                    switch (child.Name.LocalName) {
+                    case EMAIL_TAG:
+                        attendee.Email = child.Value;
+                        break;
+                    case NAME_TAG:
+                        attendee.Name = child.Value;
+                        break;
+                    case TYPE_TAG:
+                        attendee.AttendeeTypeIsSet = true;
+                        attendee.AttendeeType = (NcAttendeeType)ToInt (child.Value, (int)NcAttendeeType.Unknown);
+                        break;
+                    case STATUS_TAG:
+                        attendee.AttendeeStatusIsSet = true;
+                        attendee.AttendeeStatus = (NcAttendeeStatus)ToInt (child.Value, (int)NcAttendeeStatus.NotResponded);
+                        break;
+                    default:
+                        Log.Error (Log.LOG_CALENDAR, "Serialized attendee string has an unexpected element <{0}>", child.Name.LocalName);
+                        break;
+                    }
+                }
+                result.Add (attendee);
+            }
+            return result;
         }
 
         public static int GetParentType (McAbstrCalendarRoot r)
