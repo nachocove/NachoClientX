@@ -11,7 +11,11 @@ namespace NachoCore
         private static volatile NcMdmConfig instance;
         private static object syncRoot = new object ();
 
-        public bool IsPopulated { get; private set; }
+        public bool IsPopulated {
+            get {
+                return !String.IsNullOrEmpty(Host) || Port.HasValue || !String.IsNullOrEmpty(Username) || !String.IsNullOrEmpty(Domain) || !String.IsNullOrEmpty(EmailAddr) || !String.IsNullOrEmpty(BrandingName) || !String.IsNullOrEmpty(BrandingLogoUrl);
+            }
+        }
         public bool IsValid { get; private set; }
         // Begin MDM Values. All types must be nullable (null => not set).
         public string Host { get; set; }
@@ -47,7 +51,6 @@ namespace NachoCore
         public void SetValues (Action<NcMdmConfig> setter)
         {
             setter (this);
-            IsPopulated = !String.IsNullOrEmpty(Host) || Port.HasValue || !String.IsNullOrEmpty(Username) || !String.IsNullOrEmpty(Domain) || !String.IsNullOrEmpty(EmailAddr) || !String.IsNullOrEmpty(BrandingName) || !String.IsNullOrEmpty(BrandingLogoUrl);
             Validate ();
             NcApplication.Instance.InvokeStatusIndEventInfo (ConstMcAccount.NotAccountSpecific, 
                 NcResult.SubKindEnum.Info_MdmConfigMayHaveChanged);
@@ -64,8 +67,8 @@ namespace NachoCore
             Domain = null;
             EmailAddr = null;
             BrandingName = null;
-            IsPopulated = false;
             IsValid = false;
+            BrandingLogoUrl = null;
             NcApplication.Instance.InvokeStatusIndEventInfo (ConstMcAccount.NotAccountSpecific, 
                 NcResult.SubKindEnum.Info_MdmConfigMayHaveChanged);
         }
