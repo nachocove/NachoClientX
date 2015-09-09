@@ -2,6 +2,7 @@ using System;
 using NUnit.Framework;
 using NachoCore;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace Test.Common
 {
@@ -39,7 +40,27 @@ namespace Test.Common
             Assert.IsNull (r.GetValue<string> ());
             Assert.IsNotNull (r.GetMessage ());
             Assert.AreEqual (r.GetMessage (), "failure");
-
         }
+
+        [Test]
+        public void ResultToString ()
+        {
+            Assert.AreEqual ("NcResult(OK)", NcResult.OK ().ToString ());
+            string bar = "bar";
+            Assert.AreEqual ("NcResult(OK): Value=bar", NcResult.OK (bar).ToString ());
+
+            Assert.AreEqual ("NcResult(Info): Message=Foo", NcResult.Info ("Foo").ToString ());
+            Assert.AreEqual ("NcResult(Info): SubKind=Error_AccountDoesNotExist", NcResult.Info (NcResult.SubKindEnum.Error_AccountDoesNotExist).ToString ());
+
+            Assert.AreEqual ("NcResult(Error): Message=Foo", NcResult.Error ("Foo").ToString ());
+            Assert.AreEqual ("NcResult(Error): SubKind=Error_AccountDoesNotExist", NcResult.Error (NcResult.SubKindEnum.Error_AccountDoesNotExist).ToString ());
+            Assert.AreEqual ("NcResult(Error): SubKind=Error_AccountDoesNotExist, Why=UnresolvedRecipient", NcResult.Error (NcResult.SubKindEnum.Error_AccountDoesNotExist, NcResult.WhyEnum.UnresolvedRecipient).ToString ());
+            var err = NcResult.Error (NcResult.SubKindEnum.Error_AccountDoesNotExist, NcResult.WhyEnum.UnresolvedRecipient);
+            err.Value = bar;
+            Assert.AreEqual ("NcResult(Error): SubKind=Error_AccountDoesNotExist, Why=UnresolvedRecipient, Value=bar", err.ToString ());
+            err.Value = new McEmailMessage ();
+            Assert.AreEqual ("NcResult(Error): SubKind=Error_AccountDoesNotExist, Why=UnresolvedRecipient, Value=NachoCore.Model.McEmailMessage", err.ToString ());
+        }
+
     }
 }
