@@ -23,7 +23,6 @@ namespace NachoCore.IMAP
 {
     public class ImapCommand : NcCommand
     {
-        protected int AccountId { get; set; }
         protected NcImapClient Client { get; set; }
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
@@ -33,7 +32,6 @@ namespace NachoCore.IMAP
         {
             Client = imapClient;
             RedactProtocolLogFunc = null;
-            AccountId = BEContext.Account.Id;
         }
 
         // MUST be overridden by subclass.
@@ -203,6 +201,7 @@ namespace NachoCore.IMAP
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 try {
+                    Log.Info (Log.LOG_IMAP, "ConnectAndAuthenticate: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, cred));              
                     Client.Authenticate (username, cred, Cts.Token);
                 } catch (ImapProtocolException e) {
                     Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", e);

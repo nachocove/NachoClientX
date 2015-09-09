@@ -71,7 +71,9 @@ namespace NachoClient.iOS
         protected void EndRefreshingOnUIThread (object sender)
         {
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                refreshControl.EndRefreshing ();
+                if (refreshControl.Refreshing){
+                    refreshControl.EndRefreshing ();
+                }
             });
         }
 
@@ -88,7 +90,9 @@ namespace NachoClient.iOS
 
         void cancelRefreshTimer ()
         {
-            EndRefreshingOnUIThread (null);
+            if (refreshControl.Refreshing) {
+                EndRefreshingOnUIThread (null);
+            }
             if (null != refreshTimer) {
                 refreshTimer.Dispose ();
                 refreshTimer = null;
@@ -372,7 +376,12 @@ namespace NachoClient.iOS
                 priorityInboxNeedsRefresh = false;
                 NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController SwitchToAccount");
                 priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
-                hotListSource = new HotListTableViewSource (this, priorityInbox);
+                if (null == hotListSource) {
+                    hotListSource = new HotListTableViewSource (this, priorityInbox);
+                    hotListView.Source = hotListSource;
+                } else {
+                    hotListSource.SetMessageThreads (priorityInbox);
+                }
                 hotListView.Source = hotListSource;
                 hotListView.RowHeight = hotListView.Frame.Height - hotListSource.CardPeekDistance * 2.0f - hotListSource.CellCardInset.Top - hotListSource.CellCardInset.Bottom;
                 hotListView.ContentInset = new UIEdgeInsets (

@@ -211,7 +211,9 @@ namespace NachoClient.iOS
         protected void EndRefreshingOnUIThread (object sender)
         {
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                RefreshControl.EndRefreshing ();
+                if (RefreshControl.Refreshing){
+                    RefreshControl.EndRefreshing ();
+                }
             });
         }
 
@@ -228,7 +230,9 @@ namespace NachoClient.iOS
 
         void cancelRefreshTimer ()
         {
-            EndRefreshingOnUIThread (null);
+            if (RefreshControl.Refreshing) {
+                EndRefreshingOnUIThread (null);
+            }
             if (null != refreshTimer) {
                 refreshTimer.Dispose ();
                 refreshTimer = null;

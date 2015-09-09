@@ -32,7 +32,7 @@ namespace NachoCore.IMAP
 
         public SyncKit GenSyncKit (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt, McPending pending)
         {
-            foreach (var folder in SyncFolderList (protocolState.AccountId, protocolState.ImapSyncRung, exeCtxt)) {
+            foreach (var folder in SyncFolderList (protocolState.ImapSyncRung, exeCtxt)) {
                 SyncKit syncKit = GenSyncKit (ref protocolState, folder, pending,
                     exeCtxt == NcApplication.ExecutionContextEnum.QuickSync);
                 if (null != syncKit) {
@@ -429,7 +429,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private List<McFolder> SyncFolderList (int AccountId, uint ImapSyncRung, NcApplication.ExecutionContextEnum exeCtxt)
+        private List<McFolder> SyncFolderList (uint ImapSyncRung, NcApplication.ExecutionContextEnum exeCtxt)
         {
             var folderList = new List<McFolder> ();
             McFolder defInbox = McFolder.GetDefaultInboxFolder (AccountId);

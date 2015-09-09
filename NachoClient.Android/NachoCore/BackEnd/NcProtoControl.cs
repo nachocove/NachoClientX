@@ -49,13 +49,13 @@ namespace NachoCore
 
         public McCred Cred {
             get {
-                return McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
+                return McCred.QueryByAccountId<McCred> (AccountId).SingleOrDefault ();
             }
         }
 
         public McServer Server { 
             get {
-                return McServer.QueryByAccountIdAndCapabilities (Account.Id, Capabilities);
+                return McServer.QueryByAccountIdAndCapabilities (AccountId, Capabilities);
             }
             set {
                 var update = value;
@@ -65,7 +65,7 @@ namespace NachoCore
 
         public McProtocolState ProtocolState { 
             get {
-                return McProtocolState.QueryByAccountId<McProtocolState> (Account.Id).SingleOrDefault ();
+                return McProtocolState.QueryByAccountId<McProtocolState> (AccountId).SingleOrDefault ();
             }
             set {
                 var update = value;
@@ -280,7 +280,7 @@ namespace NachoCore
                 return false;
             }
 
-            var folders = McFolder.QueryByFolderEntryId<T> (Account.Id, itemId);
+            var folders = McFolder.QueryByFolderEntryId<T> (AccountId, itemId);
             foreach (var maybe in folders) {
                 if (maybe.IsClientOwned && !clientOwnedOkay) {
                     subKind = NcResult.SubKindEnum.Error_ClientOwned;
@@ -328,7 +328,7 @@ namespace NachoCore
                     // Need to make sure the email is marked read to get it out of GFE Inbox.
                     var emailMessage = item as McEmailMessage;
                     if (null != emailMessage && !emailMessage.IsRead) {
-                        markUpdate = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                        markUpdate = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                             Operation = McPending.Operations.EmailMarkRead,
                             ServerId = emailMessage.ServerId,
                             ParentId = srcFolder.ServerId,
@@ -343,7 +343,7 @@ namespace NachoCore
                         });
                     }
                 }
-                var pending = new McPending (Account.Id, capability) {
+                var pending = new McPending (AccountId, capability) {
                     Operation = op,
                     ServerId = item.ServerId,
                     ParentId = srcFolder.ServerId,
@@ -422,8 +422,8 @@ namespace NachoCore
 
         public virtual NcResult SearchEmailReq (string keywords, uint? maxResults, string token)
         {
-            McPending.ResolvePendingSearchReqs (Account.Id, token, true);
-            var newSearch = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+            McPending.ResolvePendingSearchReqs (AccountId, token, true);
+            var newSearch = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                 Operation = McPending.Operations.EmailSearch,
                 Search_Prefix = keywords,
                 Search_MaxResults = (null == maxResults) ? 20 : (uint)maxResults,
@@ -447,8 +447,8 @@ namespace NachoCore
 
         public virtual NcResult SearchContactsReq (string prefix, uint? maxResults, string token)
         {
-            McPending.ResolvePendingSearchReqs (Account.Id, token, true);
-            var newSearch = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactReader) {
+            McPending.ResolvePendingSearchReqs (AccountId, token, true);
+            var newSearch = new McPending (AccountId, McAccount.AccountCapabilityEnum.ContactReader) {
                 Operation = McPending.Operations.ContactSearch,
                 Search_Prefix = prefix,
                 Search_MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
@@ -473,7 +473,7 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, emailMessage) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailSender, emailMessage) {
                     Operation = McPending.Operations.EmailSend,
                 };
                 pending.Insert ();
@@ -501,7 +501,7 @@ namespace NachoCore
                 var pendingCalCre = NcModel.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.ItemId);
                 var pendingCalCreId = (null == pendingCalCre) ? 0 : pendingCalCre.Id;
 
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, emailMessage) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailSender, emailMessage) {
                     Operation = McPending.Operations.EmailSend,
                 };
                 pending.Insert ();
@@ -557,7 +557,7 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, newEmailMessage) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailSender, newEmailMessage) {
                     Operation = Op,
                     ServerId = refdEmailMessage.ServerId,
                     ParentId = folder.ServerId,
@@ -621,7 +621,7 @@ namespace NachoCore
                     return;
                 }
 
-                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId);
+                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (AccountId, emailMessageId);
                 if (null == folders || 0 == folders.Count) {
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
@@ -636,17 +636,17 @@ namespace NachoCore
                 McPending pending;
                 McFolder trash = null;
                 if (!justDelete) {
-                    trash = McFolder.GetDefaultDeletedFolder (Account.Id);
+                    trash = McFolder.GetDefaultDeletedFolder (AccountId);
                 }
                 if (justDelete || null == trash || trash.Id == primeFolder.Id) {
-                    pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                    pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                         Operation = McPending.Operations.EmailDelete,
                         ParentId = primeFolder.ServerId,
                         ServerId = emailMessage.ServerId,
                     };
                     emailMessage.Delete ();
                 } else {
-                    pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                    pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                         Operation = McPending.Operations.EmailMove,
                         ServerId = emailMessage.ServerId,
                         ParentId = primeFolder.ServerId,
@@ -683,7 +683,7 @@ namespace NachoCore
                     result = NcResult.Error (subKind);
                     return;
                 }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.EmailMarkRead,
                     ServerId = emailMessage.ServerId,
                     ParentId = folder.ServerId,
@@ -708,7 +708,7 @@ namespace NachoCore
             if (null == emailMessage) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
             }
-            var srcFolder = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId).FirstOrDefault ();
+            var srcFolder = McFolder.QueryByFolderEntryId<McEmailMessage> (AccountId, emailMessageId).FirstOrDefault ();
 
             return MoveItemCmd (McPending.Operations.EmailMove, McAccount.AccountCapabilityEnum.EmailReaderWriter,
                 NcResult.SubKindEnum.Info_EmailMessageSetChanged,
@@ -749,7 +749,7 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceIsComplete);
                     return;
                 }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.EmailBodyDownload,
                     ServerId = emailMessage.ServerId,
                     ParentId = folder.ServerId,
@@ -795,7 +795,7 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.AttachmentDownload,
                     ServerId = emailMessage.ServerId,
                     AttachmentId = attId,
@@ -833,7 +833,7 @@ namespace NachoCore
                     result = NcResult.Error (subKind);
                     return;
                 }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.CalWriter, cal) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.CalWriter, cal) {
                     Operation = McPending.Operations.CalCreate,
                     ParentId = folder.ServerId,
                     ClientId = cal.ClientId,
@@ -859,13 +859,13 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
-                var folders = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId);
+                var folders = McFolder.QueryByFolderEntryId<McCalendar> (AccountId, calId);
                 if (null == folders || 0 == folders.Count) {
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.CalWriter, cal) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.CalWriter, cal) {
                     Operation = McPending.Operations.CalUpdate,
                     ParentId = primeFolder.ServerId,
                     ServerId = cal.ServerId,
@@ -890,13 +890,13 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
-                var folders = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId);
+                var folders = McFolder.QueryByFolderEntryId<McCalendar> (AccountId, calId);
                 if (null == folders || 0 == folders.Count) {
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.CalWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.CalWriter) {
                     Operation = McPending.Operations.CalDelete,
                     ParentId = primeFolder.ServerId,
                     ServerId = cal.ServerId,
@@ -920,7 +920,7 @@ namespace NachoCore
             if (null == cal) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
             }
-            var srcFolder = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId).FirstOrDefault ();
+            var srcFolder = McFolder.QueryByFolderEntryId<McCalendar> (AccountId, calId).FirstOrDefault ();
 
             return MoveItemCmd (McPending.Operations.CalMove, McAccount.AccountCapabilityEnum.CalWriter,
                 NcResult.SubKindEnum.Info_CalendarSetChanged,
@@ -958,7 +958,7 @@ namespace NachoCore
                     result = NcResult.Error (subKind);
                     return;
                 }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactWriter, contact) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.ContactWriter, contact) {
                     Operation = McPending.Operations.ContactCreate,
                     ParentId = folder.ServerId,
                     ClientId = contact.ClientId,
@@ -985,13 +985,13 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
-                var folders = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId);
+                var folders = McFolder.QueryByFolderEntryId<McContact> (AccountId, contactId);
                 if (null == folders || 0 == folders.Count) {
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactWriter, contact) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.ContactWriter, contact) {
                     Operation = McPending.Operations.ContactUpdate,
                     ParentId = primeFolder.ServerId,
                     ServerId = contact.ServerId,
@@ -1015,13 +1015,13 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
-                var folders = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId);
+                var folders = McFolder.QueryByFolderEntryId<McContact> (AccountId, contactId);
                 if (null == folders || 0 == folders.Count) {
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.ContactWriter) {
                     Operation = McPending.Operations.ContactDelete,
                     ParentId = primeFolder.ServerId,
                     ServerId = contact.ServerId,
@@ -1045,7 +1045,7 @@ namespace NachoCore
             if (null == contact) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
             }
-            var srcFolder = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId).FirstOrDefault ();
+            var srcFolder = McFolder.QueryByFolderEntryId<McContact> (AccountId, contactId).FirstOrDefault ();
 
             return MoveItemCmd (McPending.Operations.ContactMove, McAccount.AccountCapabilityEnum.ContactWriter,
                 NcResult.SubKindEnum.Info_ContactSetChanged,
@@ -1106,7 +1106,7 @@ namespace NachoCore
                     }
                     destFldServerId = destFld.ServerId;
                 }
-                var folder = McFolder.Create (Account.Id,
+                var folder = McFolder.Create (AccountId,
                     false,
                     false,
                     false,
@@ -1118,7 +1118,7 @@ namespace NachoCore
                 folder.Insert ();
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
                 // TODO - base capabilities on folder type.
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.FolderCreate,
                     ServerId = serverId,
                     ParentId = destFldServerId,
@@ -1159,7 +1159,7 @@ namespace NachoCore
                     return;
                 }
                 // TODO - base capabilities on folder type.
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.FolderDelete,
                     ServerId = folder.ServerId,
                     ParentId = folder.ParentId,
@@ -1205,7 +1205,7 @@ namespace NachoCore
                     return;
                 }
                 // TODO - base capability on folder type.
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.FolderUpdate,
                     ServerId = folder.ServerId,
                     ParentId = folder.ParentId,
@@ -1249,7 +1249,7 @@ namespace NachoCore
                     return;
                 }
                 // TODO - determine appropriate capability based on type of folder.
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.FolderUpdate,
                     ServerId = folder.ServerId,
                     ParentId = folder.ParentId,
@@ -1280,7 +1280,7 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
                     return;
                 }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.Sync,
                     ServerId = folder.ServerId,
                 };

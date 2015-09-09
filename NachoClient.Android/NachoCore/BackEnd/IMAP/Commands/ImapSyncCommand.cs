@@ -155,6 +155,7 @@ namespace NachoCore.IMAP
             // start by uploading messages
             if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
                 Synckit.SyncSet = SyncKit.MustUniqueIdSet (Synckit.SyncSet);
+                mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadWrite);
                 foreach (var messageId in Synckit.UploadMessages) {
                     Cts.Token.ThrowIfCancellationRequested ();
                     var emailMessage = AppendMessage (mailKitFolder, Synckit.Folder, messageId.Id);
@@ -164,6 +165,7 @@ namespace NachoCore.IMAP
                 }
             }
             if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
+                mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadOnly);
                 // First find all messages marked as /Deleted
                 UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
 
@@ -422,6 +424,11 @@ namespace NachoCore.IMAP
                 MimeHelpers.AddAttachments (mimeMessage, attachments);
             }
             MessageFlags flags = MessageFlags.None;
+            // If we uploaded a message to the sent folder, mark it as read.
+            var defSent = McFolder.GetDefaultSentFolder (AccountId);
+            if (null != defSent && defSent.Id == folder.Id) {
+                flags |= MessageFlags.Seen;
+            }
             var uid = mailKitFolder.Append (mimeMessage, flags, Cts.Token);
             if (uid.HasValue) {
                 EmailMessage = EmailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {

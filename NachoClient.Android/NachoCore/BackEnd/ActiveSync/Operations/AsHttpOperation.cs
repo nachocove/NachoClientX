@@ -94,6 +94,7 @@ namespace NachoCore.ActiveSync
         private static IHttpClient ClearClient;
 
         private IBEContext BEContext;
+        protected int AccountId { get; set; }
         private IAsHttpOperationOwner Owner;
         private CancellationTokenSource Cts;
         private NcTimer DelayTimer;
@@ -170,6 +171,7 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
+            AccountId = BEContext.Account.Id;
             TimeoutExpander = KDefaultTimeoutExpander;
             MaxRetries = KDefaultRetries;
             TriesLeft = MaxRetries + 1;
@@ -366,7 +368,7 @@ namespace NachoCore.ActiveSync
         private void ReportCommResult (string host, bool didFailGenerally)
         {
             if (!DontReportCommResult) {
-                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, host, didFailGenerally);
+                NcCommStatusSingleton.ReportCommResult (AccountId, host, didFailGenerally);
             }
         }
         // Final is how to pass the ultimate Event back to OwnerSm.
@@ -409,7 +411,7 @@ namespace NachoCore.ActiveSync
                         ((Owner.IsContentLarge (this)) ? 60 : 30) * 1000, 
                         System.Threading.Timeout.Infinite);
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
-                    var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
+                    var stream = doc.ToWbxmlStream (AccountId, Owner.IsContentLarge (this), cToken);
                     capture.Stop ();
                     diaper.Dispose ();
                     var content = new StreamContent (stream);
@@ -456,7 +458,7 @@ namespace NachoCore.ActiveSync
                 // Never send password over unencrypted channel.
                 string password = BEContext.Cred.GetPassword ();
                 Log.Info (Log.LOG_HTTP, "AsHttpOperation: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, password));              
-                client = GetEncryptedClient (BEContext.Account.Id, BEContext.Cred.Username, password);
+                client = GetEncryptedClient (AccountId, BEContext.Cred.Username, password);
             } else {
                 client = GetClearClient ();
             }
@@ -678,7 +680,7 @@ namespace NachoCore.ActiveSync
                                 cToken, timeoutInSeconds * 1000, System.Threading.Timeout.Infinite);
                             long loadBytesDuration;
                             using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
-                                decoder.LoadBytes (BEContext.Account.Id, ContentData);
+                                decoder.LoadBytes (AccountId, ContentData);
                                 loadBytesDuration = capture.ElapsedMilliseconds;
                             }
                             if (1000 < loadBytesDuration) {
@@ -779,7 +781,7 @@ namespace NachoCore.ActiveSync
                 }
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     Log.Warn (Log.LOG_AS, "HTTP Status 302 with X-MS-RP");
-                    McFolder.UpdateResetSyncState (BEContext.Account.Id);
+                    McFolder.UpdateResetSyncState (AccountId);
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, BEContext);
                     IndicateUriIfChanged ();
@@ -832,7 +834,7 @@ namespace NachoCore.ActiveSync
                 ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     Log.Warn (Log.LOG_AS, "HTTP Status 403 with X-MS-RP");
-                    McFolder.UpdateResetSyncState (BEContext.Account.Id);
+                    McFolder.UpdateResetSyncState (AccountId);
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, BEContext);
                     IndicateUriIfChanged ();
@@ -882,7 +884,7 @@ namespace NachoCore.ActiveSync
                             return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP451B");
                         }
                         ServerUriBeingTested = true;
-                        var dummy = McServer.Create (BEContext.Account.Id, McAccount.ActiveSyncCapabilities, redirUri);
+                        var dummy = McServer.Create (AccountId, McAccount.ActiveSyncCapabilities, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
                         ServerUri = new Uri (dummy.BaseUri (), query);
                         RedactedServerUri  = HashHelper.HashEmailAddressesInUrl(ServerUri.ToString());
@@ -923,7 +925,7 @@ namespace NachoCore.ActiveSync
                 ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     Log.Warn (Log.LOG_AS, "HTTP Status 500 with X-MS-RP");
-                    McFolder.UpdateResetSyncState (BEContext.Account.Id);
+                    McFolder.UpdateResetSyncState (AccountId);
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, BEContext);
                     IndicateUriIfChanged ();
@@ -971,9 +973,9 @@ namespace NachoCore.ActiveSync
                     }
 
                     Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
-                    configuredSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds);
+                    configuredSecs = (uint)McMutables.GetOrCreateInt (AccountId, "HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds);
                 } else {
-                    configuredSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "DelaySeconds", KDefaultDelaySeconds);
+                    configuredSecs = (uint)McMutables.GetOrCreateInt (AccountId, "HTTP", "DelaySeconds", KDefaultDelaySeconds);
                 }
                 bestSecs = configuredSecs;
                 if (response.Headers.Contains (HeaderRetryAfter)) {
@@ -1029,12 +1031,12 @@ namespace NachoCore.ActiveSync
             var result = NcResult.Info (NcResult.SubKindEnum.Info_ServiceUnavailable);
             result.Value = secs;
             Owner.StatusInd (result);
-            uint maxSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "MaxDelaySeconds", KMaxDelaySeconds);
+            uint maxSecs = (uint)McMutables.GetOrCreateInt (AccountId, "HTTP", "MaxDelaySeconds", KMaxDelaySeconds);
             if (maxSecs >= secs) {
                 return Event.Create ((uint)HttpOpEvt.E.Delay, mnemonic, secs, message);
             }
             Log.Info (Log.LOG_AS, "AsHttpOperation: Excessive delay requested by server: {0} seconds.", secs);
-            NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
+            NcCommStatusSingleton.ReportCommResult (AccountId, ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
             return Final ((uint)SmEvt.E.HardFail, mnemonic, null, message);
         }
     }

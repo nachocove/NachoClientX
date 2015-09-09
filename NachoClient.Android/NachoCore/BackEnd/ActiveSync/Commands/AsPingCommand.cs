@@ -83,7 +83,7 @@ namespace NachoCore.ActiveSync
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
                 foreach (var xmlFolder in folders) {
                     var folder = NcModel.Instance.Db.Table<McFolder> ().
-                        Where (rec => BEContext.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId).
+                        Where (rec => AccountId == rec.AccountId && xmlFolder.Value == rec.ServerId).
                         Single ();
                     folder = folder.UpdateSet_AsSyncMetaToClientExpected (true);
                 }

@@ -165,7 +165,7 @@ namespace Test.iOS
 
         public McCred Cred { set; get; }
 
-        public MockContext (AsProtoControl protoControl = null, McServer server = null)
+        public MockContext (McAccount account, AsProtoControl protoControl = null, McServer server = null)
         {
             Owner = new MockOwner ();
            
@@ -174,10 +174,14 @@ namespace Test.iOS
             // READ InitialProvisionCompleted
             Server = server; 
 
-            Account = new McAccount () {
-                EmailAddr = "johnd@foo.utopiasystems.net",
-            };
-            Account.Insert ();
+            if (null == account) {
+                Account = new McAccount () {
+                    EmailAddr = "johnd@foo.utopiasystems.net",
+                };
+                Account.Insert ();
+            } else {
+                Account = account;
+            }
             var protoState = McProtocolState.QueryByAccountId<McProtocolState> (Account.Id).SingleOrDefault ();
             if (null == protoState) {
                 protoState = new McProtocolState () {
@@ -343,7 +347,7 @@ namespace Test.iOS
             Folder = folder;
         }
 
-        public MoveKit GenMoveKit (int accountId)
+        public MoveKit GenMoveKit ()
         {
             return null;
         }
@@ -358,7 +362,7 @@ namespace Test.iOS
             return null;
         }
 
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState)
+        public SyncKit GenSyncKit (McProtocolState protocolState)
         {
             return new NachoCore.ActiveSync.SyncKit () {
                 OverallWindowSize = 1,
@@ -374,7 +378,7 @@ namespace Test.iOS
             };
         }
 
-        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected)
+        public PingKit GenPingKit (McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected)
         {
             return new NachoCore.ActiveSync.PingKit () {
                 MaxHeartbeatInterval = 600,

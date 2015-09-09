@@ -201,14 +201,10 @@ namespace NachoClient.iOS
             var jsonStr = (string)NSString.FromData (jsonData, NSStringEncoding.UTF8);
             var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
             if (notification.HasPingerSection ()) {
-                fetchAccounts = new List<int> ();
-                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
                 if (!PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox (accountId);
                         inbox.StartSync ();
-                    } else {
-                        fetchAccounts.Add (accountId);
                     }
                 })) {
                     // Can't find any account matching those contexts. Abort immediately
@@ -734,12 +730,6 @@ namespace NachoClient.iOS
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
-            fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
-            if (hasRegisteredForRemoteNotifications) {
-                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
-            } else {
-                pushAccounts = new List<int> ();
-            }
             StartFetch (application, completionHandler, "PF");
         }
 
@@ -752,6 +742,12 @@ namespace NachoClient.iOS
             CompletionHandler = completionHandler;
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
+            fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            if (hasRegisteredForRemoteNotifications) {
+                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            } else {
+                pushAccounts = new List<int> ();
+            }
             // Need to set ExecutionContext before Start of BE so that strategy can see it.
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.QuickSync;
             NcApplication.Instance.UnmarkStartup ();

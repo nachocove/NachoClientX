@@ -34,7 +34,7 @@ namespace Test.iOS
 
                 var server = McServer.Create (defaultAccountId, McAccount.ActiveSyncCapabilities, CommonMockData.MockUri);
                 server.Insert ();
-                Context = new MockContext (null, server);
+                Context = new MockContext (null, null, server);
             }
 
             public class Inbox
@@ -90,8 +90,7 @@ namespace Test.iOS
 
             public static AsSyncCommand CreateSyncCmd (MockContext context)
             {
-                var syncCmd = new AsSyncCommand (context, ((AsProtoControl)context.ProtoControl).Strategy.GenSyncKit (
-                                  defaultAccountId, context.ProtocolState));
+                var syncCmd = new AsSyncCommand (context, ((AsProtoControl)context.ProtoControl).Strategy.GenSyncKit (context.ProtocolState));
                 AsHttpOperation.HttpClientType = typeof(MockHttpClient);
                 return syncCmd;
             }

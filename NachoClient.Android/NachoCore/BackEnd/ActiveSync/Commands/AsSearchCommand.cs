@@ -262,15 +262,15 @@ namespace NachoCore.ActiveSync
                 return;
             }
             var emailAddress = xmlEmailAddress.Value;
-            var galCacheFolder = McFolder.GetGalCacheFolder (BEContext.Account.Id);
-            if (TryUpdateGalCache (BEContext.Account.Id, galCacheFolder.Id, emailAddress, xmlProperties, Token)) {
+            var galCacheFolder = McFolder.GetGalCacheFolder (AccountId);
+            if (TryUpdateGalCache (AccountId, galCacheFolder.Id, emailAddress, xmlProperties, Token)) {
                 return;
             }
             NcModel.Instance.RunInTransaction (() => {
-                if (TryUpdateGalCache (BEContext.Account.Id, galCacheFolder.Id, emailAddress, xmlProperties, Token)) {
+                if (TryUpdateGalCache (AccountId, galCacheFolder.Id, emailAddress, xmlProperties, Token)) {
                     return;
                 }
-                var contact = McContact.CreateFromGalXml (BEContext.Account.Id, xmlProperties);
+                var contact = McContact.CreateFromGalXml (AccountId, xmlProperties);
                 contact.GalCacheToken = Token;
                 contact.Insert ();
                 galCacheFolder.Link (contact);
@@ -292,7 +292,7 @@ namespace NachoCore.ActiveSync
                         Log.Error (Log.LOG_AS, "Search result without From or DateReceived");
                     } else {
                         var dateRecv = AsHelpers.ParseAsDateTime (xmlDateReceived.Value);
-                        var hopefullyOne = McEmailMessage.QueryByDateReceivedAndFrom (BEContext.Account.Id, dateRecv, xmlFrom.Value);
+                        var hopefullyOne = McEmailMessage.QueryByDateReceivedAndFrom (AccountId, dateRecv, xmlFrom.Value);
                         if (1 < hopefullyOne.Count) {
                             Log.Warn (Log.LOG_AS, "Search result with > 1 match: {0}", hopefullyOne.Count);
                         } else if (1 == hopefullyOne.Count) {

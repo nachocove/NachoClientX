@@ -83,7 +83,7 @@ namespace NachoCore.ActiveSync
                     NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
             });
 
-            var sentFolder = McFolder.GetDefaultSentFolder (BEContext.Account.Id);
+            var sentFolder = McFolder.GetDefaultSentFolder (AccountId);
             if (null != sentFolder) {
                 sentFolder.UpdateSet_AsSyncMetaToClientExpected (true);
             }

@@ -14,7 +14,6 @@ namespace NachoCore.SMTP
 {
     public abstract class SmtpCommand : NcCommand
     {
-        protected int AccountId { get; set; }
         public NcSmtpClient Client { get; set; }
 
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
@@ -23,7 +22,6 @@ namespace NachoCore.SMTP
         {
             Client = smtpClient;
             RedactProtocolLogFunc = null;
-            AccountId = BEContext.Account.Id;
         }
 
         // MUST be overridden by subclass.
@@ -176,6 +174,7 @@ namespace NachoCore.SMTP
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 try {
+                    Log.Info (Log.LOG_SMTP, "ConnectAndAuthenticate: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, cred));              
                     Client.Authenticate (username, cred, Cts.Token);
                 } catch (SmtpProtocolException e) {
                     Log.Info (Log.LOG_SMTP, "Protocol Error during auth: {0}", e);

@@ -459,7 +459,7 @@ namespace NachoCore.ActiveSync
                 List<McPending> pendingInFolder;
                 // Note: CollectionId, Status and SyncKey are required to be present.
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
-                var folder = McFolder.ServerEndQueryByServerId (BEContext.Account.Id, serverId);
+                var folder = McFolder.ServerEndQueryByServerId (AccountId, serverId);
                 var oldSyncKey = folder.AsSyncKey;
                 var xmlSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey);
                 var xmlMoreAvailable = collection.Element (m_ns + Xml.AirSync.MoreAvailable);
@@ -681,7 +681,7 @@ namespace NachoCore.ActiveSync
             }
             if (HadDeletes) {
                 // We know that there will be updates to Deleted folder.
-                var deletedFolder = McFolder.GetDefaultDeletedFolder (BEContext.Account.Id);
+                var deletedFolder = McFolder.GetDefaultDeletedFolder (AccountId);
                 if (null != deletedFolder) {
                     deletedFolder.UpdateSet_AsSyncMetaToClientExpected (true);
                 }
@@ -732,7 +732,7 @@ namespace NachoCore.ActiveSync
         public override void StatusInd (bool didSucceed)
         {
             if (didSucceed) {
-                McPending.MakeEligibleOnSync (BEContext.Account.Id);
+                McPending.MakeEligibleOnSync (AccountId);
             }
             base.StatusInd (didSucceed);
         }
@@ -804,12 +804,12 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.Add:
                     var addServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                     Log.Debug (Log.LOG_AS, "AsSyncCommand: Command Add {0} ServerId {1}", classCode, addServerId);
-                    var pathElem = new McPath (BEContext.Account.Id);
+                    var pathElem = new McPath (AccountId);
                     pathElem.ServerId = addServerId;
                     pathElem.ParentId = folder.ServerId;
                     NcModel.Instance.RunInTransaction (() => {
                         pathElem.Insert (BEContext.Server.HostIsAsGMail ());
-                        var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
+                        var applyAdd = new ApplyItemAdd (AccountId) {
                             ClassCode = classCode,
                             ServerId = addServerId,
                             XmlCommand = command,
@@ -843,7 +843,7 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.Change:
                     var chgServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                     Log.Info (Log.LOG_AS, "AsSyncCommand: Command Change {0} ServerId {1}", classCode, chgServerId);
-                    var applyChange = new ApplyItemChange (BEContext.Account.Id) {
+                    var applyChange = new ApplyItemChange (AccountId) {
                         ClassCode = classCode,
                         ServerId = chgServerId,
                         XmlCommand = command,
@@ -874,13 +874,13 @@ namespace NachoCore.ActiveSync
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                     Log.Info (Log.LOG_AS, "AsSyncCommand: Command (Soft)Delete {0} ServerId {1}", classCode, delServerId);
                     NcModel.Instance.RunInTransaction (() => {
-                        pathElem = McPath.QueryByServerId (BEContext.Account.Id, delServerId);
+                        pathElem = McPath.QueryByServerId (AccountId, delServerId);
                         if (null != pathElem) {
                             pathElem.Delete ();
                         } else {
                             Log.Info (Log.LOG_AS, "AsSyncCommand: McPath for Command {0}, ServerId {1} not in DB - may have been subject of MoveItems.", command.Name.LocalName, delServerId);
                         }
-                        var applyDelete = new ApplyItemDelete (BEContext.Account.Id) {
+                        var applyDelete = new ApplyItemDelete (AccountId) {
                             ClassCode = classCode,
                             ServerId = delServerId,
                         };
@@ -1079,16 +1079,16 @@ namespace NachoCore.ActiveSync
 
             switch (classCode) {
             case Xml.AirSync.ClassCode.Email:
-                item = McAbstrItem.QueryByClientId<McEmailMessage> (BEContext.Account.Id, clientId);
+                item = McAbstrItem.QueryByClientId<McEmailMessage> (AccountId, clientId);
                 break;
             case Xml.AirSync.ClassCode.Contacts:
-                item = McAbstrItem.QueryByClientId<McContact> (BEContext.Account.Id, clientId);
+                item = McAbstrItem.QueryByClientId<McContact> (AccountId, clientId);
                 break;
             case Xml.AirSync.ClassCode.Calendar:
-                item = McAbstrItem.QueryByClientId<McCalendar> (BEContext.Account.Id, clientId);
+                item = McAbstrItem.QueryByClientId<McCalendar> (AccountId, clientId);
                 break;
             case Xml.AirSync.ClassCode.Tasks:
-                item = McAbstrItem.QueryByClientId<McTask> (BEContext.Account.Id, clientId);
+                item = McAbstrItem.QueryByClientId<McTask> (AccountId, clientId);
                 break;
             default:
                 Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
@@ -1103,7 +1103,7 @@ namespace NachoCore.ActiveSync
             if (null == serverId) {
                 Log.Error (Log.LOG_AS, "AsSyncCommand: Add command response without ServerId.");
             } else {
-                var pathElem = new McPath (BEContext.Account.Id) {
+                var pathElem = new McPath (AccountId) {
                     ServerId = serverId,
                     ParentId = folder.ServerId,
                 };
