@@ -168,12 +168,12 @@ namespace NachoCore.ActiveSync
             } else if (null != xmlServerId) {
                 // This means we are processing a body download prefetch response.
                 NcModel.Instance.RunInTransaction (() => {
-                    var item = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, xmlServerId.Value);
+                    var item = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, xmlServerId.Value);
                     if (null == item) {
                         Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: could not find McEmailMessage with ServerId {0}", xmlServerId.Value);
                     } else {
                         if (0 == item.BodyId) {
-                            var body = McBody.InsertError (BEContext.Account.Id);
+                            var body = McBody.InsertError (AccountId);
                             item = item.UpdateWithOCApply<McEmailMessage> ((record) => {
                                 var target = (McEmailMessage)record;
                                 target.BodyId = body.Id;
@@ -270,25 +270,25 @@ namespace NachoCore.ActiveSync
                             }
                             switch (op) {
                             case McPending.Operations.EmailBodyDownload:
-                                item = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
+                                item = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, serverId);
                                 successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
                                 if (null != pending) {
                                     Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) {1}/{2} for email {3}", item.AccountId, pending.Id, pending.Token, item.Id);
                                 } else {
                                     Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) for email {1}", item.AccountId, item.Id);
                                 }
-                                BackEnd.Instance.BodyFetchHints.RemoveHint (BEContext.Account.Id, item.Id);
+                                BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, item.Id);
                                 break;
                             case McPending.Operations.CalBodyDownload:
-                                item = McCalendar.QueryByServerId<McCalendar> (BEContext.Account.Id, serverId);
+                                item = McCalendar.QueryByServerId<McCalendar> (AccountId, serverId);
                                 successInd = NcResult.SubKindEnum.Info_CalendarBodyDownloadSucceeded;
                                 break;
                             case McPending.Operations.ContactBodyDownload:
-                                item = McContact.QueryByServerId<McContact> (BEContext.Account.Id, serverId);
+                                item = McContact.QueryByServerId<McContact> (AccountId, serverId);
                                 successInd = NcResult.SubKindEnum.Info_ContactBodyDownloadSucceeded;
                                 break;
                             case McPending.Operations.TaskBodyDownload:
-                                item = McTask.QueryByServerId<McTask> (BEContext.Account.Id, serverId);
+                                item = McTask.QueryByServerId<McTask> (AccountId, serverId);
                                 successInd = NcResult.SubKindEnum.Info_TaskBodyDownloadSucceeded;
                                 break;
                             default:

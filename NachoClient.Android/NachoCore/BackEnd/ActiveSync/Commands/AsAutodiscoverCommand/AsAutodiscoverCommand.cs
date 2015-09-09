@@ -641,7 +641,7 @@ namespace NachoCore.ActiveSync
             var known = KnownServer (Domain);
             if (null == BEContext.Server && null != known) {
                 var server = new McServer () {
-                    AccountId = Account.Id,
+                    AccountId = AccountId,
                     Capabilities = McAccount.ActiveSyncCapabilities,
                     IsHardWired = true,
                     Host = known,
@@ -946,7 +946,7 @@ namespace NachoCore.ActiveSync
             Log.Info (Log.LOG_AS, "AUTOD::END: Auto discovery succeeded.");
             var robot = (StepRobot)Sm.Arg;
             NcAssert.NotNull (robot);
-            ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, robot.SrServerUri);
+            ServerCandidate = McServer.Create (AccountId, McAccount.ActiveSyncCapabilities, robot.SrServerUri);
             if (ServerCandidate.HostIsAsGMail ()) {
                 // Robot can do this because of MX record. Not that if the user had entered this value, we would 
                 // not want IsHardWired to be true.
@@ -966,7 +966,7 @@ namespace NachoCore.ActiveSync
         private void DoTestDefaultServer ()
         {
             AutoDSucceeded = false;
-            ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, 
+            ServerCandidate = McServer.Create (AccountId, McAccount.ActiveSyncCapabilities, 
                 McServer.BaseUriForHost (McServer.AS_GMail_Host));
             ServerCandidate.IsHardWired = true;
             DoTest ();

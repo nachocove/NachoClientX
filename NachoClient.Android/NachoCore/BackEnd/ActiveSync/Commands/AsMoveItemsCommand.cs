@@ -119,7 +119,7 @@ namespace NachoCore.ActiveSync
                     mustReSync = true;
                     pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFSyncThenSync,
                         NcResult.Error (AppropriateSubKind (pending, false), NcResult.WhyEnum.MissingOnServer));
-                    McFolder.UpdateSet_AsSyncMetaToClientExpected (BEContext.Account.Id, true);
+                    McFolder.UpdateSet_AsSyncMetaToClientExpected (AccountId, true);
                     PendingList.Remove (pending);
                     break;
 
@@ -143,19 +143,19 @@ namespace NachoCore.ActiveSync
                             if (null != classCode) {
                                 switch (classCode) {
                                 case McAbstrFolderEntry.ClassCodeEnum.Email:
-                                    item = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
+                                    item = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, pending.ServerId);
                                     break;
 
                                 case McAbstrFolderEntry.ClassCodeEnum.Calendar:
-                                    item = McAbstrItem.QueryByServerId<McCalendar> (BEContext.Account.Id, pending.ServerId);
+                                    item = McAbstrItem.QueryByServerId<McCalendar> (AccountId, pending.ServerId);
                                     break;
 
                                 case McAbstrFolderEntry.ClassCodeEnum.Contact:
-                                    item = McAbstrItem.QueryByServerId<McContact> (BEContext.Account.Id, pending.ServerId);
+                                    item = McAbstrItem.QueryByServerId<McContact> (AccountId, pending.ServerId);
                                     break;
 
                                 case McAbstrFolderEntry.ClassCodeEnum.Tasks:
-                                    item = McAbstrItem.QueryByServerId<McTask> (BEContext.Account.Id, pending.ServerId);
+                                    item = McAbstrItem.QueryByServerId<McTask> (AccountId, pending.ServerId);
                                     break;
 
                                 default:
@@ -177,13 +177,13 @@ namespace NachoCore.ActiveSync
                                 }
                             }
                         }
-                        var pathElem = McPath.QueryByServerId (BEContext.Account.Id, oldServerId);
+                        var pathElem = McPath.QueryByServerId (AccountId, oldServerId);
                         if (null == pathElem) {
                             Log.Error (Log.LOG_AS, "AsMoveItemsCommand: can't find McPath for {0}", oldServerId);
                         } else {
                             pathElem.Delete ();
                         }
-                        pathElem = new McPath (BEContext.Account.Id);
+                        pathElem = new McPath (AccountId);
                         pathElem.WasMoveDest = true;
                         pathElem.ServerId = newServerId;
                         pathElem.ParentId = pending.DestParentId;
@@ -216,7 +216,7 @@ namespace NachoCore.ActiveSync
                     pending.ResolveAsDeferred (BEContext.ProtoControl,
                         DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds),
                         NcResult.Error (AppropriateSubKind (pending, false), NcResult.WhyEnum.LockedOnServer));
-                    McFolder.UpdateSet_AsSyncMetaToClientExpected (BEContext.Account.Id, true);
+                    McFolder.UpdateSet_AsSyncMetaToClientExpected (AccountId, true);
                     PendingList.Remove (pending);
                     break;
 

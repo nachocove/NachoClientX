@@ -833,7 +833,7 @@ namespace NachoCore.IMAP
             SetCmd (null);
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
-            McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
+            McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, AccountId);
 
             var disconnect = new ImapDisconnectCommand (this, MainClient);
             disconnect.Execute (this.Sm);

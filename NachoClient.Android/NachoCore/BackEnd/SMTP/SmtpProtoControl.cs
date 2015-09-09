@@ -599,7 +599,7 @@ namespace NachoCore.SMTP
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             SetCmd (null);
-            McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
+            McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, AccountId);
 
             var disconnect = new SmtpDisconnectCommand (this, SmtpClient);
             disconnect.Execute (this.Sm);

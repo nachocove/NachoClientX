@@ -54,12 +54,12 @@ namespace NachoCore.ActiveSync
                     return true;
                 });
                 var serverId = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                var pathElem = new McPath (BEContext.Account.Id);
+                var pathElem = new McPath (AccountId);
                 pathElem.ServerId = serverId;
                 pathElem.ParentId = PendingSingle.ParentId;
                 pathElem.IsFolder = true;
                 pathElem.Insert ();
-                var applyFolderCreate = new ApplyCreateFolder (BEContext.Account.Id) {
+                var applyFolderCreate = new ApplyCreateFolder (AccountId) {
                     PlaceholderId = PendingSingle.ServerId,
                     FinalServerId = serverId,
                 };

@@ -382,7 +382,7 @@ namespace NachoPlatform
                             result.WeekOfMonth = week;
                         }
                         if (null == rule.MonthsOfTheYear || 0 == rule.MonthsOfTheYear.Length) {
-                            result.MonthOfYear = 1;
+                            result.MonthOfYear = localStartTime.Month;
                         } else {
                             result.MonthOfYear = (int)rule.MonthsOfTheYear [0];
                         }
