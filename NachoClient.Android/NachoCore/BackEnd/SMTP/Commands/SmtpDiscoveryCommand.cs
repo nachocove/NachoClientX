@@ -17,6 +17,7 @@ namespace NachoCore.SMTP
 
         public SmtpDiscoveryCommand (IBEContext beContext, NcSmtpClient smtp) : base (beContext, smtp)
         {
+            DontReportCommResult = !BEContext.ProtocolState.SmtpDiscoveryDone;
         }
 
         public override void Execute (NcStateMachine sm)
@@ -31,11 +32,12 @@ namespace NachoCore.SMTP
 
         protected override Event ExecuteCommand ()
         {
-            bool Initial = BEContext.ProtocolState.SmtpDiscoveryDone;
+            bool Initial = !BEContext.ProtocolState.SmtpDiscoveryDone;
             Log.Info (Log.LOG_SMTP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
+            bool serverFailedGenerally = false;
             try {
                 Event evt1 = TryLock (Client.SyncRoot, KLockTimeout, () => {
                     if (Client.IsConnected) {
@@ -69,6 +71,7 @@ namespace NachoCore.SMTP
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCONNTEMP");
                 }
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: AuthenticationException: {0}", ex.Message);
                 evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTHFAIL1");
@@ -81,18 +84,22 @@ namespace NachoCore.SMTP
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: InvalidOperationException: {0}", ex.Message);
                 evt =  Event.Create ((uint)SmEvt.E.TempFail, "SMTPINVOPTEMP");
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (SmtpProtocolException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: SmtpProtocolException: {0}", ex.Message);
                 evt =  Event.Create ((uint)SmEvt.E.TempFail, "SMTPPROTOEXTEMP");
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (SmtpCommandException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: SmtpCommandException {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCOMMEXTEMP");
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (IOException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: IOException: {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPIOEXTEMP");
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: {0}", ex);
                 if (Initial) {
@@ -101,7 +108,9 @@ namespace NachoCore.SMTP
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPUNKHARD");
                 }
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } finally {
+                ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                 Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
             if (Initial) {

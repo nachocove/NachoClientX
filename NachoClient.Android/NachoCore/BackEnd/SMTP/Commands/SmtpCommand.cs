@@ -25,7 +25,7 @@ namespace NachoCore.SMTP
             Client = smtpClient;
             RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
-            DontReportCommResult = this is SmtpDiscoveryCommand && !BEContext.ProtocolState.SmtpDiscoveryDone;
+            DontReportCommResult = true;
         }
 
         // MUST be overridden by subclass.
@@ -110,14 +110,17 @@ namespace NachoCore.SMTP
                     Log.Info (Log.LOG_SMTP, "{0}: SmtpProtocolException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPPROTOEX");
+                    serverFailedGenerally = true;
                 } catch (SmtpCommandException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: SmtpCommandException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCMDEX");
+                    serverFailedGenerally = true;
                 } catch (InvalidOperationException ex) {
                     Log.Error (Log.LOG_SMTP, "{0}: InvalidOperationException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPHARD1");
+                    serverFailedGenerally = true;
                 } catch (FormatException ex) {
                     Log.Error (Log.LOG_SMTP, "FormatException: {0}", ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
