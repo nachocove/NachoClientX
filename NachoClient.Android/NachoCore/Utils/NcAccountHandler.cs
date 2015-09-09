@@ -66,18 +66,18 @@ namespace NachoCore.Model
                 return cred;
             }, null);
         }
-            
+
         public McAccount CreateAccount (NcMdmConfig config)
         {
             return CreateAccountCore (McAccount.AccountServiceEnum.Exchange, config.EmailAddr, (accountId) => {
                 string username = config.Username;
                 if (String.IsNullOrEmpty (username)) {
-                    if (String.IsNullOrEmpty(config.Domain)){
+                    if (String.IsNullOrEmpty (config.Domain)) {
                         username = config.EmailAddr;
-                    }else{
+                    } else {
                         username = McCred.Join (config.Domain, "");
                     }
-                }else{
+                } else {
                     username = McCred.Join (config.Domain, username);
                 }
                 var cred = new McCred () { 
@@ -92,7 +92,7 @@ namespace NachoCore.Model
                 if (!String.IsNullOrEmpty (config.BrandingName)) {
                     account.DisplayName = config.BrandingName;
                 }
-                if (!String.IsNullOrEmpty(config.Host)){
+                if (!String.IsNullOrEmpty (config.Host)) {
                     var server = new McServer () { 
                         AccountId = account.Id,
                         Capabilities = McAccount.ActiveSyncCapabilities,
@@ -120,7 +120,7 @@ namespace NachoCore.Model
                 account.SetAccountService (service);
                 account.DisplayName = NcServiceHelper.AccountServiceName (service);
                 account.Insert ();
-                if (customize != null){
+                if (customize != null) {
                     customize (account);
                     account.Update ();
                 }
