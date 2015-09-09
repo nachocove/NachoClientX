@@ -59,7 +59,10 @@ namespace NachoClient.iOS
 
         public override bool CanSubmitFields ()
         {
-            return true;
+            if (!String.IsNullOrEmpty (domainField.Text)) {
+                return !String.IsNullOrEmpty (usernameField.Text);
+            }
+            return true;    
         }
 
         public override string IssueWithFields ()
