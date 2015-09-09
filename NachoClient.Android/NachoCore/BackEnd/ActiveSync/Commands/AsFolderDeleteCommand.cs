@@ -42,8 +42,8 @@ namespace NachoCore.ActiveSync
             }
             McProtocolState protocolState = BEContext.ProtocolState;
             var xmlFolderDelete = doc.Root;
-            var pathElem = McPath.QueryByServerId (BEContext.Account.Id, PendingSingle.ServerId);
-            var folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
+            var pathElem = McPath.QueryByServerId (AccountId, PendingSingle.ServerId);
+            var folder = McFolder.QueryByServerId<McFolder> (AccountId, PendingSingle.ServerId);
             switch ((Xml.FolderHierarchy.FolderDeleteStatusCode)Convert.ToUInt32 (xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.Status).Value)) {
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Success_1:
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {

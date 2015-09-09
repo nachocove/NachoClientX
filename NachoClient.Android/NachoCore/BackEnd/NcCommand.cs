@@ -13,6 +13,7 @@ namespace NachoCore
         protected const int KLockTimeout = 10000;
 
         protected IBEContext BEContext;
+        protected int AccountId { get; set; }
 
         /// <summary>
         /// A linked token, combining the InternalCts with the top-level per-ProtoControl Cts. Any underlying/subclassed
@@ -70,6 +71,7 @@ namespace NachoCore
         public NcCommand (IBEContext beContext)
         {
             BEContext = beContext;
+            AccountId = BEContext.Account.Id;
             PendingList = new List<McPending> ();
             PendingResolveLockObj = new object ();
             InternalCts = new CancellationTokenSource ();

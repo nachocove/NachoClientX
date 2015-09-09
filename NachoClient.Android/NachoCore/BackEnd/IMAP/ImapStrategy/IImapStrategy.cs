@@ -163,7 +163,7 @@ namespace NachoCore.IMAP
     public interface IImapStrategy
     {
         SyncKit GenSyncKit (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt, McPending pending);
-        SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McPending pending);
+        SyncKit GenSyncKit (McProtocolState protocolState, McPending pending);
         SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync);
 
         FetchKit GenFetchKit ();

@@ -54,12 +54,16 @@ namespace NachoCore
         protected NcStateMachine Sm;
         protected IHttpClient Client;
 
+        private int _AccountId;
         private int AccountId {
             get {
-                if ((null == Owner) || (null == Owner.Account)) {
-                    return 0;
+                if (_AccountId == 0) {
+                    if ((null == Owner) || (null == Owner.Account)) {
+                        return 0;
+                    }
+                    _AccountId = Owner.Account.Id;
                 }
-                return Owner.Account.Id;
+                return _AccountId;
             }
         }
 
@@ -1002,7 +1006,7 @@ namespace NachoCore
                 }, "PushAssistDeviceToken");
                 break;
             case NcResult.SubKindEnum.Info_FastNotificationChanged:
-                if (Owner.Account.Id == siea.Account.Id) {
+                if (AccountId == siea.Account.Id) {
                     NcTask.Run (() => {
                         if (siea.Account.FastNotificationEnabled) {
                             if (IsStartOrParked ()) {

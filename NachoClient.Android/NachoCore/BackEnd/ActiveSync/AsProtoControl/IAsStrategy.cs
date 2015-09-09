@@ -55,11 +55,11 @@ namespace NachoCore.ActiveSync
     // This interface is here for mocking, unlikely to be useful beyond that.
     public interface IAsStrategy
     {
-        MoveKit GenMoveKit (int accountId);
+        MoveKit GenMoveKit ();
         FetchKit GenFetchKit ();
         FetchKit GenFetchKitHints ();
-        SyncKit GenSyncKit (int accountId, McProtocolState protocolState);
-        PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected);
+        SyncKit GenSyncKit (McProtocolState protocolState);
+        PingKit GenPingKit (McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected);
         Tuple<PickActionEnum, AsCommand> Pick ();
         Tuple<PickActionEnum, AsCommand> PickUserDemand ();
         int UploadTimeoutSecs (long length);
