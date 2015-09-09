@@ -16,6 +16,7 @@ namespace NachoCore.IMAP
         public ImapDiscoverCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
             RedactProtocolLogFunc = RedactProtocolLog;
+            DontReportCommResult = !BEContext.ProtocolState.ImapDiscoveryDone;
         }
 
         public string RedactProtocolLog (bool isRequest, string logData)
@@ -36,12 +37,13 @@ namespace NachoCore.IMAP
 
         private Event ExecuteCommandInternal ()
         {
-            bool Initial = BEContext.ProtocolState.ImapDiscoveryDone;
+            bool Initial = !BEContext.ProtocolState.ImapDiscoveryDone;
 
             Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
+            bool serverFailedGenerally = false;
             try {
                 return TryLock (Client.SyncRoot, KLockTimeout, () => {
                     if (Client.IsConnected) {
@@ -75,6 +77,7 @@ namespace NachoCore.IMAP
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMP");
                 }
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: AuthenticationException {0}", ex.Message);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
@@ -91,6 +94,7 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapProtocolException {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOEXTEMP");
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapCommandException {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCOMMEXTEMP");
@@ -99,6 +103,7 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
                 if (Initial) {
@@ -107,7 +112,9 @@ namespace NachoCore.IMAP
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPUNKHARD");
                 }
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } finally {
+                ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
             if (Initial) {

@@ -35,7 +35,7 @@ namespace NachoCore.IMAP
             Client = imapClient;
             RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
-            DontReportCommResult = (this is ImapDiscoverCommand && !BEContext.ProtocolState.ImapDiscoveryDone);
+            DontReportCommResult = true;
         }
 
         // MUST be overridden by subclass.
