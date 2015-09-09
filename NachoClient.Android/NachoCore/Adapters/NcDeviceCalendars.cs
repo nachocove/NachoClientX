@@ -74,8 +74,14 @@ namespace NachoCore
                 ++ InsertCount;
             } else {
                 var count = Present.RemoveAll (x => x.FolderEntryId == existing.Id);
-                if (1 != count) {
-                    Log.Error (Log.LOG_SYS, "RemoveAll found {0} for {1}/{2}", count, deviceCalendar.ServerId, existing.Id);
+                NcAssert.True (2 > count, "Multiple folder entries were found for a single McCalendar");
+                if (0 == count) {
+                    // Two events have the same ServerId.  This can happen on iOS, even though the iOS
+                    // documentation says otherwise.  On iOS, the two events are copies of the same event.
+                    // The first event has already been processed, so the best thing to do is to ignore
+                    // this one.
+                    Log.Info (Log.LOG_SYS, "Two device events have the same server ID: {0}", deviceCalendar.ServerId);
+                    return false;
                 }
                 // If present and stale, update it.
                 if (default(DateTime) == deviceCalendar.LastUpdate ||
