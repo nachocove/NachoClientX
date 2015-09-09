@@ -374,7 +374,12 @@ namespace NachoClient.iOS
                 priorityInboxNeedsRefresh = false;
                 NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController SwitchToAccount");
                 priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
-                hotListSource = new HotListTableViewSource (this, priorityInbox);
+                if (null == hotListSource) {
+                    hotListSource = new HotListTableViewSource (this, priorityInbox);
+                    hotListView.Source = hotListSource;
+                } else {
+                    hotListSource.SetMessageThreads (priorityInbox);
+                }
                 hotListView.Source = hotListSource;
                 hotListView.RowHeight = hotListView.Frame.Height - hotListSource.CardPeekDistance * 2.0f - hotListSource.CellCardInset.Top - hotListSource.CellCardInset.Bottom;
                 hotListView.ContentInset = new UIEdgeInsets (

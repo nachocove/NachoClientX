@@ -68,6 +68,11 @@ namespace NachoClient.iOS
             this.messageThreads = messageThreads;
         }
 
+        public void SetMessageThreads(INachoEmailMessages messageThreads)
+        {
+            this.messageThreads = messageThreads;
+        }
+
         protected bool NoMessageThreads ()
         {
             return ((null == messageThreads) || (0 == messageThreads.Count ()));
