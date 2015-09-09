@@ -25,7 +25,7 @@ namespace NachoCore.IMAP
             foreach (var body in fetchkit.FetchBodies) {
                 var fetchResult = FetchOneBody (body.ServerId, body.ParentId);
                 if (fetchResult.isError ()) {
-                    Log.Error (Log.LOG_IMAP, "FetchBodies: {0}", fetchResult.GetMessage ());
+                    Log.Error (Log.LOG_IMAP, "FetchBodies: {0}", fetchResult);
                     result = fetchResult;
                 }
             }
