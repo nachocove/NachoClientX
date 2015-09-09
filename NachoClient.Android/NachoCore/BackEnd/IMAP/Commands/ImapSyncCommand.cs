@@ -424,6 +424,11 @@ namespace NachoCore.IMAP
                 MimeHelpers.AddAttachments (mimeMessage, attachments);
             }
             MessageFlags flags = MessageFlags.None;
+            // If we uploaded a message to the sent folder, mark it as read.
+            var defSent = McFolder.GetDefaultSentFolder (AccountId);
+            if (null != defSent && defSent.Id == folder.Id) {
+                flags |= MessageFlags.Seen;
+            }
             var uid = mailKitFolder.Append (mimeMessage, flags, Cts.Token);
             if (uid.HasValue) {
                 EmailMessage = EmailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -433,13 +438,6 @@ namespace NachoCore.IMAP
                     return true;
                 });
                 EmailMessage = FixupFromInfo (EmailMessage, true);
-                Cts.Token.ThrowIfCancellationRequested ();
-
-                // If we uploaded a message to the sent folder, mark it as read.
-                var defSent = McFolder.GetDefaultSentFolder (AccountId);
-                if (defSent.Id == folder.Id) {
-                    mailKitFolder.AddFlags (uid.Value, MessageFlags.Seen, false, Cts.Token);
-                }
             } else {
                 Log.Error (Log.LOG_IMAP, "Append to Folder did not return a uid!");
             }
