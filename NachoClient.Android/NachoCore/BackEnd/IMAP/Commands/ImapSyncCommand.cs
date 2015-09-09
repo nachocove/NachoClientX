@@ -155,9 +155,9 @@ namespace NachoCore.IMAP
             // start by uploading messages
             if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
                 Synckit.SyncSet = SyncKit.MustUniqueIdSet (Synckit.SyncSet);
+                mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadWrite);
                 foreach (var messageId in Synckit.UploadMessages) {
                     Cts.Token.ThrowIfCancellationRequested ();
-                    mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadWrite);
                     var emailMessage = AppendMessage (mailKitFolder, Synckit.Folder, messageId.Id);
                     // add the uploaded email to the syncSet, so that we immedaitely sync it back down.
                     Synckit.SyncSet.Add (new UniqueId (emailMessage.ImapUid));
