@@ -52,7 +52,7 @@ namespace NachoCore.ActiveSync
                     target.AsSyncKey = xmlFolderUpdate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                     return true;
                 });
-                var pathElem = McPath.QueryByServerId (BEContext.Account.Id, PendingSingle.ServerId);
+                var pathElem = McPath.QueryByServerId (AccountId, PendingSingle.ServerId);
                 pathElem.ParentId = PendingSingle.ParentId;
                 pathElem.Update ();
                 PendingResolveApply ((pending) => {

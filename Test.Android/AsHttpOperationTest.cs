@@ -759,7 +759,7 @@ namespace Test.iOS
                 Capabilities = McAccount.ActiveSyncCapabilities,
                 Host = "foo.utopiasystems.net",
             };
-            Context = new MockContext ( protoControl : null, server : server);
+            Context = new MockContext (null, protoControl : null, server : server);
 
             // provides the mock owner
             BaseMockOwner owner = CreateMockOwner (CommonMockData.MockUri, CommonMockData.MockRequestXml);

@@ -65,12 +65,12 @@ namespace NachoCore.ActiveSync
                                 break;
                             }
                             parentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
-                            pathElem = new McPath (BEContext.Account.Id);
+                            pathElem = new McPath (AccountId);
                             pathElem.ServerId = serverId;
                             pathElem.ParentId = parentId;
                             pathElem.IsFolder = true;
                             pathElem.Insert ();
-                            var applyAdd = new ApplyFolderAdd (BEContext.Account.Id) {
+                            var applyAdd = new ApplyFolderAdd (AccountId) {
                                 ServerId = serverId, 
                                 ParentId = parentId,
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
@@ -82,10 +82,10 @@ namespace NachoCore.ActiveSync
                             HadFolderChanges = true;
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
                             parentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
-                            pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
+                            pathElem = McPath.QueryByServerId (AccountId, serverId);
                             pathElem.ParentId = parentId;
                             pathElem.Update ();
-                            var applyUpdate = new ApplyFolderUpdate (BEContext.Account.Id) {
+                            var applyUpdate = new ApplyFolderUpdate (AccountId) {
                                 ServerId = serverId,
                                 ParentId = parentId,
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
@@ -96,12 +96,12 @@ namespace NachoCore.ActiveSync
                         case Xml.FolderHierarchy.Delete:
                             HadFolderChanges = true;
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            var applyDelete = new ApplyFolderDelete (BEContext.Account.Id) {
+                            var applyDelete = new ApplyFolderDelete (AccountId) {
                                 ServerId = serverId,
                             };
                             applyDelete.ProcessServerCommand ();
                             // The path information can't be deleted until *after* conflict analysis is complete.
-                            pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
+                            pathElem = McPath.QueryByServerId (AccountId, serverId);
                             pathElem.Delete ();
                             break;
                         }
@@ -150,7 +150,7 @@ namespace NachoCore.ActiveSync
         public override void StatusInd (bool didSucceed)
         {
             if (didSucceed) {
-                McPending.MakeEligibleOnFSync (BEContext.Account.Id);
+                McPending.MakeEligibleOnFSync (AccountId);
             }
             base.StatusInd (didSucceed);
         }
@@ -158,8 +158,8 @@ namespace NachoCore.ActiveSync
         private void PerformFolderSyncEpochScrub ()
         {
             Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub");
-            var laf = McFolder.GetLostAndFoundFolder (BEContext.Account.Id);
-            var orphaned = McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)
+            var laf = McFolder.GetLostAndFoundFolder (AccountId);
+            var orphaned = McFolder.QueryByIsClientOwned (AccountId, false)
                 .Where (x => x.AsFolderSyncEpoch < BEContext.ProtocolState.AsFolderSyncEpoch).ToList ();
             Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: {0} folders.", orphaned.Count);
             foreach (var iterFolder in orphaned) {
