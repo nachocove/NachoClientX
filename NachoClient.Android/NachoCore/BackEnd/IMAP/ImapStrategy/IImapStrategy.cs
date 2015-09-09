@@ -114,7 +114,7 @@ namespace NachoCore.IMAP
             if (uids is UniqueIdSet) {
                 return uids as UniqueIdSet;
             } else {
-                return new UniqueIdSet (uids);
+                return null != uids ? new UniqueIdSet (uids) : new UniqueIdSet ();
             }
         }
 
