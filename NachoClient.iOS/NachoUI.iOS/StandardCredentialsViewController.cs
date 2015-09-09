@@ -424,10 +424,10 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for service {0}, showing advanced", Service);
                 UpdateForSubmitting ();
                 if (!IsShowingAdvanced) {
-                    statusLabel.Text = "We were unable to verify your information.  Please enter advanced configuration information.";
+                    statusLabel.Text = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
                     ToggleAdvancedFields ();
                 } else {
-                    statusLabel.Text = "We were unable to verify your information.  Please enter advanced configuration information.";
+                    statusLabel.Text = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
                 }
             }
         }
