@@ -13,6 +13,10 @@ class GitCommand(Command):
         super(GitCommand, self).__init__(['git'] + params)
         self.execute()
 
+    def __str__(self):
+        return "%s" % " ".join(self.cmd)
+
+
 
 class BranchCommand(GitCommand):
     def __init__(self, params=None):
@@ -80,6 +84,9 @@ class Checkout(GitCommand):
     def __init__(self, branch_name):
         super(Checkout, self).__init__(['checkout', '-q', branch_name])
 
+class SubModuleUpdate(GitCommand):
+    def __init__(self):
+        super(SubModuleUpdate, self).__init__(['submodule', 'update', '--recursive'])
 
 class TagCommand(GitCommand):
     def __init__(self, params):
