@@ -77,12 +77,18 @@ class RepoGroup:
                     real_branch = fixed_branch
 
             checkout_cmd = git.Checkout(real_branch)
-            if checkout_cmd.ran_ok():
-                print '%s -> %s' % (repo, real_branch)
-            else:
-                print '%s -> ERROR!' % repo
+            if not checkout_cmd.ran_ok():
+                print '%s: %s -> ERROR!' % (repo, checkout_cmd)
                 print checkout_cmd.stderr
                 return False
+
+            submodules_update_cmd = git.SubModuleUpdate()
+            if not submodules_update_cmd.ran_ok():
+                print '%s: %s -> ERROR!' % (repo, submodules_update_cmd)
+                print checkout_cmd.stderr
+                return False
+
+            print '%s -> %s' % (repo, real_branch)
             return True
 
         return self.for_all_repos(action=action, exception_handler=None)
