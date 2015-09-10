@@ -665,10 +665,11 @@ namespace NachoCore.ActiveSync
                     switch (ContentType) {
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
+                        NcTimer diaper = null;
                         try {
                             var isWedged = false;
                             int timeoutInSeconds = (response.Content.Headers.ContentLength ?? -1) >= 100000 ? 60 : 20;
-                            var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
+                            diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
                                              (state) => {
                                     if (!cToken.IsCancellationRequested) {
                                         Log.Error (Log.LOG_HTTP, "LoadBytes timed out after {0:n0}s trying to process {1:n0} bytes for command {2}",
@@ -683,11 +684,15 @@ namespace NachoCore.ActiveSync
                                 decoder.LoadBytes (AccountId, ContentData);
                                 loadBytesDuration = capture.ElapsedMilliseconds;
                             }
+                            // There is a small race we are living with. The diaper callback could be 
+                            // executing while this code is executing, resulting in two contradictory events
+                            // hitting the HTTP OP SM.
+                            diaper.Dispose ();
+                            diaper = null;
                             if (1000 < loadBytesDuration) {
                                 Log.Warn (Log.LOG_HTTP, "LoadBytes took {0:n0}ms for {1:n0} bytes for command {2}",
                                     loadBytesDuration, response.Content.Headers.ContentLength ?? -1, CommandName);
                             }
-                            diaper.Dispose ();
                             if (isWedged) {
                                 // If not cancelled, we've already done the right thing and sent a timeout event.
                                 return Final ((uint)SmEvt.E.HardFail, "LOADBYTESHANG");
@@ -710,6 +715,10 @@ namespace NachoCore.ActiveSync
                             // to network errors. Log as Error so we can see anything that looks like a bug.
                             Log.Error (Log.LOG_HTTP, "Unanticipated Exception: {0}", ex.ToString ());
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND4");
+                        } finally {
+                            if (null != diaper) {
+                                diaper.Dispose ();
+                            }
                         }
                         responseDoc = decoder.XmlDoc;
                         Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
