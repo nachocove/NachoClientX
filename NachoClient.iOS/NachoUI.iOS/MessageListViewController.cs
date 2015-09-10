@@ -58,7 +58,7 @@ namespace NachoClient.iOS
             searcher = new SearchHelper ("MessageListViewController", (searchString) => {
                 if (String.IsNullOrEmpty (searchString)) {
                     searchResultsMessages.UpdateMatches (null);
-                    searchResultsMessages.UpdateServerMatches(null);
+                    searchResultsMessages.UpdateServerMatches (null);
                     return; 
                 }
                 // On-device index
@@ -66,7 +66,7 @@ namespace NachoClient.iOS
                 var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
                 var index = new NachoCore.Index.NcIndex (indexPath);
                 int maxResults = 1000;
-                if(String.IsNullOrEmpty(searchString) || (4 > searchString.Length)) {
+                if (String.IsNullOrEmpty (searchString) || (4 > searchString.Length)) {
                     maxResults = 20;
                 }
                 var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
@@ -211,7 +211,9 @@ namespace NachoClient.iOS
         protected void EndRefreshingOnUIThread (object sender)
         {
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                RefreshControl.EndRefreshing ();
+                if (RefreshControl.Refreshing) {
+                    RefreshControl.EndRefreshing ();
+                }
             });
         }
 
@@ -228,7 +230,9 @@ namespace NachoClient.iOS
 
         void cancelRefreshTimer ()
         {
-            EndRefreshingOnUIThread (null);
+            if (RefreshControl.Refreshing) {
+                RefreshControl.EndRefreshing ();
+            }
             if (null != refreshTimer) {
                 refreshTimer.Dispose ();
                 refreshTimer = null;
@@ -707,7 +711,7 @@ namespace NachoClient.iOS
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
-            if(String.IsNullOrEmpty(forSearchString) || (4 > forSearchString.Length)) {
+            if (String.IsNullOrEmpty (forSearchString) || (4 > forSearchString.Length)) {
                 searchResultsMessages.UpdateServerMatches (null);
                 return;
             }
