@@ -1180,8 +1180,7 @@ namespace NachoCore.Utils
                             } else {
                                 CreateEventRecord (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
                             }
-                            calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
-                            calendarItem.Update ();
+                            calendarItem.UpdateRecurrencesGeneratedUntil (DateTime.MaxValue);
 
                         } else {
 
@@ -1194,8 +1193,7 @@ namespace NachoCore.Utils
                                     lastOneGeneratedAggregate = lastOneGenerated;
                                 }
                             }
-                            calendarItem.RecurrencesGeneratedUntil = lastOneGeneratedAggregate;
-                            calendarItem.Update ();
+                            calendarItem.UpdateRecurrencesGeneratedUntil (lastOneGeneratedAggregate);
                         }
                     }
                 }

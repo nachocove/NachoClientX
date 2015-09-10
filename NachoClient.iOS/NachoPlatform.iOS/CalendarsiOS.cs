@@ -190,11 +190,17 @@ namespace NachoPlatform
                 }
                 if (null == eventTimeZone) {
                     // If the iOS event didn't specify a time zone, or if a time zone with that ID could not be
-                    // found, assume the local time zone.  Time zones only matter for all-day events and recurring
-                    // events, so getting the wrong time zone won't be a problem for most events.
-                    eventTimeZone = TimeZoneInfo.Local;
+                    // found, assume the local time zone for regular events and UTC for all-day events.
+                    eventTimeZone = Event.AllDay ? TimeZoneInfo.Utc : TimeZoneInfo.Local;
                 }
                 cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (eventTimeZone), cal.StartTime).toEncodedTimeZone ();
+
+                if (Event.HasAlarms && Event.Alarms[0].RelativeOffset < 0.0) {
+                    // EKAlarm.RelativeOffset is the number of seconds relative to the event, where a negative
+                    // value means before.  McCalendar.Reminder is the number of minutes before the event.
+                    cal.ReminderIsSet = true;
+                    cal.Reminder = (uint)(-(Event.Alarms [0].RelativeOffset / 60));
+                }
 
                 if (null == Event.Organizer) {
                     cal.MeetingStatus = NcMeetingStatus.Appointment;
@@ -523,18 +529,61 @@ namespace NachoPlatform
             return result;
         }
 
+        private void ToEKEvent (EKEvent ekEvent, McCalendar cal)
+        {
+            ekEvent.StartDate = cal.StartTime.ToNSDate ();
+            ekEvent.AllDay = cal.AllDayEvent;
+            if (cal.AllDayEvent) {
+                // iOS wants the end time of an all-day event to be one second before midnight.
+                ekEvent.EndDate = (cal.EndTime - TimeSpan.FromSeconds (1)).ToNSDate ();
+                ekEvent.TimeZone = null;
+            } else {
+                ekEvent.EndDate = cal.EndTime.ToNSDate ();
+                ekEvent.TimeZone = NSTimeZone.LocalTimeZone;
+            }
+            ekEvent.Title = cal.Subject;
+            ekEvent.Location = cal.Location;
+            if (McBody.BodyTypeEnum.PlainText_1 == cal.DescriptionType && !string.IsNullOrEmpty (cal.Description)) {
+                ekEvent.Notes = cal.Description;
+            } else {
+                ekEvent.Notes = "";
+            }
+            if (cal.BusyStatusIsSet) {
+                switch (cal.BusyStatus) {
+                case NcBusyStatus.Busy:
+                    ekEvent.Availability = EKEventAvailability.Busy;
+                    break;
+                case NcBusyStatus.Free:
+                    ekEvent.Availability = EKEventAvailability.Free;
+                    break;
+                case NcBusyStatus.Tentative:
+                    ekEvent.Availability = EKEventAvailability.Tentative;
+                    break;
+                case NcBusyStatus.OutOfOffice:
+                    ekEvent.Availability = EKEventAvailability.Unavailable;
+                    break;
+                }
+            } else {
+                ekEvent.Availability = EKEventAvailability.NotSupported;
+            }
+        }
+
         public NcResult Add (McCalendar cal)
         {
             EKEvent ekEvent = null;
             try {
                 ekEvent = EKEvent.FromStore (Es);
-                ekEvent.StartDate = cal.StartTime.ToNSDate ();
-                ekEvent.EndDate = cal.EndTime.ToNSDate ();
-                ekEvent.Title = cal.Subject;
-                // FIXME DAVID - need full translator here. Also we may need to think about how we target the correct
-                // device calendar. worst case would be making it so that there is a device-based nacho account PER 
-                // device synced calendar (maybe ugly but not impossible).
+                ToEKEvent (ekEvent, cal);
+
+                if (cal.ReminderIsSet) {
+                    ekEvent.AddAlarm (new EKAlarm () {
+                        RelativeOffset = -((double)cal.Reminder * 60),
+                    });
+                }
+
+                // TODO Put the event in the correct device calendar.
                 ekEvent.Calendar = Es.DefaultCalendarForNewEvents;
+
                 NSError err;
                 Es.SaveEvent ( ekEvent, EKSpan.ThisEvent, out err);
                 if (null != err) {
@@ -542,7 +591,7 @@ namespace NachoPlatform
                     return NcResult.Error ("Es.SaveEvent");
                 }
                 cal.ServerId = ekEvent.EventIdentifier;
-                cal.LastModified = ekEvent.LastModifiedDate.ToDateTime ();
+                cal.DeviceLastUpdate = ekEvent.LastModifiedDate.ToDateTime ();
                 cal.IsAwaitingCreate = false;
                 cal.Update ();
                 return NcResult.OK ();
@@ -577,16 +626,42 @@ namespace NachoPlatform
             try {
                 var ekEvent = Es.EventFromIdentifier ( cal.ServerId );
                 if (null == ekEvent) {
+                    Log.Warn (Log.LOG_SYS, "Calendar.Change: Device event was not found.");
                     return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                 }
-                ekEvent.StartDate = cal.StartTime.ToNSDate ();
-                // FIXME DAVID - need to fully translate McCalendar - to the extent that we can.
+                ToEKEvent (ekEvent, cal);
+
+                if (cal.ReminderIsSet) {
+                    if (ekEvent.HasAlarms && ekEvent.Alarms [0].RelativeOffset < 0.0) {
+                        // This is the alarm that was synched with McCalendar.Reminder.
+                        // Adjust the iOS alarm's value, in case the user changed something
+                        // in the app.
+                        ekEvent.Alarms [0].RelativeOffset = -((double)cal.Reminder * 60);
+                    } else {
+                        // It doesn't look like the reminder time originally came from the iOS event.
+                        // The user probably added a new reminder.  Create an iOS alarm to match.
+                        ekEvent.AddAlarm (new EKAlarm () {
+                            RelativeOffset = -((double)cal.Reminder * 60),
+                        });
+                    }
+                } else {
+                    if (ekEvent.HasAlarms && ekEvent.Alarms [0].RelativeOffset < 0.0) {
+                        // The iOS event has an alarm that would have been synched.  The user
+                        // must have removed that reminder.  So remove the iOS alarm.
+                        ekEvent.RemoveAlarm (ekEvent.Alarms [0]);
+                    }
+                }
+
                 NSError err;
                 Es.SaveEvent ( ekEvent, EKSpan.ThisEvent, out err);
                 if (null != err) {
                     Log.Error (Log.LOG_SYS, "Change:Es.SaveEvent: {0}", Contacts.GetNSErrorString (err));
                     return NcResult.Error ("Es.SaveEvent");
                 }
+                // If the DeviceLastUpdate field is not updated, then the calendar item will be
+                // deleted and recreated during the next device calendar sync.
+                cal.DeviceLastUpdate = DateTime.UtcNow;
+                cal.Update ();
                 return NcResult.OK ();
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SYS, "Calendar.Change: {0}", ex.ToString ());
