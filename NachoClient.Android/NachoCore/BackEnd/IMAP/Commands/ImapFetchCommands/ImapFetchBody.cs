@@ -12,6 +12,7 @@ using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
 using System;
+using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -115,7 +116,7 @@ namespace NachoCore.IMAP
                                 }
                                 // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
                                 // to the proper place and remove the headers while we're doing so.
-                                CopyFilteredStream(st, bodyFile, basic.ContentType.Charset, TransferEncoding, CopyBodyWithoutHeaderAction);
+                                CopyFilteredStream(st, bodyFile, basic.ContentType.Charset, TransferEncoding, CopyBodyWithoutHeaderAction, Cts.Token);
                                 break;
                             }
                         }
@@ -181,7 +182,8 @@ namespace NachoCore.IMAP
         /// </summary>
         /// <param name="src">Source stream</param>
         /// <param name="dst">Dst stream</param>
-        private void CopyBodyWithoutHeaderAction (Stream src, Stream dst)
+        /// <param name = "Token">CancellationToken</param>
+        private void CopyBodyWithoutHeaderAction (Stream src, Stream dst, CancellationToken Token)
         {
             string terminator = "\r\n";
             string line;
@@ -192,6 +194,7 @@ namespace NachoCore.IMAP
                     using (var streamWriter = new StreamWriter (dst)) {
                         streamWriter.NewLine = terminator;
                         while ((line = streamReader.ReadLine ()) != null) {
+                            Token.ThrowIfCancellationRequested ();
                             if (skip && line.Equals (string.Empty)) {
                                 skip = false;
                                 continue; // skip the empty line. Next iteration will start writing.

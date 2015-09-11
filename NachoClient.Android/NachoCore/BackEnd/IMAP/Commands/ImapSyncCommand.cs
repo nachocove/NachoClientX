@@ -13,6 +13,7 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using System.Text;
 using MailKit.Search;
+using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -770,7 +771,7 @@ namespace NachoCore.IMAP
 
                     if (stream.Length > 0) {
                         using (var decoded = new MemoryStream ()) {
-                            CopyFilteredStream (stream, decoded, part.ContentType.Charset, TransferEncoding, CopyDataAction);
+                            CopyFilteredStream (stream, decoded, part.ContentType.Charset, TransferEncoding, CopyDataAction, Cts.Token);
                             var buffer = decoded.GetBuffer ();
                             var length = (int)decoded.Length;
                             preview = Encoding.UTF8.GetString (buffer, 0, length);
@@ -801,9 +802,16 @@ namespace NachoCore.IMAP
             return preview;
         }
 
-        private void CopyDataAction (Stream inStream, Stream outStream)
+        const int KCopyBufferSize = 4096;
+        private void CopyDataAction (Stream inStream, Stream outStream, CancellationToken Token)
         {
-            inStream.CopyTo (outStream);
+            var buffer = new byte[KCopyBufferSize];
+            int count;
+            while ((count = inStream.Read(buffer, 0, buffer.Length)) != 0)
+            {
+                Token.ThrowIfCancellationRequested();
+                outStream.Write(buffer, 0, count);
+            }
         }
 
         private BodyPart findPreviewablePart (MessageSummary summary)

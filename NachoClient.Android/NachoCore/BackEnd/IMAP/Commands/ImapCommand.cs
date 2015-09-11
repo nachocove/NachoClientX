@@ -407,7 +407,7 @@ namespace NachoCore.IMAP
         }
 
         protected void CopyFilteredStream (Stream inStream, Stream outStream, 
-            string CharSet, string TransferEncoding, Action<Stream, Stream> func)
+            string CharSet, string TransferEncoding, Action<Stream, Stream, CancellationToken> func, CancellationToken Token)
         {
             using (var filtered = new FilteredStream (outStream)) {
                 filtered.Add (DecoderFilter.Create (TransferEncoding));
@@ -424,7 +424,7 @@ namespace NachoCore.IMAP
                         // continue without the filter
                     }
                 }
-                func (inStream, filtered);
+                func (inStream, filtered, Token);
             }
         }
 
