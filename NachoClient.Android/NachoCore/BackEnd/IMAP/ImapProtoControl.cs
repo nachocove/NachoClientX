@@ -144,7 +144,7 @@ namespace NachoCore.IMAP
                 Name = string.Format ("IMAPPC({0})", AccountId),
                 LocalEventType = typeof(ImapEvt),
                 LocalStateType = typeof(Lst),
-                StateChangeIndication = UpdateSavedState,
+                TransIndication = UpdateSavedState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
@@ -441,8 +441,9 @@ namespace NachoCore.IMAP
             BackEndStatePreset = null;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
-            if ((uint)Lst.Parked != stateToSave) {
+            if ((uint)Lst.Parked != stateToSave &&
                 // We never save Parked.
+                protocolState.ImapProtoControlState != stateToSave) {
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
                     target.ImapProtoControlState = stateToSave;

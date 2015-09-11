@@ -130,7 +130,7 @@ namespace NachoCore.SMTP
                 Name = string.Format ("SMTPPC({0})", AccountId),
                 LocalEventType = typeof(SmtpEvt),
                 LocalStateType = typeof(Lst),
-                StateChangeIndication = UpdateSavedState,
+                TransIndication = UpdateSavedState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
@@ -624,8 +624,9 @@ namespace NachoCore.SMTP
             BackEndStatePreset = null;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
-            if ((uint)Lst.Parked != stateToSave) {
+            if ((uint)Lst.Parked != stateToSave &&
                 // We never save Parked.
+                protocolState.SmtpProtoControlState != stateToSave) {
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
                     target.SmtpProtoControlState = stateToSave;
