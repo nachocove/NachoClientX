@@ -129,6 +129,8 @@ namespace NachoCore.Utils
 
         public Action StateChangeIndication { set; get; }
 
+        public Action TransIndication { set; get; }
+
         private string PseudoKlass;
         private Dictionary<string,uint> EventCode;
         private Dictionary<uint,string> EventName;
@@ -274,6 +276,9 @@ namespace NachoCore.Utils
                             NameAndId (), StateName (oldState), EventName [FireEventCode], fireEvent.Mnemonic, StateName (State)), Message));
                     } else {
                         State = NextState;
+                    }
+                    if (null != TransIndication) {
+                        TransIndication ();
                     }
                     if (oldState != State && null != StateChangeIndication) {
                         StateChangeIndication ();
