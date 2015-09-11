@@ -1,0 +1,45 @@
+body {
+    font: 400 17px/24px "Avenir", "Helvetica", sans-serif;
+}
+
+body[nacho-type="compose"]{
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+a:link {
+    color: rgb(12,66,75);
+}
+
+a:visited {
+    color: inherit;
+}
+
+/* Apple-style blockquotes */
+blockquote[type="cite"] {
+    border-width: 0 0 0 2px;
+    border-style: solid;
+    margin-left: 0;
+    padding-left: 10px;
+    border-color: rgb(12,66,75);
+    color: rgb(12,66,75);
+}
+
+blockquote[type="cite"]
+blockquote[type="cite"]
+{
+    border-color: rgb(1,178,205);
+    color: rgb(1,178,205);
+}
+
+blockquote[type="cite"]
+blockquote[type="cite"]
+blockquote[type="cite"]
+{
+    border-color: rgb(43,217,178);
+    color: rgb(43,217,178);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}

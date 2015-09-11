@@ -3,8 +3,9 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Net;
+using System.Text.RegularExpressions;
+using System.Runtime.Serialization;
+using System.Xml.Serialization;
 using MimeKit;
 using NachoCore.Model;
 using HtmlAgilityPack;
@@ -12,149 +13,223 @@ using HtmlAgilityPack;
 namespace NachoCore.Utils
 {
 
-    #region Storage
+    #region Base Storage Class
 
-    public abstract class NcEmailMessageBundleStorage
+    public abstract class NcBundleStorage
     {
 
         public abstract Stream ReadableContentStreamForPath (string path);
         public abstract Stream WriteableContentsStreamForPath (string path);
         public abstract Uri UrlForPath (string path, string contentType);
+        public abstract Uri RelativeUrlForPath (string path, string contentType, string relativeToPath);
+        public abstract Uri RelativeUrlForDocumentsPath (string path);
+        public abstract Uri BaseUrl ();
 
-        public string StringContentsForPath (string path)
+        public virtual void CommitPath (string path)
         {
-            Stream contents = ReadableContentStreamForPath (path);
-            if (contents != null) {
-                StreamReader reader = new StreamReader (contents, System.Text.Encoding.UTF8);
-                return reader.ReadToEnd ();
+        }
+
+        public virtual string StringContentsForPath (string path)
+        {
+            using (Stream contents = ReadableContentStreamForPath (path)) {
+                if (contents != null) {
+                    using (StreamReader reader = new StreamReader (contents, System.Text.Encoding.UTF8)) {
+                        return reader.ReadToEnd ();
+                    }
+                }
             }
             return null;
         }
 
-        public void StoreStringContentsForPath (string stringContents, string path)
+        public virtual void StoreStringContentsForPath (string stringContents, string path)
         {
-            var contents = WriteableContentsStreamForPath (path);
-            var writer = new StreamWriter (contents, System.Text.Encoding.UTF8);
-            writer.Write (stringContents);
-            writer.Close ();
-            contents.Close ();
+            using (var contents = WriteableContentsStreamForPath (path)) {
+                using (var writer = new StreamWriter (contents, System.Text.Encoding.UTF8)) {
+                    writer.Write (stringContents);
+                }
+            }
         }
 
-        public object ObjectContentsForPath (string path)
+        public virtual object ObjectContentsForPath (string path, Type t)
         {
-            Stream contents = ReadableContentStreamForPath (path);
-            if (contents != null) {
-                BinaryFormatter serializer = new BinaryFormatter ();
-                return serializer.Deserialize (contents);
+            using (Stream contents = ReadableContentStreamForPath (path)) {
+                if (contents != null) {
+                    DataContractSerializer serializer = new DataContractSerializer (t);
+                    var o = serializer.ReadObject (contents);
+                    return o;
+                }
             }
             return null;
         }
 
-        public void StoreObjectContentsForPath (object o, string path)
+        public virtual void StoreObjectContentsForPath (object o, string path)
         {
-            var stream = WriteableContentsStreamForPath (path);
-            if (o != null) {
-                BinaryFormatter serializer = new BinaryFormatter ();
-                serializer.Serialize (stream, 0);
-                stream.Close ();
+            using (var stream = WriteableContentsStreamForPath (path)) {
+                if (o != null) {
+                    DataContractSerializer serializer = new DataContractSerializer (o.GetType());
+                    serializer.WriteObject (stream, o);
+                }
             }
         }
     }
 
+    #endregion
 
-    class NcEmailMessageBundleMemoryStorage
+    #region Memory Storage
+
+    class NcBundleMemoryStorage : NcBundleStorage
     {
 
         private Dictionary<string, object> MemoryStorage;
-        private HttpListener Server;
 
-        public NcEmailMessageBundleMemoryStorage () : base ()
+        public NcBundleMemoryStorage () : base ()
         {
-            MemoryStorage = new Dictionary<string, byte[]> ();
+            MemoryStorage = new Dictionary<string, object> ();
         }
 
-        public Stream ReadableContentStreamForPath (string path)
+        public override Stream ReadableContentStreamForPath (string path)
         {
             object o;
-            if (MemoryStorage.TryGetValue (path, o)) {
+            if (MemoryStorage.TryGetValue (path, out o)) {
                 var stream = o as Stream;
                 if (stream != null) {
-                    stream.Seek (0);
+                    stream.Seek (0, 0);
                 }
                 return stream;
             }
             return null;
         }
 
-        public Stream WriteableContentsStreamForPath (string path)
+        public override Stream WriteableContentsStreamForPath (string path)
         {
             var stream = new MemoryStream ();
             MemoryStorage [path] = stream;
             return stream;
         }
 
-        public Uri UrlForPath (string path, string contentType)
+        public override Uri UrlForPath (string path, string contentType)
         {
             var contents = ReadableContentStreamForPath (path) as MemoryStream;
             if (contents != null){
                 string base64Encoded = Convert.ToBase64String(contents.ToArray ());
-                return String.Format ("data:{0};base64,{1}", contentType, base64Encoded);
+                return new Uri(String.Format ("data:{0};base64,{1}", contentType, base64Encoded), UriKind.Absolute);
             }
             return null;
         }
 
-        public string StringContentsForPath (string path)
+        public override Uri RelativeUrlForPath (string path, string contentType, string relativeToPath)
         {
-            return ObjectContentsForPath (path) as string;
+            return UrlForPath (path, contentType);
         }
 
-        public void StoreStringContentsForPath (string stringContents, string path)
+        public override Uri RelativeUrlForDocumentsPath (string path)
+        {
+            return new Uri (path, UriKind.Relative);
+        }
+
+        public override Uri BaseUrl ()
+        {
+            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            return new Uri (String.Format ("file://{0}", documentsPath));
+        }
+
+        public override string StringContentsForPath (string path)
+        {
+            var o = ObjectContentsForPath (path, null);
+            if (o is Stream) {
+                return base.StringContentsForPath (path);
+            }
+            return o as string;
+        }
+
+        public override void StoreStringContentsForPath (string stringContents, string path)
         {
             StoreObjectContentsForPath(stringContents, path);
         }
 
-        public object ObjectContentsForPath (string path)
+        public override object ObjectContentsForPath (string path, Type t)
         {
             object o;
-            if (MemoryStorage.TryGetValue (path, o)) {
+            if (MemoryStorage.TryGetValue (path, out o)) {
                 return o;
             }
             return null;
         }
 
-        public void StoreObjectContentsForPath (object o, string path)
+        public override void StoreObjectContentsForPath (object o, string path)
         {
             MemoryStorage [path] = o;
         }
 
     }
 
+    #endregion
 
-    class NcEmailMessageBundleFileStorage
+    #region File Storage
+
+    class NcBundleFileStorage : NcBundleStorage
     {
 
         private string RootPath;
 
-        public NcEmailMessageBundleFileStorage (string rootPath) : base ()
+        public NcBundleFileStorage (string rootPath) : base ()
         {
             RootPath = rootPath;
+            if (!Directory.Exists (RootPath)) {
+                Directory.CreateDirectory (RootPath);
+            }
         }
 
-        public Stream ReadableContentStreamForPath (string path)
+        public override Stream ReadableContentStreamForPath (string path)
         {
             var filePath = FullFilePathForLocalPath (path);
-            return new FileStream (filePath, FileMode.Open);
+            if (File.Exists (filePath)) {
+                return new FileStream (filePath, FileMode.Open);
+            }
+            return null;
         }
 
-        public Stream WriteableContentsStreamForPath (string path)
+        public override Stream WriteableContentsStreamForPath (string path)
         {
             var filePath = FullFilePathForLocalPath (path);
             return new FileStream (filePath, FileMode.Create);
         }
 
-        public Uri UrlForPath (string path, string contentType)
+        public override Uri UrlForPath (string path, string contentType)
         {
             return new Uri (String.Format("file://{0}/{1}", RootPath.Replace(Path.DirectorySeparatorChar, '/'), path.Replace(Path.DirectorySeparatorChar, '/')));
+        }
+
+        public override Uri RelativeUrlForPath (string path, string contentType, string relativeToPath)
+        {
+            var a = new List<string>(path.Split (Path.DirectorySeparatorChar));
+            var b = new List<string>(relativeToPath.Split (Path.DirectorySeparatorChar));
+            int i = 0;
+            for (; i < a.Count && i < b.Count; ++i) {
+                if (!a[i].Equals(b[i])){
+                    break;
+                }
+            }
+            if (i == 0) {
+                for (int j = 0; j < b.Count - 1; ++j){
+                    a.Insert (0, "..");
+                }
+            }
+            var relative = String.Join("/", a.GetRange (i, a.Count - i).ToArray());
+            return new Uri (relative, UriKind.Relative);
+        }
+
+        public override Uri RelativeUrlForDocumentsPath (string path)
+        {
+            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var documentUri = new Uri (String.Format ("file://{0}/{1}", documentsPath, path));
+            var indexUri = UrlForPath ("x", "");
+            return indexUri.MakeRelativeUri (documentUri);
+        }
+
+        public override Uri BaseUrl ()
+        {
+            return new Uri(String.Format("file://{0}", RootPath));
         }
 
         private string FullFilePathForLocalPath (string path)
@@ -166,24 +241,37 @@ namespace NachoCore.Utils
 
     #endregion
 
-    #endregion
 
     public class NcEmailMessageBundle : MimeVisitor
     {
 
-        [Serializable]
-        private class BundleManifest
-        {
+        #region Property Classes
 
-            [Serializable]
+        [DataContract]
+        public class BundleManifest
+        {
+            [DataContract]
             public class Entry
             {
+                [DataMember]
                 public string Path { get; set; }
+                [DataMember]
                 public string ContentType { get; set; }
+
+                public Entry ()
+                {
+                }
             }
 
+            [DataMember]
             public int Version { get; set; }
+            [DataMember]
             public Dictionary<string, Entry> Entries { get; set; }
+
+            public BundleManifest ()
+            {
+                Version = 0;
+            }
 
             public BundleManifest (int version)
             {
@@ -199,19 +287,57 @@ namespace NachoCore.Utils
             public string FullText = null;
             public string TopText = null;
             public List<MultipartRelated> RelatedStack;
+            public AlternativeTypes AlternateTypeInfo;
+            private bool populateHtml = true;
+            private bool populateText = true;
 
             public ParseResult ()
             {
                 RelatedStack = new List<MultipartRelated> ();
             }
+
+            public bool PopulateHtml {
+                get {
+                    if (AlternateTypeInfo != null) {
+                        return AlternateTypeInfo.PopulatingHtml;
+                    }
+                    return populateHtml;
+                }
+                set {
+                    populateHtml = value;
+                }
+            }
+
+            public bool PopulateText {
+                get {
+                    if (AlternateTypeInfo != null) {
+                        return AlternateTypeInfo.PopulatingText;
+                    }
+                    return populateText;
+                }
+                set {
+                    populateText = value;
+                }
+            }
+
         }
+
+        private class AlternativeTypes
+        {
+            public bool PopulatingHtml;
+            public bool PopulatingText;
+            public bool ConsiderRtfAsHtml;
+        }
+
+        #endregion
 
         #region Properties
 
         public bool NeedsUpdate = false;
         private bool HasHtmlUrl = true;
         private McEmailMessage Message = null;
-        private NcEmailMessageBundleStorage Storage;
+        private MimeMessage MimeMessage = null;
+        private NcBundleStorage Storage;
         private BundleManifest Manifest;
 
         private static int LastestVersion = 1;
@@ -223,7 +349,7 @@ namespace NachoCore.Utils
         private static string FullLightlyStyledEntryName = "full-simple";
         private static string TopLightlyStyledEntryName = "top-simple";
 
-        private static string ManifestPath = "manifest.json";
+        private static string ManifestPath = "manifest.xml";
         private static string FullTextPath = "full.txt";
         private static string TopTextPath = "top.txt";
         private static string FullHtmlPath = "full.html";
@@ -239,18 +365,28 @@ namespace NachoCore.Utils
 
         public NcEmailMessageBundle (McEmailMessage message)
         {
-            Storage = new NcEmailMessageBundleMemoryStorage ();
-            HasHtmlUrl = false;
+            var dataRoot = NcApplication.GetDataDirPath ();
+            var bundleRoot = Path.Combine (dataRoot, "files", message.AccountId.ToString(), "bundles", message.Id.ToString ());
+            Storage = new NcBundleFileStorage (bundleRoot);
+            HasHtmlUrl = true;
             Message = message;
-            Manifest = Storage.ObjectContentsForPath (ManifestPath);
+            Manifest = Storage.ObjectContentsForPath (ManifestPath, typeof(BundleManifest)) as BundleManifest;
             if (Manifest != null) {
-                string versionString;
-                if (Manifest.Version) {
-                    Version = System.Int32.Parse (versionString);
-                    NeedsUpdate = Version != LastestVersion;
-                } else {
-                    NeedsUpdate = true;
-                }
+                NeedsUpdate = Manifest.Version != LastestVersion;
+            } else {
+                Manifest = new BundleManifest (LastestVersion);
+                NeedsUpdate = true;
+            }
+        }
+
+        public NcEmailMessageBundle (MimeMessage message)
+        {
+            Storage = new NcBundleMemoryStorage ();
+            HasHtmlUrl = false;
+            MimeMessage = message;
+            Manifest = Storage.ObjectContentsForPath (ManifestPath, typeof(BundleManifest)) as BundleManifest;
+            if (Manifest != null) {
+                NeedsUpdate = Manifest.Version != LastestVersion;
             } else {
                 Manifest = new BundleManifest (LastestVersion);
                 NeedsUpdate = true;
@@ -297,7 +433,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public string TopHtmlUrl {
+        public Uri TopHtmlUrl {
             get {
                 if (HasHtmlUrl) {
                     return GetUrlOfManifestEntry (TopHtmlEntryName);
@@ -306,7 +442,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public string FullHtmlUrl {
+        public Uri FullHtmlUrl {
             get {
                 if (HasHtmlUrl) {
                     return GetUrlOfManifestEntry (FullHtmlEntryName);
@@ -315,15 +451,21 @@ namespace NachoCore.Utils
             }
         }
 
+        public Uri BaseUrl {
+            get {
+                return Storage.BaseUrl ();
+            }
+        }
+
         #endregion
 
-        #region Helpers
+        #region Bundle/Storage Helpers
 
-        private string GetUrlOfManifestEntry (string name)
+        private Uri GetUrlOfManifestEntry (string name)
         {
             if (Manifest != null && Manifest.Entries != null) {
                 BundleManifest.Entry entry;
-                if (Manifest.Entries.TryGetValue (name, entry)) {
+                if (Manifest.Entries.TryGetValue (name, out entry)) {
                     return Storage.UrlForPath (entry.Path, entry.ContentType);
                 }
             }
@@ -334,7 +476,7 @@ namespace NachoCore.Utils
         {
             if (Manifest != null && Manifest.Entries != null) {
                 BundleManifest.Entry entry;
-                if (Manifest.Entries.TryGetValue (name, entry)) {
+                if (Manifest.Entries.TryGetValue (name, out entry)) {
                     string[] typeParts = entry.ContentType.Split ('/');
                     if (typeParts [0] == "text") {
                         return Storage.StringContentsForPath (entry.Path);
@@ -345,44 +487,99 @@ namespace NachoCore.Utils
             return null;
         }
 
-        #endregion
-
-        protected string TemplateHtml ()
+        private string SafeFilename (string unsafeFilename)
         {
-            // This should come from a resource file within the app, but I'm not sure
-            // how to do that in a cross platform way.  It may be that we need a subclass
-            // on each platform just to fill in this method 
+            char[] invalid = { '/', '\\', ':', '\0' };
+            string[] split = unsafeFilename.Split (invalid, StringSplitOptions.RemoveEmptyEntries);
+            var basename = String.Join ("_", split);
+            string filename = basename;
+            bool exists = false;
+            int i = 0;
+            do {
+                exists = false;
+                if (i > 0){
+                    filename = String.Format("{0}_{1}", basename, i);
+                }
+                foreach (var k in Manifest.Entries.Keys) {
+                    if (Manifest.Entries[k].Path != null && Manifest.Entries [k].Path.Equals (filename)) {
+                        exists = true;
+                        break;
+                    }
+                }
+                ++i;
+            } while (exists);
+            return filename;
         }
+
+        protected HtmlDocument TemplateHtmlDocument ()
+        {
+            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var htmlPath = Path.Combine (documentsPath, "nacho.html");
+            var doc = new HtmlDocument ();
+            doc.Load (new FileStream (htmlPath, FileMode.Open));
+            List<HtmlNode> nodes = new List<HtmlNode> ();
+            nodes.Add (doc.DocumentNode);
+            HtmlNode node;
+            string resourcesScheme = "resources:";
+            while (nodes.Count > 0) {
+                node = nodes [0];
+                nodes.RemoveAt (0);
+                foreach (var attr in node.Attributes) {
+                    if (attr.Value.StartsWith (resourcesScheme)) {
+                        var resourceName = attr.Value.Substring (resourcesScheme.Length);
+                        attr.Value = Storage.RelativeUrlForDocumentsPath (resourceName).ToString();
+                    }
+                }
+                foreach (var child in node.ChildNodes) {
+                    nodes.Add (child);
+                }
+            }
+            return doc;
+        }
+
+        #endregion
 
         #region Populate/Update Bundle
 
-        private void UpdateBundle ()
+        public void Update ()
         {
             ParseMessage ();
             StoreFullEntries ();
             StoreTopEntries ();
             StoreLightlyStyledEntries ();
             StoreManifest ();
-            // TODO: store images somewhere (maybe symlink if they're already stored somewhere)
+            NeedsUpdate = false;
         }
 
         private void ParseMessage ()
         {
-            var parsed = new ParseResult ();
+            parsed = new ParseResult ();
 
-            // FIXME: what to load?
-            var mime = MimeMessage.Load ();
-            mime.Accept (this);
+            if (Message != null) {
+                var body = Message.GetBody ();
+                if (body.BodyType == McAbstrFileDesc.BodyTypeEnum.PlainText_1) {
+                    parsed.FullText = body.GetContentsString ();
+                } else if (body.BodyType == McAbstrFileDesc.BodyTypeEnum.HTML_2) {
+                    parsed.FullHtmlDocument = TemplateHtmlDocument ();
+                    IncludeHtml (body.GetContentsString ());
+                } else if (body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4) {
+                    MimeMessage = MimeMessage.Load (body.GetFilePath ());
+                } else {
+                    parsed.FullText = body.GetContentsString ();
+                }
+            }
+
+            if (MimeMessage != null) {
+                MimeMessage.Accept (this);
+            }
 
             if (parsed.FullHtmlDocument == null) {
                 if (parsed.FullText == null) {
                     parsed.FullText = "";
                 }
-                parsed.FullHtmlDocument = new HtmlDocument ();
-                parsed.FullHtmlDocument.LoadHtml (TemplateHtml ());
-                // TODO: write FullText to the html doc
+                IncludeTextAsHtml (parsed.FullText);
             } else if (parsed.FullText == null) {
-                // TODO: populate FullText with text from html
+                IncludeHtmlDocumentAsText (parsed.FullHtmlDocument);
             }
         }
 
@@ -397,9 +594,11 @@ namespace NachoCore.Utils
             entry = new BundleManifest.Entry ();
             entry.Path = FullHtmlPath;
             entry.ContentType = "text/html";
-            var stream = Storage.WriteableContentsStreamForPath (entry.Path);
-            parsed.FullHtmlDocument.Save (stream);
-            stream.Close ();
+            using (var stream = Storage.WriteableContentsStreamForPath (entry.Path)) {
+                using (var writer = new StreamWriter (stream, parsed.FullHtmlDocument.Encoding)) {
+                    parsed.FullHtmlDocument.Save (writer);
+                }
+            }
             Manifest.Entries [FullHtmlEntryName] = entry;
         }
 
@@ -417,21 +616,23 @@ namespace NachoCore.Utils
                 topTextPath = TopTextPath;
                 topHtmlPath = TopHtmlPath;
                 Storage.StoreStringContentsForPath (TopText, topTextPath);
-                var stream = Storage.WriteableContentsStreamForPath (topHtmlPath);
-                parsed.TopHtmlDocument.Save (stream);
-                stream.Close ();
+                using (var stream = Storage.WriteableContentsStreamForPath (topHtmlPath)) {
+                    using (var writer = new StreamWriter (stream, parsed.TopHtmlDocument.Encoding)) {
+                        parsed.TopHtmlDocument.Save (writer);
+                    }
+                }
             } else {
                 topTextPath = FullTextPath;
                 topHtmlPath = FullHtmlPath;
             }
 
             var entry = new BundleManifest.Entry ();
-            entry.Path = TopTextPath;
+            entry.Path = topTextPath;
             entry.ContentType = "text/plain";
             Manifest.Entries [TopTextEntryName] = entry;
 
             entry = new BundleManifest.Entry ();
-            entry.Path = TopHtmlPath;
+            entry.Path = topHtmlPath;
             entry.ContentType = "text/html";
             Manifest.Entries [TopHtmlEntryName] = entry;
         }
@@ -471,12 +672,12 @@ namespace NachoCore.Utils
             var entry = new BundleManifest.Entry ();
             entry.Path = fullStyledPath;
             entry.ContentType = "text/rtf";
-            Manifest.Entries [FullTextEntryName] = entry;
+            Manifest.Entries [FullLightlyStyledEntryName] = entry;
 
             entry = new BundleManifest.Entry ();
             entry.Path = topStyledPath;
             entry.ContentType = "text/rtf";
-            Manifest.Entries [FullTextEntryName] = entry;
+            Manifest.Entries [TopLightlyStyledEntryName] = entry;
         }
 
         private void StoreManifest ()
@@ -489,27 +690,117 @@ namespace NachoCore.Utils
 
         #region MimeVisitor (for Populate/Update)
 
+        protected override void VisitMultipart (Multipart multipart)
+        {
+            VisitChildren (multipart);
+        }
+
         protected override void VisitMultipartAlternative (MultipartAlternative alternative)
         {
-            // Within an alternative set of parts, loop backwards and only take the lastmost html and plain text
-            // parts.  We use either part depending on the situation, which is why we look for both.
-            // I've also seen situations where there's a text/plain and text/calendar alternate parts, which might
-            // be a bug on our sending/composing end, but perhaps we should watch out for that kind of thing here.
+            // The simple idea of multipart/alternative is that the children are listed in priority order, with
+            // the higest priority last.  So you loop backwards until you find the type you want to display.
+            // For bundle purposes, we're actually looking for two types simultaneously: html and plain text.
+            // In effect, we want both alternatives so we can have each to show in various situations.
+            // Further complicating matters, it's possible to have arbitrary nesting of other multipart/* types,
+            // which makes it not totally obvious what type a child represents.  So we dive into any multipart
+            // and guess if its basically html or text (by first depth-first leaf decendant).
+            // Annoyingly, we could run into a nested multipart/alternative, which can't really be considered to be
+            // just one type.  So that complicates things even further.
+            // Finally, we'll accept an RTF part, but only we have to, as if it's always demoted to the lowest priority.
+            // Most of these cases mentioned are rare-to-non-existant in real life, but they can happen and the code
+            // needs to behave reasonably; it just adds cases and checks that aren't immediately obvious when considering
+            // the simple idea of multipart/alternative.
+            var IsOutermost = parsed.AlternateTypeInfo == null;
             bool foundHtml = false;
             bool foundText = false;
-            for (int i = alternative.Count - 1; i >= 0; --i) {
-                var part = alternative [i];
-                if (part is TextPart) {
-                    if (!foundHtml && ((TextPart)part).IsHtml) {
-                        foundHtml = true;
-                        part.Accept (this);
+            if (IsOutermost) {
+                MimeEntity rtfPart = null;
+                parsed.AlternateTypeInfo = new AlternativeTypes ();
+                for (int i = alternative.Count - 1; i >= 0; --i) {
+                    var part = alternative [i];
+                    var multipart = part as Multipart;
+                    var contentType = part.ContentType;
+                    if (multipart != null) {
+                        contentType = MultipartContentType (multipart);
                     }
-                    if (!foundText && ((TextPart)part).IsPlain) {
-                        foundText = true;
+                    bool isHtml = contentType.Matches ("text", "html");
+                    bool isText = contentType.Matches ("text", "plain");
+                    if ((contentType.Matches ("text", "rtf") || contentType.Matches ("application", "rtf")) && rtfPart != null) {
+                        // We don't really want RTF, but we'll hang onto in case we don't find html by the end.
+                        // Even if RTF is a higher priority than HTML, we still de-prioritize it becasue we won't
+                        // be displaying RTF natively; it will be converted to HTML, and the conversion may not be perfect.
+                        rtfPart = part;
+                    } else if (contentType.Matches ("multipart", "alternative")) {
+                        // This would be a very odd case when one alternative section is nested inside the other.
+                        // We'll see if the child alternative has the types we're looking for
+                        isHtml = MultipartMatchesContentType (multipart, "text", "html");
+                        isText = MultipartMatchesContentType (multipart, "text", "plain");
+                        if ((MultipartMatchesContentType (multipart, "text", "rtf") || MultipartMatchesContentType (multipart, "application", "rtf")) && rtfPart != null) {
+                            rtfPart = part;
+                        }
+                    }
+                    // Because of the nested alternative case, isHtml and isText are not mutually exclusive.  If they
+                    // both exist in a nested alternative, we want them both.
+                    if (isHtml && !foundHtml) {
+                        parsed.AlternateTypeInfo.PopulatingHtml = true;
                         part.Accept (this);
+                        parsed.AlternateTypeInfo.PopulatingHtml = false;
+                        foundHtml = true;
+                    }
+                    if (isText && !foundText) {
+                        parsed.AlternateTypeInfo.PopulatingText = true;
+                        part.Accept (this);
+                        parsed.AlternateTypeInfo.PopulatingText = false;
+                        foundText = true;
+                    }
+                }
+                // If it turns out we had an RTF, but no HTML part, go ahead and get the RTF
+                if (rtfPart != null && foundHtml == false){
+                    parsed.AlternateTypeInfo.PopulatingHtml = true;
+                    parsed.AlternateTypeInfo.ConsiderRtfAsHtml = true;
+                    rtfPart.Accept (this);
+                    parsed.AlternateTypeInfo.PopulatingHtml = false;
+                }
+                parsed.AlternateTypeInfo = null;
+            } else {
+                // We're here if the message has nested multipart/alternative segments, which shouldn't really 
+                // ever happen in practice because it doesn't really make sense as a concept.
+                // If we're inside a larger alternate, it means we're looking for a particular type (either html
+                // or text), which is what makes this code different from the outermost alternative case above.
+                for (int i = alternative.Count - 1; i >= 0; --i) {
+                    var part = alternative [i];
+                    var multipart = part as Multipart;
+                    var contentType = part.ContentType;
+                    if (multipart != null) {
+                        contentType = MultipartContentType (multipart);
+                    }
+                    bool isHtml = contentType.Matches ("text", "html");
+                    bool isText = contentType.Matches ("text", "plain");
+                    bool isRtf = contentType.Matches ("text", "rtf") || contentType.Matches ("application", "rtf");
+                    if (contentType.Matches ("multipart", "alternative")) {
+                        isHtml = MultipartMatchesContentType (multipart, "text", "html");
+                        isText = MultipartMatchesContentType (multipart, "text", "plain");
+                        isRtf = MultipartMatchesContentType (multipart, "text", "rtf");
+                    }
+                    if (isHtml && !foundHtml && parsed.AlternateTypeInfo.PopulatingHtml) {
+                        part.Accept (this);
+                        foundHtml = true;
+                    }
+                    if (isText && !foundText && parsed.AlternateTypeInfo.PopulatingText) {
+                        part.Accept (this);
+                        foundText = true;
+                    }
+                    // We only care about the RTF alternative in a very specific case, if we've already gone through and
+                    // haven't found HTML.  Theoretically, it could be our sencond trip through this code.  In order to only
+                    // consider RTF in the second case, there's and extra flag to check: ConsiderRtfAsHtml
+                    if (isRtf && !foundHtml && parsed.AlternateTypeInfo.PopulatingHtml && parsed.AlternateTypeInfo.ConsiderRtfAsHtml) {
+                        part.Accept (this);
+                        foundHtml = true;
                     }
                 }
             }
+            // TODO: I've seen our calendar invites as mutlipart/alternative -> [text/plain, text/calendar]
+            // Seems like the wrong way to send it, but perhaps we should look for that configuration
         }
 
         protected override void VisitMultipartRelated (MultipartRelated related)
@@ -521,17 +812,29 @@ namespace NachoCore.Utils
 
         protected override void VisitTextPart (TextPart entity)
         {
+            HtmlDocument htmlDocument = null;
             if (entity.IsHtml) {
-                if (parsed.FullHtmlDocument == null) {
-                    parsed.FullHtmlDocument = new HtmlDocument ();
-                    parsed.FullHtmlDocument.LoadHtml (TemplateHtml ());
+                htmlDocument = new HtmlDocument ();
+                htmlDocument.LoadHtml (entity.Text);
+            }
+            if (parsed.PopulateHtml) {
+                if (entity.IsHtml) {
+                    IncludeHtmlDocument (htmlDocument);
+                } else if (entity.IsPlain) {
+                    IncludeTextAsHtml (entity.Text);
+                } else if (entity.IsRichText){
+                    if (parsed.AlternateTypeInfo == null || parsed.AlternateTypeInfo.ConsiderRtfAsHtml) {
+                        IncludeRtfAsHtml (entity.Text);
+                    }
                 }
-                IncludeHtml (entity.Text);
-            } else if (entity.IsPlain) {
-                if (FullText == null) {
-                    FullText = entity.Text;
-                } else {
-                    FullText += entity.Text;
+            }
+            if (parsed.PopulateText){
+                if (entity.IsPlain) {
+                    IncludeText (entity.Text);
+                } else if (entity.IsHtml) {
+                    IncludeHtmlDocumentAsText (htmlDocument);
+                } else if (entity.IsRichText) {
+                    IncludeRtfAsText (entity.Text);
                 }
             }
         }
@@ -540,90 +843,127 @@ namespace NachoCore.Utils
         {
             if (entity.ContentType.Matches ("image", "*")) {
                 // even though it's not an inline image, go ahead and include in message
-                var entry = new BundleManifest.Entry ();
-                Manifest.Entries [entry.Path] = entry;
-                entry.Path = SafeFilename ("image-attachment");
-                entry.ContentType = entity.ContentType.MimeType;
-                var stream = Storage.WriteableContentsStreamForPath (entry.Path);
-                entity.ContentObject.DecodeTo (stream);
-                stream.Close ();
-
-                if (parsed.FullText == null) {
-                    parsed.FullText = "";
+                VisitImagePart (entity);
+            } else if (entity.ContentType.Matches ("text", "*")) {
+                var regex = new Regex ("/^ATT\\d{5,}\\.(txt|html?)/");
+                if (regex.IsMatch (entity.FileName)) {
+                    entity.Accept (this);
                 }
-                parsed.FullText += String.Format(" [{0}]", entity.FileName);
+            }
+        }
 
+        protected override void VisitMessagePart (MessagePart entity)
+        {
+            var bundle = new NcEmailMessageBundle (entity.Message);
+            bundle.Update ();
+            if (parsed.PopulateText) {
+                IncludeText ("\n\n--------------------------------\n");
+                // TODO: headers
+                // TODO: indent?
+                IncludeText (bundle.FullText);
+            }
+            if (parsed.PopulateHtml) {
+                IncludeHtml ("<br><br><hr>");
+                // TODO: headers
+                // TODO: indent?
+                IncludeHtml (bundle.FullHtml);
+            }
+        }
+
+        protected void VisitImagePart (MimePart entity)
+        {
+            if (parsed.PopulateHtml) {
                 if (parsed.FullHtmlDocument == null) {
-                    parsed.FullHtmlDocument = new HtmlDocument ();
-                    parsed.FullHtmlDocument.LoadHtml (TemplateHtml ());
+                    parsed.FullHtmlDocument = TemplateHtmlDocument ();
+                }
+                var entry = new BundleManifest.Entry ();
+                entry.Path = SafeFilename ("image-attachment");
+                Manifest.Entries [entry.Path] = entry;
+                entry.ContentType = entity.ContentType.MimeType;
+                using (var stream = Storage.WriteableContentsStreamForPath (entry.Path)) {
+                    entity.ContentObject.DecodeTo (stream);
                 }
                 var body = parsed.FullHtmlDocument.DocumentNode.Element ("html").Element ("body");
                 var img = body.AppendChild (parsed.FullHtmlDocument.CreateElement ("img"));
                 img.SetAttributeValue ("nacho-image-attachment", "true");
-                img.SetAttributeValue ("src", Storage.UrlForPath(entry.Path, entry.ContentType));
-            } else {
+                img.SetAttributeValue ("src", Storage.RelativeUrlForPath (entry.Path, entry.ContentType, FullHtmlPath).ToString ());
             }
-            // TODO: check for calendar type
         }
 
         #endregion
 
-        private MimePart RelatedImagePart (string src)
+        #region Parsing Helpers
+
+        protected MimeKit.ContentType MultipartContentType (Multipart multipart)
         {
-            UriKind kind;
-            if (Uri.IsWellFormedUriString (src, UriKind.Absolute)) {
-                kind = UriKind.Absolute;
-            } else if (Uri.IsWellFormedUriString (src, UriKind.Relative)) {
-                kind = UriKind.Relative;
-            } else {
-                kind = UriKind.RelativeOrAbsolute;
+            if (multipart.Count > 0) {
+                MimeEntity part = multipart [0];
+                if (part is MultipartAlternative) {
+                    return part.ContentType;
+                } else if (part is MultipartRelated) {
+                    var related = part as MultipartRelated;
+                    if (related.Root is Multipart) {
+                        return MultipartContentType (related.Root as Multipart);
+                    }
+                    return related.Root.ContentType;
+                } else if (part is Multipart) {
+                    return MultipartContentType (part as Multipart);
+                } else {
+                    return part.ContentType;
+                }
             }
-            Uri uri = null;
-            try {
-                uri = new Uri (src);
-            } catch {
-                return null;
+            return multipart.ContentType;
+        }
+
+        protected bool MultipartMatchesContentType (Multipart multipart, string mediaType, string mediaSubtype)
+        {
+            if (multipart.Count > 0){
+                MimeEntity part = multipart [0];
+                if (part is MultipartRelated) {
+                    var related = part as MultipartRelated;
+                    if (related.Root is Multipart) {
+                        return MultipartMatchesContentType (related.Root as Multipart, mediaType, mediaSubtype);
+                    }
+                    return related.Root.ContentType.Matches(mediaType, mediaSubtype);
+                } else if (part is Multipart) {
+                    return MultipartMatchesContentType (part as Multipart, mediaType, mediaSubtype);
+                } else {
+                    return part.ContentType.Matches(mediaType, mediaSubtype);
+                }
+            }
+            return false;
+        }
+
+        private MimePart RelatedImagePart (Uri uri)
+        {
+            // MimeKit strips off any trailing '.' when it validates Content-IDs.  We'll do the same so we can match
+            if (uri.Scheme.ToLowerInvariant() == "cid"){
+                uri = new Uri(uri.AbsoluteUri.TrimEnd('.'), UriKind.Absolute);
             }
             for (int i = parsed.RelatedStack.Count - 1; i >= 0; --i){
                 var related = parsed.RelatedStack [i];
                 var index = related.IndexOf (uri);
                 if (index >= 0) {
-                    return related [i] as MimePart;
+                    return related [index] as MimePart;
                 }
             }
             return null;
         }
 
-        private string SafeFilename (string unsafeFilename)
-        {
-            string[] split = unsafeFilename.Split (Path.GetInvalidFileNameChars, StringSplitOptions.RemoveEmptyEntries);
-            var basename = String.Join ("_", split);
-            string filename = basename;
-            bool exists = false;
-            int i = 0;
-            do {
-                exists = false;
-                if (i > 0){
-                    filename = String.Format("{0}_{1}", basename, i);
-                }
-                foreach (var k in Manifest.Entries) {
-                    if (Manifest.Entries [k].Path.Equals (filename)) {
-                        exists = true;
-                        break;
-                    }
-                }
-                ++i;
-            } while (exists);
-            return filename;
-        }
-
         private void IncludeHtml (string html)
         {
-            // The basic idea here is to run through the html source, strip out anything
-            // we don't want, and include the rest in our single html document.
-            // 
             var document = new HtmlDocument ();
             document.LoadHtml (html);
+            IncludeHtmlDocument (document);
+        }
+
+        private void IncludeHtmlDocument (HtmlDocument document)
+        {
+            // The basic idea here is to run through the html nodes, strip out anything
+            // we don't want, and include the rest in our single html document.
+            if (parsed.FullHtmlDocument == null) {
+                parsed.FullHtmlDocument = TemplateHtmlDocument ();
+            }
             List<HtmlNode> nodes = new List<HtmlNode> ();
             List<HtmlNode> headElements = new List<HtmlNode> ();
             List<HtmlNode> bodyElements = new List<HtmlNode> ();
@@ -631,7 +971,7 @@ namespace NachoCore.Utils
             HtmlNode node;
             while (nodes.Count > 0) {
                 node = nodes [0];
-                node = nodes.RemoveAt (0);
+                nodes.RemoveAt (0);
                 if (node.NodeType == HtmlNodeType.Element) {
                     // Remove any and all script tags, wherever they exist in the document.
                     // This allows us to enable javascript in a webview to run our own javascript
@@ -690,56 +1030,70 @@ namespace NachoCore.Utils
                         var srcs = node.Attributes.AttributesWithName ("src");
                         // There should only be one src per img tag, but we'll go ahead and change them all if more than 1 exist
                         foreach (var src in srcs) {
-                            var imagePart = RelatedImagePart (src.Value);
-                            if (imagePart != null) {
-                                var entryKey = src.Value;
-                                BundleManifest.Entry entry;
-                                if (!Manifest.Entries.ContainsKey (entryKey)) {
-                                    entry = new BundleManifest.Entry ();
-                                    Manifest.Entries [entryKey] = entry;
-                                    entry.Path = SafeFilename (entryKey);
-                                    entry.ContentType = imagePart.ContentType.MimeType;
-                                    var stream = Storage.WriteableContentsStreamForPath (entry.Path);
-                                    imagePart.ContentObject.DecodeTo (stream);
-                                    stream.Close ();
-                                } else {
-                                    entry = Manifest.Entries [entryKey];
+                            UriKind kind;
+                            if (Uri.IsWellFormedUriString (src.Value, UriKind.Absolute)) {
+                                kind = UriKind.Absolute;
+                            } else if (Uri.IsWellFormedUriString (src.Value, UriKind.Relative)) {
+                                kind = UriKind.Relative;
+                            } else {
+                                kind = UriKind.RelativeOrAbsolute;
+                            }
+                            Uri uri = null;
+                            try {
+                                uri = new Uri (src.Value, kind);
+                            } catch {
+                            }
+                            if (uri != null) {
+                                var imagePart = RelatedImagePart (uri);
+                                if (imagePart != null) {
+                                    var entryKey = src.Value;
+                                    BundleManifest.Entry entry;
+                                    if (!Manifest.Entries.ContainsKey (entryKey)) {
+                                        entry = new BundleManifest.Entry ();
+                                        Manifest.Entries [entryKey] = entry;
+                                        entry.Path = SafeFilename (entryKey);
+                                        entry.ContentType = imagePart.ContentType.MimeType;
+                                        using (var stream = Storage.WriteableContentsStreamForPath (entry.Path)) {
+                                            imagePart.ContentObject.DecodeTo (stream);
+                                        }
+                                    } else {
+                                        entry = Manifest.Entries [entryKey];
+                                    }
+                                    node.SetAttributeValue ("nacho-original-src", src.Value);
+                                    src.Value = Storage.RelativeUrlForPath (entry.Path, entry.ContentType, FullHtmlPath).ToString ();
                                 }
-                                node.SetAttributeValue ("nacho-original-src", src.Value);
-                                src.Value = Storage.UrlForPath (entry.Path, entry.ContentType);
                             }
                         }
                     }
-
-                    if (node.ParentNode != null){
-                        if (node.ParentNode.NodeType == HtmlNodeType.Document) {
-                            if (!node.Name.Equals ("html") && !node.Name.Equals ("head") && !node.Name.Equals ("body")) {
-                                // If we have a root-level element that's not html, head, or body, assume the tag should
-                                // really be part of the document body.  Emails aren't always well-formed HTML documents and
-                                // sometimes just start with <div>, for example.
-                                bodyElements.Add (node);
-                            }
-                        } else if (node.ParentNode.NodeType == HtmlNodeType.Element) {
-                            if (node.ParentNode.Name.Equals ("head")) {
-                                // We'll try to preserve any head nodes that we haven't already deleted
-                                // this is mainly style and link tags, which generally shouldn't be used in emails,
-                                // but could be, and shouldn't cause much harm to keep.  It's possible in situations
-                                // where we end up combining multiple html parts that we'll put conflicting styles into
-                                // the head of our single html document, but that will be pretty rare.
-                                headElements.Add (node);
-                            } else if (node.ParentNode.Name.Equals ("body")) {
-                                // Preserve anything we find in the body that we haven't deleted.
-                                bodyElements.Add (node);
-                            } else if (node.ParentNode.Name.Equals ("html") && !node.Name.Equals ("head") && !node.Name.Equals ("body")) {
-                                // If we come across any child nodes of html that aren't head or body, assume we're deailing
-                                // with a poorly formed doc and the child nodes are part of the body.
-                                bodyElements.Add (node);
-                            }
+                }
+                if (node.ParentNode != null){
+                    if (node.ParentNode.NodeType == HtmlNodeType.Document) {
+                        if (!node.Name.Equals ("html") && !node.Name.Equals ("head") && !node.Name.Equals ("body")) {
+                            // If we have a root-level element that's not html, head, or body, assume the tag should
+                            // really be part of the document body.  Emails aren't always well-formed HTML documents and
+                            // sometimes just start with <div>, for example.
+                            bodyElements.Add (node);
+                        }
+                    } else if (node.ParentNode.NodeType == HtmlNodeType.Element) {
+                        if (node.ParentNode.Name.Equals ("head")) {
+                            // We'll try to preserve any head nodes that we haven't already deleted
+                            // this is mainly style and link tags, which generally shouldn't be used in emails,
+                            // but could be, and shouldn't cause much harm to keep.  It's possible in situations
+                            // where we end up combining multiple html parts that we'll put conflicting styles into
+                            // the head of our single html document, but that will be pretty rare.
+                            headElements.Add (node);
+                        } else if (node.ParentNode.Name.Equals ("body")) {
+                            // Preserve anything we find in the body that we haven't deleted.
+                            bodyElements.Add (node);
+                        } else if (node.ParentNode.Name.Equals ("html") && !node.Name.Equals ("head") && !node.Name.Equals ("body")) {
+                            // If we come across any child nodes of html that aren't head or body, assume we're deailing
+                            // with a poorly formed doc and the child nodes are part of the body.
+                            bodyElements.Add (node);
                         }
                     }
-                    foreach (var child in node.ChildNodes) {
-                        nodes.Add (child);
-                    }
+                }
+                foreach (var child in node.ChildNodes) {
+                    nodes.Add (child);
                 }
             }
             var head = parsed.FullHtmlDocument.DocumentNode.Element ("html").Element ("head");
@@ -754,6 +1108,55 @@ namespace NachoCore.Utils
             }
         }
 
+        private void IncludeTextAsHtml (string text)
+        {
+            if (parsed.FullHtmlDocument == null) {
+                parsed.FullHtmlDocument = TemplateHtmlDocument ();
+            }
+            var body = parsed.FullHtmlDocument.DocumentNode.Element ("html").Element ("body");
+            var reader = new StringReader (text);
+            string line = reader.ReadLine ();
+            while (line != null) {
+                // do we want to detect things in the line like URLs and generate the appropriate markup?
+                body.AppendChild (parsed.FullHtmlDocument.CreateTextNode (line));
+                body.AppendChild (parsed.FullHtmlDocument.CreateElement ("br"));
+                line = reader.ReadLine ();
+            }
+        }
+
+        private void IncludeRtfAsHtml (string rtf)
+        {
+            if (parsed.FullHtmlDocument == null) {
+                parsed.FullHtmlDocument = TemplateHtmlDocument ();
+            }
+            // TODO: convert RTF to html
+        }
+
+        private void IncludeText (string text)
+        {
+            if (parsed.FullText == null) {
+                parsed.FullText = "";
+            }
+            parsed.FullText += text;
+        }
+
+        private void IncludeHtmlDocumentAsText (HtmlDocument doc)
+        {
+            if (parsed.FullText == null) {
+                parsed.FullText = "";
+            }
+            // TODO: convert html to plain text
+        }
+
+        private void IncludeRtfAsText (string rtf)
+        {
+            if (parsed.FullText == null) {
+                parsed.FullText = "";
+            }
+            // TODO: convert RTF to plain text
+        }
+
+        #endregion
     }
 }
 

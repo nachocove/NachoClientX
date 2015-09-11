@@ -1635,6 +1635,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration43.cs">
       <Link>NachoCore\Model\Migration\NcMigration43.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\MessageBundleViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEmailMessageBundle.cs">
+      <Link>NachoCore\Utils\NcEmailMessageBundle.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2528,6 +2532,9 @@
     <BundleResource Include="Resources\gen-avatar-alert%403x.png" />
     <BundleResource Include="Resources\gen-avatar-alert%404x.png" />
     <BundleResource Include="Resources\gen-avatar-alert%406x.png" />
+    <BundleResource Include="Resources\nacho.html" />
+    <BundleResource Include="Resources\nacho.css" />
+    <BundleResource Include="Resources\nacho.js" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
