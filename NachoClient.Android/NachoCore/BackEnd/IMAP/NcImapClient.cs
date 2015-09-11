@@ -6,6 +6,13 @@ using System.IO;
 using MailKit.Net.Imap;
 using System.Linq;
 using System.Text;
+using System.Net;
+using System.Net.Sockets;
+using System;
+using System.Threading;
+using NachoCore.Model;
+using MailKit.Security;
+using System.Runtime.InteropServices;
 
 namespace NachoCore.IMAP
 {
@@ -29,6 +36,59 @@ namespace NachoCore.IMAP
             //return new NcDebugProtocolLogger (Log.LOG_IMAP);
             return new NullProtocolLogger ();
         }
+
+        public void Connect (McServer server, CancellationToken Token)
+        {
+            var ipAddresses = Dns.GetHostAddresses (server.Host);
+            Socket socket = null;
+
+            for (int i = 0; i < ipAddresses.Length; i++) {
+                socket = new Socket (ipAddresses[i].AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+//                socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 2000);
+//                SetTcpKeepAlive (socket, 250, 2000);
+                try {
+                    Token.ThrowIfCancellationRequested ();
+                    socket.Connect (ipAddresses[i], server.Port);
+                    break;
+                } catch (OperationCanceledException) {
+                    socket.Dispose ();
+                    throw;
+                } catch {
+                    socket.Dispose ();
+
+                    if (i + 1 == ipAddresses.Length)
+                        throw;
+                }
+            }
+
+            if (socket == null) {
+                throw new IOException (string.Format ("Failed to resolve host: {0}", server.Host));
+            }
+            SecureSocketOptions options = SecureSocketOptions.Auto;
+            Connect (socket, server.Host, server.Port, options, Token);
+        }
+
+        private static void SetTcpKeepAlive(Socket socket, uint keepaliveTime, uint keepaliveInterval)
+        {
+            /* the native structure
+        struct tcp_keepalive {
+        ULONG onoff;
+        ULONG keepalivetime;
+        ULONG keepaliveinterval;
+        };
+        */
+
+            // marshal the equivalent of the native structure into a byte array
+            uint dummy = 0;
+            byte[] inOptionValues = new byte[Marshal.SizeOf(dummy) * 3];
+            BitConverter.GetBytes((uint)(keepaliveTime)).CopyTo(inOptionValues, 0);
+            BitConverter.GetBytes((uint)keepaliveTime).CopyTo(inOptionValues, Marshal.SizeOf(dummy));
+            BitConverter.GetBytes((uint)keepaliveInterval).CopyTo(inOptionValues, Marshal.SizeOf(dummy) * 2);
+
+            // write SIO_VALS to Socket IOControl
+            socket.IOControl(IOControlCode.KeepAliveValues, inOptionValues, null);
+        }
+
     }
 
     public class NcImapFolder : ImapFolder
