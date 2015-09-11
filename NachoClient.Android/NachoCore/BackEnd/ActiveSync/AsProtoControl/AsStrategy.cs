@@ -101,12 +101,12 @@ namespace NachoCore.ActiveSync
                 // { Email, Cal, Contact, Action }
                 { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower }, {
                     (int)EmailEnum.Def1d,
-                    (int)CalEnum.Def2w,
+                    (int)CalEnum.None,
                     (int)ContactEnum.RicInf,
                     (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower
                 }, {
                     (int)EmailEnum.Def3d,
-                    (int)CalEnum.Def2w,
+                    (int)CalEnum.None,
                     (int)ContactEnum.RicInf,
                     (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower
                 }, {
