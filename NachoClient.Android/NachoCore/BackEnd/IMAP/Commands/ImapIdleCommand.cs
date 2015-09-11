@@ -15,6 +15,7 @@ namespace NachoCore.IMAP
     {
         McFolder IdleFolder;
         bool ENABLED = true;
+        CancellationTokenSource Done { get; set; }
 
         public ImapIdleCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
@@ -23,6 +24,8 @@ namespace NachoCore.IMAP
             IdleFolder = McFolder.GetDefaultInboxFolder(AccountId);
             NcAssert.NotNull (IdleFolder);
             RedactProtocolLogFunc = RedactProtocolLog;
+            Done = new CancellationTokenSource ();
+            Cts.Token.Register (() => Done.Cancel ());
         }
 
         public string RedactProtocolLog (bool isRequest, string logData)
@@ -34,17 +37,22 @@ namespace NachoCore.IMAP
         private bool mailDeleted = false;
         private bool needResync = false; // used if something happened, but we don't know what exactly.
 
+        public override void Cancel ()
+        {
+            Done.Cancel ();
+            base.Cancel ();
+        }
+
         protected override Event ExecuteCommand ()
         {
-            var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
             var mailKitFolder = GetOpenMailkitFolder (IdleFolder);
             if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
             }
             if (ENABLED && Client.Capabilities.HasFlag (ImapCapabilities.Idle) && !IsComcast (BEContext.Server)) {
-                IdleIdle(mailKitFolder, done);
+                IdleIdle(mailKitFolder);
             } else {
-                NoopIdle(mailKitFolder, done);
+                NoopIdle(mailKitFolder);
             }
             Cts.Token.ThrowIfCancellationRequested ();
             if (mailArrived) {
@@ -80,18 +88,17 @@ namespace NachoCore.IMAP
         /// Use the IMAP IDLE command to wait for new things to happen.
         /// </summary>
         /// <param name="mailKitFolder">Mail kit folder.</param>
-        /// <param name="done">Done cancellation, i.e. if cancelled, will send a 'Done'
         /// command to the server to terminate the Idle gracefully.</param>
-        private void IdleIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
+        private void IdleIdle (IMailFolder mailKitFolder)
         {
             EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 mailArrived = true;
-                done.Cancel ();
+                Done.Cancel ();
             };
             EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
                 Log.Info (Log.LOG_IMAP, "{0}: Message ID {1} expunged", IdleFolder.ImapFolderNameRedacted (), e.Index);
                 mailDeleted = true;
-                done.Cancel ();
+                Done.Cancel ();
             };
             EventHandler<MessageFlagsChangedEventArgs> MessageFlagsChangedHandler = (sender, e) => {
                 if (!e.UniqueId.HasValue) {
@@ -121,7 +128,7 @@ namespace NachoCore.IMAP
                 mailKitFolder.MessageFlagsChanged += MessageFlagsChangedHandler;
                 mailKitFolder.MessageExpunged += MessageExpungedHandler;
 
-                Client.Idle (done.Token, CancellationToken.None);
+                Client.Idle (Done.Token, Cts.Token);
                 Cts.Token.ThrowIfCancellationRequested ();
             } finally {
                 mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
@@ -143,8 +150,7 @@ namespace NachoCore.IMAP
         ///       to reset any inactivity autologout timer on the server.
         /// </summary>
         /// <param name="mailKitFolder">Mail kit folder.</param>
-        /// <param name="done">Done.</param>
-        private void NoopIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
+        private void NoopIdle (IMailFolder mailKitFolder)
         {
             EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
@@ -153,7 +159,7 @@ namespace NachoCore.IMAP
                 } else {
                     needResync = true;
                 }
-                done.Cancel ();
+                Done.Cancel ();
             };
             EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
                 Log.Info (Log.LOG_IMAP, "{0}: Message ID {1} expunged", IdleFolder.ImapFolderNameRedacted (), e.Index);
@@ -163,22 +169,23 @@ namespace NachoCore.IMAP
                 } else {
                     needResync = true;
                 }
-                done.Cancel ();
+                Done.Cancel ();
             };
 
             EventHandler<EventArgs> MessageCountChangedHandler = (sender, e) => {
                 Log.Info (Log.LOG_IMAP, "{0}: message count changed", IdleFolder.ImapFolderNameRedacted ());
                 needResync = true;
-                done.Cancel ();
+                Done.Cancel ();
             };
 
             try {
                 mailKitFolder.MessagesArrived += MessagesArrivedHandler;
                 mailKitFolder.MessageExpunged += MessageExpungedHandler;
                 mailKitFolder.CountChanged += MessageCountChangedHandler;
+                var timerSource = CancellationTokenSource.CreateLinkedTokenSource (Done.Token, Cts.Token);
                 while (!Cts.Token.IsCancellationRequested) {
                     Log.Info (Log.LOG_IMAP, "ImapIdleCommand: waiting {0}s to call Noop", kNoopSleepTime);
-                    var cancelled = done.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(kNoopSleepTime));
+                    var cancelled = timerSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(kNoopSleepTime));
                     if (cancelled) {
                         break;
                     }
