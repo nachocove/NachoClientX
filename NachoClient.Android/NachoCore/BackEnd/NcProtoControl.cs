@@ -67,10 +67,6 @@ namespace NachoCore
             get {
                 return McProtocolState.QueryByAccountId<McProtocolState> (AccountId).SingleOrDefault ();
             }
-            set {
-                var update = value;
-                update.Update ();
-            }
         }
 
         public virtual BackEndStateEnum BackEndState {

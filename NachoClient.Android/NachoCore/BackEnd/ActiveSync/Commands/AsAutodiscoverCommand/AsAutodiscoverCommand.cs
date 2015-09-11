@@ -1038,7 +1038,6 @@ namespace NachoCore.ActiveSync
 
         public McProtocolState ProtocolState {
             get { return BEContext.ProtocolState; }
-            set { BEContext.ProtocolState = value; }
         }
 
         public McServer Server {
