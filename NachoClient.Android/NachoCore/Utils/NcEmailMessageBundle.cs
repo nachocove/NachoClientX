@@ -18,24 +18,20 @@ namespace NachoCore.Utils
     public abstract class NcBundleStorage
     {
 
-        public abstract Stream ReadableContentStreamForPath (string path);
-        public abstract Stream WriteableContentsStreamForPath (string path);
+        public abstract TextReader TextReaderForPath (string path);
+        public abstract TextWriter TextWriterForPath (string path);
+        public abstract BinaryReader BinaryReaderForPath (string path);
+        public abstract BinaryWriter BinaryWriterForPath (string path);
         public abstract Uri UrlForPath (string path, string contentType);
         public abstract Uri RelativeUrlForPath (string path, string contentType, string relativeToPath);
         public abstract Uri RelativeUrlForDocumentsPath (string path);
         public abstract Uri BaseUrl ();
 
-        public virtual void CommitPath (string path)
-        {
-        }
-
         public virtual string StringContentsForPath (string path)
         {
-            using (Stream contents = ReadableContentStreamForPath (path)) {
-                if (contents != null) {
-                    using (StreamReader reader = new StreamReader (contents, System.Text.Encoding.UTF8)) {
-                        return reader.ReadToEnd ();
-                    }
+            using (TextReader reader = TextReaderForPath(path)) {
+                if (reader != null) {
+                    return reader.ReadToEnd ();
                 }
             }
             return null;
@@ -43,34 +39,13 @@ namespace NachoCore.Utils
 
         public virtual void StoreStringContentsForPath (string stringContents, string path)
         {
-            using (var contents = WriteableContentsStreamForPath (path)) {
-                using (var writer = new StreamWriter (contents, System.Text.Encoding.UTF8)) {
-                    writer.Write (stringContents);
-                }
+            using (var writer = TextWriterForPath (path)) {
+                writer.Write (stringContents);
             }
         }
 
-        public virtual object ObjectContentsForPath (string path, Type t)
-        {
-            using (Stream contents = ReadableContentStreamForPath (path)) {
-                if (contents != null) {
-                    DataContractSerializer serializer = new DataContractSerializer (t);
-                    var o = serializer.ReadObject (contents);
-                    return o;
-                }
-            }
-            return null;
-        }
-
-        public virtual void StoreObjectContentsForPath (object o, string path)
-        {
-            using (var stream = WriteableContentsStreamForPath (path)) {
-                if (o != null) {
-                    DataContractSerializer serializer = new DataContractSerializer (o.GetType());
-                    serializer.WriteObject (stream, o);
-                }
-            }
-        }
+        public abstract object ObjectContentsForPath (string path, Type t);
+        public abstract void StoreObjectContentsForPath (object o, string path);
     }
 
     #endregion
@@ -87,29 +62,48 @@ namespace NachoCore.Utils
             MemoryStorage = new Dictionary<string, object> ();
         }
 
-        public override Stream ReadableContentStreamForPath (string path)
+        public override TextReader TextReaderForPath (string path)
         {
             object o;
             if (MemoryStorage.TryGetValue (path, out o)) {
-                var stream = o as Stream;
+                var stream = o as MemoryStream;
                 if (stream != null) {
-                    stream.Seek (0, 0);
+                    stream.Position = 0;
+                    return new StreamReader (stream);
                 }
-                return stream;
             }
             return null;
         }
 
-        public override Stream WriteableContentsStreamForPath (string path)
+        public override TextWriter TextWriterForPath (string path)
         {
             var stream = new MemoryStream ();
             MemoryStorage [path] = stream;
-            return stream;
+            return new StreamWriter (stream, System.Text.Encoding.UTF8, 100, true);
+        }
+
+        public override BinaryReader BinaryReaderForPath (string path)
+        {
+            object o;
+            if (MemoryStorage.TryGetValue (path, out o)) {
+                var stream = o as MemoryStream;
+                if (stream != null) {
+                    return new BinaryReader (stream);
+                }
+            }
+            return null;
+        }
+
+        public override BinaryWriter BinaryWriterForPath (string path)
+        {
+            var stream = new MemoryStream ();
+            MemoryStorage [path] = stream;
+            return new BinaryWriter (stream);
         }
 
         public override Uri UrlForPath (string path, string contentType)
         {
-            var contents = ReadableContentStreamForPath (path) as MemoryStream;
+            var contents = MemoryStorage [path] as MemoryStream;
             if (contents != null){
                 string base64Encoded = Convert.ToBase64String(contents.ToArray ());
                 return new Uri(String.Format ("data:{0};base64,{1}", contentType, base64Encoded), UriKind.Absolute);
@@ -130,7 +124,7 @@ namespace NachoCore.Utils
         public override Uri BaseUrl ()
         {
             var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            return new Uri (String.Format ("file://{0}", documentsPath));
+            return new Uri (String.Format ("file://{0}/", documentsPath));
         }
 
         public override string StringContentsForPath (string path)
@@ -180,19 +174,34 @@ namespace NachoCore.Utils
             }
         }
 
-        public override Stream ReadableContentStreamForPath (string path)
+        public override TextReader TextReaderForPath (string path)
         {
             var filePath = FullFilePathForLocalPath (path);
             if (File.Exists (filePath)) {
-                return new FileStream (filePath, FileMode.Open);
+                return new StreamReader (filePath);
             }
             return null;
         }
 
-        public override Stream WriteableContentsStreamForPath (string path)
+        public override TextWriter TextWriterForPath (string path)
         {
             var filePath = FullFilePathForLocalPath (path);
-            return new FileStream (filePath, FileMode.Create);
+            return new StreamWriter (filePath);
+        }
+
+        public override BinaryReader BinaryReaderForPath (string path)
+        {
+            var filePath = FullFilePathForLocalPath (path);
+            if (File.Exists (filePath)) {
+                return new BinaryReader (new FileStream (filePath, FileMode.Open));
+            }
+            return null;
+        }
+
+        public override BinaryWriter BinaryWriterForPath (string path)
+        {
+            var filePath = FullFilePathForLocalPath (path);
+            return new BinaryWriter (new FileStream (filePath, FileMode.Create));
         }
 
         public override Uri UrlForPath (string path, string contentType)
@@ -229,12 +238,36 @@ namespace NachoCore.Utils
 
         public override Uri BaseUrl ()
         {
-            return new Uri(String.Format("file://{0}", RootPath));
+            return new Uri(String.Format("file://{0}/", RootPath));
         }
 
         private string FullFilePathForLocalPath (string path)
         {
             return Path.Combine (RootPath, path);
+        }
+
+        public override object ObjectContentsForPath (string path, Type t)
+        {
+            var filePath = FullFilePathForLocalPath (path);
+            if (File.Exists(filePath)){
+                using (Stream contents = new FileStream(filePath, FileMode.Open)) {
+                    DataContractSerializer serializer = new DataContractSerializer (t);
+                    var o = serializer.ReadObject (contents);
+                    return o;
+                }
+            }
+            return null;
+        }
+
+        public override void StoreObjectContentsForPath (object o, string path)
+        {
+            var filePath = FullFilePathForLocalPath (path);
+            using (var stream = new FileStream (filePath, FileMode.Create)) {
+                if (o != null) {
+                    DataContractSerializer serializer = new DataContractSerializer (o.GetType());
+                    serializer.WriteObject (stream, o);
+                }
+            }
         }
 
     }
@@ -594,10 +627,8 @@ namespace NachoCore.Utils
             entry = new BundleManifest.Entry ();
             entry.Path = FullHtmlPath;
             entry.ContentType = "text/html";
-            using (var stream = Storage.WriteableContentsStreamForPath (entry.Path)) {
-                using (var writer = new StreamWriter (stream, parsed.FullHtmlDocument.Encoding)) {
-                    parsed.FullHtmlDocument.Save (writer);
-                }
+            using (var writer = Storage.TextWriterForPath(entry.Path)){
+                parsed.FullHtmlDocument.Save (writer);
             }
             Manifest.Entries [FullHtmlEntryName] = entry;
         }
@@ -616,10 +647,8 @@ namespace NachoCore.Utils
                 topTextPath = TopTextPath;
                 topHtmlPath = TopHtmlPath;
                 Storage.StoreStringContentsForPath (TopText, topTextPath);
-                using (var stream = Storage.WriteableContentsStreamForPath (topHtmlPath)) {
-                    using (var writer = new StreamWriter (stream, parsed.TopHtmlDocument.Encoding)) {
-                        parsed.TopHtmlDocument.Save (writer);
-                    }
+                using (var writer = Storage.TextWriterForPath (topHtmlPath)) {
+                    parsed.TopHtmlDocument.Save (writer);
                 }
             } else {
                 topTextPath = FullTextPath;
@@ -880,8 +909,8 @@ namespace NachoCore.Utils
                 entry.Path = SafeFilename ("image-attachment");
                 Manifest.Entries [entry.Path] = entry;
                 entry.ContentType = entity.ContentType.MimeType;
-                using (var stream = Storage.WriteableContentsStreamForPath (entry.Path)) {
-                    entity.ContentObject.DecodeTo (stream);
+                using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
+                    entity.ContentObject.DecodeTo (writer.BaseStream);
                 }
                 var body = parsed.FullHtmlDocument.DocumentNode.Element ("html").Element ("body");
                 var img = body.AppendChild (parsed.FullHtmlDocument.CreateElement ("img"));
@@ -1053,8 +1082,8 @@ namespace NachoCore.Utils
                                         Manifest.Entries [entryKey] = entry;
                                         entry.Path = SafeFilename (entryKey);
                                         entry.ContentType = imagePart.ContentType.MimeType;
-                                        using (var stream = Storage.WriteableContentsStreamForPath (entry.Path)) {
-                                            imagePart.ContentObject.DecodeTo (stream);
+                                        using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
+                                            imagePart.ContentObject.DecodeTo (writer.BaseStream);
                                         }
                                     } else {
                                         entry = Manifest.Entries [entryKey];
