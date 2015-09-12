@@ -735,7 +735,7 @@ namespace NachoCore.IMAP
         {
             string preview = string.Empty;
 
-            var part = findPreviewablePart (summary);
+            var part = findPreviewablePart (summary.BodyParts);
             if (null != part) {
                 try {
                     int previewBytes = PreviewSizeBytes;
@@ -806,20 +806,32 @@ namespace NachoCore.IMAP
             inStream.CopyTo (outStream);
         }
 
-        private BodyPart findPreviewablePart (MessageSummary summary)
+        /// <summary>
+        /// Finds the previewable part or a message based on the BodyStructure (a collection of BodyParts)
+        /// </summary>
+        /// <description>
+        /// Prefer text over html, since we can more easily make a preview.
+        /// </description>
+        /// <returns>The previewable part.</returns>
+        /// <param name="parts">Parts.</param>
+        public BodyPart findPreviewablePart (IEnumerable<BodyPartBasic> parts)
         {
-            BodyPart text;
-            text = summary.BodyParts.OfType<BodyPartMessage> ().FirstOrDefault ();
-            if (null == text) {
-                var multipart = summary.Body as BodyPartMultipart;
-                if (null != multipart) {
-                    text = multipart.BodyParts.OfType<BodyPartMessage> ().FirstOrDefault ();
+            BodyPartText html = null;
+            BodyPartText text = null;
+
+            // return the first usable part we encounter.
+            foreach (BodyPartText textPart in parts.OfType<BodyPartText> ()) {
+                if (textPart.IsAttachment) {
+                    continue;
+                }
+                if (null == text && textPart.IsPlain) {
+                    return textPart;
+                }
+                if (null == html && textPart.IsHtml) {
+                    return textPart;
                 }
             }
-            if (null == text) {
-                text = summary.TextBody ?? summary.HtmlBody;
-            }
-            return text;
+            return null;
         }
     }
 }
