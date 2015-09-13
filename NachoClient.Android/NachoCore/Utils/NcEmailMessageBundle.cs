@@ -549,7 +549,9 @@ namespace NachoCore.Utils
             var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             var htmlPath = Path.Combine (documentsPath, "nacho.html");
             var doc = new HtmlDocument ();
-            doc.Load (new FileStream (htmlPath, FileMode.Open));
+            using (var stream = new FileStream (htmlPath, FileMode.Open)) {
+                doc.Load (stream);
+            }
             List<HtmlNode> nodes = new List<HtmlNode> ();
             nodes.Add (doc.DocumentNode);
             HtmlNode node;
@@ -850,7 +852,7 @@ namespace NachoCore.Utils
                 if (entity.IsHtml) {
                     IncludeHtmlDocument (htmlDocument);
                 } else if (entity.IsPlain) {
-                    IncludeTextAsHtml (entity.Text);
+                    IncludeTextAsHtml (entity.Text.Trim ());
                 } else if (entity.IsRichText){
                     if (parsed.AlternateTypeInfo == null || parsed.AlternateTypeInfo.ConsiderRtfAsHtml) {
                         IncludeRtfAsHtml (entity.Text);
@@ -859,7 +861,7 @@ namespace NachoCore.Utils
             }
             if (parsed.PopulateText){
                 if (entity.IsPlain) {
-                    IncludeText (entity.Text);
+                    IncludeText (entity.Text.Trim ());
                 } else if (entity.IsHtml) {
                     IncludeHtmlDocumentAsText (htmlDocument);
                 } else if (entity.IsRichText) {
@@ -883,19 +885,18 @@ namespace NachoCore.Utils
 
         protected override void VisitMessagePart (MessagePart entity)
         {
-            var bundle = new NcEmailMessageBundle (entity.Message);
-            bundle.Update ();
-            if (parsed.PopulateText) {
-                IncludeText ("\n\n--------------------------------\n");
-                // TODO: headers
-                // TODO: indent?
-                IncludeText (bundle.FullText);
+            VisitMessage (entity.Message);
+        }
+
+        protected override void VisitTnefPart (MimeKit.Tnef.TnefPart entity)
+        {
+            MimeMessage message = null;
+            try {
+                message = entity.ConvertToMessage ();
+            } catch {
             }
-            if (parsed.PopulateHtml) {
-                IncludeHtml ("<br><br><hr>");
-                // TODO: headers
-                // TODO: indent?
-                IncludeHtml (bundle.FullHtml);
+            if (message != null) {
+                VisitMessage (message);
             }
         }
 
@@ -916,6 +917,68 @@ namespace NachoCore.Utils
                 var img = body.AppendChild (parsed.FullHtmlDocument.CreateElement ("img"));
                 img.SetAttributeValue ("nacho-image-attachment", "true");
                 img.SetAttributeValue ("src", Storage.RelativeUrlForPath (entry.Path, entry.ContentType, FullHtmlPath).ToString ());
+            }
+        }
+
+        protected void VisitMessage (MimeMessage message)
+        {
+            var bundle = new NcEmailMessageBundle (message);
+            bundle.Update ();
+            if (parsed.PopulateText) {
+                IncludeText ("\n\n--------------------------------\n");
+                if (message.From.Count > 0) {
+                    IncludeText (String.Format ("From: {0}\n", message.From.ToString ()));
+                }
+                if (message.To.Count > 0) {
+                    IncludeText (String.Format ("To: {0}\n", message.To.ToString ()));
+                }
+                if (message.Cc.Count > 0) {
+                    IncludeText (String.Format ("Cc: {0}\n", message.Cc.ToString ()));
+                }
+                IncludeText (String.Format ("Sent: {0}\n", message.Date.ToString ()));
+                if (!String.IsNullOrEmpty (message.Subject)) {
+                    IncludeText (String.Format ("Subject: {0}\n", message.Subject));
+                }
+                IncludeText ("\n");
+                IncludeText (bundle.FullText);
+            }
+            if (parsed.PopulateHtml) {
+                HtmlDocument doc = new HtmlDocument ();
+                doc.LoadHtml (bundle.FullHtml);
+                var body = doc.DocumentNode.Element ("html").Element ("body");
+                var messageElement = doc.CreateElement ("div");
+                messageElement.AppendChild (doc.CreateElement ("br"));
+                messageElement.AppendChild (doc.CreateElement ("hr"));
+                messageElement.SetAttributeValue ("nacho-message-attachment", "true");
+                var headersElement = doc.CreateElement ("div");
+                headersElement.SetAttributeValue ("nacho-message-headers", "true");
+                if (message.From.Count > 0) {
+                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "From", message.From.ToString ()));
+                }
+                if (message.To.Count > 0) {
+                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "To", message.To.ToString ()));
+                }
+                if (message.Cc.Count > 0) {
+                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Cc", message.Cc.ToString ()));
+                }
+                headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Date", message.Date.ToString ()));
+                if (!String.IsNullOrEmpty (message.Subject)) {
+                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Subject", message.Subject));
+                }
+                headersElement.AppendChild (doc.CreateElement ("br"));
+                var bodyElement = doc.CreateElement ("div");
+                bodyElement.SetAttributeValue ("nacho-message-body", "true");
+                messageElement.AppendChild (headersElement);
+                messageElement.AppendChild (bodyElement);
+                for (var i = body.ChildNodes.Count - 1; i >= 0; --i) {
+                    if (bodyElement.FirstChild == null) {
+                        bodyElement.AppendChild (body.ChildNodes [i]);
+                    } else {
+                        bodyElement.InsertBefore (body.ChildNodes [i], bodyElement.FirstChild);
+                    }
+                }
+                body.AppendChild (messageElement);
+                IncludeHtmlDocument (doc);
             }
         }
 
@@ -1097,10 +1160,12 @@ namespace NachoCore.Utils
                 }
                 if (node.ParentNode != null){
                     if (node.ParentNode.NodeType == HtmlNodeType.Document) {
-                        if (!node.Name.Equals ("html") && !node.Name.Equals ("head") && !node.Name.Equals ("body")) {
+                        if (node.NodeType == HtmlNodeType.Element && !node.Name.Equals ("html") && !node.Name.Equals ("head") && !node.Name.Equals ("body")) {
                             // If we have a root-level element that's not html, head, or body, assume the tag should
                             // really be part of the document body.  Emails aren't always well-formed HTML documents and
                             // sometimes just start with <div>, for example.
+                            bodyElements.Add (node);
+                        } else if (node.NodeType == HtmlNodeType.Text) {
                             bodyElements.Add (node);
                         }
                     } else if (node.ParentNode.NodeType == HtmlNodeType.Element) {
@@ -1183,6 +1248,21 @@ namespace NachoCore.Utils
                 parsed.FullText = "";
             }
             // TODO: convert RTF to plain text
+        }
+
+        private static HtmlNode SimpleMessageHeaderNode (HtmlDocument doc, string name, string value)
+        {
+            var div = doc.CreateElement ("div");
+            div.SetAttributeValue ("nacho-message-header", "true");
+            var span = doc.CreateElement ("span");
+            span.SetAttributeValue ("nacho-message-header-name", "true");
+            span.AppendChild (doc.CreateTextNode (String.Format("{0}: ", name)));
+            div.AppendChild (span);
+            span = doc.CreateElement ("span");
+            span.SetAttributeValue ("nacho-message-header-value", "true");
+            span.AppendChild (doc.CreateTextNode (value));
+            div.AppendChild (span);
+            return div;
         }
 
         #endregion
