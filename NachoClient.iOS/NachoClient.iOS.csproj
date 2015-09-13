@@ -1639,6 +1639,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEmailMessageBundle.cs">
       <Link>NachoCore\Utils\NcEmailMessageBundle.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcBundleStorage.cs">
+      <Link>NachoCore\Utils\NcBundleStorage.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
