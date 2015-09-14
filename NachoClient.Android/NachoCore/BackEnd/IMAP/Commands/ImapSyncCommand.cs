@@ -20,6 +20,7 @@ namespace NachoCore.IMAP
     {
         SyncKit Synckit;
         private const int PreviewSizeBytes = 500;
+        private const int PreviewHtmlMultiplier = 4;
         private const string KImapSyncOpenTiming = "ImapSyncCommand.OpenOnly";
         private const string KImapQuickSyncTiming = "ImapSyncCommand.QuickSync";
         private const string KImapSyncTiming = "ImapSyncCommand.Sync";
@@ -755,11 +756,28 @@ namespace NachoCore.IMAP
 
         private string getPreviewFromBodyPart (UniqueId uid, BodyPartBasic part, IMailFolder mailKitFolder)
         {
-            uint previewBytes = Math.Min (PreviewSizeBytes, part.Octets);
+            uint previewBytes;
+            var textPart = part as BodyPartText;
+            if (null != textPart && textPart.IsHtml) {
+                previewBytes = PreviewSizeBytes * PreviewHtmlMultiplier;
+            } else {
+                previewBytes = PreviewSizeBytes;
+            }
+            previewBytes = Math.Min (previewBytes, part.Octets);
             if (previewBytes == 0) {
                 return string.Empty;
             }
-            string partSpecifier = string.IsNullOrEmpty (part.PartSpecifier) ? "TEXT" : part.PartSpecifier;
+
+            string partSpecifier;
+            if (string.IsNullOrEmpty (part.PartSpecifier)) {
+                partSpecifier = "TEXT";
+            } else {
+                partSpecifier = part.PartSpecifier;
+                if (part is BodyPartMessage) {
+                    partSpecifier += ".TEXT";
+                }
+            }
+
             string preview = string.Empty;
             try {
                 Stream stream = mailKitFolder.GetStream (uid, partSpecifier, 0, (int)previewBytes, Cts.Token);
@@ -781,8 +799,7 @@ namespace NachoCore.IMAP
                 return preview; // empty
             }
 
-            BodyPartText t = part as BodyPartText;
-            bool needHtmlDecode = (null != t && t.IsPlain) ? false : true;
+            bool needHtmlDecode = (null != textPart && textPart.IsPlain) ? false : true;
             return needHtmlDecode ? Html2Text (preview) : preview;
         }
 
