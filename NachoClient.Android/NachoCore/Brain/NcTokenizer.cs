@@ -200,7 +200,7 @@ namespace NachoCore.Brain
                     ContentType contentType;
                     if (ContentType.TryParse (header, out contentType)) {
                         if (!CanProcessCharset (contentType.Charset)) {
-                            Log.Warn (Log.LOG_BRAIN, "CanProcessMessage: not indexing {0}", contentType.Charset);
+                            Log.Error (Log.LOG_BRAIN, "CanProcessMessage: not indexing {0}", contentType.Charset);
                             return false;
                         }
                     }
@@ -310,7 +310,7 @@ namespace NachoCore.Brain
                         TextPart body = (TextPart)part;
                         parts.Add (body);
                     } else {
-                        Log.Warn (Log.LOG_BRAIN, "NcTokenizer: not indexing {0}", part.ContentType.Charset);
+                        Log.Error (Log.LOG_BRAIN, "NcTokenizer: not indexing {0}", part.ContentType.Charset);
                     }
                 }
             }
