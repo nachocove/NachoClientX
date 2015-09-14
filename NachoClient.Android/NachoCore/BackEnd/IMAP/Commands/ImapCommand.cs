@@ -406,21 +406,31 @@ namespace NachoCore.IMAP
             }
         }
 
-        protected void CopyFilteredStream (Stream inStream, Stream outStream, 
-            string CharSet, string TransferEncoding, Action<Stream, Stream> func)
+        /// <summary>
+        /// Copies the filtered stream.
+        /// </summary>
+        /// <param name="inStream">In stream.</param>
+        /// <param name="outStream">Out stream.</param>
+        /// <param name="inCharSet">Input Char set.</param>
+        /// <param name="TransferEncoding">Transfer encoding.</param>
+        /// <param name="func">Func.</param>
+        /// <param name="outCharSet">Output Char set (default "utf-8").</param>
+        protected void CopyFilteredStream (Stream inStream, Stream outStream,
+            string inCharSet, string TransferEncoding, Action<Stream, Stream> func,
+            string outCharSet = "utf-8")
         {
             using (var filtered = new FilteredStream (outStream)) {
                 filtered.Add (DecoderFilter.Create (TransferEncoding));
-                if (!string.IsNullOrEmpty (CharSet)) {
+                if (!string.IsNullOrEmpty (inCharSet)) {
                     try {
-                        filtered.Add (new CharsetFilter (CharSet, "utf-8"));
+                        filtered.Add (new CharsetFilter (inCharSet, outCharSet));
                     } catch (NotSupportedException ex) {
                         // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
-                        Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", CharSet, ex);
+                        Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", inCharSet, ex);
                         // continue without the filter
                     } catch (ArgumentException ex) {
                         // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
-                        Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", CharSet, ex);
+                        Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", inCharSet, ex);
                         // continue without the filter
                     }
                 }

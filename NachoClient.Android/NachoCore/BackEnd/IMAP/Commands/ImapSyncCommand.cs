@@ -731,74 +731,61 @@ namespace NachoCore.IMAP
             }
         }
 
+        /// <summary>
+        /// Gets the preview from summary.
+        /// Using the fact that summary.BodyParts is a list (enumerable) of BodyPartBasic, we can
+        /// just loop over this list and try to find the first one that comes back with a preview.
+        /// </summary>
+        /// <returns>The preview from summary.</returns>
+        /// <param name="summary">Summary.</param>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
         private string getPreviewFromSummary (MessageSummary summary, IMailFolder mailKitFolder)
         {
-            string preview = string.Empty;
-
-            var part = findPreviewablePart (summary.BodyParts);
-            if (null != part) {
-                try {
-                    int previewBytes = PreviewSizeBytes;
-                    string partSpecifier = part.PartSpecifier;
-                    BodyPartBasic m = part as BodyPartBasic;
-                    string TransferEncoding = string.Empty;
-                    bool isPlainText = false; // when in doubt, run the http decode, just in case.
-                    if (null != m) {
-                        if (previewBytes >= m.Octets) {
-                            previewBytes = (int)m.Octets;
-                        }
-                        if (string.Empty == m.PartSpecifier) {
-                            partSpecifier = "TEXT";
-                        } else if (m is BodyPartMessage) {
-                            partSpecifier = m.PartSpecifier + ".TEXT";
-                        }
-                        TransferEncoding = m.ContentTransferEncoding;
-                    } else {
-                        Log.Warn (Log.LOG_IMAP, "BodyPart is not BodyPartBasic: {0}", part);
-                    }
-                    BodyPartText t = part as BodyPartText;
-                    if (null != t) {
-                        isPlainText = t.IsPlain;
-                    }
-                    Stream stream;
-                    try {
-                        stream = mailKitFolder.GetStream (summary.UniqueId, partSpecifier, 0, previewBytes, Cts.Token);
-                    } catch (ImapCommandException e) {
-                        Log.Error (Log.LOG_IMAP, "Could not fetch stream: {0}", e);
-                        return null;
-                    }
-
-                    if (stream.Length > 0) {
-                        using (var decoded = new MemoryStream ()) {
-                            CopyFilteredStream (stream, decoded, part.ContentType.Charset, TransferEncoding, CopyDataAction);
-                            var buffer = decoded.GetBuffer ();
-                            var length = (int)decoded.Length;
-                            preview = Encoding.UTF8.GetString (buffer, 0, length);
-                        }
-                    } else {
-                        preview = string.Empty;
-                    }
-
-                    if (!isPlainText && !string.IsNullOrEmpty (preview)) {
-                        var p = Html2Text (preview);
-                        if (string.Empty == p) {
-                            preview = string.Empty;
-                        } else {
-                            preview = p;
-                        }
-                    }
-                } catch (ImapCommandException e) {
-                    Log.Error (Log.LOG_IMAP, "{0}", e);
+            foreach (var part in summary.BodyParts) {
+                var preview = getPreviewFromBodyPart (summary.UniqueId, part, mailKitFolder);
+                Log.Info (Log.LOG_IMAP, "getPreviewFromSummary ({0}): part {1}:{2}", summary.UniqueId, part.PartSpecifier, preview);
+                if (!string.IsNullOrEmpty (preview)) {
+                    return preview;
                 }
-            } else {
-                Log.Error (Log.LOG_IMAP, "Could not find any previewable segments");
             }
 
-            if (string.Empty == preview) {
-                // This can happen if there's only attachments in the message.
-                //Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId);
+            // if we got here, there's no preview we were able to make
+            // This can happen if there's only attachments in the message.
+            Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId);
+            return string.Empty;
+        }
+
+        private string getPreviewFromBodyPart (UniqueId uid, BodyPartBasic part, IMailFolder mailKitFolder)
+        {
+            uint previewBytes = Math.Min (PreviewSizeBytes, part.Octets);
+            if (previewBytes == 0) {
+                return string.Empty;
             }
-            return preview;
+            string partSpecifier = string.IsNullOrEmpty (part.PartSpecifier) ? "TEXT" : part.PartSpecifier;
+            string preview = string.Empty;
+            try {
+                Stream stream = mailKitFolder.GetStream (uid, partSpecifier, 0, (int)previewBytes, Cts.Token);
+                if (null != stream && stream.Length > 0) {
+                    using (var decoded = new MemoryStream ()) {
+                        // Note that the outCharSet ("utf-8") must match what we use in Encoding.<xxx>.GetString.
+                        CopyFilteredStream (stream, decoded, part.ContentType.Charset, part.ContentTransferEncoding, CopyDataAction, "utf-8");
+                        var buffer = decoded.GetBuffer ();
+                        var length = (int)decoded.Length;
+                        preview = Encoding.UTF8.GetString (buffer, 0, length);
+                    }
+                }
+            } catch (ImapCommandException e) {
+                // if this is a temporary error, we'll get the preview when we download the body.
+                Log.Error (Log.LOG_IMAP, "Could not fetch stream: {0}", e);
+                preview = string.Empty;
+            }
+            if (string.IsNullOrEmpty (preview)) {
+                return preview; // empty
+            }
+
+            BodyPartText t = part as BodyPartText;
+            bool needHtmlDecode = (null != t && t.IsPlain) ? false : true;
+            return needHtmlDecode ? Html2Text (preview) : preview;
         }
 
         private void CopyDataAction (Stream inStream, Stream outStream)
@@ -806,32 +793,5 @@ namespace NachoCore.IMAP
             inStream.CopyTo (outStream);
         }
 
-        /// <summary>
-        /// Finds the previewable part or a message based on the BodyStructure (a collection of BodyParts)
-        /// </summary>
-        /// <description>
-        /// Prefer text over html, since we can more easily make a preview.
-        /// </description>
-        /// <returns>The previewable part.</returns>
-        /// <param name="parts">Parts.</param>
-        public BodyPart findPreviewablePart (IEnumerable<BodyPartBasic> parts)
-        {
-            BodyPartText html = null;
-            BodyPartText text = null;
-
-            // return the first usable part we encounter.
-            foreach (BodyPartText textPart in parts.OfType<BodyPartText> ()) {
-                if (textPart.IsAttachment) {
-                    continue;
-                }
-                if (null == text && textPart.IsPlain) {
-                    return textPart;
-                }
-                if (null == html && textPart.IsHtml) {
-                    return textPart;
-                }
-            }
-            return null;
-        }
     }
 }
