@@ -1,5 +1,6 @@
 body {
     font: 400 17px/24px "Avenir", "Helvetica", sans-serif;
+    word-wrap: break-word;
 }
 
 body[nacho-type="compose"]{
