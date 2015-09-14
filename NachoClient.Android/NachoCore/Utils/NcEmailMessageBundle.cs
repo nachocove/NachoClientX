@@ -111,6 +111,7 @@ namespace NachoCore.Utils
         private MimeMessage MimeMessage = null;
         private NcBundleStorage Storage;
         private BundleManifest Manifest;
+        private int SubmessageCount = 0;
 
         private static int LastestVersion = 1;
 
@@ -151,10 +152,15 @@ namespace NachoCore.Utils
             }
         }
 
-        public NcEmailMessageBundle (MimeMessage message)
+        public NcEmailMessageBundle (MimeMessage message, string storagePath = null)
         {
-            Storage = new NcBundleMemoryStorage ();
-            HasHtmlUrl = false;
+            if (storagePath == null) {
+                Storage = new NcBundleMemoryStorage ();
+                HasHtmlUrl = false;
+            } else {
+                Storage = new NcBundleFileStorage (storagePath);
+                HasHtmlUrl = true;
+            }
             MimeMessage = message;
             Manifest = Storage.ObjectContentsForPath (ManifestPath, typeof(BundleManifest)) as BundleManifest;
             if (Manifest != null) {
@@ -654,14 +660,27 @@ namespace NachoCore.Utils
                 }
                 var body = parsed.FullHtmlDocument.DocumentNode.Element ("html").Element ("body");
                 var img = body.AppendChild (parsed.FullHtmlDocument.CreateElement ("img"));
+                var relativeUrl = Storage.RelativeUrlForPath (entry.Path, entry.ContentType, FullHtmlPath);
+                if (relativeUrl != null) {
+                    img.SetAttributeValue ("nacho-is-relative-src", "true");
+                    img.SetAttributeValue ("src", relativeUrl.ToString());
+                } else {
+                    img.SetAttributeValue("src", Storage.UrlForPath(entry.Path, entry.ContentType).ToString ());
+                }
                 img.SetAttributeValue ("nacho-image-attachment", "true");
-                img.SetAttributeValue ("src", Storage.RelativeUrlForPath (entry.Path, entry.ContentType, FullHtmlPath).ToString ());
             }
         }
 
         protected void VisitMessage (MimeMessage message)
         {
-            var bundle = new NcEmailMessageBundle (message);
+            ++SubmessageCount;
+            string substorageRoot = null;
+            string submessagePath = String.Format ("message{0}", SubmessageCount);
+            var fileStorage = Storage as NcBundleFileStorage;
+            if (fileStorage != null) {
+                substorageRoot = Path.Combine (fileStorage.RootPath, submessagePath);
+            }
+            var bundle = new NcEmailMessageBundle (message, substorageRoot);
             bundle.Update ();
             if (parsed.PopulateText) {
                 IncludeText ("\n\n--------------------------------\n");
@@ -682,6 +701,10 @@ namespace NachoCore.Utils
                 IncludeText (bundle.FullText);
             }
             if (parsed.PopulateHtml) {
+                // When including a sub-message, we'll load up the HTML from its bundle,
+                // and then change the content around a little by placing all body nodes
+                // within a new top-level node, and then insert headers at the start; finally,
+                // fix up any relative image srcs to be relative to this parent bundle
                 HtmlDocument doc = new HtmlDocument ();
                 doc.LoadHtml (bundle.FullHtml);
                 var body = doc.DocumentNode.Element ("html").Element ("body");
@@ -717,6 +740,25 @@ namespace NachoCore.Utils
                     }
                 }
                 body.AppendChild (messageElement);
+                var stack = new List<HtmlNode> ();
+                HtmlNode node = null;
+                stack.Add (messageElement);
+                while (stack.Count > 0) {
+                    node = stack [0];
+                    stack.RemoveAt (0);
+                    if (node.NodeType == HtmlNodeType.Element) {
+                        if (node.Name.Equals ("img")) {
+                            if (node.Attributes.Contains ("nacho-is-relative-src")) {
+                                foreach (var src in node.Attributes.AttributesWithName("src")) {
+                                    src.Value = String.Format ("{0}/{1}", submessagePath, src.Value);
+                                }
+                            }
+                        }
+                        foreach (var child in node.ChildNodes) {
+                            stack.Add (child);
+                        }
+                    }
+                }
                 IncludeHtmlDocument (doc);
             }
         }
@@ -768,8 +810,10 @@ namespace NachoCore.Utils
         private MimePart RelatedImagePart (Uri uri)
         {
             // MimeKit strips off any trailing '.' when it validates Content-IDs.  We'll do the same so we can match
-            if (uri.Scheme.ToLowerInvariant() == "cid"){
-                uri = new Uri(uri.AbsoluteUri.TrimEnd('.'), UriKind.Absolute);
+            if (uri.IsAbsoluteUri) {
+                if (uri.Scheme.ToLowerInvariant () == "cid") {
+                    uri = new Uri (uri.AbsoluteUri.TrimEnd ('.'), UriKind.Absolute);
+                }
             }
             for (int i = parsed.RelatedStack.Count - 1; i >= 0; --i){
                 var related = parsed.RelatedStack [i];
@@ -825,6 +869,11 @@ namespace NachoCore.Utils
                     }
                     // Remove any and all title tags because we have our own (and title isn't used for emails anyway)
                     if (node.Name.Equals ("title")) {
+                        node.Remove ();
+                        continue;
+                    }
+
+                    if (node.Attributes.Contains ("nacho-tag")) {
                         node.Remove ();
                         continue;
                     }
@@ -891,7 +940,13 @@ namespace NachoCore.Utils
                                         entry = Manifest.Entries [entryKey];
                                     }
                                     node.SetAttributeValue ("nacho-original-src", src.Value);
-                                    src.Value = Storage.RelativeUrlForPath (entry.Path, entry.ContentType, FullHtmlPath).ToString ();
+                                    var relativeUrl = Storage.RelativeUrlForPath (entry.Path, entry.ContentType, FullHtmlPath);
+                                    if (relativeUrl != null) {
+                                        node.SetAttributeValue ("nacho-is-relative-src", "true");
+                                        src.Value = relativeUrl.ToString ();
+                                    } else {
+                                        src.Value = Storage.UrlForPath (entry.Path, entry.ContentType).ToString ();
+                                    }
                                 }
                             }
                         }

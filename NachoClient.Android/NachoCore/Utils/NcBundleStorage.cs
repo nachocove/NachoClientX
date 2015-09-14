@@ -109,7 +109,7 @@ namespace NachoCore.Utils
 
         public override Uri RelativeUrlForPath (string path, string contentType, string relativeToPath)
         {
-            return UrlForPath (path, contentType);
+            return null;
         }
 
         public override Uri RelativeUrlForDocumentsPath (string path)
@@ -160,11 +160,17 @@ namespace NachoCore.Utils
     class NcBundleFileStorage : NcBundleStorage
     {
 
-        private string RootPath;
+        private string rootPath;
+
+        public string RootPath {
+            get {
+                return rootPath;
+            }
+        }
 
         public NcBundleFileStorage (string rootPath) : base ()
         {
-            RootPath = rootPath;
+            this.rootPath = rootPath;
             if (!Directory.Exists (RootPath)) {
                 Directory.CreateDirectory (RootPath);
             }
