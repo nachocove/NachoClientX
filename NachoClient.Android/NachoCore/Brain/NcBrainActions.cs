@@ -20,7 +20,7 @@ namespace NachoCore.Brain
             }
             Log.Debug (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
             if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1 > emailMessage.HasBeenGleaned) {
-                if (!NcContactGleaner.GleanContactsHeaderPart1 (emailMessage, false)) {
+                if (!NcContactGleaner.GleanContactsHeaderPart1 (emailMessage)) {
                     return false;
                 }
             }
@@ -110,7 +110,7 @@ namespace NachoCore.Brain
         }
 
         // Try to get the file path of the body of an McAbstrItem (or its derived classes)
-        private string GetValidBodypath (McAbstrItem item, string caller, out McBody outBody)
+        private string GetValidBodyPath (McAbstrItem item, string caller, out McBody outBody)
         {
             // Make sure that there is a body
             var body = item.GetBody ();
@@ -149,15 +149,22 @@ namespace NachoCore.Brain
                 return false;
             }
             if (!IndexExists (emailMessage.AccountId)) {
-                Log.Warn (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore indexing email message {1}",
-                    emailMessage.AccountId, emailMessage.Id);
+                Log.Warn (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore indexing email message {1}", emailMessage.AccountId, emailMessage.Id);
                 return false;
             }
-            Log.Debug (Log.LOG_BRAIN, "IndexEmailMessage: index email message {0}", emailMessage.Id);
             var index = OpenedIndexes.Get (emailMessage.AccountId);
             if (null == index) {
+                Log.Error (Log.LOG_BRAIN, "IndexEmailMessage: no index for email message {0}/{1}", emailMessage.AccountId, emailMessage.Id);
                 return false;
             }
+
+            if (emailMessage.IsJunk) {
+                Log.Info (Log.LOG_BRAIN, "IndexEmailMessage: junk email message not indexed {0}", emailMessage.Id);
+                emailMessage.UpdateIsIndex (emailMessage.SetIndexVersion ());
+                return true;
+            }
+
+            Log.Debug (Log.LOG_BRAIN, "IndexEmailMessage: index email message {0}", emailMessage.Id);
 
             var parameters = new EmailMessageIndexParameters () {
                 From = NcEmailAddress.ParseAddressListString (emailMessage.From),
@@ -171,8 +178,8 @@ namespace NachoCore.Brain
             if (0 < emailMessage.BodyId) {
                 // Make sure the body is there
                 McBody body;
-                var messagePath = GetValidBodypath (emailMessage, "IndexEmailMessage", out body);
-                if (null != messagePath) {
+                var messagePath = GetValidBodyPath (emailMessage, "IndexEmailMessage", out body);
+                if ((null != messagePath) && NcMimeTokenizer.CanProcessMessage(emailMessage)) {
                     switch (body.BodyType) {
                     case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
                         var textMessage = NcObjectParser.ParseFileMessage (messagePath);
@@ -288,7 +295,7 @@ namespace NachoCore.Brain
             // If there is a note, try to add it
             if (0 != contact.BodyId) {
                 McBody dummy;
-                var notePath = GetValidBodypath (contact, "IndexContact", out dummy);
+                var notePath = GetValidBodyPath (contact, "IndexContact", out dummy);
                 if (null != notePath) {
                     try {
                         contactParams.Note = File.ReadAllText (notePath);

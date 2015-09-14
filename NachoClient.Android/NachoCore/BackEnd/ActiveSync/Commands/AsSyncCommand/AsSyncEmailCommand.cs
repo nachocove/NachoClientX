@@ -63,10 +63,11 @@ namespace NachoCore.ActiveSync
                     emailMessage.AccountId = folder.AccountId;
                 }
                 if (justCreated) {
+                    emailMessage.IsJunk = folder.IsJunkFolder ();
                     emailMessage.Insert ();
                     folder.Link (emailMessage);
                     aHelp.InsertAttachments (emailMessage);
-                    NcContactGleaner.GleanContactsHeaderPart1 (emailMessage, folder.IsJunkFolder ());
+                    NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
                 } else {
                     emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                         var target = (McEmailMessage)record;
