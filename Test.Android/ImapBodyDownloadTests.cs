@@ -7,9 +7,6 @@ using MailKit;
 using MimeKit;
 using NachoCore.IMAP;
 using NachoCore.Utils;
-using System.IO;
-using System.Threading;
-using System.Text;
 
 namespace Test.iOS
 {
@@ -97,24 +94,5 @@ namespace Test.iOS
                 result.GetValue<McAbstrFileDesc.BodyTypeEnum> ());
         }
 
-        class TestImapFolder : IMailFolder
-        {
-            public Stream DataStream { get; set; }
-            public UniqueId uidUsed { get; set; }
-            public string SectionUsed { get; set; }
-
-            public override Stream GetStream (UniqueId uid, string section, CancellationToken cancellationToken = default (CancellationToken), ITransferProgress progress = null)
-            {
-                return DataStream;
-            }
-        }
-
-        [Test]
-        public void TestBodyPreview ()
-        {
-            var stream = new MemoryStream (Encoding.UTF8.GetBytes ("83838383"));
-            private string getPreviewFromBodyPart (UniqueId uid, BodyPartBasic part, IMailFolder mailKitFolder)
-
-        }
     }
 }
