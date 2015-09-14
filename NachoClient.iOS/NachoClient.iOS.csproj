@@ -1642,6 +1642,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcBundleStorage.cs">
       <Link>NachoCore\Utils\NcBundleStorage.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Html.cs">
+      <Link>NachoCore\Utils\Html.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\HtmlTextTestViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

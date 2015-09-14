@@ -1038,7 +1038,7 @@ namespace NachoCore.Utils
             if (parsed.FullText == null) {
                 parsed.FullText = "";
             }
-            // TODO: convert html to plain text
+            parsed.FullText += doc.TextContents ();
         }
 
         private void IncludeRtfAsText (string rtf)
