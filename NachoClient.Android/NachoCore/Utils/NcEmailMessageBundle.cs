@@ -638,6 +638,7 @@ namespace NachoCore.Utils
             MimeMessage message = null;
             try {
                 message = entity.ConvertToMessage ();
+                MimeHelpers.FixTnefMessage (message);
             } catch {
             }
             if (message != null) {
