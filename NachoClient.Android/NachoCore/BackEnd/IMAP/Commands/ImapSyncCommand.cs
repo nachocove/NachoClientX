@@ -743,7 +743,6 @@ namespace NachoCore.IMAP
         {
             foreach (var part in summary.BodyParts) {
                 var preview = getPreviewFromBodyPart (summary.UniqueId, part, mailKitFolder);
-                Log.Info (Log.LOG_IMAP, "getPreviewFromSummary ({0}): part {1}:{2}", summary.UniqueId, part.PartSpecifier, preview);
                 if (!string.IsNullOrEmpty (preview)) {
                     return preview;
                 }
@@ -751,7 +750,6 @@ namespace NachoCore.IMAP
 
             // if we got here, there's no preview we were able to make
             // This can happen if there's only attachments in the message.
-            Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId);
             return string.Empty;
         }
 
