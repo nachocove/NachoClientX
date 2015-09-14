@@ -588,29 +588,38 @@ namespace NachoCore.Utils
 
         protected override void VisitTextPart (TextPart entity)
         {
-            HtmlDocument htmlDocument = null;
-            if (entity.IsHtml) {
-                htmlDocument = new HtmlDocument ();
-                htmlDocument.LoadHtml (entity.Text);
-            }
-            if (parsed.PopulateHtml) {
-                if (entity.IsHtml) {
-                    IncludeHtmlDocument (htmlDocument);
-                } else if (entity.IsPlain) {
-                    IncludeTextAsHtml (entity.Text.Trim ());
-                } else if (entity.IsRichText){
-                    if (parsed.AlternateTypeInfo == null || parsed.AlternateTypeInfo.ConsiderRtfAsHtml) {
-                        IncludeRtfAsHtml (entity.Text);
-                    }
+            bool isAttachment = entity.ContentDisposition != null && entity.ContentDisposition.IsAttachment;
+            if (isAttachment) {
+                var regex = new Regex (@"^ATT\d{5,}\.(txt|html?)$");
+                if (regex.IsMatch (entity.FileName)) {
+                    isAttachment = false;
                 }
             }
-            if (parsed.PopulateText){
-                if (entity.IsPlain) {
-                    IncludeText (entity.Text.Trim ());
-                } else if (entity.IsHtml) {
-                    IncludeHtmlDocumentAsText (htmlDocument);
-                } else if (entity.IsRichText) {
-                    IncludeRtfAsText (entity.Text);
+            if (!isAttachment) {
+                HtmlDocument htmlDocument = null;
+                if (entity.IsHtml) {
+                    htmlDocument = new HtmlDocument ();
+                    htmlDocument.LoadHtml (entity.Text);
+                }
+                if (parsed.PopulateHtml) {
+                    if (entity.IsHtml) {
+                        IncludeHtmlDocument (htmlDocument);
+                    } else if (entity.IsPlain) {
+                        IncludeTextAsHtml (entity.Text.Trim ());
+                    } else if (entity.IsRichText) {
+                        if (parsed.AlternateTypeInfo == null || parsed.AlternateTypeInfo.ConsiderRtfAsHtml) {
+                            IncludeRtfAsHtml (entity.Text);
+                        }
+                    }
+                }
+                if (parsed.PopulateText) {
+                    if (entity.IsPlain) {
+                        IncludeText (entity.Text.Trim ());
+                    } else if (entity.IsHtml) {
+                        IncludeHtmlDocumentAsText (htmlDocument);
+                    } else if (entity.IsRichText) {
+                        IncludeRtfAsText (entity.Text);
+                    }
                 }
             }
         }
@@ -620,11 +629,6 @@ namespace NachoCore.Utils
             if (entity.ContentType.Matches ("image", "*")) {
                 // even though it's not an inline image, go ahead and include in message
                 VisitImagePart (entity);
-            } else if (entity.ContentType.Matches ("text", "*")) {
-                var regex = new Regex ("/^ATT\\d{5,}\\.(txt|html?)/");
-                if (regex.IsMatch (entity.FileName)) {
-                    entity.Accept (this);
-                }
             }
         }
 
