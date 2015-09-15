@@ -179,7 +179,7 @@ namespace NachoCore.Brain
                 // Make sure the body is there
                 McBody body;
                 var messagePath = GetValidBodyPath (emailMessage, "IndexEmailMessage", out body);
-                if ((null != messagePath) && NcMimeTokenizer.CanProcessMessage(emailMessage)) {
+                if ((null != messagePath) && NcMimeTokenizer.CanProcessMessage (emailMessage)) {
                     switch (body.BodyType) {
                     case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
                         var textMessage = NcObjectParser.ParseFileMessage (messagePath);
@@ -226,8 +226,16 @@ namespace NachoCore.Brain
                     OpenedIndexes.Cleanup ();
                     index.Remove ("message", id);
                     index = OpenedIndexes.Get (emailMessage.AccountId);
+                    Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: replacing index for {0}", id);
                 }
                 var indexDoc = new EmailMessageIndexDocument (id, parameters);
+
+                Log.Debug (Log.LOG_BRAIN, "IndexEmailMessage: params {0} '{1}' '{2}' '{3}' '{4}'", id, parameters.To, parameters.From, parameters.Subject, parameters.Preview);
+                if (null == parameters.Content) {
+                    Log.Debug (Log.LOG_BRAIN, "IndexEmailMessage: content {0}/{1} is null", id, emailMessage.SetIndexVersion());
+                } else {
+                    Log.Debug (Log.LOG_BRAIN, "IndexEmailMessage: content {0}/{1} '{2}'", id, emailMessage.SetIndexVersion(), parameters.Content.Substring (0, Math.Min (40, parameters.Content.Length)));
+                }
 
                 // Index the document
                 BytesIndexed += index.BatchAdd (indexDoc);
