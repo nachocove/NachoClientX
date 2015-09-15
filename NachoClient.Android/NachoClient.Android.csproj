@@ -510,6 +510,7 @@
     <Compile Include="NachoCore\BackEnd\NcPreFetchHints.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration43.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration44.cs" />
+    <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -660,7 +661,7 @@
       <Name>Xamarin.Auth.Android</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\JetBlack.Caching\JetBlack.Caching.Android\JetBlack.Caching.Android.csproj">
-      <Project>{63F04FFB-A98F-4DAA-9870-80527037DD61}</Project>
+      <Project>{628CA4C5-0D38-416C-8E46-D8E4BD3CE0FB}</Project>
       <Name>JetBlack.Caching.Android</Name>
     </ProjectReference>
   </ItemGroup>
