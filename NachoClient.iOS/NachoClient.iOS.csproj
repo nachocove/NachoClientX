@@ -1634,7 +1634,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration43.cs">
       <Link>NachoCore\Model\Migration\NcMigration43.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\MessageBundleViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEmailMessageBundle.cs">
       <Link>NachoCore\Utils\NcEmailMessageBundle.cs</Link>
     </Compile>
@@ -1644,7 +1643,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Html.cs">
       <Link>NachoCore\Utils\Html.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\HtmlTextTestViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration44.cs">
       <Link>NachoCore\Model\Migration\NcMigration44.cs</Link>
     </Compile>

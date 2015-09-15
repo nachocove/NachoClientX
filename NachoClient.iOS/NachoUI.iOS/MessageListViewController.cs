@@ -574,15 +574,7 @@ namespace NachoClient.iOS
             } else if (messageThread.HasMultipleMessages ()) {
                 PerformSegue ("SegueToMessageThreadView", new SegueHolder (messageThread));
             } else {
-//                PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
-                var vc = new MessageBundleViewController();
-                var message = messageThread.FirstMessageSpecialCase ();
-                vc.SetMessage (message);
-                vc.NavigationItem.RightBarButtonItem = new UIBarButtonItem ("Done", UIBarButtonItemStyle.Done, (object sender, EventArgs e) => {
-                    vc.DismissViewController (true, null);
-                });
-                var nav = new UINavigationController (vc);
-                PresentViewController (nav, true, null);
+                PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
             }
         }
 
