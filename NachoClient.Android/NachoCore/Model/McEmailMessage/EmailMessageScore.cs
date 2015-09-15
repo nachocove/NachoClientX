@@ -476,6 +476,7 @@ namespace NachoCore.Model
             return new List<object> (QueryNeedUpdate (count, above: false));
         }
 
+        // All messages with at least basic gleaning finished
         public static List<McEmailMessage> QueryNeedAnalysis (int count, int version = Scoring.Version)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
@@ -492,20 +493,12 @@ namespace NachoCore.Model
 
         public static List<McEmailMessage> QueryNeedGleaning (Int64 accountId, int count)
         {
-            var query = "SELECT e.* FROM McEmailMessage AS e " +
-                        " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                        " WHERE likelihood (HasBeenGleaned < ?, 0.1) ";
-            var sqlSet = McFolder.GleaningExemptedFolderListSqlString (); 
-            if (null != sqlSet) {
-                query += String.Format (" AND likelihood (m.FolderId NOT IN {0}, 0.9) ", sqlSet);
-            }
-            if (0 <= accountId) {
-                query += " AND likelihood (e.AccountId = ?, 1.0) LIMIT ?";
-                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, accountId, count);
-            } else {
-                query += " LIMIT ?";
-                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, count);
-            }
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT e.* FROM McEmailMessage AS e " +
+                " WHERE " +
+                " likelihood (HasBeenGleaned < ?, 0.1) " +
+                " AND likelihood (e.AccountId = ?, 1.0) LIMIT ?",
+                GleanPhaseEnum.GLEAN_PHASE2, accountId, count);
         }
 
         public static List<McEmailMessage> QueryNeedQuickScoring (int accountId, int count)

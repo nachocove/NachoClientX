@@ -52,13 +52,38 @@ namespace NachoClient.iOS
             this.messageSource.SetEmailMessages (messageThreads, "No messages");
         }
 
+        void DumpMatches (string title, int version, string searchString, List<object> matches)
+        {
+            var prefix = String.Format ("{0} search ({1}) {2}:", title, version, searchString);
+            Log.Debug (Log.LOG_UI, "{0} {1}", prefix, String.Join (",", matches));
+
+        }
+
+        void DumpMatches (string title, int version, string searchString, List<NachoCore.Index.MatchedItem> matches)
+        {
+            var list = new List<object> ();
+            foreach (var m in matches) {
+                list.Add (m.Id);
+            }
+            DumpMatches (title, version, searchString, list);
+        }
+
+        void DumpMatches (string title, int version, string searchString, List<McEmailMessageThread> indexList)
+        {
+            var list = new List<object> ();
+            foreach (var m in indexList) {
+                list.Add (m.FirstMessageId);
+            }
+            DumpMatches (title, version, searchString, list);
+        }
+
         public MessageListViewController (IntPtr handle) : base (handle)
         {
             messageSource = new MessageTableViewSource (this);
             searcher = new SearchHelper ("MessageListViewController", (searchString) => {
                 if (String.IsNullOrEmpty (searchString)) {
                     searchResultsMessages.UpdateMatches (null);
-                    searchResultsMessages.UpdateServerMatches(null);
+                    searchResultsMessages.UpdateServerMatches (null);
                     return; 
                 }
                 // On-device index
@@ -66,10 +91,12 @@ namespace NachoClient.iOS
                 var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
                 var index = new NachoCore.Index.NcIndex (indexPath);
                 int maxResults = 1000;
-                if(String.IsNullOrEmpty(searchString) || (4 > searchString.Length)) {
+                if (String.IsNullOrEmpty (searchString) || (4 > searchString.Length)) {
                     maxResults = 20;
                 }
                 var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
+
+                DumpMatches ("raw", curVersion, searchString, matches);
 
                 // Cull low scores
                 var maxScore = 0f;
@@ -77,6 +104,8 @@ namespace NachoClient.iOS
                     maxScore = Math.Max (maxScore, m.Score);
                 }
                 matches.RemoveAll (x => x.Score < (maxScore / 2));
+
+                DumpMatches ("cooked", curVersion, searchString, matches);
 
                 if (curVersion == searcher.Version) {
                     InvokeOnUIThread.Instance.Invoke (() => {
@@ -211,7 +240,7 @@ namespace NachoClient.iOS
         protected void EndRefreshingOnUIThread (object sender)
         {
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                if (RefreshControl.Refreshing){
+                if (RefreshControl.Refreshing) {
                     RefreshControl.EndRefreshing ();
                 }
             });
@@ -711,7 +740,7 @@ namespace NachoClient.iOS
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
-            if(String.IsNullOrEmpty(forSearchString) || (4 > forSearchString.Length)) {
+            if (String.IsNullOrEmpty (forSearchString) || (4 > forSearchString.Length)) {
                 searchResultsMessages.UpdateServerMatches (null);
                 return;
             }
@@ -731,6 +760,7 @@ namespace NachoClient.iOS
                 thread.MessageCount = 1;
                 threadList.Add (thread);
             }
+            DumpMatches ("svr", 0, "", threadList);
             searchResultsMessages.UpdateServerMatches (threadList);
             List<int> adds;
             List<int> deletes;

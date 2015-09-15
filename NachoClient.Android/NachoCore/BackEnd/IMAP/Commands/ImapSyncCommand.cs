@@ -382,10 +382,11 @@ namespace NachoCore.IMAP
                 // TODO move the rest to parent class or into the McEmailAddress class before insert or update?
                 NcModel.Instance.RunInTransaction (() => {
                     if (justCreated) {
+                        emailMessage.IsJunk = folder.IsJunkFolder ();
                         emailMessage.Insert ();
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
-                        NcContactGleaner.GleanContactsHeaderPart1 (emailMessage, folder.IsJunkFolder ());
+                        NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                             var target = (McEmailMessage)record;
