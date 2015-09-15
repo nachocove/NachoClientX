@@ -55,8 +55,7 @@ namespace NachoClient.iOS
         void DumpMatches (string title, int version, string searchString, List<object> matches)
         {
             var prefix = String.Format ("{0} search ({1}) {2}:", title, version, searchString);
-            Log.Debug (Log.LOG_UI, "{0} {1}", prefix, String.Join (",", matches));
-
+            Log.Debug (Log.LOG_SEARCH, "{0} {1}", prefix, String.Join (",", matches));
         }
 
         void DumpMatches (string title, int version, string searchString, List<NachoCore.Index.MatchedItem> matches)
