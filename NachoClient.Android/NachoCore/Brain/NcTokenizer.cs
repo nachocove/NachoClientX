@@ -200,7 +200,7 @@ namespace NachoCore.Brain
                     ContentType contentType;
                     if (ContentType.TryParse (header, out contentType)) {
                         if (!CanProcessCharset (contentType.Charset)) {
-                            Log.Error (Log.LOG_BRAIN, "CanProcessMessage: not indexing {0}", contentType.Charset);
+                            Log.Error (Log.LOG_SEARCH, "CanProcessMessage: not indexing {0}", contentType.Charset);
                             return false;
                         }
                     }

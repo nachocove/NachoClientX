@@ -12,18 +12,9 @@ namespace NachoCore.Utils
     {
         private static int UserActionValue = 1;
 
-        public static void InitTestMode ()
+        public static void SetTestMode(bool enable)
         {
-            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
-                TestMode.Instance.Add ("markhoton", (parameters) => {
-                    ScoringHelpers.UserActionValue = 2;
-                    Console.WriteLine ("!!!!! ENTER MARKHOT TEST MODE !!!!!");
-                });
-                TestMode.Instance.Add ("markhotoff", (parameters) => {
-                    ScoringHelpers.UserActionValue = 1;
-                    Console.WriteLine ("!!!!! EXIT MARKHOT TEST MODE !!!!!");
-                });
-            }
+            UserActionValue = (enable ? 2 : 1);
         }
 
         public static void ToggleHotOrNot (McEmailMessage message)
