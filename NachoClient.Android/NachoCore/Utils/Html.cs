@@ -129,11 +129,7 @@ namespace NachoCore.Utils
 
         private void VisitDocument (HtmlNode node)
         {
-            foreach (var child in node.ChildNodes) {
-                if (child.NodeType == HtmlNodeType.Element) {
-                    VisitNode (child);
-                }
-            }
+            VisitChildren (node);
         }
 
         private void VisitElement (HtmlNode node)
