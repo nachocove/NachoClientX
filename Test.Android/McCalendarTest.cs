@@ -79,6 +79,38 @@ namespace Test.Android
             var r6 = McCalendar.QueryByUID (2, "ccc");
             Assert.IsNull (r6, "McCalendar.QueryByUID (2, \"ccc\") found an item when it shouldn't have.");
         }
+
+        [Test]
+        public void TestUpdateRecurrencesGeneratedUntil ()
+        {
+            // Have two in-memory copies of the same McCalendar item.  Verify that calling
+            // UpdateRecurrencesGeneratedUntil() updates only the RecurrencesGeneratedUntil
+            // field, and not any other fields.
+
+            var c1 = CalendarHelper.DefaultMeeting ();
+            c1.AccountId = 1;
+            c1.Subject = "TestUpdateRecurrencesGeneratedUntil";
+            c1.Insert ();
+
+            var c2 = McCalendar.QueryById<McCalendar> (c1.Id);
+
+            DateTime originalStartTime = c1.StartTime;
+            DateTime adjustedStartTime = originalStartTime + TimeSpan.FromMinutes (1);
+            c1.Subject = "Changed subject";
+            c1.StartTime = adjustedStartTime;
+            c1.Update ();
+
+            DateTime testTime = DateTime.UtcNow + TimeSpan.FromHours (2);
+            c2.UpdateRecurrencesGeneratedUntil (testTime);
+
+            Assert.AreEqual ("TestUpdateRecurrencesGeneratedUntil", c2.Subject, "c2.Subject was changed when it shouldn't have been");
+            Assert.AreEqual (originalStartTime, c2.StartTime, "c2.StartTime was changed when it shouldn't have been");
+
+            var c3 = McCalendar.QueryById<McCalendar> (c1.Id);
+            Assert.AreEqual ("Changed subject", c3.Subject, "The Subject field was incorrectly overwritten by UpdateRecurrencesGeneratedUntil");
+            Assert.AreEqual (adjustedStartTime, c3.StartTime, "The StartTime field was incorrectly overwritten by UpdateRecurrencesGeneratedUntil");
+            Assert.AreEqual (testTime, c3.RecurrencesGeneratedUntil, "UpdateRecurrencesGeneratedUntil did not update the RecurrencesGeneratedUntil field");
+        }
     }
 }
 

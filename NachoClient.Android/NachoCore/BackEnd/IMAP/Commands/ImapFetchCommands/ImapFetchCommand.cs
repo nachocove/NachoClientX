@@ -52,7 +52,7 @@ namespace NachoCore.IMAP
             }
 
             if (result.isError ()) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result.Message);
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result);
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, result);
                 });

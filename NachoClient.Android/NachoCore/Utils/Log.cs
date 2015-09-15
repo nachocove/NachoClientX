@@ -37,6 +37,16 @@ namespace NachoCore.Utils
             Telemetry = settings.Telemetry;
         }
 
+        public void EnableConsole (ulong subsystem = ulong.MaxValue)
+        {
+            Console |= subsystem;
+        }
+
+        public void EnableTelemetry (ulong subsystem = ulong.MaxValue)
+        {
+            Telemetry |= subsystem;
+        }
+
         public void DisableConsole (ulong subsystem = ulong.MaxValue)
         {
             Console &= ~subsystem;
@@ -356,6 +366,7 @@ namespace NachoCore.Utils
         public const ulong LOG_BACKEND = (1 << 22);
         public const ulong LOG_SMTP = (1 << 23);
         public const ulong LOG_IMAP = (1 << 24);
+        public const ulong LOG_SEARCH = (1 << 25);
 
         public static string ModuleString (ulong subsystem)
         {
@@ -410,6 +421,8 @@ namespace NachoCore.Utils
                 return "SMTP";
             case LOG_IMAP:
                 return "IMAP";
+            case LOG_SEARCH:
+                return "SEARCH";
             default:
                 throw new Exception (string.Format ("Unknown Log subsystem {0}", subsystem));
             }

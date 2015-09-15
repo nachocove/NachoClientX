@@ -233,9 +233,13 @@ namespace NachoCore.Model
         /// <value>The headers.</value>
         public string Headers { get; set; }
 
-        /// True if the message header matches some of the fields. A match can cause a 
-        /// message from being removed from the hot list.
+        /// If true, the message headers match a disqualifying
+        /// pattern and this message will be disqualified by brain.
         public bool HeadersFiltered { get; set; }
+
+        /// If true, this message is in a junk folder or has been
+        /// classified as junk and will be disqualified by brain.
+        public bool IsJunk { get; set; }
 
         ///
         /// <Flag> STUFF.
@@ -612,15 +616,15 @@ namespace NachoCore.Model
                 accountId, threadId, "Defer until");
         }
 
-        public static List<McEmailMessageThread> QueryForMessageThreadSet(List<int> indexList)
+        public static List<McEmailMessageThread> QueryForMessageThreadSet (List<int> indexList)
         {
             var set = String.Format ("( {0} )", String.Join (",", indexList.ToArray<int> ()));
             var cmd = String.Format (
-                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
-                "WHERE " +
-                "e.ID IN {0} " +
-                " ORDER BY e.DateReceived DESC ",
-                set);
+                          "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+                          "WHERE " +
+                          "e.ID IN {0} " +
+                          " ORDER BY e.DateReceived DESC ",
+                          set);
             return NcModel.Instance.Db.Query<McEmailMessageThread> (cmd); 
         }
 
@@ -1326,14 +1330,19 @@ namespace NachoCore.Model
         public int SetIndexVersion ()
         {
             int newIsIndexed;
-            if (0 == BodyId) {
-                // No body to index. This message is fully indexed.
+            if (IsJunk) {
+                // Don't index junk
+                newIsIndexed = EmailMessageIndexDocument.Version;
+            } else if (0 == BodyId) {
+                // No body to index. Try again later.
                 newIsIndexed = EmailMessageIndexDocument.Version - 1;
             } else {
                 var body = GetBody ();
                 if ((null != body) && body.IsComplete ()) {
+                    // Message is fully indexed
                     newIsIndexed = EmailMessageIndexDocument.Version;
                 } else {
+                    // Body not downloaded; try again later
                     newIsIndexed = EmailMessageIndexDocument.Version - 1;
                 }
             }

@@ -668,8 +668,9 @@ namespace NachoCore.ActiveSync
                         try {
                             var isWedged = false;
                             int timeoutInSeconds = (response.Content.Headers.ContentLength ?? -1) >= 100000 ? 60 : 20;
-                            var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
-                                             (state) => {
+                            long loadBytesDuration;
+                            using (var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
+                                (state) => {
                                     if (!cToken.IsCancellationRequested) {
                                         Log.Error (Log.LOG_HTTP, "LoadBytes timed out after {0:n0}s trying to process {1:n0} bytes for command {2}",
                                             timeoutInSeconds, response.Content.Headers.ContentLength ?? -1, CommandName);
@@ -677,17 +678,19 @@ namespace NachoCore.ActiveSync
                                         TimeoutTimerCallback (state);
                                     }
                                 },
-                                cToken, timeoutInSeconds * 1000, System.Threading.Timeout.Infinite);
-                            long loadBytesDuration;
-                            using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
-                                decoder.LoadBytes (AccountId, ContentData);
-                                loadBytesDuration = capture.ElapsedMilliseconds;
+                                cToken, timeoutInSeconds * 1000, System.Threading.Timeout.Infinite)) {
+                                using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
+                                    decoder.LoadBytes (AccountId, ContentData);
+                                    loadBytesDuration = capture.ElapsedMilliseconds;
+                                }
+                                // There is a small race we are living with. The diaper callback could be 
+                                // executing while this code is executing, resulting in two contradictory events
+                                // hitting the HTTP OP SM.
                             }
                             if (1000 < loadBytesDuration) {
                                 Log.Warn (Log.LOG_HTTP, "LoadBytes took {0:n0}ms for {1:n0} bytes for command {2}",
                                     loadBytesDuration, response.Content.Headers.ContentLength ?? -1, CommandName);
                             }
-                            diaper.Dispose ();
                             if (isWedged) {
                                 // If not cancelled, we've already done the right thing and sent a timeout event.
                                 return Final ((uint)SmEvt.E.HardFail, "LOADBYTESHANG");

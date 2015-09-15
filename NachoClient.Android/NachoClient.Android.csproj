@@ -513,6 +513,8 @@
     <Compile Include="NachoCore\Utils\NcEmailMessageBundle.cs" />
     <Compile Include="NachoCore\Utils\NcBundleStorage.cs" />
     <Compile Include="NachoCore\Utils\Html.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration44.cs" />
+    <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
