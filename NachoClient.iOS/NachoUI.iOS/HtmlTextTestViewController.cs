@@ -4,6 +4,7 @@ using System;
 using UIKit;
 using NachoCore;
 using NachoCore.Utils;
+using System.IO;
 using CoreGraphics;
 using HtmlAgilityPack;
 
@@ -30,11 +31,21 @@ namespace NachoClient.iOS
             TextResultView.Layer.BorderWidth = 1.0f;
             View.AddSubview (HtmlSourceView);
             View.AddSubview (TextResultView);
-            HtmlSourceView.Changed += (object sender, EventArgs e) => {
-                if (HtmlSourceView.Text != null){
-                    var doc = new HtmlDocument ();
-                    doc.LoadHtml (HtmlSourceView.Text);
-                    TextResultView.Text = doc.TextContents ();
+//            HtmlSourceView.Changed += (object sender, EventArgs e) => {
+//                if (HtmlSourceView.Text != null){
+//                    var doc = new HtmlDocument ();
+//                    doc.LoadHtml (HtmlSourceView.Text);
+//                    TextResultView.Text = doc.TextContents ();
+//                }
+//            };
+            TextResultView.Changed += (object sender, EventArgs e) => {
+                if (TextResultView.Text != null){
+                    var serializer = new HtmlTextDeserializer ();
+                    var doc = serializer.Deserialize (TextResultView.Text);
+                    using (var writer = new StringWriter ()){
+                        doc.Save (writer);
+                        HtmlSourceView.Text = writer.ToString ();
+                    }
                 }
             };
         }

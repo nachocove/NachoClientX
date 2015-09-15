@@ -1006,15 +1006,9 @@ namespace NachoCore.Utils
             if (parsed.FullHtmlDocument == null) {
                 parsed.FullHtmlDocument = TemplateHtmlDocument ();
             }
-            var body = parsed.FullHtmlDocument.DocumentNode.Element ("html").Element ("body");
-            var reader = new StringReader (text);
-            string line = reader.ReadLine ();
-            while (line != null) {
-                // do we want to detect things in the line like URLs and generate the appropriate markup?
-                body.AppendChild (parsed.FullHtmlDocument.CreateTextNode (line));
-                body.AppendChild (parsed.FullHtmlDocument.CreateElement ("br"));
-                line = reader.ReadLine ();
-            }
+            var serializer = new HtmlTextDeserializer ();
+            var doc = serializer.Deserialize (text);
+            IncludeHtmlDocument (doc);
         }
 
         private void IncludeRtfAsHtml (string rtf)

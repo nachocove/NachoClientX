@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
@@ -173,7 +174,7 @@ namespace NachoCore.Utils
         {
             PushState ();
             State.LinePrefix = State.LinePrefix.TrimEnd () + "> ";
-            VisitParagraphElement (node);
+            VisitParagraphElement (node, true);
             PopState ();
         }
 
@@ -280,14 +281,18 @@ namespace NachoCore.Utils
             VisitParagraphElement (node);
         }
 
-        private void VisitParagraphElement (HtmlNode node)
+        private void VisitParagraphElement (HtmlNode node, bool statePushedByCaller = false)
         {
-            PushState ();
+            if (!statePushedByCaller) {
+                PushState ();
+            }
             bool wasAtParagraphBreak = AtParagraphBreak;
             AtParagraphBreak = true;
             VisitBlockElement (node);
             AtParagraphBreak = State.IsStarted || wasAtParagraphBreak;
-            PopState ();
+            if (!statePushedByCaller) {
+                PopState ();
+            }
         }
 
         private void VisitBlockElement (HtmlNode node)
@@ -473,6 +478,92 @@ namespace NachoCore.Utils
 
         #endregion
     }
+        
+    public class HtmlTextDeserializer {
 
+        HtmlDocument Document;
+        HtmlNode Node;
+        StringReader Reader;
+        string LinePrefix = "";
+
+        public HtmlTextDeserializer ()
+        {
+        }
+
+        public HtmlDocument Deserialize (string text)
+        {
+            Document = new HtmlDocument ();
+            var html = Document.CreateElement ("html");
+            var head = Document.CreateElement ("head");
+            var charset = Document.CreateElement ("meta");
+            charset.SetAttributeValue ("charset", "utf8");
+            head.AppendChild (charset);
+            html.AppendChild (head);
+            Node = Document.CreateElement ("body");
+            html.AppendChild (Node);
+            Document.DocumentNode.AppendChild (html);
+
+            Reader = new StringReader (text);
+            var readMore = true;
+            while (readMore) {
+                readMore = ReadLine ();
+            }
+
+            return Document;
+        }
+
+        public void PushNode (string name)
+        {
+            var node = Document.CreateElement (name);
+            Node.AppendChild (node);
+            Node = node;
+        }
+
+        public void PopNode ()
+        {
+            Node = Node.ParentNode;
+        }
+
+        private bool ReadLine ()
+        {
+            var line = Reader.ReadLine ();
+            if (line != null) {
+                if (!String.IsNullOrEmpty (LinePrefix)) {
+                    if (!line.StartsWith (LinePrefix)) {
+                        while (!line.StartsWith (LinePrefix) && LinePrefix.Length > 0) {
+                            PopNode ();
+                            LinePrefix = LinePrefix.Substring (0, LinePrefix.Length - 1);
+                        }
+                        if (!String.IsNullOrEmpty (LinePrefix)) {
+                            line = line.Substring (LinePrefix.Length).TrimStart ();
+                        }
+                    } else {
+                        line = line.Substring (LinePrefix.Length).TrimStart ();
+                    }
+                }
+                while (line.StartsWith (">")) {
+                    PushNode ("blockquote");
+                    Node.SetAttributeValue ("type", "cite");
+                    line = line.Substring (1).TrimStart ();
+                    LinePrefix += ">";
+                }
+                PushNode ("div");
+                ConsumeText (line);
+                if (String.IsNullOrWhiteSpace (line)) {
+                    Node.AppendChild (Document.CreateElement ("br"));
+                }
+                PopNode ();
+                return true;
+            }
+            return false;
+        }
+
+        private void ConsumeText (string text)
+        {
+            text = text.Replace ("&", "&amp;").Replace ("<", "&lt;");
+            Node.AppendChild (Document.CreateTextNode (text));
+        }
+
+    }
 }
 
