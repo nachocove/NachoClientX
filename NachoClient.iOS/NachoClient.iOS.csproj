@@ -1653,6 +1653,7 @@
       <Link>NachoCore\Utils\IRtfConverter.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\RtfConverter.cs" />
+    <Compile Include="NachoUI.iOS\Support\CompoundScrollView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
