@@ -744,6 +744,9 @@ namespace NachoCore.IMAP
         private string getPreviewFromSummary (MessageSummary summary, IMailFolder mailKitFolder)
         {
             foreach (var part in summary.BodyParts) {
+                if (!part.ContentType.Matches ("text", "*")) {
+                    continue;
+                }
                 var preview = getPreviewFromBodyPart (summary.UniqueId, part, mailKitFolder);
                 if (!string.IsNullOrEmpty (preview)) {
                     return preview;
