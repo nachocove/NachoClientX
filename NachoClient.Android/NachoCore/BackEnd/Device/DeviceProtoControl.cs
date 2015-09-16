@@ -504,7 +504,7 @@ namespace NachoCore
             }
         }
 
-        public override bool Execute ()
+        protected override bool Execute ()
         {
             // Ignore base.Execute() we don't care about the nextwork.
             // We're letting the app use Start() to trigger a re-sync. TODO - consider using Sync command.
