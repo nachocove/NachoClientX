@@ -733,6 +733,8 @@ namespace NachoCore.IMAP
             }
         }
 
+        readonly string[] ValidTextParts = { "plain", "html" };
+
         /// <summary>
         /// Gets the preview from summary.
         /// Using the fact that summary.BodyParts is a list (enumerable) of BodyPartBasic, we can
@@ -744,7 +746,8 @@ namespace NachoCore.IMAP
         private string getPreviewFromSummary (MessageSummary summary, IMailFolder mailKitFolder)
         {
             foreach (var part in summary.BodyParts) {
-                if (!part.ContentType.Matches ("text", "*")) {
+                if (!part.ContentType.Matches ("text", "*") ||
+                    !ValidTextParts.Contains (part.ContentType.MediaSubtype.ToLowerInvariant ())) {
                     continue;
                 }
                 var preview = getPreviewFromBodyPart (summary.UniqueId, part, mailKitFolder);
