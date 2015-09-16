@@ -515,6 +515,7 @@
     <Compile Include="NachoCore\Utils\Html.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration44.cs" />
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
+    <Compile Include="NachoCore\Utils\IRtfConverter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

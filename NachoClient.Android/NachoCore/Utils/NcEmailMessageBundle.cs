@@ -106,6 +106,7 @@ namespace NachoCore.Utils
         #region Properties
 
         public bool NeedsUpdate = false;
+        public IRtfConverter RtfConverter = null;
         private bool HasHtmlUrl = true;
         private McEmailMessage Message = null;
         private MimeMessage MimeMessage = null;
@@ -1013,10 +1014,13 @@ namespace NachoCore.Utils
 
         private void IncludeRtfAsHtml (string rtf)
         {
-            if (parsed.FullHtmlDocument == null) {
-                parsed.FullHtmlDocument = TemplateHtmlDocument ();
+            if (RtfConverter != null) {
+                if (parsed.FullHtmlDocument == null) {
+                    parsed.FullHtmlDocument = TemplateHtmlDocument ();
+                }
+                var html = RtfConverter.ToHtml (rtf);
+                IncludeHtml (html);
             }
-            // TODO: convert RTF to html
         }
 
         private void IncludeText (string text)
@@ -1037,10 +1041,13 @@ namespace NachoCore.Utils
 
         private void IncludeRtfAsText (string rtf)
         {
-            if (parsed.FullText == null) {
-                parsed.FullText = "";
+            if (RtfConverter != null) {
+                if (parsed.FullText == null) {
+                    parsed.FullText = "";
+                }
+                var txt = RtfConverter.ToTxt (rtf);
+                IncludeText (rtf);
             }
-            // TODO: convert RTF to plain text
         }
 
         private static HtmlNode SimpleMessageHeaderNode (HtmlDocument doc, string name, string value)
