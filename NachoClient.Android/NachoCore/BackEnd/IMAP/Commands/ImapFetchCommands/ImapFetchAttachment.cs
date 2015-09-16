@@ -25,7 +25,7 @@ namespace NachoCore.IMAP
                 }
                 var fetchResult = FetchAttachment (folder, attachment, email);
                 if (!fetchResult.isOK ()) {
-                    Log.Error (Log.LOG_IMAP, "FetchAttachments: {0}", fetchResult.GetMessage ());
+                    Log.Error (Log.LOG_IMAP, "FetchAttachments: {0}", fetchResult);
                     result = fetchResult;
                 }
             }
