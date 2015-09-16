@@ -33,6 +33,7 @@ namespace NachoCore.IMAP
         private static uint[] KRungSyncWindowSize = new uint[] { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
 
         private Random CoinToss;
+
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
             CoinToss = new Random ();
@@ -129,10 +130,21 @@ namespace NachoCore.IMAP
                         cmd = new ImapFolderDeleteCommand (BEContext, Client, next);
                         break;
                     case McPending.Operations.EmailDelete:
-                        cmd = new ImapEmailDeleteCommand (BEContext, Client, next);
+                        // see if there's more than one we can process for the same folder
+                        var deletes = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities)
+                            .Where (x => x.Operation == next.Operation &&
+                                      x.ParentId == next.ParentId &&
+                                      x.DelayNotAllowed == next.DelayNotAllowed);
+                        cmd = new ImapEmailDeleteCommand (BEContext, Client, deletes.ToList ());
                         break;
                     case McPending.Operations.EmailMove:
-                        cmd = new ImapEmailMoveCommand (BEContext, Client, next);
+                        // see if there's more than one we can process for the same folder
+                        var moves = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities)
+                            .Where (x => x.Operation == next.Operation &&
+                                    x.ParentId == next.ParentId &&
+                                    x.DestParentId == next.DestParentId &&
+                                    x.DelayNotAllowed == next.DelayNotAllowed);
+                        cmd = new ImapEmailMoveCommand (BEContext, Client, moves.ToList ());
                         break;
                     case McPending.Operations.EmailMarkRead:
                         cmd = new ImapEmailMarkReadCommand (BEContext, Client, next);
