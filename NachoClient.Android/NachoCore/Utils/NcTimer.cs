@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace NachoCore.Utils
 {
-    public class NcTimer
+    public class NcTimer : IDisposable
     {
         public delegate DateTime CurrentTimeFunction ();
 

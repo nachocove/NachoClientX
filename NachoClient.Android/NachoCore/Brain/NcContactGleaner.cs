@@ -173,15 +173,25 @@ namespace NachoCore.Brain
             return false;
         }
 
-        public static bool GleanContactsHeaderPart1 (McEmailMessage emailMessage, bool isJunk)
+        // Do not glean junk or marketing emails because they are usually junk
+        private static bool DoNotGlean (McEmailMessage emailMessage)
         {
-            // Caller is responsible for making sure that this is not in a junk folder.
-            // We do not check here in order to avoid a lot of db queries just for
-            // gleaning.
+            if (emailMessage.IsJunk) {
+                return true;
+            }
+            if (emailMessage.HeadersFiltered) {
+                return true;
+            }
+            if (CheckDisqualification (emailMessage)) {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool GleanContactsHeaderPart1 (McEmailMessage emailMessage)
+        {
             bool gleaned;
-            if (isJunk || emailMessage.HeadersFiltered || CheckDisqualification (emailMessage) ||
-                ((0 == emailMessage.FromEmailAddressId) && String.IsNullOrEmpty (emailMessage.To))) {
-                // Do not glean email addresses from marketing emails because they are usually junk
+            if (DoNotGlean (emailMessage)) {
                 gleaned = true;
             } else {
                 gleaned = InterruptibleGleaning ((obeyAbatement) => {
@@ -197,12 +207,8 @@ namespace NachoCore.Brain
 
         public static bool GleanContactsHeaderPart2 (McEmailMessage emailMessage)
         {
-            // McEmailMessage.QueryNeedGleaning() should filter out all ungleaned emails
-            // in any of the junk folders. So, we don't do the junk folder check again
-            // because it costs an additional query (on McMapFolderFolderEntry) per email.
             bool gleaned = false;
-            if (emailMessage.HeadersFiltered || CheckDisqualification (emailMessage)) {
-                // Do not glean email addresses from marketing emails because they are usually junk
+            if (DoNotGlean (emailMessage)) {
                 gleaned = true;
             } else {
                 gleaned = InterruptibleGleaning ((obeyAbatement) => {

@@ -299,7 +299,6 @@ namespace NachoClient.iOS
                 NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
                 NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
                 MdmConfig.Instance.ExtractValues ();
-                ScoringHelpers.InitTestMode ();
             }
 
             if ((null != launchOptions) && launchOptions.ContainsKey (UIApplication.LaunchOptionsRemoteNotificationKey)) {

@@ -638,8 +638,22 @@ namespace NachoCore.ActiveSync
 
             var l = new List<McException> ();
 
+            DateTime oldExceptionCutoff = DateTime.UtcNow - TimeSpan.FromDays (31);
+
             foreach (var exception in exceptions.Elements()) {
-                NcAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
+                if (Xml.Calendar.Exceptions.Exception != exception.Name.LocalName) {
+                    Log.Warn (Log.LOG_AS, "ParseExceptions: Unexpected XML element <{0}>. Should be <{1}>.",
+                        exception.Name.LocalName, Xml.Calendar.Exceptions.Exception);
+                    continue;
+                }
+                var startTimeXml = exception.ElementAnyNs (Xml.Calendar.Exception.ExceptionStartTime);
+                if (null != startTimeXml) {
+                    var startTime = ParseAsCompactDateTime (startTimeXml.Value);
+                    if (startTime < oldExceptionCutoff && startTime != DateTime.MinValue) {
+                        // This exception is too old to be shown on the calendar.  Ignore it.
+                        continue;
+                    }
+                }
                 var e = new McException ();
                 e.AccountId = accountId;
                 var attendees = new List<McAttendee> ();
@@ -709,7 +723,7 @@ namespace NachoCore.ActiveSync
                         NcAssert.CaseError (); // Docs claim this doesn't exist
                         break;
                     default:
-                        Log.Warn (Log.LOG_AS, "CreateNcCalendarFromXML UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+                        Log.Warn (Log.LOG_AS, "ParseExceptions: Unhandled element <{0}> with value={1}", child.Name.LocalName, child.Value);
                         break;
                     }
                 }

@@ -27,7 +27,6 @@ namespace NachoCore.Brain
             double durationSec;
             if (IsWallPowered ()) {
                 durationSec = 0.5 * periodSec;
-                Console.WriteLine ("Plugged in, duration={0}", durationSec);
             } else {
                 double level = Power.Instance.BatteryLevel;
                 double dutyCycle;
@@ -66,7 +65,6 @@ namespace NachoCore.Brain
                 }
                 durationSec = periodSec * dutyCycle;
                 Log.Debug (Log.LOG_BRAIN, "On battery, power_level={0}, duration={1}", level, durationSec);
-                Console.WriteLine ("On battery, power_level={0}, duration={1}", level, durationSec);
             }
             return DateTime.UtcNow.AddSeconds (durationSec);
         }

@@ -13,6 +13,7 @@ using Lucene.Net.Util;
 using HtmlAgilityPack;
 
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
@@ -167,6 +168,46 @@ namespace NachoCore.Brain
                 Log.Error (Log.LOG_BRAIN, "fail to parse HTML (execption={0})", e.Message);
             }
         }
+
+        public static bool CanProcessCharset (string charset)
+        {
+            if (String.IsNullOrEmpty (charset)) {
+                return true; // default is us-ascii
+            }
+            if (String.Equals (charset, "US-ASCII", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            if (String.Equals (charset, "ASCII", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            if (String.Equals (charset, "UTF-8", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool CanProcessMessage (McEmailMessage message)
+        {
+            if (String.IsNullOrEmpty (message.Headers)) {
+                return true;
+            }
+            var headers = message.Headers.Split (new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            if (null == headers) {
+                return true;
+            }
+            foreach (var header in headers) {
+                if (header.StartsWith ("Content-Type:", StringComparison.OrdinalIgnoreCase)) {
+                    ContentType contentType;
+                    if (ContentType.TryParse (header, out contentType)) {
+                        if (!CanProcessCharset (contentType.Charset)) {
+                            Log.Error (Log.LOG_SEARCH, "CanProcessMessage: not indexing {0}", contentType.Charset);
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
     }
 
     public class NcPlainTextTokenizer : NcTokenizer
@@ -264,10 +305,13 @@ namespace NachoCore.Brain
         {
             var parts = new List<TextPart> ();
             if ("text" == part.ContentType.MediaType) {
-                if (("plain" == part.ContentType.MediaSubtype) ||
-                    ("html" == part.ContentType.MediaSubtype)) {
-                    TextPart body = (TextPart)part;
-                    parts.Add (body);
+                if (("plain" == part.ContentType.MediaSubtype) || ("html" == part.ContentType.MediaSubtype)) {
+                    if (CanProcessCharset (part.ContentType.Charset)) {
+                        TextPart body = (TextPart)part;
+                        parts.Add (body);
+                    } else {
+                        Log.Error (Log.LOG_BRAIN, "NcTokenizer: not indexing {0}", part.ContentType.Charset);
+                    }
                 }
             }
             return parts;

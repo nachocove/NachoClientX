@@ -316,6 +316,7 @@ namespace NachoCore.Brain
             return numScored;
         }
 
+        // Called when message set changes
         private int GleanEmailMessages (int count, Int64 accountId)
         {
             int numGleaned = 0;
