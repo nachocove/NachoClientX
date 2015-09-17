@@ -269,6 +269,28 @@ namespace NachoCore
                             new Trans { Event = (uint)DevEvt.E.AbateOff, Act = DoNop, State = (uint)Lst.Idle },
                         }
                     },
+                    new Node {
+                        State = (uint)Lst.Parked,
+                        Drop = new uint[] {
+                            (uint)DevEvt.E.AbateOn,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)DevEvt.E.SyncDone,
+                            (uint)DevEvt.E.SyncCancelled,
+                            (uint)DevEvt.E.SyncStopped,
+                            (uint)PcEvt.E.PendQOrHint,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)PcEvt.E.Park,
+                            (uint)DevEvt.E.SyncStart,
+                            (uint)DevEvt.E.AbateOff,
+                        },
+                        Invalid = new uint[] {
+                        },
+                        On = new Trans[] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
+                        }
+                    } 
                 }
             };
             Sm.Validate ();
