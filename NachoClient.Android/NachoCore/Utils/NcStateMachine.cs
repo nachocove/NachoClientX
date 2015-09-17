@@ -250,7 +250,7 @@ namespace NachoCore.Utils
                     if (null == hotNode) {
                         Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID TRANSITION",
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                        goto PossiblyLeave;
+                        NcAssert.True (false);
                     }
                     if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
                         Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
@@ -320,7 +320,7 @@ namespace NachoCore.Utils
                         var targetNode = TransTable.Where (x => target.State == x.State).SingleOrDefault ();
                         if (null == targetNode) {
                             errors.Add (string.Format ("{0}: State {1}, event code {2} has invalid target state {3}",
-                                Name,
+                                PseudoKlass,
                                 StateName (stateNode.State),
                                 EventName [eventCode],
                                 StateName (target.State)));
@@ -334,13 +334,13 @@ namespace NachoCore.Utils
                             errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Drop and Node.", 
                                 StateName (stateNode.State),
                                 EventName [eventCode],
-                                Name));
+                                PseudoKlass));
                         }
                         if (null != stateNode.Invalid && Array.Exists (stateNode.Invalid, y => eventCode == y)) {
                             errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Invalid and Node.", 
                                 StateName (stateNode.State),
                                 EventName [eventCode],
-                                Name));
+                                PseudoKlass));
                         }
                         break;
                     case 0:
@@ -356,12 +356,12 @@ namespace NachoCore.Utils
                             errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Invalid and Drop.",
                                 StateName (stateNode.State),
                                 EventName [eventCode],
-                                Name));
+                                PseudoKlass));
                         } else if (!inDrop && !inInvalid) {
                             errors.Add (string.Format ("{2}: State {0}, event code {1} exists in none of Node, Drop nor Invalid.",
                                 StateName (stateNode.State),
                                 EventName [eventCode],
-                                Name));
+                                PseudoKlass));
                         }
                         break;
                     default:
@@ -369,7 +369,7 @@ namespace NachoCore.Utils
                         errors.Add (string.Format ("{2}: State {0}, event code {1} exists in multiple Trans in same Node.",
                             StateName (stateNode.State),
                             EventName [eventCode],
-                            Name));
+                            PseudoKlass));
                         break;
                     }
                 }
