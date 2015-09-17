@@ -511,7 +511,6 @@
     <Compile Include="NachoUI.iOS\Support\Util.cs" />
     <Compile Include="NachoUI.iOS\Support\PlatformHelpers.cs" />
     <Compile Include="NachoUI.iOS\Support\CidImageProtocol.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\INachoMessageController.cs" />
     <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\ServerTracker.cs">
       <Link>NachoCore\BackEnd\NcCommStatus\ServerTracker.cs</Link>
@@ -1654,6 +1653,7 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\RtfConverter.cs" />
     <Compile Include="NachoUI.iOS\Support\CompoundScrollView.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageComposeHeaderView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

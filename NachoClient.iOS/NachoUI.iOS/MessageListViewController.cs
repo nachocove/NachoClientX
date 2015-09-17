@@ -16,7 +16,7 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate, INachoDateControllerParent
+    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate, INachoDateControllerParent
     {
         IMessageTableViewSource messageSource;
         IMessageTableViewSource searchResultsSource;
@@ -142,7 +142,7 @@ namespace NachoClient.iOS
             Util.SetAutomaticImageForButton (composeMailButton, "contact-newemail");
             composeMailButton.AccessibilityLabel = "New message";
             composeMailButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageListToCompose", this);
+                ComposeMessage ();
             };
 
             multiSelectButton = new NcUIBarButtonItem ();
@@ -491,29 +491,7 @@ namespace NachoClient.iOS
             if (null != blurry) {
                 blurry.CaptureView (this.View);
             }
-            if (segue.Identifier == "NachoNowToCompose") {
-                var vc = (MessageComposeViewController)segue.DestinationViewController;
-                var h = sender as SegueHolder;
-                if (null == h) {
-                    // Composing a message
-                    vc.SetAction (null, null);
-                } else {
-                    vc.SetAction ((McEmailMessageThread)h.value2, (string)h.value);
-                }
-                vc.SetOwner (this);
-                return;
-            }
             if (segue.Identifier == "SegueToNachoNow") {
-                return;
-            }
-            if (segue.Identifier == "MessageListToCompose") {
-                return;
-            }
-            if (segue.Identifier == "DraftsToCompose") {
-                var vc = (MessageComposeViewController)segue.DestinationViewController;
-                var h = sender as SegueHolder;
-                vc.SetDraft ((McEmailMessage)h.value);
-                vc.SetOwner (this);
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageView") {
@@ -561,14 +539,13 @@ namespace NachoClient.iOS
         {
             PerformSegue (identifier, sender);
         }
-
    
         ///  IMessageTableViewSourceDelegate
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
             var msg = messageSource.GetNachoEmailMessages ();
             if (msg.HasDraftsSemantics ()) {
-                PerformSegue ("DraftsToCompose", new SegueHolder (messageThread.SingleMessageSpecialCase ()));
+                ComposeDraft (messageThread.SingleMessageSpecialCase ());
             } else if (msg.HasOutboxSemantics ()) {
                 DealWithThreadInOutbox (messageThread);
             } else if (messageThread.HasMultipleMessages ()) {
@@ -588,7 +565,7 @@ namespace NachoClient.iOS
             var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
             if ((null == pending) || (NcResult.KindEnum.Error != pending.ResultKind)) {
                 var copy = EmailHelper.MoveFromOutboxToDrafts (message);
-                PerformSegue ("DraftsToCompose", new SegueHolder (copy));
+                ComposeDraft (copy);
                 return;
             }
 
@@ -601,19 +578,9 @@ namespace NachoClient.iOS
             NcAlertView.Show (this, "Edit Message", alertString,
                 new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
                     var copy = EmailHelper.MoveFromOutboxToDrafts (message);
-                    PerformSegue ("DraftsToCompose", new SegueHolder (copy));
+                    ComposeDraft (copy);
                     return;
                 }));
-        }
-
-
-        /// <summary>
-        /// INachoMessageControl delegate
-        /// </summary>
-        public void DismissChildMessageEditor (INachoMessageEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, null);
         }
 
         public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
@@ -624,35 +591,6 @@ namespace NachoClient.iOS
         public void DismissChildDateController (INachoDateController vc)
         {
             vc.DismissDateController (false, null);
-        }
-
-        /// <summary>
-        /// INachoMessageControl delegate
-        /// </summary>
-        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var m = thread.FirstMessageSpecialCase ();
-            if (null != m) {
-                var t = CalendarHelper.CreateTask (m);
-                vc.SetOwner (null);
-                vc.DismissMessageEditor (false, new Action (delegate {
-                    PerformSegue ("", new SegueHolder (t));
-                }));
-            }
-        }
-
-        /// <summary>
-        /// INachoMessageControl delegate
-        /// </summary>
-        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var m = thread.FirstMessageSpecialCase ();
-            if (null != m) {
-                var c = CalendarHelper.CreateMeeting (m);
-                vc.DismissMessageEditor (false, new Action (delegate {
-                    PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
-                }));
-            }
         }
 
         /// <summary>
@@ -813,6 +751,32 @@ namespace NachoClient.iOS
             messageSource.RefreshEmailMessages (out adds, out deletes);
             threadsNeedsRefresh = false;
             TableView.ReloadData ();
+        }
+
+        void ComposeMessage ()
+        {
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Present ();
+        }
+
+        void ComposeDraft (McEmailMessage draft)
+        {
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Message = draft;
+            composeViewController.Present ();
+        }
+
+        public void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action)
+        {
+            ComposeResponse (thread, action);
+        }
+
+        private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
+        {
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.MessageKind = action;
+            composeViewController.RelatedThread = thread;
+            composeViewController.Present ();
         }
     }
 

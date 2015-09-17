@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public class MessageTableViewSource : UITableViewSource, IMessageTableViewSource, INachoMessageEditorParent, INachoFolderChooserParent
+    public class MessageTableViewSource : UITableViewSource, IMessageTableViewSource, INachoFolderChooserParent
     {
         bool scrolling;
         string messageWhenEmpty;
@@ -881,30 +881,6 @@ namespace NachoClient.iOS
             var messageList = GetSelectedMessages ();
             NcEmailArchiver.Archive (messageList);
             MultiSelectCancel (tableView);
-        }
-
-        /// <summary>
-        /// INachoMessageEditor delegate
-        /// </summary>
-        public void DismissChildMessageEditor (INachoMessageEditor vc)
-        {
-            vc.DismissMessageEditor (true, null);
-        }
-
-        /// <summary>
-        /// INachoMessageEditor delegate
-        /// </summary>
-        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            Log.Info (Log.LOG_UI, "MessageTableViewSource: CreateTaskForEmailMessage");
-        }
-
-        /// <summary>
-        /// INachoMessageEditor delegate
-        /// </summary>
-        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            Log.Info (Log.LOG_UI, "MessageTableViewSource: CreateMeetingEmailForMessage");
         }
 
         /// <summary>

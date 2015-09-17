@@ -53,7 +53,7 @@ namespace NachoClient.iOS
                     return view as UIScrollView;
                 }
                 // ... or they may be like WKWebView and have a scrollView property
-                var propInfo = view.GetType ().GetProperty ("scrollView");
+                var propInfo = view.GetType ().GetProperty ("ScrollView");
                 if (propInfo != null) {
                     return propInfo.GetValue (view) as UIScrollView;
                 }
@@ -225,6 +225,10 @@ namespace NachoClient.iOS
 
         CompoundScrollViewContainerView CompoundContainerView;
 
+        public CompoundScrollView (CGRect frame) : base(frame)
+        {
+        }
+
         public void AddCompoundView (UIView view)
         {
             if (CompoundContainerView == null){
@@ -247,6 +251,7 @@ namespace NachoClient.iOS
             CompoundContainerView.Frame = Bounds;
             CompoundContainerView.Bounds = new CGRect(ContentOffset.X, ContentOffset.Y, Bounds.Width, Bounds.Height);
             CompoundContainerView.SetNeedsLayout ();
+            CompoundContainerView.LayoutIfNeeded ();
         }
 
 

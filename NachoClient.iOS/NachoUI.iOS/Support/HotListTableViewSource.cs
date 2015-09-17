@@ -12,7 +12,8 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public class HotListTableViewSource : UITableViewSource, INachoMessageEditorParent, INachoFolderChooserParent, IBodyViewOwner
+
+    public class HotListTableViewSource : UITableViewSource, INachoFolderChooserParent, IBodyViewOwner
     {
         INachoEmailMessages messageThreads;
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
@@ -404,13 +405,13 @@ namespace NachoClient.iOS
                 var toolbarEventArgs = e as MessageToolbarEventArgs;
                 switch (toolbarEventArgs.Action) {
                 case MessageToolbar.ActionType.REPLY:
-                    onReplyButtonClicked (messageThread, MessageComposeViewController.REPLY_ACTION);
+                    onReplyButtonClicked (messageThread, EmailHelper.Action.Reply);
                     break;
                 case MessageToolbar.ActionType.REPLY_ALL:
-                    onReplyButtonClicked (messageThread, MessageComposeViewController.REPLY_ALL_ACTION);
+                    onReplyButtonClicked (messageThread, EmailHelper.Action.ReplyAll);
                     break;
                 case MessageToolbar.ActionType.FORWARD:
-                    onReplyButtonClicked (messageThread, MessageComposeViewController.FORWARD_ACTION);
+                    onReplyButtonClicked (messageThread, EmailHelper.Action.Forward);
                     break;
                 case MessageToolbar.ActionType.ARCHIVE:
                     onArchiveButtonClicked (messageThread);
@@ -517,24 +518,6 @@ namespace NachoClient.iOS
             owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id)));
         }
 
-        /// INachoMessageEditorParent delegate
-        public void DismissChildMessageEditor (INachoMessageEditor vc)
-        {
-            vc.DismissMessageEditor (true, null);
-        }
-
-        /// INachoMessageEditorParent delegate
-        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            Log.Info (Log.LOG_UI, "MessageTableViewSource: CreateTaskForEmailMessage");
-        }
-
-        /// INachoMessageEditorParent delegate
-        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            Log.Info (Log.LOG_UI, "MessageTableViewSource: CreateMeetingEmailForMessage");
-        }
-
         /// INachoFolderChooserParent delegate
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
@@ -552,12 +535,12 @@ namespace NachoClient.iOS
             vc.DismissFolderChooser (true, null);
         }
 
-        void onReplyButtonClicked (McEmailMessageThread messageThread, string action)
+        void onReplyButtonClicked (McEmailMessageThread messageThread, EmailHelper.Action action)
         {
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToCompose", new SegueHolder (action, messageThread));
+            owner.RespondToMessageThread (messageThread, action);
         }
 
         void onChiliButtonClicked (McEmailMessageThread messageThread)
@@ -703,7 +686,11 @@ namespace NachoClient.iOS
         void IBodyViewOwner.LinkSelected (NSUrl url)
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
-                owner.PerformSegueForDelegate ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
+                string body;
+                var composeViewController = new MessageComposeViewController ();
+                composeViewController.Message = EmailHelper.MessageFromMailTo (NcApplication.Instance.Account, url.AbsoluteString, out body);
+                composeViewController.InitialText = body;
+                composeViewController.Present ();
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);
             }

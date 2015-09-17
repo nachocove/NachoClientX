@@ -143,7 +143,6 @@ namespace NachoClient.iOS
 
     public class UcAttachmentBlock : UIView
     {
-        protected int accountId;
         protected IUcAttachmentBlockDelegate owner;
         protected nfloat parentWidth;
         protected List<UcAttachmentCell> list = new List<UcAttachmentCell> ();
@@ -164,16 +163,14 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer toggleCompactTapped;
         protected UITapGestureRecognizer.Token toggleCompactTappedToken;
 
-        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, nfloat parentWidth, int cellHeight, bool editable)
+        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, nfloat parentWidth, int cellHeight, bool editable)
         {
             this.owner = owner;
-            this.accountId = accountId;
             this.parentWidth = parentWidth;
             this.BackgroundColor = UIColor.White;
             this.CELL_HEIGHT = cellHeight;
             this.editable = editable;
 
-            this.AutoresizingMask = UIViewAutoresizing.None;
             this.AutosizesSubviews = false;
 
             CreateView ();
@@ -281,6 +278,11 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void LayoutSubviews ()
+        {
+            Layout ();
+        }
+
         public void Layout ()
         {
             nfloat yOffset = 0;
@@ -321,7 +323,7 @@ namespace NachoClient.iOS
         private void ShowChooser()
         {
             if (null != owner) {
-                owner.PerformSegueForAttachmentBlock ("SegueToAddAttachment", new SegueHolder (null));
+                owner.ShowChooserForAttachmentBlock ();
             }
         }
 

@@ -1033,29 +1033,17 @@ namespace NachoClient
             }
         }
 
-        public static void EmailContact (string segueIdentifier, McContact contact, NcUIViewController owner)
+        public static string GetContactDefaultEmail (McContact contact)
         {
-            if (null == contact) {
-                ComplainAbout ("No Email Address", "This contact does not have an email address.");
-                return;
+            if (1 == contact.EmailAddresses.Count) {
+                return contact.GetEmailAddress ();
             }
-            if (0 == contact.EmailAddresses.Count) {
-                if (contact.CanUserEdit ()) {
-                    owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
-                } else {
-                    ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+            foreach (var e in contact.EmailAddresses) {
+                if (e.IsDefault) {
+                    return e.Value;
                 }
-            } else if (1 == contact.EmailAddresses.Count) {
-                owner.PerformSegue ("SegueToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
-            } else {
-                foreach (var e in contact.EmailAddresses) {
-                    if (e.IsDefault) {
-                        owner.PerformSegue ("SegueToMessageCompose", new SegueHolder (e.Value));
-                        return;
-                    }
-                }
-                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
             }
+            return null;
         }
 
         public static UIColor GetCircleColorForEmail (string displayEmailAddress, int accountId)

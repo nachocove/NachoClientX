@@ -225,28 +225,6 @@ namespace NachoClient.iOS
             owner.ContactSelectedCallback (contact);
         }
 
-        protected void SwipedQuickMessage (string address)
-        {
-            Log.Info (Log.LOG_UI, "Swiped Quick Message");
-
-            if (string.IsNullOrEmpty (address)) {
-                Util.ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
-                return;
-            }
-            owner.PerformSegueForDelegate ("ContactsToQuickMessageCompose", new SegueHolder (address));
-        }
-
-        protected void SwipedEmail (string address)
-        {
-            Log.Info (Log.LOG_UI, "Swiped Email Compose");
-
-            if (string.IsNullOrEmpty (address)) {
-                Util.ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
-                return;
-            }
-            owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (address));
-        }
-
         protected void SwipedCall (string number)
         {
             Log.Info (Log.LOG_UI, "Swiped Call");

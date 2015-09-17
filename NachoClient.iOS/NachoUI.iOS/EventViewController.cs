@@ -928,14 +928,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier == "SegueToMailTo") {
-                var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var url = (string)holder.value;
-                dc.SetMailToUrl (url);
-                return;
-            }
-
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -1565,7 +1557,7 @@ namespace NachoClient.iOS
         public void LinkSelected (NSUrl url)
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
-                PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
+                ComposeMessage (url);
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);
             }
@@ -1574,6 +1566,15 @@ namespace NachoClient.iOS
         void IBodyViewOwner.DismissView ()
         {
             NavigationController.PopViewController (true);
+        }
+
+        private void ComposeMessage (NSUrl url)
+        {
+            string body;
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Message = EmailHelper.MessageFromMailTo (NcApplication.Instance.Account, url.AbsoluteString, out body);
+            composeViewController.InitialText = body;
+            composeViewController.Present ();
         }
 
         #endregion

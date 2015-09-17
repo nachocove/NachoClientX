@@ -500,6 +500,44 @@ namespace NachoCore.Utils
             return true;
         }
 
+        public static McEmailMessage MessageFromMailTo (McAccount account, string urlString, out string body)
+        {
+            List<NcEmailAddress> addresses;
+            string subject;
+            if (!ParseMailTo(urlString, out addresses, out subject, out body)) {
+                subject = "";
+                body = null;
+                addresses = new List<NcEmailAddress> ();
+            }
+            var message = McEmailMessage.MessageWithSubject (account, subject);
+            var toList = new List<string> ();
+            var ccList = new List<string> ();
+            var bccList = new List<string> ();
+            MailboxAddress mailbox;
+            foreach (var address in addresses) {
+                mailbox = address.ToMailboxAddress (mustUseAddress: true);
+                if (mailbox != null) {
+                    if (address.kind == NcEmailAddress.Kind.To) {
+                        toList.Add (mailbox.ToString ());
+                    } else if (address.kind == NcEmailAddress.Kind.Cc) {
+                        ccList.Add (mailbox.ToString ());
+                    } else if (address.kind == NcEmailAddress.Kind.Bcc) {
+                        bccList.Add (mailbox.ToString ());
+                    }
+                }
+            }
+            if (toList.Count > 0) {
+                message.To = String.Join (",", toList);
+            }
+            if (ccList.Count > 0) {
+                message.To = String.Join (",", ccList);
+            }
+            if (bccList.Count > 0) {
+                message.To = String.Join (",", bccList);
+            }
+            return message;
+        }
+
         private static bool IsAccountAlias (InternetAddress accountInternetAddress, string match)
         {
             if (null == accountInternetAddress) {

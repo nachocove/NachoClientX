@@ -14,1575 +14,396 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
 
+using WebKit;
+
 namespace NachoClient.iOS
 {
-    public partial class MessageComposeViewController : NcUIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent
+
+    public interface MessageComposeViewDelegate {
+
+        void MessageComposeViewDidBeginSend (MessageComposeViewController vc);
+        void MessageComposeViewDidSaveDraft (MessageComposeViewController vc);
+        void MessageComposeViewDidCancel (MessageComposeViewController vc);
+
+    }
+
+    public partial class MessageComposeViewController : NcUIViewController, IWKNavigationDelegate, MessageComposeHeaderViewDelegate, QuickResponseViewControllerDelegate
     {
+
+        #region Properties
+
+        public MessageComposeViewDelegate ComposeDelegate;
+        public bool StartWithQuickResponse;
+        public EmailHelper.Action MessageKind = EmailHelper.Action.Send;
+        public McEmailMessageThread RelatedThread;
+        public McCalendar RelatedCalendarItem;
+        public McEmailMessage Message;
+        public MimeMessage MimeMessage;
+        public string InitialText;
+        public List<McAttachment> InitialAttachments;
+        CompoundScrollView ScrollView;
+        MessageComposeHeaderView HeaderView;
+        WKWebView WebView;
+        McAccount Account;
+        NcUIBarButtonItem CloseButton;
+        NcUIBarButtonItem SendButton;
+        NcUIBarButtonItem QuickResponseButton;
+        UIAlertController CloseAlertController;
+        bool HasShownOnce;
+
+        enum MessagePreparationStatus {
+            NotStarted,
+            Preparing,
+            Done
+        };
+
+        MessagePreparationStatus MessagePreparationState = MessagePreparationStatus.NotStarted;
+
+        NSObject BackgroundNotification;
+        NSObject ContentSizeCategoryChangedNotification;
+
         protected static readonly long EMAIL_SIZE_ALERT_LIMIT = 2000000;
 
-        // Strings to be used when calling SetAction()
-        public static readonly string REPLY_ACTION = "Reply";
-        public static readonly string REPLY_ALL_ACTION = "ReplyAll";
-        public static readonly string FORWARD_ACTION = "Forward";
+        #endregion
 
-        public INachoMessageEditorParent owner;
+        #region Constructors
 
-        protected McAccount account;
-        protected McCalendar calendarInviteItem;
-
-        protected McEmailMessage referencedMessage;
-        // The message being forwarded or replied to, if any
-        protected EmailHelper.Action action;
-        // The reason for sending this message
-        protected McEmailMessage draftMessage;
-
-        protected bool calendarInviteIsSet;
-        bool suppressLayout;
-
-        UcAddressBlock toView;
-        UcAddressBlock ccView;
-        UcAddressBlock bccView;
-        UcAttachmentBlock attachmentView;
-
-        UILabel subjectLabel;
-        UITextField subjectField;
-        UIView intentView;
-        UILabel intentLabel;
-        UILabel intentDisplayLabel;
-        bool ccHasBeenOpened;
-        bool alwaysShowIntent;
-        bool alwaysShowAttachments;
-
-        UITextView bodyTextView;
-        UIButton showQuotedTextButton;
-
-        UIView toViewHR;
-        UIView ccViewHR;
-        UIView bccViewHR;
-        UIView subjectLabelHR;
-        UIView intentLabelHR;
-        UIView attachmentViewHR;
-
-        List<NcEmailAddress> PresetAddresses;
-        string PresetSubject;
-        string EmailTemplate;
-        List<McAttachment> PresetAttachmentList;
-        bool startInSubjectField;
-        bool startInBodyField;
-
-        // If this is a reply or forward, keep track of the quoted text that is inserted.
-        // This makes it possible to check later if the user changed the text.
-        private NSAttributedString initialQuotedText = null;
-
-        protected UIFont composeFont = A.Font_AvenirNextRegular14;
-        protected UIColor composeColor = A.Color_NachoDarkText;
-
-        protected UIFont labelFont = A.Font_AvenirNextMedium14;
-        protected UIColor labelColor = A.Color_NachoDarkText;
-
-        protected nfloat LINE_HEIGHT = 42;
-        protected nfloat LEFT_INDENT = 15;
-        protected nfloat RIGHT_INDENT = 15;
-        protected nfloat BODY_TOP_MARGIN = 10;
-        protected nfloat BODY_LEFT_MARGIN = 10;
-        protected nfloat BODY_RIGHT_MARGIN = 10;
-        protected nfloat BODY_BOTTOM_MARGIN = 10;
-
-        protected NcQuickResponse.QRTypeEnum QRType = NcQuickResponse.QRTypeEnum.None;
-
-        UIBarButtonItem sendButton;
-        UIBarButtonItem cancelButton;
-        UIBarButtonItem quickResponseButton;
-        protected McEmailMessage.IntentType messageIntent = McEmailMessage.IntentType.None;
-        protected MessageDeferralType messageIntentDateType;
-        protected DateTime messageIntentDateTime;
-
-        protected void RestoreDraft ()
+        public MessageComposeViewController () : base ()
         {
-            subjectField.Text = draftMessage.Subject ?? "";
-            toView.SetAddressList (draftMessage.To, NcEmailAddress.Kind.To);
-            ccView.SetAddressList (draftMessage.Cc, NcEmailAddress.Kind.Cc);
-            bccView.SetAddressList (draftMessage.Bcc, NcEmailAddress.Kind.Bcc);
-
-            startInSubjectField = !String.IsNullOrEmpty(draftMessage.To) && String.IsNullOrEmpty(draftMessage.Subject);
-            startInBodyField = !String.IsNullOrEmpty(draftMessage.To) && !String.IsNullOrEmpty(draftMessage.Subject);
-
-            QRType = draftMessage.QRType;
-            messageIntent = draftMessage.Intent;
-            messageIntentDateTime = draftMessage.IntentDate;
-            messageIntentDateType = draftMessage.IntentDateType;
-
-            var body = draftMessage.GetBody ();
-
-            // Body of draft is always MIME and always complete
-            NcAssert.NotNull (body);
-            NcAssert.True (McBody.IsNontruncatedBodyComplete (body));
-            NcAssert.True (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType);
-
-            var mimeMessage = MimeHelpers.LoadMessage (body);
-
-            // This code will need to get a lot more sophisticated
-            // but for now let's just handle the simple case of text.
-
-            var bodyText = ExtractBodyTextAsNSAttributedString (mimeMessage);
-            bodyTextView.AttributedText = bodyText;
-            bodyTextView.Font = UIFont.PreferredBody;
-
-            if (0 == draftMessage.ReferencedEmailId) {
-                action = EmailHelper.Action.Send;
-            } else {
-                action = (draftMessage.ReferencedIsForward ? EmailHelper.Action.Forward : EmailHelper.Action.ReplyAll);
-                referencedMessage = McEmailMessage.QueryById<McEmailMessage> (draftMessage.ReferencedEmailId);
-                if (null == referencedMessage) {
-                    Log.Warn (Log.LOG_EMAIL, "Restore draft could not find original message {0}", draftMessage.ReferencedEmailId);
-                    action = EmailHelper.Action.Send;
-                }
-            }
-            showQuotedTextButton.Hidden = draftMessage.ReferencedBodyIsIncluded;
-
-            foreach (var mimeAttachment in mimeMessage.Attachments) {
-                var mimePartAttachment = (MimePart)mimeAttachment;
-                var attachment = McAttachment.InsertFile (draftMessage.AccountId, (stream) => mimePartAttachment.ContentObject.DecodeTo (stream));
-                attachment.SetDisplayName (mimePartAttachment.FileName);
-                attachmentView.Append (attachment);
-            }
+            Account = NcApplication.Instance.Account;
         }
 
-        public void SaveDraft ()
+        #endregion
+
+        #region Presenters
+
+        public void Present (Action completionHandler = null)
         {
-            var mimeMessage = EmailHelper.CreateMessage (account, toView.AddressList, ccView.AddressList, bccView.AddressList);
-            mimeMessage.Subject = subjectField.Text ?? "";
-
-            var bodyAttributedText = bodyTextView.AttributedText;
-
-            // Convert to Helvetica because it's widely available
-            var mutableBodyAttributedText = new NSMutableAttributedString (bodyAttributedText);
-            mutableBodyAttributedText.AddAttribute (UIStringAttributeKey.Font, UIFont.FromName ("Helvetica", 12), new NSRange (0, mutableBodyAttributedText.Length));
-
-            using (var body = new NcMimeBodyBuilder ()) {
-                body.TextBody = bodyTextView.Text;
-
-                var length = Math.Min (bodyTextView.Text.Length, 256);
-                var preview = bodyTextView.Text.Substring (0, length);
-
-                NSError error = null;
-                NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
-                                      new NSRange (0, mutableBodyAttributedText.Length),
-                                      new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
-                                      ref error);
-                body.HtmlBody = htmlData.ToString ();
-
-                foreach (var attachment in attachmentView.AttachmentList) {
-                    body.Attachments.Add (attachment.GetFilePath ());
-                }
-
-                mimeMessage.Body = body.ToMessageBody ();
-
-                var message = MimeHelpers.AddToDb (account.Id, mimeMessage);
-                message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
-                    var target = (McEmailMessage)record;
-                    target.BodyPreview = preview;
-                    target.Intent = messageIntent;
-                    target.IntentDate = messageIntentDateTime;
-                    target.IntentDateType = messageIntentDateType;
-                    target.QRType = QRType;
-
-                    target.ReferencedEmailId = (null == referencedMessage) ? 0 : referencedMessage.Id;
-                    target.ReferencedIsForward = (action == EmailHelper.Action.Forward);
-                    target.ReferencedBodyIsIncluded = !calendarInviteIsSet && null != initialQuotedText;
-                    return true;
-                });
-
-                EmailHelper.SaveEmailMessageInDrafts (message);
-                if (null != draftMessage) {
-                    EmailHelper.DeleteEmailMessageFromDrafts (draftMessage);
-                }
-            }
+            var window = UIApplication.SharedApplication.Delegate.GetWindow ();
+            var navigationController = new UINavigationController (this);
+            NachoClient.Util.ConfigureNavBar (false, navigationController);
+            window.RootViewController.PresentViewController (navigationController, true, completionHandler);
         }
 
-        public MessageComposeViewController (IntPtr handle) : base (handle)
-        {
-        }
+        #endregion
 
-        public void SetOwner (INachoMessageEditorParent o)
-        {
-            owner = o;
-        }
-
-        public void SetDraft (McEmailMessage draftMessage)
-        {
-            this.draftMessage = draftMessage;
-        }
-
-        public void SetQRType (NcQuickResponse.QRTypeEnum QRType)
-        {
-            this.QRType = QRType;
-        }
-
-        public void SetMailToUrl (string urlString)
-        {
-            List<NcEmailAddress> addresses = new List<NcEmailAddress> ();
-            string subject;
-            string body;
-
-            EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body);
-
-            PresetAddresses = addresses;
-            PresetSubject = subject;
-            EmailTemplate = body;
-
-            alwaysShowIntent = !String.IsNullOrEmpty (PresetSubject);
-            startInSubjectField = (null != PresetAddresses) && String.IsNullOrEmpty (PresetSubject);
-            startInBodyField = (null != PresetAddresses) && !String.IsNullOrEmpty (PresetSubject) && !String.IsNullOrEmpty (body);
-        }
-
-        // Can be called by owner to set a pre-existing To: address, subject, email template and/or attachment
-        public void SetEmailPresetFields (NcEmailAddress toAddress = null, string subject = null, string emailTemplate = null, List<McAttachment> attachmentList = null, bool isQR = false)
-        {
-            if (null != toAddress) {
-                PresetAddresses = new List<NcEmailAddress> ();
-                PresetAddresses.Add (toAddress);
-            }
-            PresetSubject = subject;
-            EmailTemplate = emailTemplate;
-            PresetAttachmentList = attachmentList;
-            alwaysShowIntent = !String.IsNullOrEmpty (PresetSubject);
-            startInSubjectField = (null != PresetAddresses) && String.IsNullOrEmpty (PresetSubject);
-            startInBodyField = (null != PresetAddresses) && !String.IsNullOrEmpty (PresetSubject) && !String.IsNullOrEmpty (emailTemplate);
-        }
+        #region View Lifecycle
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
-            composeFont = UIFont.PreferredBody;
+            View.BackgroundColor = UIColor.White;
 
-            account = NcApplication.Instance.Account;
+            // Nav bar
+            CloseButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (CloseButton, "icn-close");
+            CloseButton.AccessibilityLabel = "Close";
+            CloseButton.Clicked += Close;
 
-            sendButton = new NcUIBarButtonItem ();
-            cancelButton = new NcUIBarButtonItem ();
-            quickResponseButton = new NcUIBarButtonItem ();
+            SendButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (SendButton, "icn-send");
+            SendButton.AccessibilityLabel = "Send";
+            SendButton.Clicked += Send;
 
-            Util.SetAutomaticImageForButton (quickResponseButton, "contact-quickemail");
-            quickResponseButton.AccessibilityLabel = "Quick response";
+            QuickResponseButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (QuickResponseButton, "contact-quickemail");
+            QuickResponseButton.AccessibilityLabel = "Quick response";
+            QuickResponseButton.Clicked += QuickReply;
 
-            Util.SetAutomaticImageForButton (cancelButton, "icn-close");
-            cancelButton.AccessibilityLabel = "Close";
-
-            Util.SetAutomaticImageForButton (sendButton, "icn-send");
-            sendButton.AccessibilityLabel = "Send";
-
-            NavigationItem.LeftBarButtonItem = cancelButton;
-
+            NavigationItem.LeftBarButtonItem = CloseButton;
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                sendButton,
-                quickResponseButton,
+                SendButton,
+                QuickResponseButton,
             };
 
-            quickResponseButton.Clicked += (object sender, EventArgs e) => {
-                View.EndEditing (true);
-                if (EmailHelper.IsReplyAction (action)) {
-                    QRType = NcQuickResponse.QRTypeEnum.Reply;
-                } else if (EmailHelper.IsForwardAction (action)) {
-                    QRType = NcQuickResponse.QRTypeEnum.Forward;
-                } else {
-                    QRType = NcQuickResponse.QRTypeEnum.Compose;
-                }
-                ShowQuickResponses ();
-            };
+            // Content Area
+            ScrollView = new CompoundScrollView (View.Bounds);
+            ScrollView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            ScrollView.AlwaysBounceVertical = true;
 
-            sendButton.Clicked += (object sender, EventArgs e) => {
-                View.EndEditing (true);
-                MaybeSendMessageAndClose ();
-            };
+            HeaderView = new MessageComposeHeaderView (ScrollView.Bounds);
+            HeaderView.Frame = new CGRect (0.0, 0.0, ScrollView.Bounds.Width, HeaderView.PreferredHeight);
+            HeaderView.HeaderDelegate = this;
 
-            cancelButton.Clicked += (sender, e) => {
-                View.EndEditing (true);
-                NcActionSheet.Show (View, this,
-                    new NcAlertAction ("Discard Draft", NcAlertActionStyle.Destructive, () => {
-                        owner = null;
-                        if (null == NavigationController) {
-                            Log.Error (Log.LOG_UI, "MessageComposeView null navigation controller for discard draft");
-                        }
-                        NavigationController.PopViewController (true);
-                    }),
-                    new NcAlertAction ("Save Draft", () => {
-                        SaveDraft ();
-                        if (null == NavigationController) {
-                            Log.Error (Log.LOG_UI, "MessageComposeView null navigation controller for save draft");
-                        }
-                        NavigationController.PopViewController (true);
-                    }),
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
-                );
-            };
+            var config = new WKWebViewConfiguration ();
+            config.SuppressesIncrementalRendering = true;
+            WebView = new WKWebView (ScrollView.Bounds, config);
+            WebView.NavigationDelegate = this;
 
-            alwaysShowAttachments = true;
-            suppressLayout = true;
-
-            CreateView ();
-
-            if (null != draftMessage) {
-                RestoreDraft ();
-            } else if (EmailHelper.IsForwardOrReplyAction (action)) {
-                InitializeMessageForAction ();
-            }
-
-            showQuotedTextButton.Hidden = (null == referencedMessage);
-
-            suppressLayout = false;
-                
-            if (EmailHelper.IsReplyAction (action)) {
-                ConfigureBodyEditView (false);
-                bodyTextView.BecomeFirstResponder ();
-                bodyTextView.SelectedRange = new NSRange (0, 0);
-            } else if (startInSubjectField) {
-                ConfigureSubjectEditView (false);
-                subjectField.BecomeFirstResponder ();
-            } else if (startInBodyField) {
-                ConfigureBodyEditView (false);
-                bodyTextView.BecomeFirstResponder ();
-                if (EmailTemplate == null) {
-                    bodyTextView.SelectedRange = new NSRange (0, 0);
-                } else {
-                    bodyTextView.SelectedRange = new NSRange (EmailTemplate.Length, 0);
-                }
-            } else if (calendarInviteIsSet) {
-                toView.SetEditFieldAsFirstResponder ();
-            } else {
-                ConfigureToView (false);
-                toView.SetEditFieldAsFirstResponder ();
-            }
+            ScrollView.AddCompoundView (HeaderView);
+            ScrollView.AddCompoundView (WebView);
+            View.AddSubview (ScrollView);
         }
-
-        NSObject backgroundNotification;
-        NSObject contentSizeCategoryChangedNotification;
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-                if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
-                    this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
-                }
-            }
-            backgroundNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
-            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
 
-            if (NcQuickResponse.QRTypeEnum.None != QRType) {
-                ShowQuickResponses ();
-            }
+            StartPreparingMessage ();
 
-            if (null != referencedMessage) {
+            RegisterForNotifications ();
+
+            if (null != RelatedThread) {
                 var now = DateTime.UtcNow;
-                NcBrain.MessageReplyStatusUpdated (referencedMessage, now, 0.1);
+                var message = RelatedThread.FirstMessageSpecialCase ();
+                NcBrain.MessageReplyStatusUpdated (message, now, 0.1);
             }
+
+            if (!HasShownOnce) {
+                if (StartWithQuickResponse) {
+                    ShowQuickResponses ();
+                }
+                HasShownOnce = true;
+            }
+
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
         }
 
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-            }
-            NSNotificationCenter.DefaultCenter.RemoveObserver (backgroundNotification);
-            NSNotificationCenter.DefaultCenter.RemoveObserver (contentSizeCategoryChangedNotification);
+            UnregisterNotifications ();
+        }
 
-            QRType = NcQuickResponse.QRTypeEnum.None;
+        public override void ViewDidDisappear (bool animated)
+        {
+            base.ViewDidDisappear (animated);
+        }
+
+        #endregion
+
+        #region Layout
+
+        private void UpdateScrollViewSize ()
+        {
+            CGSize contentSize = new CGSize (ScrollView.Bounds.Width, 0);
+            contentSize.Height += HeaderView.Frame.Height;
+            contentSize.Height += WebView.ScrollView.ContentSize.Height;
+            if (WebView.ScrollView.ContentSize.Width > contentSize.Width) {
+                contentSize.Width = WebView.ScrollView.ContentSize.Width;
+            }
+            ScrollView.ContentSize = contentSize;
+        }
+
+        private void LayoutScrollView ()
+        {
+            UpdateScrollViewSize ();
+            ScrollView.SetNeedsLayout ();
+            ScrollView.LayoutIfNeeded ();
+        }
+
+        public void MessageComposeHeaderViewDidChangeHeight (MessageComposeHeaderView view)
+        {
+            LayoutScrollView ();
+        }
+
+        #endregion
+
+        #region User Actions
+
+        public void Send (object sender, EventArgs e)
+        {
+            View.EndEditing (true);
+            // TODO: send (can happen in background)
+            if (ComposeDelegate != null) {
+                ComposeDelegate.MessageComposeViewDidBeginSend (this);
+            }
+            DismissViewController (true, null);
+        }
+
+        public void QuickReply (object sender, EventArgs e)
+        {
+            View.EndEditing (true);
+            ShowQuickResponses ();
+        }
+
+        public void Close (object sender, EventArgs e)
+        {
+            View.EndEditing (true);
+            CloseAlertController = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
+            CloseAlertController.AddAction (UIAlertAction.Create ("Discard Draft", UIAlertActionStyle.Destructive, Discard));
+            CloseAlertController.AddAction (UIAlertAction.Create ("Save Draft", UIAlertActionStyle.Default, Save));
+            CloseAlertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction obj) => { CloseAlertController = null; }));
+            PresentViewController (CloseAlertController, true, null);
+        }
+
+        public void Discard (UIAlertAction obj)
+        {
+            CloseAlertController = null;
+            // TODO: delete message (can happen in background)
+            if (ComposeDelegate != null) {
+                ComposeDelegate.MessageComposeViewDidCancel (this);
+            }
+            DismissViewController (true, null);
+        }
+
+        public void Save (UIAlertAction obj)
+        {
+            CloseAlertController = null;
+            // TODO: save message (can happen in background)
+            if (ComposeDelegate != null) {
+                ComposeDelegate.MessageComposeViewDidCancel (this);
+            }
+            DismissViewController (true, null);
+        }
+
+        public void QuickResponseViewDidSelectResponse (QuickResponseViewController vc, NcQuickResponse.QRTypeEnum whatType, NcQuickResponse.QuickResponse response, McEmailMessage.IntentType intentType)
+        {
+            if (whatType == NcQuickResponse.QRTypeEnum.Compose) {
+                Message.Subject = response.subject;
+                // TODO: update header view
+            }
+            if (MessagePreparationState == MessagePreparationStatus.Done) {
+            } else {
+                InitialText = response.body;
+            }
+//            if (NcQuickResponse.QRTypeEnum.Compose == whichType) {
+//                alwaysShowIntent = true;
+//                subjectField.Text = selectedResponse.subject;
+//            }
+//
+//            var attributes = new CoreText.CTStringAttributes ();
+//            attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
+//
+//            var response = new NSMutableAttributedString (selectedResponse.body, attributes);
+//            response.Append (bodyTextView.AttributedText);
+//            bodyTextView.AttributedText = response;
+//
+//            bodyTextView.BecomeFirstResponder ();
+//            if (bodyTextView.Text.Contains ("\n")) {
+//                bodyTextView.SelectedRange = new NSRange (bodyTextView.Text.IndexOf ("\n"), 0);
+//            }
+
+
+//            this.messageIntent = intent;
+//            this.messageIntentDateType = intentDateType;
+//            this.messageIntentDateTime = intentDateTime;
+//            intentDisplayLabel.Text = NcMessageIntent.GetIntentString (intent, intentDateType, intentDateTime);
+        }
+
+        #endregion
+
+        #region Message Preparation
+
+        private void StartPreparingMessage ()
+        {
+            if (MessagePreparationState != MessagePreparationStatus.NotStarted) {
+                return;
+            }
+            MessagePreparationState = MessagePreparationStatus.Preparing;
+            if (Message == null) {
+                Message = McEmailMessage.MessageWithSubject (Account, "");
+            }
+            if (Message.Id == 0) {
+                if (InitialText == null) {
+                    InitialText = "";
+                }
+                if (!String.IsNullOrEmpty (Account.Signature)) {
+                    InitialText += "\n\n" + Account.Signature;
+                }
+                if (RelatedThread != null) {
+                    var message = RelatedThread.FirstMessageSpecialCase ();
+                }
+                if (!String.IsNullOrWhiteSpace (InitialText)) {
+                }
+                if (InitialAttachments != null) {
+                    CopyInitialAttachments ();
+                }
+            } else {
+                MessagePreparationState = MessagePreparationStatus.Done;
+            }
+
+            // Fake web view load for testing layout
+            NSUrl url = new NSUrl("http://www.nytimes.com");
+            NSUrlRequest request = new NSUrlRequest (url);
+            WebView.LoadRequest (request);
+        }
+
+        private void CopyInitialAttachments ()
+        {
+            //                AttachmentHelper.CopyAttachment (attachment)
+        }
+
+        #endregion
+
+        #region Web View Delegate
+
+        [Export ("webView:didFinishNavigation:")]
+        public void DidFinishNavigation (WebKit.WKWebView webView, WebKit.WKNavigation navigation)
+        {
+            // The navigation is done, meaning the HTML has loaded in the web view, so we now have to
+            // tell our scroll view how big the webview is.
+            // Unfortunately, WebView.ScrollView.ContentSize.Height is still 0 at this point.
+            // It's a timing issue, and so we'll wait until it's not 0
+            UpdateScrollViewSizeOnceWebViewIsSized ();
+        }
+
+        [Export ("updateScrollViewSizeOnceWebViewIsSized")]
+        private void UpdateScrollViewSizeOnceWebViewIsSized ()
+        {
+            // The basic idea is to keep scheduling ourselves in the run loop until we see a non-zero height.
+            // Using the run loop is crucuial because it means we won't block anything.
+            // Experiements show this usually takes anywhere from 1-4 itereations.
+            if (WebView.ScrollView.ContentSize.Height == 0.0) {
+                var selector = new ObjCRuntime.Selector ("updateScrollViewSizeOnceWebViewIsSized");
+                var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
+                NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
+            } else {
+                UpdateScrollViewSize ();
+            }
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private void ShowQuickResponses ()
+        {
+            NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
+
+            if (EmailHelper.IsReplyAction (MessageKind)) {
+                responseType = NcQuickResponse.QRTypeEnum.Reply;
+            } else if (EmailHelper.IsForwardAction (MessageKind)) {
+                responseType = NcQuickResponse.QRTypeEnum.Forward;
+            }
+
+            // TODO: show view controller
+        }
+
+        #endregion
+
+        #region Notifications
+
+        private void RegisterForNotifications ()
+        {
+            BackgroundNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
+            ContentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
+        }
+
+        private void UnregisterNotifications ()
+        {
+            NSNotificationCenter.DefaultCenter.RemoveObserver (BackgroundNotification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (ContentSizeCategoryChangedNotification);
         }
 
         private void OnBackgroundNotification (NSNotification notification)
         {
-            if (null != this.NavigationController) {
-                var actionController = this.NavigationController.PresentedViewController as UIAlertController;
-                if (null != actionController) {
-                    actionController.DismissViewController (false, null);
-                }
+            if (null != CloseAlertController) {
+                CloseAlertController.DismissViewController (false, null);
             }
         }
 
         void OnContentSizeCategoryChangedNotification (NSNotification notification)
         {
-            if (null != bodyTextView) {
-                bodyTextView.Font = UIFont.PreferredBody;
-            }
-            if (null != showQuotedTextButton) {
-                showQuotedTextButton.TitleLabel.Font = UIFont.PreferredCaption1;
-            }
+            // TODO: can we do anything to update the webview font size?
         }
 
-        public override bool HidesBottomBarWhenPushed {
-            get {
-                return true;
-            }
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            var blurry = segue.DestinationViewController as BlurryViewController;
-            if (null != blurry) {
-                blurry.CaptureView (this.View);
-            }
-
-            if (segue.Identifier.Equals ("ComposeToContactChooser")) {
-                var dc = (INachoContactChooser)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var address = (NcEmailAddress)holder.value;
-                dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
-                return;
-            }
-            if (segue.Identifier.Equals ("ComposeToContactSearch")) {
-                var dc = (INachoContactChooser)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var address = (NcEmailAddress)holder.value;
-                dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
-                return;
-            }
-            if (segue.Identifier.Equals ("ComposeToNachoNow")) {
-                return;
-            }
-            if (segue.Identifier == "SegueToQuickResponse") {
-                var vc = (QuickResponseViewController)segue.DestinationViewController;
-                vc.SetOwner (this);
-                vc.SetProperties (QRType);
-                return;
-            }
-            if (segue.Identifier == "SegueToIntentSelection") {
-                var vc = (IntentSelectionViewController)segue.DestinationViewController;
-                vc.SetOwner (this);
-                vc.SetDateControllerOwner (this);
-                return;
-            }
-
-            if (segue.Identifier.Equals ("SegueToAddAttachment")) {
-                var dc = (AddAttachmentViewController)segue.DestinationViewController;
-                dc.SetOwner (this, account);
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
-        protected void CreateView ()
-        {
-            View.BackgroundColor = UIColor.White;
-            scrollView.BackgroundColor = UIColor.White;
-            scrollView.AutosizesSubviews = false;
-            scrollView.AutoresizingMask = UIViewAutoresizing.None;
-
-            contentView.BackgroundColor = UIColor.White;
-            contentView.Layer.CornerRadius = 6;
-            contentView.Layer.MasksToBounds = true;
-
-            toView = new UcAddressBlock (this, "To:", null, View.Frame.Width);
-            ccView = new UcAddressBlock (this, "Cc:", "Cc/Bcc:", View.Frame.Width);
-            bccView = new UcAddressBlock (this, "Bcc:", null, View.Frame.Width);
-
-            toViewHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
-            toViewHR.BackgroundColor = A.Color_NachoNowBackground;
-
-            ccViewHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
-            ccViewHR.BackgroundColor = A.Color_NachoNowBackground;
-
-            bccViewHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
-            bccViewHR.BackgroundColor = A.Color_NachoNowBackground;
-
-            subjectLabelHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
-            subjectLabelHR.BackgroundColor = A.Color_NachoNowBackground;
-
-            intentLabelHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
-            intentLabelHR.BackgroundColor = A.Color_NachoNowBackground;
-
-            attachmentViewHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
-            attachmentViewHR.BackgroundColor = A.Color_NachoNowBackground;
-
-            subjectLabel = new UILabel ();
-            subjectLabel.Text = "Subject: ";
-            subjectLabel.Font = labelFont;
-            subjectLabel.TextColor = labelColor;
-            subjectLabel.SizeToFit ();
-            ViewFramer.Create (subjectLabel).X (LEFT_INDENT).Height (LINE_HEIGHT);
-
-            subjectField = new UITextField ();
-            subjectField.AccessibilityLabel = "Subject";
-            subjectField.Font = labelFont;
-            subjectField.TextColor = labelColor;
-            subjectField.Placeholder = "";
-            if (!String.IsNullOrEmpty (PresetSubject)) {
-                alwaysShowIntent = true;
-                subjectField.Text += PresetSubject;
-            }
-            subjectField.SizeToFit ();
-            ViewFramer.Create (subjectField).X (subjectLabel.Frame.X + subjectLabel.Frame.Width).Width (View.Frame.Width - subjectField.Frame.X).Height (LINE_HEIGHT);
-
-            intentView = new UIView (new CGRect (0, 0, View.Frame.Width, LINE_HEIGHT));
-            intentView.BackgroundColor = UIColor.White;
-
-            intentLabel = new UILabel ();
-            intentLabel.Text = "Intent: ";
-            intentLabel.Font = labelFont;
-            intentLabel.TextColor = labelColor;
-            intentLabel.SizeToFit ();
-            ViewFramer.Create (intentLabel).X (LEFT_INDENT).Height (LINE_HEIGHT);
-            alwaysShowIntent = false;
-
-            intentDisplayLabel = new UILabel ();
-            intentDisplayLabel.Font = labelFont;
-            intentDisplayLabel.TextColor = labelColor;
-            intentDisplayLabel.Text = "NONE";
-            intentDisplayLabel.SizeToFit ();
-            ViewFramer.Create (intentDisplayLabel).X (intentLabel.Frame.X + intentLabel.Frame.Width).Width (View.Frame.Width - intentDisplayLabel.Frame.X).Height (LINE_HEIGHT);
-
-            UITapGestureRecognizer intentTap = new UITapGestureRecognizer (() => {
-                View.EndEditing (true);
-                PerformSegue ("SegueToIntentSelection", this);
-            });
-            intentTap.ShouldRecognizeSimultaneously = ((UIGestureRecognizer gestureRecognizer, UIGestureRecognizer otherGestureRecognizer) => {
-                return true;
-            }); 
-            intentView.AddGestureRecognizer (intentTap);
-            intentView.UserInteractionEnabled = true;
-
-            Util.AddArrowAccessory (contentView.Frame.Width - 15 - 12, 14, 12, intentView);
-
-            intentView.AddSubviews (new UIView[] { intentLabel, intentDisplayLabel });
-
-            attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40, true);
-
-            bodyTextView = new NcTextView (new CGRect (BODY_LEFT_MARGIN, 0, View.Frame.Width - BODY_RIGHT_MARGIN - BODY_LEFT_MARGIN, 0));
-            bodyTextView.Font = composeFont;
-            bodyTextView.TextColor = composeColor;
-            bodyTextView.BackgroundColor = UIColor.White;
-            bodyTextView.ScrollEnabled = true;
-            bodyTextView.Scrolled += BodyTextViewScrolled;
-            bodyTextView.DraggingEnded += BodyTextViewDraggingEnded;
-            bodyTextView.ShowsHorizontalScrollIndicator = false;
-            bodyTextView.ShowsVerticalScrollIndicator = false;
-            bodyTextView.AllowsEditingTextAttributes = true;
-
-            var attributes = new CoreText.CTStringAttributes ();
-            attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
-            var initialString = new NSMutableAttributedString ();
-
-            if (EmailTemplate != null) {
-                initialString.Append (new NSAttributedString (EmailTemplate, attributes));
-            }
-            if (!String.IsNullOrEmpty (account.Signature)) {
-                initialString.Append (new NSAttributedString ("\n\n", attributes));
-                initialString.Append (new NSAttributedString (account.Signature, attributes));
-            }
-
-            bodyTextView.AttributedText = initialString;
-
-            var beginningRange = new NSRange (0, 0);
-            bodyTextView.SelectedRange = beginningRange;
-
-            //Need to be able to inserthtml here, but for now will do simple text input
-            //bodyTextView.InsertText ("<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
-
-            contentView.AddSubviews (new UIView[] {
-                toView,
-                toViewHR,
-                ccView,
-                ccViewHR,
-                bccView,
-                bccViewHR,
-                subjectLabel,
-                subjectLabelHR,
-                subjectField,
-                intentView,
-                intentLabelHR,
-                attachmentView,
-                attachmentViewHR,
-            });
-
-            scrollView.AddSubview (bodyTextView);
-
-            showQuotedTextButton = UIButton.FromType (UIButtonType.System);
-            showQuotedTextButton.SetTitle ("Tap to show quoted text", UIControlState.Normal);
-            showQuotedTextButton.TitleLabel.Font = UIFont.PreferredCaption1;
-            showQuotedTextButton.AccessibilityLabel = "Show quoted text";
-            showQuotedTextButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            showQuotedTextButton.SizeToFit ();
-
-            // The minimum indent from UITextView frame to text is a mystery
-            ViewFramer.Create (showQuotedTextButton).X (bodyTextView.Frame.X + 4);
-            ViewFramer.Create (showQuotedTextButton).Height (30);
-            scrollView.AddSubview (showQuotedTextButton);
-
-            showQuotedTextButton.TouchUpInside += onShowQuotedTextButton;
-
-            subjectField.EditingDidBegin += (object sender, EventArgs e) => {
-                ConfigureSubjectEditView (true);
-            };
-                
-            bodyTextView.Started += (object sender, EventArgs e) => {
-                ConfigureBodyEditView (true);
-                LayoutView ();
-            };
-
-            bodyTextView.Changed += (object sender, EventArgs e) => {
-                SelectionChanged (bodyTextView);
-            };
-
-            if (null != PresetAddresses) {
-                foreach (var address in PresetAddresses) {
-                    UpdateEmailAddress (null, address);
-                }
-            }
-
-            if (PresetAttachmentList != null) {
-                foreach (var attachment in PresetAttachmentList) {
-                    attachmentView.Append (AttachmentHelper.CopyAttachment (attachment));
-                }
-            }
-
-//            attachmentView.BackgroundColor = UIColor.Yellow;
-//            bodyTextView.BackgroundColor = UIColor.Gray;
-//            contentView.BackgroundColor = UIColor.Green;
-//            scrollView.BackgroundColor = UIColor.Red;
-//            View.BackgroundColor = UIColor.Cyan;
-        }
-
-        Boolean ShouldMergeCcAndBcc ()
-        {
-            return (!ccHasBeenOpened) && ccView.IsEmpty () && bccView.IsEmpty ();
-        }
-
-        protected void ConfigureToView (bool animate)
-        {
-            ccHasBeenOpened = ccHasBeenOpened || !ccView.IsEmpty () || !bccView.IsEmpty ();
-
-            toView.Hidden = false;
-            toViewHR.Hidden = false;
-            toView.SetCompact (false, -1);
-
-            ccView.Hidden = false;
-            ccViewHR.Hidden = false;
-            ccView.SetCompact (true, -1, ShouldMergeCcAndBcc ());
-
-            bccView.Hidden = ShouldMergeCcAndBcc ();
-            bccViewHR.Hidden = ShouldMergeCcAndBcc ();
-            bccView.SetCompact (true, -1);
-
-            attachmentView.Hidden = calendarInviteIsSet;
-            attachmentViewHR.Hidden = calendarInviteIsSet;
-            // attachmentView.SetCompact (false);
-
-            intentView.Hidden = !alwaysShowIntent;
-            intentLabelHR.Hidden = !alwaysShowIntent;
-
-            suppressLayout = true;
-            toView.ConfigureView ();
-            ccView.ConfigureView ();
-            bccView.ConfigureView ();
-            attachmentView.ConfigureView ();
-            suppressLayout = false;
-
-            if (animate) {
-                LayoutView ();
-            } else {
-                LayoutWithoutAnimation ();
-            }
-        }
-
-        protected void ConfigureCcView (bool animate)
-        {
-            ccHasBeenOpened = true;
-
-            toView.Hidden = false;
-            toViewHR.Hidden = false;
-            toView.SetCompact (false, -1);
-
-            ccView.Hidden = false;
-            ccViewHR.Hidden = false;
-            ccView.SetCompact (false, -1);
-
-            bccView.Hidden = false;
-            bccViewHR.Hidden = false;
-            bccView.SetCompact (false, -1);
-
-            attachmentView.Hidden = calendarInviteIsSet;
-            attachmentViewHR.Hidden = calendarInviteIsSet;
-            // attachmentView.SetCompact (false);
-
-            intentView.Hidden = !alwaysShowIntent;
-            intentLabelHR.Hidden = !alwaysShowIntent;
-
-            suppressLayout = true;
-            toView.ConfigureView ();
-            ccView.ConfigureView ();
-            bccView.ConfigureView ();
-            attachmentView.ConfigureView ();
-            suppressLayout = false;
-
-            if (animate) {
-                LayoutView ();
-            } else {
-                LayoutWithoutAnimation ();
-            }
-        }
-
-        protected void ConfigureSubjectEditView (bool animate)
-        {
-            ccHasBeenOpened = ccHasBeenOpened || !ccView.IsEmpty () || !bccView.IsEmpty ();
-
-            toView.Hidden = false;
-            toViewHR.Hidden = false;
-            toView.SetCompact (true, -1);
-
-            ccView.Hidden = false;
-            ccViewHR.Hidden = false;
-            ccView.SetCompact (true, -1, ShouldMergeCcAndBcc ());
-
-            bccView.Hidden = ShouldMergeCcAndBcc ();
-            bccViewHR.Hidden = ShouldMergeCcAndBcc ();
-            bccView.SetCompact (true, -1);
-
-            attachmentView.Hidden = calendarInviteIsSet;
-            attachmentViewHR.Hidden = calendarInviteIsSet;
-            // attachmentView.SetCompact (true);
-
-            suppressLayout = true;
-            toView.ConfigureView ();
-            ccView.ConfigureView ();
-            bccView.ConfigureView ();
-            attachmentView.ConfigureView ();
-            suppressLayout = false;
-
-            alwaysShowIntent = true;
-            intentView.Hidden = false;
-            intentLabelHR.Hidden = false;
-
-            if (animate) {
-                LayoutView ();
-            } else {
-                LayoutWithoutAnimation ();
-            }
-        }
-
-        protected void ConfigureBodyEditView (bool animate)
-        {
-            // this might be the place that we set up our initializaiton text
-            toView.Hidden = false;
-            toViewHR.Hidden = false;
-            toView.SetCompact (true, -1);
-
-            // Reset if cc & bcc are both empty
-            ccHasBeenOpened = !(ccView.IsEmpty () && bccView.IsEmpty ());
-
-            ccView.Hidden = false;
-            ccViewHR.Hidden = false;
-            ccView.SetCompact (true, -1, ShouldMergeCcAndBcc ());
-
-            bccView.Hidden = ShouldMergeCcAndBcc ();
-            bccViewHR.Hidden = ShouldMergeCcAndBcc ();
-            bccView.SetCompact (true, -1);
-
-            attachmentView.Hidden = !alwaysShowAttachments;
-            attachmentViewHR.Hidden = !alwaysShowAttachments;
-            // attachmentView.SetCompact (false);
-
-            intentView.Hidden = !alwaysShowIntent;
-            intentLabelHR.Hidden = !alwaysShowIntent;
-
-            suppressLayout = true;
-            toView.ConfigureView ();
-            ccView.ConfigureView ();
-            bccView.ConfigureView ();
-            attachmentView.ConfigureView ();
-            suppressLayout = false;
-
-            if (animate) {
-                LayoutView ();
-            } else {
-                LayoutWithoutAnimation ();
-            }
-        }
-
-        /// IUcAttachmentBlock delegate
-        public void AttachmentBlockNeedsLayout (UcAttachmentBlock view)
-        {
-            if (suppressLayout) {
-                return;
-            }
-            LayoutView ();
-        }
-
-        public void AddressBlockNeedsLayout (UcAddressBlock view)
-        {
-            if (suppressLayout) {
-                return;
-            }
-            LayoutView ();
-        }
-
-        public void AddressBlockWillBecomeActive (UcAddressBlock view)
-        {
-            if (view == toView) {
-                ConfigureToView (true);
-            } else {
-                ConfigureCcView (true);
-            }
-        }
-
-        public void AddressBlockWillBecomeInactive (UcAddressBlock view)
-        {
-        }
-
-        protected void LayoutView ()
-        {
-            if (suppressLayout) {
-                return;
-            }
-            UIView.Animate (0.2, () => {
-                LayoutWithoutAnimation ();
-            });
-        }
-
-        protected void LayoutWithoutAnimation ()
-        {
-            toView.Layout ();
-            ccView.Layout ();
-            bccView.Layout ();
-            attachmentView.Layout ();
-
-            nfloat yOffset = 0;
-
-            ViewFramer.Create (toView).Y (yOffset);
-            ViewFramer.Create (toViewHR).Y (yOffset + toView.Frame.Height);
-            if (!toView.Hidden) {
-                yOffset = toViewHR.Frame.Bottom;
-            }
-
-            ViewFramer.Create (ccView).Y (yOffset);
-            ViewFramer.Create (ccViewHR).Y (yOffset + ccView.Frame.Height);
-            if (!ccView.Hidden) {
-                yOffset = ccViewHR.Frame.Bottom;
-
-            }
-
-            ViewFramer.Create (bccView).Y (yOffset);
-            ViewFramer.Create (bccViewHR).Y (yOffset + bccView.Frame.Height);
-            if (!bccView.Hidden) {
-                yOffset = bccViewHR.Frame.Bottom;
-            }
-
-            ViewFramer.Create (subjectLabel).CenterY (yOffset, LINE_HEIGHT);
-            ViewFramer.Create (subjectField).CenterY (yOffset, LINE_HEIGHT);
-  
-            yOffset += LINE_HEIGHT;
-
-            ViewFramer.Create (subjectLabelHR).Y (yOffset);
-            yOffset += subjectLabelHR.Frame.Height;
-
-            // Intent subviews
-            ViewFramer.Create (intentLabel).CenterY (0, LINE_HEIGHT);
-            ViewFramer.Create (intentDisplayLabel).CenterY (0, LINE_HEIGHT);
-            ViewFramer.Create (intentView).Y (yOffset);
-            ViewFramer.Create (intentLabelHR).Y (intentView.Frame.Bottom);
-
-            if (!intentView.Hidden) {
-                yOffset = intentLabelHR.Frame.Bottom;
-            }
-
-            if (!attachmentView.Hidden) {
-                ViewFramer.Create (attachmentView).Y (yOffset);
-                yOffset += attachmentView.Frame.Height;
-                ViewFramer.Create (attachmentViewHR).Y (yOffset);
-                yOffset += attachmentViewHR.Frame.Height;
-            }
-
-            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-
-            // padding at the end, before textview
-            yOffset += 10;
-
-            var contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
-            contentView.Frame = contentFrame;
-
-            ViewFramer.Create (bodyTextView).Y (contentFrame.Bottom);
-
-            SetBodyAndScrollViewSize (bodyTextView);
-        }
-
-        // Want to keep the keyboard up when transitioning
-        // to and from contact chooser.  Notice EndEditing
-        // is called close the keyboard as this view exits.
-        public override bool ShouldEndEditing {
-            get {
-                return false;
-            }
-        }
-
-        protected override void OnKeyboardChanged ()
-        {
-            LayoutView ();
-        }
-
-        /// <summary>
-        /// Requires iOS 7
-        /// </summary>
-        public static nfloat AdjustToFittingHeight (UITextView textView)
-        {
-            if (textView == null) {
-                return 0;
-            }
-
-            // Using simply ContentSize does not work on iOS7. The dimensions are calculated lazily.
-            // Enforce the layout of the text container to get correct measurements.
-            textView.LayoutManager.EnsureLayoutForTextContainer (textView.TextContainer);
-
-            // Get container size from the layout manager.
-            var containerSize = textView.LayoutManager.GetUsedRectForTextContainer (textView.TextContainer).Size;
-
-            // Take insets into consideration.
-            nfloat height = (nfloat)Math.Ceiling (containerSize.Height + textView.TextContainerInset.Top + textView.TextContainerInset.Bottom);
-
-            // Adjust frame but only alter height.
-            textView.Frame = new CGRect (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, height);
-
-            // Return the height for convenient access.
-            return height;
-        }
-
-        /// <summary>
-        /// iOS 6 and before
-        /// </summary>
-        public static nfloat OldAdjustToFittingHeight (UITextView textView)
-        {
-            if (textView == null) {
-                return 0;
-            }
-
-            // Get the size that'll hold this text.
-            var sz = textView.SizeThatFits (new CGSize (textView.Frame.Width, nfloat.MaxValue));
-            nfloat height = (nfloat)Math.Ceiling (sz.Height + textView.TextContainerInset.Top + textView.TextContainerInset.Bottom);
-
-            // Adjust frame but only alter height.
-            textView.Frame = new CGRect (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, height);
-
-            return sz.Height;
-        }
-
-        protected void SetBodyAndScrollViewSize (UITextView textView)
-        {
-            AdjustToFittingHeight (textView);
-
-            if (!textView.Frame.Size.Equals (textView.ContentSize)) {
-                textView.ContentSize = textView.Frame.Size;
-            }
-            nfloat y;
-            if (showQuotedTextButton.Hidden) {
-                y = textView.Frame.Bottom;
-            } else {
-                ViewFramer.Create (showQuotedTextButton).Y (textView.Frame.Bottom);
-                y = showQuotedTextButton.Frame.Bottom;
-            }
-
-            var scrollViewContentSize = new CGSize (textView.ContentSize.Width, y + BODY_BOTTOM_MARGIN + BODY_TOP_MARGIN);
-            if (!scrollView.ContentSize.Equals (scrollViewContentSize)) {
-                scrollView.ContentSize = scrollViewContentSize;
-            }
-            // Console.WriteLine ("SetBodyAndScrollViewSize: {0}", ViewHelper.ViewInfo (scrollView, "scrollView"));
-            // Console.WriteLine ("SetBodyAndScrollViewSize: {0}", ViewHelper.ViewInfo (bodyTextView, "bodyTextView"));
-            // ViewHelper.DumpViewHierarchy (View);
-
-        }
-
-        public override void ViewDidLayoutSubviews ()
-        {
-            base.ViewDidLayoutSubviews ();
-        }
-
-        /// <summary>
-        /// Called when a key is pressed (or other changes) in body text view.
-        /// CAREFUL:  Also called from Layout to set body and scrollview sizes. 
-        /// </summary>
-        protected void SelectionChanged (UITextView textView)
-        {
-            SetBodyAndScrollViewSize (textView);
-
-            // We want to scroll the caret rect into view
-            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.Start);
-            caretRect.Size = new CGSize (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
-
-            var targetRect = caretRect;
-            targetRect.Y += textView.Frame.Y;
-            scrollView.ScrollRectToVisible (targetRect, true);
-        }
-
-        /// <summary>
-        /// If the body view scroll takes over from the main scrollview,
-        /// we make sure body text view is always scrolled to the top iff
-        /// the scrollview is visible on the screen.
-        /// </summary>
-        protected void BodyTextViewScrolled (object sender, EventArgs e)
-        {
-            // is header on the screen?
-            if (scrollView.ContentOffset.Y < contentView.Frame.Bottom) {
-                var nco = scrollView.ContentOffset.Y + bodyTextView.ContentOffset.Y;
-                // Console.WriteLine ("adjusted: {0} {1}", nco, ViewHelper.ViewInfo (scrollView, ""));
-                scrollView.SetContentOffset (new CGPoint (scrollView.ContentOffset.X, nco), false);
-                bodyTextView.SetContentOffset (new CGPoint (bodyTextView.ContentOffset.X, 0), false);
-            }
-            if (0 > bodyTextView.ContentOffset.Y) {
-                var nco = scrollView.ContentOffset.Y + bodyTextView.ContentOffset.Y;
-                // Console.WriteLine ("adjusted: {0} {1}", nco, ViewHelper.ViewInfo (scrollView, ""));
-                scrollView.SetContentOffset (new CGPoint (scrollView.ContentOffset.X, nco), false);
-                bodyTextView.SetContentOffset (new CGPoint (bodyTextView.ContentOffset.X, 0), false);
-            }
-        }
-
-        /// <summary>
-        /// If the body view scroll takes over from the main scrollview,
-        /// we have to make sure that the main scrollview bounces back up
-        /// to the top iff the scrollview is pulled down to a negative offset.
-        /// </summary>
-
-        protected void BodyTextViewDraggingEnded (object sender, DraggingEventArgs e)
-        {
-            if (0 > scrollView.ContentOffset.Y) {
-                // Console.WriteLine ("dragging adjusted: {0}", ViewHelper.ViewInfo (scrollView, ""));
-                scrollView.SetContentOffset (new CGPoint (scrollView.ContentOffset.X, 0), true);
-            }
-        }
-
-        public void AddressBlockClicked (UcAddressBlock view, string prefix, string segue)
-        {
-            NcEmailAddress.Kind kind = NcEmailAddress.Kind.Unknown;
-
-            if (view == toView) {
-                kind = NcEmailAddress.Kind.To;
-            } else if (view == ccView) {
-                kind = NcEmailAddress.Kind.Cc;
-            } else if (view == bccView) {
-                kind = NcEmailAddress.Kind.Bcc;
-            } else {
-                NcAssert.CaseError ();
-            }
-            var e = new NcEmailAddress (kind);
-            e.action = NcEmailAddress.Action.create;
-            e.address = prefix;
-            PerformSegue (segue, new SegueHolder (e));
-        }
-
-        /// IUcAddressBlock delegate
-        public void AddressBlockAutoCompleteContactClicked (UcAddressBlock view, string prefix)
-        {
-            AddressBlockClicked (view, prefix, "ComposeToContactChooser");
-        }
-
-        /// IUcAddressBlock delegate
-        public void AddressBlockSearchContactClicked (UcAddressBlock view, string prefix)
-        {
-            AddressBlockClicked (view, prefix, "ComposeToContactSearch");
-        }
-
-        public void DismissINachoContactChooser (INachoContactChooser vc)
-        {
-            vc.Cleanup ();
-            NavigationController.PopToViewController (this, true);
-        }
-
-        protected void ShowQuickResponses ()
-        {
-            PerformSegue ("SegueToQuickResponse", this);
-        }
-
-        public void PopulateMessageFromQR (NcQuickResponse.QRTypeEnum whichType, NcQuickResponse.QuickResponse selectedResponse)
-        {
-            if (NcQuickResponse.QRTypeEnum.Compose == whichType) {
-                alwaysShowIntent = true;
-                subjectField.Text = selectedResponse.subject;
-            }
-
-            var attributes = new CoreText.CTStringAttributes ();
-            attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
-
-            var response = new NSMutableAttributedString (selectedResponse.body, attributes);
-            response.Append (bodyTextView.AttributedText);
-            bodyTextView.AttributedText = response;
-                       
-            bodyTextView.BecomeFirstResponder ();
-            if (bodyTextView.Text.Contains ("\n")) {
-                bodyTextView.SelectedRange = new NSRange (bodyTextView.Text.IndexOf ("\n"), 0);
-            }
-        }
-
-        public void SetCalendarInvite (McCalendar c)
-        {
-            this.calendarInviteItem = c;
-            calendarInviteIsSet = true;
-        }
-
-        public void PopulateMessageFromSelectedIntent (McEmailMessage.IntentType intent, MessageDeferralType intentDateType, DateTime intentDateTime)
-        {
-            this.messageIntent = intent;
-            this.messageIntentDateType = intentDateType;
-            this.messageIntentDateTime = intentDateTime;
-            intentDisplayLabel.Text = NcMessageIntent.GetIntentString (intent, intentDateType, intentDateTime);
-        }
-
-        // INachoIntentChooser
-        public void SelectMessageIntent (NcMessageIntent.MessageIntent selectedMessageIntent)
-        {
-            messageIntent = selectedMessageIntent.type;
-            PopulateMessageFromSelectedIntent (messageIntent, MessageDeferralType.None, DateTime.MinValue);
-        }
-
-        // INachoDateControllerParent called from IntentSelectionViewController -> Date selector
-        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            // Assumption -- SelectMessageIntent was already called
-            NcAssert.True (McEmailMessage.IntentType.None != messageIntent);
-            PopulateMessageFromSelectedIntent (messageIntent, request, selectedDate);
-        }
-
-        // INachoDateControllerParent
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            vc.DismissDateController (false, null);
-        }
-
-        /// IUcAttachmentBlock delegate
-        public void PerformSegueForAttachmentBlock (string identifier, SegueHolder segueHolder)
-        {
-            PerformSegue (identifier, segueHolder);
-        }
-
-        /// IUcAttachmentBlock delegate
-        public void DisplayAttachmentForAttachmentBlock (McAttachment attachment)
-        {
-            PlatformHelpers.DisplayAttachment (this, attachment);
-        }
-
-        /// IUcAttachmentBlock delegate
-        public void PresentViewControllerForAttachmentBlock (UIViewController viewControllerToPresent, bool animated, Action completionHandler)
-        {
-            this.PresentViewController (viewControllerToPresent, animated, completionHandler);
-        }
-
-        /// <summary>
-        /// INachoContactChooser callback
-        /// </summary>
-        public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
-        {
-            NcAssert.True (null != address);
-
-            switch (address.kind) {
-            case NcEmailAddress.Kind.To:
-                toView.Append (address);
-                break;
-            case NcEmailAddress.Kind.Cc:
-                ccView.Append (address);
-                break;
-            case NcEmailAddress.Kind.Bcc:
-                bccView.Append (address);
-                break;
-            default:
-                NcAssert.CaseError ();
-                break;
-            }
-        }
-
-        /// <summary>
-        /// Callback
-        /// </summary>
-        public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
-        {
-            // Chooser returned an empty string; ignore it.
-        }
-
-
-
-
-
-        private string TextForScaling (string scalingMessage, long size)
-        {
-            return String.Format ("{0} ({1})", scalingMessage, Pretty.PrettyFileSize (size));
-        }
-
-        // Pre-flight checks
-        private void MaybeSendMessageAndClose ()
-        {
-            if (0 == (toView.AddressList.Count + ccView.AddressList.Count + bccView.AddressList.Count)) {
-                NcAlertView.ShowMessage (this, "No Recipients", "This message is not being sent to anybody. Please add a recipient to the 'To' field.");
-                return;
-            }
-
-            long messageSize = bodyTextView.AttributedText.Length;
-
-            long sTotal = 0;
-            long mTotal = 0;
-            long lTotal = 0;
-            long aTotal = 0;
-            foreach (var attachment in attachmentView.AttachmentList) {
-                long s, m, l, a;
-                AttachmentHelper.EstimateAttachmentSizes (attachment, out s, out m, out l, out a);
-                sTotal += s;
-                mTotal += m;
-                lTotal += l;
-                aTotal += a;
-            }
-
-            messageSize += aTotal;
-
-            // Small enough.
-            if (EMAIL_SIZE_ALERT_LIMIT > messageSize) {
-                ReallySendMessageAndClose ();
-                return;
-            }
-
-            // Compressing won't help
-            if ((sTotal >= aTotal) && (mTotal >= aTotal) && (lTotal >= aTotal)) {
-                NcActionSheet.Show (View, this, null,
-                    String.Format ("This message is {0}", Pretty.PrettyFileSize (aTotal)),
-                    new NcAlertAction ("Send", () => {
-                        ReallySendMessageAndClose ();
-                    }),
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
-                );
-                return;
-            }
-
-            NcActionSheet.Show (View, this, null,
-                String.Format ("This message is {0}. You can scale the images by one of the sizes below to reduce the message size.", Pretty.PrettyFileSize (aTotal)),
-                new NcAlertAction (TextForScaling ("Small", sTotal), () => {
-                    foreach (var attachment in attachmentView.AttachmentList) {
-                        var newAttachment = AttachmentHelper.ResizeAttachmentToSize (attachment, new CGSize (240, 320));
-                        if (null != newAttachment) {
-                            attachmentView.ReplaceAttachment (attachment, newAttachment);
-                        }
-                    }
-                    ReallySendMessageAndClose ();
-                }),
-                new NcAlertAction (TextForScaling ("Medium", mTotal), () => {
-                    foreach (var attachment in attachmentView.AttachmentList) {
-                        var newAttachment = AttachmentHelper.ResizeAttachmentToSize (attachment, new CGSize (480, 640));
-                        if (null != newAttachment) {
-                            attachmentView.ReplaceAttachment (attachment, newAttachment);
-                        }
-                    }
-                    ReallySendMessageAndClose ();
-                }),
-                new NcAlertAction (TextForScaling ("Large", lTotal), () => {
-                    foreach (var attachment in attachmentView.AttachmentList) {
-                        var newAttachment = AttachmentHelper.ResizeAttachmentToSize (attachment, new CGSize (960, 1280));
-                        if (null != newAttachment) {
-                            attachmentView.ReplaceAttachment (attachment, newAttachment);
-                        }
-                    }
-                    ReallySendMessageAndClose ();
-                }),
-                new NcAlertAction (TextForScaling ("Actual Size", aTotal), () => {
-                    ReallySendMessageAndClose ();
-                }),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
-            );
-
-        }
-
-        private void ReallySendMessageAndClose ()
-        {
-            var mimeMessage = EmailHelper.CreateMessage (account, toView.AddressList, ccView.AddressList, bccView.AddressList);
-            mimeMessage.Subject = EmailHelper.CreateSubjectWithIntent (subjectField.Text, messageIntent, messageIntentDateType, messageIntentDateTime);
-
-            EmailHelper.SetupReferences (ref mimeMessage, referencedMessage);
-
-            var bodyAttributedText = bodyTextView.AttributedText;
-            bool originalEmailIsEmbedded = !calendarInviteIsSet && null != initialQuotedText;
-            if (originalEmailIsEmbedded && Util.AttributedStringEndsWith (bodyAttributedText, initialQuotedText)) {
-                // Strip the quoted text from the body of the message and instead have the server add in the original message.
-                originalEmailIsEmbedded = false;
-                bodyAttributedText = bodyAttributedText.Substring (0, (bodyAttributedText.Length - initialQuotedText.Length));
-            }
-
-            // Convert to Helvetica because it's widely available
-            var mutableBodyAttributedText = new NSMutableAttributedString (bodyAttributedText);
-            mutableBodyAttributedText.AddAttribute (UIStringAttributeKey.Font, UIFont.FromName ("Helvetica", 12), new NSRange (0, mutableBodyAttributedText.Length));
-
-            using (var body = new NcMimeBodyBuilder ()) {
-                body.TextBody = bodyTextView.Text;
-
-                // For drafts in case message is viewed in Outbox
-                var length = Math.Min (bodyTextView.Text.Length, 256);
-                var preview = bodyTextView.Text.Substring (0, length);
-
-                NSError error = null;
-                NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
-                                      new NSRange (0, mutableBodyAttributedText.Length),
-                                      new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
-                                      ref error);
-                body.HtmlBody = htmlData.ToString ();
-
-                foreach (var attachment in attachmentView.AttachmentList) {
-                    body.Attachments.Add (attachment.GetFilePath ());
-                }
-                bool attachmentNeedsDownloading = false;
-                if (EmailHelper.IsForwardAction (action) && originalEmailIsEmbedded) {
-                    // The user edited the body of the message being forwarded. That means the server won't
-                    // automatically include the attachments from the forwarded message (if any).  That needs
-                    // to be done explicitly.  If all of the necessary attachments are available, go ahead and
-                    // add them to the message now.  If any of the attachments need to be downloaded, then
-                    // wait until later to add them.
-                    var originalAttachments = McAttachment.QueryByItemId (referencedMessage);
-                    foreach (var attachment in originalAttachments) {
-                        if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
-                            attachmentNeedsDownloading = true;
-                            break;
-                        }
-                    }
-                    if (!attachmentNeedsDownloading) {
-                        foreach (var attachment in originalAttachments) {
-                            body.Attachments.Add (attachment.GetFilePath ());
-                        }
-                    }
-                }
-
-                mimeMessage.Body = body.ToMessageBody ();
-                var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
-                messageToSend = messageToSend.UpdateWithOCApply<McEmailMessage> ((record) => {
-                    var target = (McEmailMessage)record;
-                    target.BodyPreview = preview;
-                    target.Intent = messageIntent;
-                    target.IntentDate = messageIntentDateTime;
-                    target.IntentDateType = messageIntentDateType;
-                    target.QRType = QRType;
-
-                    if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
-                        target.ReferencedEmailId = referencedMessage.Id;
-                        target.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
-                        target.ReferencedIsForward = EmailHelper.IsForwardAction (action);
-                        target.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
-                    }
-                    return true;
-                });
-
-                // Send the mesage
-                EmailHelper.SendTheMessage (action, messageToSend, originalEmailIsEmbedded, referencedMessage, calendarInviteIsSet, calendarInviteItem);
-
-                // and remove the draft, if any
-                if (null != draftMessage) {
-                    EmailHelper.DeleteEmailMessageFromDrafts (draftMessage);
-                }
-            }
-
-            // And close
-            owner = null;
-            NavigationController.PopViewController (true);
-        }
-
-        /// <summary>
-        /// Reply, ReplyAll, Forward
-        /// FIXME:  Wait for full text to arrive!
-        /// </summary>
-        void InitializeMessageForAction ()
-        {
-            var toList = new List<NcEmailAddress> ();
-            var recipientExclusions = new List<string> ();
-            recipientExclusions.Add (account.EmailAddr);
-            if (EmailHelper.IsReplyAction (action)) {
-                string toString = null;
-                // Reply-To trumps From
-                if (null != referencedMessage.ReplyTo) {
-                    toString = referencedMessage.ReplyTo;
-                }else if (null != referencedMessage.From) {
-                    toString = referencedMessage.From;
-                }
-                // Some validation
-                if (toString != null) {
-                    InternetAddress toAddress;
-                    if (MailboxAddress.TryParse (toString, out toAddress)){
-                        if (String.Equals ((toAddress as MailboxAddress).Address, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
-                            // If it looks like we're replying to ourself, we should instead reply to the entire To list from the
-                            // referenced message.  This behavior is consistent with other clients, and is typically seen when
-                            // replying to a message you sent.  It's an interesting case where a reply could go to multiple people
-                            // even though it wasn't a reply-all.  If there was anyone in the CC list of the referenced message,
-                            // they'll get picked up in the reply-all scenario in the next block.
-                            toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, recipientExclusions, referencedMessage.To);
-                        } else {
-                            toList.Add(new NcEmailAddress (NcEmailAddress.Kind.To, toString));
-                        }
-                    }
-                }
-            }
-            foreach (var to in toList) {
-                toView.Append (to);
-                recipientExclusions.Add (to.address);
-            }
-            if (EmailHelper.Action.ReplyAll == action) {
-                // Add the To & Cc list to the CC list, not included this user
-                var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, recipientExclusions, referencedMessage.To, referencedMessage.Cc);
-                foreach (var cc in ccList) {
-                    ccView.Append (cc);
-                }
-            }
-            if (null == referencedMessage) {
-                subjectField.Text = "";
-            } else {
-                subjectField.Text = EmailHelper.CreateInitialSubjectLine (action, referencedMessage.Subject);
-            }
-            alwaysShowIntent |= !string.IsNullOrEmpty (subjectField.Text);
-        }
-
-
-        void onShowQuotedTextButton (object sender, EventArgs e)
-        {
-            var selectedRange = bodyTextView.SelectedRange;
-            showQuotedTextButton.Hidden = true;
-            InitializeQuotedText ();
-            LayoutView ();
-            bodyTextView.SelectedRange = selectedRange;
-        }
-
-        void InitializeQuotedText ()
-        {
-            if (null == referencedMessage) {
-                return;
-            }
-
-            string html;
-            string text;
-            if (MimeHelpers.FindText (referencedMessage, out html, out text)) {
-                var attributes = new CoreText.CTStringAttributes ();
-                attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
-                var initialString = new NSMutableAttributedString ();
-                initialString.Append (bodyTextView.AttributedText);
-                initialString.Append (new NSAttributedString ("\n\n", attributes));
-                initialString.Append (new NSAttributedString (EmailHelper.FormatBasicHeaders (referencedMessage), attributes));
-                var whereQuotedTextBegins = initialString.Length;
-                // First try text, quoted, then html, not quoted
-                if (null != text) {
-                    NcAssert.NotNull (text);
-                    var quotedText = EmailHelper.QuoteForReply (text);
-                    initialString.Append (new NSAttributedString (quotedText, attributes));
-                } else {
-                    NcAssert.NotNull (html);
-                    NSError error = null;
-                    var d = NSData.FromString (html);
-                    var convertedString = new NSAttributedString (d, new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
-                    initialString.Append (convertedString);
-                }
-                bodyTextView.AttributedText = initialString;
-                if (whereQuotedTextBegins < bodyTextView.AttributedText.Length) {
-                    // Pull from uitextview to account for formatting that happens when the string is added
-                    initialQuotedText = bodyTextView.AttributedText.Substring (whereQuotedTextBegins, bodyTextView.AttributedText.Length - whereQuotedTextBegins);
-                } else {
-                    initialQuotedText = null;
-                }
-            }
-        }
-
-        NSAttributedString ExtractBodyTextAsNSAttributedString (MimeMessage mimeMessage)
-        {
-            string html;
-            string text;
-            var initialString = new NSMutableAttributedString ();
-            if (null != mimeMessage) {
-                if (MimeHelpers.FindText (mimeMessage, out html, out text)) {
-                    var attributes = new CoreText.CTStringAttributes ();
-                    attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
-                    if (null == html) {
-                        NcAssert.NotNull (text);
-                        initialString.Append (new NSAttributedString (text, attributes));
-                    } else {
-                        NSError error = null;
-                        var d = NSData.FromString (html);
-                        var convertedString = new NSAttributedString (d, new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
-                        initialString.Append (convertedString);
-                    }
-                }
-            }
-            return initialString;
-        }
-
-        /// <summary>
-        /// INachoFileChooserParent delegate
-        /// </summary>
-        public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
-        {
-            var a = obj as McAttachment;
-            if (null != a) {
-                attachmentView.Append (AttachmentHelper.CopyAttachment (a));
-                this.DismissViewController (true, null);
-                return;
-            }
-
-            var file = obj as McDocument;
-            if (null != file) {
-                var attachment = McAttachment.InsertSaveStart (account.Id);
-                attachment.SetDisplayName (file.DisplayName);
-                attachment.IsInline = true;
-                attachment.UpdateFileCopy (file.GetFilePath ());
-                attachmentView.Append (attachment);
-                this.DismissViewController (true, null);
-                return;
-            }
-
-            var note = obj as McNote;
-            if (null != note) {
-                var attachment = McAttachment.InsertSaveStart (account.Id);
-                attachment.SetDisplayName (note.DisplayName + ".txt");
-                attachment.IsInline = true;
-                attachment.UpdateData (note.noteContent);
-                attachmentView.Append (attachment);
-                this.DismissViewController (true, null);
-                return;
-            }
-
-            NcAssert.CaseError ();
-        }
-
-        /// <summary>
-        /// INachoFileChooserParent delegate
-        /// </summary>
-        public void DismissChildFileChooser (INachoFileChooser vc)
-        {
-            vc.DismissFileChooser (true, null);
-        }
-
-        /// <summary>
-        /// INachoFileChooserParent delegate
-        /// </summary>
-        public void Append (McAttachment attachment)
-        {
-            attachmentView.Append (attachment);
-        }
-
-        /// <summary>
-        /// INachoFileChooserParent delegate
-        /// </summary>
-        public void DismissPhotoPicker ()
-        {
-            this.DismissViewController (true, null);
-        }
-
-        public void SetAction (McEmailMessageThread thread, string actionString)
-        {
-            if (null != thread) {
-                referencedMessage = thread.FirstMessageSpecialCase ();
-            }
-            if (null == actionString) {
-                action = EmailHelper.Action.Send;
-            } else if (REPLY_ACTION.Equals (actionString)) {
-                action = EmailHelper.Action.Reply;
-            } else if (REPLY_ALL_ACTION.Equals (actionString)) {
-                action = EmailHelper.Action.ReplyAll;
-            } else if (FORWARD_ACTION.Equals (actionString)) {
-                action = EmailHelper.Action.Forward;
-            } else {
-                NcAssert.CaseError (String.Format ("Unexpected value for message action: {0}", actionString));
-            }
-            if (EmailHelper.Action.Send != action) {
-                if (null == referencedMessage) {
-                    Log.Info (Log.LOG_UI, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));
-                    action = EmailHelper.Action.Send;
-                }
-            }
-        }
-
-     
+        #endregion
     }
+        
 }

@@ -50,7 +50,7 @@ namespace NachoClient.iOS
         protected nfloat parentWidth;
         protected string openTopLeftString;
         protected string alternateTopLeftString;
-        protected IUcAddressBlockDelegate owner;
+        public IUcAddressBlockDelegate owner;
 
         protected int suppliedCount;
         protected UILabel moreLabel;
@@ -90,7 +90,6 @@ namespace NachoClient.iOS
             this.list = new List<UcAddressField> ();
             this.isEditable = true;
 
-            this.AutoresizingMask = UIViewAutoresizing.None;
             this.AutosizesSubviews = false;
             this.currentAddressField = null;
 
@@ -308,6 +307,11 @@ namespace NachoClient.iOS
         protected void AdjustXY (UIView view, nfloat X, nfloat Y)
         {
             view.Center = new CGPoint (X + (view.Frame.Width / 2), Y + lineHeight / 2);
+        }
+
+        public override void LayoutSubviews ()
+        {
+            Layout ();
         }
 
         public void Layout ()

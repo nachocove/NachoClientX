@@ -136,13 +136,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("SegueToMessageCompose")) {
-                var h = sender as SegueHolder;
-                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
-                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
-                return;
-            }
-
             if (segue.Identifier.Equals ("SegueToContactDetail")) {
                 var h = sender as SegueHolder;
                 var c = (McContact)h.value;
@@ -566,7 +559,24 @@ namespace NachoClient.iOS
 
         public void EmailSwipeHandler (McContact contact)
         {
-            Util.EmailContact ("SegueToContactDefaultSelection", contact, this);
+            if (contact == null) {
+                Util.ComplainAbout ("No Email Address", "This contact does not have an email address.");
+            } else {
+                var address = Util.GetContactDefaultEmail (contact);
+                if (address == null) {
+                    if (contact.EmailAddresses.Count == 0) {
+                        if (contact.CanUserEdit ()) {
+                            PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                        } else {
+                            Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+                        }
+                    } else {
+                        PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+                    }
+                } else {
+                    ComposeMessage (address);
+                }
+            }
         }
 
         public void CallSwipeHandler (McContact contact)
@@ -663,9 +673,18 @@ namespace NachoClient.iOS
             PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
         }
 
-        public void PerformSegueForContactDefaultSelector (string identifier, NSObject sender)
+        public void ContactDefaultSelectorComposeMessage (string address)
         {
-            PerformSegue (identifier, sender);
+            ComposeMessage (address);
+        }
+
+        private void ComposeMessage (string address)
+        {
+            var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
+            message.To = address;
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Message = message;
+            composeViewController.Present ();
         }
 
     }

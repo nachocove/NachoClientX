@@ -24,7 +24,7 @@ using DDay.iCal.Serialization.iCalendar;
 namespace NachoClient.iOS
 {
     public partial class MessageViewController : NcUIViewControllerNoLeaks, INachoMessageViewer,
-        INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, 
+        INachoFolderChooserParent, INachoCalendarItemEditorParent, 
         IUcAddressBlockDelegate, INachoDateControllerParent, IBodyViewOwner
     {
         // Model data
@@ -184,13 +184,13 @@ namespace NachoClient.iOS
                 var toolbarEventArgs = (MessageToolbarEventArgs)e;
                 switch (toolbarEventArgs.Action) {
                 case MessageToolbar.ActionType.REPLY:
-                    onReplyButtonClicked (MessageComposeViewController.REPLY_ACTION);
+                    onReplyButtonClicked (EmailHelper.Action.Reply);
                     break;
                 case MessageToolbar.ActionType.REPLY_ALL:
-                    onReplyButtonClicked (MessageComposeViewController.REPLY_ALL_ACTION);
+                    onReplyButtonClicked (EmailHelper.Action.ReplyAll);
                     break;
                 case MessageToolbar.ActionType.FORWARD:
-                    onReplyButtonClicked (MessageComposeViewController.FORWARD_ACTION);
+                    onReplyButtonClicked (EmailHelper.Action.Forward);
                     break;
                 case MessageToolbar.ActionType.ARCHIVE:
                     onArchiveButtonClicked ();
@@ -395,7 +395,7 @@ namespace NachoClient.iOS
 
             blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
                 new UIBlockMenu.Block ("contact-quickemail", "Quick Reply", () => {
-                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
+                    ComposeResponse (EmailHelper.Action.Reply, true);
                 }),
                 new UIBlockMenu.Block ("email-calendartime", "Create Deadline", () => {
                     PerformSegue ("SegueToMessageDeadline", new SegueHolder (null));
@@ -652,26 +652,6 @@ namespace NachoClient.iOS
                 vc.SetOwner (this, true, thread);
                 return;
             }
-            if (segue.Identifier == "MessageViewToCompose") {
-                var vc = (MessageComposeViewController)segue.DestinationViewController;
-                var h = sender as SegueHolder;
-
-                if (null != h.value) {
-                    vc.SetAction (thread, (string)h.value);
-                    vc.SetOwner (this);  
-                    if (null != h.value2) {
-                        vc.SetQRType ((NcQuickResponse.QRTypeEnum)h.value2);
-                    }
-                }
-                return;
-            }
-            if (segue.Identifier == "SegueToMailTo") {
-                var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var url = (string)holder.value;
-                dc.SetMailToUrl (url);
-                return;
-            }
             if (segue.Identifier == "MessageViewToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
@@ -775,16 +755,6 @@ namespace NachoClient.iOS
             }
         }
 
-        // Interface implemntations
-
-        public void DismissChildMessageEditor (INachoMessageEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new Action (delegate {
-                NavigationController.PopViewController (true);
-            }));
-        }
-
         public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
             NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
@@ -795,27 +765,6 @@ namespace NachoClient.iOS
             vc.DismissDateController (false, new Action (delegate {
                 NavigationController.PopViewController (true);
             }));
-        }
-
-        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var message = thread.SingleMessageSpecialCase ();
-            var task = CalendarHelper.CreateTask (message);
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new Action (delegate {
-                PerformSegue ("", new SegueHolder (task));
-            }));
-        }
-
-        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var message = thread.SingleMessageSpecialCase ();
-            if (null != message) {
-                var cal = CalendarHelper.CreateMeeting (message);
-                vc.DismissMessageEditor (false, new Action (delegate {
-                    PerformSegue ("MessageViewToEditEvent", new SegueHolder (cal));
-                }));
-            }
         }
 
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
@@ -893,9 +842,9 @@ namespace NachoClient.iOS
             NavigationController.PopViewController (true);
         }
 
-        private void onReplyButtonClicked (string action)
+        private void onReplyButtonClicked (EmailHelper.Action action)
         {
-            PerformSegue ("MessageViewToCompose", new SegueHolder (action));
+            ComposeResponse (action);
         }
 
         private void DeferButtonClicked (object sender, EventArgs e)
@@ -1002,6 +951,15 @@ namespace NachoClient.iOS
         {
         }
 
+        private void ComposeResponse (EmailHelper.Action action, bool startWithQuickResponse = false)
+        {
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.MessageKind = action;
+            composeViewController.RelatedThread = thread;
+            composeViewController.StartWithQuickResponse = startWithQuickResponse;
+            composeViewController.Present ();
+        }
+
         #region IBodyViewOwner implementation
 
         void IBodyViewOwner.SizeChanged ()
@@ -1016,7 +974,11 @@ namespace NachoClient.iOS
         void IBodyViewOwner.LinkSelected (NSUrl url)
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
-                PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
+                string body;
+                var composeViewController = new MessageComposeViewController ();
+                composeViewController.Message = EmailHelper.MessageFromMailTo (NcApplication.Instance.Account, url.AbsoluteString, out body);
+                composeViewController.InitialText = body;
+                composeViewController.Present ();
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);
             }

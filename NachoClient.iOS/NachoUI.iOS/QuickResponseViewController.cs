@@ -11,9 +11,15 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
+
+    public interface QuickResponseViewControllerDelegate {
+
+        void QuickResponseViewDidSelectResponse (QuickResponseViewController vc, NcQuickResponse.QRTypeEnum whatType, NcQuickResponse.QuickResponse response, McEmailMessage.IntentType intentType);
+    }
+
     public partial class QuickResponseViewController : NcUIViewController
     {
-        MessageComposeViewController owner;
+        public QuickResponseViewControllerDelegate ResponseDelegate;
         protected nfloat yOffset;
         protected NcQuickResponse ncQuick;
 
@@ -33,11 +39,6 @@ namespace NachoClient.iOS
         public void SetProperties (NcQuickResponse.QRTypeEnum whatType)
         {
             ncQuick = new NcQuickResponse (whatType);
-        }
-
-        public void SetOwner (MessageComposeViewController owner)
-        {
-            this.owner = owner;
         }
 
         public void CreateView ()
@@ -79,12 +80,15 @@ namespace NachoClient.iOS
                 quickButton.Font = A.Font_AvenirNextDemiBold14;
                 quickButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
                 quickButton.TouchUpInside += (object sender, EventArgs e) => {
+                    McEmailMessage.IntentType intentType;
                     if (null == response.intent) {
-                        owner.PopulateMessageFromSelectedIntent (McEmailMessage.IntentType.None, MessageDeferralType.None, DateTime.MinValue);
+                        intentType = McEmailMessage.IntentType.None;
                     } else {
-                        owner.PopulateMessageFromSelectedIntent (response.intent.type, MessageDeferralType.None, DateTime.MinValue);
+                        intentType = response.intent.type;
                     }
-                    owner.PopulateMessageFromQR (ncQuick.whatType, response);
+                    if (ResponseDelegate != null){
+                        ResponseDelegate.QuickResponseViewDidSelectResponse (this, ncQuick.whatType, response, intentType);
+                    }
                     DismissViewController (true, null);
                 };
                 qrView.Add (quickButton);

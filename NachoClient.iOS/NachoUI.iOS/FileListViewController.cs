@@ -36,7 +36,6 @@ namespace NachoClient.iOS
         UILabel EmptyListLabel;
 
         // segue id's
-        string FilesToComposeSegueId = "AttachmentsToCompose";
         string FilesToNotesSegueId = "AttachmentsToNotes";
         string FilesToNotesModalSegueId = "AttachmentsToNotesModal";
 
@@ -339,13 +338,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals (FilesToComposeSegueId)) {
-                var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var attachments = (List<McAttachment>)holder.value;
-                dc.SetEmailPresetFields (attachmentList: attachments);
-                return;
-            }
             if (segue.Identifier.Equals (FilesToNotesSegueId)) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -548,13 +540,17 @@ namespace NachoClient.iOS
         public void ForwardAttachment (McAttachment attachment, UITableViewCell cell)
         {
             DownloadAndDoAction (attachment.Id, cell, (a) => {
-                PerformSegue (FilesToComposeSegueId, new SegueHolder (a));
+                var attachments = new List<McAttachment>();
+                attachments.Add (a);
+                ForwardAttachments (attachments);
             });
         }
 
         public void ForwardAttachments (List<McAttachment> attachments)
         {
-            PerformSegue (FilesToComposeSegueId, new SegueHolder (attachments));
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.InitialAttachments = attachments;
+            composeViewController.Present ();
         }
 
         public void OpenInOtherApp (McAttachment attachment, UITableViewCell cell)
