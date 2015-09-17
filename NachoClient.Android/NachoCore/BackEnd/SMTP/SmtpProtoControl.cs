@@ -391,12 +391,6 @@ namespace NachoCore.SMTP
             //PushAssist = new PushAssist (this);
         }
 
-        public override void ForceStop ()
-        {
-            base.ForceStop ();
-            Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPFORCESTOP");
-        }
-
         public override void Remove ()
         {
             // TODO Move to base? That might require moving the NcCommStatus stuff to base as well.
@@ -407,7 +401,7 @@ namespace NachoCore.SMTP
             base.Remove ();
         }
 
-        public override bool Execute ()
+        protected override bool Execute ()
         {
             if (!base.Execute ()) {
                 return false;

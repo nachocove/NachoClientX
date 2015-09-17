@@ -174,7 +174,7 @@ namespace NachoCore
                 CreateServices (accountId);
             }
             ApplyAcrossServices (accountId, "Stop", (service) => {
-                service.ForceStop ();
+                service.Stop ();
                 return NcResult.OK ();
             });
         }
@@ -238,7 +238,7 @@ namespace NachoCore
             }
             ApplyAcrossServices (accountId, "Start", (service) => {
                 NcTask.Run (() => {
-                    service.Execute ();
+                    service.Start ();
                 }, "Start");
                 return NcResult.OK ();
             });
@@ -330,10 +330,8 @@ namespace NachoCore
 
         private NcResult CmdInDoNotDelayContext (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> cmd)
         {
+            NcCommStatus.Instance.ForceUp ("CmdInDoNotDelayContext");
             return ApplyToService (accountId, capability, (service) => {
-                if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down) {
-                    return NcResult.Error (NcResult.SubKindEnum.Error_NetworkUnavailable);
-                }
                 if (NcCommStatus.Instance.Quality (service.Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
                     return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
                 }
