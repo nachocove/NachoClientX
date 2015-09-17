@@ -246,7 +246,12 @@ namespace NachoCore.Utils
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         goto PossiblyLeave;
                     }
-                    var hotNode = TransTable.Where (x => State == x.State).Single ();
+                    var hotNode = TransTable.Where (x => State == x.State).SingleOrDefault ();
+                    if (null == hotNode) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID TRANSITION",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        goto PossiblyLeave;
+                    }
                     if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
                         Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
@@ -308,6 +313,18 @@ namespace NachoCore.Utils
             foreach (var stateNode in TransTable) {
                 foreach (var nameNCode in EventCode) {
                     var eventCode = nameNCode.Value;
+                    foreach (var target in stateNode.On) {
+                        if (target.ActSetsState) {
+                            continue; // can't check
+                        }
+                        var targetNode = TransTable.Where (x => target.State == x.State).SingleOrDefault ();
+                        if (null == targetNode) {
+                            errors.Add (string.Format ("{2}: State {0}, event code {1} has invalid target state {3}",
+                                StateName (stateNode.State),
+                                EventName [eventCode],
+                                Name, StateName(target.State)));
+                        }
+                    }
                     var forEventCode = stateNode.On.Where (x => eventCode == x.Event).ToList ();
                     switch (forEventCode.Count) {
                     case 1:
