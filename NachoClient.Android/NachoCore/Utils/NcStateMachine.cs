@@ -314,15 +314,16 @@ namespace NachoCore.Utils
                 foreach (var nameNCode in EventCode) {
                     var eventCode = nameNCode.Value;
                     foreach (var target in stateNode.On) {
-                        if (target.ActSetsState) {
+                        if (target.ActSetsState || target.State == (uint)St.Stop) {
                             continue; // can't check
                         }
                         var targetNode = TransTable.Where (x => target.State == x.State).SingleOrDefault ();
                         if (null == targetNode) {
-                            errors.Add (string.Format ("{2}: State {0}, event code {1} has invalid target state {3}",
+                            errors.Add (string.Format ("{0}: State {1}, event code {2} has invalid target state {3}",
+                                Name,
                                 StateName (stateNode.State),
                                 EventName [eventCode],
-                                Name, StateName(target.State)));
+                                StateName (target.State)));
                         }
                     }
                     var forEventCode = stateNode.On.Where (x => eventCode == x.Event).ToList ();
