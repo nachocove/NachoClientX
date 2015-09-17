@@ -63,12 +63,12 @@ namespace NachoCore.Utils
                     if (DateTime.MinValue < DueTime) {
                         DateTime now = GetCurrentTime ();
                         if (DueTime > now) {
-                            /// We are not done with the current due time. See how much time to go
+                            // We are not done with the current due time. See how much time to go
                             Int64 due = (long)(DueTime - GetCurrentTime ()).TotalMilliseconds;
                             Int64 period = Period;
                             if (MAX_DURATION < due) {
-                                /// The remaining time is still too large. Fire another
-                                /// one-short MAX_DURATION timer.
+                                // The remaining time is still too large. Fire another
+                                // one-short MAX_DURATION timer.
                                 due = MAX_DURATION;
                                 period = Timeout.Infinite;
                             }
@@ -82,7 +82,7 @@ namespace NachoCore.Utils
                                 Object_, due, period);
                             return; // no callback yet
                         } else if (0 < Period) {
-                            /// We are past due time. See if the period is too large
+                            // We are past due time. See if the period is too large
                             Int64 due = Period;
                             Int64 period = Period;
                             if (MAX_DURATION < Period) {
@@ -174,12 +174,12 @@ namespace NachoCore.Utils
                     Period = period;
 
                     if (MAX_DURATION < due) {
-                        /// The due time is larger than the timer can handle. We save
-                        /// The real due time and period and create a one-shot timer
-                        /// fired in 40 days. If the remaining time is still larger
-                        /// than 40 days, the callback will create another one-shot
-                        /// timer until the remaining time is less than 40 days.
-                        /// The actual callback (to c) will not happen until then.
+                        // The due time is larger than the timer can handle. We save
+                        // The real due time and period and create a one-shot timer
+                        // fired in 40 days. If the remaining time is still larger
+                        // than 40 days, the callback will create another one-shot
+                        // timer until the remaining time is less than 40 days.
+                        // The actual callback (to c) will not happen until then.
                         due = MAX_DURATION;
                         period = Timeout.Infinite;
                     }

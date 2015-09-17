@@ -174,7 +174,7 @@ namespace NachoCore
                 CreateServices (accountId);
             }
             ApplyAcrossServices (accountId, "Stop", (service) => {
-                service.ForceStop ();
+                service.Stop ();
                 return NcResult.OK ();
             });
         }
@@ -238,7 +238,7 @@ namespace NachoCore
             }
             ApplyAcrossServices (accountId, "Start", (service) => {
                 NcTask.Run (() => {
-                    service.Execute ();
+                    service.Start ();
                 }, "Start");
                 return NcResult.OK ();
             });
