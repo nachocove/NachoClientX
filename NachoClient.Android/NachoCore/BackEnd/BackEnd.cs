@@ -330,6 +330,7 @@ namespace NachoCore
 
         private NcResult CmdInDoNotDelayContext (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> cmd)
         {
+            NcCommStatus.Instance.ForceUp ("CmdInDoNotDelayContext");
             return ApplyToService (accountId, capability, (service) => {
                 if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down) {
                     return NcResult.Error (NcResult.SubKindEnum.Error_NetworkUnavailable);
