@@ -1649,10 +1649,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ScoringHelpers.cs">
       <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\IRtfConverter.cs">
-      <Link>NachoCore\Utils\IRtfConverter.cs</Link>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Support\RtfConverter.cs" />
+    <Compile Include="NachoPlatform.iOS\RtfConverteriOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

@@ -10,6 +10,7 @@ using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using HtmlAgilityPack;
+using NachoPlatform;
 
 namespace NachoCore.Utils
 {
@@ -106,7 +107,7 @@ namespace NachoCore.Utils
         #region Properties
 
         public bool NeedsUpdate = false;
-        public IRtfConverter RtfConverter = null;
+        public IPlatformRtfConverter RtfConverter = null;
         private bool HasHtmlUrl = true;
         private McEmailMessage Message = null;
         private MimeMessage MimeMessage = null;
@@ -1046,7 +1047,7 @@ namespace NachoCore.Utils
                     parsed.FullText = "";
                 }
                 var txt = RtfConverter.ToTxt (rtf);
-                IncludeText (rtf);
+                IncludeText (txt);
             }
         }
 

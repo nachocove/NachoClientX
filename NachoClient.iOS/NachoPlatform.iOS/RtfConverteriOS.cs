@@ -2,11 +2,12 @@
 //
 using System;
 using NachoCore.Utils;
+using NachoPlatform;
 using Foundation;
 
 namespace NachoClient.iOS
 {
-    public class RtfConverter : IRtfConverter
+    public class RtfConverter : IPlatformRtfConverter
     {
         public RtfConverter ()
         {

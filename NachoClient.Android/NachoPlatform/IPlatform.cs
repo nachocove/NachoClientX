@@ -319,4 +319,12 @@ namespace NachoPlatform
     {
         void ExtractValues ();
     }
+
+    public interface IPlatformRtfConverter {
+
+        string ToHtml (string rtf);
+        string ToTxt (string rtf);
+
+    }
+
 }
