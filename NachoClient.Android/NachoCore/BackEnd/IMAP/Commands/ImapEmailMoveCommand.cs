@@ -80,7 +80,6 @@ namespace NachoCore.IMAP
             }
             var result = MoveEmails (emails, src, dst, Cts.Token);
             if (result.isOK ()) {
-                // FIXME Need to do fixup stuff in pending. Are there API's for that?
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMoveSucceeded));
                 });
