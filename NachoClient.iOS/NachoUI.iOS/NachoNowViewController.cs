@@ -245,9 +245,7 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier == "NachoNowToCalendar") {
-                // Nothing to do
-            } else if (segue.Identifier == "NachoNowToEditEventView") {
+            if (segue.Identifier == "NachoNowToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;

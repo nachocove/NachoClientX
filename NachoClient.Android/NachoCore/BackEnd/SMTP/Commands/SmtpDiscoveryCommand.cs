@@ -53,11 +53,11 @@ namespace NachoCore.SMTP
                 errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
-                evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL2", AutoDFailureReason.CannotFindServer);
+                evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL2", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
                 errResult.Message = ex.Message;
             } catch (SocketException ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: SocketException: {0}", ex.Message);
-                evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
                 errResult.Message = ex.Message;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: AuthenticationException: {0}", ex.Message);

@@ -160,7 +160,7 @@ namespace NachoCore.ActiveSync
                 Name = string.Format ("ASPC({0})", AccountId),
                 LocalEventType = typeof(CtlEvt),
                 LocalStateType = typeof(Lst),
-                StateChangeIndication = UpdateSavedState,
+                TransIndication = UpdateSavedState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
@@ -780,11 +780,13 @@ namespace NachoCore.ActiveSync
                 // We never save Parked.
                 return;
             }
-            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                var target = (McProtocolState)record;
-                target.ProtoControlState = stateToSave;
-                return true;
-            });
+            if (protocolState.ProtoControlState != stateToSave) {
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.ProtoControlState = stateToSave;
+                    return true;
+                });
+            }
             if (LastBackEndState != BackEndState) {
                 var res = NcResult.Info (NcResult.SubKindEnum.Info_BackEndStateChanged);
                 res.Value = AccountId;
@@ -801,7 +803,8 @@ namespace NachoCore.ActiveSync
         {
             BackEndStatePreset = BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
-            Owner.ServConfReq (this, Sm.Arg);
+            AutoDFailureReason = (BackEnd.AutoDFailureReasonEnum)Sm.Arg;
+            Owner.ServConfReq (this, AutoDFailureReason);
         }
 
         private void DoSetServConf ()

@@ -438,9 +438,6 @@ namespace NachoClient.iOS
                 dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
                 return;
             }
-            if (segue.Identifier.Equals ("ComposeToNachoNow")) {
-                return;
-            }
             if (segue.Identifier == "SegueToQuickResponse") {
                 var vc = (QuickResponseViewController)segue.DestinationViewController;
                 vc.SetOwner (this);

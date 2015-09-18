@@ -140,11 +140,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("SegueToNachoNow")) {
-                // Nothing to do
-                return;
-            }  
-
             if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
