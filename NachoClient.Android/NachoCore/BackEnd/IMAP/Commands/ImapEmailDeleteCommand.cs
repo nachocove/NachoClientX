@@ -15,9 +15,11 @@ namespace NachoCore.IMAP
         public ImapEmailDeleteCommand (IBEContext beContext, NcImapClient imap, List<McPending> pendingList) : base (beContext, imap)
         {
             PendingList = pendingList;
-            foreach (var pending in PendingList) {
-                pending.MarkDispached ();
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var pending in PendingList) {
+                    pending.MarkDispached ();
+                }
+            });
             RedactProtocolLogFunc = RedactProtocolLog;
         }
 
@@ -38,7 +40,6 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             McFolder folder = null;
-            // FIXME This will not work once we turn on email-in-multiple-folders feature
             List<UniqueId> uids = new List<UniqueId> ();
             var removeList = new List<McPending> ();
             foreach (var pending in PendingList) {
@@ -50,6 +51,7 @@ namespace NachoCore.IMAP
                     }
                 }
                 UInt32 uid;
+                // FIXME This will not work once we turn on email-in-multiple-folders feature
                 if (!UInt32.TryParse (pending.ServerId.Split (':') [1], out uid)) {
                     Log.Error (Log.LOG_IMAP, "Could not extract UID from ServerId {0}", pending.ServerId);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageDeleteFailed, NcResult.WhyEnum.BadOrMalformed));

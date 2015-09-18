@@ -19,9 +19,11 @@ namespace NachoCore.IMAP
         public ImapEmailMoveCommand (IBEContext beContext, NcImapClient imap, List<McPending> pendingList) : base (beContext, imap)
         {
             PendingList = pendingList;
-            foreach (var pending in pendingList) {
-                pending.MarkDispached ();
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var pending in pendingList) {
+                    pending.MarkDispached ();
+                }
+            });
             RedactProtocolLogFunc = RedactProtocolLog;
 
             RegexList = new List<Regex> ();
@@ -40,9 +42,7 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             McFolder src = null;
-            NcAssert.NotNull (src);
             McFolder dst = null;
-            NcAssert.NotNull (dst);
             var emails = new List<McEmailMessage> ();
             var removeList = new List<McPending> ();
             foreach (var pending in PendingList) {
@@ -106,14 +106,16 @@ namespace NachoCore.IMAP
             try {
                 var newUids = srcFolder.MoveTo (uids, dstFolder, Token);
                 if (newUids.Any ()) {
-                    for (var i=0; i<newUids.Count; i++) {
-                        emails[i].UpdateWithOCApply<McEmailMessage> ((record) => {
-                            var target = (McEmailMessage)record;
-                            target.ServerId = ImapProtoControl.MessageServerId (dst, newUids[i]);
-                            target.ImapUid = newUids[i].Id;
-                            return true;
-                        });
-                    }
+                    NcModel.Instance.RunInTransaction (() => {
+                        for (var i=0; i<newUids.Count; i++) {
+                            emails[i].UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.ServerId = ImapProtoControl.MessageServerId (dst, newUids[i]);
+                                target.ImapUid = newUids[i].Id;
+                                return true;
+                            });
+                        }
+                    });
                 } else {
                     // FIXME How do we determine the new ID? This can happen with servers that don't support UIDPLUS.
                 }
