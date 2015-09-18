@@ -43,7 +43,7 @@ namespace NachoCore.IMAP
             var first = PendingList.FirstOrDefault ();
             if (null == first) {
                 Log.Error (Log.LOG_IMAP, "No pendings");
-                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL");
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELNONE");
             }
             McFolder folder = McFolder.QueryByServerId (AccountId, first.ParentId);
             if (null == folder) {
