@@ -669,6 +669,7 @@ namespace NachoCore.ActiveSync
                 catch (UriFormatException) {
                     Log.Warn (Log.LOG_AS, "SRV record does not look like a hostname: {0}", SrDomain);
                     StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRD2RD");
+                    return;
                 }
                 DoRobot2ReDir ();
             }
