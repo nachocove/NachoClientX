@@ -67,6 +67,7 @@ namespace NachoCore.IMAP
                     removeList.Add (pending);
                     continue;
                 }
+                emails.Add (emailMessage);
             }
             foreach (var pending in removeList) {
                 PendingList.Remove (pending);
