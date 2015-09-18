@@ -39,19 +39,26 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            McFolder folder = null;
+            // All pendings are assumed to be for the same folder.
+            var first = PendingList.FirstOrDefault ();
+            if (null == first) {
+                Log.Error (Log.LOG_IMAP, "No pendings");
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL");
+            }
+            McFolder folder = McFolder.QueryByServerId (AccountId, first.ParentId);
+            if (null == folder) {
+                Log.Error (Log.LOG_IMAP, "No folder for {0}", first.ParentId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL");
+            }
+
             List<UniqueId> uids = new List<UniqueId> ();
             var removeList = new List<McPending> ();
             foreach (var pending in PendingList) {
-                if (null == folder) {
-                    folder = McFolder.QueryByServerId (AccountId, pending.ParentId);
-                    if (null == folder) {
-                        Log.Error (Log.LOG_IMAP, "No folder for {0}", pending.ParentId);
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL");
-                    }
-                }
                 UInt32 uid;
                 // FIXME This will not work once we turn on email-in-multiple-folders feature
+                // To fix, we'll presumably keep the ImapUid in the Folder mapping (since each folder will know the email
+                // by a different Uid). In that case, we need to look up the folder-mapping for the email's serverId, and
+                // extract the ImapUid from there.
                 if (!UInt32.TryParse (pending.ServerId.Split (':') [1], out uid)) {
                     Log.Error (Log.LOG_IMAP, "Could not extract UID from ServerId {0}", pending.ServerId);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageDeleteFailed, NcResult.WhyEnum.BadOrMalformed));

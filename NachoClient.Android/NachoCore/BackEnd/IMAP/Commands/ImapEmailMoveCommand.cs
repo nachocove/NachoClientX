@@ -41,25 +41,26 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            McFolder src = null;
-            McFolder dst = null;
+            // All pendings are assumed to be for the same folders.
+            var first = PendingList.FirstOrDefault ();
+            if (null == first) {
+                Log.Error (Log.LOG_IMAP, "No pendings");
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGMOVNONE");
+            }
+            McFolder src = McFolder.QueryByServerId (AccountId, first.ParentId);
+            if (null == src) {
+                Log.Error (Log.LOG_IMAP, "No src folder for {0}", first.ParentId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL1");
+            }
+            McFolder dst = McFolder.QueryByServerId (AccountId, first.DestParentId);
+            if (null == dst) {
+                Log.Error (Log.LOG_IMAP, "No dst folder for {0}", first.DestParentId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL2");
+            }
+
             var emails = new List<McEmailMessage> ();
             var removeList = new List<McPending> ();
             foreach (var pending in PendingList) {
-                if (null == src) {
-                    src = McFolder.QueryByServerId<McFolder> (AccountId, pending.ParentId);
-                    if (null == src) {
-                        Log.Error (Log.LOG_IMAP, "No src folder for {0}", pending.ParentId);
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL");
-                    }
-                }
-                if (null == dst) {
-                    dst = McFolder.QueryByServerId<McFolder> (AccountId, pending.DestParentId);
-                    if (null == dst) {
-                        Log.Error (Log.LOG_IMAP, "No dst folder for {0}", pending.DestParentId);
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL");
-                    }
-                }
                 var emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, pending.ServerId);
                 if (null == emailMessage) {
                     Log.Error (Log.LOG_IMAP, "Could not find email message {0}", pending.ServerId);
