@@ -141,7 +141,9 @@ namespace NachoCore
         NcResult ValidateConfig (int accountId, McServer server, McCred cred);
         void CancelValidateConfig (int accountId);
         // state, including auto-d.
+        List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> BackEndStates (int accountId);
         BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities);
+        BackEnd.AutoDFailureReasonEnum AutoDFailureReason (int accountId, McAccount.AccountCapabilityEnum capabilities);
         AutoDInfoEnum AutoDInfo (int accountId, McAccount.AccountCapabilityEnum capabilities);
         X509Certificate2 ServerCertToBeExamined (int accountId, McAccount.AccountCapabilityEnum capabilities);
         void SendEmailBodyFetchHint (int accountId, int emailMessageId);

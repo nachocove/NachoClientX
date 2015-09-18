@@ -96,7 +96,7 @@ namespace Test.iOS
             public void StatusInd (NcProtoControl sender, NcResult status) {}
             public void StatusInd (NcProtoControl sender, NcResult status, string[] tokens) {}
             public void CredReq (NcProtoControl sender) {}
-            public void ServConfReq (NcProtoControl sender, object arg) {}
+            public void ServConfReq (NcProtoControl sender, NachoCore.BackEnd.AutoDFailureReasonEnum arg) {}
             public void CertAskReq (NcProtoControl sender, X509Certificate2 certificate) {}
             public void SearchContactsResp (NcProtoControl sender, string prefix, string token) {}
             public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend) {}

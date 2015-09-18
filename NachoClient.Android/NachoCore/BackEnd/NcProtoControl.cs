@@ -85,6 +85,8 @@ namespace NachoCore
             }
         }
 
+        public virtual BackEnd.AutoDFailureReasonEnum AutoDFailureReason { get; protected set; }
+
         public virtual X509Certificate2 ServerCertToBeExamined {
             get {
                 return null;

@@ -11,6 +11,10 @@ namespace NachoCore.Utils
         event NcCommStatusServerEventHandler CommStatusServerEvent;
         event NetStatusEventHandler CommStatusNetEvent;
 
+        NetStatusStatusEnum Status { get; set; }
+
+        NetStatusSpeedEnum Speed { get; set; }
+
         void ReportCommResult (int serverId, bool didFailGenerally);
 
         void ReportCommResult (int serverId, DateTime delayUntil);

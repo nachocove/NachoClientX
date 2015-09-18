@@ -93,7 +93,7 @@ namespace NachoCore
     // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
     // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD.
 
-    public sealed class NcApplication : IBackEndOwner
+    public sealed class NcApplication : IBackEndOwner, IStatusIndEvent
     {
         private const int KClass4EarlyShowSeconds = 5;
         private const int KClass4LateShowSeconds = 15;
@@ -818,15 +818,25 @@ namespace NachoCore
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication CredReqCallback.");
             }
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
+                Account = McAccount.QueryById<McAccount> (accountId),
+            });
         }
 
-        public void ServConfReq (int accountId, McAccount.AccountCapabilityEnum capabilities, object arg)
+        public void ServConfReq (int accountId, McAccount.AccountCapabilityEnum capabilities, BackEnd.AutoDFailureReasonEnum arg)
         {
             if (null != ServConfReqCallback) {
                 ServConfReqCallback (accountId, capabilities, arg);
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication ServConfReqCallback.");
             }
+            var status = NcResult.Info (NcResult.SubKindEnum.Info_ServerConfReqCallback);
+            status.Value = new Tuple<McAccount.AccountCapabilityEnum, BackEnd.AutoDFailureReasonEnum> (capabilities, arg);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = status,
+                Account = McAccount.QueryById<McAccount> (accountId),
+            });
         }
 
         public void CertAskReq (int accountId, McAccount.AccountCapabilityEnum capabilities, X509Certificate2 certificate)
@@ -840,6 +850,12 @@ namespace NachoCore
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication CertAskReqCallback.");
             }
+            var status = NcResult.Info (NcResult.SubKindEnum.Info_CertAskReqCallback);
+            status.Value = new Tuple<McAccount.AccountCapabilityEnum, X509Certificate2> (capabilities, certificate);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = status,
+                Account = McAccount.QueryById<McAccount> (accountId),
+            });
         }
 
         public void SearchContactsResp (int accountId, string prefix, string token)
