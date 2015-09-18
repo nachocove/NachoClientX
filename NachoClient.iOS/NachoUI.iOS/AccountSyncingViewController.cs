@@ -21,7 +21,7 @@ namespace NachoClient.iOS
 
     #endregion
 
-    public partial class AccountSyncingViewController : NcUIViewController
+    public partial class AccountSyncingViewController : NcUIViewController, ILoginEvents
     {
 
         #region Properties
@@ -41,7 +41,6 @@ namespace NachoClient.iOS
         }
 
         public AccountSyncingViewControllerDelegate AccountDelegate;
-        private bool StatusIndCallbackIsSet;
         private McAccount account;
         private bool IsVisible;
         private bool DismissOnVisible;
@@ -61,8 +60,9 @@ namespace NachoClient.iOS
 
             set {
                 account = value;
-                StartListeningForApplicationStatus ();
-                CheckBackendState ();
+                LoginEvents.Owner = this;
+                LoginEvents.AccountId = account.Id;
+                LoginEvents.CheckBackendState ();
             }
         }
 
@@ -120,7 +120,7 @@ namespace NachoClient.iOS
         partial void Skip (NSObject sender)
         {
             Log.Info (Log.LOG_UI, "AccountSyncingViewController user did skip, dismissing as if we were done");
-            StopListeningForApplicationStatus ();
+            LoginEvents.Owner = null;
             CompleteAccount ();
             Dismiss ();
         }
@@ -187,59 +187,43 @@ namespace NachoClient.iOS
 
         #region Backend Events
 
-        void StartListeningForApplicationStatus ()
+        public void CredReq (int accountId)
         {
-            if (!StatusIndCallbackIsSet) {
-                StatusIndCallbackIsSet = true;
-                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            }
+            LoginEvents.Owner = null;
+            CompleteWithMessage (ErrorMessage);
         }
 
-        void StopListeningForApplicationStatus ()
+        public void ServConfReq (int accountId, McAccount.AccountCapabilityEnum capabilities, BackEnd.AutoDFailureReasonEnum arg)
         {
-            if (StatusIndCallbackIsSet) {
-                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-                StatusIndCallbackIsSet = false;
-            }
+            LoginEvents.Owner = null;
+            CompleteWithMessage (ErrorMessage);
         }
 
-        private void StatusIndicatorCallback (object sender, EventArgs e)
+        public void CertAskReq (int accountId, McAccount.AccountCapabilityEnum capabilities, System.Security.Cryptography.X509Certificates.X509Certificate2 certificate)
         {
-            if (!StatusIndCallbackIsSet) {
-                Log.Info (Log.LOG_UI, "AccountSyncingViewController ignoring status callback because listening has been disabled");
-                return;
-            }
-            var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_BackEndStateChanged == s.Status.SubKind) {
-                if (s.Account != null && s.Account.Id == Account.Id) {
-                    CheckBackendState ();
-                }
-            } else if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
-                StopListeningForApplicationStatus ();
-                CompleteWithMessage (NetworkMessage);
-            }
+            LoginEvents.Owner = null;
+            CompleteWithMessage (ErrorMessage);
         }
 
-        private void CheckBackendState ()
+        public void NetworkDown ()
         {
-            var senderState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
-            var readerState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
-            Log.Info (Log.LOG_UI, "AccountSyncingViewController senderState {0}, readerState {1} for account {2}", senderState, readerState, Account.Id);
-            if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
-                CompleteWithMessage (ErrorMessage);
-            } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
-                CompleteWithMessage (ErrorMessage);
-            } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
-                CompleteWithMessage (ErrorMessage);
-            } else if ((senderState == BackEndStateEnum.PostAutoDPostInboxSync) && (readerState == BackEndStateEnum.PostAutoDPostInboxSync)) {
-                Log.Info (Log.LOG_UI, "AccountSyncingViewController saw PostAutoDBPostInboxSync for both sender and reader, account ID{0}", Account.Id);
-                CompleteWithMessage (SuccessMessage);
-            }
+            LoginEvents.Owner = null;
+            CompleteWithMessage (NetworkMessage);
+        }
+
+        public void PostAutoDPreInboxSync (int accountId)
+        {
+            // we don't care about this state, so do nothing wait for something else
+        }
+
+        public void PostAutoDPostInboxSync (int accountId)
+        {
+            LoginEvents.Owner = null;
+            CompleteWithMessage (SuccessMessage);
         }
 
         private void CompleteWithMessage (AccountSyncingStatusMessage message)
         {
-            StopListeningForApplicationStatus ();
             CompleteAccount ();
             Message = message;
             Update ();

@@ -13,12 +13,11 @@ using System.Linq;
 namespace NachoClient.iOS
 {
 
-    public partial class StandardCredentialsViewController : AccountCredentialsViewController, INachoCertificateResponderParent, AccountAdvancedFieldsViewControllerDelegate, IUITextFieldDelegate
+    public partial class StandardCredentialsViewController : AccountCredentialsViewController, INachoCertificateResponderParent, AccountAdvancedFieldsViewControllerDelegate, IUITextFieldDelegate, ILoginEvents
     {
 
         #region Properties
 
-        private bool StatusIndCallbackIsSet;
         private bool IsShowingAdvanced;
         private bool IsSubmitting;
         private UIView advancedSubview;
@@ -26,6 +25,7 @@ namespace NachoClient.iOS
         AccountAdvancedFieldsViewController advancedFieldsViewController;
         private bool HideAdvancedButton = false;
         private bool LockEmailField = false;
+        private bool AcceptCertOnNextReq = false;
 
         #endregion
 
@@ -125,8 +125,10 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier == "cert-ask") {
+                var holder = sender as SegueHolder;
+                McAccount.AccountCapabilityEnum capability = (McAccount.AccountCapabilityEnum)holder.value;
                 var vc = (CertAskViewController)segue.DestinationViewController;
-                vc.Setup (Account, McAccount.AccountCapabilityEnum.EmailSender);
+                vc.Setup (Account, capability);
                 vc.CertificateDelegate = this;
             }
         }
@@ -145,8 +147,8 @@ namespace NachoClient.iOS
                 View.EndEditing (false);
                 statusLabel.Text = "Verifying your information...";
                 IsSubmitting = true;
+                AcceptCertOnNextReq = false;
                 UpdateForSubmitting ();
-                StartListeningForApplicationStatus ();
                 scrollView.SetContentOffset (new CGPoint (0, 0), true);
                 if (Account == null) {
                     Account = NcAccountHandler.Instance.CreateAccount (Service, email, password);
@@ -155,8 +157,6 @@ namespace NachoClient.iOS
                         advancedFieldsViewController.PopulateAccountWithFields (Account);
                     }
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
-                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController Instace.Start for ID{0}", Account.Id);
-                    BackEnd.Instance.Start (Account.Id);
                 } else {
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController updating account ID{0}", Account.Id);
                     Account.EmailAddr = email;
@@ -167,10 +167,10 @@ namespace NachoClient.iOS
                     if (IsShowingAdvanced) {
                         advancedFieldsViewController.PopulateAccountWithFields (Account);
                     }
-                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController stop/start ID{0}", Account.Id);
-                    BackEnd.Instance.Stop (Account.Id);
-                    BackEnd.Instance.Start (Account.Id);
                 }
+                StartReceivingLoginEvents ();
+                Log.Info (Log.LOG_UI, "AccountCredentialsViewController start ID{0}", Account.Id);
+                BackEnd.Instance.Start (Account.Id);
             } else {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController issue found: {0}", issue);
                 NcAlertView.ShowMessage (this, "Nacho Mail", issue);
@@ -356,54 +356,54 @@ namespace NachoClient.iOS
 
         #region Backend Events
 
-        void StartListeningForApplicationStatus ()
+        void StartReceivingLoginEvents ()
         {
-            if (!StatusIndCallbackIsSet) {
-                StatusIndCallbackIsSet = true;
-                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            }
+            LoginEvents.Owner = this;
+            LoginEvents.AccountId = Account.Id;
         }
 
-        void StopListeningForApplicationStatus ()
+        void StopRecevingLoginEvents ()
         {
-            if (StatusIndCallbackIsSet) {
-                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-                StatusIndCallbackIsSet = false;
-            }
+            LoginEvents.Owner = null;
         }
 
-        private void StatusIndicatorCallback (object sender, EventArgs e)
+        public void CredReq (int accountId)
         {
-            if (!StatusIndCallbackIsSet) {
-                Log.Info (Log.LOG_UI, "AccountCredentialsViewController ignoring status callback because listening has been disabled");
-                return;
+            StopRecevingLoginEvents ();
+            HandleCredentialError ();
+        }
+
+        public void ServConfReq (int accountId, McAccount.AccountCapabilityEnum capabilities, BackEnd.AutoDFailureReasonEnum arg)
+        {
+            StopRecevingLoginEvents ();
+            HandleServerError ();
+        }
+
+        public void CertAskReq (int accountId, McAccount.AccountCapabilityEnum capabilities, System.Security.Cryptography.X509Certificates.X509Certificate2 certificate)
+        {
+            if (AcceptCertOnNextReq) {
+                AcceptCertOnNextReq = false;
+                NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
+            } else {
+                HandleCertificateAsk (capabilities);
             }
-            var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_BackEndStateChanged == s.Status.SubKind) {
-                if (s.Account != null && s.Account.Id == Account.Id) {
+        }
+            
+        public void NetworkDown ()
+        {
+            StopRecevingLoginEvents ();
+            HandleNetworkUnavailableError ();
+        }
 
-                    var senderState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
-                    var readerState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+        public void PostAutoDPreInboxSync (int accountId)
+        {
+            StopRecevingLoginEvents ();
+            HandleAccountVerified ();
+        }
 
-                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController senderState {0}, readerState {1}", senderState, readerState);
-
-                    if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
-                        StopListeningForApplicationStatus ();
-                        HandleServerError ();
-                    } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
-                        StopListeningForApplicationStatus ();
-                        HandleCredentialError ();
-                    } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
-                        HandleCertificateAsk ();
-                    } else if ((senderState >= BackEndStateEnum.PostAutoDPreInboxSync) && (readerState >= BackEndStateEnum.PostAutoDPreInboxSync)) {
-                        StopListeningForApplicationStatus ();
-                        HandleAccountVerified ();
-                    }
-                }
-            } else if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
-                StopListeningForApplicationStatus ();
-                HandleNetworkUnavailableError ();
-            }
+        public void PostAutoDPostInboxSync (int accountId)
+        {
+            // We never get here for this view because we stop once we see PostAutoDPreInboxSync
         }
 
         private void HandleNetworkUnavailableError ()
@@ -417,6 +417,7 @@ namespace NachoClient.iOS
         private void HandleServerError ()
         {
             IsSubmitting = false;
+            BackEnd.Instance.Stop (Account.Id);
             if (Service == McAccount.AccountServiceEnum.GoogleExchange || Service == McAccount.AccountServiceEnum.Office365Exchange) {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for known exchange service {0}, not showing advanced", Service);
                 ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
@@ -436,18 +437,20 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CredWait for service {0}", Service);
             IsSubmitting = false;
+            BackEnd.Instance.Stop (Account.Id);
             ShowCredentialsError ("Invalid username or password.  Please adjust and try again.");
         }
 
-        private void HandleCertificateAsk ()
+        private void HandleCertificateAsk (McAccount.AccountCapabilityEnum capability)
         {
-            if (NcApplication.Instance.CertAskReqPreApproved (Account.Id, McAccount.AccountCapabilityEnum.EmailSender)) {
+            if (NcApplication.Instance.CertAskReqPreApproved (Account.Id, capability)) {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CertAskWait for service {0}, but cert is pre approved, so continuting on", Service);
-                NcApplication.Instance.CertAskResp (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, true);
+                NcApplication.Instance.CertAskResp (Account.Id, capability, true);
             } else {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CertAskWait for service {0}, user must approve", Service);
-                StopListeningForApplicationStatus ();
-                PerformSegue ("cert-ask", null);
+                StopRecevingLoginEvents ();
+                var holder = new SegueHolder (capability);
+                PerformSegue ("cert-ask", holder);
             }
         }
 
@@ -467,6 +470,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController certificate rejected by user");
             IsSubmitting = false;
+            BackEnd.Instance.Stop (Account.Id);
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
             LoginHelpers.UserInterventionStateChanged (accountId);
             UpdateForSubmitting ();
@@ -480,13 +484,11 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController certificate accepted by user");
             LoginHelpers.UserInterventionStateChanged (accountId);
             DismissViewController (true, null);
-            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                Log.Info (Log.LOG_UI, "AccountCredentialsViewController no network after certficate accepted by user");
-                HandleNetworkUnavailableError ();
-            } else {
-                StartListeningForApplicationStatus ();
-                NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
-            }
+            StartReceivingLoginEvents ();
+            // Checking the backend state should either result in a newtork down callback, in which case
+            // we stop, or a cert wait callback, in which case we'll accept the cert.
+            AcceptCertOnNextReq = true;
+            LoginEvents.CheckBackendState ();
         }
 
         #endregion

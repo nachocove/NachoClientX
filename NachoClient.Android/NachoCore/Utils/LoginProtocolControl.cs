@@ -28,6 +28,7 @@ namespace NachoCore.Utils
         private static IBackEnd _BackEnd;
         private static INcCommStatus _commStatus;
         private static IStatusIndEvent _statusIndEvent;
+        private static int? _accountId;
 
         public static ILoginEvents Owner {
             set {
@@ -36,6 +37,7 @@ namespace NachoCore.Utils
                         Log.Error (Log.LOG_UI, "LoginEvents.Owner: set to null when already null.");
                     }
                     _Owner = null;
+                    _accountId = null;
                 } else {
                     if (!IsInitialized) {
                         Init ();
@@ -45,8 +47,13 @@ namespace NachoCore.Utils
                     }
                     _Owner = value;
                     OwnerTypeName = _Owner.GetType ().ToString ();
-                    CheckBackendState ();
                 }
+            }
+        }
+
+        public static int? AccountId {
+            set {
+                _accountId = value;
             }
         }
 
@@ -81,6 +88,9 @@ namespace NachoCore.Utils
             }
             var accounts = McAccount.GetAllAccounts ();
             foreach (var account in accounts) {
+                if (_accountId.HasValue && _accountId.Value != account.Id) {
+                    continue;
+                }
                 var credReqCalled = false;
                 // if all controllers are in PostPost say so.
                 var allPostPost = true;
@@ -144,6 +154,11 @@ namespace NachoCore.Utils
         {
             var siea = ea as StatusIndEventArgs;
             var subKind = siea.Status.SubKind;
+            if (_accountId.HasValue) {
+                if (siea.Account != null && siea.Account.Id != _accountId.Value) {
+                    return;
+                }
+            }
             switch (subKind) {
             case NcResult.SubKindEnum.Info_CredReqCallback:
                 LogAndCall (subKind.ToString (), () => {
