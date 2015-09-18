@@ -395,12 +395,6 @@ namespace NachoCore.SMTP
             NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
-        public override void ForceStop ()
-        {
-            base.ForceStop ();
-            Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPFORCESTOP");
-        }
-
         public override void Remove ()
         {
             if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
@@ -410,7 +404,7 @@ namespace NachoCore.SMTP
             base.Remove ();
         }
 
-        public override bool Execute ()
+        protected override bool Execute ()
         {
             if (!base.Execute ()) {
                 return false;
