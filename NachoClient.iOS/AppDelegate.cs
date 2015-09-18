@@ -299,7 +299,6 @@ namespace NachoClient.iOS
                 NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
                 NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
                 MdmConfig.Instance.ExtractValues ();
-                ScoringHelpers.InitTestMode ();
             }
 
             if ((null != launchOptions) && launchOptions.ContainsKey (UIApplication.LaunchOptionsRemoteNotificationKey)) {
@@ -739,6 +738,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
                 CompletePerformFetchWithoutShutdown ();
             }
+            NcCommStatus.Instance.ForceUp ("StartFetch");
             CompletionHandler = completionHandler;
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;

@@ -728,7 +728,7 @@ namespace NachoCore.ActiveSync
         }
         // Methods callable by the owner.
         // Keep Execute() harmless if it is called while already executing.
-        public override bool Execute ()
+        protected override bool Execute ()
         {
             if (!base.Execute ()) {
                 return false;
@@ -1136,13 +1136,12 @@ namespace NachoCore.ActiveSync
             Cmd.Execute (Sm);
         }
 
-        public override void ForceStop ()
+        protected override void ForceStop ()
         {
             base.ForceStop ();
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
-            Sm.PostEvent ((uint)PcEvt.E.Park, "FORCESTOP");
         }
 
         public override void ValidateConfig (McServer server, McCred cred)

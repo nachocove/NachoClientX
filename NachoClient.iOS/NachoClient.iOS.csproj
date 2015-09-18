@@ -1095,7 +1095,6 @@
     <Compile Include="NachoUI.iOS\Interfaces\INachoCertificateResponder.cs" />
     <Compile Include="NachoUI.iOS\Support\IBodyRender.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyImageView.cs" />
-    <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
     <Compile Include="WebCache.cs" />
     <Compile Include="NachoUI.iOS\AccountSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountSettingsViewController.designer.cs">
@@ -1662,6 +1661,12 @@
     <Compile Include="NachoUI.iOS\Support\HotHelpMessageView.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration43.cs">
       <Link>NachoCore\Model\Migration\NcMigration43.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration44.cs">
+      <Link>NachoCore\Model\Migration\NcMigration44.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ScoringHelpers.cs">
+      <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

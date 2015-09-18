@@ -382,7 +382,6 @@ namespace NachoClient.iOS
                 } else {
                     hotListSource.SetMessageThreads (priorityInbox);
                 }
-                hotListView.Source = hotListSource;
                 hotListView.RowHeight = hotListView.Frame.Height - hotListSource.CardPeekDistance * 2.0f - hotListSource.CellCardInset.Top - hotListSource.CellCardInset.Bottom;
                 hotListView.ContentInset = new UIEdgeInsets (
                     hotListSource.CardPeekDistance + hotListSource.CellCardInset.Top,

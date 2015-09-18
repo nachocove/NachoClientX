@@ -93,17 +93,22 @@ namespace NachoCore
             }
         }
 
-        public CancellationTokenSource Cts { get; protected set; }
         public NcProtoControl (INcProtoControlOwner owner, int accountId)
         {
             Owner = owner;
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
-            Cts = new CancellationTokenSource ();
+            NewCancellation ();
             if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
                 NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
                 NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
             }
+        }
+
+        public CancellationTokenSource Cts { get; protected set; }
+        private void NewCancellation ()
+        {
+            Cts = new CancellationTokenSource ();
         }
 
         protected void SetupAccount ()
@@ -180,6 +185,8 @@ namespace NachoCore
             NcModel.Instance.InitializeDirs (AccountId);
         }
 
+        private bool ForceStopped;
+
         #region NcCommStatus
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
@@ -192,9 +199,7 @@ namespace NachoCore
                 switch (e.Quality) {
                 case NcCommStatus.CommQualityEnum.OK:
                     Log.Info (Log.LOG_BACKEND, "Server {0} communication quality OK.", Server.Host);
-                    if (!Cts.IsCancellationRequested) {
-                        Execute ();
-                    }
+                    Execute ();
                     break;
 
                 default:
@@ -213,9 +218,7 @@ namespace NachoCore
         public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
         {
             if (NetStatusStatusEnum.Up == e.Status) {
-                if (!Cts.IsCancellationRequested) {
-                    Execute ();
-                }
+                Execute ();
             } else {
                 // The "Down" case.
                 Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
@@ -364,21 +367,35 @@ namespace NachoCore
 
         // Interface to owner.
         // Returns false if sub-class override should not continue.
-        public virtual bool Execute ()
+        public bool Start ()
         {
-            if (NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                Log.Warn (Log.LOG_BACKEND, "Execute called while network is down.");
+            ForceStopped = false;
+            return Execute ();
+        }
+
+        protected virtual bool Execute ()
+        {
+            // don't allow us to execute, if the App/UI told us to stop.
+            if (ForceStopped) {
                 return false;
             }
             if (Cts.IsCancellationRequested) {
-                Cts = new CancellationTokenSource ();
+                NewCancellation ();
             }
             return true;
         }
 
-        public virtual void ForceStop ()
+        // Interface to owner.
+        public void Stop ()
+        {
+            ForceStopped = true;
+            ForceStop ();
+        }
+
+        protected virtual void ForceStop ()
         {
             Cts.Cancel ();
+            Sm.PostEvent ((uint)PcEvt.E.Park, "PCFORCESTOP");
         }
 
         public virtual void Remove ()

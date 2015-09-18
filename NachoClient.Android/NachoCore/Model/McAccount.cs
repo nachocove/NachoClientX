@@ -70,6 +70,7 @@ namespace NachoCore.Model
 
         public const AccountCapabilityEnum DeviceCapabilities = (
                                                                     AccountCapabilityEnum.CalReader |
+                                                                    AccountCapabilityEnum.CalWriter |
                                                                     AccountCapabilityEnum.ContactReader |
                                                                     AccountCapabilityEnum.ContactWriter
                                                                 );

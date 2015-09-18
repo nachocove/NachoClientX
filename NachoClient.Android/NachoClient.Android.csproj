@@ -509,6 +509,8 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration42.cs" />
     <Compile Include="NachoCore\BackEnd\NcPreFetchHints.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration43.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration44.cs" />
+    <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

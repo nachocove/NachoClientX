@@ -1137,9 +1137,9 @@ namespace NachoCore.ActiveSync
                 var next = McPending.QueryEligible (AccountId, McAccount.ActiveSyncCapabilities).FirstOrDefault ();
                 if (null != next) {
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:{0}:{1}", next.DelayNotAllowed ? "HotQOp" : "QOp", next.Operation.ToString ());
                     AsCommand cmd = null;
-                    var action = PickActionEnum.QOop;
+                    var action = next.DelayNotAllowed ? PickActionEnum.HotQOp : PickActionEnum.QOop;
                     switch (next.Operation) {
                     // It is likely that next is one of these at the top of the switch () ...
                     case McPending.Operations.FolderCreate:

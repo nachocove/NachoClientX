@@ -1,5 +1,6 @@
 using System;
 using NachoCore.Model;
+using System.Collections.Generic;
 
 namespace NachoCore.Utils
 {
@@ -289,6 +290,25 @@ namespace NachoCore.Utils
         public string GetMessage ()
         {
             return Message;
+        }
+
+        public override string ToString ()
+        {
+            string me = string.Format ("NcResult({0})", Kind);
+            List<string> extra = new List<string> ();
+            if (!string.IsNullOrEmpty (Message)) {
+                extra.Add (string.Format ("Message={0}", Message));
+            }
+            if (SubKind != SubKindEnum.NotSpecified) {
+                extra.Add (string.Format ("SubKind={0}", SubKind));
+            }
+            if (Why != WhyEnum.NotSpecified) {
+                extra.Add (string.Format ("Why={0}", Why));
+            }
+            if (null != Value) {
+                extra.Add (string.Format ("Value={0}", Value));
+            }
+            return extra.Count == 0 ? me : string.Format ("{0}: {1}", me, string.Join (", ", extra));
         }
     }
 }

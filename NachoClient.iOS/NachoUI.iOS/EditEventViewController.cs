@@ -108,9 +108,10 @@ namespace NachoClient.iOS
         protected bool timesAreSet = true;
         protected bool descriptionWasEdited = false;
         protected bool suppressLayout = false;
+        protected bool isSimpleEvent = false;
 
         protected bool calendarItemIsMissing = false;
-        protected bool noCalendarSupport = false;
+        protected bool noCalendarAccess = false;
 
         protected event Action OpenKeyboardAction;
 
@@ -217,24 +218,23 @@ namespace NachoClient.iOS
             }
             calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
             if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == calendars.Count ()) {
-                account = null;
-                foreach (var calAccount in McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.CalWriter)) {
-                    calendars = new NachoFolders (calAccount.Id, NachoFolders.FilterForCalendars);
-                    if (0 < calendars.Count ()) {
-                        Log.Info (Log.LOG_CALENDAR,
-                            "The current account does not support writing to calendars. Using a different account, {0}, that has calendar support.",
-                            calAccount.DisplayName);
-                        account = calAccount;
-                        break;
-                    }
+                Log.Info (Log.LOG_CALENDAR, "The current account does not support writing to calendars. Using the device account instead.");
+                account = McAccount.GetDeviceAccount ();
+                calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+            }
+
+            // There are additional restrictions on the event when it is on the device calendar.
+            if (McAccount.AccountTypeEnum.Device == account.AccountType) {
+                isSimpleEvent = true;
+                if (!Calendars.Instance.AuthorizationStatus) {
+                    // The app doesn't have access to the calendar
+                    noCalendarAccess = true;
                 }
-                if (null == account) {
-                    Log.Warn (Log.LOG_CALENDAR, "The current account does not support writing to calendars, and no suitable account could be found.");
-                    noCalendarSupport = true;
-                    // The account and set of calendars need to be set to something so the code can get through
-                    // setting up the view hierarchy and to the point where it displays the error message.
-                    account = NcApplication.Instance.Account;
-                    calendars = new NachoFolders (McAccount.GetDeviceAccount ().Id, NachoFolders.FilterForCalendars);
+                if (CalendarItemEditorAction.create == action && null != item) {
+                    // The Create Event gesture on an email message will create a meeting with attendees.
+                    // But the app does not support creating meetings on the device calendar.  Remove any
+                    // attendees from the calendar item.
+                    item.attendees = new List<McAttendee> ();
                 }
             }
         }
@@ -268,11 +268,10 @@ namespace NachoClient.iOS
                     }));
             }
 
-            if (noCalendarSupport) {
+            if (noCalendarAccess) {
                 var message = string.Format (
-                    "This version of the app does not support calendars for {0} accounts. Calendar support will be available in a future release.",
-                    NcServiceHelper.AccountServiceName (account.AccountService));
-                NcAlertView.Show (this, "No Calendar Support", message,
+                    "The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar.");
+                NcAlertView.Show (this, "No Calendar Access", message,
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
                         NavigationController.PopViewController (true);
                     }));
@@ -1045,15 +1044,24 @@ namespace NachoClient.iOS
             AdjustY (locationView, yOffset);
             yOffset += locationView.Frame.Height;
 
-            AdjustY (line9, yOffset);
-            AdjustY (attachmentView, yOffset);
-            AdjustY (attachmentBGView, yOffset);
-            attachmentView.Layout ();
-            yOffset += attachmentView.Frame.Height;
+            line9.Hidden = isSimpleEvent;
+            attachmentView.Hidden = isSimpleEvent;
+            attachmentBGView.Hidden = isSimpleEvent;
+            if (!isSimpleEvent) {
+                AdjustY (line9, yOffset);
+                AdjustY (attachmentView, yOffset);
+                AdjustY (attachmentBGView, yOffset);
+                attachmentView.Layout ();
+                yOffset += attachmentView.Frame.Height;
+            }
 
-            AdjustY (line11, yOffset);
-            AdjustY (peopleView, yOffset);
-            yOffset += peopleView.Frame.Height;
+            line11.Hidden = isSimpleEvent;
+            peopleView.Hidden = isSimpleEvent;
+            if (!isSimpleEvent) {
+                AdjustY (line11, yOffset);
+                AdjustY (peopleView, yOffset);
+                yOffset += peopleView.Frame.Height;
+            }
             AdjustY (line12, yOffset);
             AdjustY (separator4, line12.Frame.Bottom);
 

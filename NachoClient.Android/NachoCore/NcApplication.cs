@@ -336,6 +336,9 @@ namespace NachoCore
 
         private NcApplication ()
         {
+            // Install test mode handlers
+            InitTestMode ();
+
             // SetMaxThreads needs to be called before SetMinThreads, because on some devices (such as
             // iPhone 4s running iOS 7) the default maximum is less than the minimums we are trying to set.
             // NcAssert.True can't be called here, because logging hasn't been set up yet, meaning a
@@ -1112,6 +1115,30 @@ namespace NachoCore
                 return false;
             }
             return true;
+        }
+
+        public static void InitTestMode ()
+        {
+            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
+                TestMode.Instance.Add ("markhoton", (parameters) => {
+                    ScoringHelpers.SetTestMode (true);
+                    Console.WriteLine ("!!!!! ENTER MARKHOT TEST MODE !!!!!");
+                });
+                TestMode.Instance.Add ("markhotoff", (parameters) => {
+                    ScoringHelpers.SetTestMode (false);
+                    Console.WriteLine ("!!!!! EXIT MARKHOT TEST MODE !!!!!");
+                });
+                TestMode.Instance.Add ("searchon", (parameters) => {
+                    Log.SharedInstance.Settings.Debug.EnableConsole (Log.LOG_SEARCH);
+                    Log.SharedInstance.Settings.Debug.EnableTelemetry (Log.LOG_SEARCH);
+                    Console.WriteLine ("!!!!! START SEARCH DEBUG LOGGING  !!!!!");
+                });
+                TestMode.Instance.Add ("searchoff", (parameters) => {
+                    Log.SharedInstance.Settings.Debug.DisableConsole (Log.LOG_SEARCH);
+                    Log.SharedInstance.Settings.Debug.DisableTelemetry (Log.LOG_SEARCH);
+                    Console.WriteLine ("!!!!! STOP SEARCH DEBUG LOGGING !!!!!");
+                });
+            }
         }
 
     }

@@ -502,9 +502,9 @@ namespace NachoClient.iOS
                 NcMeetingStatus.MeetingOrganizerCancelled == root.MeetingStatus;
 
             // The event can be edited if (1) it is owned by the current user, (2) it is not a recurring event,
-            // and (3) it is from a writable calendar.  (The recurring event restriction will be lifted
-            // at some future date.)
-            if (isOrganizer && !isRecurring && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+            // (3) it is from a writable calendar, and (4) it is not a meeting on the device calendar.  (The
+            // recurring event restriction will be lifted at some future date.)
+            if (isOrganizer && !isRecurring && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && (0 == root.attendees.Count || McAccount.AccountTypeEnum.Device != account.AccountType)) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
 
@@ -609,7 +609,11 @@ namespace NachoClient.iOS
             var alertDetailLabel = View.ViewWithTag ((int)TagType.EVENT_ALERT_DETAIL_TAG) as UILabel;
             alertDetailLabel.Text = Pretty.ReminderString (c.HasReminder (), c.GetReminder ());
             alertDetailLabel.SizeToFit ();
-            eventAlertsViewArrow.Hidden = !account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter);
+            bool canChangeReminder =
+                account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) &&
+                (McAccount.AccountTypeEnum.Device != account.AccountType || !isRecurring);
+            eventAlertsViewArrow.Hidden = !canChangeReminder;
+            alertTapGestureRecognizer.Enabled = canChangeReminder;
 
             hasAttachments = 0 != c.attachments.Count ();
             attachmentListView.Hidden = !hasAttachments;
@@ -1027,7 +1031,7 @@ namespace NachoClient.iOS
             AdjustViewLayout (TagType.EVENT_CALENDAR_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             AdjustViewLayout (TagType.EVENT_CALENDAR_DETAIL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
 
-            if (isOrganizer && isRecurring && hasAttendees && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+            if (isOrganizer && isRecurring && hasAttendees && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && McAccount.AccountTypeEnum.Device != account.AccountType) {
                 AdjustViewLayout (cancelMeetingSeparatorLine, 0, ref internalYOffset, 0);
                 AdjustViewLayout (cancelMeetingButton, 18, ref internalYOffset, 18);
                 ViewFramer.Create (cancelMeetingLabel).Y (cancelMeetingButton.Frame.Y);
