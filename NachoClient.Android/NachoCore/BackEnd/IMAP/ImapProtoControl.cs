@@ -481,14 +481,13 @@ namespace NachoCore.IMAP
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
         }
 
-        public override void ForceStop ()
+        protected override void ForceStop ()
         {
             base.ForceStop ();
 
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
-            Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPFORCESTOP");
         }
 
         public override void Remove ()
@@ -506,7 +505,7 @@ namespace NachoCore.IMAP
             base.Remove ();
         }
 
-        public override bool Execute ()
+        protected override bool Execute ()
         {
             if (!base.Execute ()) {
                 return false;
