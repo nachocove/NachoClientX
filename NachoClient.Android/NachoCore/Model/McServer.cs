@@ -45,6 +45,10 @@ namespace NachoCore.Model
         public const string GMail_Suffix = "gmail.com";
         public const string GMail_Suffix2 = "googlemail.com";
 
+        public const string ICloud_Suffix = "icloud.com";
+        public const string ICloud_Suffix2 = "me.com";
+        public const string ICloud_Suffix3 = "mac.com";
+
         public string Path { get; set; }
 
 
