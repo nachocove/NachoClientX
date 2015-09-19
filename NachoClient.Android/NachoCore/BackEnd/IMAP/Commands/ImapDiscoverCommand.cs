@@ -156,7 +156,10 @@ namespace NachoCore.IMAP
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
                     var parts = username.Split ('@');
-                    if (DomainIsOrEndsWith(parts [1].ToLowerInvariant (), McServer.ICloud_Suffix)) {
+                    var domain = parts [1].ToLowerInvariant ();
+                    if (DomainIsOrEndsWith (domain, McServer.ICloud_Suffix) ||
+                        DomainIsOrEndsWith (domain, McServer.ICloud_Suffix2) ||
+                        DomainIsOrEndsWith (domain, McServer.ICloud_Suffix3)) {
                         username = parts [0];
                     }
                 }
