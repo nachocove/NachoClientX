@@ -772,7 +772,7 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "AUTOD::Restart event doesn't have Sm.Arg value.");  
                 // Didn't do a hard fail since it doesn't report an error back to user. Posted a cannot connect to server. 
                 // Sm.PostEvent ((uint)SmEvt.E.HardFail, "AUTODRESTARTFAIL");
-                OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODRESTARTFAIL", AutoDFailureReason.CannotConnectToServer);
+                OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODRESTARTFAIL", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
 
             }
         }
@@ -983,12 +983,12 @@ namespace NachoCore.ActiveSync
 
         private void DoUiGetServer ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS", AutoDFailureReason.CannotFindServer);
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
         }
 
         private void DoUiGetServerTempFail ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGSTF", AutoDFailureReason.CannotConnectToServer);
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGSTF", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
         }
 
         private void DoUiServerCertAsk ()
@@ -1038,7 +1038,6 @@ namespace NachoCore.ActiveSync
 
         public McProtocolState ProtocolState {
             get { return BEContext.ProtocolState; }
-            set { BEContext.ProtocolState = value; }
         }
 
         public McServer Server {

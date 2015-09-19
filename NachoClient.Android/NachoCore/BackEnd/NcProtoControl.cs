@@ -67,10 +67,6 @@ namespace NachoCore
             get {
                 return McProtocolState.QueryByAccountId<McProtocolState> (AccountId).SingleOrDefault ();
             }
-            set {
-                var update = value;
-                update.Update ();
-            }
         }
 
         public virtual BackEndStateEnum BackEndState {
@@ -88,6 +84,8 @@ namespace NachoCore
                 _autoDInfo = value;
             }
         }
+
+        public virtual BackEnd.AutoDFailureReasonEnum AutoDFailureReason { get; protected set; }
 
         public virtual X509Certificate2 ServerCertToBeExamined {
             get {

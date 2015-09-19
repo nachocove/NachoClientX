@@ -143,8 +143,8 @@ namespace NachoCore.Utils
             Error_ValidateConfigFailedAuth,
             Error_ValidateConfigFailedComm,
             Error_ValidateConfigFailedUser,
-            Error_ServerConfReqCallback,
-            Error_CertAskReqCallback,
+            Info_ServerConfReqCallback,
+            Info_CertAskReqCallback,
             Error_AutoDUserMessage,
             Error_AutoDAdminMessage,
 

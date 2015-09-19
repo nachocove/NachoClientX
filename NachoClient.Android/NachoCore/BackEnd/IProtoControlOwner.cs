@@ -10,7 +10,7 @@ namespace NachoCore
         void StatusInd (NcProtoControl sender, NcResult status);
         void StatusInd (NcProtoControl sender, NcResult status, string[] tokens);
         void CredReq (NcProtoControl sender);
-        void ServConfReq (NcProtoControl sender, object arg);
+        void ServConfReq (NcProtoControl sender, BackEnd.AutoDFailureReasonEnum arg);
         void CertAskReq (NcProtoControl sender, X509Certificate2 certificate);
         void SearchContactsResp (NcProtoControl sender, string prefix, string token);
         void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend);

@@ -64,7 +64,7 @@ namespace NachoCore.IMAP
                 // this can't (shouldn't?) really happen except if Initial=true
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
                 if (Initial) {
-                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPURICONF", AutoDFailureReason.CannotFindServer);
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPURICONF", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPURLHARD");
                 }
@@ -72,7 +72,7 @@ namespace NachoCore.IMAP
             } catch (SocketException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
                 if (Initial) {
-                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMP");
                 }
@@ -180,7 +180,10 @@ namespace NachoCore.IMAP
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
                     var parts = username.Split ('@');
-                    if (DomainIsOrEndsWith(parts [1].ToLowerInvariant (), McServer.ICloud_Suffix)) {
+                    var domain = parts [1].ToLowerInvariant ();
+                    if (DomainIsOrEndsWith (domain, McServer.ICloud_Suffix) ||
+                        DomainIsOrEndsWith (domain, McServer.ICloud_Suffix2) ||
+                        DomainIsOrEndsWith (domain, McServer.ICloud_Suffix3)) {
                         username = parts [0];
                     }
                 }

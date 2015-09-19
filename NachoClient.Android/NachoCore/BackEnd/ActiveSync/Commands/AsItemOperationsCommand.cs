@@ -21,10 +21,12 @@ namespace NachoCore.ActiveSync
         {
             Attachments = new List<McAttachment> ();
             FetchKit = fetchKit;
-            foreach (var pending in fetchKit.Pendings) {
-                pending.Pending.MarkDispached ();
-                PendingList.Add (pending.Pending);
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var pending in fetchKit.Pendings) {
+                    pending.Pending.MarkDispached ();
+                    PendingList.Add (pending.Pending);
+                }
+            });
         }
 
         private XElement ToEmailFetch (string parentId, string serverId, Xml.AirSync.TypeCode bodyPref)

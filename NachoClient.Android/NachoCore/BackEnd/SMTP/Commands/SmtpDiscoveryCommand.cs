@@ -58,7 +58,7 @@ namespace NachoCore.SMTP
             } catch (UriFormatException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
                 if (Initial) {
-                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPURIFAIL", AutoDFailureReason.CannotFindServer);
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPURIFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPURIHARD");
                 }
@@ -66,7 +66,7 @@ namespace NachoCore.SMTP
             } catch (SocketException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: SocketException: {0}", ex.Message);
                 if (Initial) {
-                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCONNTEMP");
                 }

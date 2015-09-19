@@ -47,7 +47,7 @@ namespace NachoCore.Model
                 cred.Insert ();
                 cred.UpdateOauth2 (accessToken, refreshToken, expiry);
                 return cred;
-            });
+            }, null);
         }
 
         public McAccount CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
@@ -64,10 +64,50 @@ namespace NachoCore.Model
                     cred.UpdatePassword (password);
                 }
                 return cred;
+            }, null);
+        }
+
+        public McAccount CreateAccount (NcMdmConfig config)
+        {
+            return CreateAccountCore (McAccount.AccountServiceEnum.Exchange, config.EmailAddr, (accountId) => {
+                string username = config.Username;
+                if (String.IsNullOrEmpty (username)) {
+                    if (String.IsNullOrEmpty (config.Domain)) {
+                        username = config.EmailAddr;
+                    } else {
+                        username = McCred.Join (config.Domain, "");
+                    }
+                } else {
+                    username = McCred.Join (config.Domain, username);
+                }
+                var cred = new McCred () { 
+                    AccountId = accountId,
+                    CredType = McCred.CredTypeEnum.Password,
+                    Username = username,
+                };
+                cred.Insert ();
+                return cred;
+            }, (account) => {
+                account.IsMdmBased = true;
+                if (!String.IsNullOrEmpty (config.BrandingName)) {
+                    account.DisplayName = config.BrandingName;
+                }
+                if (!String.IsNullOrEmpty (config.Host)) {
+                    var server = new McServer () { 
+                        AccountId = account.Id,
+                        Capabilities = McAccount.ActiveSyncCapabilities,
+                    };
+                    server.Host = config.Host;
+                    if (config.Port.HasValue) {
+                        server.Port = (int)config.Port.Value;
+                    }
+                    server.UsedBefore = false;
+                    server.Insert ();
+                }
             });
         }
 
-        private McAccount CreateAccountCore (McAccount.AccountServiceEnum service, string emailAddress, Func<int, McCred> makeCred)
+        private McAccount CreateAccountCore (McAccount.AccountServiceEnum service, string emailAddress, Func<int, McCred> makeCred, Action<McAccount> customize)
         {
             var account = new McAccount () { EmailAddr = emailAddress };
 
@@ -80,6 +120,10 @@ namespace NachoCore.Model
                 account.SetAccountService (service);
                 account.DisplayName = NcServiceHelper.AccountServiceName (service);
                 account.Insert ();
+                if (customize != null) {
+                    customize (account);
+                    account.Update ();
+                }
                 var cred = makeCred (account.Id);
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
                 Telemetry.RecordAccountEmailAddress (account);
