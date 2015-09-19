@@ -8,6 +8,7 @@ using System.Threading;
 using MailKit.Net.Imap;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NachoCore.IMAP
 {
@@ -15,10 +16,14 @@ namespace NachoCore.IMAP
     {
         private List<Regex> RegexList;
 
-        public ImapEmailMoveCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapEmailMoveCommand (IBEContext beContext, NcImapClient imap, List<McPending> pendingList) : base (beContext, imap)
         {
-            PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingList = pendingList;
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var pending in pendingList) {
+                    pending.MarkDispached ();
+                }
+            });
             RedactProtocolLogFunc = RedactProtocolLog;
 
             RegexList = new List<Regex> ();
@@ -31,21 +36,50 @@ namespace NachoCore.IMAP
             //2015-06-22T17:27:04.326Z: IMAP S: * 60 EXPUNGE
             //* 59 EXISTS
             //A00000082 OK [COPYUID 5 8728 8648] (Success)
-            return NcMailKitProtocolLogger.RedactLogDataRegex(RegexList, logData);
+            return NcMailKitProtocolLogger.RedactLogDataRegex (RegexList, logData);
         }
 
         protected override Event ExecuteCommand ()
         {
-            var emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, PendingSingle.ServerId);
-            NcAssert.NotNull (emailMessage);
-            McFolder src = McFolder.QueryByServerId<McFolder> (AccountId, PendingSingle.ParentId);
-            NcAssert.NotNull (src);
-            McFolder dst = McFolder.QueryByServerId<McFolder> (AccountId, PendingSingle.DestParentId);
-            NcAssert.NotNull (dst);
+            // All pendings are assumed to be for the same folders.
+            var first = PendingList.FirstOrDefault ();
+            if (null == first) {
+                Log.Error (Log.LOG_IMAP, "No pendings");
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGMOVNONE");
+            }
+            McFolder src = McFolder.QueryByServerId (AccountId, first.ParentId);
+            if (null == src) {
+                Log.Error (Log.LOG_IMAP, "No src folder for {0}", first.ParentId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL1");
+            }
+            McFolder dst = McFolder.QueryByServerId (AccountId, first.DestParentId);
+            if (null == dst) {
+                Log.Error (Log.LOG_IMAP, "No dst folder for {0}", first.DestParentId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL2");
+            }
 
-            var result = MoveEmail (emailMessage, src, dst, Cts.Token);
+            var emails = new List<McEmailMessage> ();
+            var removeList = new List<McPending> ();
+            foreach (var pending in PendingList) {
+                var emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, pending.ServerId);
+                if (null == emailMessage) {
+                    Log.Error (Log.LOG_IMAP, "Could not find email message {0}", pending.ServerId);
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageMoveFailed, NcResult.WhyEnum.BadOrMalformed));
+                    removeList.Add (pending);
+                    continue;
+                }
+                emails.Add (emailMessage);
+            }
+            foreach (var pending in removeList) {
+                PendingList.Remove (pending);
+            }
+
+            if (!emails.Any ()) {
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMOVHARD");
+
+            }
+            var result = MoveEmails (emails, src, dst, Cts.Token);
             if (result.isOK ()) {
-                // FIXME Need to do fixup stuff in pending. Are there API's for that?
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMoveSucceeded));
                 });
@@ -53,28 +87,35 @@ namespace NachoCore.IMAP
                 return evt;
             } else {
                 ResolveAllFailed (NcResult.WhyEnum.Unsupported);
-                return Event.Create((uint)SmEvt.E.HardFail, "IMAPMOVHARD");
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMOVHARD");
             }
         }
 
-        public NcResult MoveEmail(McEmailMessage emailMessage, McFolder src, McFolder dst, CancellationToken Token)
+        public NcResult MoveEmails (List<McEmailMessage> emails, McFolder src, McFolder dst, CancellationToken Token)
         {
             NcResult result;
-            UniqueId? newUid;
             var srcFolder = Client.GetFolder (src.ServerId, Token);
             NcAssert.NotNull (srcFolder);
             var dstFolder = Client.GetFolder (dst.ServerId, Token);
             NcAssert.NotNull (dstFolder);
 
+            var uids = new List<UniqueId> ();
+            foreach (var email in emails) {
+                uids.Add (new UniqueId (email.ImapUid));
+            }
             srcFolder.Open (FolderAccess.ReadWrite, Token);
             try {
-                newUid = srcFolder.MoveTo (new UniqueId(emailMessage.ImapUid), dstFolder, Token);
-                if (null != newUid && newUid.HasValue && 0 != newUid.Value.Id) {
-                    emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                        var target = (McEmailMessage)record;
-                        target.ServerId = ImapProtoControl.MessageServerId (dst, newUid.Value);
-                        target.ImapUid = newUid.Value.Id;
-                        return true;
+                var newUids = srcFolder.MoveTo (uids, dstFolder, Token);
+                if (newUids.Any ()) {
+                    NcModel.Instance.RunInTransaction (() => {
+                        for (var i=0; i<newUids.Count; i++) {
+                            emails[i].UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.ServerId = ImapProtoControl.MessageServerId (dst, newUids[i]);
+                                target.ImapUid = newUids[i].Id;
+                                return true;
+                            });
+                        }
                     });
                 } else {
                     // FIXME How do we determine the new ID? This can happen with servers that don't support UIDPLUS.

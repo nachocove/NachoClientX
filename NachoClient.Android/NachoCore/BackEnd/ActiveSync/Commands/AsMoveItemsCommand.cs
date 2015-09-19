@@ -20,9 +20,11 @@ namespace NachoCore.ActiveSync
         {
             MoveKit = moveKit;
             PendingList.AddRange (MoveKit.Pendings);
-            foreach (var pending in PendingList) {
-                pending.MarkDispached ();
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var pending in PendingList) {
+                    pending.MarkDispached ();
+                }
+            });
         }
 
         protected override bool RequiresPending ()
