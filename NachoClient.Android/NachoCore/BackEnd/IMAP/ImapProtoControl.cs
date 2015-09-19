@@ -873,7 +873,8 @@ namespace NachoCore.IMAP
         {
             // We need to be able to get the right capabilities, so must have auth'd at least once
             // This happens during discovery, so this shouldn't be an issue.
-            return McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
+            return null != ProtoControl.ProtocolState &&
+                McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
         }
 
         private void PossiblyKickPushAssist ()
