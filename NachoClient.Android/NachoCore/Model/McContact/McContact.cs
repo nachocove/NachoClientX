@@ -1423,106 +1423,407 @@ namespace NachoCore.Model
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
         }
 
-        public static List<McContactEmailAddressAttribute> SearchAllContactsWithEmailAddresses (string searchFor, bool withEclipsing = false)
-        {
-            // TODO: Put this in the brain
-            if (String.IsNullOrEmpty (searchFor)) {
-                return new List<McContactEmailAddressAttribute> ();
-            }
-            var target = searchFor.Split (new char[] { ' ' });
-            var firstName = target.First () + "%";
-            var lastName = target.Last () + "%";
-            return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
-                "Select s.*, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
-                "FROM McContactEmailAddressAttribute AS s " +
-                "JOIN McEmailAddress AS a ON s.EmailAddress = a.Id " +
-                "JOIN McContact AS c ON s.ContactId = c.Id " +
-                "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                "WHERE " +
-                " likelihood (m.ClassCode=?, 0.2) AND " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
-                (withEclipsing ? "(c.EmailAddressesEclipsed = 0 OR c.PhoneNumbersEclipsed = 0) AND " : "") +
-                "( " +
-                "  c.FirstName LIKE ? OR c.LastName LIKE ?  OR s.Value LIKE ? OR s.Value LIKE ? " +
-                ") " +
-                "ORDER BY a.Score DESC, SORT_ORDER COLLATE NOCASE ASC  LIMIT 100", 
-                (int)McAbstrFolderEntry.ClassCodeEnum.Contact, firstName, lastName, firstName, lastName);
-        }
-
         public static List<McContact> QueryByIds (List<string> ids)
         {
             var query = String.Format ("SELECT c.* FROM McContact AS c WHERE c.Id IN ({0})", String.Join (",", ids));
             return NcModel.Instance.Db.Query<McContact> (query);
         }
 
-        public static List<McContactEmailAddressAttribute> SearchIndexAllContacts (string searchFor, bool onlyWithEmailAddresses, bool withEclipsing)
+        public static List<McContact> QueryByIds (List<long> ids)
         {
-            const int maxResults = 30;
-            var trimmedSearchFor = searchFor.Trim ();
+            var query = string.Format ("SELECT * FROM McContact WHERE Id IN ({0})", string.Join (",", ids));
+            return NcModel.Instance.Db.Query<McContact> (query);
+        }
 
-            var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
-            if (String.IsNullOrEmpty (trimmedSearchFor)) {
-                return emailAddressAttributes;
+        /// <summary>
+        /// Search all contacts, returning any contact whose first name, last name, or company name
+        /// starts with the given string.
+        /// </summary>
+        private static List<McContact> SearchAllContactsByName (string searchFor)
+        {
+            string prefixPattern = searchFor.Replace ('%', '_') + "%";
+            return NcModel.Instance.Db.Query<McContact> (
+                "SELECT * FROM McContact WHERE FirstName LIKE ? OR LastName LIKE ? OR CompanyName LIKE ?",
+                prefixPattern, prefixPattern, prefixPattern);
+        }
+
+        /// <summary>
+        /// Search the e-mail addresses associated with all contacts, returning any e-mail address
+        /// where the address as a whole or the domain name starts with the given string.
+        /// </summary>
+        private static List<McContactEmailAddressAttribute> SearchAllContactEmail (string searchFor)
+        {
+            string prefixPattern = searchFor.Replace ('%', '_') + "%";
+            string domainPattern = "%@" + prefixPattern;
+            return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
+                "SELECT * FROM McContactEmailAddressAttribute WHERE Value LIKE ? OR Value LIKE ?",
+                prefixPattern, domainPattern);
+        }
+
+        /// <summary>
+        /// Helper class for ranking and filtering potential matches for a contact search.
+        /// </summary>
+        private class SearchMatch
+        {
+            public McContact contact;
+            public McContactEmailAddressAttribute attribute;
+            public string email;
+            public int matchScore;
+
+            public SearchMatch (McContact contact, McContactEmailAddressAttribute attribute)
+            {
+                this.contact = contact;
+                this.attribute = attribute;
+                this.email = attribute.Value;
+                this.matchScore = -1;
+            }
+        }
+
+        private static bool StartsWith (string s, string substring)
+        {
+            if (null == s) {
+                return false;
+            }
+            return s.StartsWith (substring, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        /// <summary>
+        /// Return the quality or value of the contact based on its source.
+        /// </summary>
+        /// <returns>The value.</returns>
+        /// <param name="contact">Contact.</param>
+        private static int SourceValue (McContact contact)
+        {
+            if (contact.IsRic()) {
+                return 3;
+            }
+            switch (contact.Source) {
+            case ItemSource.ActiveSync:
+                return 5;
+            case ItemSource.Device:
+                return 4;
+            case ItemSource.Internal:
+                return 2;
+            default:
+                return 1;
+            }
+        }
+
+        /// <summary>
+        /// Does the given contact have a name?
+        /// </summary>
+        private static bool HasName (McContact contact)
+        {
+            return !string.IsNullOrEmpty (contact.FirstName) || !string.IsNullOrEmpty (contact.LastName);
+        }
+
+        /// <summary>
+        /// Do the two contacts have the exact same name?  That includes the company name, but ignores case.
+        /// </summary>
+        private static bool SameName (McContact x, McContact y)
+        {
+            return string.Equals (x.FirstName, y.FirstName, StringComparison.InvariantCultureIgnoreCase) &&
+                string.Equals (x.MiddleName, y.MiddleName, StringComparison.InvariantCultureIgnoreCase) &&
+                string.Equals (x.LastName, y.LastName, StringComparison.InvariantCultureIgnoreCase) &&
+                string.Equals (x.CompanyName, y.CompanyName, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        /// <summary>
+        /// Search all contacts that have an e-mail address.  Return any contact/e-mail address where the
+        /// first name, last name, company name, e-mail address, or domain name begins with any of the
+        /// words in the given search string.  Filter the results so each e-mail address appears at most
+        /// once in the resulting list.  Sort the results by how well they match the search string.
+        /// </summary>
+        public static List<McContactEmailAddressAttribute> SearchAllContactsForEmail (string searchFor)
+        {
+            var searchWords = searchFor.Trim ().Split (new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var contactMatches = new List<McContact> ();
+            var emailMatches = new List<McContactEmailAddressAttribute> ();
+
+            foreach (var searchWord in searchWords) {
+                // Search the database for contacts whose name matches the search string.
+                contactMatches.AddRange (SearchAllContactsByName (searchWord));
+                // Search the database for e-mail addresses that match the search string.
+                emailMatches.AddRange (SearchAllContactEmail (searchWord));
             }
 
-            // Special case short strings for speed
-            if (onlyWithEmailAddresses && (4 > searchFor.Length)) {
-                return SearchAllContactsWithEmailAddresses (searchFor, withEclipsing);
-            }
+            var allMatches = new List<SearchMatch> ();
+            var matchedAttributeIds = new HashSet<int> ();
+            var matchedContactIds = new HashSet<int> ();
 
-            var allMatches = new List<MatchedItem> ();
-            var allContacts = new List<McContact> ();
-            foreach (var account in McAccount.GetAllAccounts()) {
-                var index = NcBrain.SharedInstance.Index (account.Id);
-                var matches = index.SearchAllContactFields (searchFor, maxResults);
-                allMatches.AddRange (matches);
-            }
-            if (0 == allMatches.Count) {
-                return emailAddressAttributes;
-            }
-
-            // Cull low scores
-            var maxScore = 0f;
-            foreach (var m in allMatches) {
-                maxScore = Math.Max (maxScore, m.Score);
-            }
-            allMatches.RemoveAll (x => x.Score < (maxScore / 2));
-
-            // Shrink long list, keeping highest scores
-            allMatches.Sort (new MatchedItemScoreComparer ());
-            allMatches = allMatches.GetRange (0, Math.Min (allMatches.Count, maxResults));
-
-            var idList = allMatches.Select (x => x.Id).Distinct ().ToList ();
-            var matchingContacts = McContact.QueryByIds (idList);
-            foreach (var id in idList) {
-                var match = matchingContacts.Where (x => x.Id == int.Parse (id)).SingleOrDefault ();
-                if (null != match) {
-                    allContacts.Add (match);
+            // Convert the matched e-mail addresses into SearchMatch objects, avoiding duplicates.
+            foreach (var emailMatch in emailMatches) {
+                if (matchedAttributeIds.Add (emailMatch.Id)) {
+                    allMatches.Add (new SearchMatch (McContact.QueryById<McContact> ((int)emailMatch.ContactId), emailMatch));
                 }
             }
 
-            // FIXME: Do not sort for contact auto-complete?
-            allContacts.Sort (new McContactNameComparer ());
-
-            // Get all matching email addresses
-            foreach (var contact in allContacts) {
-                if (withEclipsing && contact.EmailAddressesEclipsed) {
-                    continue;
-                }
-                if (0 == contact.EmailAddresses.Count) {
-                    if (onlyWithEmailAddresses) {
-                        continue;
+            // Convert the e-mail addresses of the matched contacts into SearchMatch objects, avoiding duplicates.
+            foreach (var contactMatch in contactMatches) {
+                if (0 < contactMatch.EmailAddresses.Count && !contactMatch.IsAwaitingDelete && matchedContactIds.Add (contactMatch.Id)) {
+                    foreach (var emailAttribute in contactMatch.EmailAddresses) {
+                        if (matchedAttributeIds.Add (emailAttribute.Id)) {
+                            allMatches.Add (new SearchMatch (contactMatch, emailAttribute));
+                        }
                     }
-                    var addressAttr = new McContactEmailAddressAttribute () {
-                        AccountId = contact.AccountId,
-                        ContactId = contact.Id
-                    };
-                    emailAddressAttributes.Add (addressAttr);
-                } else {
-                    emailAddressAttributes.AddRange (contact.EmailAddresses);
                 }
             }
-            return emailAddressAttributes;
+
+            if (0 == allMatches.Count) {
+                return new List<McContactEmailAddressAttribute> ();
+            }
+
+            // Score each match to see how well it matches the search string
+            foreach (var match in allMatches) {
+                int score = 0;
+                foreach (var word in searchWords) {
+                    if (StartsWith (match.email, word)) {
+                        score += 5 * word.Length;
+                    } else if (StartsWith (match.contact.LastName, word)) {
+                        score += 4 * word.Length;
+                    } else if (StartsWith (match.contact.FirstName, word)) {
+                        score += 3 * word.Length;
+                    } else if (StartsWith (match.contact.CompanyName, word)) {
+                        score += 2 * word.Length;
+                    } else if (0 <= match.email.IndexOf ("@" + word, StringComparison.InvariantCultureIgnoreCase)) {
+                        score += 2 * word.Length;
+                    }
+                }
+                if (0 != match.contact.PortraitId) {
+                    score += 1;
+                }
+                match.matchScore = score;
+            }
+
+            // Sort the matches by (1) e-mail address, so we can remove duplicates,
+            // (2) match score, (3) the quality of the contact, prefering contacts
+            // with more information.
+            allMatches.Sort ((SearchMatch x, SearchMatch y) => {
+                int emailCompare = string.Compare (x.email, y.email);
+                if (0 != emailCompare) {
+                    return emailCompare;
+                }
+                if (x.matchScore != y.matchScore) {
+                    return y.matchScore - x.matchScore;
+                }
+                var xHasPortrait = 0 != x.contact.PortraitId;
+                var yHasPortrait = 0 != y.contact.PortraitId;
+                if (xHasPortrait && !yHasPortrait) {
+                    return -1;
+                }
+                if (!xHasPortrait && yHasPortrait) {
+                    return 1;
+                }
+                var xHasLast = !string.IsNullOrEmpty (x.contact.LastName);
+                var yHasLast = !string.IsNullOrEmpty (y.contact.LastName);
+                if (xHasLast && !yHasLast) {
+                    return -1;
+                }
+                if (!xHasLast && yHasLast) {
+                    return 1;
+                }
+                var xHasFirst = !string.IsNullOrEmpty (x.contact.FirstName);
+                var yHasFirst = !string.IsNullOrEmpty (y.contact.FirstName);
+                if (xHasFirst && !yHasFirst) {
+                    return -1;
+                }
+                if (!xHasFirst && yHasFirst) {
+                    return 1;
+                }
+                var xHasPhone = 0 != x.contact.PhoneNumbers.Count;
+                var yHasPhone = 0 != y.contact.PhoneNumbers.Count;
+                if (xHasPhone && !yHasPhone) {
+                    return -1;
+                }
+                if (!xHasPhone && yHasPhone) {
+                    return 1;
+                }
+                return 0;
+            });
+
+            // Remove duplicate e-mail addresses.
+            var uniqueMatches = new List<SearchMatch> ();
+            for (int i = 0; i < allMatches.Count; ++i) {
+                if (0 == i || allMatches [i - 1].email != allMatches [i].email) {
+                    uniqueMatches.Add (allMatches [i]);
+                }
+            }
+            allMatches = uniqueMatches;
+
+            // Sort the result how well it matches the search string.
+            allMatches.Sort ((SearchMatch x, SearchMatch y) => {
+                return y.matchScore - x.matchScore;
+            });
+
+            return allMatches.Select (x => x.attribute).ToList ();
+        }
+
+        /// <summary>
+        /// Search all contacts.  Return any contact where any word in the given search string matches
+        /// the first name, middle name, last name, company name, e-mail address, e-mail domain, phone
+        /// number, street address, or notes.  Filter out contacts that appear to be duplicates, but
+        /// never filter out synched contacts or device contacts.  Sort the results by how well they
+        /// match the search string.
+        /// </summary>
+        public static List<McContactEmailAddressAttribute> SearchIndexAllContacts (string searchFor)
+        {
+            var searchWords = searchFor.Trim ().Split (new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var rawContacts = new List<McContact> ();
+            var dbEmailMatches = new List<McContactEmailAddressAttribute> ();
+
+            foreach (var searchWord in searchWords) {
+                // Search the database for contacts whose name matches the search string.
+                rawContacts.AddRange (SearchAllContactsByName (searchWord));
+                // Search the database for e-mail addresses that match the search string.
+                dbEmailMatches.AddRange (SearchAllContactEmail (searchWord));
+            }
+
+            // Add the contacts associated with the e-mail addresses that were found to the set of contacts.
+            rawContacts.AddRange (McContact.QueryByIds (dbEmailMatches.Select (x => x.ContactId).Distinct ().ToList ()));
+
+            // If the search string is only one or two characters, don't bother searching the index.
+            // When the user types the first couple letters, we want the app to display some results
+            // quickly, and searching the index can take a long time.
+            if (2 < searchFor.Length) {
+                var indexMatches = new List<MatchedItem> ();
+                foreach (var account in McAccount.GetAllAccounts ()) {
+                    var index = NcBrain.SharedInstance.Index (account.Id);
+                    indexMatches.AddRange (index.SearchAllContactFields (searchFor));
+                }
+
+                rawContacts.AddRange (McContact.QueryByIds (indexMatches.Select (x => x.Id).Distinct ().ToList ()));
+            }
+
+            var allMatches = new List<SearchMatch> ();
+            var matchedContactIds = new HashSet<int> ();
+
+            // Convert the contacts that were found into SearchMatch objects.
+            foreach (var rawContact in rawContacts) {
+                if (!rawContact.IsAwaitingDelete && matchedContactIds.Add (rawContact.Id)) {
+                    if (0 == rawContact.EmailAddresses.Count) {
+                        // Create a dummy e-mail attribute object
+                        allMatches.Add (new SearchMatch (rawContact, new McContactEmailAddressAttribute () {
+                            AccountId = rawContact.AccountId,
+                            ContactId = rawContact.Id,
+                            Value = "",
+                        }));
+                    } else {
+                        // Create SearchMatch objects for all of the contact's e-mail addresses.
+                        // All but one of them will be filtered out later, but we need SearchMatch
+                        // objects for all of them now so we can figure out which one best matches
+                        // the search string.
+                        foreach (var emailAttribute in rawContact.EmailAddresses) {
+                            allMatches.Add (new SearchMatch (rawContact, emailAttribute));
+                        }
+                    }
+                }
+            }
+
+            // Score each match to see how well it matches the search string
+            foreach (var match in allMatches) {
+                int score = 0;
+                foreach (var word in searchWords) {
+                    if (StartsWith (match.contact.LastName, word)) {
+                        score += 5 * word.Length;
+                    } else if (StartsWith (match.contact.FirstName, word)) {
+                        score += 4 * word.Length;
+                    } else if (StartsWith (match.contact.CompanyName, word)) {
+                        score += 3 * word.Length;
+                    } else if (StartsWith (match.email, word)) {
+                        score += 3 * word.Length;
+                    } else if (0 <= match.email.IndexOf ("@" + word, StringComparison.InvariantCultureIgnoreCase)) {
+                        score += 2 * word.Length;
+                    }
+                }
+                if (0 != match.contact.PortraitId) {
+                    score += 1;
+                }
+                match.matchScore = score;
+            }
+
+            // Sort by contact.  Within each contact, sort the e-mail addresses by how well they match
+            // the search string and then whether or not they are the default e-mail address.
+            allMatches.Sort ((SearchMatch x, SearchMatch y) => {
+                if (x.contact.Id != y.contact.Id) {
+                    return x.contact.Id - y.contact.Id;
+                }
+                if (x.matchScore != y.matchScore) {
+                    return y.matchScore - x.matchScore;
+                }
+                if (x.attribute.IsDefault && !y.attribute.IsDefault) {
+                    return -1;
+                }
+                if (!x.attribute.IsDefault && y.attribute.IsDefault) {
+                    return 1;
+                }
+                return 0;
+            });
+
+            // Eliminate duplicate entries for the same contact, so that each contact has only
+            // one e-mail address in the results.
+            var uniqueContacts = new List<SearchMatch> ();
+            for (int i = 0; i < allMatches.Count; ++i) {
+                if (0 == i || allMatches [i - 1].contact.Id != allMatches [i].contact.Id) {
+                    uniqueContacts.Add (allMatches [i]);
+                }
+            }
+            allMatches = uniqueContacts;
+
+            // Sort by e-mail address.  For contacts with the same e-mail address, sort by name,
+            // then by the quality of the source of the contact.  (E.g. Synched contacts are
+            // preferred over gleaned contacts.)
+            allMatches.Sort ((SearchMatch x, SearchMatch y) => {
+                int emailCompare = string.Compare (x.email, y.email);
+                if (0 != emailCompare) {
+                    return emailCompare;
+                }
+                bool xHasName = HasName(x.contact);
+                bool yHasName = HasName(y.contact);
+                if (xHasName && !yHasName) {
+                    return -1;
+                }
+                if (!xHasName && yHasName) {
+                    return 1;
+                }
+                int lastCompare = string.Compare (x.contact.LastName, y.contact.LastName);
+                if (0 != lastCompare) {
+                    return lastCompare;
+                }
+                int firstCompare = string.Compare (x.contact.FirstName, y.contact.FirstName);
+                if (0 != firstCompare) {
+                    return firstCompare;
+                }
+                return SourceValue (y.contact) - SourceValue (x.contact);
+            });
+
+            // Eliminate contacts that appear to be duplicates.  A duplicate is
+            // (1) not a synched contact or a device contact
+            // (2) has the same e-mail address
+            // (3) has the same name, or doesn't have a name.
+            uniqueContacts = new List<SearchMatch> ();
+            for (int i = 0; i < allMatches.Count; ++i) {
+                var curr = allMatches [i];
+                if (0 == i || curr.contact.IsSynced () || curr.contact.IsDevice ()) {
+                    uniqueContacts.Add (allMatches [i]);
+                } else {
+                    var prev = allMatches [i - 1];
+                    if (string.IsNullOrEmpty (curr.email) || curr.email != prev.email) {
+                        uniqueContacts.Add (curr);
+                    } else if (HasName (curr.contact) && !SameName (curr.contact, prev.contact)) {
+                        uniqueContacts.Add (curr);
+                    }
+                }
+            }
+            allMatches = uniqueContacts;
+
+            // Sort the resulting list by how well it matches the search string
+            allMatches.Sort ((SearchMatch x, SearchMatch y) => {
+                return y.matchScore - x.matchScore;
+            });
+
+            return allMatches.Select (x => x.attribute).ToList ();
         }
 
         static string GetAllContactsQueryString (bool withEclipsing, int accountId = 0)
