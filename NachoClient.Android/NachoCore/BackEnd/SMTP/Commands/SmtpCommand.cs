@@ -25,7 +25,7 @@ namespace NachoCore.SMTP
             Client = smtpClient;
             RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
-            DontReportCommResult = true;
+            DontReportCommResult = false;
         }
 
         // MUST be overridden by subclass.
