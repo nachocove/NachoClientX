@@ -35,7 +35,7 @@ namespace NachoCore.IMAP
             Client = imapClient;
             RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
-            DontReportCommResult = true;
+            DontReportCommResult = false;
         }
 
         // MUST be overridden by subclass.
@@ -116,7 +116,6 @@ namespace NachoCore.IMAP
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
             } catch (ServiceNotConnectedException) {
-                // FIXME - this needs to feed into NcCommStatus, not loop forever.
                 Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
