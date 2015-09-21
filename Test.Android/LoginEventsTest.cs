@@ -48,11 +48,9 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.NotYetStarted, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.NotYetStarted, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            // Ensure CheckBackendState is called on Owner set.
             MockCS.Status = NachoPlatform.NetStatusStatusEnum.Down;
             MockCS.Speed = NachoPlatform.NetStatusSpeedEnum.CellSlow_2;
             LoginEvents.Owner = MockLE;
-            Assert.IsTrue (MockLE.NetworkDownCalled);
             // Ensure that we don't get callbacks when Owner is reset.
             MockLE.NetworkDownCalled = false;
             LoginEvents.Owner = null;
