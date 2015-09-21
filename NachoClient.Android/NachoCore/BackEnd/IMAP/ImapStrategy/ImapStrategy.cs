@@ -33,6 +33,7 @@ namespace NachoCore.IMAP
         private static uint[] KRungSyncWindowSize = new uint[] { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
 
         private Random CoinToss;
+
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
             CoinToss = new Random ();
@@ -114,9 +115,9 @@ namespace NachoCore.IMAP
                 var next = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities).FirstOrDefault ();
                 if (null != next) {
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
+                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:{0}:{1}", next.DelayNotAllowed ? "HotQOp" : "QOp", next.Operation.ToString ());
                     ImapCommand cmd = null;
-                    var action = PickActionEnum.QOop;
+                    var action = next.DelayNotAllowed ? PickActionEnum.HotQOp : PickActionEnum.QOop;
                     switch (next.Operation) {
                     // It is likely that next is one of these at the top of the switch () ...
                     case McPending.Operations.FolderCreate:
@@ -129,10 +130,21 @@ namespace NachoCore.IMAP
                         cmd = new ImapFolderDeleteCommand (BEContext, Client, next);
                         break;
                     case McPending.Operations.EmailDelete:
-                        cmd = new ImapEmailDeleteCommand (BEContext, Client, next);
+                        // see if there's more than one we can process for the same folder
+                        var deletes = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities)
+                            .Where (x => x.Operation == next.Operation &&
+                                      x.ParentId == next.ParentId &&
+                                      x.DelayNotAllowed == next.DelayNotAllowed);
+                        cmd = new ImapEmailDeleteCommand (BEContext, Client, deletes.ToList ());
                         break;
                     case McPending.Operations.EmailMove:
-                        cmd = new ImapEmailMoveCommand (BEContext, Client, next);
+                        // see if there's more than one we can process for the same folder
+                        var moves = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities)
+                            .Where (x => x.Operation == next.Operation &&
+                                    x.ParentId == next.ParentId &&
+                                    x.DestParentId == next.DestParentId &&
+                                    x.DelayNotAllowed == next.DelayNotAllowed);
+                        cmd = new ImapEmailMoveCommand (BEContext, Client, moves.ToList ());
                         break;
                     case McPending.Operations.EmailMarkRead:
                         cmd = new ImapEmailMarkReadCommand (BEContext, Client, next);

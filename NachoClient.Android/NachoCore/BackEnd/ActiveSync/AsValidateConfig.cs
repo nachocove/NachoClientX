@@ -28,15 +28,31 @@ namespace NachoCore.ActiveSync
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {
                     new Node {State = (uint)St.Start,
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail, 
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.HardFail, 
+                            (uint)AsProtoControl.AsEvt.E.ReDisc,
+                            (uint)AsProtoControl.AsEvt.E.ReProv,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
                         },
                         On = new[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoVal, State = (uint)Lst.ValW },
                         }
                     },
                     new Node {State = (uint)Lst.ValW,
-                        Drop = new [] { (uint)SmEvt.E.Launch },
+                        Drop = new [] {
+                            (uint)SmEvt.E.Launch,
+                        },
+                        Invalid = new uint[] {
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoYes, State = (uint)St.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoNoComm, State = (uint)St.Stop },
@@ -49,6 +65,7 @@ namespace NachoCore.ActiveSync
                     },
                 }
             };
+            Sm.Validate ();
         }
 
         private void DoVal ()
@@ -110,7 +127,6 @@ namespace NachoCore.ActiveSync
 
         public McProtocolState ProtocolState {
             get { return BEContext.ProtocolState; }
-            set { BEContext.ProtocolState = value; }
         }
 
         public McServer Server {

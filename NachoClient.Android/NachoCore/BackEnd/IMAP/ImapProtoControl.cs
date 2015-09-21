@@ -144,7 +144,7 @@ namespace NachoCore.IMAP
                 Name = string.Format ("IMAPPC({0})", AccountId),
                 LocalEventType = typeof(ImapEvt),
                 LocalStateType = typeof(Lst),
-                StateChangeIndication = UpdateSavedState,
+                TransIndication = UpdateSavedState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
@@ -441,8 +441,9 @@ namespace NachoCore.IMAP
             BackEndStatePreset = null;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
-            if ((uint)Lst.Parked != stateToSave) {
+            if ((uint)Lst.Parked != stateToSave &&
                 // We never save Parked.
+                protocolState.ImapProtoControlState != stateToSave) {
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
                     target.ImapProtoControlState = stateToSave;
@@ -481,14 +482,13 @@ namespace NachoCore.IMAP
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
         }
 
-        public override void ForceStop ()
+        protected override void ForceStop ()
         {
             base.ForceStop ();
 
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
-            Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPFORCESTOP");
         }
 
         public override void Remove ()
@@ -506,7 +506,7 @@ namespace NachoCore.IMAP
             base.Remove ();
         }
 
-        public override bool Execute ()
+        protected override bool Execute ()
         {
             if (!base.Execute ()) {
                 return false;
@@ -552,7 +552,8 @@ namespace NachoCore.IMAP
         {
             BackEndStatePreset = BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
-            Owner.ServConfReq (this, Sm.Arg);
+            AutoDFailureReason = (BackEnd.AutoDFailureReasonEnum)Sm.Arg;
+            Owner.ServConfReq (this, AutoDFailureReason);
         }
 
         private void DoConn ()
@@ -872,7 +873,8 @@ namespace NachoCore.IMAP
         {
             // We need to be able to get the right capabilities, so must have auth'd at least once
             // This happens during discovery, so this shouldn't be an issue.
-            return McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
+            return null != ProtoControl.ProtocolState &&
+                McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
         }
 
         private void PossiblyKickPushAssist ()

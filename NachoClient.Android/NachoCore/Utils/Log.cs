@@ -235,21 +235,22 @@ namespace NachoCore.Utils
             int maxIndirect = 5;
             while (0 < maxIndirect && Log.IndirectQ.TryDequeue (out elem)) {
                 var message = "@" + String.Format ("{0:yyyy-MM-ddTHH:mm:ss.fffZ}", elem.Occurred) + ": " + elem.Message;
+                var parms = new object[1] { message };
                 switch (elem.Level) {
                 case LogElement.LevelEnum.Debug:
-                    _Log (elem.ThreadId, elem.Subsystem, Settings.Debug, TelemetryEventType.DEBUG, message, "Debug");
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Debug, TelemetryEventType.DEBUG, "{0}", "Debug", parms);
                     break;
 
                 case LogElement.LevelEnum.Info:
-                    _Log (elem.ThreadId, elem.Subsystem, Settings.Info, TelemetryEventType.INFO, message, "Info");
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Info, TelemetryEventType.INFO, "{0}", "Info", parms);
                     break;
 
                 case LogElement.LevelEnum.Warn:
-                    _Log (elem.ThreadId, elem.Subsystem, Settings.Warn, TelemetryEventType.WARN, message, "Warn");
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Warn, TelemetryEventType.WARN, "{0}", "Warn", parms);
                     break;
 
                 case LogElement.LevelEnum.Error:
-                    _Log (elem.ThreadId, elem.Subsystem, Settings.Error, TelemetryEventType.ERROR, message, "Error");
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Error, TelemetryEventType.ERROR, "{0}", "Error", parms);
                     break;
                 }
                 --maxIndirect;

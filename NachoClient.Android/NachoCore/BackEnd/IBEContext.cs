@@ -9,7 +9,7 @@ namespace NachoCore
     {
         INcProtoControlOwner Owner { set; get; }
         NcProtoControl ProtoControl { set; get; }
-        McProtocolState ProtocolState { get; set; }
+        McProtocolState ProtocolState { get; }
         McServer Server { get; set; }
         McAccount Account { get; }
         McCred Cred { get; }

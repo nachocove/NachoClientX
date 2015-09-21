@@ -66,7 +66,7 @@ namespace NachoCore.Utils
 
         private void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
         {
-            UpdateState (e.Status, e.Speed);
+            UpdateState (e.Status, e.Speed, "NetStatusEventHandler");
         }
 
         public enum CommQualityEnum
@@ -158,7 +158,7 @@ namespace NachoCore.Utils
             NetStatusStatusEnum currStatus;
             NetStatusSpeedEnum currSpeed;
             NetStatus.Instance.GetCurrentStatus (out currStatus, out currSpeed);
-            UpdateState (currStatus, currSpeed);
+            UpdateState (currStatus, currSpeed, "Refresh");
         }
 
         public bool IsRateLimited (int serverId)
@@ -167,14 +167,14 @@ namespace NachoCore.Utils
             return !tracker.Throttle.HasTokens ();
         }
 
-        private void UpdateState (NetStatusStatusEnum status, NetStatusSpeedEnum speed)
+        private void UpdateState (NetStatusStatusEnum status, NetStatusSpeedEnum speed, string source)
         {
             lock (syncRoot) {
                 NetStatusStatusEnum oldStatus = Status;
                 NetStatusSpeedEnum oldSpeed = Speed;
                 Status = status;
                 Speed = speed;
-                Log.Info (Log.LOG_STATE, "UPDATE STATE {0}=>{1} {2}=>{3}", oldStatus, Status, oldSpeed, Speed);
+                Log.Info (Log.LOG_STATE, "UPDATE STATE {0}=>{1} {2}=>{3} (src {4})", oldStatus, Status, oldSpeed, Speed, source);
                 if (oldStatus != Status && null != CommStatusNetEvent) {
                     var info = new NetStatusEventArgs (Status, Speed);
                     CommStatusNetEvent (this, info);
@@ -185,6 +185,13 @@ namespace NachoCore.Utils
                         Account = ConstMcAccount.NotAccountSpecific,
                     });
                 }
+            }
+        }
+
+        public void ForceUp (string source)
+        {
+            if (Status != NetStatusStatusEnum.Up) {
+                UpdateState (NetStatusStatusEnum.Up, Speed, source);
             }
         }
     }

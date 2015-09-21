@@ -330,6 +330,7 @@ namespace NachoClient.iOS
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
             UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
+            UINavigationBar.Appearance.ShadowImage = new UIImage();
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
             UIBarButtonItem.Appearance.TintColor = A.Color_NachoBlue;
 
@@ -337,6 +338,10 @@ namespace NachoClient.iOS
             navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
             navigationTitleTextAttributes.TextColor = UIColor.White;
             UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
+            using (var arrow = UIImage.FromFile ("nav-backarrow")) {
+                UINavigationBar.Appearance.BackIndicatorImage = arrow;
+                UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
+            }
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
@@ -387,18 +392,6 @@ namespace NachoClient.iOS
             }
 
             NcKeyboardSpy.Instance.Init ();
-
-            if (NcApplication.ReadyToStartUI ()) {
-                var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var vc = storyboard.InstantiateViewController ("NachoTabBarController");
-                if (null == vc) {
-                    // Might get null if we're running in background
-                    Log.Info (Log.LOG_UI, "fast path view controller is null");
-                } else {
-                    Log.Info (Log.LOG_UI, "fast path to tab bar controller");
-                    Window.RootViewController = (UIViewController)vc;
-                }
-            }
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
@@ -763,6 +756,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
                 CompletePerformFetchWithoutShutdown ();
             }
+            NcCommStatus.Instance.ForceUp ("StartFetch");
             CompletionHandler = completionHandler;
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;

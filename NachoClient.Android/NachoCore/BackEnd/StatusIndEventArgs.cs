@@ -6,6 +6,11 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
+    public interface IStatusIndEvent
+    {
+        event EventHandler StatusIndEvent;
+    }
+
     public class StatusIndEventArgs : EventArgs
     {
         public McAccount Account;

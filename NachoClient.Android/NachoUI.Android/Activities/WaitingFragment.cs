@@ -106,7 +106,7 @@ namespace NachoClient.AndroidClient
                 handleStatusEnums ();
                 return;
             }
-            if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
+            if (NcResult.SubKindEnum.Info_ServerConfReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: ServerConfReq Status Ind (Adv. View)");
                 handleStatusEnums ();
                 return;
@@ -116,7 +116,7 @@ namespace NachoClient.AndroidClient
                 handleStatusEnums ();
                 return;
             }
-            if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
+            if (NcResult.SubKindEnum.Info_CertAskReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: CertAskCallback Status Ind");
                 handleStatusEnums ();
                 return;

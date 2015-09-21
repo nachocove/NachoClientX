@@ -9,12 +9,7 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("AdvancedLoginViewController")]
-	partial class AdvancedLoginViewController
+	partial class NcAccountTypeCollectionViewCell
 	{
-		
-		void ReleaseDesignerOutlets ()
-		{
-		}
 	}
 }

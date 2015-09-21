@@ -9,8 +9,8 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("AccountCredentialsViewController")]
-	partial class AccountCredentialsViewController
+	[Register ("GoogleCredentialsViewController")]
+	partial class GoogleCredentialsViewController
 	{
 		
 		void ReleaseDesignerOutlets ()

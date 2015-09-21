@@ -20,8 +20,9 @@ namespace NachoClient.AndroidClient
         public override void OnCreate ()
         {
             base.OnCreate ();
+            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
         }
-
+            
         public static void Startup()
         {
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;

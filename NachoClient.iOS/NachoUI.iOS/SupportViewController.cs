@@ -13,6 +13,7 @@ namespace NachoClient.iOS
 {
     public partial class SupportViewController : NcUIViewControllerNoLeaks
     {
+        public bool HideNavTitle = true;
         protected static readonly nfloat INDENT = 18;
 
         // SwitchAccountButton switchAccountButton;
@@ -40,7 +41,9 @@ namespace NachoClient.iOS
             // If added back, because of crash when called at start up.
             // switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             // NavigationItem.TitleView = switchAccountButton;
-            NavigationItem.TitleView = new UIView ();
+            if (HideNavTitle) {
+                NavigationItem.TitleView = new UIView ();
+            }
 
             UIView supportView = new UIView (new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120));
             supportView.BackgroundColor = UIColor.White;
