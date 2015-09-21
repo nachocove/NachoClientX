@@ -31,6 +31,9 @@ namespace NachoCore.Utils
         private static int? _accountId;
 
         public static ILoginEvents Owner {
+            get {
+                return _Owner;
+            }
             set {
                 if (null == value) {
                     if (null == _Owner) {
@@ -156,15 +159,11 @@ namespace NachoCore.Utils
             var subKind = siea.Status.SubKind;
             if (_accountId.HasValue) {
                 if (siea.Account != null && siea.Account.Id != _accountId.Value) {
+                    Log.Info (Log.LOG_UI, "LoginEvents: Skipping event because account id {0} != filter id {1}", siea.Account.Id, _accountId.Value);
                     return;
                 }
             }
             switch (subKind) {
-            case NcResult.SubKindEnum.Info_CredReqCallback:
-                LogAndCall (subKind.ToString (), () => {
-                    _Owner.CredReq (siea.Account.Id);
-                });
-                break;
             case NcResult.SubKindEnum.Info_ServerConfReqCallback:
                 LogAndCall (subKind.ToString (), () => {
                     var tup = siea.Status.Value as Tuple<McAccount.AccountCapabilityEnum, BackEnd.AutoDFailureReasonEnum>;
@@ -180,7 +179,11 @@ namespace NachoCore.Utils
             case NcResult.SubKindEnum.Info_BackEndStateChanged:
                 var accountId = (int)siea.Status.Value;
                 var states = _BackEnd.BackEndStates (accountId);
-                if (states.All (state => BackEndStateEnum.PostAutoDPostInboxSync == state.Item1)) {
+                if (states.Any (state => BackEndStateEnum.CredWait == state.Item1)) {
+                    LogAndCall (subKind.ToString (), () => {
+                        _Owner.CredReq (siea.Account.Id);
+                    });
+                }else if (states.All (state => BackEndStateEnum.PostAutoDPostInboxSync == state.Item1)) {
                     // ensure all controllers are at PostAutoDPostInboxSync before calling.
                     LogAndCall (BackEndStateEnum.PostAutoDPostInboxSync.ToString (), () => {
                         _Owner.PostAutoDPostInboxSync (accountId);
