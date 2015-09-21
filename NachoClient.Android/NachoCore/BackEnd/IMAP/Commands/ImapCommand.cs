@@ -163,7 +163,7 @@ namespace NachoCore.IMAP
                 serverFailedGenerally = true;
             } finally {
                 ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished (failed {2})", this.GetType ().Name, AccountId, serverFailedGenerally);
             }
             if (Cts.Token.IsCancellationRequested) {
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);

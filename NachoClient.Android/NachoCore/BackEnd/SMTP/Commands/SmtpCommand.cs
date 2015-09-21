@@ -137,13 +137,13 @@ namespace NachoCore.SMTP
                     serverFailedGenerally = true;
                 } finally {
                     ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
+                    Log.Info (Log.LOG_SMTP, "{0}({1}): Finished (failed {2})", cmdname, AccountId, serverFailedGenerally);
                 }
 
                 if (Cts.Token.IsCancellationRequested) {
                     Log.Info (Log.LOG_SMTP, "{0}({1}): Cancelled", cmdname, AccountId);
                     return;
                 }
-                Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", cmdname, AccountId);
                 switch (action.Item1) {
                 case ResolveAction.None:
                     break;
