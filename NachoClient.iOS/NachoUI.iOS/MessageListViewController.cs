@@ -491,9 +491,6 @@ namespace NachoClient.iOS
             if (null != blurry) {
                 blurry.CaptureView (this.View);
             }
-            if (segue.Identifier == "SegueToNachoNow") {
-                return;
-            }
             if (segue.Identifier == "NachoNowToMessageView") {
                 var vc = (INachoMessageViewer)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;

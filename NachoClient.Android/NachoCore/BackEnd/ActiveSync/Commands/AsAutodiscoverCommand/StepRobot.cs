@@ -578,7 +578,13 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotHttp ()
             {
-                var currentUri = CurrentServerUri ();
+                Uri currentUri;
+                try {
+                    currentUri = CurrentServerUri ();
+                } catch (UriFormatException) {
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRHHARDURI");
+                    return;
+                }
                 Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP request to {1}", Step, currentUri);
                 if (IsNotReDirLoop (currentUri) && 0 < RetriesLeft--) {
                     HttpOp = HttpOpFactory ();
@@ -621,7 +627,13 @@ namespace NachoCore.ActiveSync
             private void DoRobot302 ()
             {
                 // NOTE: this handles the 302 case, NOT the <Redirect> in XML after 200 case.
-                var currentUri = CurrentServerUri ();
+                Uri currentUri;
+                try {
+                    currentUri = CurrentServerUri ();
+                } catch (UriFormatException) {
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDR302HARDURI");
+                    return;
+                }
                 if (IsNotReDirLoop (currentUri) && 0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
                     HttpOp = HttpOpFactory ();
@@ -651,7 +663,14 @@ namespace NachoCore.ActiveSync
                 // Make the successful SRV lookup seem like a 302 so that the code for
                 // the remaining flow is unified for both paths (GET/DNS).
                 IsReDir = true;
-                ReDirUri = new Uri (string.Format ("https://{0}/autodiscover/autodiscover.xml", SrDomain));
+                try {
+                    ReDirUri = new Uri (string.Format ("https://{0}/autodiscover/autodiscover.xml", SrDomain));
+                }
+                catch (UriFormatException) {
+                    Log.Warn (Log.LOG_AS, "SRV record does not look like a hostname: {0}", SrDomain);
+                    StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRD2RD");
+                    return;
+                }
                 DoRobot2ReDir ();
             }
 
@@ -710,8 +729,13 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotAuthFail ()
             {
-                var currentUri = CurrentServerUri ();
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {1}.", Step, currentUri);
+                string currentUriString;
+                try {
+                    currentUriString = CurrentServerUri ().ToString ();
+                } catch (UriFormatException) {
+                    currentUriString = string.Format ("Could not format Uri, SrDomain: {0}", SrDomain);
+                }
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {1}.", Step, currentUriString);
                 ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
             }
 

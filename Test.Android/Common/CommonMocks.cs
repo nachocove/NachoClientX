@@ -241,7 +241,7 @@ namespace Test.iOS
         {
         }
 
-        public void ServConfReq (NcProtoControl sender, object arg)
+        public void ServConfReq (NcProtoControl sender, NachoCore.BackEnd.AutoDFailureReasonEnum arg)
         {
         }
 
@@ -265,6 +265,10 @@ namespace Test.iOS
         private MockNcCommStatus ()
         {
         }
+
+        public NetStatusStatusEnum Status { get; set; }
+
+        public NetStatusSpeedEnum Speed { get; set; }
 
         public static MockNcCommStatus Instance { 
             get {

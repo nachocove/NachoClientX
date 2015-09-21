@@ -71,6 +71,7 @@ namespace NachoPlatform
                 mdmConfig.Domain = GetStringAsString ("UserDomain");
                 mdmConfig.EmailAddr = GetStringAsString ("UserEmail");
                 mdmConfig.BrandingName = GetStringAsString ("BrandingName");
+                mdmConfig.BrandingLogoUrl = GetStringAsString ("BrandingLogo");
             });
         }
     }

@@ -130,7 +130,7 @@ namespace NachoCore.SMTP
                 Name = string.Format ("SMTPPC({0})", AccountId),
                 LocalEventType = typeof(SmtpEvt),
                 LocalStateType = typeof(Lst),
-                StateChangeIndication = UpdateSavedState,
+                TransIndication = UpdateSavedState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
@@ -391,12 +391,6 @@ namespace NachoCore.SMTP
             //PushAssist = new PushAssist (this);
         }
 
-        public override void ForceStop ()
-        {
-            base.ForceStop ();
-            Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPFORCESTOP");
-        }
-
         public override void Remove ()
         {
             // TODO Move to base? That might require moving the NcCommStatus stuff to base as well.
@@ -407,7 +401,7 @@ namespace NachoCore.SMTP
             base.Remove ();
         }
 
-        public override bool Execute ()
+        protected override bool Execute ()
         {
             if (!base.Execute ()) {
                 return false;
@@ -474,7 +468,8 @@ namespace NachoCore.SMTP
         {
             BackEndStatePreset = BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
-            Owner.ServConfReq (this, Sm.Arg);
+            AutoDFailureReason = (BackEnd.AutoDFailureReasonEnum)Sm.Arg;
+            Owner.ServConfReq (this, AutoDFailureReason);
         }
 
         private X509Certificate2 _ServerCertToBeExamined;
@@ -624,8 +619,9 @@ namespace NachoCore.SMTP
             BackEndStatePreset = null;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
-            if ((uint)Lst.Parked != stateToSave) {
+            if ((uint)Lst.Parked != stateToSave &&
                 // We never save Parked.
+                protocolState.SmtpProtoControlState != stateToSave) {
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
                     target.SmtpProtoControlState = stateToSave;

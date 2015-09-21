@@ -86,7 +86,7 @@ namespace NachoCore.SMTP
                 } catch (SocketException ex) {
                     Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.InvalidDest);
-                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
                 } catch (ServiceNotConnectedException) {
                     // FIXME - this needs to feed into NcCommStatus, not loop forever.
                     Log.Info (Log.LOG_SMTP, "{0}: ServiceNotConnectedException", cmdname);

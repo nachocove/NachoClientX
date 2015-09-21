@@ -380,7 +380,8 @@ namespace NachoCore.Model
                 // TODO Be smart about formatting.  Right now everything is forced to plain text.
                 string originalBodyText = MimeHelpers.ExtractTextPart (originalMessage);
                 string outgoingBodyText = MimeHelpers.ExtractTextPart (outgoingMime);
-                MimeHelpers.SetPlainText (outgoingMime, outgoingBodyText + originalBodyText);
+                string originalHeaderText = EmailHelper.FormatBasicHeaders (originalMessage);
+                MimeHelpers.SetPlainText (outgoingMime, outgoingBodyText + "\n\n" + originalHeaderText + originalBodyText);
             }
             if (ReferencedIsForward && (!ReferencedBodyIsIncluded || WaitingForAttachmentsToDownload)) {
                 // Add all the attachments from the original message.

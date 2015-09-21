@@ -442,13 +442,14 @@ namespace NachoClient.iOS
             if (!ErrorHelper.ExtractErrorString (nr, out message)) {
                 message = "Download failed.";
             }
-            if (UserInteractionEnabled) {
+            bool isUnrecoverableError = nr.Why == NcResult.WhyEnum.MissingOnServer;
+            if (UserInteractionEnabled && !isUnrecoverableError) {
                 message += " Tap here to retry.";
             }
             if (hasPreview) {
                 message += " Showing message preview only.";
             }
-            RenderDownloadFailure (message);
+            RenderDownloadFailure (message, isUnrecoverableError);
             if (hasPreview) {
                 RenderTextString (preview);
             }
@@ -512,7 +513,7 @@ namespace NachoClient.iOS
 
                     } else {
                         // The download really did fail.  Let the user know.
-                        ShowErrorMessage (NcResult.Error (statusEvent.Status.SubKind));
+                        ShowErrorMessage (NcResult.Error (statusEvent.Status.SubKind, statusEvent.Status.Why));
                     }
                     break;
                 }
@@ -637,7 +638,7 @@ namespace NachoClient.iOS
             }
         }
 
-        private void RenderDownloadFailure (string message)
+        private void RenderDownloadFailure (string message, bool isUnrecoverableError)
         {
             var attributedString = new NSAttributedString (message);
             errorMessage.Lines = 0;
@@ -647,15 +648,18 @@ namespace NachoClient.iOS
 
             yOffset = errorMessage.Frame.Bottom;
 
-            if (UserInteractionEnabled && null == retryDownloadGestureRecognizer) {
-                errorMessage.UserInteractionEnabled = true;
-                retryDownloadGestureRecognizer = new UITapGestureRecognizer ();
-                retryDownloadGestureRecognizer.NumberOfTapsRequired = 1;
-                retryDownloadGestureRecognizerToken = retryDownloadGestureRecognizer.AddTarget (StartDownloadWhenInForeground);
-                retryDownloadGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                    return false;
-                };
-                errorMessage.AddGestureRecognizer (retryDownloadGestureRecognizer);
+            if (UserInteractionEnabled) {
+                if (retryDownloadGestureRecognizer == null) {
+                    errorMessage.UserInteractionEnabled = true;
+                    retryDownloadGestureRecognizer = new UITapGestureRecognizer ();
+                    retryDownloadGestureRecognizer.NumberOfTapsRequired = 1;
+                    retryDownloadGestureRecognizerToken = retryDownloadGestureRecognizer.AddTarget (StartDownloadWhenInForeground);
+                    retryDownloadGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                        return false;
+                    };
+                    errorMessage.AddGestureRecognizer (retryDownloadGestureRecognizer);
+                }
+                retryDownloadGestureRecognizer.Enabled = !isUnrecoverableError;
             }
         }
 

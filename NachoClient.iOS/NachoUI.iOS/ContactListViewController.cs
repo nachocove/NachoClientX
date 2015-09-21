@@ -219,9 +219,6 @@ namespace NachoClient.iOS
                 destinationViewController.account = a;
                 return;
             }
-            if (segue.Identifier.Equals ("SegueToNachoNow")) {
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }

@@ -261,10 +261,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XmlDocument+Wbxml.cs">
       <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\LaunchViewController.cs" />
-    <Compile Include="NachoUI.iOS\LaunchViewController.designer.cs">
-      <DependentUpon>LaunchViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XElement+AnyNs.cs">
       <Link>NachoCore\Extensions\XElement+AnyNs.cs</Link>
     </Compile>
@@ -958,10 +954,6 @@
     <Compile Include="NachoUI.iOS\ContactDetailViewController.designer.cs">
       <DependentUpon>ContactDetailViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\AdvancedLoginViewController.cs" />
-    <Compile Include="NachoUI.iOS\AdvancedLoginViewController.designer.cs">
-      <DependentUpon>AdvancedLoginViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcDeviceContacts.cs">
       <Link>NachoCore\Adapters\NcDeviceContacts.cs</Link>
     </Compile>
@@ -1042,7 +1034,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
-    <Compile Include="NachoUI.iOS\Support\WaitingScreen.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoNotesController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrFileDesc.cs">
       <Link>NachoCore\Model\McAbstrFileDesc.cs</Link>
@@ -1428,10 +1419,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration28.cs">
       <Link>NachoCore\Model\Migration\NcMigration28.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.designer.cs">
-      <DependentUpon>AccountCredentialsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoCredentials.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\ILoginFields.cs" />
     <Compile Include="NachoUI.iOS\Support\IMapFields.cs" />
@@ -1596,11 +1583,52 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration41.cs">
       <Link>NachoCore\Model\Migration\NcMigration41.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcActivityIndicatorView.cs" />
+    <Compile Include="NachoUI.iOS\StartupMigrationViewController.cs" />
+    <Compile Include="NachoUI.iOS\StartupMigrationViewController.designer.cs">
+      <DependentUpon>StartupMigrationViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\StartupRecoveryViewController.cs" />
+    <Compile Include="NachoUI.iOS\StartupRecoveryViewController.designer.cs">
+      <DependentUpon>StartupRecoveryViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\GettingStartedViewController.cs" />
+    <Compile Include="NachoUI.iOS\GettingStartedViewController.designer.cs">
+      <DependentUpon>GettingStartedViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcSimpleColorButton.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAccountTypeCollectionViewCell.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAccountTypeCollectionViewCell.designer.cs">
+      <DependentUpon>NcAccountTypeCollectionViewCell.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountSyncingViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountSyncingViewController.designer.cs">
+      <DependentUpon>AccountSyncingViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcAdjustableLayoutTextField.cs" />
+    <Compile Include="NachoUI.iOS\ImapAdvancedFieldsViewController.cs" />
+    <Compile Include="NachoUI.iOS\ImapAdvancedFieldsViewController.designer.cs">
+      <DependentUpon>ImapAdvancedFieldsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ExchangeAdvancedFieldsViewController.cs" />
+    <Compile Include="NachoUI.iOS\ExchangeAdvancedFieldsViewController.designer.cs">
+      <DependentUpon>ExchangeAdvancedFieldsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\AccountAdvancedFieldsViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\GoogleOAuth2Authenticator.cs">
       <Link>NachoCore\Utils\GoogleOAuth2Authenticator.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\StandardCredentialsViewController.designer.cs">
+      <DependentUpon>StandardCredentialsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\StandardCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\GoogleCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\GoogleCredentialsViewController.designer.cs">
+      <DependentUpon>GoogleCredentialsViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs">
       <Link>NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs</Link>
@@ -1655,6 +1683,10 @@
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
+    <InterfaceDefinition Include="LaunchScreen.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\Startup.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\Welcome.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\AccountCreation.storyboard" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
@@ -2651,5 +2683,21 @@
     <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default-568h%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default-667h%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default-736h%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Bootscreen-1.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Bootscreen-1%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Bootscreen-1%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\ActivityIndicatorStrip.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\ActivityIndicatorStrip%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\ActivityIndicatorStrip%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LeftBottomDarkTriangles.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\LeftBottomDarkTriangles.imageset\triangles.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LeftBottomDarkTriangles.imageset\triangles%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LeftBottomDarkTriangles.imageset\triangles%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\triangles.png" />
+    <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\triangles%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\triangles%403x.png" />
   </ItemGroup>
 </Project>

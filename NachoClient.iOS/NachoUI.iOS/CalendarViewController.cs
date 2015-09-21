@@ -140,11 +140,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("SegueToNachoNow")) {
-                // Nothing to do
-                return;
-            }
-
             if (segue.Identifier == "CalendarToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;

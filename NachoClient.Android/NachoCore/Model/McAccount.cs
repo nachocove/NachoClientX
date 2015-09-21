@@ -288,6 +288,8 @@ namespace NachoCore.Model
 
         public bool FastNotificationEnabled { get; set; }
 
+        public bool IsMdmBased { get; set; }
+
         /// <summary>
         /// Does this account have the given capability or capabilities?
         /// </summary>
@@ -346,6 +348,11 @@ namespace NachoCore.Model
         public static McAccount GetAccountBeingConfigured ()
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => McAccount.ConfigurationInProgressEnum.Done != x.ConfigurationInProgress).SingleOrDefault ();
+        }
+
+        public static McAccount GetMDMAccount ()
+        {
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => true == x.IsMdmBased).SingleOrDefault ();
         }
 
         public static bool IsAccountBeingConfigured (int accountId)
@@ -430,6 +437,19 @@ namespace NachoCore.Model
             }
             string hash = HashHelper.Sha256 (account.GetLogSalt () + password);
             return hash.Substring (hash.Length - 3); // e.g. "f47"
+        }
+
+        public async void PopulateProfilePhotoFromURL (Uri imageUrl)
+        {
+            try {
+                var httpClient = new System.Net.Http.HttpClient ();
+                byte[] contents = await httpClient.GetByteArrayAsync (imageUrl);
+                var portrait = McPortrait.InsertFile (Id, contents);
+                DisplayPortraitId = portrait.Id;
+                Update ();
+            } catch (Exception e) {
+                Log.Info (Log.LOG_DB, "McAccount: PopulateProfilePhotoFromURL exception: {0}", e);
+            }
         }
     }
 
