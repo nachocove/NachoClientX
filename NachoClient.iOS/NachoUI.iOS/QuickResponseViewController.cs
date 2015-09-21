@@ -25,9 +25,13 @@ namespace NachoClient.iOS
 
         protected static readonly nfloat X_INDENT = 30;
 
+        public QuickResponseViewController () : base ()
+        {
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
+
         public QuickResponseViewController (IntPtr handle) : base (handle)
         {
-
         }
 
         public override void ViewDidLoad ()

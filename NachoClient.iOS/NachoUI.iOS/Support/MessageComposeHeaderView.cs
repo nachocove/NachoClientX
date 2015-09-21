@@ -4,84 +4,21 @@ using System;
 using UIKit;
 using CoreGraphics;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
     
-    // From an unmerged branch
-    public class NcAdjustableLayoutTextField : UITextField
-    {
-
-        public CGRect? AdjustedLeftViewRect;
-        public CGRect? AdjustedRightViewRect;
-        public UIEdgeInsets? AdjustedEditingInsets;
-
-        public NcAdjustableLayoutTextField (IntPtr handle) : base (handle)
-        {
-        }
-
-        public NcAdjustableLayoutTextField (CGRect frame) : base (frame)
-        {
-        }
-
-        public override CGRect LeftViewRect (CGRect forBounds)
-        {
-            if (AdjustedLeftViewRect.HasValue) {
-                return AdjustedLeftViewRect.Value;
-            }
-            return base.LeftViewRect (forBounds);
-        }
-
-        public override CGRect RightViewRect (CGRect forBounds)
-        {
-            if (AdjustedRightViewRect.HasValue) {
-                return AdjustedRightViewRect.Value;
-            }
-            return base.RightViewRect (forBounds);
-        }
-
-        public override CGRect EditingRect (CGRect forBounds)
-        {
-            if (AdjustedEditingInsets.HasValue) {
-                return new CGRect (
-                    forBounds.X + AdjustedEditingInsets.Value.Left,
-                    forBounds.Y + AdjustedEditingInsets.Value.Top,
-                    forBounds.Width - AdjustedEditingInsets.Value.Left - AdjustedEditingInsets.Value.Right,
-                    forBounds.Height - AdjustedEditingInsets.Value.Top - AdjustedEditingInsets.Value.Bottom
-                );
-            }
-            return base.EditingRect (forBounds);
-        }
-
-        public override CGRect TextRect (CGRect forBounds)
-        {
-            if (AdjustedEditingInsets.HasValue) {
-                return new CGRect (
-                    forBounds.X + AdjustedEditingInsets.Value.Left,
-                    forBounds.Y + AdjustedEditingInsets.Value.Top,
-                    forBounds.Width - AdjustedEditingInsets.Value.Left - AdjustedEditingInsets.Value.Right,
-                    forBounds.Height - AdjustedEditingInsets.Value.Top - AdjustedEditingInsets.Value.Bottom
-                );
-            }
-            return base.TextRect (forBounds);
-        }
-
-        public override CGRect PlaceholderRect (CGRect forBounds)
-        {
-            if (AdjustedEditingInsets.HasValue) {
-                return new CGRect (
-                    forBounds.X + AdjustedEditingInsets.Value.Left,
-                    forBounds.Y + AdjustedEditingInsets.Value.Top,
-                    forBounds.Width - AdjustedEditingInsets.Value.Left - AdjustedEditingInsets.Value.Right,
-                    forBounds.Height - AdjustedEditingInsets.Value.Top - AdjustedEditingInsets.Value.Bottom
-                );
-            }
-            return base.PlaceholderRect (forBounds);
-        }
-    }
-
     public interface MessageComposeHeaderViewDelegate {
         void MessageComposeHeaderViewDidChangeHeight (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject);
+        void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
+        void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
+        void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address);
+        void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address);
+        void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address);
     }
 
     public class MessageComposeHeaderView : UIView, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate
@@ -89,7 +26,7 @@ namespace NachoClient.iOS
 
         #region Private Views
 
-        private class MessageFieldLabel : UIView
+        public class MessageFieldLabel : UIView
         {
             public readonly UILabel NameLabel;
             public readonly UILabel ValueLabel;
@@ -108,7 +45,6 @@ namespace NachoClient.iOS
                 AddSubview (NameLabel);
                 AddSubview (ValueLabel);
                 DisclosureIndicatorView = Util.AddArrowAccessory (Bounds.Width - RightPadding - DisclosureWidth, 0, DisclosureWidth, this);
-                DisclosureIndicatorView.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
                 TapGesture = new UITapGestureRecognizer (Tap);
                 AddGestureRecognizer (TapGesture);
             }
@@ -117,9 +53,9 @@ namespace NachoClient.iOS
             {
                 base.LayoutSubviews ();
                 DisclosureIndicatorView.Frame = new CGRect (
-                    DisclosureIndicatorView.Frame.X,
+                    Bounds.Width - RightPadding - DisclosureWidth,
                     (Bounds.Height - DisclosureIndicatorView.Frame.Height) / 2.0f,
-                    DisclosureIndicatorView.Frame.Width,
+                    DisclosureWidth,
                     DisclosureIndicatorView.Frame.Height
                 );
                 NameLabel.SizeToFit ();
@@ -150,21 +86,23 @@ namespace NachoClient.iOS
                 return preferredHeight;
             }
         }
-        nfloat preferredHeight = 0.0f;
-        UcAddressBlock ToView;
-        UcAddressBlock CcView;
-        UcAddressBlock BccView;
-        NcAdjustableLayoutTextField SubjectField;
-        MessageFieldLabel IntentView;
-        UcAttachmentBlock AttachmentsView;
+        public bool AttachmentsAllowed = true;
+        public readonly UcAddressBlock ToView;
+        public readonly UcAddressBlock CcView;
+        public readonly UcAddressBlock BccView;
+        public readonly NcAdjustableLayoutTextField SubjectField;
+        public readonly MessageFieldLabel IntentView;
+        public readonly UcAttachmentBlock AttachmentsView;
         UIView ToSeparator;
         UIView CcSeparator;
         UIView BccSeparator;
         UIView SubjectSeparator;
         UIView IntentSeparator;
         UIView AttachmentsSeparator;
+        UcAddressBlock ActiveAddressView;
         bool HasOpenedCc;
         bool HasOpenedSubject;
+        nfloat preferredHeight = 0.0f;
 
         private nfloat LineHeight = 42.0f;
         private nfloat RightPadding = 15.0f;
@@ -194,7 +132,9 @@ namespace NachoClient.iOS
             CcView = new UcAddressBlock (this, "Cc:", "Cc/Bcc:", Bounds.Width);
             BccView = new UcAddressBlock (this, "Bcc:", null, Bounds.Width);
 
+            ToView.SetCompact (true, -1);
             CcView.SetCompact (true, -1, true);
+            BccView.SetCompact (true, -1);
 
             ToView.ConfigureView ();
             CcView.ConfigureView ();
@@ -206,6 +146,7 @@ namespace NachoClient.iOS
 
             var label = FieldLabel ("Subject:");
             SubjectField = new NcAdjustableLayoutTextField (new CGRect (0, 0, Bounds.Width, LineHeight));
+            SubjectField.BackgroundColor = UIColor.White;
             SubjectField.Font = LabelFont;
             SubjectField.TextColor = LabelColor;
             SubjectField.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -214,8 +155,8 @@ namespace NachoClient.iOS
             SubjectField.AdjustedEditingInsets = new UIEdgeInsets (0.0f, LeftPadding + label.Frame.Width + 10.0f, 0.0f, RightPadding);
             SubjectField.AdjustedLeftViewRect = new CGRect(LeftPadding, (SubjectField.Frame.Height - label.Frame.Height) / 2.0, label.Frame.Width, label.Frame.Height);
             SubjectField.LeftView = label;
-            // FIXME: compile error
-//            SubjectField.EditingDidBegin += SubjectEditingDidBegin;
+            SubjectField.EditingDidBegin += SubjectEditingDidBegin;
+            SubjectField.EditingDidEnd += SubjectEditingDidEnd;
 
             IntentView = new MessageFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
             IntentView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -258,6 +199,7 @@ namespace NachoClient.iOS
             AddSubview (IntentSeparator);
             AddSubview (AttachmentsView);
             AddSubview (AttachmentsSeparator);
+
             SetNeedsLayout ();
         }
 
@@ -270,43 +212,117 @@ namespace NachoClient.iOS
             if (view == CcView) {
                 HasOpenedCc = true;
             }
+            view.SetNeedsLayout ();
             view.SetCompact (false, -1);
             SetNeedsLayout ();
-            LayoutIfNeeded ();
+            if (ActiveAddressView != null) {
+                ActiveAddressView.SetCompact (true, -1);
+                ActiveAddressView.SetNeedsLayout ();
+            }
+            UIView.Animate (0.2, () => {
+                view.LayoutIfNeeded ();
+                if (ActiveAddressView != null) {
+                    ActiveAddressView.LayoutIfNeeded ();
+                }
+                LayoutIfNeeded ();
+            });
+            ActiveAddressView = view;
         }
 
         public void AddressBlockWillBecomeInactive (UcAddressBlock view)
         {
-            view.SetCompact (true, -1);
+            if (ActiveAddressView == view) {
+                view.SetCompact (true, -1);
+                view.SetNeedsLayout ();
+                SetNeedsLayout ();
+                UIView.Animate (0.2, () => {
+                    view.LayoutIfNeeded ();
+                    LayoutIfNeeded ();
+                });
+                ActiveAddressView = null;
+            }
         }
 
         public void AddressBlockAutoCompleteContactClicked(UcAddressBlock view, string prefix)
         {
+            var address = EmailAddressForAddressView (view, prefix);
+            if (HeaderDelegate != null) {
+                HeaderDelegate.MessageComposeHeaderViewDidSelectContactChooser (this, address);
+            }
         }
 
         public void AddressBlockSearchContactClicked(UcAddressBlock view, string prefix)
         {
+            var address = EmailAddressForAddressView (view, prefix);
+            if (HeaderDelegate != null) {
+                HeaderDelegate.MessageComposeHeaderViewDidSelectContactSearch (this, address);
+            }
+        }
+
+        public void AddressBlockRemovedAddress (UcAddressBlock view, NcEmailAddress address)
+        {
+            if (HeaderDelegate != null) {
+                HeaderDelegate.MessageComposeHeaderViewDidRemoveAddress (this, address);
+            }
         }
 
         public void DisplayAttachmentForAttachmentBlock (McAttachment attachment)
         {
+            if (HeaderDelegate != null) {
+                HeaderDelegate.MessageComposeHeaderViewDidSelectAttachment (this, attachment);
+            }
+        }
+
+        public void RemoveAttachmentForAttachmentBlock (McAttachment attachment)
+        {
+            if (HeaderDelegate != null) {
+                HeaderDelegate.MessageComposeHeaderViewDidRemoveAttachment (this, attachment);
+            }
+            SetNeedsLayout ();
+            UIView.Animate (0.2, () => {
+                AttachmentsView.LayoutIfNeeded ();
+                LayoutIfNeeded ();
+            });
         }
 
         public void ShowChooserForAttachmentBlock ()
         {
+            if (HeaderDelegate != null) {
+                HeaderDelegate.MessageComposeHeaderViewDidSelectAddAttachment (this);
+            }
+        }
+
+        public void ToggleCompactForAttachmentBlock ()
+        {
+            AttachmentsView.ToggleCompact ();
+            SetNeedsLayout ();
+            UIView.Animate(0.2, () => {
+                AttachmentsView.LayoutIfNeeded ();
+                LayoutIfNeeded ();
+            });
         }
 
         public void SubjectEditingDidBegin (object sender, EventArgs e)
         {
             HasOpenedSubject = true;
             SetNeedsLayout ();
-            LayoutIfNeeded ();
+            UIView.Animate (0.2, () => {
+                LayoutIfNeeded ();
+            });
+        }
+
+        public void SubjectEditingDidEnd (object sender, EventArgs e)
+        {
+            if (HeaderDelegate != null) {
+                HeaderDelegate.MessageComposeHeaderViewDidChangeSubject (this, SubjectField.Text);
+            }
         }
 
         private void SelectIntent ()
         {
-            //                View.EndEditing (true);
-            //                PerformSegue ("SegueToIntentSelection", this);
+            if (HeaderDelegate != null) {
+                HeaderDelegate.MessageComposeHeaderViewDidSelectIntentField (this);
+            }
         }
 
         #endregion
@@ -315,23 +331,23 @@ namespace NachoClient.iOS
 
         public void AddressBlockNeedsLayout (UcAddressBlock view)
         {
-//            SetNeedsLayout ();
-//            LayoutIfNeeded ();
+            SetNeedsLayout ();
         }
 
         public void AttachmentBlockNeedsLayout (UcAttachmentBlock view)
         {
-//            SetNeedsLayout ();
-//            LayoutIfNeeded ();
+            SetNeedsLayout ();
         }
 
         public override void LayoutSubviews ()
         {
             base.LayoutSubviews ();
             nfloat y = 0.0f;
+            nfloat previousPreferredHeight = PreferredHeight;
 
             BccView.Hidden = BccSeparator.Hidden = ShouldHideBcc;
             IntentView.Hidden = IntentSeparator.Hidden = ShouldHideIntent;
+            AttachmentsView.Hidden = AttachmentsSeparator.Hidden = !AttachmentsAllowed;
 
             y += LayoutSubviewAtYPosition (ToView, y);
             y += LayoutSubviewAtYPosition (ToSeparator, y);
@@ -347,13 +363,16 @@ namespace NachoClient.iOS
             y += LayoutSubviewAtYPosition (AttachmentsSeparator, y);
 
             preferredHeight = y;
+
+            Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, preferredHeight);
+
+            if ((Math.Abs(preferredHeight - previousPreferredHeight) > 0.5) && HeaderDelegate != null) {
+                HeaderDelegate.MessageComposeHeaderViewDidChangeHeight (this);
+            }
         }
             
         private nfloat LayoutSubviewAtYPosition(UIView subview, nfloat y, float padding = 0f, nfloat? maxHeight = null, float minHeight = 0f)
         {
-            if (subview.Hidden){
-                return 0f;
-            }
             var layoutHeight = subview.Frame.Height;
             if (maxHeight.HasValue) {
                 layoutHeight = subview.SizeThatFits (new CGSize (subview.Frame.Width, maxHeight.Value)).Height;
@@ -362,6 +381,9 @@ namespace NachoClient.iOS
                 layoutHeight = minHeight;
             }
             subview.Frame = new CGRect (subview.Frame.X, y, subview.Frame.Width, layoutHeight);
+            if (subview.Hidden){
+                return 0f;
+            }
             return layoutHeight + padding;
         }
 
@@ -386,6 +408,24 @@ namespace NachoClient.iOS
             label.Text = text;
             label.SizeToFit ();
             return label;
+        }
+
+        private NcEmailAddress EmailAddressForAddressView (UcAddressBlock view, string prefix)
+        {
+            NcEmailAddress.Kind kind = NcEmailAddress.Kind.Unknown;
+            if (view == ToView) {
+                kind = NcEmailAddress.Kind.To;
+            } else if (view == CcView) {
+                kind = NcEmailAddress.Kind.Cc;
+            } else if (view == BccView) {
+                kind = NcEmailAddress.Kind.Bcc;
+            } else {
+                NcAssert.CaseError ();
+            }
+            var emailAddress = new NcEmailAddress (kind);
+            emailAddress.action = NcEmailAddress.Action.create;
+            emailAddress.address = prefix;
+            return emailAddress;
         }
 
         #endregion

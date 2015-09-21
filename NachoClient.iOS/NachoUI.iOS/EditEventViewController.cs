@@ -1259,9 +1259,20 @@ namespace NachoClient.iOS
         }
 
         /// IUcAttachmentBlock delegate
+        public void ToggleCompactForAttachmentBlock ()
+        {
+            attachmentView.ToggleCompact ();
+        }
+
+        /// IUcAttachmentBlock delegate
         public void DisplayAttachmentForAttachmentBlock (McAttachment attachment)
         {
             PlatformHelpers.DisplayAttachment (this, attachment);
+        }
+
+        /// IUcAttachmentBlock delegate
+        public void RemoveAttachmentForAttachmentBlock (McAttachment attachment)
+        {
         }
 
         public void UpdateAttendeeList (IList<McAttendee> attendees)

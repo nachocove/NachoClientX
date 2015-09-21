@@ -951,6 +951,10 @@ namespace NachoClient.iOS
         {
         }
 
+        public void AddressBlockRemovedAddress (UcAddressBlock view, NcEmailAddress address)
+        {
+        }
+
         private void ComposeResponse (EmailHelper.Action action, bool startWithQuickResponse = false)
         {
             var composeViewController = new MessageComposeViewController ();

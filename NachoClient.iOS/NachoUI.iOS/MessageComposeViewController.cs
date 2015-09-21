@@ -27,7 +27,14 @@ namespace NachoClient.iOS
 
     }
 
-    public partial class MessageComposeViewController : NcUIViewController, IWKNavigationDelegate, MessageComposeHeaderViewDelegate, QuickResponseViewControllerDelegate
+    public partial class MessageComposeViewController : NcUIViewController,
+        IWKNavigationDelegate,
+        MessageComposeHeaderViewDelegate,
+        QuickResponseViewControllerDelegate,
+        INachoIntentChooserParent,
+        INachoDateControllerParent,
+        INachoFileChooserParent,
+        INachoContactChooserDelegate
     {
 
         #region Properties
@@ -50,6 +57,15 @@ namespace NachoClient.iOS
         NcUIBarButtonItem QuickResponseButton;
         UIAlertController CloseAlertController;
         bool HasShownOnce;
+        UIStoryboard mainStorybaord;
+        UIStoryboard MainStoryboard {
+            get {
+                if (mainStorybaord == null) {
+                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                }
+                return mainStorybaord;
+            }
+        }
 
         enum MessagePreparationStatus {
             NotStarted,
@@ -125,6 +141,7 @@ namespace NachoClient.iOS
             HeaderView = new MessageComposeHeaderView (ScrollView.Bounds);
             HeaderView.Frame = new CGRect (0.0, 0.0, ScrollView.Bounds.Width, HeaderView.PreferredHeight);
             HeaderView.HeaderDelegate = this;
+            HeaderView.AttachmentsAllowed = RelatedCalendarItem == null;
 
             var config = new WKWebViewConfiguration ();
             config.SuppressesIncrementalRendering = true;
@@ -202,10 +219,18 @@ namespace NachoClient.iOS
             LayoutScrollView ();
         }
 
+        protected override void OnKeyboardChanged ()
+        {
+            var frame = View.Bounds;
+            frame.Height = frame.Height - keyboardHeight;
+            ScrollView.Frame = frame;
+        }
+
         #endregion
 
-        #region User Actions
+        #region User Actions - Navbar
 
+        // User hitting the send button
         public void Send (object sender, EventArgs e)
         {
             View.EndEditing (true);
@@ -216,12 +241,14 @@ namespace NachoClient.iOS
             DismissViewController (true, null);
         }
 
+        // User hitting the quick reply button
         public void QuickReply (object sender, EventArgs e)
         {
             View.EndEditing (true);
             ShowQuickResponses ();
         }
 
+        // User hitting the close button
         public void Close (object sender, EventArgs e)
         {
             View.EndEditing (true);
@@ -232,6 +259,7 @@ namespace NachoClient.iOS
             PresentViewController (CloseAlertController, true, null);
         }
 
+        // User opting to discard while closing
         public void Discard (UIAlertAction obj)
         {
             CloseAlertController = null;
@@ -242,6 +270,7 @@ namespace NachoClient.iOS
             DismissViewController (true, null);
         }
 
+        // User opting to save while closing
         public void Save (UIAlertAction obj)
         {
             CloseAlertController = null;
@@ -252,6 +281,7 @@ namespace NachoClient.iOS
             DismissViewController (true, null);
         }
 
+        // User selecting a quick response
         public void QuickResponseViewDidSelectResponse (QuickResponseViewController vc, NcQuickResponse.QRTypeEnum whatType, NcQuickResponse.QuickResponse response, McEmailMessage.IntentType intentType)
         {
             if (whatType == NcQuickResponse.QRTypeEnum.Compose) {
@@ -288,6 +318,186 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region User Actions - Header
+
+        // User selecting + button in To/CC/BCC field
+        public void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address)
+        {
+            ContactChooserViewController chooserController = MainStoryboard.InstantiateViewController ("ContactChooserViewController") as ContactChooserViewController;
+            chooserController.SetOwner (this, Account, address, NachoContactType.EmailRequired);
+            FadeCustomSegue.Transition (this, chooserController);
+        }
+
+        // User starting to type in To/CC/BCC field
+        public void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address)
+        {
+            ContactSearchViewController searchController = MainStoryboard.InstantiateViewController ("ContactSearchViewController") as ContactSearchViewController;
+            searchController.SetOwner (this, Account, address, NachoContactType.EmailRequired);
+            FadeCustomSegue.Transition (this, searchController);
+        }
+
+        // User selecting contact for To/CC/BCC field
+        public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
+        {
+            if (address.kind == NcEmailAddress.Kind.To) {
+                HeaderView.ToView.Append (address);
+                Message.To = EmailHelper.AddressStringFromList (HeaderView.ToView.AddressList);
+            } else if (address.kind == NcEmailAddress.Kind.Cc) {
+                HeaderView.CcView.Append (address);
+                Message.Cc = EmailHelper.AddressStringFromList (HeaderView.CcView.AddressList);
+            } else if (address.kind == NcEmailAddress.Kind.Bcc) {
+                HeaderView.BccView.Append (address);
+                Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
+            } else {
+                NcAssert.CaseError ();
+            }
+        }
+
+        public void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address)
+        {
+            
+            if (address.kind == NcEmailAddress.Kind.To) {
+                Message.To = EmailHelper.AddressStringFromList (HeaderView.ToView.AddressList);
+            } else if (address.kind == NcEmailAddress.Kind.Cc) {
+                Message.Cc = EmailHelper.AddressStringFromList (HeaderView.CcView.AddressList);
+            } else if (address.kind == NcEmailAddress.Kind.Bcc) {
+                Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
+            } else {
+                NcAssert.CaseError ();
+            }
+        }
+
+        // ??
+        public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
+        {
+            // old implementation did nothing
+        }
+
+        // User changing the subject
+        public void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject)
+        {
+            Message.Subject = subject;
+        }
+
+        // User tapping the intent field 
+        public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
+        {
+            IntentSelectionViewController intentController = MainStoryboard.InstantiateViewController ("IntentSelectionViewController") as IntentSelectionViewController;
+            intentController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+            intentController.SetOwner (this);
+            intentController.SetDateControllerOwner (this);
+            PresentViewController (intentController, true, null);
+        }
+
+        // User selecting an intent
+        public void SelectMessageIntent (NcMessageIntent.MessageIntent intent)
+        {
+            Message.Intent = intent.type;
+            Message.IntentDateType = MessageDeferralType.None;
+            Message.IntentDate = DateTime.MinValue;
+            UpdateHeaderViewIntent ();
+        }
+
+        // User selecting a date for the intent
+        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            Message.IntentDateType = request;
+            Message.IntentDate = selectedDate;
+            UpdateHeaderViewIntent ();
+        }
+            
+        // User tapping on add attachment
+        public void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view)
+        {
+            AddAttachmentViewController attachmentViewController = MainStoryboard.InstantiateViewController ("AddAttachmentViewController") as AddAttachmentViewController;
+            attachmentViewController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+            attachmentViewController.SetOwner (this, Account);
+            PresentViewController (attachmentViewController, true, null);
+        }
+
+        // User tapping on a specific attachment to display
+        public void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment)
+        {
+            PlatformHelpers.DisplayAttachment (this, attachment);
+        }
+
+        // User picking a file as an attachment
+        public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
+        {
+            var attachment = obj as McAttachment;
+            if (attachment != null) {
+                attachment = AttachmentHelper.CopyAttachment (attachment);
+            }else{
+                var file = obj as McDocument;
+                if (file != null) {
+                    attachment = McAttachment.InsertSaveStart (Account.Id);
+                    attachment.SetDisplayName (file.DisplayName);
+                    attachment.IsInline = true;
+                    attachment.UpdateFileCopy (file.GetFilePath ());
+                } else {
+                    var note = obj as McNote;
+                    if (note != null) {
+                        attachment = McAttachment.InsertSaveStart (Account.Id);
+                        attachment.SetDisplayName (note.DisplayName + ".txt");
+                        attachment.IsInline = true;
+                        attachment.UpdateData (note.noteContent);
+                    }
+                }
+            }
+
+            if (attachment != null) {
+                attachment.ItemId = Message.Id;
+                HeaderView.AttachmentsView.Append (attachment);
+                this.DismissViewController (true, null);
+            } else {
+                NcAssert.CaseError ();
+            }
+
+        }
+
+        // User deleting an attachment
+        public void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment)
+        {
+            attachment.Delete ();
+        }
+
+        // User adding an attachment from media browser
+        public void Append (McAttachment attachment)
+        {
+            attachment.ItemId = Message.Id;
+            HeaderView.AttachmentsView.Append (attachment);
+        }
+
+        // Not really a direct user action, but caused by the user selecting a date for the intent
+        public void DismissChildDateController (INachoDateController vc)
+        {
+            // Basically, once the intent date view controller is dismissed, we need to dismiss the intent controller
+            DismissViewController (false, null);
+        }
+
+        // Not really a direct user action, but caused by the user selecting a date for the intent
+        public void DismissChildFileChooser (INachoFileChooser vc)
+        {
+            DismissViewController (true, null);
+        }
+
+        // Not really a direct user action, but caused by the user selecting a date for the intent
+        public void DismissPhotoPicker ()
+        {
+            DismissViewController (true, null);
+        }
+
+        // Not really a direct user action, but caused by the user selecting a contact
+        public void DismissINachoContactChooser (INachoContactChooser vc)
+        {
+            // The contact chooser was pushed on the nav stack, rather than shown as a modal.
+            // So we need to pop it from the stack
+            vc.Cleanup ();
+            NavigationController.PopViewController (true);
+        }
+
+        #endregion
+
         #region Message Preparation
 
         private void StartPreparingMessage ()
@@ -317,6 +527,8 @@ namespace NachoClient.iOS
             } else {
                 MessagePreparationState = MessagePreparationStatus.Done;
             }
+
+            UpdateHeaderView ();
 
             // Fake web view load for testing layout
             NSUrl url = new NSUrl("http://www.nytimes.com");
@@ -362,7 +574,7 @@ namespace NachoClient.iOS
 
         #region Helpers
 
-        private void ShowQuickResponses ()
+        private void ShowQuickResponses (bool animated = true)
         {
             NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
 
@@ -372,7 +584,33 @@ namespace NachoClient.iOS
                 responseType = NcQuickResponse.QRTypeEnum.Forward;
             }
 
-            // TODO: show view controller
+            var quickViewController = new QuickResponseViewController ();
+            quickViewController.SetProperties (responseType);
+            PresentViewController (quickViewController, animated, null);
+        }
+
+        #endregion
+
+        #region Header View
+
+        private void UpdateHeaderView ()
+        {
+            UpdateHeaderSubjectView ();
+            UpdateHeaderViewIntent ();
+            var attachments = McAttachment.QueryByItemId (Message);
+            foreach (var attachment in attachments) {
+                HeaderView.AttachmentsView.Append (attachment);
+            }
+        }
+
+        private void UpdateHeaderSubjectView ()
+        {
+            HeaderView.SubjectField.Text = Message.Subject;
+        }
+
+        private void UpdateHeaderViewIntent ()
+        {
+            HeaderView.IntentView.ValueLabel.Text = NcMessageIntent.GetIntentString (Message.Intent, Message.IntentDateType, Message.IntentDate);
         }
 
         #endregion
@@ -404,6 +642,12 @@ namespace NachoClient.iOS
         }
 
         #endregion
+
+        public override bool ShouldEndEditing {
+            get {
+                return false;
+            }
+        }
     }
         
 }

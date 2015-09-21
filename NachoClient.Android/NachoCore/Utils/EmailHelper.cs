@@ -510,32 +510,36 @@ namespace NachoCore.Utils
                 addresses = new List<NcEmailAddress> ();
             }
             var message = McEmailMessage.MessageWithSubject (account, subject);
-            var toList = new List<string> ();
-            var ccList = new List<string> ();
-            var bccList = new List<string> ();
+            var toList = new List<NcEmailAddress> ();
+            var ccList = new List<NcEmailAddress> ();
+            var bccList = new List<NcEmailAddress> ();
             MailboxAddress mailbox;
+            foreach (var address in addresses) {
+                if (address.kind == NcEmailAddress.Kind.To) {
+                    toList.Add (address);
+                } else if (address.kind == NcEmailAddress.Kind.Cc) {
+                    ccList.Add (address);
+                } else if (address.kind == NcEmailAddress.Kind.Bcc) {
+                    bccList.Add (address);
+                }
+            }
+            message.To = AddressStringFromList (toList);
+            message.Cc = AddressStringFromList (ccList);
+            message.Bcc = AddressStringFromList (bccList);
+            return message;
+        }
+
+        public static string AddressStringFromList (List<NcEmailAddress> addresses)
+        {
+            MailboxAddress mailbox;
+            var addressStrings = new List<string> (addresses.Count);
             foreach (var address in addresses) {
                 mailbox = address.ToMailboxAddress (mustUseAddress: true);
                 if (mailbox != null) {
-                    if (address.kind == NcEmailAddress.Kind.To) {
-                        toList.Add (mailbox.ToString ());
-                    } else if (address.kind == NcEmailAddress.Kind.Cc) {
-                        ccList.Add (mailbox.ToString ());
-                    } else if (address.kind == NcEmailAddress.Kind.Bcc) {
-                        bccList.Add (mailbox.ToString ());
-                    }
+                    addressStrings.Add (mailbox.ToString ());
                 }
             }
-            if (toList.Count > 0) {
-                message.To = String.Join (",", toList);
-            }
-            if (ccList.Count > 0) {
-                message.To = String.Join (",", ccList);
-            }
-            if (bccList.Count > 0) {
-                message.To = String.Join (",", bccList);
-            }
-            return message;
+            return String.Join (",", addressStrings);
         }
 
         private static bool IsAccountAlias (InternetAddress accountInternetAddress, string match)

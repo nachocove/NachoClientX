@@ -181,6 +181,13 @@ namespace NachoClient.iOS
             this.isCompact = isCompact;
         }
 
+        public void ToggleCompact ()
+        {
+            isCompact = !isCompact;
+            ConfigureView ();
+            SetNeedsLayout ();
+        }
+
         public List<McAttachment> AttachmentList {
             get {
                 var l = new List<McAttachment> ();
@@ -247,12 +254,16 @@ namespace NachoClient.iOS
 
         public void Remove (UcAttachmentCell c)
         {
+            var attachment = c.attachment;
             list.Remove (c);
             c.RemoveFromSuperview ();
             c.Dispose ();
 
-            Layout ();
+            SetNeedsLayout ();
             ConfigureView ();
+            if (null != owner) {
+                owner.RemoveAttachmentForAttachmentBlock (attachment);
+            }
         }
 
         /// Adjusts x & y on the top line of a view
@@ -338,8 +349,9 @@ namespace NachoClient.iOS
 
         private void ToggleCompactness ()
         {
-            isCompact = !isCompact;
-            ConfigureView ();
+            if (null != owner) {
+                owner.ToggleCompactForAttachmentBlock ();
+            }
         }
     }
 }

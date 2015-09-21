@@ -15,7 +15,11 @@ namespace NachoClient.iOS
 
         void DisplayAttachmentForAttachmentBlock (McAttachment attachment);
 
+        void RemoveAttachmentForAttachmentBlock (McAttachment attachment);
+
         void ShowChooserForAttachmentBlock ();
+
+        void ToggleCompactForAttachmentBlock ();
     }
 }
 

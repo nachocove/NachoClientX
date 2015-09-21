@@ -275,9 +275,6 @@ namespace NachoClient.iOS
             if (!isEditable) {
                 return;
             }
-            if (null != owner) {
-                owner.AddressBlockWillBecomeActive (this);
-            }
             entryTextField.BecomeFirstResponder ();
             ConfigureView ();
         }
@@ -288,6 +285,8 @@ namespace NachoClient.iOS
             if (isCompact && showAlternateTopLeftLabel) {
                 topLeftLabelString = alternateTopLeftString;
             }
+
+            chooserButton.Hidden = isCompact || (0 == isActive);
 
             topLeftLabel.Text = topLeftLabelString;
             var topLeftLabelSize = topLeftLabelString.StringSize (topLeftLabel.Font);
@@ -336,8 +335,6 @@ namespace NachoClient.iOS
                 AdjustXY (topLeftLabel, xOffset, yOffset);
                 xOffset += topLeftLabel.Frame.Width;
             }
-
-            chooserButton.Hidden = true;
 
             for (int i = 1; i < list.Count; i++) {
                 list [i].Hidden = true;
@@ -403,8 +400,7 @@ namespace NachoClient.iOS
                 AdjustXY (topLeftLabel, xOffset, yOffset);
                 xOffset += topLeftLabel.Frame.Width;
             }
-
-            chooserButton.Hidden = (0 == isActive);
+                
             xLimit = chooserButton.Frame.X;
 
             bool firstLine = true;
