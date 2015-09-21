@@ -1459,7 +1459,7 @@ namespace NachoClient.iOS
                     NcAssert.NotNull (html);
                     NSError error = null;
                     var d = NSData.FromString (html);
-                    var convertedString = new NSAttributedString (d, new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
+                    var convertedString = new NSAttributedString (d, new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML, StringEncoding = NSStringEncoding.UTF8 }, ref error);
                     initialString.Append (convertedString);
                 }
                 bodyTextView.AttributedText = initialString;
