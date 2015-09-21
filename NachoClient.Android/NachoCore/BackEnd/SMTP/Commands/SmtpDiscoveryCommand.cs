@@ -17,7 +17,7 @@ namespace NachoCore.SMTP
 
         public SmtpDiscoveryCommand (IBEContext beContext, NcSmtpClient smtp) : base (beContext, smtp)
         {
-            DontReportCommResult = BEContext.ProtocolState.ImapDiscoveryDone ? false : true;
+            DontReportCommResult = BEContext.ProtocolState.SmtpDiscoveryDone ? false : true;
         }
 
         public override void Execute (NcStateMachine sm)
