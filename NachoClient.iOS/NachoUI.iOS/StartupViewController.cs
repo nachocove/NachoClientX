@@ -185,7 +185,7 @@ namespace NachoClient.iOS
 
         void ShowSetupScreen (bool startWithTutorial = false)
         {
-            if (currentState == StartupViewState.Startup) {
+            if (currentState == StartupViewState.Setup) {
                 return;
             }
             Log.Info (Log.LOG_UI, "StartupViewController ShowSetupScreen");
