@@ -531,17 +531,20 @@ namespace NachoCore.Utils
                             LinePrefix = LinePrefix.Substring (0, LinePrefix.Length - 1);
                         }
                         if (!String.IsNullOrEmpty (LinePrefix)) {
-                            line = line.Substring (LinePrefix.Length).TrimStart ();
+                            line = line.Substring (LinePrefix.Length);
                         }
                     } else {
-                        line = line.Substring (LinePrefix.Length).TrimStart ();
+                        line = line.Substring (LinePrefix.Length);
                     }
                 }
                 while (line.StartsWith (">")) {
                     PushNode ("blockquote");
                     Node.SetAttributeValue ("type", "cite");
-                    line = line.Substring (1).TrimStart ();
+                    line = line.Substring (1);
                     LinePrefix += ">";
+                }
+                if (!String.IsNullOrEmpty(LinePrefix)) {
+                    line = line.TrimStart ();
                 }
                 PushNode ("div");
                 ConsumeText (line);
