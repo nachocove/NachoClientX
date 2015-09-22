@@ -412,7 +412,7 @@ namespace NachoClient.iOS
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController got too many devices while verifying");
-            ShowCredentialsError ("You are already using the maximum number of devices for this account.");
+            ShowCredentialsError ("You are already using the maximum number of devices for this account.  Please contact your system administrator.");
         }
 
         public void ServerIndServerErrorRetryLater (int acccountId)
@@ -421,7 +421,7 @@ namespace NachoClient.iOS
             IsSubmitting = false;
             BackEnd.Instance.Stop (Account.Id);
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController got server error while verifying");
-            ShowCredentialsError ("The server is currently unavailble. Please try again later.");
+            ShowCredentialsError ("The server is currently unavailable. Please try again later.");
         }
 
         private void HandleNetworkUnavailableError ()
