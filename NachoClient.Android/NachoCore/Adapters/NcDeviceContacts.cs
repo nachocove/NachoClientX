@@ -18,7 +18,7 @@ namespace NachoCore
 
         public NcDeviceContacts ()
         {
-            var deviceContacts = Contacts.Instance.GetContacts ();
+            var deviceContacts = NachoPlatform.Contacts.Instance.GetContacts ();
             if (null == deviceContacts) {
                 return;
             }

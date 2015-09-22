@@ -221,6 +221,18 @@ namespace NachoClient.iOS
             LoginEvents.Owner = null;
             CompleteWithMessage (SuccessMessage);
         }
+            
+        public void ServerIndTooManyDevices (int acccountId)
+        {
+            LoginEvents.Owner = null;
+            CompleteWithMessage (ErrorMessage);
+        }
+
+        public void ServerIndServerErrorRetryLater (int acccountId)
+        {
+            LoginEvents.Owner = null;
+            CompleteWithMessage (ErrorMessage);
+        }
 
         private void CompleteWithMessage (AccountSyncingStatusMessage message)
         {
