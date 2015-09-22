@@ -301,6 +301,8 @@ namespace NachoClient.iOS
                 MdmConfig.Instance.ExtractValues ();
             }
 
+            CopyResourcesToDocuments ();
+
             if ((null != launchOptions) && launchOptions.ContainsKey (UIApplication.LaunchOptionsRemoteNotificationKey)) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Remote notification");
             }
@@ -394,6 +396,22 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
             return true;
+        }
+
+        public void CopyResourcesToDocuments ()
+        {
+            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            string [] resources = {"nacho.html", "nacho.css", "nacho.js"};
+            foreach (var resourceName in resources) {
+                var resourcePath = NSBundle.MainBundle.PathForResource (resourceName, null);
+                var destinationPath = Path.Combine (documentsPath, resourceName);
+                if (!File.Exists (destinationPath) || File.GetLastWriteTime (destinationPath) < File.GetLastWriteTime (resourcePath)) {
+                    if (File.Exists (destinationPath)) {
+                        File.Delete (destinationPath);
+                    }
+                    File.Copy (resourcePath, destinationPath);
+                }
+            }
         }
 
         /// <Docs>Reference to the UIApplication that invoked this delegate method.</Docs>

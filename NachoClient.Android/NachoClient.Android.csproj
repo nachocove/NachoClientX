@@ -94,6 +94,7 @@
     <Reference Include="GooglePlayServicesLib">
       <HintPath>..\packages\Xamarin.GooglePlayServices.22.0.0.2\lib\MonoAndroid41\GooglePlayServicesLib.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -509,6 +510,9 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration42.cs" />
     <Compile Include="NachoCore\BackEnd\NcPreFetchHints.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration43.cs" />
+    <Compile Include="NachoCore\Utils\NcEmailMessageBundle.cs" />
+    <Compile Include="NachoCore\Utils\NcBundleStorage.cs" />
+    <Compile Include="NachoCore\Utils\Html.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration44.cs" />
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
   </ItemGroup>
