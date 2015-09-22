@@ -1425,12 +1425,18 @@ namespace NachoCore.Model
 
         public static List<McContact> QueryByIds (List<string> ids)
         {
+            if (0 == ids.Count) {
+                return new List<McContact> ();
+            }
             var query = String.Format ("SELECT c.* FROM McContact AS c WHERE c.Id IN ({0})", String.Join (",", ids));
             return NcModel.Instance.Db.Query<McContact> (query);
         }
 
         public static List<McContact> QueryByIds (List<long> ids)
         {
+            if (0 == ids.Count) {
+                return new List<McContact> ();
+            }
             var query = string.Format ("SELECT * FROM McContact WHERE Id IN ({0})", string.Join (",", ids));
             return NcModel.Instance.Db.Query<McContact> (query);
         }
@@ -1439,7 +1445,7 @@ namespace NachoCore.Model
         /// Search all contacts, returning any contact whose first name, last name, or company name
         /// starts with the given string.
         /// </summary>
-        private static List<McContact> SearchAllContactsByName (string searchFor)
+        public static List<McContact> SearchAllContactsByName (string searchFor)
         {
             string prefixPattern = searchFor.Replace ('%', '_') + "%";
             return NcModel.Instance.Db.Query<McContact> (
@@ -1451,7 +1457,7 @@ namespace NachoCore.Model
         /// Search the e-mail addresses associated with all contacts, returning any e-mail address
         /// where the address as a whole or the domain name starts with the given string.
         /// </summary>
-        private static List<McContactEmailAddressAttribute> SearchAllContactEmail (string searchFor)
+        public static List<McContactEmailAddressAttribute> SearchAllContactEmail (string searchFor)
         {
             string prefixPattern = searchFor.Replace ('%', '_') + "%";
             string domainPattern = "%@" + prefixPattern;
@@ -1490,9 +1496,7 @@ namespace NachoCore.Model
         /// <summary>
         /// Return the quality or value of the contact based on its source.
         /// </summary>
-        /// <returns>The value.</returns>
-        /// <param name="contact">Contact.</param>
-        private static int SourceValue (McContact contact)
+        private static int ContactSourceScore (McContact contact)
         {
             if (contact.IsRic()) {
                 return 3;
@@ -1525,6 +1529,7 @@ namespace NachoCore.Model
             return string.Equals (x.FirstName, y.FirstName, StringComparison.InvariantCultureIgnoreCase) &&
                 string.Equals (x.MiddleName, y.MiddleName, StringComparison.InvariantCultureIgnoreCase) &&
                 string.Equals (x.LastName, y.LastName, StringComparison.InvariantCultureIgnoreCase) &&
+                string.Equals (x.Suffix, y.Suffix, StringComparison.InvariantCultureIgnoreCase) &&
                 string.Equals (x.CompanyName, y.CompanyName, StringComparison.InvariantCultureIgnoreCase);
         }
 
@@ -1651,7 +1656,7 @@ namespace NachoCore.Model
             }
             allMatches = uniqueMatches;
 
-            // Sort the result how well it matches the search string.
+            // Sort the results by how well they match the search string.
             allMatches.Sort ((SearchMatch x, SearchMatch y) => {
                 return y.matchScore - x.matchScore;
             });
@@ -1795,7 +1800,7 @@ namespace NachoCore.Model
                 if (0 != firstCompare) {
                     return firstCompare;
                 }
-                return SourceValue (y.contact) - SourceValue (x.contact);
+                return ContactSourceScore (y.contact) - ContactSourceScore (x.contact);
             });
 
             // Eliminate contacts that appear to be duplicates.  A duplicate is
