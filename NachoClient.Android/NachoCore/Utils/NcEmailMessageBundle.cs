@@ -577,8 +577,6 @@ namespace NachoCore.Utils
                     }
                 }
             }
-            // TODO: I've seen our calendar invites as mutlipart/alternative -> [text/plain, text/calendar]
-            // Seems like the wrong way to send it, but perhaps we should look for that configuration
         }
 
         protected override void VisitMultipartRelated (MultipartRelated related)
