@@ -115,6 +115,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             if (IsMovingFromParentViewController) {
+                LoginEvents.Owner = null;
                 if (Account != null) {
                     NcAccountHandler.Instance.RemoveAccount (Account.Id);
                 }
