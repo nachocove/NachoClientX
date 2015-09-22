@@ -146,6 +146,7 @@ namespace NachoClient.iOS
                 attachment.SetDisplayName (mimePartAttachment.FileName);
                 attachmentView.Append (attachment);
             }
+
         }
 
         public void SaveDraft ()
@@ -353,6 +354,8 @@ namespace NachoClient.iOS
                 ConfigureToView (false);
                 toView.SetEditFieldAsFirstResponder ();
             }
+
+            UpdateSendEnabled ();
         }
 
         NSObject backgroundNotification;
@@ -1182,6 +1185,7 @@ namespace NachoClient.iOS
                 NcAssert.CaseError ();
                 break;
             }
+            UpdateSendEnabled ();
         }
 
         /// <summary>
@@ -1578,6 +1582,11 @@ namespace NachoClient.iOS
                     action = EmailHelper.Action.Send;
                 }
             }
+        }
+
+        private void UpdateSendEnabled ()
+        {
+            sendButton.Enabled = !toView.IsEmpty () || !ccView.IsEmpty () || !bccView.IsEmpty ();
         }
 
      
