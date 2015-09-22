@@ -197,7 +197,7 @@ namespace NachoCore.Utils
                 }
                 break;
             case NcResult.SubKindEnum.Info_ServerStatus:
-                var statusCode = (NachoCore.ActiveSync.Xml.StatusCode)siea.Status.Value;
+                var statusCode = (NachoCore.ActiveSync.Xml.StatusCode)(uint)(siea.Status.Value);
                 switch (statusCode) {
                 case NachoCore.ActiveSync.Xml.StatusCode.ServerErrorRetryLater_111:
                     LogAndCall (statusCode.ToString (), () => {
