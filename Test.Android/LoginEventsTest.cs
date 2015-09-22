@@ -86,8 +86,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPostInboxSync, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPostInboxSync, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             SendStateChange (AccountIdA);
             Assert.AreEqual (AccountIdA, MockLE.PostAutoDPostInboxSyncAccountId);
             Assert.AreEqual (-1, MockLE.PostAutoDPreInboxSyncAccountId);
@@ -96,8 +95,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.NotYetStarted, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPostInboxSync, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             SendStateChange (AccountIdA);
             Assert.AreEqual (-1, MockLE.PostAutoDPostInboxSyncAccountId);
             Assert.AreEqual (-1, MockLE.PostAutoDPreInboxSyncAccountId);
@@ -107,8 +105,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPreInboxSync, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPreInboxSync, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             SendStateChange (AccountIdA);
             Assert.AreEqual (AccountIdA, MockLE.PostAutoDPreInboxSyncAccountId);
             Assert.AreEqual (-1, MockLE.PostAutoDPostInboxSyncAccountId);
@@ -118,8 +115,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPostInboxSync, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPreInboxSync, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             SendStateChange (AccountIdA);
             Assert.AreEqual (AccountIdA, MockLE.PostAutoDPreInboxSyncAccountId);
             Assert.AreEqual (-1, MockLE.PostAutoDPostInboxSyncAccountId);
@@ -133,12 +129,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.NotYetStarted, McAccount.AccountCapabilityEnum.CalWriter),
             };
             // Network down.
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             MockCS.Status = NachoPlatform.NetStatusStatusEnum.Down;
             LoginEvents.CheckBackendState ();
             Assert.True (MockLE.NetworkDownCalled);
@@ -155,12 +146,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.NotYetStarted, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.NotYetStarted, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
             Assert.AreEqual (-1, MockLE.CredReqAccountId);
@@ -175,12 +161,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.Running, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.Running, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
             Assert.AreEqual (-1, MockLE.CredReqAccountId);
@@ -195,12 +176,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.Running, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.CertAskWait, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             var match = new X509Certificate2 ();
             MockBE.ServerCertPreSet = match;
             MockBE.ServerCertCapabilities = McAccount.AccountCapabilityEnum.CalWriter;
@@ -222,12 +198,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.ServerConfWait, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.NotYetStarted, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             MockBE.AutoDFailureReasonPreSet = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
@@ -246,12 +217,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.CredWait, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.CredWait, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
             Assert.AreEqual (AccountIdA, MockLE.CredReqAccountId);
@@ -265,12 +231,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.Running, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.CredWait, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
             Assert.AreEqual (AccountIdA, MockLE.CredReqAccountId);
@@ -285,12 +246,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPreInboxSync, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.CredWait, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
             Assert.AreEqual (AccountIdA, MockLE.CredReqAccountId);
@@ -304,12 +260,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPreInboxSync, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPostInboxSync, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
             Assert.AreEqual (-1, MockLE.CredReqAccountId);
@@ -323,12 +274,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPostInboxSync, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPreInboxSync, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
             Assert.AreEqual (-1, MockLE.CredReqAccountId);
@@ -342,12 +288,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPreInboxSync, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPreInboxSync, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
             Assert.AreEqual (-1, MockLE.CredReqAccountId);
@@ -362,12 +303,7 @@ namespace Test.iOS
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPostInboxSync, McAccount.AccountCapabilityEnum.EmailSender),
                 new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.PostAutoDPostInboxSync, McAccount.AccountCapabilityEnum.CalWriter),
             };
-            MockLE.NetworkDownCalled = false;
-            MockLE.CredReqAccountId = -1;
-            MockLE.ServConfReqAccountId = -1;
-            MockLE.CertAskReqAccountId = -1;
-            MockLE.PostAutoDPostInboxSyncAccountId = -1;
-            MockLE.PostAutoDPreInboxSyncAccountId = -1;
+            MockLE.ResetAll ();
             LoginEvents.CheckBackendState ();
             Assert.False (MockLE.NetworkDownCalled);
             Assert.AreEqual (-1, MockLE.CredReqAccountId);
@@ -375,6 +311,40 @@ namespace Test.iOS
             Assert.AreEqual (-1, MockLE.CertAskReqAccountId);
             Assert.AreEqual (-1, MockLE.PostAutoDPreInboxSyncAccountId);
             Assert.AreEqual (AccountIdA, MockLE.PostAutoDPostInboxSyncAccountId);
+
+            // ServerIndServerErrorRetryLater
+            MockBE.BackEndStatesPreSet = new List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> ()
+            { 
+                new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.Running, McAccount.AccountCapabilityEnum.EmailSender),
+                new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.Running, McAccount.AccountCapabilityEnum.CalWriter),
+            };
+            MockLE.ResetAll ();
+            SendServerInd (AccountIdB, (uint)Xml.StatusCode.ServerErrorRetryLater_111);
+            Assert.False (MockLE.NetworkDownCalled);
+            Assert.AreEqual (-1, MockLE.CredReqAccountId);
+            Assert.AreEqual (-1, MockLE.ServConfReqAccountId);
+            Assert.AreEqual (-1, MockLE.CertAskReqAccountId);
+            Assert.AreEqual (-1, MockLE.PostAutoDPreInboxSyncAccountId);
+            Assert.AreEqual (-1, MockLE.PostAutoDPostInboxSyncAccountId);
+            Assert.AreEqual (AccountIdB, MockLE.ServerIndServerErrorRetryLaterAccountId);
+            Assert.AreEqual (-1, MockLE.ServerIndTooManyDevicesAccountId);
+
+            // ServerIndTooManyDevices
+            MockBE.BackEndStatesPreSet = new List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> ()
+            { 
+                new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.Running, McAccount.AccountCapabilityEnum.EmailSender),
+                new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateEnum.Running, McAccount.AccountCapabilityEnum.CalWriter),
+            };
+            MockLE.ResetAll ();
+            SendServerInd (AccountIdA, (uint)Xml.StatusCode.MaximumDevicesReached_177);
+            Assert.False (MockLE.NetworkDownCalled);
+            Assert.AreEqual (-1, MockLE.CredReqAccountId);
+            Assert.AreEqual (-1, MockLE.ServConfReqAccountId);
+            Assert.AreEqual (-1, MockLE.CertAskReqAccountId);
+            Assert.AreEqual (-1, MockLE.PostAutoDPreInboxSyncAccountId);
+            Assert.AreEqual (-1, MockLE.PostAutoDPostInboxSyncAccountId);
+            Assert.AreEqual (-1, MockLE.ServerIndServerErrorRetryLaterAccountId);
+            Assert.AreEqual (AccountIdA, MockLE.ServerIndTooManyDevicesAccountId);
         }
 
         private MockBackEnd MockBE;
@@ -421,6 +391,15 @@ namespace Test.iOS
                 Account = McAccount.QueryById<McAccount> (accountId),
             });
         }
+        private void SendServerInd (int accountId, uint code)
+        {
+            var status = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
+            status.Value = code;
+            MockSI.SendEvent (new StatusIndEventArgs () {
+                Account = McAccount.QueryById<McAccount> (accountId),
+                Status = status,
+            });
+        }
     }
 
     public class MockLoginEvents : ILoginEvents
@@ -435,6 +414,20 @@ namespace Test.iOS
         public X509Certificate2 CertAskReqCertificate;
         public int PostAutoDPreInboxSyncAccountId;
         public int PostAutoDPostInboxSyncAccountId;
+        public int ServerIndServerErrorRetryLaterAccountId;
+        public int ServerIndTooManyDevicesAccountId;
+
+        public void ResetAll ()
+        {
+            NetworkDownCalled = false;
+            CredReqAccountId = -1;
+            ServConfReqAccountId = -1;
+            CertAskReqAccountId = -1;
+            PostAutoDPostInboxSyncAccountId = -1;
+            PostAutoDPreInboxSyncAccountId = -1;
+            ServerIndServerErrorRetryLaterAccountId = -1;
+            ServerIndTooManyDevicesAccountId = -1;
+        }
 
         public void CredReq (int accountId)
         {
@@ -464,6 +457,14 @@ namespace Test.iOS
         public void PostAutoDPostInboxSync (int accountId)
         {
             PostAutoDPostInboxSyncAccountId = accountId;
+        }
+        public void ServerIndServerErrorRetryLater (int accountId)
+        {
+            ServerIndServerErrorRetryLaterAccountId = accountId;
+        }
+        public void ServerIndTooManyDevices (int accountId)
+        {
+            ServerIndTooManyDevicesAccountId = accountId;
         }
     }
     public class MockBackEnd : IBackEnd
