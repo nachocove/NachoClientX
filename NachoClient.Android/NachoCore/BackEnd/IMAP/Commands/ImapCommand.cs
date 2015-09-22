@@ -25,6 +25,8 @@ namespace NachoCore.IMAP
     {
         protected NcImapClient Client { get; set; }
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
+        protected bool DontReportCommResult { get; set; }
+        public INcCommStatus NcCommStatusSingleton { set; get; }
 
         private const string KCaptureFolderMetadata = "ImapCommand.FolderMetadata";
 
@@ -32,6 +34,8 @@ namespace NachoCore.IMAP
         {
             Client = imapClient;
             RedactProtocolLogFunc = null;
+            NcCommStatusSingleton = NcCommStatus.Instance;
+            DontReportCommResult = false;
         }
 
         // MUST be overridden by subclass.
@@ -94,6 +98,7 @@ namespace NachoCore.IMAP
         public void ExecuteNoTask(NcStateMachine sm)
         {
             Event evt;
+            bool serverFailedGenerally = false;
             Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
             Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             try {
@@ -111,10 +116,10 @@ namespace NachoCore.IMAP
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
             } catch (ServiceNotConnectedException) {
-                // FIXME - this needs to feed into NcCommStatus, not loop forever.
                 Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
+                serverFailedGenerally = true;
             } catch (AuthenticationException) {
                 Log.Info (Log.LOG_IMAP, "AuthenticationException");
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
@@ -131,6 +136,7 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIO");
+                serverFailedGenerally = true;
             } catch (ImapProtocolException ex) {
                 // From MailKit: The exception that is thrown when there is an error communicating with an IMAP server. A
                 // <see cref="ImapProtocolException"/> is typically fatal and requires the <see cref="ImapClient"/>
@@ -138,12 +144,14 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapProtocolException: {0}", ex.ToString ());
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOTEMPFAIL");
+                serverFailedGenerally = true;
             } catch (SocketException ex) {
                 // We check the server connectivity pretty well in Discovery. If this happens with
                 // other commands, it's probably a temporary failure.
                 Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
+                serverFailedGenerally = true;
             } catch (InvalidOperationException ex) {
                 Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
@@ -152,8 +160,10 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD2");
+                serverFailedGenerally = true;
             } finally {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
+                ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished (failed {2})", this.GetType ().Name, AccountId, serverFailedGenerally);
             }
             if (Cts.Token.IsCancellationRequested) {
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
@@ -201,7 +211,7 @@ namespace NachoCore.IMAP
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 try {
-                    Log.Info (Log.LOG_IMAP, "ConnectAndAuthenticate: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, cred));              
+                    Log.Info (Log.LOG_IMAP, "ConnectAndAuthenticate{0}: LoggablePasswordSaltedHash {1}", AccountId, McAccount.GetLoggablePassword (BEContext.Account, cred));
                     Client.Authenticate (username, cred, Cts.Token);
                 } catch (ImapProtocolException e) {
                     Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", e);
@@ -435,6 +445,13 @@ namespace NachoCore.IMAP
                     }
                 }
                 func (inStream, filtered);
+            }
+        }
+
+        protected void ReportCommResult (string host, bool didFailGenerally)
+        {
+            if (!DontReportCommResult) {
+                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, host, didFailGenerally);
             }
         }
 

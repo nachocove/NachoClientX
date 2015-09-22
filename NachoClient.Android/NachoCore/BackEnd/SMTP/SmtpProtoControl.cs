@@ -2,15 +2,9 @@
 //
 using System;
 using System.Linq;
-using System.Text;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
-using NachoPlatform;
-using MailKit;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using System.Threading;
 using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore.SMTP
@@ -115,7 +109,8 @@ namespace NachoCore.SMTP
                 UiCertOkYes,
                 UiCertOkNo,
                 AuthFail,
-                Last = AuthFail,
+                Wait,
+                Last = Wait,
             };
         }
 
@@ -149,6 +144,7 @@ namespace NachoCore.SMTP
                             (uint)SmEvt.E.TempFail,
                             (uint)SmtpEvt.E.GetCertOk,
                             (uint)SmtpEvt.E.GetServConf,
+                            (uint)SmtpEvt.E.Wait,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -171,6 +167,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.GetCertOk,
                             (uint)SmtpEvt.E.UiSetCred, // TODO: should we re-consider?
                             (uint)SmtpEvt.E.GetServConf,
+                            (uint)SmtpEvt.E.Wait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -205,6 +202,7 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)SmtpEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.GetCertOk, Act = DoUiCertOkReq, State = (uint)Lst.UiCertOkW },
                             new Trans { Event = (uint)SmtpEvt.E.GetServConf, Act = DoUiServConfReq, State = (uint)Lst.UiServConfW },
+                            new Trans { Event = (uint)SmtpEvt.E.Wait, Act = DoWait, State = (uint)Lst.IdleW },
                         }
                     },
                     new Node {
@@ -224,6 +222,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
                             (uint)SmtpEvt.E.GetServConf,
+                            (uint)SmtpEvt.E.Wait,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
@@ -249,6 +248,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
                             (uint)SmtpEvt.E.GetServConf,
+                            (uint)SmtpEvt.E.Wait,
                         },
                         On = new Trans[] {
                             // If the creds are still bad, then disc will ask for new ones again.
@@ -267,6 +267,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
                             (uint)SmtpEvt.E.GetServConf,
+                            (uint)SmtpEvt.E.Wait,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, ActSetsState = true },
@@ -298,6 +299,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.ReDisc,
                             (uint)SmtpEvt.E.AuthFail,
                             (uint)SmtpEvt.E.ReConn,
+                            (uint)SmtpEvt.E.Wait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
@@ -318,6 +320,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
                             (uint)SmtpEvt.E.GetServConf,
+                            (uint)SmtpEvt.E.Wait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, ActSetsState = true },
@@ -343,6 +346,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
                             (uint)SmtpEvt.E.GetServConf,
+                            (uint)SmtpEvt.E.Wait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, ActSetsState = true },
@@ -359,7 +363,12 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.Parked,
                         Drop = new uint[] {
+                            (uint)PcEvt.E.PendQOrHint,
+                            (uint)PcEvt.E.PendQHot,
                             (uint)PcEvt.E.Park,
+                            (uint)SmtpEvt.E.UiSetCred,
+                            (uint)SmtpEvt.E.UiSetServConf,
+                            (uint)SmtpEvt.E.ReConn,
                         },
                         Invalid = new uint[] {
                             (uint)SmEvt.E.HardFail,
@@ -369,16 +378,12 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
                             (uint)SmtpEvt.E.GetServConf,
+                            (uint)SmtpEvt.E.Wait,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
-                            new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
-                            new Trans { Event = (uint)SmtpEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmtpEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.ConnW }, // TODO FIXME
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                         }
                     }
                 }
@@ -387,17 +392,15 @@ namespace NachoCore.SMTP
             Sm.State = ProtocolState.SmtpProtoControlState;
             LastBackEndState = BackEndState;
             LastIsDoNotDelayOk = IsDoNotDelayOk;
-            //SyncStrategy = new SmtpStrategy (this);
-            //PushAssist = new PushAssist (this);
+            NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
         public override void Remove ()
         {
-            // TODO Move to base? That might require moving the NcCommStatus stuff to base as well.
             if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
                 Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
             }
-            // TODO cleanup stuff on disk like for wipe.
+            NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             base.Remove ();
         }
 
@@ -419,9 +422,7 @@ namespace NachoCore.SMTP
 
         private void SetCmd (SmtpCommand nextCmd)
         {
-            if (null != Cmd) {
-                Cmd.Cancel ();
-            }
+            CancelCmd ();
             Cmd = nextCmd;
         }
 
@@ -457,7 +458,10 @@ namespace NachoCore.SMTP
         private void DoDiscTempFail ()
         {
             Log.Info (Log.LOG_SMTP, "SMTP DoDisc Attempt {0}", DiscoveryRetries++);
-            if (DiscoveryRetries >= KDiscoveryMaxRetries) {
+            if (DiscoveryRetries >= KDiscoveryMaxRetries && !ProtocolState.SmtpDiscoveryDone) {
+                var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+                err.Message = "Too many failures";
+                StatusInd (err);
                 Sm.PostEvent ((uint)SmtpEvt.E.GetServConf, "SMTPMAXDISC");
             } else {
                 DoDisc ();
@@ -604,14 +608,18 @@ namespace NachoCore.SMTP
 
         private void DoUiCredReq ()
         {
-            if (null != Cmd) {
-                Cmd.Cancel ();
-            }
+            CancelCmd ();
             BackEndStatePreset = BackEndStateEnum.CredWait;
             // Send the request toward the UI.
             Owner.CredReq (this);
         }
 
+        private void DoWait ()
+        {
+            var waitTime = (int)Sm.Arg;
+            SetCmd (new SmtpWaitCommand (this, SmtpClient, waitTime, true));
+            ExecuteCmd ();
+        }
 
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
@@ -638,6 +646,30 @@ namespace NachoCore.SMTP
                 ResolveDoNotDelayAsHardFail ();
             }
             LastIsDoNotDelayOk = IsDoNotDelayOk;
+        }
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            if (null == siea.Account || siea.Account.Id != AccountId) {
+                return;
+            }
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_BackEndStateChanged:
+                var senderState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailSender);
+                var readerState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                if (!ProtocolState.SmtpDiscoveryDone &&
+                    ((BackEndStateEnum.PostAutoDPreInboxSync == senderState && BackEndStateEnum.PostAutoDPreInboxSync == readerState) ||
+                    (BackEndStateEnum.PostAutoDPostInboxSync == senderState && BackEndStateEnum.PostAutoDPostInboxSync == readerState))) {
+                    var protocolState = ProtocolState;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.SmtpDiscoveryDone = true;
+                        return true;
+                    });
+                }
+                break;
+            }
         }
 
         #region ValidateConfig
