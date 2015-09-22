@@ -37,7 +37,7 @@ namespace NachoCore.Utils
             set {
                 if (null == value) {
                     if (null == _Owner) {
-                        Log.Error (Log.LOG_UI, "LoginEvents.Owner: set to null when already null.");
+                        Log.Info (Log.LOG_UI, "LoginEvents.Owner: set to null when already null.");
                     }
                     _Owner = null;
                     _accountId = null;
