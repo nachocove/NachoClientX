@@ -361,7 +361,6 @@ namespace NachoCore.ActiveSync
         public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc)
         {
             McProtocolState protocolState = null;
-            status = 111;
             switch ((Xml.StatusCode)status) {
             case Xml.StatusCode.InvalidContent_101:
             case Xml.StatusCode.InvalidWBXML_102:
