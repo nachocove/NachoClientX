@@ -326,6 +326,26 @@ namespace NachoCore.Utils
         public void Update ()
         {
             ParseMessage ();
+            CompleteBundleAfterParse ();
+        }
+
+        public void SetFullText (string text)
+        {
+            parsed = new ParseResult ();
+            parsed.FullText = text;
+            CompleteBundleAfterParse ();
+        }
+
+        public void SetFullHtml (HtmlDocument doc)
+        {
+            parsed = new ParseResult ();
+            parsed.FullHtmlDocument = doc;
+            CompleteBundleAfterParse ();
+        }
+
+        private void CompleteBundleAfterParse ()
+        {
+            FillMissing ();
             StoreFullEntries ();
             StoreTopEntries ();
             StoreLightlyStyledEntries ();
@@ -354,7 +374,10 @@ namespace NachoCore.Utils
             if (MimeMessage != null) {
                 MimeMessage.Accept (this);
             }
+        }
 
+        private void FillMissing ()
+        {
             if (parsed.FullHtmlDocument == null) {
                 if (parsed.FullText == null) {
                     parsed.FullText = "";

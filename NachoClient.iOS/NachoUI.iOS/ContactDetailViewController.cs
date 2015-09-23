@@ -1055,7 +1055,7 @@ namespace NachoClient.iOS
             var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
             message.To = address;
             var composeViewController = new MessageComposeViewController ();
-            composeViewController.Message = message;
+            composeViewController.Composer.Message = message;
             composeViewController.Present ();
         }
 
@@ -1230,7 +1230,7 @@ namespace NachoClient.iOS
             var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
             message.To = address;
             var composeViewController = new MessageComposeViewController ();
-            composeViewController.Message = message;
+            composeViewController.Composer.Message = message;
             composeViewController.Present ();
         }
 
@@ -1273,8 +1273,8 @@ namespace NachoClient.iOS
         private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
         {
             var composeViewController = new MessageComposeViewController ();
-            composeViewController.MessageKind = action;
-            composeViewController.RelatedThread = thread;
+            composeViewController.Composer.Kind = action;
+            composeViewController.Composer.RelatedThread = thread;
             composeViewController.Present ();
         }
 

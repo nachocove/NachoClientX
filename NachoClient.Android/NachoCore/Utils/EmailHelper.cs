@@ -513,7 +513,6 @@ namespace NachoCore.Utils
             var toList = new List<NcEmailAddress> ();
             var ccList = new List<NcEmailAddress> ();
             var bccList = new List<NcEmailAddress> ();
-            MailboxAddress mailbox;
             foreach (var address in addresses) {
                 if (address.kind == NcEmailAddress.Kind.To) {
                     toList.Add (address);
@@ -557,6 +556,47 @@ namespace NachoCore.Utils
             var target = accountMailboxAddress.Address;
             return String.Equals (target, match, StringComparison.OrdinalIgnoreCase);
 
+        }
+
+        public static void PopulateMessageRecipients (McAccount account, McEmailMessage message, Action action, McEmailMessage referencedMessage)
+        {
+            var toList = new List<NcEmailAddress> ();
+            var recipientExclusions = new List<string> ();
+            recipientExclusions.Add (account.EmailAddr);
+            if (EmailHelper.IsReplyAction (action)) {
+                string toString = null;
+                // Reply-To trumps From
+                if (null != referencedMessage.ReplyTo) {
+                    toString = referencedMessage.ReplyTo;
+                }else if (null != referencedMessage.From) {
+                    toString = referencedMessage.From;
+                }
+                // Some validation
+                if (toString != null) {
+                    InternetAddress toAddress;
+                    if (MailboxAddress.TryParse (toString, out toAddress)){
+                        if (String.Equals ((toAddress as MailboxAddress).Address, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
+                            // If it looks like we're replying to ourself, we should instead reply to the entire To list from the
+                            // referenced message.  This behavior is consistent with other clients, and is typically seen when
+                            // replying to a message you sent.  It's an interesting case where a reply could go to multiple people
+                            // even though it wasn't a reply-all.  If there was anyone in the CC list of the referenced message,
+                            // they'll get picked up in the reply-all scenario in the next block.
+                            toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, recipientExclusions, referencedMessage.To);
+                        } else {
+                            toList.Add(new NcEmailAddress (NcEmailAddress.Kind.To, toString));
+                        }
+                    }
+                }
+            }
+            foreach (var to in toList) {
+                recipientExclusions.Add (to.address);
+            }
+            message.To = AddressStringFromList (toList);
+            if (EmailHelper.Action.ReplyAll == action) {
+                // Add the To & Cc list to the CC list, not included this user
+                var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, recipientExclusions, referencedMessage.To, referencedMessage.Cc);
+                message.Cc = AddressStringFromList (ccList);
+            }
         }
 
         public static List<NcEmailAddress> CcList (string accountEmailAddress, string toString, string ccString)

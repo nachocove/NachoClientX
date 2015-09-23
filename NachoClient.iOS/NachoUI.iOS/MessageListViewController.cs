@@ -759,7 +759,7 @@ namespace NachoClient.iOS
         void ComposeDraft (McEmailMessage draft)
         {
             var composeViewController = new MessageComposeViewController ();
-            composeViewController.Message = draft;
+            composeViewController.Composer.Message = draft;
             composeViewController.Present ();
         }
 
@@ -771,8 +771,8 @@ namespace NachoClient.iOS
         private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
         {
             var composeViewController = new MessageComposeViewController ();
-            composeViewController.MessageKind = action;
-            composeViewController.RelatedThread = thread;
+            composeViewController.Composer.Kind = action;
+            composeViewController.Composer.RelatedThread = thread;
             composeViewController.Present ();
         }
     }

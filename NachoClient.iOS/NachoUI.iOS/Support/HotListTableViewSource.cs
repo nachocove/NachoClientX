@@ -688,8 +688,8 @@ namespace NachoClient.iOS
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 string body;
                 var composeViewController = new MessageComposeViewController ();
-                composeViewController.Message = EmailHelper.MessageFromMailTo (NcApplication.Instance.Account, url.AbsoluteString, out body);
-                composeViewController.InitialText = body;
+                composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (NcApplication.Instance.Account, url.AbsoluteString, out body);
+                composeViewController.Composer.InitialText = body;
                 composeViewController.Present ();
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);

@@ -34,24 +34,19 @@ namespace NachoClient.iOS
         INachoIntentChooserParent,
         INachoDateControllerParent,
         INachoFileChooserParent,
-        INachoContactChooserDelegate
+        INachoContactChooserDelegate,
+        MessageComposerDelegate
     {
 
         #region Properties
 
         public MessageComposeViewDelegate ComposeDelegate;
         public bool StartWithQuickResponse;
-        public EmailHelper.Action MessageKind = EmailHelper.Action.Send;
-        public McEmailMessageThread RelatedThread;
+        public readonly MessageComposer Composer;
         public McCalendar RelatedCalendarItem;
-        public McEmailMessage Message;
-        public MimeMessage MimeMessage;
-        public string InitialText;
-        public List<McAttachment> InitialAttachments;
         CompoundScrollView ScrollView;
         MessageComposeHeaderView HeaderView;
         WKWebView WebView;
-        McAccount Account;
         NcUIBarButtonItem CloseButton;
         NcUIBarButtonItem SendButton;
         NcUIBarButtonItem QuickResponseButton;
@@ -67,14 +62,6 @@ namespace NachoClient.iOS
             }
         }
 
-        enum MessagePreparationStatus {
-            NotStarted,
-            Preparing,
-            Done
-        };
-
-        MessagePreparationStatus MessagePreparationState = MessagePreparationStatus.NotStarted;
-
         NSObject BackgroundNotification;
         NSObject ContentSizeCategoryChangedNotification;
 
@@ -86,7 +73,8 @@ namespace NachoClient.iOS
 
         public MessageComposeViewController () : base ()
         {
-            Account = NcApplication.Instance.Account;
+            Composer = new MessageComposer (NcApplication.Instance.Account);
+            Composer.Delegate = this;
         }
 
         #endregion
@@ -157,13 +145,15 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            StartPreparingMessage ();
+            Composer.StartPreparingMessage ();
+
+            UpdateHeaderView ();
 
             RegisterForNotifications ();
 
-            if (null != RelatedThread) {
+            if (null != Composer.RelatedThread) {
                 var now = DateTime.UtcNow;
-                var message = RelatedThread.FirstMessageSpecialCase ();
+                var message = Composer.RelatedThread.FirstMessageSpecialCase ();
                 NcBrain.MessageReplyStatusUpdated (message, now, 0.1);
             }
 
@@ -285,35 +275,20 @@ namespace NachoClient.iOS
         public void QuickResponseViewDidSelectResponse (QuickResponseViewController vc, NcQuickResponse.QRTypeEnum whatType, NcQuickResponse.QuickResponse response, McEmailMessage.IntentType intentType)
         {
             if (whatType == NcQuickResponse.QRTypeEnum.Compose) {
-                Message.Subject = response.subject;
-                // TODO: update header view
+                Composer.Message.Subject = response.subject;
+                UpdateHeaderSubjectView ();
             }
-            if (MessagePreparationState == MessagePreparationStatus.Done) {
+            if (Composer.IsMessagePrepared) {
+                // TODO: need to insert response.body into webview
+                // Web view may not have loaded yet, even if the composer is all done
             } else {
-                InitialText = response.body;
+                Composer.InitialText = response.body;
             }
-//            if (NcQuickResponse.QRTypeEnum.Compose == whichType) {
-//                alwaysShowIntent = true;
-//                subjectField.Text = selectedResponse.subject;
-//            }
-//
-//            var attributes = new CoreText.CTStringAttributes ();
-//            attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
-//
-//            var response = new NSMutableAttributedString (selectedResponse.body, attributes);
-//            response.Append (bodyTextView.AttributedText);
-//            bodyTextView.AttributedText = response;
-//
-//            bodyTextView.BecomeFirstResponder ();
-//            if (bodyTextView.Text.Contains ("\n")) {
-//                bodyTextView.SelectedRange = new NSRange (bodyTextView.Text.IndexOf ("\n"), 0);
-//            }
-
-
-//            this.messageIntent = intent;
-//            this.messageIntentDateType = intentDateType;
-//            this.messageIntentDateTime = intentDateTime;
-//            intentDisplayLabel.Text = NcMessageIntent.GetIntentString (intent, intentDateType, intentDateTime);
+            // TODO: show the intent field if hidden
+            Composer.Message.Intent = intentType;
+            Composer.Message.IntentDate = DateTime.MinValue;
+            Composer.Message.IntentDateType = MessageDeferralType.None;
+            UpdateHeaderViewIntent ();
         }
 
         #endregion
@@ -324,7 +299,7 @@ namespace NachoClient.iOS
         public void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address)
         {
             ContactChooserViewController chooserController = MainStoryboard.InstantiateViewController ("ContactChooserViewController") as ContactChooserViewController;
-            chooserController.SetOwner (this, Account, address, NachoContactType.EmailRequired);
+            chooserController.SetOwner (this, Composer.Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, chooserController);
         }
 
@@ -332,7 +307,7 @@ namespace NachoClient.iOS
         public void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address)
         {
             ContactSearchViewController searchController = MainStoryboard.InstantiateViewController ("ContactSearchViewController") as ContactSearchViewController;
-            searchController.SetOwner (this, Account, address, NachoContactType.EmailRequired);
+            searchController.SetOwner (this, Composer.Account, address, NachoContactType.EmailRequired);
             FadeCustomSegue.Transition (this, searchController);
         }
 
@@ -341,13 +316,13 @@ namespace NachoClient.iOS
         {
             if (address.kind == NcEmailAddress.Kind.To) {
                 HeaderView.ToView.Append (address);
-                Message.To = EmailHelper.AddressStringFromList (HeaderView.ToView.AddressList);
+                Composer.Message.To = EmailHelper.AddressStringFromList (HeaderView.ToView.AddressList);
             } else if (address.kind == NcEmailAddress.Kind.Cc) {
                 HeaderView.CcView.Append (address);
-                Message.Cc = EmailHelper.AddressStringFromList (HeaderView.CcView.AddressList);
+                Composer.Message.Cc = EmailHelper.AddressStringFromList (HeaderView.CcView.AddressList);
             } else if (address.kind == NcEmailAddress.Kind.Bcc) {
                 HeaderView.BccView.Append (address);
-                Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
+                Composer.Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
             } else {
                 NcAssert.CaseError ();
             }
@@ -357,11 +332,11 @@ namespace NachoClient.iOS
         {
             
             if (address.kind == NcEmailAddress.Kind.To) {
-                Message.To = EmailHelper.AddressStringFromList (HeaderView.ToView.AddressList);
+                Composer.Message.To = EmailHelper.AddressStringFromList (HeaderView.ToView.AddressList);
             } else if (address.kind == NcEmailAddress.Kind.Cc) {
-                Message.Cc = EmailHelper.AddressStringFromList (HeaderView.CcView.AddressList);
+                Composer.Message.Cc = EmailHelper.AddressStringFromList (HeaderView.CcView.AddressList);
             } else if (address.kind == NcEmailAddress.Kind.Bcc) {
-                Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
+                Composer.Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
             } else {
                 NcAssert.CaseError ();
             }
@@ -376,7 +351,7 @@ namespace NachoClient.iOS
         // User changing the subject
         public void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject)
         {
-            Message.Subject = subject;
+            Composer.Message.Subject = subject;
         }
 
         // User tapping the intent field 
@@ -392,17 +367,17 @@ namespace NachoClient.iOS
         // User selecting an intent
         public void SelectMessageIntent (NcMessageIntent.MessageIntent intent)
         {
-            Message.Intent = intent.type;
-            Message.IntentDateType = MessageDeferralType.None;
-            Message.IntentDate = DateTime.MinValue;
+            Composer.Message.Intent = intent.type;
+            Composer.Message.IntentDateType = MessageDeferralType.None;
+            Composer.Message.IntentDate = DateTime.MinValue;
             UpdateHeaderViewIntent ();
         }
 
         // User selecting a date for the intent
         public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
-            Message.IntentDateType = request;
-            Message.IntentDate = selectedDate;
+            Composer.Message.IntentDateType = request;
+            Composer.Message.IntentDate = selectedDate;
             UpdateHeaderViewIntent ();
         }
             
@@ -411,7 +386,7 @@ namespace NachoClient.iOS
         {
             AddAttachmentViewController attachmentViewController = MainStoryboard.InstantiateViewController ("AddAttachmentViewController") as AddAttachmentViewController;
             attachmentViewController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
-            attachmentViewController.SetOwner (this, Account);
+            attachmentViewController.SetOwner (this, Composer.Account);
             PresentViewController (attachmentViewController, true, null);
         }
 
@@ -430,14 +405,14 @@ namespace NachoClient.iOS
             }else{
                 var file = obj as McDocument;
                 if (file != null) {
-                    attachment = McAttachment.InsertSaveStart (Account.Id);
+                    attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
                     attachment.SetDisplayName (file.DisplayName);
                     attachment.IsInline = true;
                     attachment.UpdateFileCopy (file.GetFilePath ());
                 } else {
                     var note = obj as McNote;
                     if (note != null) {
-                        attachment = McAttachment.InsertSaveStart (Account.Id);
+                        attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
                         attachment.SetDisplayName (note.DisplayName + ".txt");
                         attachment.IsInline = true;
                         attachment.UpdateData (note.noteContent);
@@ -446,7 +421,7 @@ namespace NachoClient.iOS
             }
 
             if (attachment != null) {
-                attachment.ItemId = Message.Id;
+                attachment.ItemId = Composer.Message.Id;
                 HeaderView.AttachmentsView.Append (attachment);
                 this.DismissViewController (true, null);
             } else {
@@ -464,7 +439,7 @@ namespace NachoClient.iOS
         // User adding an attachment from media browser
         public void Append (McAttachment attachment)
         {
-            attachment.ItemId = Message.Id;
+            attachment.ItemId = Composer.Message.Id;
             HeaderView.AttachmentsView.Append (attachment);
         }
 
@@ -500,45 +475,24 @@ namespace NachoClient.iOS
 
         #region Message Preparation
 
-        private void StartPreparingMessage ()
+        public void MessageComposerDidCompletePreparation (MessageComposer composer)
         {
-            if (MessagePreparationState != MessagePreparationStatus.NotStarted) {
-                return;
-            }
-            MessagePreparationState = MessagePreparationStatus.Preparing;
-            if (Message == null) {
-                Message = McEmailMessage.MessageWithSubject (Account, "");
-            }
-            if (Message.Id == 0) {
-                if (InitialText == null) {
-                    InitialText = "";
-                }
-                if (!String.IsNullOrEmpty (Account.Signature)) {
-                    InitialText += "\n\n" + Account.Signature;
-                }
-                if (RelatedThread != null) {
-                    var message = RelatedThread.FirstMessageSpecialCase ();
-                }
-                if (!String.IsNullOrWhiteSpace (InitialText)) {
-                }
-                if (InitialAttachments != null) {
-                    CopyInitialAttachments ();
-                }
-            } else {
-                MessagePreparationState = MessagePreparationStatus.Done;
-            }
-
-            UpdateHeaderView ();
-
-            // Fake web view load for testing layout
-            NSUrl url = new NSUrl("http://www.nytimes.com");
-            NSUrlRequest request = new NSUrlRequest (url);
-            WebView.LoadRequest (request);
+            DisplayMessageBody ();
         }
 
-        private void CopyInitialAttachments ()
+        void DisplayMessageBody ()
         {
-            //                AttachmentHelper.CopyAttachment (attachment)
+            if (Composer.Bundle != null) {
+                if (Composer.Bundle.FullHtmlUrl != null) {
+                    var url = new NSUrl (Composer.Bundle.FullHtmlUrl.AbsoluteUri);
+                    NSUrlRequest request = new NSUrlRequest (url);
+                    WebView.LoadRequest (request);
+                } else {
+                    var html = Composer.Bundle.FullHtml;
+                    var url = new NSUrl (Composer.Bundle.BaseUrl.AbsoluteUri);
+                    WebView.LoadHtmlString (new NSString(html), url);
+                }
+            }
         }
 
         #endregion
@@ -553,6 +507,7 @@ namespace NachoClient.iOS
             // Unfortunately, WebView.ScrollView.ContentSize.Height is still 0 at this point.
             // It's a timing issue, and so we'll wait until it's not 0
             UpdateScrollViewSizeOnceWebViewIsSized ();
+            // TODO: turn on editing
         }
 
         [Export ("updateScrollViewSizeOnceWebViewIsSized")]
@@ -578,9 +533,9 @@ namespace NachoClient.iOS
         {
             NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
 
-            if (EmailHelper.IsReplyAction (MessageKind)) {
+            if (EmailHelper.IsReplyAction (Composer.Kind)) {
                 responseType = NcQuickResponse.QRTypeEnum.Reply;
-            } else if (EmailHelper.IsForwardAction (MessageKind)) {
+            } else if (EmailHelper.IsForwardAction (Composer.Kind)) {
                 responseType = NcQuickResponse.QRTypeEnum.Forward;
             }
 
@@ -597,7 +552,7 @@ namespace NachoClient.iOS
         {
             UpdateHeaderSubjectView ();
             UpdateHeaderViewIntent ();
-            var attachments = McAttachment.QueryByItemId (Message);
+            var attachments = McAttachment.QueryByItemId (Composer.Message);
             foreach (var attachment in attachments) {
                 HeaderView.AttachmentsView.Append (attachment);
             }
@@ -605,12 +560,12 @@ namespace NachoClient.iOS
 
         private void UpdateHeaderSubjectView ()
         {
-            HeaderView.SubjectField.Text = Message.Subject;
+            HeaderView.SubjectField.Text = Composer.Message.Subject;
         }
 
         private void UpdateHeaderViewIntent ()
         {
-            HeaderView.IntentView.ValueLabel.Text = NcMessageIntent.GetIntentString (Message.Intent, Message.IntentDateType, Message.IntentDate);
+            HeaderView.IntentView.ValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
         }
 
         #endregion
