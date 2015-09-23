@@ -761,6 +761,7 @@ namespace NachoCore.Utils
                 messageElement.AppendChild (headersElement);
                 messageElement.AppendChild (bodyElement);
                 for (var i = body.ChildNodes.Count - 1; i >= 0; --i) {
+                    body.ChildNodes [i].Remove ();
                     if (bodyElement.FirstChild == null) {
                         bodyElement.AppendChild (body.ChildNodes [i]);
                     } else {

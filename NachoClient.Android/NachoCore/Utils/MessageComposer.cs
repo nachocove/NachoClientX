@@ -190,14 +190,14 @@ namespace NachoCore.Utils
             NcTask.Run (() => {
                 var doc = new HtmlDocument ();
                 doc.LoadHtml (relatedBundle.FullHtml);
-                if (Kind == EmailHelper.Action.Forward) {
-                    // FIXME: need to copy inline images
-                    QuoteHtml (doc);
-                } else if (Kind == EmailHelper.Action.Reply) {
+                if (EmailHelper.IsReplyAction(Kind)){
                     StripInlineImages (doc);
+                }else{
+                    // FIXME: need to copy inline images from bundle to bundle
+                }
+                if (Kind == EmailHelper.Action.Forward || EmailHelper.IsReplyAction(Kind)){
                     QuoteHtml (doc);
-                } else {
-                    // FIXME: need to copy inline images
+                    // TODO: insert signature & initial text, if any
                 }
                 Bundle.SetFullHtml (doc);
                 InvokeOnUIThread.Instance.Invoke (() => {
@@ -210,10 +210,12 @@ namespace NachoCore.Utils
         {
             var body = doc.DocumentNode.Element ("html").Element ("body");
             HtmlNode blockquote = doc.CreateElement ("blockquote");
+            blockquote.SetAttributeValue ("type", "cite");
             HtmlNode node;
             HtmlNode following = null;
             for (int i = body.ChildNodes.Count - 1; i >= 0; --i) {
                 node = body.ChildNodes [i];
+                node.Remove ();
                 if (following != null) {
                     blockquote.InsertBefore (node, following);
                 } else {
@@ -221,6 +223,7 @@ namespace NachoCore.Utils
                 }
                 following = node;
             }
+            // TODO: add attribution line ("On XYZ ABC wrote:")
             body.AppendChild (EmptyLine (doc));
             body.AppendChild (blockquote);
             body.AppendChild (EmptyLine (doc));
@@ -260,7 +263,7 @@ namespace NachoCore.Utils
 
         void PrepareMessageBody ()
         {
-            string messageText = "";
+            string messageText = "This\nis\na\ntest\nof\nwebview\ncompose\nemail";
             if (!String.IsNullOrWhiteSpace(InitialText)) {
                 messageText += InitialText;
             }

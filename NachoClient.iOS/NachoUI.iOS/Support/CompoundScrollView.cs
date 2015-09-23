@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using UIKit;
 using CoreGraphics;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -41,6 +42,7 @@ namespace NachoClient.iOS
             CGPoint ScrollViewOffsetAtZoomStart;
             int ZoomingViewLevel;
             List<UIView> CompoundViews;
+            bool IsLayingOutSubviews;
 
             public CompoundScrollViewContainerView (CGRect frame) : base(frame)
             {
@@ -89,6 +91,26 @@ namespace NachoClient.iOS
                 SetNeedsLayout ();
             }
 
+            public void DetermineContentSize ()
+            {
+                var size = new CGSize (Bounds.Width, 0.0f);
+                foreach (var subview in CompoundViews) {
+                    var scrollView = ScrollViewForCompoundScrollView (subview);
+                    if (scrollView != null) {
+                        size.Height += scrollView.ContentSize.Height;
+                        if (scrollView.ContentSize.Width > size.Width) {
+                            size.Width = scrollView.ContentSize.Width;
+                        }
+                    } else {
+                        size.Height += subview.Frame.Height;
+                        if (subview.Frame.Width > size.Width) {
+                            size.Width = subview.Frame.Width;
+                        }
+                    }
+                }
+                ScrollView.ContentSize = size;
+            }
+
             public override void LayoutSubviews ()
             {
                 // The basic idea here is to loop through our inner views and lay them out in a vertical stack,
@@ -100,6 +122,7 @@ namespace NachoClient.iOS
                 nfloat y = 0.0f;
                 int i = 0;
                 CGRect frame;
+                IsLayingOutSubviews = true;
                 foreach (UIView subview in CompoundViews){
                     UIScrollView scrollView = ScrollViewForCompoundScrollView (subview);
                     if (scrollView != null){
@@ -115,14 +138,14 @@ namespace NachoClient.iOS
                                     frame.Y = y;
                                 }
                                 // Cap the frame's bottom at the bottom boundary, and make sure the final view extends there regardless
-                                nfloat availableHeight = Bounds.Y + Bounds.Height - Frame.Y;
+                                nfloat availableHeight = Bounds.Y + Bounds.Height - frame.Y;
                                 if (i == CompoundViews.Count - 1){
                                     frame.Height = availableHeight;
                                 }else{
                                     frame.Height = (nfloat)Math.Min(contentHeight, availableHeight);
                                 }
                                 // Adjust the inner scroll view's offset so it lines up with where it should be
-                                CGPoint p = new CGPoint(Frame.X, Math.Max(0, Bounds.Y - y));
+                                CGPoint p = new CGPoint(frame.X, Math.Max(0, Bounds.Y - y));
                                 scrollView.ContentOffset = p;
                             }
                             subview.Frame = frame;
@@ -142,11 +165,56 @@ namespace NachoClient.iOS
                     y += contentHeight;
                     ++i;
                 }
+                IsLayingOutSubviews = false;
+            }
+
+            [Foundation.Export("scrollViewDidScroll:")]
+            public void Scrolled (UIScrollView scrollView)
+            {
+                if (!IsLayingOutSubviews) {
+                    // If we see a scroll from one of our subview, and we didn't cause it,
+                    // then we need to adjust the outer view accordingly.
+                    // In general, the subviews should not be scrollable.  In fact, we disable scrolling.
+                    // However, when we have an editiable webview, say, text insertion/deletion/selection
+                    // can all adjust the view's contentOffset.
+                    // The basic strategy used here to is to figure out where the we expect the view's offset to be,
+                    // and compare to where it is.  If there's a difference, we adjust the outer view by the same
+                    // amount (which, in turn, will cause us to re-layout).
+                    if (scrollView.ContentOffset.Y >= 0) {
+                        UIView compoundView = scrollView;
+                        while (compoundView.Superview != this) {
+                            compoundView = compoundView.Superview;
+                        }
+                        nfloat y = 0.0f;
+                        foreach (var subview in CompoundViews) {
+                            if (subview == compoundView) {
+                                break;
+                            }
+                            var subviewScrollView = ScrollViewForCompoundScrollView (subview);
+                            if (subviewScrollView != null) {
+                                y += subviewScrollView.ContentSize.Height;
+                            } else {
+                                y += subview.Frame.Height;
+                            }
+                        }
+                        CGPoint expectedOffset = new CGPoint(compoundView.Frame.X, Math.Max(0, Bounds.Y - y));
+                        CGPoint diff = new CGPoint (scrollView.ContentOffset.X - expectedOffset.X, scrollView.ContentOffset.Y - expectedOffset.Y);
+                        if (diff.X != 0.0f || diff.Y != 0.0f) {
+                            DetermineContentSize ();
+                            CGPoint newOuterOffset = new CGPoint (ScrollView.ContentOffset.X + diff.X, ScrollView.ContentOffset.Y + diff.Y);
+                            ScrollView.ContentOffset = newOuterOffset;
+                            ScrollView.SetNeedsLayout ();
+                            ScrollView.LayoutIfNeeded ();
+                        }
+                    }
+                }
             }
 
             [Foundation.Export ("scrollViewWillBeginZooming:withView:")]
             public void ZoomingStarted (UIKit.UIScrollView scrollView, UIKit.UIView view)
             {
+                // FIXME: adding the Scrolled method above possibly broke this zooming code...needs testing;
+                //        likely solution is to ignore scrolling while zooming
                 // The idea here is to position the zooming view to the maximum size (our bounds),
                 // at the start of zooming so we don't have reposition/resize it while we're zooming because
                 // that causing a lot of jumpiness.
@@ -236,6 +304,11 @@ namespace NachoClient.iOS
                 AddSubview (CompoundContainerView);
             }
             CompoundContainerView.AddCompoundView (view);
+        }
+
+        public void DetermineContentSize ()
+        {
+            CompoundContainerView.DetermineContentSize ();
         }
 
         public void RemoveCompoundView (UIView view)

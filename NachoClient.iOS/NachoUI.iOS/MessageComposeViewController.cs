@@ -29,6 +29,9 @@ namespace NachoClient.iOS
 
     public partial class MessageComposeViewController : NcUIViewController,
         IWKNavigationDelegate,
+        IWKScriptMessageHandler,
+        IUIWebViewDelegate,
+        IUIScrollViewDelegate,
         MessageComposeHeaderViewDelegate,
         QuickResponseViewControllerDelegate,
         INachoIntentChooserParent,
@@ -46,7 +49,7 @@ namespace NachoClient.iOS
         public McCalendar RelatedCalendarItem;
         CompoundScrollView ScrollView;
         MessageComposeHeaderView HeaderView;
-        WKWebView WebView;
+        UIWebView WebView;
         NcUIBarButtonItem CloseButton;
         NcUIBarButtonItem SendButton;
         NcUIBarButtonItem QuickResponseButton;
@@ -125,16 +128,21 @@ namespace NachoClient.iOS
             ScrollView = new CompoundScrollView (View.Bounds);
             ScrollView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             ScrollView.AlwaysBounceVertical = true;
+            ScrollView.Delegate = this;
 
             HeaderView = new MessageComposeHeaderView (ScrollView.Bounds);
             HeaderView.Frame = new CGRect (0.0, 0.0, ScrollView.Bounds.Width, HeaderView.PreferredHeight);
             HeaderView.HeaderDelegate = this;
             HeaderView.AttachmentsAllowed = RelatedCalendarItem == null;
-
-            var config = new WKWebViewConfiguration ();
-            config.SuppressesIncrementalRendering = true;
-            WebView = new WKWebView (ScrollView.Bounds, config);
-            WebView.NavigationDelegate = this;
+//            var config = new WKWebViewConfiguration ();
+//            config.SuppressesIncrementalRendering = true;
+//            config.UserContentController.AddScriptMessageHandler (this, "nachoCompose");
+//            config.UserContentController.AddScriptMessageHandler (this, "nacho");
+//            WebView = new WKWebView (ScrollView.Bounds, config);
+//            WebView.NavigationDelegate = this;
+            WebView = new UIWebView (View.Bounds);
+            WebView.SuppressesIncrementalRendering = true;
+            WebView.Delegate = this;
 
             ScrollView.AddCompoundView (HeaderView);
             ScrollView.AddCompoundView (WebView);
@@ -151,11 +159,12 @@ namespace NachoClient.iOS
 
             RegisterForNotifications ();
 
-            if (null != Composer.RelatedThread) {
-                var now = DateTime.UtcNow;
-                var message = Composer.RelatedThread.FirstMessageSpecialCase ();
-                NcBrain.MessageReplyStatusUpdated (message, now, 0.1);
-            }
+            // FIXME: seeing an error in the logs for this...not critical for getthing things up and running
+//            if (null != Composer.RelatedThread) {
+//                var now = DateTime.UtcNow;
+//                var message = Composer.RelatedThread.FirstMessageSpecialCase ();
+//                NcBrain.MessageReplyStatusUpdated (message, now, 0.1);
+//            }
 
             if (!HasShownOnce) {
                 if (StartWithQuickResponse) {
@@ -188,13 +197,7 @@ namespace NachoClient.iOS
 
         private void UpdateScrollViewSize ()
         {
-            CGSize contentSize = new CGSize (ScrollView.Bounds.Width, 0);
-            contentSize.Height += HeaderView.Frame.Height;
-            contentSize.Height += WebView.ScrollView.ContentSize.Height;
-            if (WebView.ScrollView.ContentSize.Width > contentSize.Width) {
-                contentSize.Width = WebView.ScrollView.ContentSize.Width;
-            }
-            ScrollView.ContentSize = contentSize;
+            ScrollView.DetermineContentSize ();
         }
 
         private void LayoutScrollView ()
@@ -214,6 +217,8 @@ namespace NachoClient.iOS
             var frame = View.Bounds;
             frame.Height = frame.Height - keyboardHeight;
             ScrollView.Frame = frame;
+            ScrollView.SetNeedsLayout ();
+            ScrollView.LayoutIfNeeded ();
         }
 
         #endregion
@@ -253,6 +258,7 @@ namespace NachoClient.iOS
         public void Discard (UIAlertAction obj)
         {
             CloseAlertController = null;
+            Composer.Message.Delete ();
             // TODO: delete message (can happen in background)
             if (ComposeDelegate != null) {
                 ComposeDelegate.MessageComposeViewDidCancel (this);
@@ -485,6 +491,22 @@ namespace NachoClient.iOS
             if (Composer.Bundle != null) {
                 if (Composer.Bundle.FullHtmlUrl != null) {
                     var url = new NSUrl (Composer.Bundle.FullHtmlUrl.AbsoluteUri);
+//                    if (url.Scheme.ToLowerInvariant().Equals("file")){
+//                        var selector = new ObjCRuntime.Selector ("loadFileURL:allowingReadAccessToURL:");
+//                        if (WebView.RespondsToSelector (selector)) {
+//                            var baseUrl = new NSUrl (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments));
+//                            WebView.PerformSelector (selector, url, baseUrl);
+//                        } else {
+//                            // need a workaround for iOS 8
+//                            // - can run an http server
+//                            // - can copy files to /tmp
+//                            // - curious about symlink from /tmp -> Documents, but doubtful it will work
+//                        }
+//                    } else {
+//                        NSUrlRequest request = new NSUrlRequest (url);
+//                        WebView.LoadRequest (request);
+//                    }
+
                     NSUrlRequest request = new NSUrlRequest (url);
                     WebView.LoadRequest (request);
                 } else {
@@ -507,7 +529,7 @@ namespace NachoClient.iOS
             // Unfortunately, WebView.ScrollView.ContentSize.Height is still 0 at this point.
             // It's a timing issue, and so we'll wait until it's not 0
             UpdateScrollViewSizeOnceWebViewIsSized ();
-            // TODO: turn on editing
+            EnableEditingInWebView ();
         }
 
         [Export ("updateScrollViewSizeOnceWebViewIsSized")]
@@ -524,6 +546,66 @@ namespace NachoClient.iOS
                 UpdateScrollViewSize ();
             }
         }
+
+        [Export ("userContentController:didReceiveScriptMessage:")]
+        public void DidReceiveScriptMessage (WKUserContentController userContentController, WKScriptMessage message)
+        {
+            NSDictionary body = message.Body as NSDictionary;
+            string kind = body.ObjectForKey (new NSString("kind")).ToString ();
+            if (message.Name == "nacho") {
+                if (kind == "error") {
+                    string errorMessage = body.ObjectForKey (new NSString("message")).ToString ();
+                    string filename = body.ObjectForKey (new NSString("filename")).ToString ();
+                    string lineno = body.ObjectForKey (new NSString("lineno")).ToString ();
+                    string colno = body.ObjectForKey (new NSString("colno")).ToString ();
+                    Log.Error(Log.LOG_UI, "MessageComposeView javascript uncaught error: [{1}:{2}:{3}] {0}", errorMessage, filename, lineno, colno);
+                }
+            } else if (message.Name == "nachoCompose") {
+                if (kind == "editor-height-changed") {
+                    UpdateScrollViewSize ();
+                }
+            }
+        }
+
+        [Export ("webViewDidFinishLoad:")]
+        public void LoadingFinished (UIWebView webView)
+        {
+            UpdateScrollViewSize ();
+            EnableEditingInWebView ();
+        }
+
+        private void EnableEditingInWebView ()
+        {
+            EvaluateJavaScript ("Editor.Enable()");
+        }
+
+        private void EvaluateJavaScript(string javascript, WKJavascriptEvaluationResult callback = null)
+        {
+//            WebView.EvaluateJavaScript (new NSString(javascript), (NSObject result, NSError error) => {
+//                if (error !=  null){
+//                    Log.Error(Log.LOG_UI, "MessageComposeView error evaluating javascript '{0}': {1}", javascript, error);
+//                }
+//                if (callback != null) {
+//                    callback (result, error);
+//                }
+//            });
+            WebView.EvaluateJavascript (javascript);
+        }
+
+        [Foundation.Export("scrollViewWillBeginDragging:")]
+        public void DraggingStarted (UIScrollView scrollView)
+        {
+            UpdateScrollViewSize ();
+        }
+
+//        [Foundation.Export("scrollViewDidScroll:")]
+//        public void Scrolled (UIScrollView scrollView)
+//        {
+//            var top = WebView.EvaluateJavascript ("window.getSelection().getRangeAt(0).getBoundingClientRect().top");
+//            var height = WebView.EvaluateJavascript ("window.innerHeight");
+//            var offset = WebView.EvaluateJavascript ("window.pageYOffset");
+//            Log.Info (Log.LOG_UI, "MessageComposeView scroll height: {0}, offset: {1}, top: {2}", height, offset, top);
+//        }
 
         #endregion
 

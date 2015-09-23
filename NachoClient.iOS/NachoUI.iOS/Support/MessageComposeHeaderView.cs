@@ -42,6 +42,7 @@ namespace NachoClient.iOS
             {
                 NameLabel = new UILabel (Bounds);
                 ValueLabel = new UILabel (Bounds);
+                BackgroundColor = UIColor.White;
                 AddSubview (NameLabel);
                 AddSubview (ValueLabel);
                 DisclosureIndicatorView = Util.AddArrowAccessory (Bounds.Width - RightPadding - DisclosureWidth, 0, DisclosureWidth, this);

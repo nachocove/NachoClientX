@@ -144,7 +144,6 @@ namespace NachoCore.Utils
                 Bundle.Update();
                 InvokeOnUIThread.Instance.Invoke(BundleUpdated);
             }, "MessageDownloader_UpdateBundle");
-            Bundle.Update ();
         }
 
         void BundleUpdated ()
