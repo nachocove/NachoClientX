@@ -13,6 +13,7 @@ using MimeKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using PassKit;
 
 namespace NachoClient
 {
@@ -155,9 +156,28 @@ namespace NachoClient
 
         protected static void DisplayFile (UIViewController vc, string path)
         {
-            UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
-            Preview.Delegate = new DocumentInteractionControllerDelegate (vc);
-            Preview.PresentPreview (true);
+            var url = NSUrl.FromFilename (path);
+            if (url.PathExtension.ToLowerInvariant () == "pkpass") {
+                if (PKAddPassesViewController.CanAddPasses) {
+                    var data = NSData.FromUrl (url);
+                    NSError error;
+                    var pass = new PKPass (data, out error);
+                    if (error == null) {
+                        var addPassController = new PKAddPassesViewController (pass);
+                        vc.PresentViewController (addPassController, true, null);
+                    } else {
+                        NachoClient.iOS.NcAlertView.ShowMessage (vc, "Unsupported Pass", "Sorry, we are unable to open this pass");
+                    }
+                } else {
+                    NachoClient.iOS.NcAlertView.ShowMessage (vc, "Cannot Add Pass", "Sorry, passes cannot be added to Passbook on this device");
+                }
+            } else {
+                UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (url);
+                Preview.Delegate = new DocumentInteractionControllerDelegate (vc);
+                if (!Preview.PresentPreview (true)) {
+                    NachoClient.iOS.NcAlertView.ShowMessage (vc, "Unsupported Attachment", "Sorry, we are unable to open this type of attachment");
+                }
+            }
         }
 
         public static NcResult DownloadAttachment (McAttachment attachment)
