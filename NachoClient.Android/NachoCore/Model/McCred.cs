@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using NachoCore.Utils;
 using NachoClient.Build;
 using NachoPlatform;
+using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
@@ -44,6 +45,8 @@ namespace NachoCore.Model
         private string RefreshToken { get; set; }
         // General-use. When will the credential expire?
         public DateTime Expiry { get; set; }
+        // General-use. Seconds the credential will expire in (should be used to set Expiry)
+        public uint ExpirySecs { get; set; }
         // General-use. Where can a user manually refresh this credential?
         public string RectificationUrl { get; set; }
         // General-use. When we open the web view for web-based auth, where should we point it?
@@ -51,9 +54,18 @@ namespace NachoCore.Model
         // General-use. What substring in a URL will cause us to tear-down the web view?
         public string DoneSubstring { get; set; }
 
+        // General-use. The epoch of the Credentials.
+        public int Epoch { get; set; }
+
         public McCred ()
         {
             Expiry = DateTime.MaxValue;
+        }
+
+        private void UpdateCredential ()
+        {
+            Epoch += 1;
+            Update ();
         }
 
         /// <summary>
@@ -70,30 +82,31 @@ namespace NachoCore.Model
             if (Keychain.Instance.HasKeychain ()) {
                 NcAssert.True (Keychain.Instance.SetPassword (Id, password));
                 Password = null;
-                Update ();
+                UpdateCredential ();
             } else {
                 Password = password;
-                Update ();
+                UpdateCredential ();
             }
             var account = McAccount.QueryById<McAccount> (AccountId);
             NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_McCredPasswordChanged);
         }
 
-        public void UpdateOauth2 (string accessToken, string refreshToken, DateTime expiry)
+        public void UpdateOauth2 (string accessToken, string refreshToken, uint expirySecs)
         {
             NcAssert.True (0 != Id);
             NcAssert.AreEqual ((int)CredTypeEnum.OAuth2, (int)CredType, string.Format ("UpdateOauth2:CredType:{0}", CredType));
-            Expiry = expiry;
+            Expiry = DateTime.UtcNow.AddSeconds (expirySecs);
+            ExpirySecs = expirySecs;
             if (Keychain.Instance.HasKeychain ()) {
                 NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
                 AccessToken = null;
                 NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
                 RefreshToken = null;
-                Update ();
+                UpdateCredential ();
             } else {
                 AccessToken = accessToken;
                 RefreshToken = refreshToken;
-                Update ();
+                UpdateCredential ();
             }
         }
 
@@ -185,6 +198,48 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
+        private int KOauth2RefreshIntervalSecs = 600;
+        private int KOauth2RefreshPercent = 80;
+
+        NcTimer Oauth2RefreshTimer = null;
+
+        private void PossiblyRefreshToken (McCred cred)
+        {
+            Action<McCred> onSuccess = (c) => {
+                Log.Info (Log.LOG_BACKEND, "PossiblyRefreshToken({0}): success", c.AccountId);
+            };
+
+            Action<McCred> onFailure = (c) => {
+                Log.Info (Log.LOG_BACKEND, "PossiblyRefreshToken({0}): failure", c.AccountId);
+            };
+
+            var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
+            if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
+                if (!cred.AttemptRefresh (onSuccess, onFailure)) {
+                    onFailure (cred);
+                }
+            }
+        }
+
+        public override int Insert ()
+        {
+            if (CredType == CredTypeEnum.OAuth2 && null == Oauth2RefreshTimer) {
+                Oauth2RefreshTimer = new NcTimer ("McCred:Oauth2RefreshTimer", state => {
+                    foreach (var cred in McCred.QueryAllOauth2()) {
+                        PossiblyRefreshToken (cred);
+                    }
+                }, null, KOauth2RefreshIntervalSecs, KOauth2RefreshIntervalSecs);
+                Oauth2RefreshTimer.Stfu = true;
+            }
+            return base.Insert ();
+        }
+
+        private static List<McCred> QueryAllOauth2 ()
+        {
+            return NcModel.Instance.Db.Query<McCred> (
+                "SELECT * FROM McCred WHERE CredType = ?", CredTypeEnum.OAuth2);
+        }
+
         public bool AttemptRefresh (Action<McCred> onSuccess, Action<McCred> onFailure)
         {
             switch (CredType) {
@@ -213,6 +268,8 @@ namespace NachoCore.Model
             public string expires_in { get; set; }
 
             public string token_type { get; set; }
+
+            public string refresh_token { get; set; }
         }
 
         private async Task<bool> TryRefresh ()
@@ -238,8 +295,9 @@ namespace NachoCore.Model
                         return false;
                     }
                     Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", response.expires_in);
-                    UpdateOauth2 (response.access_token, GetRefreshToken (), 
-                        DateTime.UtcNow.AddSeconds (int.Parse (response.expires_in)));
+                    UpdateOauth2 (response.access_token, 
+                        string.IsNullOrEmpty (response.refresh_token) ? GetRefreshToken () : response.refresh_token,
+                        uint.Parse (response.expires_in));
                     return true;
                 } else {
                     Log.Error (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", httpResponse.StatusCode.ToString ());

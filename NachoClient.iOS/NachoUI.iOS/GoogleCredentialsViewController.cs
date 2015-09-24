@@ -90,12 +90,11 @@ namespace NachoClient.iOS
                 e.Account.Properties.TryGetValue ("expires_in", out expires_in);
                 Log.Info (Log.LOG_SYS, "OAUTH2 Token acquired. expires_in={0}", expires_in);
 
-                int expires = 0;
                 string expiresString = "0";
-                DateTime expirationDateTime = DateTime.UtcNow;
+                uint expireSecs = 0;
                 if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
-                    if (int.TryParse (expiresString, out expires)) {
-                        expirationDateTime = expirationDateTime.AddSeconds (expires);
+                    if (!uint.TryParse (expiresString, out expireSecs)) {
+                        Log.Info (Log.LOG_UI, "AuthCompleted: Could not convert expires value {0} to int", expiresString);
                     }
                 }
 
@@ -116,7 +115,7 @@ namespace NachoClient.iOS
                         (string)userInfo ["email"],
                         access_token,
                         refresh_token,
-                        expirationDateTime);
+                        expireSecs);
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
                     Log.Info (Log.LOG_UI, "GoogleCredentialsViewController created account ID{0}", Account.Id);
 
