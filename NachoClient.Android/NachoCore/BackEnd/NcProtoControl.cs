@@ -33,6 +33,34 @@ namespace NachoCore
         protected BackEndStateEnum LastBackEndState;
         protected BackEndStateEnum? BackEndStatePreset;
 
+        protected virtual BackEndStateEnum RealBackEndState () 
+        {
+            throw new Exception ("subclass must implement");
+        }
+
+        public virtual BackEndStateEnum BackEndState
+        {
+            get {
+                BackEndStateEnum state;
+                if (null != BackEndStatePreset) {
+                    state = (BackEndStateEnum)BackEndStatePreset;
+                } else {
+                    state = RealBackEndState ();
+                }
+                if (BackEndStateEnum.CredWait == state) {
+                    BackEnd.CredReqActiveState crState;
+                    if (BackEnd.Instance.TryGetCredReqActiveState (AccountId, out crState)) {
+                        if (BackEnd.CredReqActiveState.CredReqActive_AwaitingRefresh == crState) {
+                            state = (ProtocolState.HasSyncedInbox) ? 
+                                BackEndStateEnum.PostAutoDPostInboxSync : 
+                                BackEndStateEnum.PostAutoDPreInboxSync;
+                        }
+                    }
+                }
+                return state;
+            }
+        }
+
         public int AccountId;
 
         public INcProtoControlOwner Owner { get; set; }
@@ -66,12 +94,6 @@ namespace NachoCore
         public McProtocolState ProtocolState { 
             get {
                 return McProtocolState.QueryByAccountId<McProtocolState> (AccountId).SingleOrDefault ();
-            }
-        }
-
-        public virtual BackEndStateEnum BackEndState {
-            get {
-                return BackEndStateEnum.PostAutoDPostInboxSync;
             }
         }
 

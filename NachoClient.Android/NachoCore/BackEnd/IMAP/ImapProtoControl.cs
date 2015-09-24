@@ -34,45 +34,41 @@ namespace NachoCore.IMAP
             Parked,
         };
 
-        public override BackEndStateEnum BackEndState {
-            get {
-                if (null != BackEndStatePreset) {
-                    return (BackEndStateEnum)BackEndStatePreset;
-                }
-                var state = Sm.State;
-                if ((uint)Lst.Parked == state) {
-                    state = ProtocolState.ImapProtoControlState;
-                }
-                // Every state above must be mapped here.
-                switch (state) {
-                case (uint)St.Start:
-                    return BackEndStateEnum.NotYetStarted;
+        protected override BackEndStateEnum RealBackEndState ()
+        {
+            var state = Sm.State;
+            if ((uint)Lst.Parked == state) {
+                state = ProtocolState.ImapProtoControlState;
+            }
+            // Every state above must be mapped here.
+            switch (state) {
+            case (uint)St.Start:
+                return BackEndStateEnum.NotYetStarted;
 
-                case (uint)Lst.UiCrdW:
-                    return BackEndStateEnum.CredWait;
+            case (uint)Lst.UiCrdW:
+                return BackEndStateEnum.CredWait;
 
-                case (uint)Lst.UiServConfW:
-                    return BackEndStateEnum.ServerConfWait;
+            case (uint)Lst.UiServConfW:
+                return BackEndStateEnum.ServerConfWait;
 
-                case (uint)Lst.DiscW:
-                    return BackEndStateEnum.Running;
+            case (uint)Lst.DiscW:
+                return BackEndStateEnum.Running;
 
-                case (uint)Lst.FSyncW:
-                case (uint)Lst.SyncW:
-                case (uint)Lst.QOpW:
-                case (uint)Lst.HotQOpW:
-                case (uint)Lst.IdleW:
-                case (uint)Lst.PingW:
-                case (uint)Lst.FetchW:
-                case (uint)Lst.Parked:
-                    return (ProtocolState.HasSyncedInbox) ? 
-                        BackEndStateEnum.PostAutoDPostInboxSync : 
-                        BackEndStateEnum.PostAutoDPreInboxSync;
-                    
-                default:
-                    NcAssert.CaseError (string.Format ("BackEndState: Unhandled state {0}", StateName ((uint)Sm.State)));
-                    return BackEndStateEnum.PostAutoDPostInboxSync;
-                }
+            case (uint)Lst.FSyncW:
+            case (uint)Lst.SyncW:
+            case (uint)Lst.QOpW:
+            case (uint)Lst.HotQOpW:
+            case (uint)Lst.IdleW:
+            case (uint)Lst.PingW:
+            case (uint)Lst.FetchW:
+            case (uint)Lst.Parked:
+                return (ProtocolState.HasSyncedInbox) ? 
+                    BackEndStateEnum.PostAutoDPostInboxSync : 
+                    BackEndStateEnum.PostAutoDPreInboxSync;
+
+            default:
+                NcAssert.CaseError (string.Format ("BackEndState: Unhandled state {0}", StateName ((uint)Sm.State)));
+                return BackEndStateEnum.PostAutoDPostInboxSync;
             }
         }
 
