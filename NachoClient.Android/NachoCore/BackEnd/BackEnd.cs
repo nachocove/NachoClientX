@@ -72,7 +72,18 @@ namespace NachoCore
 
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
-        private Dictionary<int, bool> CredReqActive;
+
+        public enum CredReqActiveState {
+            CredReqActive_NeedUI,
+            CredReqActive_AwaitingRefresh,
+        }
+
+        /// <summary>
+        /// Dictionary to keep track of currently being processed Cred-Requests. If the account ID is an existing
+        /// key in the dictionary, we know we are processing a cred request. If the bool is true, this is a regular
+        /// password refresh. If false, it's an OAUTH/2 refresh.
+        /// </summary>
+        private Dictionary<int, CredReqActiveState> CredReqActive;
         public NcPreFetchHints BodyFetchHints { get; set; }
 
         public IBackEndOwner Owner { set; private get; }
@@ -137,7 +148,7 @@ namespace NachoCore
             ServicePointManager.DefaultConnectionLimit = 25;
 
             Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
-            CredReqActive = new Dictionary<int, bool> ();
+            CredReqActive = new Dictionary<int, CredReqActiveState> ();
             BodyFetchHints = new NcPreFetchHints ();
         }
 
@@ -691,6 +702,13 @@ namespace NachoCore
             return states;
         }
 
+        public bool TryGetCredReqActiveState (int accountId, out CredReqActiveState state)
+        {
+            lock(CredReqActive) {
+                return CredReqActive.TryGetValue (accountId, out state);
+            }
+        }
+
         public BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             var result = ApplyToService (accountId, capabilities,
@@ -745,14 +763,6 @@ namespace NachoCore
 
         public void CredReq (NcProtoControl sender)
         {
-            // If we don't already have a request from this account, record it and send it up.
-            lock (CredReqActive) {
-                if (CredReqActive.ContainsKey (sender.Account.Id)) {
-                    return;
-                }
-                CredReqActive.Add (sender.Account.Id, true);
-            }
-
             Action<McCred> onSuccess = (cred) => {
                 CredResp (sender.AccountId);
             };
@@ -763,8 +773,26 @@ namespace NachoCore
                     Owner.CredReq (sender.AccountId);
                 });
             };
-            // FIXME - need a CancellationToken tied to Stop().
-            if (!sender.Cred.AttemptRefresh (onSuccess, onFailure)) {
+
+            // If we don't already have a request from this account, record it and send it up.
+            bool doFailure = false;
+            lock (CredReqActive) {
+                if (CredReqActive.ContainsKey (sender.Account.Id)) {
+                    return;
+                }
+                // assume oauth2 refresh.
+                CredReqActive.Add (sender.Account.Id, CredReqActiveState.CredReqActive_AwaitingRefresh);
+
+                // FIXME - need a CancellationToken tied to Stop().
+                // AttemptRefresh internally uses await to set up the http refresh, and thus returns very quickly.
+                // Having this inside the lock shouldn't present any problems.
+                if (!sender.Cred.AttemptRefresh (onSuccess, onFailure)) {
+                    // we're not attempting a refresh. Mark it in the dictionary.
+                    CredReqActive [sender.Account.Id] = CredReqActiveState.CredReqActive_NeedUI;
+                    doFailure = true;
+                }
+            }
+            if (doFailure) {
                 onFailure (sender.Cred);
             }
         }
