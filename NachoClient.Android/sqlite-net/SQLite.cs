@@ -269,7 +269,7 @@ namespace SQLite
 #endif
 		public virtual bool SetLastAccess ()
 		{
-			LastAccess = DateTime.Now;
+			LastAccess = DateTime.UtcNow;
 			return true;
 		}
 
@@ -2237,7 +2237,7 @@ namespace SQLite
 			if (_conn.Trace) {
 				Debug.WriteLine ("Executing Query: " + this);
 			}
-			var lastAccess = DateTime.Now;
+			var lastAccess = DateTime.UtcNow;
 			var stmt = Prepare ();
 			try
 			{
@@ -2249,7 +2249,7 @@ namespace SQLite
 				}
 				var bumpSeconds = Math.Max (1, _conn.GCSeconds/4);
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					if (0 < _conn.GCSeconds && DateTime.Now.AddSeconds (-bumpSeconds) > lastAccess) {
+					if (0 < _conn.GCSeconds && DateTime.UtcNow.AddSeconds (-bumpSeconds) > lastAccess) {
 						_conn.SetLastAccess ();
 					}
 					var obj = Activator.CreateInstance(map.MappedType);
