@@ -101,11 +101,21 @@ namespace NachoCore.SMTP
                 } catch (AuthenticationException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: AuthenticationException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH1");
+                    if (BEContext.Cred.Epoch == SavedCredEpoch) {
+                        evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH1");
+                    } else {
+                        // credential was updated while we were running the command. Just try again.
+                        evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPAUTH1TEMP");
+                    }
                 } catch (ServiceNotAuthenticatedException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: ServiceNotAuthenticatedException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH2");
+                    if (BEContext.Cred.Epoch == SavedCredEpoch) {
+                        evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH2");
+                    } else {
+                        // credential was updated while we were running the command. Just try again.
+                        evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPAUTH2TEMP");
+                    }
                 } catch (SmtpProtocolException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: SmtpProtocolException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
