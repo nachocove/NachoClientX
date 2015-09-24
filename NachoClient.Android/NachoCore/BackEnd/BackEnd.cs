@@ -794,7 +794,6 @@ namespace NachoCore
                 // assume oauth2 refresh.
                 CredReqActive.Add (sender.Account.Id, CredReqActiveState.CredReqActive_AwaitingRefresh);
 
-                // FIXME - need a CancellationToken tied to Stop().
                 // AttemptRefresh internally uses await to set up the http refresh, and thus returns very quickly.
                 // Having this inside the lock shouldn't present any problems.
                 if (null == RefreshCancelSource) {
