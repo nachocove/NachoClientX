@@ -75,11 +75,29 @@ namespace NachoCore
 
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
+
         CancellationTokenSource RefreshCancelSource { get; set; }
 
-        public enum CredReqActiveState {
+        public enum CredReqActiveState
+        {
+            CredReqActive_AwaitingRefresh = 0,
             CredReqActive_NeedUI,
-            CredReqActive_AwaitingRefresh,
+        }
+
+        class CredReqActiveStatus
+        {
+            public CredReqActiveState State { get; set; }
+
+            public bool NeedCredResp { get; set; }
+
+            public uint RefreshRetries { get; set; }
+
+            public CredReqActiveStatus (CredReqActiveState state, bool needCredResp)
+            {
+                State = state;
+                NeedCredResp = needCredResp;
+                RefreshRetries = 0;
+            }
         }
 
         /// <summary>
@@ -87,7 +105,8 @@ namespace NachoCore
         /// key in the dictionary, we know we are processing a cred request. If the bool is true, this is a regular
         /// password refresh. If false, it's an OAUTH/2 refresh.
         /// </summary>
-        private Dictionary<int, CredReqActiveState> CredReqActive;
+        private Dictionary<int, CredReqActiveStatus> CredReqActive;
+
         public NcPreFetchHints BodyFetchHints { get; set; }
 
         public IBackEndOwner Owner { set; private get; }
@@ -152,7 +171,7 @@ namespace NachoCore
             ServicePointManager.DefaultConnectionLimit = 25;
 
             Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
-            CredReqActive = new Dictionary<int, CredReqActiveState> ();
+            CredReqActive = new Dictionary<int, CredReqActiveStatus> ();
             BodyFetchHints = new NcPreFetchHints ();
         }
 
@@ -168,13 +187,11 @@ namespace NachoCore
         public void Start ()
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start() called");
+            RefreshCancelSource = new CancellationTokenSource ();
             // The callee does Task.Run.
             ApplyAcrossAccounts ("Start", (accountId) => {
                 Start (accountId);
             });
-            if (McCred.QueryAllOauth2 ().Any ()) {
-                McCred.StartOauthRefreshTimer ();
-            }
         }
 
         // DON'T PUT Stop in a Task.Run. We want to execute as much as possible immediately.
@@ -183,9 +200,8 @@ namespace NachoCore
         public void Stop ()
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
-            if (null != RefreshCancelSource) {
-                RefreshCancelSource.Cancel ();
-            }
+            RefreshCancelSource.Cancel ();
+            StopOauthRefreshTimer ();
             if (null != PendingOnTimeTimer) {
                 PendingOnTimeTimer.Dispose ();
                 PendingOnTimeTimer = null;
@@ -194,7 +210,6 @@ namespace NachoCore
                 Stop (accountId);
             });
             BodyFetchHints.Reset ();
-            McCred.StopOauthRefreshTimer ();
         }
 
         public void Stop (int accountId)
@@ -274,6 +289,10 @@ namespace NachoCore
                 }, "Start");
                 return NcResult.OK ();
             });
+            McCred cred = McCred.QueryByAccountId<McCred> (accountId).FirstOrDefault ();
+            if (null != cred && cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                StartOauthRefreshTimer ();
+            }
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
         }
 
@@ -421,15 +440,15 @@ namespace NachoCore
 
        
         private List<NcResult> DeleteMultiCmd (int accountId, McAccount.AccountCapabilityEnum capability, List<int> Ids,
-            Func<NcProtoControl, int, bool, NcResult> deleter)
+                                               Func<NcProtoControl, int, bool, NcResult> deleter)
         {
             var outer = ApplyToService (accountId, capability, (service) => {
                 var retval = new List<NcResult> ();
                 for (var iter = 0; iter < Ids.Count; ++iter) {
                     if (Ids.Count - 1 == iter) {
-                        retval.Add (deleter (service, Ids[iter], true));
-                        } else {
-                        retval.Add (deleter (service, Ids[iter], false));
+                        retval.Add (deleter (service, Ids [iter], true));
+                    } else {
+                        retval.Add (deleter (service, Ids [iter], false));
                     }
                 }
                 return NcResult.OK (retval);
@@ -438,15 +457,15 @@ namespace NachoCore
         }
 
         private List<NcResult> MoveMultiCmd (int accountId, McAccount.AccountCapabilityEnum capability, List<int> Ids, int destFolderId,
-            Func<NcProtoControl, int, int, bool, NcResult> mover)
+                                             Func<NcProtoControl, int, int, bool, NcResult> mover)
         {
             var outer = ApplyToService (accountId, capability, (service) => {
                 var retval = new List<NcResult> ();
                 for (var iter = 0; iter < Ids.Count; ++iter) {
                     if (Ids.Count - 1 == iter) {
-                        retval.Add (mover (service, Ids[iter], destFolderId, true));
+                        retval.Add (mover (service, Ids [iter], destFolderId, true));
                     } else {
-                        retval.Add (mover (service, Ids[iter], destFolderId, false));
+                        retval.Add (mover (service, Ids [iter], destFolderId, false));
                     }
                 }
                 return NcResult.OK (retval);
@@ -715,29 +734,35 @@ namespace NachoCore
 
         public bool TryGetCredReqActiveState (int accountId, out CredReqActiveState state)
         {
-            lock(CredReqActive) {
-                return CredReqActive.TryGetValue (accountId, out state);
+            CredReqActiveStatus status;
+            state = CredReqActiveState.CredReqActive_NeedUI;
+            lock (CredReqActive) {
+                if (CredReqActive.TryGetValue (accountId, out status)) {
+                    state = status.State;
+                    return true;
+                }
             }
+            return false;
         }
 
         public BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             var result = ApplyToService (accountId, capabilities,
-                (service) => NcResult.OK (service.BackEndState));
+                             (service) => NcResult.OK (service.BackEndState));
             return result.isOK () ? result.GetValue<BackEndStateEnum> () : BackEndStateEnum.NotYetStarted;
         }
 
         public AutoDFailureReasonEnum AutoDFailureReason (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             var result = ApplyToService (accountId, capabilities,
-                (service) => NcResult.OK (service.AutoDFailureReason));
+                             (service) => NcResult.OK (service.AutoDFailureReason));
             return result.isOK () ? result.GetValue<AutoDFailureReasonEnum> () : AutoDFailureReasonEnum.Unknown;
         }
 
         public AutoDInfoEnum AutoDInfo (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             var result = ApplyToService (accountId, capabilities,
-                (service) => NcResult.OK (service.AutoDInfo));
+                             (service) => NcResult.OK (service.AutoDInfo));
             return result.isOK () ? result.GetValue<AutoDInfoEnum> () : AutoDInfoEnum.Unknown;
         }
 
@@ -772,41 +797,46 @@ namespace NachoCore
             });
         }
 
-        public void CredReq (NcProtoControl sender)
+        void TokenRefreshFailure (McCred cred)
         {
-            Action<McCred> onSuccess = (cred) => {
-                CredResp (sender.AccountId);
-            };
-
-            Action<McCred> onFailure = (cred) => {
-                Log.Error (Log.LOG_BACKEND, "CredReq:onFailure called.");
-                InvokeOnUIThread.Instance.Invoke (delegate () {
-                    Owner.CredReq (sender.AccountId);
-                });
-            };
-
-            // If we don't already have a request from this account, record it and send it up.
-            bool doFailure = false;
             lock (CredReqActive) {
-                if (CredReqActive.ContainsKey (sender.Account.Id)) {
-                    return;
-                }
-                // assume oauth2 refresh.
-                CredReqActive.Add (sender.Account.Id, CredReqActiveState.CredReqActive_AwaitingRefresh);
-
-                // AttemptRefresh internally uses await to set up the http refresh, and thus returns very quickly.
-                // Having this inside the lock shouldn't present any problems.
-                if (null == RefreshCancelSource) {
-                    RefreshCancelSource = new CancellationTokenSource ();
-                }
-                if (!sender.Cred.AttemptRefresh (onSuccess, onFailure, RefreshCancelSource.Token)) {
-                    // we're not attempting a refresh. Mark it in the dictionary.
-                    CredReqActive [sender.Account.Id] = CredReqActiveState.CredReqActive_NeedUI;
-                    doFailure = true;
+                CredReqActiveStatus status;
+                if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
+                    if (status.NeedCredResp) {
+                        InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (cred.AccountId));
+                    }
                 }
             }
-            if (doFailure) {
-                onFailure (sender.Cred);
+        }
+
+        void TokenRefreshSuccess (McCred cred)
+        {
+            lock (CredReqActive) {
+                CredReqActiveStatus status;
+                if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
+                    if (status.NeedCredResp) {
+                        CredResp (cred.AccountId);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Attempt a CredReq. Called from ProtoControl. If one is already active, just return.
+        /// </summary>
+        /// <param name="sender">Sender.</param>
+        public void CredReq (NcProtoControl sender)
+        {
+            lock (CredReqActive) {
+                CredReqActiveStatus status;
+                if (CredReqActive.TryGetValue (sender.Account.Id, out status)) {
+                    status.NeedCredResp = true;
+                    return;
+                }
+                CredReqActive.Add (sender.Account.Id, new CredReqActiveStatus (default(CredReqActiveState), true));
+            }
+            if (!RefreshToken (sender.Cred)) {
+                TokenRefreshFailure (sender.Cred);
             }
         }
 
@@ -848,5 +878,68 @@ namespace NachoCore
             }
         }
 
+        #region Oauth2Refresh
+
+        const int KOauth2RefreshIntervalSecs = 300;
+        const int KOauth2RefreshPercent = 80;
+        const bool EnableOauth2RefreshTimer = true;
+        NcTimer Oauth2RefreshTimer = null;
+
+        private void StartOauthRefreshTimer ()
+        {
+            if (null == Oauth2RefreshTimer && EnableOauth2RefreshTimer) {
+                var refreshMsecs = KOauth2RefreshIntervalSecs * 1000;
+                var x = new NcTimer ("McCred:Oauth2RefreshTimer", state => {
+                    foreach (var cred in McCred.QueryByCredType (McCred.CredTypeEnum.OAuth2)) {
+                        RefreshCancelSource.Token.ThrowIfCancellationRequested ();
+                        var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
+                        if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
+                            lock (CredReqActive) {
+                                if (!CredReqActive.ContainsKey (cred.AccountId)) {
+                                    CredReqActive.Add (cred.AccountId, new CredReqActiveStatus (CredReqActiveState.CredReqActive_AwaitingRefresh, false));
+                                }
+                            }
+                            RefreshToken (cred);
+                        }
+                    }
+                }, null, refreshMsecs, refreshMsecs);
+                //x.Stfu = true;
+                // protect against stop having been called right during initialization.
+                if (!RefreshCancelSource.IsCancellationRequested) {
+                    Oauth2RefreshTimer = x;
+                }
+            }            
+        }
+
+        private void StopOauthRefreshTimer ()
+        {
+            if (null != Oauth2RefreshTimer) {
+                Oauth2RefreshTimer.Dispose ();
+                Oauth2RefreshTimer = null;
+            }
+        }
+
+        private bool RefreshToken (McCred cred)
+        {
+            if (!cred.CanRefresh ()) {
+                return false;
+            }
+            lock (CredReqActive) {
+                CredReqActiveStatus status;
+                if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
+                    if (status.State != CredReqActiveState.CredReqActive_AwaitingRefresh) {
+                        // FIXME Is this really a problem? Or does this indicate we've failed to refresh and
+                        // we should stop here?
+                        Log.Warn (Log.LOG_BACKEND, "State should be CredReqActive_AwaitingRefresh");
+                    }
+                    // In the future, we might check a max-retry.
+                    status.RefreshRetries++;
+                }
+            }
+            cred.RefreshOAuth2 (TokenRefreshSuccess, TokenRefreshFailure, RefreshCancelSource.Token);
+            return true;
+        }
+
+        #endregion
     }
 }

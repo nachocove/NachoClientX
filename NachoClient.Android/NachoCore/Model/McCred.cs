@@ -198,86 +198,19 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        const int KOauth2RefreshIntervalSecs = 300;
-        const int KOauth2RefreshPercent = 80;
-        const bool EnableOauth2RefreshTimer = true;
-        static CancellationTokenSource RefreshCancelSource;
-        static NcTimer Oauth2RefreshTimer = null;
-
-        public static void StartOauthRefreshTimer ()
-        {
-            if (null == Oauth2RefreshTimer && EnableOauth2RefreshTimer) {
-                var refreshMsecs = KOauth2RefreshIntervalSecs * 1000;
-                RefreshCancelSource = new CancellationTokenSource ();
-                var x = new NcTimer ("McCred:Oauth2RefreshTimer", state => {
-                    foreach (var cred in McCred.QueryAllOauth2()) {
-                        PossiblyRefreshToken (cred, RefreshCancelSource.Token);
-                    }
-                }, null, refreshMsecs, refreshMsecs);
-                x.Stfu = true;
-                // protect against stop having been called right during initialization.
-                if (!RefreshCancelSource.IsCancellationRequested) {
-                    Oauth2RefreshTimer = x;
-                }
-            }            
-        }
-
-        public static void StopOauthRefreshTimer ()
-        {
-            if (null != RefreshCancelSource) {
-                RefreshCancelSource.Cancel ();
-            }
-            if (null != Oauth2RefreshTimer) {
-                Oauth2RefreshTimer.Dispose ();
-                Oauth2RefreshTimer = null;
-            }
-        }
-
-        private static void PossiblyRefreshToken (McCred cred, CancellationToken Token)
-        {
-            Action<McCred> onSuccess = (c) => {
-                Log.Info (Log.LOG_BACKEND, "PossiblyRefreshToken({0}): success", c.AccountId);
-            };
-
-            Action<McCred> onFailure = (c) => {
-                Log.Info (Log.LOG_BACKEND, "PossiblyRefreshToken({0}): failure", c.AccountId);
-            };
-
-            var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
-            if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
-                if (!cred.AttemptRefresh (onSuccess, onFailure, Token)) {
-                    onFailure (cred);
-                }
-            }
-        }
-
-        public override int Insert ()
-        {
-            if (CredType == CredTypeEnum.OAuth2) {
-                StartOauthRefreshTimer ();
-            }
-            return base.Insert ();
-        }
-
-        public static List<McCred> QueryAllOauth2 ()
+        public static List<McCred> QueryByCredType (CredTypeEnum credType)
         {
             return NcModel.Instance.Db.Query<McCred> (
-                "SELECT * FROM McCred WHERE CredType = ?", CredTypeEnum.OAuth2);
+                "SELECT * FROM McCred WHERE CredType = ?", credType);
         }
 
-        public bool AttemptRefresh (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
+        public bool CanRefresh ()
         {
             switch (CredType) {
             case CredTypeEnum.Password:
                 return false;
             case CredTypeEnum.OAuth2:
-                var account = McAccount.QueryById<McAccount> (AccountId);
-                if (account.AccountService == McAccount.AccountServiceEnum.GoogleDefault) {
-                    RefreshOAuth2Google (onSuccess, onFailure, Token);
-                    return true;
-                }
-                Log.Error (Log.LOG_BACKEND, "Unable to do OAUTH2 refresh for {0}", account.AccountService.ToString ());
-                return false;
+                return true;
             default:
                 NcAssert.CaseError (CredType.ToString ());
                 return false;
@@ -297,7 +230,7 @@ namespace NachoCore.Model
             public string refresh_token { get; set; }
         }
 
-        private async Task<bool> TryRefresh (CancellationToken Token)
+        private async Task<bool> TryRefreshGoogleOauth2 (CancellationToken Token)
         {
             var handler = new NativeMessageHandler ();
             var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
@@ -334,9 +267,19 @@ namespace NachoCore.Model
             }
         }
 
-        private async void RefreshOAuth2Google (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
-        {    
-            bool result = await TryRefresh (Token);
+        public async void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
+        {
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            bool result;
+            switch (account.AccountService) {
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                result = await TryRefreshGoogleOauth2 (Token);
+                break;
+
+            default:
+                Log.Error (Log.LOG_SYS, "Can not refresh {0}:{1}", account.Id, account.AccountService);
+                return;
+            }
             if (result) {
                 onSuccess (this);
             } else {
