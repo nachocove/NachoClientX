@@ -1668,6 +1668,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ScoringHelpers.cs">
       <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration45.cs">
+      <Link>NachoCore\Model\Migration\NcMigration45.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
