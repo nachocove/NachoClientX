@@ -19,7 +19,7 @@ namespace NachoCore.Utils
         public abstract BinaryReader BinaryReaderForPath (string path);
         public abstract BinaryWriter BinaryWriterForPath (string path);
         public abstract Uri UrlForPath (string path, string contentType);
-        public abstract Uri RelativeUrlForPath (string path, string contentType, string relativeToPath);
+        public abstract Uri RelativeUrlForPath (string path, string relativeToPath);
         public abstract Uri RelativeUrlForDocumentsPath (string path);
         public abstract Uri BaseUrl ();
 
@@ -107,7 +107,7 @@ namespace NachoCore.Utils
             return null;
         }
 
-        public override Uri RelativeUrlForPath (string path, string contentType, string relativeToPath)
+        public override Uri RelativeUrlForPath (string path, string relativeToPath)
         {
             return null;
         }
@@ -211,23 +211,11 @@ namespace NachoCore.Utils
             return new Uri (String.Format("file://{0}/{1}", RootPath.Replace(Path.DirectorySeparatorChar, '/'), path.Replace(Path.DirectorySeparatorChar, '/')));
         }
 
-        public override Uri RelativeUrlForPath (string path, string contentType, string relativeToPath)
+        public override Uri RelativeUrlForPath (string path, string relativeToPath)
         {
-            var a = new List<string>(path.Split (Path.DirectorySeparatorChar));
-            var b = new List<string>(relativeToPath.Split (Path.DirectorySeparatorChar));
-            int i = 0;
-            for (; i < a.Count && i < b.Count; ++i) {
-                if (!a[i].Equals(b[i])){
-                    break;
-                }
-            }
-            if (i == 0) {
-                for (int j = 0; j < b.Count - 1; ++j){
-                    a.Insert (0, "..");
-                }
-            }
-            var relative = String.Join("/", a.GetRange (i, a.Count - i).ToArray());
-            return new Uri (relative, UriKind.Relative);
+            var url = UrlForPath (path, null);
+            var relativeToUrl = UrlForPath (relativeToPath, null);
+            return relativeToUrl.MakeRelativeUri (url);
         }
 
         public override Uri RelativeUrlForDocumentsPath (string path)

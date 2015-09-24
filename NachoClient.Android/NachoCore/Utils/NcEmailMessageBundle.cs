@@ -63,10 +63,12 @@ namespace NachoCore.Utils
             public AlternativeTypes AlternateTypeInfo;
             private bool populateHtml = true;
             private bool populateText = true;
+            public Dictionary<string, string> ImageEntriesBySrc;
 
             public ParseResult ()
             {
                 RelatedStack = new List<MultipartRelated> ();
+                ImageEntriesBySrc = new Dictionary<string, string> ();
             }
 
             public bool PopulateHtml {
@@ -336,10 +338,11 @@ namespace NachoCore.Utils
             CompleteBundleAfterParse ();
         }
 
-        public void SetFullHtml (HtmlDocument doc)
+        public void SetFullHtml (HtmlDocument doc, NcEmailMessageBundle sourceBundle)
         {
             parsed = new ParseResult ();
             parsed.FullHtmlDocument = doc;
+            ResolveRelativeReferences (doc, sourceBundle);
             CompleteBundleAfterParse ();
         }
 
@@ -681,16 +684,17 @@ namespace NachoCore.Utils
                 }
                 var entry = new BundleManifest.Entry ();
                 entry.Path = SafeFilename ("image-attachment");
-                Manifest.Entries [entry.Path] = entry;
+                var entryKey = entry.Path;
+                Manifest.Entries [entryKey] = entry;
                 entry.ContentType = entity.ContentType.MimeType;
                 using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
                     entity.ContentObject.DecodeTo (writer.BaseStream);
                 }
                 var body = parsed.FullHtmlDocument.DocumentNode.Element ("html").Element ("body");
                 var img = body.AppendChild (parsed.FullHtmlDocument.CreateElement ("img"));
-                var relativeUrl = Storage.RelativeUrlForPath (entry.Path, entry.ContentType, FullHtmlPath);
+                var relativeUrl = Storage.RelativeUrlForPath (entry.Path, FullHtmlPath);
                 if (relativeUrl != null) {
-                    img.SetAttributeValue ("nacho-is-relative-src", "true");
+                    img.SetAttributeValue ("nacho-bundle-entry", entryKey);
                     img.SetAttributeValue ("src", relativeUrl.ToString());
                 } else {
                     img.SetAttributeValue("src", Storage.UrlForPath(entry.Path, entry.ContentType).ToString ());
@@ -777,7 +781,7 @@ namespace NachoCore.Utils
                     stack.RemoveAt (0);
                     if (node.NodeType == HtmlNodeType.Element) {
                         if (node.Name.Equals ("img")) {
-                            if (node.Attributes.Contains ("nacho-is-relative-src")) {
+                            if (node.Attributes.Contains ("nacho-bundle-entry")) {
                                 foreach (var src in node.Attributes.AttributesWithName("src")) {
                                     src.Value = String.Format ("{0}/{1}", submessagePath, src.Value);
                                 }
@@ -915,19 +919,19 @@ namespace NachoCore.Utils
                     // template - No need (html5, not really used yet), I think can include scripting.
                     // canvas - Pointless without JS
 
-                    // Remove any and all event attributes (onload, onclick, etc)
-                    // to ensure that no scripts are run
+                    // remove any attributes related to scripting
                     for (int i = node.Attributes.Count - 1; i >= 0; --i){
                         var attr = node.Attributes [i];
+
+                        // Remove any and all event attributes (onload, onclick, etc)
+                        // to ensure that no scripts are run
                         if (attr.Name.StartsWith ("on")) {
                             attr.Remove ();
                         }
-                    }
 
-                    // If any attribute value starts with javascript:, just remove it.
-                    // This will catch any href, src, or other attribute that has a javascript: scheme to start a url.
-                    // It will also catch other things that may be harmless, but aren't useful for anything we care about.
-                    foreach (var attr in node.Attributes){
+                        // If any attribute value starts with javascript:, just remove it.
+                        // This will catch any href, src, or other attribute that has a javascript: scheme to start a url.
+                        // It will also catch other things that may be harmless, but aren't useful for anything we care about.
                         if (attr.Value.Trim ().ToLower ().StartsWith ("javscript:")) {
                             attr.Remove ();
                         }
@@ -936,46 +940,55 @@ namespace NachoCore.Utils
                     // Update any image references that point to other parts of the message to point to
                     // the storage area for this bundle
                     if (node.Name.Equals ("img") && node.Attributes.Contains("src")) {
+                        // Removing our special attributes because no one else should be setting them
+                        node.Attributes.Remove ("nacho-bundle-entry");
+                        // There should only be one src per img tag, we'll only consider the first one
                         var srcs = node.Attributes.AttributesWithName ("src");
-                        // There should only be one src per img tag, but we'll go ahead and change them all if more than 1 exist
-                        foreach (var src in srcs) {
-                            UriKind kind;
-                            if (Uri.IsWellFormedUriString (src.Value, UriKind.Absolute)) {
-                                kind = UriKind.Absolute;
-                            } else if (Uri.IsWellFormedUriString (src.Value, UriKind.Relative)) {
-                                kind = UriKind.Relative;
-                            } else {
-                                kind = UriKind.RelativeOrAbsolute;
-                            }
-                            Uri uri = null;
-                            try {
-                                uri = new Uri (src.Value, kind);
-                            } catch {
-                            }
-                            if (uri != null) {
-                                var imagePart = RelatedImagePart (uri);
-                                if (imagePart != null) {
-                                    var entryKey = src.Value;
-                                    BundleManifest.Entry entry;
-                                    if (!Manifest.Entries.ContainsKey (entryKey)) {
-                                        entry = new BundleManifest.Entry ();
-                                        Manifest.Entries [entryKey] = entry;
-                                        entry.Path = SafeFilename (entryKey);
-                                        entry.ContentType = imagePart.ContentType.MimeType;
-                                        using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
-                                            imagePart.ContentObject.DecodeTo (writer.BaseStream);
-                                        }
-                                    } else {
-                                        entry = Manifest.Entries [entryKey];
+                        string src = null;
+                        foreach (var attr in srcs) {
+                            src = attr.Value;
+                            break;
+                        }
+                        UriKind kind;
+                        if (Uri.IsWellFormedUriString (src, UriKind.Absolute)) {
+                            kind = UriKind.Absolute;
+                        } else if (Uri.IsWellFormedUriString (src, UriKind.Relative)) {
+                            kind = UriKind.Relative;
+                        } else {
+                            kind = UriKind.RelativeOrAbsolute;
+                        }
+                        Uri uri = null;
+                        try {
+                            uri = new Uri (src, kind);
+                        } catch {
+                        }
+                        if (uri != null) {
+                            var imagePart = RelatedImagePart (uri);
+                            if (imagePart != null) {
+                                // Removing existing src in case 
+                                node.Attributes.Remove ("src");
+                                BundleManifest.Entry entry;
+                                string entryKey;
+                                if (!parsed.ImageEntriesBySrc.ContainsKey (src)) {
+                                    entry = new BundleManifest.Entry ();
+                                    entry.Path = SafeFilename ("image");
+                                    entryKey = entry.Path;
+                                    Manifest.Entries [entryKey] = entry;
+                                    parsed.ImageEntriesBySrc [src] = entryKey;
+                                    entry.ContentType = imagePart.ContentType.MimeType;
+                                    using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
+                                        imagePart.ContentObject.DecodeTo (writer.BaseStream);
                                     }
-                                    node.SetAttributeValue ("nacho-original-src", src.Value);
-                                    var relativeUrl = Storage.RelativeUrlForPath (entry.Path, entry.ContentType, FullHtmlPath);
-                                    if (relativeUrl != null) {
-                                        node.SetAttributeValue ("nacho-is-relative-src", "true");
-                                        src.Value = relativeUrl.ToString ();
-                                    } else {
-                                        src.Value = Storage.UrlForPath (entry.Path, entry.ContentType).ToString ();
-                                    }
+                                } else {
+                                    entryKey = parsed.ImageEntriesBySrc [src];
+                                    entry = Manifest.Entries [entryKey];
+                                }
+                                var relativeUrl = Storage.RelativeUrlForPath (entry.Path, FullHtmlPath);
+                                if (relativeUrl != null) {
+                                    node.SetAttributeValue ("nacho-bundle-entry", entryKey);
+                                    node.SetAttributeValue ("src", relativeUrl.ToString ());
+                                } else {
+                                    node.SetAttributeValue ("src", Storage.UrlForPath (entry.Path, entry.ContentType).ToString ());
                                 }
                             }
                         }
@@ -1086,6 +1099,54 @@ namespace NachoCore.Utils
             span.AppendChild (doc.CreateTextNode (value));
             div.AppendChild (span);
             return div;
+        }
+
+        private void ResolveRelativeReferences (HtmlDocument doc, NcEmailMessageBundle sourceBundle)
+        {
+            var stack = new List<HtmlNode> ();
+            stack.Add (doc.DocumentNode);
+            HtmlNode node;
+            while (stack.Count > 0) {
+                node = stack [0];
+                stack.RemoveAt (0);
+                if (node.NodeType == HtmlNodeType.Element) {
+                    if (node.Name.Equals ("img")) {
+                        if (node.Attributes.Contains ("nacho-bundle-entry")) {
+                            string sourceEntryName = node.Attributes ["nacho-bundle-entry"].Value;
+                            var src = node.Attributes ["src"];
+                            BundleManifest.Entry entry;
+                            string entryKey;
+                            if (!parsed.ImageEntriesBySrc.ContainsKey (src.Value)) {
+                                entry = new BundleManifest.Entry ();
+                                entry.Path = SafeFilename ("image");
+                                entryKey = entry.Path;
+                                Manifest.Entries [entryKey] = entry;
+                                parsed.ImageEntriesBySrc [src.Value] = entryKey;
+                                var sourceEntry = sourceBundle.Manifest.Entries [sourceEntryName];
+                                entry.ContentType = sourceEntry.ContentType;
+                                using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
+                                    using (var reader = sourceBundle.Storage.BinaryReaderForPath (sourceEntry.Path)) {
+                                        writer.Write (reader.Read ());
+                                    }
+                                }
+                            } else {
+                                entryKey = parsed.ImageEntriesBySrc [src.Value];
+                                entry = Manifest.Entries [entryKey];
+                            }
+                            var relativeUrl = Storage.RelativeUrlForPath (entry.Path, FullHtmlPath);
+                            if (relativeUrl != null) {
+                                node.SetAttributeValue ("nacho-bundle-entry", entryKey);
+                                src.Value = relativeUrl.ToString ();
+                            } else {
+                                src.Value = Storage.UrlForPath (entry.Path, entry.ContentType).ToString ();
+                            }
+                        }
+                    }
+                }
+                foreach (var child in node.ChildNodes) {
+                    stack.Add (child);
+                }
+            }
         }
 
         #endregion

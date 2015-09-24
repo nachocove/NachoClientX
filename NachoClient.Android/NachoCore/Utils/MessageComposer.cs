@@ -191,15 +191,13 @@ namespace NachoCore.Utils
                 var doc = new HtmlDocument ();
                 doc.LoadHtml (relatedBundle.FullHtml);
                 if (EmailHelper.IsReplyAction(Kind)){
-                    StripInlineImages (doc);
-                }else{
-                    // FIXME: need to copy inline images from bundle to bundle
+                    ReplaceInlineImages (doc);
                 }
                 if (Kind == EmailHelper.Action.Forward || EmailHelper.IsReplyAction(Kind)){
                     QuoteHtml (doc);
                     // TODO: insert signature & initial text, if any
                 }
-                Bundle.SetFullHtml (doc);
+                Bundle.SetFullHtml (doc, relatedBundle);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     FinishPreparingMessage ();
                 });
@@ -237,7 +235,7 @@ namespace NachoCore.Utils
             return div;
         }
 
-        void StripInlineImages (HtmlDocument doc)
+        void ReplaceInlineImages (HtmlDocument doc)
         {
             HtmlNode node;
             var stack = new List<HtmlNode> ();
@@ -248,7 +246,7 @@ namespace NachoCore.Utils
                 stack.RemoveAt (0);
                 if (node.NodeType == HtmlNodeType.Element) {
                     if (node.Name.Equals ("img")) {
-                        if (node.Attributes.Contains ("nacho-is-relative-src")) {
+                        if (node.Attributes.Contains ("nacho-bundle-entry")) {
                             var replacement = doc.CreateTextNode ("[image]");
                             node.ParentNode.InsertBefore (replacement, node);
                             node.Remove ();
@@ -263,7 +261,7 @@ namespace NachoCore.Utils
 
         void PrepareMessageBody ()
         {
-            string messageText = "This\nis\na\ntest\nof\nwebview\ncompose\nemail";
+            string messageText = "";
             if (!String.IsNullOrWhiteSpace(InitialText)) {
                 messageText += InitialText;
             }
