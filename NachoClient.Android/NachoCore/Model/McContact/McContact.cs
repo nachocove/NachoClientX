@@ -931,6 +931,7 @@ namespace NachoCore.Model
 
         private void DeleteStringAttribute (McContactStringType stringType)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             NcModel.Instance.Db.Query<McContactStringAttribute> (
                 "DELETE FROM McContactStringAttribute WHERE ContactId = ? AND Type = ?", Id, (int)stringType);
         }
