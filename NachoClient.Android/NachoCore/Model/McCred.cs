@@ -198,20 +198,22 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        static int KOauth2RefreshIntervalSecs = 600;
-        static int KOauth2RefreshPercent = 80;
+        const int KOauth2RefreshIntervalSecs = 300;
+        const int KOauth2RefreshPercent = 80;
+        const bool EnableOauth2RefreshTimer = true;
         static CancellationTokenSource RefreshCancelSource;
         static NcTimer Oauth2RefreshTimer = null;
 
         public static void StartOauthRefreshTimer ()
         {
-            if (null == Oauth2RefreshTimer) {
+            if (null == Oauth2RefreshTimer && EnableOauth2RefreshTimer) {
+                var refreshMsecs = KOauth2RefreshIntervalSecs * 1000;
                 RefreshCancelSource = new CancellationTokenSource ();
                 var x = new NcTimer ("McCred:Oauth2RefreshTimer", state => {
                     foreach (var cred in McCred.QueryAllOauth2()) {
                         PossiblyRefreshToken (cred, RefreshCancelSource.Token);
                     }
-                }, null, KOauth2RefreshIntervalSecs, KOauth2RefreshIntervalSecs);
+                }, null, refreshMsecs, refreshMsecs);
                 x.Stfu = true;
                 // protect against stop having been called right during initialization.
                 if (!RefreshCancelSource.IsCancellationRequested) {
