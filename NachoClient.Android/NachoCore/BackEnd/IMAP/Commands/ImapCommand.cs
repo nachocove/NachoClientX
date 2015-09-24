@@ -127,12 +127,17 @@ namespace NachoCore.IMAP
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
                 } else {
                     // credential was updated while we were running the command. Just try again.
-                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTHTEMP1");
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTH1TEMP");
                 }
             } catch (ServiceNotAuthenticatedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
+                if (BEContext.Cred.Epoch == SavedCredEpoch) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
+                } else {
+                    // credential was updated while we were running the command. Just try again.
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTH2TEMP");
+                }
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
