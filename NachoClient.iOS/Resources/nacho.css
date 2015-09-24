@@ -19,7 +19,7 @@ a:visited {
 blockquote[type="cite"] {
     border-width: 0 0 0 2px;
     border-style: solid;
-    margin: 20px 0;
+    margin: 0;
     padding: 0 0 0 10px;
     border-color: rgb(1,178,205);
     color: rgb(1,178,205);

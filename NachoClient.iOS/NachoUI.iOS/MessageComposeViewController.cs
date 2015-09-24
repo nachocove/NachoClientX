@@ -259,7 +259,6 @@ namespace NachoClient.iOS
         {
             CloseAlertController = null;
             Composer.Message.Delete ();
-            // TODO: delete message (can happen in background)
             if (ComposeDelegate != null) {
                 ComposeDelegate.MessageComposeViewDidCancel (this);
             }
@@ -294,7 +293,7 @@ namespace NachoClient.iOS
             Composer.Message.Intent = intentType;
             Composer.Message.IntentDate = DateTime.MinValue;
             Composer.Message.IntentDateType = MessageDeferralType.None;
-            UpdateHeaderViewIntent ();
+            UpdateHeaderIntentView ();
         }
 
         #endregion
@@ -376,7 +375,7 @@ namespace NachoClient.iOS
             Composer.Message.Intent = intent.type;
             Composer.Message.IntentDateType = MessageDeferralType.None;
             Composer.Message.IntentDate = DateTime.MinValue;
-            UpdateHeaderViewIntent ();
+            UpdateHeaderIntentView ();
         }
 
         // User selecting a date for the intent
@@ -384,7 +383,7 @@ namespace NachoClient.iOS
         {
             Composer.Message.IntentDateType = request;
             Composer.Message.IntentDate = selectedDate;
-            UpdateHeaderViewIntent ();
+            UpdateHeaderIntentView ();
         }
             
         // User tapping on add attachment
@@ -633,10 +632,40 @@ namespace NachoClient.iOS
         private void UpdateHeaderView ()
         {
             UpdateHeaderSubjectView ();
-            UpdateHeaderViewIntent ();
+            UpdateHeaderToView ();
+            UpdateHeaderCcView ();
+            UpdateHeaderBccView ();
+            UpdateHeaderIntentView ();
             var attachments = McAttachment.QueryByItemId (Composer.Message);
             foreach (var attachment in attachments) {
                 HeaderView.AttachmentsView.Append (attachment);
+            }
+        }
+
+        private void UpdateHeaderToView ()
+        {
+            HeaderView.ToView.Clear ();
+            var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.To, null, Composer.Message.To);
+            foreach (var address in addresses) {
+                HeaderView.ToView.Append (address);
+            }
+        }
+
+        private void UpdateHeaderCcView ()
+        {
+            HeaderView.CcView.Clear ();
+            var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, null, Composer.Message.Cc);
+            foreach (var address in addresses) {
+                HeaderView.CcView.Append (address);
+            }
+        }
+
+        private void UpdateHeaderBccView ()
+        {
+            HeaderView.BccView.Clear ();
+            var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.Bcc, null, Composer.Message.Bcc);
+            foreach (var address in addresses) {
+                HeaderView.BccView.Append (address);
             }
         }
 
@@ -645,7 +674,7 @@ namespace NachoClient.iOS
             HeaderView.SubjectField.Text = Composer.Message.Subject;
         }
 
-        private void UpdateHeaderViewIntent ()
+        private void UpdateHeaderIntentView ()
         {
             HeaderView.IntentView.ValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
         }

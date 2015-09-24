@@ -19,6 +19,15 @@ namespace NachoCore.Utils
             return serializer.Serialize ();
         }
 
+        public static HtmlTextNode CreateTextNodeWithEscaping (this HtmlDocument doc, string text)
+        {
+            // HtmlAgilityPack doesn't do any escaping of the text like a fully-featured DOM implementation would.
+            // So this is a convenience function to do it.
+            var escaped = text.Replace ("&", "&amp;").Replace ("<", "&lt;");
+            var node = doc.CreateTextNode (escaped);
+            return node;
+        }
+
     }
 
     public class HtmlTextSerializer {
@@ -559,8 +568,7 @@ namespace NachoCore.Utils
 
         private void ConsumeText (string text)
         {
-            text = text.Replace ("&", "&amp;").Replace ("<", "&lt;");
-            Node.AppendChild (Document.CreateTextNode (text));
+            Node.AppendChild (Document.CreateTextNodeWithEscaping (text));
         }
 
     }

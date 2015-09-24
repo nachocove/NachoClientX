@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.IO;
 using System.Collections.Generic;
 using NachoCore.Model;
 using NachoPlatform;
@@ -194,8 +195,8 @@ namespace NachoCore.Utils
                     ReplaceInlineImages (doc);
                 }
                 if (Kind == EmailHelper.Action.Forward || EmailHelper.IsReplyAction(Kind)){
-                    QuoteHtml (doc);
-                    // TODO: insert signature & initial text, if any
+                    QuoteHtml (doc, RelatedMessage);
+                    InsertInitialHtml (doc);
                 }
                 Bundle.SetFullHtml (doc, relatedBundle);
                 InvokeOnUIThread.Instance.Invoke (() => {
@@ -204,11 +205,46 @@ namespace NachoCore.Utils
             }, "MessageComposer_SetFullHtml");
         }
 
-        void QuoteHtml (HtmlDocument doc)
+        void InsertInitialHtml (HtmlDocument doc)
+        {
+            var body = doc.DocumentNode.Element ("html").Element ("body");
+            var firstChildBeforeInserts = body.FirstChild;
+            string messageText = "";
+            if (!String.IsNullOrWhiteSpace (InitialText)){
+                messageText += InitialText;
+            }
+            messageText += SignatureText ();
+            if (!String.IsNullOrWhiteSpace (messageText)){
+                using (var reader = new StringReader (messageText)){
+                    var line = reader.ReadLine ();
+                    while (line != null) {
+                        var div = doc.CreateElement ("div");
+                        if (String.IsNullOrWhiteSpace (line)){
+                            div.AppendChild (doc.CreateElement ("br"));
+                        }else{
+                            div.AppendChild (doc.CreateTextNodeWithEscaping (line));
+                        }
+                        if (firstChildBeforeInserts != null) {
+                            body.InsertBefore (div, firstChildBeforeInserts);
+                        } else {
+                            body.AppendChild (div);
+                        }
+                        line = reader.ReadLine ();
+                    }
+                }
+            }
+        }
+
+        void QuoteHtml (HtmlDocument doc, McEmailMessage sourceMessage)
         {
             var body = doc.DocumentNode.Element ("html").Element ("body");
             HtmlNode blockquote = doc.CreateElement ("blockquote");
             blockquote.SetAttributeValue ("type", "cite");
+            var attribution = EmailHelper.AttributionLineForMessage (sourceMessage);
+            var attributionLine = doc.CreateElement ("div");
+            attributionLine.AppendChild (doc.CreateTextNodeWithEscaping (attribution));
+            blockquote.AppendChild (attributionLine);
+            blockquote.AppendChild (EmptyLine (doc));
             HtmlNode node;
             HtmlNode following = null;
             for (int i = body.ChildNodes.Count - 1; i >= 0; --i) {
@@ -221,7 +257,6 @@ namespace NachoCore.Utils
                 }
                 following = node;
             }
-            // TODO: add attribution line ("On XYZ ABC wrote:")
             body.AppendChild (EmptyLine (doc));
             body.AppendChild (blockquote);
             body.AppendChild (EmptyLine (doc));

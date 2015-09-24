@@ -256,6 +256,33 @@ namespace NachoCore.Utils
             }
         }
 
+        public static string AttributionLineForMessage (McEmailMessage message)
+        {
+            var attribution = "";
+            attribution += message.DateReceived.ToString ("'On' MMM d, yyyy 'at' h:mm tt");
+            if (!String.IsNullOrWhiteSpace (message.From)) {
+                if (attribution.Length > 0) {
+                    attribution += ", ";
+                }
+                var address = new NcEmailAddress (NcEmailAddress.Kind.From, message.From);
+                var mailbox = address.ToMailboxAddress (true);
+                if (mailbox != null) {
+                    if (!String.IsNullOrWhiteSpace(mailbox.Name)) {
+                        attribution += String.Format ("{0} <{1}>", mailbox.Name, mailbox.Address);
+                    } else {
+                        attribution += mailbox.Address;
+                    }
+                } else {
+                    attribution += message.From;
+                }
+                attribution += " wrote";
+            }
+            if (attribution.Length > 0) {
+                attribution += ":";
+            }
+            return attribution;
+        }
+
 
         public static bool IsValidEmail (string email)
         {
