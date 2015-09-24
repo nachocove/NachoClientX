@@ -114,12 +114,21 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            if (activityIndicatorView.IsAnimating) {
+                activityIndicatorView.StopAnimating ();
+            }
             if (IsMovingFromParentViewController) {
                 LoginEvents.Owner = null;
                 if (Account != null) {
                     NcAccountHandler.Instance.RemoveAccount (Account.Id);
                 }
             }
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            UpdateForSubmitting ();
         }
 
 
