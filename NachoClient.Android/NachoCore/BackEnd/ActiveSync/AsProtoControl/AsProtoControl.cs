@@ -701,7 +701,21 @@ namespace NachoCore.ActiveSync
                 }
             };
             Sm.Validate ();
-            Sm.State = ProtocolState.ProtoControlState;
+            var protocolState = ProtocolState;
+            if ((uint)Lst.Parked == protocolState.ProtoControlState) {
+                // 1.0 did not use OC with McProtocolState. 
+                // Our best guess for #1160 is that this allowed Parked to get saved to the DB.
+                // Remove this if () once the Error is no longer seen.
+                // If we keep seeing the error, then we have another problem ...
+                Log.Error (Log.LOG_AS, "ProtoControlState was Parked");
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    // Any PostPost state will do.
+                    target.ProtoControlState = (uint)Lst.IdleW;
+                    return true;
+                });
+            }
+            Sm.State = protocolState.ProtoControlState;
             LastBackEndState = BackEndState;
             LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new AsStrategy (this);
