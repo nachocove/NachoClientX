@@ -548,7 +548,8 @@ namespace NachoClient
 
         public static void PerformAction (string action, string number)
         {
-            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+            var uristr = String.Format ("{0}:{1}", action, Uri.EscapeDataString(number));
+            UIApplication.SharedApplication.OpenUrl (new Uri (uristr));
         }
 
 

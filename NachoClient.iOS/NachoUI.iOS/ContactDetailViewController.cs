@@ -1058,7 +1058,7 @@ namespace NachoClient.iOS
         protected bool PerformAction (string action, string number)
         {
             try {
-                UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+                Util.PerformAction(action, number);
                 return true;
             } catch (Exception e) {
                 Log.Warn (Log.LOG_UI, "Cannot perform action {0} ({1})", action, e);
