@@ -205,27 +205,29 @@ namespace NachoCore.Model
 
         public static void StartOauthRefreshTimer ()
         {
-            lock (Oauth2RefreshTimer) {
-                if (null == Oauth2RefreshTimer) {
-                    RefreshCancelSource = new CancellationTokenSource ();
-                    Oauth2RefreshTimer = new NcTimer ("McCred:Oauth2RefreshTimer", state => {
-                        foreach (var cred in McCred.QueryAllOauth2()) {
-                            PossiblyRefreshToken (cred, RefreshCancelSource.Token);
-                        }
-                    }, null, KOauth2RefreshIntervalSecs, KOauth2RefreshIntervalSecs);
-                    Oauth2RefreshTimer.Stfu = true;
-                }            
-            }
+            if (null == Oauth2RefreshTimer) {
+                RefreshCancelSource = new CancellationTokenSource ();
+                var x = new NcTimer ("McCred:Oauth2RefreshTimer", state => {
+                    foreach (var cred in McCred.QueryAllOauth2()) {
+                        PossiblyRefreshToken (cred, RefreshCancelSource.Token);
+                    }
+                }, null, KOauth2RefreshIntervalSecs, KOauth2RefreshIntervalSecs);
+                x.Stfu = true;
+                // protect against stop having been called right during initialization.
+                if (!RefreshCancelSource.IsCancellationRequested) {
+                    Oauth2RefreshTimer = x;
+                }
+            }            
         }
 
         public static void StopOauthRefreshTimer ()
         {
-            lock (Oauth2RefreshTimer) {
+            if (null != RefreshCancelSource) {
                 RefreshCancelSource.Cancel ();
-                if (null != Oauth2RefreshTimer) {
-                    Oauth2RefreshTimer.Dispose ();
-                    Oauth2RefreshTimer = null;
-                }
+            }
+            if (null != Oauth2RefreshTimer) {
+                Oauth2RefreshTimer.Dispose ();
+                Oauth2RefreshTimer = null;
             }
         }
 
