@@ -42,8 +42,8 @@ namespace NachoCore
         {
             get {
                 BackEndStateEnum state;
-                if (null != BackEndStatePreset) {
-                    state = (BackEndStateEnum)BackEndStatePreset;
+                if (BackEndStatePreset.HasValue) {
+                    state = BackEndStatePreset.Value;
                 } else {
                     state = RealBackEndState ();
                 }
