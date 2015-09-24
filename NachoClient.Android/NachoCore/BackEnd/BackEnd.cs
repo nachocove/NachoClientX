@@ -31,6 +31,9 @@ using NachoPlatform;
  * The UI Must have started all accounts before modding the DB records associated
  * with those accounts - otherwise mod events will get dropped and not end up on the server.
  * */
+using System.Threading;
+
+
 namespace NachoCore
 {
     public sealed class BackEnd : IBackEnd, INcProtoControlOwner
@@ -72,6 +75,7 @@ namespace NachoCore
 
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
+        CancellationTokenSource RefreshCancelSource { get; set; }
 
         public enum CredReqActiveState {
             CredReqActive_NeedUI,
@@ -168,6 +172,9 @@ namespace NachoCore
             ApplyAcrossAccounts ("Start", (accountId) => {
                 Start (accountId);
             });
+            if (McCred.QueryAllOauth2 ().Any ()) {
+                McCred.StartOauthRefreshTimer ();
+            }
         }
 
         // DON'T PUT Stop in a Task.Run. We want to execute as much as possible immediately.
@@ -176,6 +183,9 @@ namespace NachoCore
         public void Stop ()
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
+            if (null != RefreshCancelSource) {
+                RefreshCancelSource.Cancel ();
+            }
             if (null != PendingOnTimeTimer) {
                 PendingOnTimeTimer.Dispose ();
                 PendingOnTimeTimer = null;
@@ -184,6 +194,7 @@ namespace NachoCore
                 Stop (accountId);
             });
             BodyFetchHints.Reset ();
+            McCred.StopOauthRefreshTimer ();
         }
 
         public void Stop (int accountId)
@@ -786,7 +797,10 @@ namespace NachoCore
                 // FIXME - need a CancellationToken tied to Stop().
                 // AttemptRefresh internally uses await to set up the http refresh, and thus returns very quickly.
                 // Having this inside the lock shouldn't present any problems.
-                if (!sender.Cred.AttemptRefresh (onSuccess, onFailure)) {
+                if (null == RefreshCancelSource) {
+                    RefreshCancelSource = new CancellationTokenSource ();
+                }
+                if (!sender.Cred.AttemptRefresh (onSuccess, onFailure, RefreshCancelSource.Token)) {
                     // we're not attempting a refresh. Mark it in the dictionary.
                     CredReqActive [sender.Account.Id] = CredReqActiveState.CredReqActive_NeedUI;
                     doFailure = true;

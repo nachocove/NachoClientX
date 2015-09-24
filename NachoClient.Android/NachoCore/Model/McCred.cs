@@ -198,12 +198,38 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        private int KOauth2RefreshIntervalSecs = 600;
-        private int KOauth2RefreshPercent = 80;
+        static int KOauth2RefreshIntervalSecs = 600;
+        static int KOauth2RefreshPercent = 80;
+        static CancellationTokenSource RefreshCancelSource;
+        static NcTimer Oauth2RefreshTimer = null;
 
-        NcTimer Oauth2RefreshTimer = null;
+        public static void StartOauthRefreshTimer ()
+        {
+            lock (Oauth2RefreshTimer) {
+                if (null == Oauth2RefreshTimer) {
+                    RefreshCancelSource = new CancellationTokenSource ();
+                    Oauth2RefreshTimer = new NcTimer ("McCred:Oauth2RefreshTimer", state => {
+                        foreach (var cred in McCred.QueryAllOauth2()) {
+                            PossiblyRefreshToken (cred, RefreshCancelSource.Token);
+                        }
+                    }, null, KOauth2RefreshIntervalSecs, KOauth2RefreshIntervalSecs);
+                    Oauth2RefreshTimer.Stfu = true;
+                }            
+            }
+        }
 
-        private void PossiblyRefreshToken (McCred cred)
+        public static void StopOauthRefreshTimer ()
+        {
+            lock (Oauth2RefreshTimer) {
+                RefreshCancelSource.Cancel ();
+                if (null != Oauth2RefreshTimer) {
+                    Oauth2RefreshTimer.Dispose ();
+                    Oauth2RefreshTimer = null;
+                }
+            }
+        }
+
+        private static void PossiblyRefreshToken (McCred cred, CancellationToken Token)
         {
             Action<McCred> onSuccess = (c) => {
                 Log.Info (Log.LOG_BACKEND, "PossiblyRefreshToken({0}): success", c.AccountId);
@@ -215,7 +241,7 @@ namespace NachoCore.Model
 
             var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
             if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
-                if (!cred.AttemptRefresh (onSuccess, onFailure)) {
+                if (!cred.AttemptRefresh (onSuccess, onFailure, Token)) {
                     onFailure (cred);
                 }
             }
@@ -223,24 +249,19 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            if (CredType == CredTypeEnum.OAuth2 && null == Oauth2RefreshTimer) {
-                Oauth2RefreshTimer = new NcTimer ("McCred:Oauth2RefreshTimer", state => {
-                    foreach (var cred in McCred.QueryAllOauth2()) {
-                        PossiblyRefreshToken (cred);
-                    }
-                }, null, KOauth2RefreshIntervalSecs, KOauth2RefreshIntervalSecs);
-                Oauth2RefreshTimer.Stfu = true;
+            if (CredType == CredTypeEnum.OAuth2) {
+                StartOauthRefreshTimer ();
             }
             return base.Insert ();
         }
 
-        private static List<McCred> QueryAllOauth2 ()
+        public static List<McCred> QueryAllOauth2 ()
         {
             return NcModel.Instance.Db.Query<McCred> (
                 "SELECT * FROM McCred WHERE CredType = ?", CredTypeEnum.OAuth2);
         }
 
-        public bool AttemptRefresh (Action<McCred> onSuccess, Action<McCred> onFailure)
+        public bool AttemptRefresh (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
         {
             switch (CredType) {
             case CredTypeEnum.Password:
@@ -248,7 +269,7 @@ namespace NachoCore.Model
             case CredTypeEnum.OAuth2:
                 var account = McAccount.QueryById<McAccount> (AccountId);
                 if (account.AccountService == McAccount.AccountServiceEnum.GoogleDefault) {
-                    RefreshOAuth2Google (onSuccess, onFailure);
+                    RefreshOAuth2Google (onSuccess, onFailure, Token);
                     return true;
                 }
                 Log.Error (Log.LOG_BACKEND, "Unable to do OAUTH2 refresh for {0}", account.AccountService.ToString ());
@@ -272,7 +293,7 @@ namespace NachoCore.Model
             public string refresh_token { get; set; }
         }
 
-        private async Task<bool> TryRefresh ()
+        private async Task<bool> TryRefresh (CancellationToken Token)
         {
             var handler = new NativeMessageHandler ();
             var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
@@ -283,7 +304,7 @@ namespace NachoCore.Model
             var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
             var httpRequest = new HttpRequestMessage (HttpMethod.Post, requestUri);
             try {
-                var httpResponse = await client.SendAsync (httpRequest, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
+                var httpResponse = await client.SendAsync (httpRequest, HttpCompletionOption.ResponseContentRead, Token);
                 if (httpResponse.StatusCode == System.Net.HttpStatusCode.OK) {
                     var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
                     var response = JsonConvert.DeserializeObject<OAuth2RefreshRespose> (jsonResponse);
@@ -309,9 +330,9 @@ namespace NachoCore.Model
             }
         }
 
-        private async void RefreshOAuth2Google (Action<McCred> onSuccess, Action<McCred> onFailure)
+        private async void RefreshOAuth2Google (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
         {    
-            bool result = await TryRefresh ();
+            bool result = await TryRefresh (Token);
             if (result) {
                 onSuccess (this);
             } else {
