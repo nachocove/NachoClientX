@@ -150,13 +150,17 @@ namespace SQLite
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 		internal static readonly Sqlite3DatabaseHandle NullHandle = default(Sqlite3DatabaseHandle);
 
+		public DateTime LastAccess { get; set; }
+
+		public int GCSeconds { get; set; }
+
 		public string DatabasePath { get; private set; }
 
 		public bool TimeExecution { get; set; }
 
 		public bool Trace { get; set; }
 
-        public int TraceThreshold { get; set; }
+		public int TraceThreshold { get; set; }
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
@@ -263,6 +267,11 @@ namespace SQLite
 			return bytes;
 		}
 #endif
+		public virtual bool SetLastAccess ()
+		{
+			LastAccess = DateTime.Now;
+			return true;
+		}
 
         /// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
@@ -2228,7 +2237,7 @@ namespace SQLite
 			if (_conn.Trace) {
 				Debug.WriteLine ("Executing Query: " + this);
 			}
-
+			var lastAccess = DateTime.Now;
 			var stmt = Prepare ();
 			try
 			{
@@ -2238,8 +2247,11 @@ namespace SQLite
 					var name = SQLite3.ColumnName16 (stmt, i);
 					cols [i] = map.FindColumn (name);
 				}
-			
+				var bumpSeconds = Math.Max (1, _conn.GCSeconds/4);
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+					if (0 < _conn.GCSeconds && DateTime.Now.AddSeconds (-bumpSeconds) > lastAccess) {
+						_conn.SetLastAccess ();
+					}
 					var obj = Activator.CreateInstance(map.MappedType);
 					for (int i = 0; i < cols.Length; i++) {
 						if (cols [i] == null)
