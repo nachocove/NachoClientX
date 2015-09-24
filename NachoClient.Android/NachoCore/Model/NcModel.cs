@@ -124,7 +124,7 @@ namespace NachoCore.Model
                             SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
                             storeDateTimeAsTicks: true);
                         db.BusyTimeout = TimeSpan.FromSeconds (10.0);
-                        db.TraceThreshold = 150;
+                        db.TraceThreshold = 500;
                         NcAssert.True (DbConns.TryAdd (threadId, db));
                     }
                     if (db.SetLastAccess ()) {
