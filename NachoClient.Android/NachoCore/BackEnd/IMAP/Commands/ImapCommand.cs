@@ -120,8 +120,8 @@ namespace NachoCore.IMAP
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
                 serverFailedGenerally = true;
-            } catch (AuthenticationException) {
-                Log.Info (Log.LOG_IMAP, "AuthenticationException");
+            } catch (AuthenticationException ex) {
+                Log.Info (Log.LOG_IMAP, "AuthenticationException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
             } catch (ServiceNotAuthenticatedException) {
