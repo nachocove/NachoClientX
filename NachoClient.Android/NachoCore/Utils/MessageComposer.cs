@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoPlatform;
 using HtmlAgilityPack;
+using MimeKit;
 
 namespace NachoCore.Utils
 {
@@ -17,6 +18,8 @@ namespace NachoCore.Utils
 
     public class MessageComposer : MessageDownloadDelegate
     {
+
+        #region Properties
 
         public MessageComposerDelegate Delegate;
         public readonly McAccount Account;
@@ -54,10 +57,18 @@ namespace NachoCore.Utils
         MessageDownloader MainMessageDownloader;
         MessageDownloader RelatedMessageDownloader;
 
+        #endregion
+
+        #region Constructors
+
         public MessageComposer (McAccount account)
         {
             Account = account;
         }
+
+        #endregion
+
+        #region Prepare Message
 
         public void StartPreparingMessage ()
         {
@@ -162,7 +173,6 @@ namespace NachoCore.Utils
                 PrepareMessageBodyUsingRelatedBundle (relatedBundle);
             }
         }
-
 
         public void MessageDownloadDidFinish (MessageDownloader downloader)
         {
@@ -324,6 +334,116 @@ namespace NachoCore.Utils
             }
             return null;
         }
+
+        #endregion
+
+        #region Save Message
+
+        public void Save (string html)
+        {
+            var mime = BuildMimeMessage (html);
+            McBody body;
+            if (Message.BodyId != 0) {
+                body = McBody.QueryById<McBody> (Message.BodyId);
+                body.UpdateData ((FileStream stream) => {
+                    mime.WriteTo (stream);
+                });
+            } else {
+                body = McBody.InsertFile (Account.Id, McAbstrFileDesc.BodyTypeEnum.MIME_4, (FileStream stream) => {
+                    mime.WriteTo (stream);
+                });
+            }
+            Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
+                var message = record as McEmailMessage;
+                message.Subject = Message.Subject;
+                message.To = Message.To;
+                message.Cc = Message.Cc;
+                message.Bcc = Message.Bcc;
+                message.Intent = Message.Intent;
+                message.IntentDate = Message.IntentDate;
+                message.IntentDateType = Message.IntentDateType;
+                Message.BodyId = body.Id;
+                return true;
+            });
+            // TODO: update or invalidate bundle
+        }
+
+        public MimeMessage BuildMimeMessage (string html)
+        {
+            var toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, null, Message.To);
+            var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, null, Message.To);
+            var bccList = EmailHelper.AddressList (NcEmailAddress.Kind.Bcc, null, Message.To);
+            var mime = EmailHelper.CreateMessage (Account, toList, ccList, bccList);
+            mime.Subject = Message.Subject ?? "";
+            var doc = new HtmlDocument ();
+            doc.LoadHtml (html);
+            var serializer = new HtmlTextSerializer (doc);
+            var alternative = new MultipartAlternative ();
+            var plainPart = new TextPart ("plain");
+            plainPart.Text = serializer.Serialize ();
+            alternative.Add (plainPart);
+            var htmlPart = HtmlPart (doc);
+            alternative.Add (htmlPart);
+            var attachments = McAttachment.QueryByItemId (Message);
+            if (attachments.Count > 0) {
+                var mixed = new Multipart ();
+                mixed.Add (alternative);
+                foreach (var attachment in attachments) {
+                    var attachmentPart = new MimePart ();
+                    // TODO: populate attachment part
+                    mixed.Add (attachmentPart);
+                }
+                mime.Body = mixed;
+            } else {
+                mime.Body = alternative;
+            }
+            return mime;
+        }
+
+        MimeEntity HtmlPart (HtmlDocument doc)
+        {
+            bool hasRelatedParts = false;
+            var related = new MultipartRelated ();
+            var htmlPart = new TextPart ("html");
+            related.Root = htmlPart;
+            var stack = new List<HtmlNode> ();
+            HtmlNode node;
+            stack.Add (doc.DocumentNode);
+            while (stack.Count > 0) {
+                node = stack [0];
+                stack.RemoveAt (0);
+                if (node.NodeType == HtmlNodeType.Element) {
+                    if (node.Attributes.Contains ("nacho-tag")) {
+                        node.Remove ();
+                    }
+                    if (node.Name.Equals ("img")) {
+                        if (node.Attributes.Contains ("nacho-bundle-entry")) {
+                            var entryName = node.Attributes ["nacho-bundle-entry"];
+                            hasRelatedParts = true;
+                            var attachment = new MimePart();
+                            // TODO: populate attachment part
+                            attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
+                            related.Add (attachment);
+                            node.SetAttributeValue ("src", "cid:" + attachment.ContentId);
+                            node.Attributes.Remove ("nacho-bundle-entry");
+                        }
+                    }
+                }
+                foreach (var child in node.ChildNodes) {
+                    stack.Add (child);
+                }
+            }
+            using (var writer = new StringWriter ()) {
+                doc.Save (writer);
+                htmlPart.Text = writer.ToString ();
+            }
+            if (hasRelatedParts) {
+                return related;
+            }
+            return htmlPart;
+        }
+
+        #endregion
 
     }
 }

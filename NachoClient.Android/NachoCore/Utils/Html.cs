@@ -82,9 +82,22 @@ namespace NachoCore.Utils
 
         #region Constructors
 
+        public HtmlTextSerializer (string html)
+        {
+            Document = new HtmlDocument ();
+            Document.LoadHtml (html);
+            CommonInit ();
+
+        }
+
         public HtmlTextSerializer (HtmlDocument document)
         {
             Document = document;
+            CommonInit ();
+        }
+
+        void CommonInit ()
+        {
             PushState ();
             Text = "";
         }

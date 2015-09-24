@@ -229,6 +229,8 @@ namespace NachoClient.iOS
         public void Send (object sender, EventArgs e)
         {
             View.EndEditing (true);
+            // TODO: preflight checks like size
+            // TODO: offer option to resize images
             // TODO: send (can happen in background)
             if (ComposeDelegate != null) {
                 ComposeDelegate.MessageComposeViewDidBeginSend (this);
@@ -269,7 +271,8 @@ namespace NachoClient.iOS
         public void Save (UIAlertAction obj)
         {
             CloseAlertController = null;
-            // TODO: save message (can happen in background)
+            var html = GetHtmlContent ();
+            Composer.Save (html);
             if (ComposeDelegate != null) {
                 ComposeDelegate.MessageComposeViewDidCancel (this);
             }
@@ -348,6 +351,8 @@ namespace NachoClient.iOS
         }
 
         // ??
+        // I think this is when the user starts typing an email adderess and then clears it.
+        // Since we don't change anything when they start typing, there's nothing to change if the clear.
         public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
             // old implementation did nothing
@@ -427,6 +432,7 @@ namespace NachoClient.iOS
 
             if (attachment != null) {
                 attachment.ItemId = Composer.Message.Id;
+                attachment.Update ();
                 HeaderView.AttachmentsView.Append (attachment);
                 this.DismissViewController (true, null);
             } else {
@@ -445,6 +451,7 @@ namespace NachoClient.iOS
         public void Append (McAttachment attachment)
         {
             attachment.ItemId = Composer.Message.Id;
+            attachment.Update ();
             HeaderView.AttachmentsView.Append (attachment);
         }
 
@@ -594,7 +601,9 @@ namespace NachoClient.iOS
         [Foundation.Export("scrollViewWillBeginDragging:")]
         public void DraggingStarted (UIScrollView scrollView)
         {
-            UpdateScrollViewSize ();
+            // This causes the black box
+            // When else is a good time to update the scroll size?
+            //UpdateScrollViewSize ();
         }
 
 //        [Foundation.Export("scrollViewDidScroll:")]
@@ -625,6 +634,13 @@ namespace NachoClient.iOS
             PresentViewController (quickViewController, animated, null);
         }
 
+        private string GetHtmlContent ()
+        {
+            // This is a sync call with UIWebView, but will be async with WKWebView,
+            // which could cause havoc with the design of upstream callers
+            return "<!DOCTYPE html>\n" + WebView.EvaluateJavascript ("document.documentElement.outerHTML");
+        }
+
         #endregion
 
         #region Header View
@@ -636,10 +652,7 @@ namespace NachoClient.iOS
             UpdateHeaderCcView ();
             UpdateHeaderBccView ();
             UpdateHeaderIntentView ();
-            var attachments = McAttachment.QueryByItemId (Composer.Message);
-            foreach (var attachment in attachments) {
-                HeaderView.AttachmentsView.Append (attachment);
-            }
+            UpdateHeaderAttachmentsView ();
         }
 
         private void UpdateHeaderToView ()
@@ -677,6 +690,15 @@ namespace NachoClient.iOS
         private void UpdateHeaderIntentView ()
         {
             HeaderView.IntentView.ValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
+        }
+
+        private void UpdateHeaderAttachmentsView ()
+        {
+            HeaderView.AttachmentsView.Clear ();
+            var attachments = McAttachment.QueryByItemId (Composer.Message);
+            foreach (var attachment in attachments) {
+                HeaderView.AttachmentsView.Append (attachment);
+            }
         }
 
         #endregion

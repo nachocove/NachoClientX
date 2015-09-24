@@ -119,7 +119,7 @@ namespace NachoClient.iOS
 
         bool ShouldHideIntent {
             get {
-                return !HasOpenedSubject;
+                return !HasOpenedSubject && String.IsNullOrEmpty(SubjectField.Text);
             }
         }
 

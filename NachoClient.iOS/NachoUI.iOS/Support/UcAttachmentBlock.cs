@@ -266,6 +266,17 @@ namespace NachoClient.iOS
             }
         }
 
+        public void Clear ()
+        {
+            foreach (var cell in list) {
+                cell.RemoveFromSuperview ();
+                cell.Dispose ();
+            }
+            list.Clear ();
+            SetNeedsLayout ();
+            ConfigureView ();
+        }
+
         /// Adjusts x & y on the top line of a view
         protected void AdjustXY (UIView view, nfloat X, nfloat Y)
         {
