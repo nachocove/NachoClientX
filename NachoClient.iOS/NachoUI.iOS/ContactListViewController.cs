@@ -219,9 +219,6 @@ namespace NachoClient.iOS
                 destinationViewController.account = a;
                 return;
             }
-            if (segue.Identifier.Equals ("SegueToNachoNow")) {
-                return;
-            }
             if (segue.Identifier.Equals ("ContactsToQuickMessageCompose")) {
                 var h = sender as SegueHolder;
                 MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;

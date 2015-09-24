@@ -104,7 +104,7 @@ namespace NachoCore.Utils
             // If it does not exist, we save the current Cognito id into the file. After
             // the 1st time, we use the id in the file as the client id. Note that we 
             // still need to talk to Cognito in order to get the session token.
-            if (UserIdFile.SharedInstance.Exists ()) {
+            if (UserIdFile.SharedInstance.Read () != null) {
                 FreshInstall = false;
             } else {
                 // Save the current Cognito id as client id

@@ -277,6 +277,7 @@ namespace Test.iOS
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
             var deviceAccount = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Device,
+                AccountCapability = McAccount.AccountCapabilityEnum.CalReader,
             };
             deviceAccount.Insert ();
             // turn off telemetry logging for tests

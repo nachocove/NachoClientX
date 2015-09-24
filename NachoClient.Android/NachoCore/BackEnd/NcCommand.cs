@@ -55,12 +55,6 @@ namespace NachoCore
         protected NcResult FailureInd;
         protected Object LockObj = new Object ();
 
-        public enum AutoDFailureReason : uint
-        {
-            CannotConnectToServer,
-            CannotFindServer
-        }
-
         protected enum ResolveAction
         {
             None,
@@ -244,7 +238,7 @@ namespace NachoCore
                 }
                 if (!HasCompleted) {
                     HasCompleted = true;
-                    Sm.PostEvent ((uint)SmEvt.E.Success, "ASWAITS");
+                    Sm.PostEvent ((uint)SmEvt.E.Success, "NCWAITS");
                 }
             }
         }

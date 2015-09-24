@@ -16,6 +16,7 @@ namespace NachoCore.IMAP
         public ImapDiscoverCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
             RedactProtocolLogFunc = RedactProtocolLog;
+            DontReportCommResult = BEContext.ProtocolState.ImapDiscoveryDone ? false : true;
         }
 
         public string RedactProtocolLog (bool isRequest, string logData)
@@ -36,10 +37,13 @@ namespace NachoCore.IMAP
 
         private Event ExecuteCommandInternal ()
         {
+            bool Initial = !BEContext.ProtocolState.ImapDiscoveryDone;
+
             Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
+            bool serverFailedGenerally = false;
             try {
                 return TryLock (Client.SyncRoot, KLockTimeout, () => {
                     if (Client.IsConnected) {
@@ -57,13 +61,23 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
                 errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL2", AutoDFailureReason.CannotFindServer);
+                // this can't (shouldn't?) really happen except if Initial=true
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
+                if (Initial) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPURICONF", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPURLHARD");
+                }
                 errResult.Message = ex.Message;
             } catch (SocketException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
+                if (Initial) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMP");
+                }
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: AuthenticationException {0}", ex.Message);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
@@ -73,13 +87,14 @@ namespace NachoCore.IMAP
                 evt =  Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
                 errResult.Message = ex.Message;
             } catch (InvalidOperationException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
                 evt =  Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
                 errResult.Message = ex.Message;
             } catch (ImapProtocolException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapProtocolException {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOEXTEMP");
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapCommandException {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCOMMEXTEMP");
@@ -88,14 +103,23 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
+                if (Initial) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
+                } else {
+                    evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPUNKHARD");
+                }
                 errResult.Message = ex.Message;
+                serverFailedGenerally = true;
             } finally {
+                ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
-            StatusInd (errResult);
+            if (Initial) {
+                StatusInd (errResult);
+            }
             return evt;
         }
 
@@ -156,7 +180,10 @@ namespace NachoCore.IMAP
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
                     var parts = username.Split ('@');
-                    if (DomainIsOrEndsWith(parts [1].ToLowerInvariant (), McServer.ICloud_Suffix)) {
+                    var domain = parts [1].ToLowerInvariant ();
+                    if (DomainIsOrEndsWith (domain, McServer.ICloud_Suffix) ||
+                        DomainIsOrEndsWith (domain, McServer.ICloud_Suffix2) ||
+                        DomainIsOrEndsWith (domain, McServer.ICloud_Suffix3)) {
                         username = parts [0];
                     }
                 }

@@ -839,6 +839,182 @@ namespace Test.Common
             Assert.AreEqual (contact2.Id, contacts2 [0].Id);
             Assert.AreEqual (contact4.Id, contacts2 [1].Id);
         }
+
+        private void CheckSameMcContactCollection (List<McContact> expected, List<McContact> actual)
+        {
+            Assert.AreEqual (expected.Count, actual.Count, "McContact.QueryByIds returned the wrong number of objects");
+            foreach (var expectedContact in expected) {
+                bool foundMatch = false;
+                foreach (var actualContact in actual) {
+                    if (expectedContact.Id == actualContact.Id) {
+                        foundMatch = true;
+                        Assert.AreEqual (expectedContact.FirstName, actualContact.FirstName);
+                        Assert.AreEqual (expectedContact.LastName, actualContact.LastName);
+                        Assert.AreEqual (expectedContact.CompanyName, actualContact.CompanyName);
+                        break;
+                    }
+                }
+                Assert.True (foundMatch, "McContact.QueryByIds returned the wrong set of contacts");
+            }
+        }
+
+        [Test]
+        public void TestQueryByIds ()
+        {
+            var shouldBeFound = new List<McContact> ();
+            var shouldNotBeFound = new List<McContact> ();
+            for (int i = 0; i < 10; ++i) {
+                var contact = new McContact () {
+                    AccountId = 1,
+                    FirstName = "Joe",
+                    LastName = string.Format ("Smith{0}", i),
+                    CompanyName = "Find Me Inc.",
+                };
+                contact.Insert ();
+                shouldBeFound.Add (contact);
+                contact = new McContact () {
+                    AccountId = 1,
+                    FirstName = "John",
+                    LastName = string.Format ("Doe{0}", i),
+                    CompanyName = "Secret Corp.",
+                };
+                contact.Insert ();
+                shouldNotBeFound.Add (contact);
+            }
+
+            var shouldBeEmpty = McContact.QueryByIds (new List<long> ());
+            Assert.AreEqual (0, shouldBeEmpty.Count, "McContact.QueryByIds(long) returned something when given an empty list to search");
+            shouldBeEmpty = McContact.QueryByIds (new List<string> ());
+            Assert.AreEqual (0, shouldBeEmpty.Count, "McContact.QueryByIds(string) returned something when given an empty list to search");
+            shouldBeEmpty = McContact.QueryByIds ((new long[] { 1000000, 2000000 }).ToList ());
+            Assert.AreEqual (0, shouldBeEmpty.Count, "McContact.QueryByIds(long) returned something when given a list of bogus IDs");
+            shouldBeEmpty = McContact.QueryByIds ((new string[] { "1000000", "2000000" }).ToList ());
+            Assert.AreEqual (0, shouldBeEmpty.Count, "McContact.QueryByIds(string) returned something when given a list of bogus IDs");
+
+            var contactIdsLong = new List<long> ();
+            var contactIdsString = new List<string> ();
+            foreach (var contact in shouldBeFound) {
+                contactIdsLong.Add (contact.Id);
+                contactIdsString.Add (contact.Id.ToString ());
+            }
+            // Add a couple of bogus IDs, which should just be ignored.
+            contactIdsLong.Add (1000000);
+            contactIdsLong.Add (2000000);
+            contactIdsString.Add ("1000000");
+            contactIdsString.Add ("2000000");
+
+            var queryResult = McContact.QueryByIds (contactIdsLong);
+            CheckSameMcContactCollection (shouldBeFound, queryResult);
+
+            queryResult = McContact.QueryByIds (contactIdsString);
+            CheckSameMcContactCollection (shouldBeFound, queryResult);
+        }
+
+        [Test]
+        public void TestSearchAllContactsByName ()
+        {
+            var expectedSmith = new List<McContact> ();
+            var expectedPet = new List<McContact> ();
+            var expectedJ = new List<McContact> ();
+
+            var contact = new McContact () {
+                AccountId = 1,
+                FirstName = "Joe",
+                LastName = "Smith",
+                CompanyName = "",
+            };
+            contact.Insert ();
+            expectedSmith.Add (contact);
+            expectedJ.Add (contact);
+
+            contact = new McContact () {
+                AccountId = 1,
+                FirstName = "PETER",
+                LastName = "PIPER",
+                CompanyName = "Pepper Pickers",
+            };
+            contact.Insert ();
+            expectedPet.Add (contact);
+
+            contact = new McContact () {
+                AccountId = 1,
+                FirstName = "janice",
+                LastName = "peterson",
+                CompanyName = "smithsonian",
+            };
+            contact.Insert ();
+            expectedSmith.Add (contact);
+            expectedPet.Add (contact);
+            expectedJ.Add (contact);
+
+            contact = new McContact () {
+                AccountId = 1,
+                FirstName = "Smitty-John",
+                MiddleName = "Peter",
+                LastName = "Watson-Smith",
+                CompanyName = "Goldstein, Smith, Peterson & Johnson, LLC",
+            };
+
+            var searchResult = McContact.SearchAllContactsByName ("xyz");
+            Assert.AreEqual (0, searchResult.Count, "McContact.SearchAllContactsByName returned something for a string that shouldn't have matched anything");
+
+            searchResult = McContact.SearchAllContactsByName ("smith");
+            CheckSameMcContactCollection (expectedSmith, searchResult);
+
+            searchResult = McContact.SearchAllContactsByName ("peT");
+            CheckSameMcContactCollection (expectedPet, searchResult);
+
+            searchResult = McContact.SearchAllContactsByName ("j");
+            CheckSameMcContactCollection (expectedJ, searchResult);
+        }
+
+        private void CheckSameMcContactEmailAttributeCollection (List<McContactEmailAddressAttribute> expected, List<McContactEmailAddressAttribute> actual)
+        {
+            Assert.AreEqual (expected.Count, actual.Count, "McContact.SearchAllContactEmail returned the wrong number of objects");
+            foreach (var expectedContact in expected) {
+                bool foundMatch = false;
+                foreach (var actualContact in actual) {
+                    if (expectedContact.Id == actualContact.Id) {
+                        foundMatch = true;
+                        Assert.AreEqual (expectedContact.Value, actualContact.Value);
+                        break;
+                    }
+                }
+                Assert.True (foundMatch, "McContact.SearchAllContactEmail returned the wrong set of objects");
+            }
+        }
+
+        [Test]
+        public void TestSearchAllContactEmail ()
+        {
+            var expectedNacho = new List<McContactEmailAddressAttribute> ();
+
+            var email = new McContactEmailAddressAttribute () {
+                AccountId = 1,
+                Value = "chrisp@nachocove.com",
+            };
+            email.Insert ();
+            expectedNacho.Add (email);
+
+            email = new McContactEmailAddressAttribute () {
+                AccountId = 1,
+                Value = "random.guy@gmail.com",
+            };
+            email.Insert ();
+
+            email = new McContactEmailAddressAttribute () {
+                AccountId = 1,
+                Value = "NachoSupport@freshdesk.com",
+            };
+            email.Insert ();
+            expectedNacho.Add (email);
+
+            var searchResult = McContact.SearchAllContactEmail ("xyz");
+            Assert.AreEqual (0, searchResult.Count, "McContact.SearchAllContactEmail() return something for a search that shouldn't have matched anything");
+
+            searchResult = McContact.SearchAllContactEmail ("nacho");
+            CheckSameMcContactEmailAttributeCollection (expectedNacho, searchResult);
+        }
     }
 }
 

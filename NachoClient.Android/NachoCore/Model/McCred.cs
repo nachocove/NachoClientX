@@ -125,7 +125,7 @@ namespace NachoCore.Model
             if (-1 == slashIndex) {
                 user = username;
             } else if (username.Length == (slashIndex + 1)) {
-                user = username.Substring (0, slashIndex);
+                domain = username.Substring (0, slashIndex);
             } else {
                 domain = username.Substring (0, slashIndex);
                 user = username.Substring (slashIndex + 1);

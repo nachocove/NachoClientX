@@ -49,9 +49,11 @@ namespace NachoCore.ActiveSync
                 FoldersInRequest.Add (perFolder.Folder);
                 PendingList.AddRange (perFolder.Commands);
             }
-            foreach (var pending in PendingList) {
-                pending.MarkDispached ();
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var pending in PendingList) {
+                    pending.MarkDispached ();
+                }
+            });
         }
 
         private XElement ToEmailDelete (McPending pending)

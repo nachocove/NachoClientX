@@ -25,6 +25,8 @@ namespace NachoClient.iOS
         List<McServer> SavedList;
         List<McServer> ServerList;
 
+        public delegate void onValidateCallback (McCred creds, List<McServer> servers);
+
         public AdvancedSettingsViewController (IntPtr handle) : base (handle)
         {
         }
@@ -53,10 +55,10 @@ namespace NachoClient.iOS
             var rect = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             switch (account.AccountType) {
             case McAccount.AccountTypeEnum.Exchange:
-                loginFields = new ExchangeFields (account, LoginProtocolControl.Prompt.EditInfo, null, null, rect, onValidate);
+                loginFields = new ExchangeFields (account, null, null, rect, onValidate);
                 break;
             case McAccount.AccountTypeEnum.IMAP_SMTP:
-                loginFields = new IMapFields (account, LoginProtocolControl.Prompt.EditInfo, null, null, rect, onValidate);
+                loginFields = new IMapFields (account, null, null, rect, onValidate);
                 break;
             default:
                 NcAssert.CaseError ();

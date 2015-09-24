@@ -63,6 +63,13 @@ namespace NachoCore
             WillDelete,
         };
 
+        public enum AutoDFailureReasonEnum : uint
+        {
+            Unknown,
+            CannotConnectToServer,
+            CannotFindServer,
+        }
+
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
         private Dictionary<int, bool> CredReqActive;
@@ -177,6 +184,9 @@ namespace NachoCore
                 service.Stop ();
                 return NcResult.OK ();
             });
+            lock (CredReqActive) {
+                CredReqActive.Remove (accountId);
+            }
         }
 
         public void Remove (int accountId)
@@ -671,11 +681,28 @@ namespace NachoCore
             });
         }
 
+        public List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> BackEndStates (int accountId)
+        {
+            var states = new List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> ();
+            ApplyAcrossServices (accountId, "BackEndStates", (service) => {
+                states.Add (new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (service.BackEndState, service.Capabilities));
+                return NcResult.OK ();
+            });
+            return states;
+        }
+
         public BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             var result = ApplyToService (accountId, capabilities,
                 (service) => NcResult.OK (service.BackEndState));
             return result.isOK () ? result.GetValue<BackEndStateEnum> () : BackEndStateEnum.NotYetStarted;
+        }
+
+        public AutoDFailureReasonEnum AutoDFailureReason (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            var result = ApplyToService (accountId, capabilities,
+                (service) => NcResult.OK (service.AutoDFailureReason));
+            return result.isOK () ? result.GetValue<AutoDFailureReasonEnum> () : AutoDFailureReasonEnum.Unknown;
         }
 
         public AutoDInfoEnum AutoDInfo (int accountId, McAccount.AccountCapabilityEnum capabilities)
@@ -742,7 +769,7 @@ namespace NachoCore
             }
         }
 
-        public void ServConfReq (NcProtoControl sender, object arg)
+        public void ServConfReq (NcProtoControl sender, BackEnd.AutoDFailureReasonEnum arg)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
                 Owner.ServConfReq (sender.AccountId, sender.Capabilities, arg);
