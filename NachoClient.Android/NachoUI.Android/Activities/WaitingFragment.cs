@@ -46,6 +46,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+            handleStatusEnums ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -57,13 +58,17 @@ namespace NachoClient.AndroidClient
 
         void SyncCompleted (int accountId)
         {
+            if (null != account) {
+                account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
+                account.Update ();
+            }
             var parent = (LaunchActivity)Activity;
             parent.WaitingFinished ();
         }
 
         public void handleStatusEnums ()
         {
-            if (BackEndStateEnum.PostAutoDPostInboxSync == BackEnd.Instance.BackEndState (account.Id, account.AccountCapability)) {
+            if (BackEndStateEnum.PostAutoDPostInboxSync == BackEnd.Instance.BackEndState (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter)) {
                 var parent = (LaunchActivity)Activity;
                 parent.WaitingFinished ();
             }
@@ -118,6 +123,11 @@ namespace NachoClient.AndroidClient
             }
             if (NcResult.SubKindEnum.Info_CertAskReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: CertAskCallback Status Ind");
+                handleStatusEnums ();
+                return;
+            }
+            if (NcResult.SubKindEnum.Info_BackEndStateChanged == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Info_BackEndStateChanged");
                 handleStatusEnums ();
                 return;
             }

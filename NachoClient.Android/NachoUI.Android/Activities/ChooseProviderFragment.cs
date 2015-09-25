@@ -109,14 +109,14 @@ namespace NachoClient.AndroidClient
 
         Data[] data = new Data[] {
             new Data { i = Resource.Drawable.avatar_msexchange, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_gmail, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_googleapps, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_hotmail, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_icloud, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_imap, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_office365, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_outlook, e = McAccount.AccountServiceEnum.Exchange },
-            new Data { i = Resource.Drawable.avatar_yahoo, e = McAccount.AccountServiceEnum.Exchange },
+            new Data { i = Resource.Drawable.avatar_gmail, e = McAccount.AccountServiceEnum.GoogleDefault },
+            new Data { i = Resource.Drawable.avatar_googleapps, e = McAccount.AccountServiceEnum.GoogleExchange },
+            new Data { i = Resource.Drawable.avatar_hotmail, e = McAccount.AccountServiceEnum.HotmailExchange },
+            new Data { i = Resource.Drawable.avatar_icloud, e = McAccount.AccountServiceEnum.iCloud },
+            new Data { i = Resource.Drawable.avatar_imap, e = McAccount.AccountServiceEnum.IMAP_SMTP },
+            new Data { i = Resource.Drawable.avatar_office365, e = McAccount.AccountServiceEnum.Office365Exchange },
+            new Data { i = Resource.Drawable.avatar_outlook, e = McAccount.AccountServiceEnum.OutlookExchange },
+            new Data { i = Resource.Drawable.avatar_yahoo, e = McAccount.AccountServiceEnum.Yahoo },
         };
     }
 }
