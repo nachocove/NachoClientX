@@ -79,11 +79,13 @@ namespace NachoCore.Model
 
         public static void DeleteByEmailMessageId (Int64 emailMessageid)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             NcModel.Instance.Db.Query<McEmailMessageDependency> ("DELETE FROM McEmailMessageDependency WHERE EmailMessageId == ?", emailMessageid);
         }
 
         public static void DeleteByEmailAddressId (Int64 emailAddressId)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             NcModel.Instance.Db.Query<McEmailMessageDependency> ("DELETE FROM McEmailMessageDependency WHERE EmailAddressId == ?", emailAddressId);
         }
 

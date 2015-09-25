@@ -50,7 +50,9 @@ namespace Test.Common
             Assert.AreEqual (emailMessage.Id, score.ParentId);
 
             // Delete by parent id
-            McEmailMessageScore.DeleteByParentId (emailMessage.Id);
+            NcModel.Instance.RunInTransaction (() => {
+                McEmailMessageScore.DeleteByParentId (emailMessage.Id);
+            });
 
             // Make sure the query now fails
             var score2 = McEmailMessageScore.QueryById <McEmailMessageScore> (score.Id);
