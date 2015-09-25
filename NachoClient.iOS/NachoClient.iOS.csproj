@@ -241,6 +241,7 @@
     <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
+    <Folder Include="NachoCore\Model\McEmailAddress\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -854,9 +855,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress.cs">
-      <Link>NachoCore\Model\McEmailAddress.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McConference.cs">
       <Link>NachoCore\Model\McConference.cs</Link>
     </Compile>
@@ -945,9 +943,6 @@
     <Compile Include="NachoUI.iOS\NotesViewController.cs" />
     <Compile Include="NachoUI.iOS\NotesViewController.designer.cs">
       <DependentUpon>NotesViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\EmailAddressScore.cs">
-      <Link>NachoCore\Model\EmailAddressScore.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\IContactsTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\ContactsTableViewSource.cs" />
@@ -1671,6 +1666,12 @@
     <Compile Include="NachoUI.iOS\LikelyToReadViewController.cs" />
     <Compile Include="NachoUI.iOS\LikelyToReadViewController.designer.cs">
       <DependentUpon>LikelyToReadViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress\EmailAddressScore.cs">
+      <Link>NachoCore\Model\McEmailAddress\EmailAddressScore.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress\McEmailAddress.cs">
+      <Link>NachoCore\Model\McEmailAddress\McEmailAddress.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

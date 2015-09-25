@@ -73,6 +73,7 @@ namespace NachoCore.Model
 
         public void Touch()
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             LastModified = DateTime.UtcNow;
             NcModel.Instance.Db.Query<McBody> ("UPDATE McBody SET LastModified = ?", LastModified);
         }

@@ -550,7 +550,9 @@ namespace Test.Common
             CreateMcBody (mds, 1);
             var body = McBody.QueryById<McBody> (1);
             Assert.IsNotNull (body);
-            body.Touch ();
+            NcModel.Instance.RunInTransaction (() => {
+                body.Touch ();
+            });
         }
 
         [Test]
