@@ -191,7 +191,7 @@ namespace NachoClient.iOS
             accountInfoView.AddSubview (settingsButton);
 
             var unreadMessagesViewFrame = new CGRect (0, 120, accountInfoView.Frame.Width, 40);
-            var unreadMessagesView = new UnreadMessagesView (unreadMessagesViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked);
+            var unreadMessagesView = new UnreadMessagesView (unreadMessagesViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked, LikelyClicked);
             accountInfoView.AddSubview (unreadMessagesView);
 
             var yOffset = unreadMessagesView.Frame.Bottom;
@@ -239,6 +239,18 @@ namespace NachoClient.iOS
                 DismissViewController (false, null);
                 var nachoTabBar = Util.GetActiveTabBar ();
                 nachoTabBar.SwitchToDeferred ();
+            });
+        }
+
+        private void LikelyClicked (object sender)
+        {
+            // No double presses
+            switchAccountButton.UserInteractionEnabled = false;
+
+            Deactivate (null, (McAccount account) => {
+                DismissViewController (false, null);
+                var nachoTabBar = Util.GetActiveTabBar ();
+                nachoTabBar.SwitchToLikely ();
             });
         }
 

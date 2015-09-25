@@ -1668,6 +1668,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ScoringHelpers.cs">
       <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\LikelyToReadViewController.cs" />
+    <Compile Include="NachoUI.iOS\LikelyToReadViewController.designer.cs">
+      <DependentUpon>LikelyToReadViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

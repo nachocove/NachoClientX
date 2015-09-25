@@ -1,4 +1,4 @@
-// (C) Copyright 2013-2015 Nacho Cove, Inc.
+﻿// (C) Copyright 2015 Nacho Cove, Inc.
 using System;
 
 using Foundation;
@@ -7,9 +7,9 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public partial class DeferredViewController : MessageListViewController
+    public partial class LikelyToReadViewController : MessageListViewController
     {
-        public DeferredViewController (IntPtr handle) : base (handle)
+        public LikelyToReadViewController (IntPtr handle) : base (handle)
         {
             SetEmailMessages (GetNachoEmailMessages (NcApplication.Instance.Account.Id));
         }
@@ -29,10 +29,6 @@ namespace NachoClient.iOS
         {
             return true;
         }
-
-//        protected override void CustomizeBackButton ()
-//        {
-//            BackShouldSwitchToFolders ();
-//        }
     }
 }
+

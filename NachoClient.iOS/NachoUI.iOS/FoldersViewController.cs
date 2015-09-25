@@ -145,6 +145,9 @@ namespace NachoClient.iOS
             if ("SegueToDeferredList" == segue.Identifier) {
                 return;
             }
+            if ("SegueToLikelyToRead" == segue.Identifier) {
+                return;
+            }
             if (segue.Identifier == "SegueToCompose") {
                 var vc = (MessageComposeViewController)segue.DestinationViewController;
                 vc.SetAction (null, null);
@@ -327,6 +330,10 @@ namespace NachoClient.iOS
                 }
                 CreateTopFolderCell ("Hot List", topFolderCount, true, () => {
                     PerformSegue ("SegueToHotList", new SegueHolder (null));
+                });
+                topFolderCount += 1;
+                CreateTopFolderCell ("Likely To Read", topFolderCount, true, () => {
+                    PerformSegue ("SegueToLikelyToRead", new SegueHolder (null));
                 });
                 topFolderCount += 1;
                 CreateTopFolderCell ("Deferred Messages", topFolderCount, false, () => {
