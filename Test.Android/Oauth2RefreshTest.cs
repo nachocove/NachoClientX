@@ -139,8 +139,6 @@ namespace Test.iOS
 
         uint expirySecs = 1;
         OauthRefreshMockBE MockBe { get; set; }
-        McCred PassCred { get; set; }
-        McCred Oauth2Cred { get; set; }
 
         [SetUp]
         public void Setup ()
@@ -148,39 +146,38 @@ namespace Test.iOS
             Account = new McAccount () {
             };
             Account.Insert ();
-            Oauth2Cred = new McCred () {
+            Cred = new McCred () {
                 AccountId = Account.Id,
                 CredType = McCred.CredTypeEnum.OAuth2,
                 ExpirySecs = expirySecs,
                 Expiry = DateTime.UtcNow.AddSeconds (expirySecs),
             };
-            Oauth2Cred.Insert ();
+            Cred.Insert ();
             ProtoControl = new NcProtoControl (this, Account.Id);
             MockBe = new OauthRefreshMockBE ();
             MockBe.Reset ();
-            PassCred = new McCred () {
-                AccountId = Account.Id,
-                CredType = McCred.CredTypeEnum.Password,
-            };
-            PassCred.Insert ();
-            Cred = Oauth2Cred;
         }
 
         [TearDown]
         public void Teardown ()
         {
             Account.Delete ();
-            Oauth2Cred.Delete ();
-            PassCred.Delete ();
+            Cred.Delete ();
         }
 
         [Test]
         public void TestPasswordNoOauth ()
         {
-            Cred = PassCred;
+            var cred = Cred;
+            cred = cred.UpdateWithOCApply<McCred> ((record) => {
+                var target = (McCred)record;
+                target.CredType = McCred.CredTypeEnum.Password;
+                return true;
+            });
+            Assert.AreEqual (McCred.CredTypeEnum.Password, Cred.CredType);
             MockBe.CredReq (ProtoControl);
             Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
-            Assert.IsTrue (MockBe.RefreshMcCredCalled);
+            Assert.False (MockBe.RefreshMcCredCalled);
             Assert.IsTrue (MockBe.GetReqStatusNeedCredResp(Account.Id));
             // finish the request
             MockBe.FinishRequest (Cred, false);
