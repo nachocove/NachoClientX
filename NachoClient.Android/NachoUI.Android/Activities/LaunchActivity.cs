@@ -43,7 +43,13 @@ namespace NachoClient.AndroidClient
             if (ReadyToStart ()) {
                 Skip ();
             } else {
-                WelcomeFinished ();
+                var account = McAccount.GetAccountBeingConfigured ();
+                if (null == account) {
+                    WelcomeFinished ();
+                } else {
+                    var waitingFragment = WaitingFragment.newInstance (account);
+                    FragmentManager.BeginTransaction ().Replace (Resource.Id.content, waitingFragment).Commit ();
+                }
             }
 
         }

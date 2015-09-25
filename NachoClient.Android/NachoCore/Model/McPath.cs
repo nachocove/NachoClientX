@@ -153,6 +153,7 @@ namespace NachoCore.Model
 
         public static void DeleteNonFolderByParentId (int accountId, string parentId)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             NcModel.Instance.Db.Query<McPath> (
                 "DELETE FROM McPath WHERE " +
                 " likelihood (AccountId = ?, 1.0) AND " +
