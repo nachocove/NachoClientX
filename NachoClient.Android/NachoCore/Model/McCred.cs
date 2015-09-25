@@ -253,6 +253,7 @@ namespace NachoCore.Model
                         return false;
                     }
                     Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", response.expires_in);
+                    // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
                     UpdateOauth2 (response.access_token, 
                         string.IsNullOrEmpty (response.refresh_token) ? GetRefreshToken () : response.refresh_token,
                         uint.Parse (response.expires_in));
