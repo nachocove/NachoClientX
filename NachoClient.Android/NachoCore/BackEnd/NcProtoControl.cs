@@ -48,6 +48,7 @@ namespace NachoCore
                     state = RealBackEndState ();
                 }
                 if (BackEndStateEnum.CredWait == state) {
+                    // HACK HACK: Lie to the UI, if we're in CredWait, but we're waiting for an OAUTH2 refresh.
                     BackEnd.CredReqActiveState crState;
                     if (BackEnd.Instance.TryGetCredReqActiveState (AccountId, out crState)) {
                         if (BackEnd.CredReqActiveState.CredReqActive_AwaitingRefresh == crState) {
