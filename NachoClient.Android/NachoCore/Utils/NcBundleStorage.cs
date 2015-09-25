@@ -22,6 +22,7 @@ namespace NachoCore.Utils
         public abstract Uri RelativeUrlForPath (string path, string relativeToPath);
         public abstract Uri RelativeUrlForDocumentsPath (string path);
         public abstract Uri BaseUrl ();
+        public abstract void Delete ();
 
         public virtual string StringContentsForPath (string path)
         {
@@ -121,6 +122,10 @@ namespace NachoCore.Utils
         {
             var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             return new Uri (String.Format ("file://{0}/", documentsPath));
+        }
+
+        public override void Delete ()
+        {
         }
 
         public override string StringContentsForPath (string path)
@@ -229,6 +234,11 @@ namespace NachoCore.Utils
         public override Uri BaseUrl ()
         {
             return new Uri(String.Format("file://{0}/", RootPath));
+        }
+
+        public override void Delete ()
+        {
+            Directory.Delete (RootPath, true);
         }
 
         private string FullFilePathForLocalPath (string path)

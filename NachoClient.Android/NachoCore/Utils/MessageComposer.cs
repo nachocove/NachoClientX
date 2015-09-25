@@ -25,6 +25,7 @@ namespace NachoCore.Utils
         public readonly McAccount Account;
         public McEmailMessage Message;
         public McEmailMessageThread RelatedThread;
+        public McCalendar RelatedCalendarItem;
         public EmailHelper.Action Kind = EmailHelper.Action.Send;
         public List<McAttachment> InitialAttachments;
         public string InitialText;
@@ -68,7 +69,7 @@ namespace NachoCore.Utils
 
         #endregion
 
-        #region Prepare Message
+        #region Prepare Message for Compose
 
         public void StartPreparingMessage ()
         {
@@ -95,20 +96,31 @@ namespace NachoCore.Utils
         {
             // For a new message, we need to first save it to the database so we have an Id
             // that will be referenced by the bundle, attachments, etc.
+            if (RelatedThread != null) {
+                RelatedMessage = RelatedThread.FirstMessageSpecialCase ();
+                Message.ReferencedEmailId = RelatedMessage.Id;
+                Message.ReferencedIsForward = Kind == EmailHelper.Action.Forward;
+                Message.ReferencedBodyIsIncluded = true;
+                Message.Subject = EmailHelper.CreateInitialSubjectLine (Kind, RelatedMessage.Subject);
+                if (EmailHelper.IsReplyAction (Kind)) {
+                    EmailHelper.PopulateMessageRecipients (Account, Message, Kind, RelatedMessage);
+                }
+                // FIXME: was causing an error
+                //                var now = DateTime.UtcNow;
+                //                NcBrain.MessageReplyStatusUpdated (RelatedMessage, now, 0.1);
+            }
+            var mailbox = new MailboxAddress (Pretty.UserNameForAccount (Account), Account.EmailAddr);
+            Message.From = mailbox.ToString ();
             Message.Insert ();
             EmailHelper.SaveEmailMessageInDrafts (Message);
 
             // Now we need to start building the initial message.  It could be blank, it
             // could inlude a quick reply, or it could be quoting another message.
             if (RelatedThread != null) {
-                RelatedMessage = RelatedThread.FirstMessageSpecialCase ();
-                Message.Subject = EmailHelper.CreateInitialSubjectLine (Kind, RelatedMessage.Subject);
                 if (Kind == EmailHelper.Action.Forward) {
                     // FIXME: we may want to skip inline attachments here...gotta put everything together and test
                     // to see what works best
                     CopyAttachments (McAttachment.QueryByItemId (RelatedMessage));
-                } else if (EmailHelper.IsReplyAction(Kind)) {
-                    EmailHelper.PopulateMessageRecipients (Account, Message, Kind, RelatedMessage);
                 }
                 DownloadRelatedMessage ();
             } else {
@@ -337,11 +349,13 @@ namespace NachoCore.Utils
 
         #endregion
 
-        #region Save Message
+        #region Save Message 
 
-        public void Save (string html)
+        public MimeMessage Save (string html)
         {
             var mime = BuildMimeMessage (html);
+            var text = mime.GetTextBody (MimeKit.Text.TextFormat.Text);
+            var preview = text.Substring (0, Math.Min (text.Length, 256));
             McBody body;
             if (Message.BodyId != 0) {
                 body = McBody.QueryById<McBody> (Message.BodyId);
@@ -353,6 +367,13 @@ namespace NachoCore.Utils
                     mime.WriteTo (stream);
                 });
             }
+            if (Message.ReferencedEmailId != 0) {
+                var relatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.ReferencedEmailId);
+                // the referenced message may not exist anyore
+                if (relatedMessage != null) {
+                    EmailHelper.SetupReferences (ref mime, relatedMessage);
+                }
+            }
             Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
                 var message = record as McEmailMessage;
                 message.Subject = Message.Subject;
@@ -362,17 +383,21 @@ namespace NachoCore.Utils
                 message.Intent = Message.Intent;
                 message.IntentDate = Message.IntentDate;
                 message.IntentDateType = Message.IntentDateType;
-                Message.BodyId = body.Id;
+                message.BodyId = body.Id;
+                message.BodyPreview = preview;
+                message.DateReceived = mime.Date.DateTime;
+//                message.QRType = Message.QRType;
                 return true;
             });
-            // TODO: update or invalidate bundle
+            Bundle.Invalidate ();
+            return mime;
         }
 
         public MimeMessage BuildMimeMessage (string html)
         {
             var toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, null, Message.To);
-            var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, null, Message.To);
-            var bccList = EmailHelper.AddressList (NcEmailAddress.Kind.Bcc, null, Message.To);
+            var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, null, Message.Cc);
+            var bccList = EmailHelper.AddressList (NcEmailAddress.Kind.Bcc, null, Message.Bcc);
             var mime = EmailHelper.CreateMessage (Account, toList, ccList, bccList);
             mime.Subject = Message.Subject ?? "";
             var doc = new HtmlDocument ();
@@ -416,9 +441,12 @@ namespace NachoCore.Utils
                     if (node.Attributes.Contains ("nacho-tag")) {
                         node.Remove ();
                     }
+                    if (node.Attributes.Contains ("contenteditable")){
+                        node.Attributes.Remove ("contenteditable");
+                    }
                     if (node.Name.Equals ("img")) {
                         if (node.Attributes.Contains ("nacho-bundle-entry")) {
-                            var entryName = node.Attributes ["nacho-bundle-entry"];
+                            var entryName = node.Attributes ["nacho-bundle-entry"].Value;
                             hasRelatedParts = true;
                             var attachment = new MimePart();
                             // TODO: populate attachment part
@@ -445,6 +473,22 @@ namespace NachoCore.Utils
 
         #endregion
 
+        #region Send Message
+
+        public void Send (string html)
+        {
+            var mime = Save (html);
+            Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
+                var message = record as McEmailMessage;
+                message.Subject = EmailHelper.CreateSubjectWithIntent (mime.Subject, Message.Intent, Message.IntentDateType, Message.IntentDate);
+                return true;
+            });
+            EmailHelper.SendTheMessage (Message, RelatedCalendarItem);
+        }
+
+        #endregion
+
     }
+
 }
 

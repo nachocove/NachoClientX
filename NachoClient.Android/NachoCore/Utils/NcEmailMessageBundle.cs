@@ -331,6 +331,11 @@ namespace NachoCore.Utils
             CompleteBundleAfterParse ();
         }
 
+        public void Invalidate ()
+        {
+            Storage.Delete ();
+        }
+
         public void SetFullText (string text)
         {
             parsed = new ParseResult ();

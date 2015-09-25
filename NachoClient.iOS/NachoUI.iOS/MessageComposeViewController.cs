@@ -46,7 +46,6 @@ namespace NachoClient.iOS
         public MessageComposeViewDelegate ComposeDelegate;
         public bool StartWithQuickResponse;
         public readonly MessageComposer Composer;
-        public McCalendar RelatedCalendarItem;
         CompoundScrollView ScrollView;
         MessageComposeHeaderView HeaderView;
         UIWebView WebView;
@@ -133,7 +132,7 @@ namespace NachoClient.iOS
             HeaderView = new MessageComposeHeaderView (ScrollView.Bounds);
             HeaderView.Frame = new CGRect (0.0, 0.0, ScrollView.Bounds.Width, HeaderView.PreferredHeight);
             HeaderView.HeaderDelegate = this;
-            HeaderView.AttachmentsAllowed = RelatedCalendarItem == null;
+            HeaderView.AttachmentsAllowed = Composer.RelatedCalendarItem == null;
 //            var config = new WKWebViewConfiguration ();
 //            config.SuppressesIncrementalRendering = true;
 //            config.UserContentController.AddScriptMessageHandler (this, "nachoCompose");
@@ -152,20 +151,9 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-
             Composer.StartPreparingMessage ();
-
             UpdateHeaderView ();
-
             RegisterForNotifications ();
-
-            // FIXME: seeing an error in the logs for this...not critical for getthing things up and running
-//            if (null != Composer.RelatedThread) {
-//                var now = DateTime.UtcNow;
-//                var message = Composer.RelatedThread.FirstMessageSpecialCase ();
-//                NcBrain.MessageReplyStatusUpdated (message, now, 0.1);
-//            }
-
             if (!HasShownOnce) {
                 if (StartWithQuickResponse) {
                     ShowQuickResponses ();
@@ -232,6 +220,8 @@ namespace NachoClient.iOS
             // TODO: preflight checks like size
             // TODO: offer option to resize images
             // TODO: send (can happen in background)
+            var html = GetHtmlContent ();
+            Composer.Send (html);
             if (ComposeDelegate != null) {
                 ComposeDelegate.MessageComposeViewDidBeginSend (this);
             }
@@ -601,9 +591,7 @@ namespace NachoClient.iOS
         [Foundation.Export("scrollViewWillBeginDragging:")]
         public void DraggingStarted (UIScrollView scrollView)
         {
-            // This causes the black box
-            // When else is a good time to update the scroll size?
-            //UpdateScrollViewSize ();
+            UpdateScrollViewSize ();
         }
 
 //        [Foundation.Export("scrollViewDidScroll:")]

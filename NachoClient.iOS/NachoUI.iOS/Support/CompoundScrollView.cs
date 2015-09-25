@@ -93,6 +93,7 @@ namespace NachoClient.iOS
 
             public void DetermineContentSize ()
             {
+                Log.Info (Log.LOG_UI, "DetermineContentSize");
                 var size = new CGSize (Bounds.Width, 0.0f);
                 foreach (var subview in CompoundViews) {
                     var scrollView = ScrollViewForCompoundScrollView (subview);

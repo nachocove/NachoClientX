@@ -427,7 +427,7 @@ namespace NachoClient.iOS
             var calendarInvite = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != calendarInvite) {
                 var composeViewController = new MessageComposeViewController ();
-                composeViewController.RelatedCalendarItem  = calendarInvite;
+                composeViewController.Composer.RelatedCalendarItem  = calendarInvite;
                 composeViewController.Composer.Message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + calendarInvite.Subject);
                 composeViewController.Present ();
 
