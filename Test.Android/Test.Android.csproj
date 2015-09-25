@@ -143,6 +143,8 @@
     <Compile Include="ImapBodyDownloadTests.cs" />
     <Compile Include="NcPreFetchHintsTest.cs" />
     <Compile Include="LoginEventsTest.cs" />
+    <Compile Include="Oauth2RefreshTest.cs" />
+    <Compile Include="McCredTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -36,7 +36,9 @@ using System.Threading;
 
 namespace NachoCore
 {
-    public sealed class BackEnd : IBackEnd, INcProtoControlOwner
+    // This should be treated as a sealed class, although the sealed keyword is not here.
+    // We need to be able to inherit and override some functions for testing.
+    public class BackEnd : IBackEnd, INcProtoControlOwner
     {
         private static volatile BackEnd instance;
         private static object syncRoot = new Object ();
@@ -76,7 +78,7 @@ namespace NachoCore
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
 
-        CancellationTokenSource RefreshCancelSource { get; set; }
+        protected CancellationTokenSource RefreshCancelSource { get; set; }
 
         public enum CredReqActiveState
         {
@@ -84,7 +86,7 @@ namespace NachoCore
             CredReqActive_NeedUI,
         }
 
-        class CredReqActiveStatus
+        protected class CredReqActiveStatus
         {
             public CredReqActiveState State { get; set; }
 
@@ -105,7 +107,7 @@ namespace NachoCore
         /// key in the dictionary, we know we are processing a cred request. If the bool is true, this is a regular
         /// password refresh. If false, it's an OAUTH/2 refresh.
         /// </summary>
-        private Dictionary<int, CredReqActiveStatus> CredReqActive;
+        protected Dictionary<int, CredReqActiveStatus> CredReqActive;
 
         public NcPreFetchHints BodyFetchHints { get; set; }
 
@@ -165,7 +167,7 @@ namespace NachoCore
         }
 
         // For IBackEnd.
-        private BackEnd ()
+        protected BackEnd ()
         {
             // Adjust system settings.
             ServicePointManager.DefaultConnectionLimit = 25;
@@ -317,7 +319,7 @@ namespace NachoCore
             }, "ServerConfResp");
         }
 
-        public void CredResp (int accountId)
+        public virtual void CredResp (int accountId)
         {
             NcTask.Run (() => {
                 // Let every service know about the new creds.
@@ -797,19 +799,37 @@ namespace NachoCore
             });
         }
 
-        void TokenRefreshFailure (McCred cred)
+        protected bool NeedToPassReqToUi (int accountId)
         {
             lock (CredReqActive) {
                 CredReqActiveStatus status;
-                if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
-                    if (status.NeedCredResp) {
-                        InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (cred.AccountId));
+                if (CredReqActive.TryGetValue (accountId, out status)) {
+                    // We want to pass the request up to the UI in the following cases:
+                    // - the ProtoController asked for creds, and we failed.
+                    //   We should have refreshed long before this, so if we reach this point, pass it up.
+                    // - We've retried too many times
+                    // - The state was set to CredReqActive_NeedUI somehow (password auth gets this)
+                    if (status.NeedCredResp ||
+                        status.RefreshRetries >= KOauth2RefreshMaxFailure ||
+                        status.State == CredReqActiveState.CredReqActive_NeedUI) {
+                        return true;
                     }
+                } else {
+                    Log.Warn (Log.LOG_BACKEND, "TokenRefreshFailure: No CredReqActive entry.");
+                    return true;
                 }
+            }
+            return false;
+        }
+
+        protected virtual void TokenRefreshFailure (McCred cred)
+        {
+            if (NeedToPassReqToUi(cred.AccountId)) {
+                InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (cred.AccountId));
             }
         }
 
-        void TokenRefreshSuccess (McCred cred)
+        protected virtual void TokenRefreshSuccess (McCred cred)
         {
             lock (CredReqActive) {
                 CredReqActiveStatus status;
@@ -830,14 +850,17 @@ namespace NachoCore
             lock (CredReqActive) {
                 CredReqActiveStatus status;
                 if (CredReqActive.TryGetValue (sender.Account.Id, out status)) {
+                    // remember that we had a CredReq, so that we send a response when we get a token updated.
+                    // This path can happen if the timer is already refreshing the token, but the controller
+                    // got an AuthFail and asks us for new credentials.
                     status.NeedCredResp = true;
                     return;
                 }
                 CredReqActive.Add (sender.Account.Id, new CredReqActiveStatus (default(CredReqActiveState), true));
             }
-            if (!RefreshToken (sender.Cred)) {
-                TokenRefreshFailure (sender.Cred);
-            }
+            // This should only really happen if the timer is messed up and didn't try to refresh already.
+            // But we'll leave here as a backup.
+            RefreshToken (sender.Cred);
         }
 
         public void ServConfReq (NcProtoControl sender, BackEnd.AutoDFailureReasonEnum arg)
@@ -884,25 +907,21 @@ namespace NachoCore
         const int KOauth2RefreshPercent = 80;
         const bool EnableOauth2RefreshTimer = true;
         NcTimer Oauth2RefreshTimer = null;
+        const uint KOauth2RefreshMaxFailure = 5;
 
-        private void StartOauthRefreshTimer ()
+
+        /// <summary>
+        /// Starts the oauth refresh timer. 
+        /// 
+        /// This will keep ALL oauth2 tokens up to date, whether the backed for the associated
+        /// account is active or not.
+        /// </summary>
+        void StartOauthRefreshTimer ()
         {
             if (null == Oauth2RefreshTimer && EnableOauth2RefreshTimer) {
                 var refreshMsecs = KOauth2RefreshIntervalSecs * 1000;
-                var x = new NcTimer ("McCred:Oauth2RefreshTimer", state => {
-                    foreach (var cred in McCred.QueryByCredType (McCred.CredTypeEnum.OAuth2)) {
-                        RefreshCancelSource.Token.ThrowIfCancellationRequested ();
-                        var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
-                        if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
-                            lock (CredReqActive) {
-                                if (!CredReqActive.ContainsKey (cred.AccountId)) {
-                                    CredReqActive.Add (cred.AccountId, new CredReqActiveStatus (CredReqActiveState.CredReqActive_AwaitingRefresh, false));
-                                }
-                            }
-                            RefreshToken (cred);
-                        }
-                    }
-                }, null, refreshMsecs, refreshMsecs);
+                var x = new NcTimer ("McCred:Oauth2RefreshTimer", state => RefreshAllDueTokens (),
+                    null, refreshMsecs, refreshMsecs);
                 //x.Stfu = true;
                 // protect against stop having been called right during initialization.
                 if (!RefreshCancelSource.IsCancellationRequested) {
@@ -911,7 +930,26 @@ namespace NachoCore
             }            
         }
 
-        private void StopOauthRefreshTimer ()
+        protected void RefreshAllDueTokens ()
+        {
+            foreach (var cred in McCred.QueryByCredType (McCred.CredTypeEnum.OAuth2)) {
+                RefreshCancelSource.Token.ThrowIfCancellationRequested ();
+                var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
+                if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
+                    lock (CredReqActive) {
+                        if (!CredReqActive.ContainsKey (cred.AccountId)) {
+                            CredReqActive.Add (cred.AccountId, new CredReqActiveStatus (CredReqActiveState.CredReqActive_AwaitingRefresh, false));
+                        }
+                    }
+                    RefreshToken (cred);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Stops the oauth refresh timer.
+        /// </summary>
+        void StopOauthRefreshTimer ()
         {
             if (null != Oauth2RefreshTimer) {
                 Oauth2RefreshTimer.Dispose ();
@@ -919,10 +957,11 @@ namespace NachoCore
             }
         }
 
-        private bool RefreshToken (McCred cred)
+        protected void RefreshToken (McCred cred)
         {
             if (!cred.CanRefresh ()) {
-                return false;
+                TokenRefreshFailure (cred);
+                return;
             }
             lock (CredReqActive) {
                 CredReqActiveStatus status;
@@ -936,8 +975,16 @@ namespace NachoCore
                     status.RefreshRetries++;
                 }
             }
+            RefreshMcCred (cred);
+        }
+
+        /// <summary>
+        /// Refreshs the McCred. Exists so we can override it in testing
+        /// </summary>
+        /// <param name="cred">Cred.</param>
+        protected virtual void RefreshMcCred (McCred cred)
+        {
             cred.RefreshOAuth2 (TokenRefreshSuccess, TokenRefreshFailure, RefreshCancelSource.Token);
-            return true;
         }
 
         #endregion
