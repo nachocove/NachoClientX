@@ -894,9 +894,9 @@ namespace NachoCore
                 if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
                     if (status.NeedCredResp) {
                         CredResp (cred.AccountId);
+                    } else {
+                        CredReqActive.Remove (cred.AccountId);
                     }
-                } else {
-                    CredReqActive.Remove (cred.AccountId);
                 }
             }
         }
@@ -1012,7 +1012,7 @@ namespace NachoCore
         /// Number of retries after which we call the attempts failed, and tell the UI
         /// to ask the user to log in anew. Not saved in the DB.
         /// </summary>
-        const uint KOauth2RefreshMaxFailure = 5;
+        public const uint KOauth2RefreshMaxFailure = 5;
 
         /// <summary>
         /// Starts the oauth refresh timer. 
