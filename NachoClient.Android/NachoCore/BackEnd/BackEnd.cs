@@ -130,6 +130,16 @@ namespace NachoCore
         /// If the account ID is an existing key in the dictionary, we know we 
         /// are processing a cred request. The Dictionary value tells us
         /// details about the CredReq.
+        /// 
+        /// An entry for an account must exist until a CredResp has been initiated. In the 
+        /// case of an OAuth2 refresh, where there might not have been a CredReq, and thus
+        /// no CredResp is called, the OAuth2 refresh callback must clean up the entry.
+        /// 
+        /// Since this is an in-memory dictionary, it will have no entries on reboot of the app.
+        /// This is OK, since when the app starts, either the Oauth2RefreshTimer will catch
+        /// expired tokens, or the controller will (when it tries to use it), which will cause a new
+        /// entry to be created. At worst, we retry a few more times. If this causes undue delay
+        /// for users, we should adjust KOauth2RefreshMaxFailure downwards.
         /// </summary>
         protected Dictionary<int, CredReqActiveStatus> CredReqActive;
 
@@ -841,13 +851,16 @@ namespace NachoCore
             lock (CredReqActive) {
                 CredReqActiveStatus status;
                 if (CredReqActive.TryGetValue (accountId, out status)) {
+                    // We've retried too many times. Guess we need the UI afterall.
+                    if (status.RefreshRetries >= KOauth2RefreshMaxFailure) {
+                        status.State = CredReqActiveState.CredReqActive_NeedUI;
+                    }
+
                     // We want to pass the request up to the UI in the following cases:
                     // - the ProtoController asked for creds, and we failed.
                     //   We should have refreshed long before this, so if we reach this point, pass it up.
-                    // - We've retried too many times
                     // - The state was set to CredReqActive_NeedUI somehow (password auth gets this)
                     if (status.NeedCredResp ||
-                        status.RefreshRetries >= KOauth2RefreshMaxFailure ||
                         status.State == CredReqActiveState.CredReqActive_NeedUI) {
                         return true;
                     }
@@ -882,6 +895,8 @@ namespace NachoCore
                     if (status.NeedCredResp) {
                         CredResp (cred.AccountId);
                     }
+                } else {
+                    CredReqActive.Remove (cred.AccountId);
                 }
             }
         }
@@ -948,6 +963,36 @@ namespace NachoCore
 
         #region Oauth2Refresh
 
+        /// OAuth2 refresh has the following cases:
+        /// 1) Oauth2RefreshTimer callback find a credentials and initiates a refresh.
+        ///    It creates an entry in CredReqActive to keep track of the refresh. This
+        ///    is also needed so that we know we're already working on it, should the controller
+        ///    initiate a CredReq. If the timer-initiated refresh finishes without the controller
+        ///    sending a CredReq, we don't need to send a CredResp. If it does, we do.
+        /// 2) Controller initiates a CredReq before the Oauth2RefreshTimer callback notices
+        ///    it needs to refresh a token. This can happen when the Backend is first Start()'ed.
+        ///    The timer will wait KOauth2RefreshIntervalSecs to run, but the Controller will
+        ///    start immediately, so we'll start the refresh via the CredReq. When the timer callback
+        ///    runs and notices it needs to refresh the token (assuming it hasn't finished already),
+        ///    it will not restart the refresh, and simply keep track.
+        /// 
+        /// Failures:
+        /// 1) If the refresh fails and there was a CredReq, we send a CredReq up the line to the UI.
+        ///    TODO: Perhaps we should not send it but wait for max-retries to expire, i.e. case 2?
+        /// 2) If there was no CredReq, we simply try again, until KOauth2RefreshMaxFailure have been tried.
+        /// 
+        /// Success:
+        /// 1) The refresh succeeds, and there was a CredReq: We need to send a CredResp. The CredResp 
+        ///    deletes the CredReqActive record.
+        /// 2) The refresh succeeds, and there was NO CredReq. We don't send a CredResp, and thus
+        ///    need to delete the CredReqActive entry ourselves.
+        /// 
+        /// TODO: We currently don't handle the case where the refreshtoken is invalidated somehow. Tokens
+        /// for google are valid forever (Other services may limit this to 2 weeks). The refresh token
+        /// can also be invalidated by the user. Currently we retry KOauth2RefreshMaxFailure times, but
+        /// we can do better if we catch an invalid refresh token in the McCred.RefreshOAuth2() and
+        /// immediately punt up the UI.
+
         /// <summary>
         /// Interval in seconds after which we (re-)check the OAuth2 credentials.
         /// </summary>
@@ -957,11 +1002,6 @@ namespace NachoCore
         /// The percentage of OAuth2-expiry after which we refresh the token.
         /// </summary>
         const int KOauth2RefreshPercent = 80;
-
-        /// <summary>
-        /// Quick way to disable the periodic checking. Useful for testing.
-        /// </summary>
-        const bool EnableOauth2RefreshTimer = true;
 
         /// <summary>
         /// The OAuth2 Refresh NcTimer
@@ -974,7 +1014,6 @@ namespace NachoCore
         /// </summary>
         const uint KOauth2RefreshMaxFailure = 5;
 
-
         /// <summary>
         /// Starts the oauth refresh timer. 
         /// 
@@ -983,7 +1022,7 @@ namespace NachoCore
         /// </summary>
         void StartOauthRefreshTimer ()
         {
-            if (null == Oauth2RefreshTimer && EnableOauth2RefreshTimer) {
+            if (null == Oauth2RefreshTimer) {
                 var refreshMsecs = KOauth2RefreshIntervalSecs * 1000;
                 var x = new NcTimer ("McCred:Oauth2RefreshTimer", state => RefreshAllDueTokens (),
                     null, refreshMsecs, refreshMsecs);
