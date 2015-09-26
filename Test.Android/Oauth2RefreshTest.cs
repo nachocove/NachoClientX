@@ -19,7 +19,7 @@ namespace Test.iOS
         {
             public OauthRefreshMockBE () : base ()
             {
-                RefreshCancelSource = new CancellationTokenSource ();
+                Oauth2RefreshCancelSource = new CancellationTokenSource ();
             }
 
             public bool TokenRefreshSuccessCalled { get; set; }
@@ -205,14 +205,15 @@ namespace Test.iOS
         [Test]
         public void TestNoCredReqRefreshFail ()
         {
-            // wait for the refresh to figure out it needs to refresh the token. Should be pretty quick,
-            // since the credential expiry is set to 1 second.
+            // wait for the refresh to figure out it needs to refresh the token. 
+            // Should be pretty quick, since the credential expiry is set to 1 second
+            // (see expirySecs).
             for (var i = 0; i < 6; i++) {
                 MockBe.TestRefreshAllTokens ();
                 if (MockBe.RefreshStarted (Account.Id)) {
                     break;
                 }
-                Thread.Sleep (500);
+                Thread.Sleep (500); // 500 milliseconds
             }
             Assert.IsTrue (MockBe.RefreshStarted (Account.Id));
             Assert.IsTrue (MockBe.RefreshMcCredCalled);
