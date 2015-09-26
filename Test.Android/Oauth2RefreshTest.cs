@@ -233,7 +233,6 @@ namespace Test.iOS
 
             // fail the request several times.
             for (var i = 1; i < BackEnd.KOauth2RefreshMaxFailure-1; i++) {
-                Console.WriteLine ("JAN: {0}", i);
                 Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
                 Assert.IsTrue (MockBe.TokenRefreshFailureCalled);
                 Assert.IsFalse (MockBe.CredRespCalled);
