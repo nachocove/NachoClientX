@@ -78,6 +78,13 @@ namespace Test.iOS
                 return CredReqActive.ContainsKey (accountId);
             }
 
+            public BackEnd.CredReqActiveState GetReqActiveState (int accountId)
+            {
+                CredReqActiveStatus status;
+                Assert.True (CredReqActive.TryGetValue (accountId, out status));
+                return status.State;
+            }
+
             public bool GetReqStatusNeedCredResp (int accountId)
             {
                 CredReqActiveStatus status;
@@ -93,14 +100,6 @@ namespace Test.iOS
             public bool NeedToPassUp (int accountId)
             {
                 return NeedToPassReqToUi (accountId);
-            }
-
-            public void FakeRefreshToken (McCred cred)
-            {
-                CredReqActiveStatus status;
-                if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
-                    status.RefreshRetries++;
-                }
             }
         }
 
@@ -170,7 +169,7 @@ namespace Test.iOS
         public void Teardown ()
         {
             Account.Delete ();
-            Cred.Delete ();
+            NcModel.Instance.Db.DeleteAll<McCred> ();
         }
 
         [Test]
@@ -202,6 +201,7 @@ namespace Test.iOS
             Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
             Assert.IsTrue (MockBe.RefreshMcCredCalled);
             Assert.IsTrue (MockBe.GetReqStatusNeedCredResp(Account.Id));
+            Assert.AreEqual (BackEnd.CredReqActiveState.CredReqActive_AwaitingRefresh, MockBe.GetReqActiveState (Account.Id));
             // finish the request
             MockBe.FinishRequest (Cred, false);
             Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
@@ -211,57 +211,69 @@ namespace Test.iOS
             Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
         }
 
-        [Test]
-        public void TestNoCredReqRefreshFail ()
+        private bool WaitForTimerRefresh (int accountId)
         {
             // wait for the refresh to figure out it needs to refresh the token. 
             // Should be pretty quick, since the credential expiry is set to 1 second
             // (see expirySecs).
             for (var i = 0; i < 6; i++) {
                 MockBe.TestRefreshAllTokens ();
-                if (MockBe.RefreshStarted (Account.Id)) {
+                if (MockBe.RefreshStarted (accountId)) {
                     break;
                 }
                 Thread.Sleep (500); // 500 milliseconds
             }
-            Assert.IsTrue (MockBe.RefreshStarted (Account.Id));
-            Assert.IsTrue (MockBe.RefreshMcCredCalled);
-            Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
-            Assert.IsFalse (MockBe.GetReqStatusNeedCredResp(Account.Id));
-            MockBe.FakeRefreshToken (Cred);
-            MockBe.FinishRequest (Cred, false);
+            return MockBe.RefreshStarted (accountId);
+        }
 
-            // fail the request several times.
-            for (var i = 1; i < BackEnd.KOauth2RefreshMaxFailure-1; i++) {
+        [Test]
+        public void TestNoCredReqRefreshFail ()
+        {
+            // loop until we decide to pass the request up to the UI, which happens
+            // after KOauth2RefreshMaxFailure iterations.
+            for (var i = 0; i <= BackEnd.KOauth2RefreshMaxFailure; i++) {
+                if (i == 0) {
+                    Assert.IsTrue (WaitForTimerRefresh (Account.Id));
+                } else {
+                    MockBe.TestRefreshAllTokens ();
+                }
+                Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
+                Assert.IsFalse (MockBe.GetReqStatusNeedCredResp(Account.Id));
+                Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
+                Assert.IsFalse (MockBe.TokenRefreshFailureCalled);
+                if (i == BackEnd.KOauth2RefreshMaxFailure) {
+                    Assert.IsFalse (MockBe.RefreshMcCredCalled);
+                    Assert.AreEqual (BackEnd.CredReqActiveState.CredReqActive_NeedUI, MockBe.GetReqActiveState (Account.Id));
+                } else {
+                    Assert.IsTrue (MockBe.RefreshMcCredCalled);
+                    Assert.AreEqual (BackEnd.CredReqActiveState.CredReqActive_AwaitingRefresh, MockBe.GetReqActiveState (Account.Id));
+                }
+
+                MockBe.Reset ();
+
+                MockBe.FinishRequest (Cred, false);
                 Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
                 Assert.IsTrue (MockBe.TokenRefreshFailureCalled);
                 Assert.IsFalse (MockBe.CredRespCalled);
-                Assert.IsFalse (MockBe.NeedToPassUp (Account.Id));
 
-                MockBe.FinishRequest (Cred, false);
-                MockBe.FakeRefreshToken (Cred);
+                if (i == BackEnd.KOauth2RefreshMaxFailure) {
+                    Assert.IsTrue (MockBe.NeedToPassUp (Account.Id));
+                } else {
+                    Assert.IsFalse (MockBe.NeedToPassUp (Account.Id));
+                }
+                MockBe.Reset ();
             }
 
-            Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
-            Assert.IsTrue (MockBe.TokenRefreshFailureCalled);
-            Assert.IsFalse (MockBe.CredRespCalled);
+            // After we've passed the request up, refreshToken should no longer be called.
+            MockBe.TestRefreshAllTokens ();
+            Assert.IsFalse (MockBe.RefreshMcCredCalled);
             Assert.IsTrue (MockBe.NeedToPassUp (Account.Id));
         }
 
         [Test]
         public void TestNoCredReqRefreshSuccess ()
         {
-            // wait for the refresh to figure out it needs to refresh the token. 
-            // Should be pretty quick, since the credential expiry is set to 1 second
-            // (see expirySecs).
-            for (var i = 0; i < 6; i++) {
-                MockBe.TestRefreshAllTokens ();
-                if (MockBe.RefreshStarted (Account.Id)) {
-                    break;
-                }
-                Thread.Sleep (500); // 500 milliseconds
-            }
-            Assert.IsTrue (MockBe.RefreshStarted (Account.Id));
+            Assert.IsTrue (WaitForTimerRefresh (Account.Id));
             Assert.IsTrue (MockBe.RefreshMcCredCalled);
             Assert.IsTrue (MockBe.HaveCredReqActive (Account.Id));
             Assert.IsFalse (MockBe.GetReqStatusNeedCredResp (Account.Id));
@@ -298,16 +310,7 @@ namespace Test.iOS
         [Test]
         public void TestTimerAndCredReq ()
         {
-            // wait for the refresh to figure out it needs to refresh the token. Should be pretty quick,
-            // since the credential expiry is set to 1 second.
-            for (var i = 0; i < 6; i++) {
-                MockBe.TestRefreshAllTokens ();
-                if (MockBe.RefreshStarted (Account.Id)) {
-                    break;
-                }
-                Thread.Sleep (500);
-            }
-            Assert.IsTrue (MockBe.RefreshStarted (Account.Id));
+            Assert.IsTrue (WaitForTimerRefresh (Account.Id));
             Assert.IsTrue (MockBe.RefreshMcCredCalled);
             Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
             Assert.IsFalse (MockBe.GetReqStatusNeedCredResp(Account.Id));

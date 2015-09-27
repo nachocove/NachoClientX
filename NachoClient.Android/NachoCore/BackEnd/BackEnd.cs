@@ -350,7 +350,6 @@ namespace NachoCore
             }, "CertAskResp");
         }
 
-        // FIXME add capabilities.
         public void ServerConfResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool forceAutodiscovery)
         {
             NcTask.Run (delegate {
@@ -851,11 +850,6 @@ namespace NachoCore
             lock (CredReqActive) {
                 CredReqActiveStatus status;
                 if (CredReqActive.TryGetValue (accountId, out status)) {
-                    // We've retried too many times. Guess we need the UI afterall.
-                    if (status.RefreshRetries >= KOauth2RefreshMaxFailure) {
-                        status.State = CredReqActiveState.CredReqActive_NeedUI;
-                    }
-
                     // We want to pass the request up to the UI in the following cases:
                     // - the ProtoController asked for creds, and we failed.
                     //   We should have refreshed long before this, so if we reach this point, pass it up.
@@ -1046,8 +1040,14 @@ namespace NachoCore
                 var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
                 if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
                     lock (CredReqActive) {
-                        if (!CredReqActive.ContainsKey (cred.AccountId)) {
+                        CredReqActiveStatus status;
+                        if (!CredReqActive.TryGetValue (cred.AccountId, out status)) {
                             CredReqActive.Add (cred.AccountId, new CredReqActiveStatus (CredReqActiveState.CredReqActive_AwaitingRefresh, false));
+                        } else {
+                            if (status.State == CredReqActiveState.CredReqActive_NeedUI) {
+                                // We've decided to give up on this one
+                                continue;
+                            }
                         }
                     }
                     RefreshToken (cred);
@@ -1080,12 +1080,13 @@ namespace NachoCore
                 CredReqActiveStatus status;
                 if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
                     if (status.State != CredReqActiveState.CredReqActive_AwaitingRefresh) {
-                        // FIXME Is this really a problem? Or does this indicate we've failed to refresh and
-                        // we should stop here?
-                        Log.Warn (Log.LOG_BACKEND, "State should be CredReqActive_AwaitingRefresh");
+                        Log.Warn (Log.LOG_BACKEND, "RefreshToken ({0}): State should be CredReqActive_AwaitingRefresh", cred.AccountId);
                     }
-                    // In the future, we might check a max-retry.
-                    status.RefreshRetries++;
+                    // We've retried too many times. Guess we need the UI afterall.
+                    if (status.RefreshRetries++ >= KOauth2RefreshMaxFailure) {
+                        status.State = CredReqActiveState.CredReqActive_NeedUI;
+                        return;
+                    }
                 }
             }
             RefreshMcCred (cred);
