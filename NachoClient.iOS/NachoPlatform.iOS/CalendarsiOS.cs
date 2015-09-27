@@ -47,9 +47,45 @@ namespace NachoPlatform
             }
         }
 
+        public class PlatformCalendarFolderRecordiOS : PlatformCalendarFolderRecord
+        {
+            private EKCalendar Folder;
+            private bool isDefault;
+
+            public PlatformCalendarFolderRecordiOS (EKCalendar folder, bool isDefault)
+            {
+                this.Folder = folder;
+                this.isDefault = isDefault;
+            }
+
+            public override string ServerId {
+                get {
+                    return Folder.CalendarIdentifier;
+                }
+            }
+
+            public override string DisplayName {
+                get {
+                    return Folder.Title;
+                }
+            }
+
+            public override NcResult ToMcFolder ()
+            {
+                var mcFolder = McFolder.Create (McAccount.GetDeviceAccount ().Id, true, false, false, "0", Folder.CalendarIdentifier, Folder.Title,
+                    isDefault ? Xml.FolderHierarchy.TypeCode.DefaultCal_8 : Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                return NcResult.OK (mcFolder);
+            }
+        }
+
         public class PlatformCalendarRecordiOS : PlatformCalendarRecord
         {
-            public EKEvent Event { get; set; }
+            private EKEvent Event;
+
+            public PlatformCalendarRecordiOS (EKEvent ekEvent)
+            {
+                this.Event = ekEvent;
+            }
 
             public override string ServerId {
                 get {
@@ -65,6 +101,13 @@ namespace NachoPlatform
                     return string.Format ("{0}/RID={1}", Event.EventIdentifier, (long)Event.StartDate.SecondsSinceReferenceDate);
                 }
             }
+
+            public override PlatformCalendarFolderRecord ParentFolder {
+                get {
+                    return new PlatformCalendarFolderRecordiOS (Event.Calendar, false);
+                }
+            }
+
             public override DateTime LastUpdate {
                 get {
                     return (null == Event.LastModifiedDate) ? default(DateTime) : Event.LastModifiedDate.ToDateTime ();
@@ -493,40 +536,50 @@ namespace NachoPlatform
                 });
         }
 
-        public IEnumerable<PlatformCalendarRecord> GetCalendars ()
+        public void GetCalendars (out IEnumerable<PlatformCalendarFolderRecord> folders, out IEnumerable<PlatformCalendarRecord> events)
         {
-            if (EKEventStore.GetAuthorizationStatus (EKEntityType.Event) != EKAuthorizationStatus.Authorized) {
+            folders = null;
+            events = null;
+
+            if (EKAuthorizationStatus.Authorized != EKEventStore.GetAuthorizationStatus (EKEntityType.Event)) {
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_NeedCalPermission),
                     Account = ConstMcAccount.NotAccountSpecific,
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_NeedCalPermission),
                 });
-                return null;
+                return;
             }
-
             if (null == Es) {
-                return null;
+                return;
             }
 
-            // Ask for all events from one month ago (which is as far back as the calendar normally goes) until
-            // one year into the future.  There is not a way to find out how far into the future the user has
-            // scrolled the calendar, nor is there a way for the calendar view to ask for more McCalendar items
-            // as the user scrolls.  So we pick what seems like a reasonable time frame for synching device
-            // events.  If the user scrolls more than a year into the future, the calendar simply won't have
-            // any events from the device calendar.
-            var result = new List<PlatformCalendarRecordiOS> ();
-            var allCalendars = Es.GetCalendars (EKEntityType.Event);
-            var predicate = Es.PredicateForEvents (DateTime.UtcNow.AddDays (-31).ToNSDate (), DateTime.UtcNow.AddYears (1).ToNSDate (), allCalendars);
-            var deviceEvents = Es.EventsMatching (predicate);
-            if (null != deviceEvents) {
-                var cancellationToken = NcTask.Cts.Token;
-                foreach (var deviceEvent in deviceEvents) {
+            var cancellationToken = NcTask.Cts.Token;
+
+            var appFolders = new List<PlatformCalendarFolderRecord> ();
+            var appEvents = new List<PlatformCalendarRecord> ();
+
+            var ekCalendars = Es.GetCalendars (EKEntityType.Event);
+
+            if (null == ekCalendars) {
+                return;
+            }
+
+            var defaultId = Es.DefaultCalendarForNewEvents.CalendarIdentifier;
+            foreach (var ekCalendar in ekCalendars) {
+                cancellationToken.ThrowIfCancellationRequested ();
+                appFolders.Add (new PlatformCalendarFolderRecordiOS (ekCalendar, ekCalendar.CalendarIdentifier == defaultId));
+            }
+
+            var predicate = Es.PredicateForEvents (DateTime.UtcNow.AddDays (-31).ToNSDate (), DateTime.UtcNow.AddYears (1).ToNSDate (), ekCalendars);
+            var ekEvents = Es.EventsMatching (predicate);
+            if (null != ekEvents) {
+                foreach (var ekEvent in ekEvents) {
                     cancellationToken.ThrowIfCancellationRequested ();
-                    result.Add (new PlatformCalendarRecordiOS () {
-                        Event = deviceEvent,
-                    });
+                    appEvents.Add (new PlatformCalendarRecordiOS (ekEvent));
                 }
             }
-            return result;
+
+            folders = appFolders;
+            events = appEvents;
         }
 
         private void ToEKEvent (EKEvent ekEvent, McCalendar cal)
@@ -581,12 +634,31 @@ namespace NachoPlatform
                     });
                 }
 
-                // TODO Put the event in the correct device calendar.
-                ekEvent.Calendar = Es.DefaultCalendarForNewEvents;
+                var parentFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
+                if (null == parentFolder) {
+                    Log.Error (Log.LOG_SYS, "Calendar item that is being added to the device calendar does not have a containing folder.");
+                    ekEvent.Calendar = Es.DefaultCalendarForNewEvents;
+                } else {
+                    var ekCalendar = Es.GetCalendar (parentFolder.ServerId);
+                    if (null == ekCalendar) {
+                        Log.Error (Log.LOG_SYS, "The iOS caledar for a new calendar item could not be found.");
+                        ekEvent.Calendar = Es.DefaultCalendarForNewEvents;
+                    } else {
+                        ekEvent.Calendar = ekCalendar;
+                    }
+                }
 
                 NSError err;
                 Es.SaveEvent ( ekEvent, EKSpan.ThisEvent, out err);
                 if (null != err) {
+                    // I have seen this happen when the user chose a read-only calendar.
+                    // TODO Notify the user that there was a problem, and allow the user to correct
+                    // the problem, maybe by choosing a different calendar.  This is not trivial,
+                    // because the editor has already been dismissed, and the user has gone on to do
+                    // something else.  For now, allow the event to be deleted the next time the
+                    // device calendar is synched.
+                    cal.IsAwaitingCreate = false;
+                    cal.Update ();
                     Log.Error (Log.LOG_SYS, "Add:Es.SaveEvent: {0}", Contacts.GetNSErrorString (err));
                     return NcResult.Error ("Es.SaveEvent");
                 }
@@ -652,9 +724,28 @@ namespace NachoPlatform
                     }
                 }
 
+                // See if the event was moved to a different calendar.
+                var parentFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
+                if (null == parentFolder) {
+                    Log.Error (Log.LOG_SYS, "Device calendar item that is being changed is not in any folder.");
+                } else if (parentFolder.ServerId != ekEvent.Calendar.CalendarIdentifier) {
+                    var newEkCalendar = Es.GetCalendar (parentFolder.ServerId);
+                    if (null == newEkCalendar) {
+                        Log.Error (Log.LOG_SYS, "The iOS calendar for a changed event could not be found.");
+                    } else {
+                        ekEvent.Calendar = newEkCalendar;
+                    }
+                }
+
                 NSError err;
                 Es.SaveEvent ( ekEvent, EKSpan.ThisEvent, out err);
                 if (null != err) {
+                    // I have seen this happen when the user chose a read-only calendar.
+                    // TODO Notify the user that there was a problem, and allow the user to correct
+                    // the problem, maybe by choosing a different calendar.  This is not trivial,
+                    // because the editor has already been dismissed, and the user has gone on to do
+                    // something else.  For now, allow the event to be returned to its original
+                    // calendar the next time the device calendar is synched.
                     Log.Error (Log.LOG_SYS, "Change:Es.SaveEvent: {0}", Contacts.GetNSErrorString (err));
                     return NcResult.Error ("Es.SaveEvent");
                 }
