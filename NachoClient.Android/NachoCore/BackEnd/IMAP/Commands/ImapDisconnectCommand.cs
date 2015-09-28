@@ -12,29 +12,19 @@ namespace NachoCore.IMAP
         {
         }
 
-        public override void Execute (NcStateMachine sm)
+        /// <summary>
+        /// We don't need the normal 'ExecuteConnectAndAuthEvent()' functionality, since we don't care
+        /// here if we're connected or auth'd, since we're disconnecting. So we override the ExecuteConnectAndAuthEvent
+        /// method, and just disconnect.
+        /// </summary>
+        /// <returns>The connect and auth event.</returns>
+        public override Event ExecuteConnectAndAuthEvent ()
         {
-            // Disconnect is different than the other IMAP commands.  It is run when parking
-            // the ProtoControl, which usually happens when shutting down the app.  Because
-            // it is run during the shutdown process, it can't block.  But it needs to wait
-            // until any other command is done using the ImapClient.  If the ImapClient's lock
-            // is available, disconnect it right away.  If the lock is not available, then
-            // start a background task that will wait as long as necessary to get the lock.
-            // The state machine is not waiting for the command to complete, so there is no
-            // need to post an event when done.
-            if (Monitor.TryEnter (Client.SyncRoot)) {
-                try {
-                    Client.Disconnect (true, Cts.Token);
-                } finally {
-                    Monitor.Exit (Client.SyncRoot);
-                }
-            } else {
-                NcTask.Run (() => {
-                    lock (Client.SyncRoot) {
-                        Client.Disconnect (true, Cts.Token);
-                    }
-                }, "ImapDisconnectCommand");
-            }
+            Cts.Token.ThrowIfCancellationRequested ();
+            return TryLock (Client.SyncRoot, KLockTimeout, () => {
+                Client.Disconnect (false, Cts.Token);
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUCC");
+            });
         }
     }
 }

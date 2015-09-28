@@ -69,7 +69,7 @@ namespace NachoCore.IMAP
             }, this.GetType ().Name);
         }
 
-        public Event ExecuteConnectAndAuthEvent()
+        public virtual Event ExecuteConnectAndAuthEvent()
         {
             Cts.Token.ThrowIfCancellationRequested ();
             NcCapture.AddKind (this.GetType ().Name);
