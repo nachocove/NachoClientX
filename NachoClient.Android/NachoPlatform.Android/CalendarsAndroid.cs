@@ -38,6 +38,7 @@ namespace NachoPlatform
 
             public override DateTime LastUpdate { get { return DateTime.MaxValue; } } // FIXME.
 
+            public override PlatformCalendarFolderRecord ParentFolder { get { return null; } }
 
             public override NcResult ToMcCalendar ()
             {
@@ -49,9 +50,10 @@ namespace NachoPlatform
         {
         }
 
-        public IEnumerable<PlatformCalendarRecord> GetCalendars ()
+        public void GetCalendars (out IEnumerable<PlatformCalendarFolderRecord> folders, out IEnumerable<PlatformCalendarRecord> events)
         {
-            return null;
+            folders = null;
+            events = null;
         }
 
         public event EventHandler ChangeIndicator;
