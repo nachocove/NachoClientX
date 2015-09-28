@@ -1679,6 +1679,7 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessageComposer.cs">
       <Link>NachoCore\Utils\MessageComposer.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress\EmailAddressScore.cs">
       <Link>NachoCore\Model\McEmailAddress\EmailAddressScore.cs</Link>
     </Compile>
