@@ -221,6 +221,12 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_CALENDAR, "The current account does not support writing to calendars. Using the device account instead.");
                 account = McAccount.GetDeviceAccount ();
                 calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+                if (0 == calendars.Count ()) {
+                    // This can happen if the user doesn't have permission to access the calendar.
+                    // Use the backstop device calendar folder so the UI can finish loading before
+                    // the user gets the popup message about the lack of permission.
+                    calendars = new NachoFolders (McFolder.GetDeviceCalendarsFolder ());
+                }
             }
 
             // There are additional restrictions on the event when it is on the device calendar.

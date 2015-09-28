@@ -8,7 +8,8 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
-using Android.Util;
+
+//using Android.Util;
 using Android.Views;
 using Android.Support.V4.View;
 using Android.Support.V4.Widget;
@@ -19,13 +20,21 @@ using Android.Support.Design.Widget;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using Android.Graphics.Drawables;
 
 namespace NachoClient.AndroidClient
 {
     public class MessageListFragment : Fragment
     {
-        Android.Widget.ListView listView;
+        private const int ARCHIVE_TAG = 1;
+        private const int SAVE_TAG = 2;
+        private const int DELETE_TAG = 3;
+        private const int DEFER_TAG = 4;
+
+        SwipeMenuListView listView;
         MessageListAdapter messageListAdapter;
+
+        SwipeRefreshLayout mSwipeRefreshLayout;
 
         INachoEmailMessages messages;
 
@@ -54,6 +63,14 @@ namespace NachoClient.AndroidClient
             var activity = (NcActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
+            mSwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
+            mSwipeRefreshLayout.SetColorSchemeResources (Resource.Color.refresh_1, Resource.Color.refresh_2, Resource.Color.refresh_3);
+
+            mSwipeRefreshLayout.Refresh += (object sender, EventArgs e) => {
+                var nr = messages.StartSync ();
+                rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
+            };
+
             composeButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
             composeButton.SetImageResource (Resource.Drawable.contact_newemail);
             composeButton.Visibility = Android.Views.ViewStates.Visible;
@@ -65,10 +82,72 @@ namespace NachoClient.AndroidClient
 
             messageListAdapter = new MessageListAdapter (messages);
 
-            listView = view.FindViewById<Android.Widget.ListView> (Resource.Id.listView);
+            listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = messageListAdapter;
 
             listView.ItemClick += ListView_ItemClick;
+
+            listView.setMenuCreator ((menu) => {
+                SwipeMenuItem deferItem = new SwipeMenuItem (Activity.ApplicationContext);
+                deferItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDefer));
+                deferItem.setWidth (dp2px (90));
+                deferItem.setTitle ("Defer");
+                deferItem.setTitleSize (14);
+                deferItem.setTitleColor (A.Color_White);
+                deferItem.setIcon (A.Id_NachoSwipeEmailDefer);
+                deferItem.setId (DEFER_TAG);
+                menu.addMenuItem (deferItem, SwipeMenu.SwipeSide.LEFT);
+                SwipeMenuItem moveItem = new SwipeMenuItem (Activity.ApplicationContext);
+                moveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailMove));
+                moveItem.setWidth (dp2px (90));
+                moveItem.setTitle ("Move");
+                moveItem.setTitleSize (14);
+                moveItem.setTitleColor (A.Color_White);
+                moveItem.setIcon (A.Id_NachoSwipeEmailMove);
+                moveItem.setId (SAVE_TAG);
+                menu.addMenuItem (moveItem, SwipeMenu.SwipeSide.LEFT);
+                SwipeMenuItem archiveItem = new SwipeMenuItem (Activity.ApplicationContext);
+                archiveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailArchive));
+                archiveItem.setWidth (dp2px (90));
+                archiveItem.setTitle ("Archive");
+                archiveItem.setTitleSize (14);
+                archiveItem.setTitleColor (A.Color_White);
+                archiveItem.setIcon (A.Id_NachoSwipeEmailArchive);
+                archiveItem.setId (ARCHIVE_TAG);
+                menu.addMenuItem (archiveItem, SwipeMenu.SwipeSide.RIGHT);
+                SwipeMenuItem deleteItem = new SwipeMenuItem (Activity.ApplicationContext);
+                deleteItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDelete));
+                deleteItem.setWidth (dp2px (90));
+                deleteItem.setTitle ("Delete");
+                deleteItem.setTitleSize (14);
+                deleteItem.setTitleColor (A.Color_White);
+                deleteItem.setIcon (A.Id_NachoSwipeEmailDelete);
+                deleteItem.setId (DELETE_TAG);
+                menu.addMenuItem (deleteItem, SwipeMenu.SwipeSide.RIGHT);
+            });
+
+            listView.setOnMenuItemClickListener (( position, menu, index) => {
+                var messageThread = messages.GetEmailThread (position);
+                switch (index) {
+                case SAVE_TAG:
+//                    ShowFileChooser (messageThread);
+                    break;
+                case DEFER_TAG:
+//                    ShowPriorityChooser (messageThread);
+                    break;
+                case ARCHIVE_TAG:
+                    ArchiveThisMessage (messageThread);
+                    break;
+                case DELETE_TAG:
+                    DeleteThisMessage (messageThread);
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
+                }
+                return false;
+            }
+            );
+
 
             return view;
         }
@@ -86,7 +165,63 @@ namespace NachoClient.AndroidClient
             intent.SetClass (this.Activity, typeof(MessageComposeActivity));
             StartActivity (intent);
         }
-           
+
+        protected void EndRefreshingOnUIThread (object sender)
+        {
+            NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                if (mSwipeRefreshLayout.Refreshing) {
+                    mSwipeRefreshLayout.Refreshing = false;
+                }
+            });
+        }
+
+        NcTimer refreshTimer;
+
+        void rearmRefreshTimer (int seconds)
+        {
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
+            refreshTimer = new NcTimer ("MessageListFragment refresh", EndRefreshingOnUIThread, null, seconds * 1000, 0); 
+        }
+
+        void cancelRefreshTimer ()
+        {
+            if (mSwipeRefreshLayout.Refreshing) {
+                EndRefreshingOnUIThread (null);
+            }
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
+        }
+
+        private int dp2px (int dp)
+        {
+            return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
+        }
+
+        public void DeleteThisMessage (McEmailMessageThread messageThread)
+        {
+            if (messages.HasOutboxSemantics ()) {
+                EmailHelper.DeleteEmailThreadFromOutbox (messageThread);
+                return;
+            }
+            if (messages.HasDraftsSemantics ()) {
+                EmailHelper.DeleteEmailThreadFromDrafts (messageThread);
+                return;
+            }
+            NcAssert.NotNull (messageThread);
+            Log.Debug (Log.LOG_UI, "DeleteThisMessage");
+            NcEmailArchiver.Delete (messageThread);
+        }
+
+        public void ArchiveThisMessage (McEmailMessageThread messageThread)
+        {
+            NcAssert.NotNull (messageThread);
+            NcEmailArchiver.Archive (messageThread);
+        }
     }
 
     public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
