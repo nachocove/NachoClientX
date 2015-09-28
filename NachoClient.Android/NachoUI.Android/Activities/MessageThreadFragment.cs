@@ -24,8 +24,7 @@ namespace NachoClient.AndroidClient
 {
     public class MessageThreadFragment : Fragment
     {
-        RecyclerView recyclerView;
-        RecyclerView.LayoutManager layoutManager;
+        Android.Widget.ListView listView;
         MessageListAdapter messageListAdapter;
 
         McEmailMessageThread thread;
@@ -59,23 +58,20 @@ namespace NachoClient.AndroidClient
             var messages = new NachoThreadedEmailMessages (inbox, thread.GetThreadId ());
             messageListAdapter = new MessageListAdapter (messages);
 
-            messageListAdapter.onMessageClick += MessageListAdapter_onMessageClick;
+            listView.ItemClick += ListView_ItemClick;
 
-            recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
-            recyclerView.SetAdapter (messageListAdapter);
-
-            layoutManager = new LinearLayoutManager (this.Activity);
-            recyclerView.SetLayoutManager (layoutManager);
+            listView = view.FindViewById<Android.Widget.ListView> (Resource.Id.listView);
+            listView.Adapter = messageListAdapter;
 
             return view;
         }
 
-        void MessageListAdapter_onMessageClick (object sender, McEmailMessageThread thread)
+        void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
             Console.WriteLine ("MessageListAdapter_onMessageClick: {0}", thread);
             if (null != onMessageClick) {
-                var message = thread.SingleMessageSpecialCase ();
-                onMessageClick (this, message);
+                var thread = McEmailMessage.QueryById<McEmailMessage> (e.Position);
+                onMessageClick (this, thread);
             }
         }
 

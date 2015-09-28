@@ -145,7 +145,7 @@ namespace NachoPlatform
             try {
                 StringBuilder sb = new StringBuilder ();
                 sb.AppendFormat ("Error Code: {0}:", nsError.Code.ToString ());
-                sb.AppendFormat ("Description: {0}", nsError.LocalizedDescription);
+                sb.AppendFormat (" Description: {0}", nsError.LocalizedDescription);
                 var userInfo = nsError.UserInfo;
                 for (int i = 0; i < userInfo.Keys.Length; i++) {
                     sb.AppendFormat ("[{0}]: {1}\r\n", userInfo.Keys [i].ToString (), userInfo.Values [i].ToString ());

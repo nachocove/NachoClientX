@@ -440,15 +440,14 @@ namespace NachoCore.ActiveSync
 
         public List<McFolder> ContactFolderListProvider (Scope.ContactEnum scope, bool isNarrow)
         {
-            if (isNarrow) {
-                return new List<McFolder> ();
-            }
+            McFolder contacts = null;
+            McFolder ric = null;
             switch (scope) {
             case Scope.ContactEnum.None:
                 return new List<McFolder> ();
 
             case Scope.ContactEnum.RicInf:
-                var ric = McFolder.GetRicContactFolder (AccountId);
+                ric = McFolder.GetRicContactFolder (AccountId);
                 if (null != ric) {
                     return new List<McFolder> () { ric };
                 } else {
@@ -457,9 +456,9 @@ namespace NachoCore.ActiveSync
 
             case Scope.ContactEnum.DefRicInf:
                 ric = McFolder.GetRicContactFolder (AccountId);
-                McFolder contacts = McFolder.GetDefaultContactFolder (AccountId);
+                contacts = McFolder.GetDefaultContactFolder (AccountId);
                 var list = new List<McFolder> ();
-                if (null != ric) {
+                if (null != ric && !isNarrow) {
                     list.Add (ric);
                 }
                 if (null != contacts) {
@@ -468,9 +467,18 @@ namespace NachoCore.ActiveSync
                 return list;
 
             case Scope.ContactEnum.AllInf:
-                return McFolder.ServerEndQueryAll (AccountId).Where (f => 
+                if (isNarrow) {
+                    contacts = McFolder.GetDefaultContactFolder (AccountId);
+                    if (null != contacts) {
+                        return new List<McFolder> () { contacts };
+                    } else {
+                        return new List<McFolder> ();
+                    }
+                } else {
+                    return McFolder.ServerEndQueryAll (AccountId).Where (f => 
                     Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
-                McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
+                    McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
+                }
 
             default:
                 NcAssert.CaseError (string.Format ("{0}", scope));

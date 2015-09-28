@@ -32,11 +32,18 @@ namespace NachoClient.iOS
 
         #endregion
 
-        #region iOS View Lifecycle
+        #region Authenticator Setup
 
-        public override void ViewDidLoad ()
+        void RestartAuthenticator ()
         {
-            base.ViewDidLoad ();
+            if (Authenticator != null) {
+                Authenticator.Completed -= AuthCompleted;
+                Authenticator.Error -= AuthError;
+            }
+            if (AuthView != null) {
+                AuthView.RemoveFromSuperview ();
+            }
+            WebAuthenticator.ClearCookies ();
             var scopes = new List<string> ();
             scopes.Add ("email");
             scopes.Add ("profile");
@@ -61,10 +68,21 @@ namespace NachoClient.iOS
             var vc = Authenticator.GetUI ();
             if (vc is UINavigationController) {
                 vc = ((UINavigationController)vc).TopViewController;
+                AddChildViewController (vc);
             }
             AuthView = vc.View;
             AuthView.Frame = View.Bounds;
             View.AddSubview (AuthView);
+        }
+
+        #endregion
+
+        #region iOS View Lifecycle
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            RestartAuthenticator ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -104,7 +122,9 @@ namespace NachoClient.iOS
                 var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
 
                 if (LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"])) {
-                    Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser existing account: {0}", userInfo.Property ("email"));
+                    Log.Info (Log.LOG_UI, "GoogleCredentialsViewController existing account: {0}", userInfo.Property ("email"));
+                    NcAlertView.ShowMessage (this, "Account Exists", "An account with that email address already exists. Duplicate accounts are not supported.");
+                    RestartAuthenticator ();
                 } else {
                     if (Account != null) {
                         Log.Info (Log.LOG_UI, "GoogleCredentialsViewController removing account ID{0}", Account.Id);
