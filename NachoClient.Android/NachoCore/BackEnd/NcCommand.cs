@@ -238,7 +238,7 @@ namespace NachoCore
                 }
                 if (!HasCompleted) {
                     HasCompleted = true;
-                    Sm.PostEvent ((uint)SmEvt.E.Success, "ASWAITS");
+                    Sm.PostEvent ((uint)SmEvt.E.Success, "NCWAITS");
                 }
             }
         }

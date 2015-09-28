@@ -114,11 +114,21 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            if (activityIndicatorView.IsAnimating) {
+                activityIndicatorView.StopAnimating ();
+            }
             if (IsMovingFromParentViewController) {
+                LoginEvents.Owner = null;
                 if (Account != null) {
                     NcAccountHandler.Instance.RemoveAccount (Account.Id);
                 }
             }
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            UpdateForSubmitting ();
         }
 
 
@@ -404,6 +414,24 @@ namespace NachoClient.iOS
         public void PostAutoDPostInboxSync (int accountId)
         {
             // We never get here for this view because we stop once we see PostAutoDPreInboxSync
+        }
+
+        public void ServerIndTooManyDevices (int acccountId)
+        {
+            StopRecevingLoginEvents ();
+            IsSubmitting = false;
+            BackEnd.Instance.Stop (Account.Id);
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController got too many devices while verifying");
+            ShowCredentialsError ("You are already using the maximum number of devices for this account.  Please contact your system administrator.");
+        }
+
+        public void ServerIndServerErrorRetryLater (int acccountId)
+        {
+            StopRecevingLoginEvents ();
+            IsSubmitting = false;
+            BackEnd.Instance.Stop (Account.Id);
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController got server error while verifying");
+            ShowCredentialsError ("The server is currently unavailable. Please try again later.");
         }
 
         private void HandleNetworkUnavailableError ()

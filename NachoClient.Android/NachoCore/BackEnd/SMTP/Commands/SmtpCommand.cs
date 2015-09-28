@@ -17,11 +17,15 @@ namespace NachoCore.SMTP
         public NcSmtpClient Client { get; set; }
 
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
+        protected bool DontReportCommResult { get; set; }
+        public INcCommStatus NcCommStatusSingleton { set; get; }
 
         public SmtpCommand (IBEContext beContext, NcSmtpClient smtpClient) : base (beContext)
         {
             Client = smtpClient;
             RedactProtocolLogFunc = null;
+            NcCommStatusSingleton = NcCommStatus.Instance;
+            DontReportCommResult = false;
         }
 
         // MUST be overridden by subclass.
@@ -72,6 +76,7 @@ namespace NachoCore.SMTP
             NcTask.Run (() => {
                 Event evt;
                 Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
+                bool serverFailedGenerally = false;
 
                 Log.Info (Log.LOG_SMTP, "{0}({1}): Started", cmdname, AccountId);
                 try {
@@ -87,6 +92,7 @@ namespace NachoCore.SMTP
                     Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.InvalidDest);
                     evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
+                    serverFailedGenerally = true;
                 } catch (ServiceNotConnectedException) {
                     // FIXME - this needs to feed into NcCommStatus, not loop forever.
                     Log.Info (Log.LOG_SMTP, "{0}: ServiceNotConnectedException", cmdname);
@@ -104,14 +110,17 @@ namespace NachoCore.SMTP
                     Log.Info (Log.LOG_SMTP, "{0}: SmtpProtocolException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPPROTOEX");
+                    serverFailedGenerally = true;
                 } catch (SmtpCommandException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: SmtpCommandException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCMDEX");
+                    serverFailedGenerally = true;
                 } catch (InvalidOperationException ex) {
                     Log.Error (Log.LOG_SMTP, "{0}: InvalidOperationException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPHARD1");
+                    serverFailedGenerally = true;
                 } catch (FormatException ex) {
                     Log.Error (Log.LOG_SMTP, "FormatException: {0}", ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
@@ -120,17 +129,21 @@ namespace NachoCore.SMTP
                     Log.Info (Log.LOG_SMTP, "{0}: IOException: {1}", cmdname, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPIO");
+                    serverFailedGenerally = true;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_SMTP, "{0}: Exception : {1}", cmdname, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPHARD2");
+                    serverFailedGenerally = true;
+                } finally {
+                    ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
+                    Log.Info (Log.LOG_SMTP, "{0}({1}): Finished (failed {2})", cmdname, AccountId, serverFailedGenerally);
                 }
 
                 if (Cts.Token.IsCancellationRequested) {
                     Log.Info (Log.LOG_SMTP, "{0}({1}): Cancelled", cmdname, AccountId);
                     return;
                 }
-                Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", cmdname, AccountId);
                 switch (action.Item1) {
                 case ResolveAction.None:
                     break;
@@ -143,6 +156,13 @@ namespace NachoCore.SMTP
                 }
                 sm.PostEvent (evt);
             }, cmdname);
+        }
+
+        protected void ReportCommResult (string host, bool didFailGenerally)
+        {
+            if (!DontReportCommResult) {
+                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, host, didFailGenerally);
+            }
         }
 
         public void ConnectAndAuthenticate ()
@@ -174,7 +194,7 @@ namespace NachoCore.SMTP
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 try {
-                    Log.Info (Log.LOG_SMTP, "ConnectAndAuthenticate: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, cred));              
+                    Log.Info (Log.LOG_SMTP, "ConnectAndAuthenticate{0}: LoggablePasswordSaltedHash {1}", AccountId, McAccount.GetLoggablePassword (BEContext.Account, cred));
                     Client.Authenticate (username, cred, Cts.Token);
                 } catch (SmtpProtocolException e) {
                     Log.Info (Log.LOG_SMTP, "Protocol Error during auth: {0}", e);
@@ -200,4 +220,22 @@ namespace NachoCore.SMTP
             Client.MailKitProtocolLogger.Stop ();
         }
     }
+
+    public class SmtpWaitCommand : SmtpCommand
+    {
+        NcCommand WaitCommand;
+        public SmtpWaitCommand (IBEContext dataSource, NcSmtpClient imap, int duration, bool earlyOnECChange) : base (dataSource, imap)
+        {
+            WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
+        }
+        public override void Execute (NcStateMachine sm)
+        {
+            WaitCommand.Execute (sm);
+        }
+        public override void Cancel ()
+        {
+            WaitCommand.Cancel ();
+        }
+    }
+
 }

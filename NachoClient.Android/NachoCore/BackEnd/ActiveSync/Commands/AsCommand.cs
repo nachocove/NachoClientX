@@ -345,6 +345,12 @@ namespace NachoCore.ActiveSync
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsDeferredForce (BEContext.ProtoControl);
             });
+            var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
+            result.Value = status;
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Account = BEContext.Account,
+                Status = result,
+            });
             return Event.Create ((uint)SmEvt.E.TempFail,
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
                 string.Format ("{0}", (Xml.StatusCode)status));

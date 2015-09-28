@@ -4,6 +4,7 @@ using System;
 using CoreGraphics;
 using Foundation;
 using UIKit;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -20,6 +21,10 @@ namespace NachoClient.iOS
 
         public override void Paste (NSObject sender)
         {
+            if (sender == null) {
+                Log.Error (Log.LOG_UI, "NcTextView.Paste got null sender, skipping paste because base.Paste will throw exception");
+                return;
+            }
             bool justText = false;
             var pasteboard = UIPasteboard.General;
 

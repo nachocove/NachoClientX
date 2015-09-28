@@ -184,6 +184,9 @@ namespace NachoCore
                 service.Stop ();
                 return NcResult.OK ();
             });
+            lock (CredReqActive) {
+                CredReqActive.Remove (accountId);
+            }
         }
 
         public void Remove (int accountId)

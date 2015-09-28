@@ -134,7 +134,9 @@ namespace Test.Common
         private void TestDeleteOneContact (int contactId)
         {
             AssertNotEmptyByContact (contactId);
-            McEmailMessageDependency.DeleteByEmailAddressId (contactId);
+            NcModel.Instance.RunInTransaction (() => {
+                McEmailMessageDependency.DeleteByEmailAddressId (contactId);
+            });
             AssertEmptyByContact (contactId);
         }
 
@@ -164,7 +166,9 @@ namespace Test.Common
         private void TestDeleteOneEmailMessage (int emailMessageId)
         {
             AssertNotEmptyByEmailMessage (emailMessageId);
-            McEmailMessageDependency.DeleteByEmailMessageId (emailMessageId);
+            NcModel.Instance.RunInTransaction (() => {
+                McEmailMessageDependency.DeleteByEmailMessageId (emailMessageId);
+            });
             AssertEmptyByEmailMessage (emailMessageId);
         }
 

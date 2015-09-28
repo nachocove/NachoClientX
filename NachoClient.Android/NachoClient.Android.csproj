@@ -279,7 +279,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\IAsStrategy.cs" />
     <Compile Include="NachoPlatform.Android\NotifAndroid.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs" />
-    <Compile Include="NachoCore\Model\McEmailAddress.cs" />
     <Compile Include="NachoCore\Model\McMapContactEmail.cs" />
     <Compile Include="NachoCore\Model\McConference.cs" />
     <Compile Include="NachoCore\Model\McEmailMessageCategory.cs" />
@@ -304,7 +303,6 @@
     <Compile Include="NachoPlatform.Android\PlatformUserColorIndex.cs" />
     <Compile Include="NachoCore\Model\McContactEmailAddressAttribute.cs" />
     <Compile Include="NachoPlatform.Android\ContactsAndroid.cs" />
-    <Compile Include="NachoCore\Model\EmailAddressScore.cs" />
     <Compile Include="NachoCore\Adapters\NcDeviceContacts.cs" />
     <Compile Include="NachoCore\Adapters\NcDeviceCalendars.cs" />
     <Compile Include="NachoPlatform.Android\CalendarsAndroid.cs" />
@@ -517,6 +515,8 @@
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
     <Compile Include="NachoCore\Utils\MessageDownloader.cs" />
     <Compile Include="NachoCore\Utils\MessageComposer.cs" />
+    <Compile Include="NachoCore\Model\McEmailAddress\EmailAddressScore.cs" />
+    <Compile Include="NachoCore\Model\McEmailAddress\McEmailAddress.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -580,6 +580,7 @@
     <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
+    <Folder Include="NachoCore\Model\McEmailAddress\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

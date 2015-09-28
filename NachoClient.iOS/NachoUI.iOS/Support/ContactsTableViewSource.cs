@@ -48,7 +48,7 @@ namespace NachoClient.iOS
                     });
                 } else {
                     int curVersion = searcher.Version;
-                    var results = McContact.SearchIndexAllContacts (searchString, false, true);
+                    var results = McContact.SearchIndexAllContacts (searchString);
                     if (curVersion == searcher.Version) {
                         InvokeOnUIThread.Instance.Invoke (() => {
                             SetSearchResults (results);
