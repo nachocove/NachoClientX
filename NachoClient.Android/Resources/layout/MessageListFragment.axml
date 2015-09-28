@@ -6,13 +6,18 @@
     android:layout_height="fill_parent">
     <include
         layout="@layout/NavigationBar" />
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:scrollbars="vertical"
-        android:layout_width="fill_parent"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_layout"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="@color/NachoLightGray" />
+        android:layout_weight="1">
+        <ListView
+            android:id="@+id/listView"
+            android:scrollbars="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:background="@color/NachoLightGray" />
+    </android.support.v4.widget.SwipeRefreshLayout>
     <View
         android:layout_width="fill_parent"
         android:layout_height="1dp"
