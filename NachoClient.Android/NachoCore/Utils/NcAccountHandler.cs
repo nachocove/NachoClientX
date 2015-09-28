@@ -36,7 +36,7 @@ namespace NachoCore.Model
         }
 
         public McAccount CreateAccount (McAccount.AccountServiceEnum service, string emailAddress,
-                                        string accessToken, string refreshToken, DateTime expiry)
+                                        string accessToken, string refreshToken, uint expireSecs)
         {
             return CreateAccountCore (service, emailAddress, (accountId) => {
                 var cred = new McCred () { 
@@ -45,7 +45,7 @@ namespace NachoCore.Model
                     Username = emailAddress,
                 };
                 cred.Insert ();
-                cred.UpdateOauth2 (accessToken, refreshToken, expiry);
+                cred.UpdateOauth2 (accessToken, refreshToken, expireSecs);
                 return cred;
             }, null);
         }

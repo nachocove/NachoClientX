@@ -509,10 +509,11 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration43.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration44.cs" />
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration45.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress\EmailAddressScore.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress\McEmailAddress.cs" />
-    <Compile Include="NachoCore\Model\Migration\NcMigration45.cs" />
     <Compile Include="NachoUI.Android\Support\SwipeMenuListView.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration46.cs" />
     <Compile Include="NachoUI.Android\Support\A.cs" />
   </ItemGroup>
   <ItemGroup>
