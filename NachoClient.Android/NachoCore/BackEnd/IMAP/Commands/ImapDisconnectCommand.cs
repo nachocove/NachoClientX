@@ -20,9 +20,10 @@ namespace NachoCore.IMAP
         /// <returns>The connect and auth event.</returns>
         public override Event ExecuteConnectAndAuthEvent ()
         {
-            Cts.Token.ThrowIfCancellationRequested ();
             return TryLock (Client.SyncRoot, KLockTimeout, () => {
-                Client.Disconnect (false, Cts.Token);
+                // don't bother with a cancellation token here. We're just disconnecting.
+                // If we set the first parameter to true, then we MUST use a cancellation token.
+                Client.Disconnect (false);
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUCC");
             });
         }
