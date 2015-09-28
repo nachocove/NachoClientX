@@ -27,6 +27,8 @@ namespace NachoClient.AndroidClient
         Android.Widget.ListView listView;
         MessageListAdapter messageListAdapter;
 
+        SwipeRefreshLayout mSwipeRefreshLayout;
+
         INachoEmailMessages messages;
 
         Android.Widget.ImageView composeButton;
@@ -53,6 +55,14 @@ namespace NachoClient.AndroidClient
 
             var activity = (NcActivity)this.Activity;
             activity.HookNavigationToolbar (view);
+
+            mSwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
+            mSwipeRefreshLayout.SetColorSchemeResources (Resource.Color.refresh_1, Resource.Color.refresh_2, Resource.Color.refresh_3);
+
+            mSwipeRefreshLayout.Refresh += (object sender, EventArgs e) => {
+                var nr = messages.StartSync ();
+                rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
+            };
 
             composeButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
             composeButton.SetImageResource (Resource.Drawable.contact_newemail);
@@ -86,7 +96,37 @@ namespace NachoClient.AndroidClient
             intent.SetClass (this.Activity, typeof(MessageComposeActivity));
             StartActivity (intent);
         }
-           
+
+        protected void EndRefreshingOnUIThread (object sender)
+        {
+            NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                if (mSwipeRefreshLayout.Refreshing) {
+                    mSwipeRefreshLayout.Refreshing = false;
+                }
+            });
+        }
+
+        NcTimer refreshTimer;
+
+        void rearmRefreshTimer (int seconds)
+        {
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
+            refreshTimer = new NcTimer ("MessageListFragment refresh", EndRefreshingOnUIThread, null, seconds * 1000, 0); 
+        }
+
+        void cancelRefreshTimer ()
+        {
+            if (mSwipeRefreshLayout.Refreshing) {
+                EndRefreshingOnUIThread (null);
+            }
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
+        }
     }
 
     public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
