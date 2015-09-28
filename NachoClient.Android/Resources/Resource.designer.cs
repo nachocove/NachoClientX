@@ -2579,8 +2579,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b00d7
 			public const int btnSkip = 2131427543;
 			
-			// aapt resource value: 0x7f0b00d8
-			public const int btnWelcome = 2131427544;
+			// aapt resource value: 0x7f0b00d9
+			public const int btnWelcome = 2131427545;
 			
 			// aapt resource value: 0x7f0b0062
 			public const int buttonPanel = 2131427426;
@@ -2687,11 +2687,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b001e
 			public const int donate_with_google = 2131427358;
 			
-			// aapt resource value: 0x7f0b00d9
-			public const int drawer_item_1 = 2131427545;
-			
 			// aapt resource value: 0x7f0b00da
-			public const int drawer_item_2 = 2131427546;
+			public const int drawer_item_1 = 2131427546;
+			
+			// aapt resource value: 0x7f0b00db
+			public const int drawer_item_2 = 2131427547;
 			
 			// aapt resource value: 0x7f0b0097
 			public const int drawer_layout = 2131427479;
@@ -2816,6 +2816,9 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0039
 			public const int listMode = 2131427385;
 			
+			// aapt resource value: 0x7f0b00a6
+			public const int listView = 2131427494;
+			
 			// aapt resource value: 0x7f0b0056
 			public const int list_item = 2131427414;
 			
@@ -2918,8 +2921,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0066
 			public const int radio = 2131427430;
 			
-			// aapt resource value: 0x7f0b00a6
-			public const int recyclerView = 2131427494;
+			// aapt resource value: 0x7f0b00d8
+			public const int recyclerView = 2131427544;
 			
 			// aapt resource value: 0x7f0b00a8
 			public const int reply = 2131427496;
