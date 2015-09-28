@@ -511,6 +511,7 @@
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress\EmailAddressScore.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress\McEmailAddress.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration45.cs" />
     <Compile Include="NachoUI.Android\Support\SwipeMenuListView.cs" />
   </ItemGroup>
   <ItemGroup>
