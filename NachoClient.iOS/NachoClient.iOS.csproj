@@ -1672,6 +1672,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress\McEmailAddress.cs">
       <Link>NachoCore\Model\McEmailAddress\McEmailAddress.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration46.cs">
+      <Link>NachoCore\Model\Migration\NcMigration46.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
