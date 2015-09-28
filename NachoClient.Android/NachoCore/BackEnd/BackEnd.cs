@@ -775,23 +775,25 @@ namespace NachoCore
             return states;
         }
 
-        public bool TryGetCredReqActiveState (int accountId, out CredReqActiveState state)
-        {
-            CredReqActiveStatus status;
-            state = CredReqActiveState.CredReqActive_NeedUI;
-            lock (CredReqActive) {
-                if (CredReqActive.TryGetValue (accountId, out status)) {
-                    state = status.State;
-                    return true;
-                }
-            }
-            return false;
-        }
-
         public BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
-            var result = ApplyToService (accountId, capabilities,
-                             (service) => NcResult.OK (service.BackEndState));
+            var result = ApplyToService (accountId, capabilities, (service) => {
+                BackEndStateEnum state = service.BackEndState;
+                if (BackEndStateEnum.CredWait == state) {
+                    // HACK HACK: Lie to the UI, if we're in CredWait, but we're waiting for an OAUTH2 refresh.
+                    CredReqActiveStatus status;
+                    lock (CredReqActive) {
+                        if (CredReqActive.TryGetValue (accountId, out status)) {
+                            if (BackEnd.CredReqActiveState.CredReqActive_AwaitingRefresh == status.State) {
+                                state = (service.ProtocolState.HasSyncedInbox) ? 
+                                    BackEndStateEnum.PostAutoDPostInboxSync : 
+                                    BackEndStateEnum.PostAutoDPreInboxSync;
+                            }
+                        }
+                    }
+                }
+                return NcResult.OK (state);
+            });
             return result.isOK () ? result.GetValue<BackEndStateEnum> () : BackEndStateEnum.NotYetStarted;
         }
 
@@ -872,7 +874,7 @@ namespace NachoCore
         /// <param name="cred">Cred.</param>
         protected virtual void TokenRefreshFailure (McCred cred)
         {
-            if (NeedToPassReqToUi(cred.AccountId)) {
+            if (NeedToPassReqToUi (cred.AccountId)) {
                 InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (cred.AccountId));
             }
         }
@@ -1019,7 +1021,7 @@ namespace NachoCore
             if (null == Oauth2RefreshTimer) {
                 var refreshMsecs = KOauth2RefreshIntervalSecs * 1000;
                 var x = new NcTimer ("McCred:Oauth2RefreshTimer", state => RefreshAllDueTokens (),
-                    null, refreshMsecs, refreshMsecs);
+                            null, refreshMsecs, refreshMsecs);
                 //x.Stfu = true;
                 // protect against stop having been called right during initialization.
                 if (!Oauth2RefreshCancelSource.IsCancellationRequested) {
