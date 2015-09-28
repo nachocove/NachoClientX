@@ -17,8 +17,8 @@ namespace NachoCore.Model
 {
     public class NcSQLiteConnection : SQLiteConnection
     {
+        private const int KGCSeconds = 60;
         private object LockObj;
-        private DateTime LastAccess;
         private bool DidDispose;
 
         public NcSQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false) :
@@ -26,6 +26,7 @@ namespace NachoCore.Model
         {
             LockObj = new object ();
             LastAccess = DateTime.UtcNow;
+            GCSeconds = KGCSeconds;
         }
 
         public NcSQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false) :
@@ -33,17 +34,17 @@ namespace NachoCore.Model
         {
             LockObj = new object ();
             LastAccess = DateTime.UtcNow;
+            GCSeconds = KGCSeconds;
         }
 
-        public bool SetLastAccess ()
+        public override bool SetLastAccess ()
         {
             lock (LockObj) {
                 if (DidDispose) {
-                    Log.Info (Log.LOG_DB, "NcSQLiteConnection.SetLastAccess: found DidDispose");
+                    Log.Error (Log.LOG_DB, "NcSQLiteConnection.SetLastAccess: found DidDispose");
                     return false;
                 }
-                LastAccess = DateTime.UtcNow;
-                return true;
+                return base.SetLastAccess ();
             }
         }
 
@@ -75,7 +76,7 @@ namespace NachoCore.Model
         public void EliminateIfStale (Action action)
         {
             lock (LockObj) {
-                var wayBack = DateTime.UtcNow.AddMinutes (-1);
+                var wayBack = DateTime.UtcNow.AddSeconds (-GCSeconds);
                 if (LastAccess < wayBack) {
                     action ();
                     Eliminate ();
@@ -123,7 +124,7 @@ namespace NachoCore.Model
                             SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
                             storeDateTimeAsTicks: true);
                         db.BusyTimeout = TimeSpan.FromSeconds (10.0);
-                        db.TraceThreshold = 150;
+                        db.TraceThreshold = 500;
                         NcAssert.True (DbConns.TryAdd (threadId, db));
                     }
                     if (db.SetLastAccess ()) {

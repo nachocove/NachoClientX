@@ -18,6 +18,9 @@ namespace NachoCore.Utils
         // Note that PostAutoDPreInboxSync may fire > 1 time for multi-controller accounts.
         void PostAutoDPreInboxSync (int accountId);
         void PostAutoDPostInboxSync (int accountId);
+        // We can add a capabilities parameter if we need to indicate service.
+        void ServerIndTooManyDevices (int acccountId);
+        void ServerIndServerErrorRetryLater (int acccountId);
     }
 
     static public class LoginEvents
@@ -34,7 +37,7 @@ namespace NachoCore.Utils
             set {
                 if (null == value) {
                     if (null == _Owner) {
-                        Log.Error (Log.LOG_UI, "LoginEvents.Owner: set to null when already null.");
+                        Log.Info (Log.LOG_UI, "LoginEvents.Owner: set to null when already null.");
                     }
                     _Owner = null;
                     _accountId = null;
@@ -191,6 +194,21 @@ namespace NachoCore.Utils
                     LogAndCall (BackEndStateEnum.PostAutoDPreInboxSync.ToString (), () => {
                         _Owner.PostAutoDPreInboxSync (accountId);
                     });
+                }
+                break;
+            case NcResult.SubKindEnum.Info_ServerStatus:
+                var statusCode = (NachoCore.ActiveSync.Xml.StatusCode)(uint)(siea.Status.Value);
+                switch (statusCode) {
+                case NachoCore.ActiveSync.Xml.StatusCode.ServerErrorRetryLater_111:
+                    LogAndCall (statusCode.ToString (), () => {
+                        _Owner.ServerIndServerErrorRetryLater (siea.Account.Id);
+                    });
+                    break;
+                case NachoCore.ActiveSync.Xml.StatusCode.MaximumDevicesReached_177:
+                    LogAndCall (statusCode.ToString (), () => {
+                        _Owner.ServerIndTooManyDevices (siea.Account.Id);
+                    });
+                    break;
                 }
                 break;
             }

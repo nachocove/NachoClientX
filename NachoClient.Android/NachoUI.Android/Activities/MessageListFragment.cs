@@ -24,8 +24,7 @@ namespace NachoClient.AndroidClient
 {
     public class MessageListFragment : Fragment
     {
-        RecyclerView recyclerView;
-        RecyclerView.LayoutManager layoutManager;
+        Android.Widget.ListView listView;
         MessageListAdapter messageListAdapter;
 
         INachoEmailMessages messages;
@@ -66,15 +65,19 @@ namespace NachoClient.AndroidClient
 
             messageListAdapter = new MessageListAdapter (messages);
 
-            messageListAdapter.onMessageClick += MessageListAdapter_onMessageClick;
+            listView = view.FindViewById<Android.Widget.ListView> (Resource.Id.listView);
+            listView.Adapter = messageListAdapter;
 
-            recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
-            recyclerView.SetAdapter (messageListAdapter);
-
-            layoutManager = new LinearLayoutManager (this.Activity);
-            recyclerView.SetLayoutManager (layoutManager);
+            listView.ItemClick += ListView_ItemClick;
 
             return view;
+        }
+
+        void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
+        {
+            if (null != onMessageClick) {
+                onMessageClick (this, messageListAdapter [e.Position]);
+            }
         }
 
         void ComposeButton_Click (object sender, EventArgs e)
@@ -83,21 +86,11 @@ namespace NachoClient.AndroidClient
             intent.SetClass (this.Activity, typeof(MessageComposeActivity));
             StartActivity (intent);
         }
-
-        void MessageListAdapter_onMessageClick (object sender, McEmailMessageThread thread)
-        {
-            Console.WriteLine ("MessageListAdapter_onMessageClick: list {0}", thread);
-            if (null != onMessageClick) {
-                onMessageClick (this, thread);
-            }
-        }
-
+           
     }
 
-    public class MessageListAdapter : RecyclerView.Adapter
+    public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
     {
-        public event EventHandler<McEmailMessageThread> onMessageClick;
-
         INachoEmailMessages messages;
 
         public MessageListAdapter (INachoEmailMessages messages)
@@ -106,51 +99,31 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
-        class MessageHolder : RecyclerView.ViewHolder
+        public override long GetItemId (int position)
         {
-            Action<int> listener;
-
-            public MessageHolder (View view, Action<int> listener) : base (view)
-            {
-                this.listener = listener;
-                view.Click += View_Click;
-            }
-
-            void View_Click (object sender, EventArgs e)
-            {
-                listener (base.Position);
-            }
+            return messages.GetEmailThread (position).FirstMessageId;
         }
 
-        public override int ItemCount {
+        public override int Count {
             get {
                 return messages.Count ();
             }
         }
 
-        public void OnClick (int position)
+        public override McEmailMessageThread this [int position] {  
+            get { return messages.GetEmailThread (position); }
+        }
+
+        public override View GetView (int position, View convertView, ViewGroup parent)
         {
-            if (null != onMessageClick) {
-                var thread = messages.GetEmailThread (position);
-                onMessageClick (this, thread);
+            View view = convertView; // re-use an existing view, if one is available
+            if (view == null) {
+                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCell, parent, false);
             }
-        }
-
-        public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
-        {
-            var view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCell, parent, false);
-            return new MessageHolder (view, OnClick);
-        }
-
-        public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
-        {
             var thread = messages.GetEmailThread (position);
             var message = thread.FirstMessageSpecialCase ();
-            Bind.BindMessageHeader (thread, message, holder.ItemView);
-
-            var previewView = holder.ItemView.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
-            var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
-            previewView.Text = cookedPreview;
+            Bind.BindMessageHeader (thread, message, view);
+            return view;
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

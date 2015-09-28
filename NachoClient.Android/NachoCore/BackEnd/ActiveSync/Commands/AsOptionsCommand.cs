@@ -56,7 +56,7 @@ namespace NachoCore.ActiveSync
         {
             McProtocolState protocolState = beContext.ProtocolState;
             protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                var target = (McProtocolState)protocolState;
+                var target = (McProtocolState)record;
                 target.AsProtocolVersion = "12.0";
                 return true;
             });

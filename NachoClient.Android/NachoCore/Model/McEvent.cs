@@ -183,6 +183,7 @@ namespace NachoCore.Model
         /// <returns>The number of McEvents that were deleted.</returns>
         public static int DeleteEventsForCalendarItem (int calendarId)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             return NcModel.Instance.Db.Execute (
                 "DELETE FROM McEvent WHERE CalendarId = ?", calendarId);
         }

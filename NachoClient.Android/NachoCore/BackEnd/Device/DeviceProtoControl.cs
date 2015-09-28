@@ -294,15 +294,15 @@ namespace NachoCore
                 }
             };
             Sm.Validate ();
-            Contacts.Instance.ChangeIndicator += DeviceDbChange;
-            Calendars.Instance.ChangeIndicator += DeviceDbChange;
+            NachoPlatform.Contacts.Instance.ChangeIndicator += DeviceDbChange;
+            NachoPlatform.Calendars.Instance.ChangeIndicator += DeviceDbChange;
             NcApplication.Instance.StatusIndEvent += AbateChange;
         }
 
         public override void Remove ()
         {
             NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
-            Contacts.Instance.ChangeIndicator -= DeviceDbChange;
+            NachoPlatform.Contacts.Instance.ChangeIndicator -= DeviceDbChange;
             Calendars.Instance.ChangeIndicator -= DeviceDbChange;
             NcApplication.Instance.StatusIndEvent -= AbateChange;
             base.Remove ();
@@ -494,7 +494,7 @@ namespace NachoCore
 
                 case McPending.Operations.ContactCreate:
                     contact = McContact.QueryById<McContact> (pending.ItemId);
-                    if (Contacts.Instance.Add (contact).isOK ()) {
+                    if (NachoPlatform.Contacts.Instance.Add (contact).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {
                         pending.ResolveAsHardFail (this, NcResult.WhyEnum.Unknown);
@@ -502,7 +502,7 @@ namespace NachoCore
                     break;
 
                 case McPending.Operations.ContactDelete:
-                    if (Contacts.Instance.Delete (pending.ServerId).isOK ()) {
+                    if (NachoPlatform.Contacts.Instance.Delete (pending.ServerId).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {
                         pending.ResolveAsHardFail (this, NcResult.WhyEnum.Unknown);
@@ -511,7 +511,7 @@ namespace NachoCore
 
                 case McPending.Operations.ContactUpdate:
                     contact = McContact.QueryById<McContact> (pending.ItemId);
-                    if (Contacts.Instance.Change (contact).isOK ()) {
+                    if (NachoPlatform.Contacts.Instance.Change (contact).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {
                         pending.ResolveAsHardFail (this, NcResult.WhyEnum.Unknown);

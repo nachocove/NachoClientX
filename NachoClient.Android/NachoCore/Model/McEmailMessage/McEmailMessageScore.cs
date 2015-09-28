@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using SQLite;
 using NachoCore.Brain;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -50,6 +51,7 @@ namespace NachoCore.Model
 
         public static void DeleteByParentId (int parentId)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             NcModel.Instance.Db.Execute ("DELETE FROM McEmailMessageScore WHERE ParentId = ?", parentId);
         }
 
