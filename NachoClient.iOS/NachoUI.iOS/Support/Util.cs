@@ -1023,13 +1023,13 @@ namespace NachoClient
                 }
             } else if (1 == contact.PhoneNumbers.Count) {
                 if (!Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ())) {
-                    ComplainAbout ("Could Not Dial", "We are unable to dial this phone number");
+                    ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
                 }
             } else {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
                         if (!Util.PerformAction ("tel", p.Value)) {
-                            ComplainAbout ("Could Not Dial", "We are unable to dial this phone number");
+                            ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
                         }
                         return; 
                     }

@@ -256,7 +256,7 @@ namespace NachoClient.iOS
                 return;
             }
             if (!Util.PerformAction ("tel", number)) {
-                Util.ComplainAbout ("Could Not Dial", "We are unable to dial this phone number");
+                Util.ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
             }
         }
 
