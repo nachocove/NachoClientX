@@ -56,7 +56,7 @@ namespace NachoPlatform
 
         private SecRecord CreateQuery (int handle, string subKey)
         {
-            return CreateQuery (handle.ToString () + ":" + subKey);
+            return CreateQuery (string.Format ("{0}:{1}", handle, subKey));
         }
 
         private SecRecord CreateQuery (int handle)
@@ -87,14 +87,14 @@ namespace NachoPlatform
         }
 
         public bool SetStringForKey (string key, string value,
-            SecAccessible accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly)
+                                     SecAccessible accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly)
         {
             return Setter (CreateQuery (key), NSData.FromString (value), accessible);
         }
 
         public string GetLogSalt (int handle)
         {
-            var data = Getter (CreateQuery (handle, KLogSalt), errorIfMissing:true);
+            var data = Getter (CreateQuery (handle, KLogSalt), errorIfMissing: true);
             return StringFromNSData (data);
         }
 
@@ -107,7 +107,7 @@ namespace NachoPlatform
         {
             return Deleter (CreateQuery (handle, KLogSalt));     
         }
-            
+
         public string GetIdentifierForVendor ()
         {
             return GetStringForKey (KIdentifierForVendor);
@@ -115,7 +115,7 @@ namespace NachoPlatform
 
         public bool SetIdentifierForVendor (string ident)
         {
-            return SetStringForKey (KIdentifierForVendor, ident, accessible:SecAccessible.AlwaysThisDeviceOnly);
+            return SetStringForKey (KIdentifierForVendor, ident, accessible: SecAccessible.AlwaysThisDeviceOnly);
         }
 
         public string GetUserId ()
@@ -135,7 +135,7 @@ namespace NachoPlatform
 
         public string GetAccessToken (int handle)
         {
-            var data = Getter (CreateQuery (handle, KAccessToken), errorIfMissing:true);
+            var data = Getter (CreateQuery (handle, KAccessToken), errorIfMissing: true);
             return StringFromNSData (data);
         }
 
@@ -151,7 +151,7 @@ namespace NachoPlatform
 
         public string GetRefreshToken (int handle)
         {
-            var data = Getter (CreateQuery (handle, KRefreshToken), errorIfMissing:true);
+            var data = Getter (CreateQuery (handle, KRefreshToken), errorIfMissing: true);
             return StringFromNSData (data);
         }
 
@@ -175,27 +175,42 @@ namespace NachoPlatform
             }
         }
 
+        const int KLogSaltGetMaxRetries = 5;
+
         private NSData Getter (SecRecord query, bool errorIfMissing = false)
         {
             SecStatusCode res;
-            var match = SecKeyChain.QueryAsRecord (query, out res);
-            if (SecStatusCode.Success == res) {
-                if (null == match.ValueData || 0 == match.ValueData.Length) {
-                    Log.Error (Log.LOG_SYS, "Getter: SecKeyChain.QueryAsRecord returned ValueData of null/(length==0)");
+            for (var i = 0; i < KLogSaltGetMaxRetries; i++) {
+                var match = SecKeyChain.QueryAsRecord (query, out res);
+                if (SecStatusCode.Success == res) {
+                    if (null == match.ValueData || 0 == match.ValueData.Length) {
+                        Log.Error (Log.LOG_SYS, "Getter: query={{{0}}} returned ValueData of null/(length==0)", DumpQuery (query));
+                    }
+                    return match.ValueData;
+                } else {
+                    if (errorIfMissing || SecStatusCode.ItemNotFound != res) {
+                        Log.Error (Log.LOG_SYS, "Getter: Error: {0} query={{{1}}} iter={2}", res, DumpQuery (query), i);
+                    }
+                    if (errorIfMissing == false) {
+                        break;
+                    }
                 }
-                return match.ValueData;
-            } else {
-                if (SecStatusCode.ItemNotFound != res) {
-                    Log.Error (Log.LOG_SYS, "Getter: SecKeyChain.QueryAsRecord returned {0}", res.ToString ());
-                } else if (errorIfMissing) {
-                    Log.Error (Log.LOG_SYS, "Getter: missing: query is: KeyClass={0}, Account={1}, Service={2}.", query.KeyClass, query.Account, query.Service);
-                }
-                return null;
             }
+            return null;
+        }
+
+        private string DumpQuery (SecRecord query)
+        {
+            string str = query.ToString () + " ";
+            var qDict = query.ToDictionary ();
+            foreach (var x in qDict) {
+                str += string.Format ("{0}={1} ", x.Key, x.Value);
+            }
+            return str;
         }
 
         private bool Setter (SecRecord query, NSData value, 
-            SecAccessible accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly)
+                             SecAccessible accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly)
         {
             SecStatusCode res;
             var match = SecKeyChain.QueryAsRecord (query, out res);

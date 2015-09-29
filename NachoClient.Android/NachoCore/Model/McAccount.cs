@@ -431,11 +431,17 @@ namespace NachoCore.Model
 
         public static string GetLoggablePassword (McAccount account, string password)
         {
-            NcAssert.False (string.IsNullOrEmpty (account.GetLogSalt ()));
             if (account == null) {
-                return null;
+                return "account:null";
             }
-            string hash = HashHelper.Sha256 (account.GetLogSalt () + password);
+
+            string salt = account.GetLogSalt ();
+            if (string.IsNullOrEmpty (salt)) {
+                Log.Error (Log.LOG_SYS, "Could not retrieve LogSalt for account {0}", account.Id);
+                return "saltNotFound";
+            }
+
+            string hash = HashHelper.Sha256 (salt + password);
             return hash.Substring (hash.Length - 3); // e.g. "f47"
         }
 
