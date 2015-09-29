@@ -528,7 +528,17 @@ namespace NachoCore.ActiveSync
                 }
 
                 if (!cToken.IsCancellationRequested) {
-                    var contentType = response.Content.Headers.ContentType;
+                    System.Net.Http.Headers.MediaTypeHeaderValue contentType = null;
+                    if (null == response || null == response.Content) {
+                        CancelTimeoutTimer ("response.Content");
+                        Log.Error (Log.LOG_HTTP, "Bad or missing response: {0}, response.Content: {1}",
+                            (null == response), (null == response || null == response.Content));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNRC");
+                        return;
+                    }
+                    if (null != response.Content.Headers) {
+                        contentType = response.Content.Headers.ContentType;
+                    }
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
                     try {
                         ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
