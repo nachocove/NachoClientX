@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using NachoCore.Utils;
 using NachoClient.Build;
 using NachoPlatform;
+using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
@@ -44,6 +45,8 @@ namespace NachoCore.Model
         private string RefreshToken { get; set; }
         // General-use. When will the credential expire?
         public DateTime Expiry { get; set; }
+        // General-use. Seconds the credential will expire in (should be used to set Expiry)
+        public uint ExpirySecs { get; set; }
         // General-use. Where can a user manually refresh this credential?
         public string RectificationUrl { get; set; }
         // General-use. When we open the web view for web-based auth, where should we point it?
@@ -51,9 +54,18 @@ namespace NachoCore.Model
         // General-use. What substring in a URL will cause us to tear-down the web view?
         public string DoneSubstring { get; set; }
 
+        // General-use. The epoch of the Credentials.
+        public int Epoch { get; set; }
+
         public McCred ()
         {
             Expiry = DateTime.MaxValue;
+        }
+
+        private void UpdateCredential ()
+        {
+            Epoch += 1;
+            Update ();
         }
 
         /// <summary>
@@ -70,30 +82,31 @@ namespace NachoCore.Model
             if (Keychain.Instance.HasKeychain ()) {
                 NcAssert.True (Keychain.Instance.SetPassword (Id, password));
                 Password = null;
-                Update ();
+                UpdateCredential ();
             } else {
                 Password = password;
-                Update ();
+                UpdateCredential ();
             }
             var account = McAccount.QueryById<McAccount> (AccountId);
             NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_McCredPasswordChanged);
         }
 
-        public void UpdateOauth2 (string accessToken, string refreshToken, DateTime expiry)
+        public void UpdateOauth2 (string accessToken, string refreshToken, uint expirySecs)
         {
             NcAssert.True (0 != Id);
             NcAssert.AreEqual ((int)CredTypeEnum.OAuth2, (int)CredType, string.Format ("UpdateOauth2:CredType:{0}", CredType));
-            Expiry = expiry;
+            Expiry = DateTime.UtcNow.AddSeconds (expirySecs);
+            ExpirySecs = expirySecs;
             if (Keychain.Instance.HasKeychain ()) {
                 NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
                 AccessToken = null;
                 NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
                 RefreshToken = null;
-                Update ();
+                UpdateCredential ();
             } else {
                 AccessToken = accessToken;
                 RefreshToken = refreshToken;
-                Update ();
+                UpdateCredential ();
             }
         }
 
@@ -185,19 +198,19 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        public bool AttemptRefresh (Action<McCred> onSuccess, Action<McCred> onFailure)
+        public static List<McCred> QueryByCredType (CredTypeEnum credType)
+        {
+            return NcModel.Instance.Db.Query<McCred> (
+                "SELECT * FROM McCred WHERE CredType = ?", credType);
+        }
+
+        public bool CanRefresh ()
         {
             switch (CredType) {
             case CredTypeEnum.Password:
                 return false;
             case CredTypeEnum.OAuth2:
-                var account = McAccount.QueryById<McAccount> (AccountId);
-                if (account.AccountService == McAccount.AccountServiceEnum.GoogleDefault) {
-                    RefreshOAuth2Google (onSuccess, onFailure);
-                    return true;
-                }
-                Log.Error (Log.LOG_BACKEND, "Unable to do OAUTH2 refresh for {0}", account.AccountService.ToString ());
-                return false;
+                return true;
             default:
                 NcAssert.CaseError (CredType.ToString ());
                 return false;
@@ -213,9 +226,11 @@ namespace NachoCore.Model
             public string expires_in { get; set; }
 
             public string token_type { get; set; }
+
+            public string refresh_token { get; set; }
         }
 
-        private async Task<bool> TryRefresh ()
+        private async Task<bool> TryRefreshGoogleOauth2 (CancellationToken Token)
         {
             var handler = new NativeMessageHandler ();
             var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
@@ -226,7 +241,7 @@ namespace NachoCore.Model
             var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
             var httpRequest = new HttpRequestMessage (HttpMethod.Post, requestUri);
             try {
-                var httpResponse = await client.SendAsync (httpRequest, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
+                var httpResponse = await client.SendAsync (httpRequest, HttpCompletionOption.ResponseContentRead, Token);
                 if (httpResponse.StatusCode == System.Net.HttpStatusCode.OK) {
                     var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
                     var response = JsonConvert.DeserializeObject<OAuth2RefreshRespose> (jsonResponse);
@@ -238,8 +253,10 @@ namespace NachoCore.Model
                         return false;
                     }
                     Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", response.expires_in);
-                    UpdateOauth2 (response.access_token, GetRefreshToken (), 
-                        DateTime.UtcNow.AddSeconds (int.Parse (response.expires_in)));
+                    // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
+                    UpdateOauth2 (response.access_token, 
+                        string.IsNullOrEmpty (response.refresh_token) ? GetRefreshToken () : response.refresh_token,
+                        uint.Parse (response.expires_in));
                     return true;
                 } else {
                     Log.Error (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", httpResponse.StatusCode.ToString ());
@@ -251,9 +268,19 @@ namespace NachoCore.Model
             }
         }
 
-        private async void RefreshOAuth2Google (Action<McCred> onSuccess, Action<McCred> onFailure)
-        {    
-            bool result = await TryRefresh ();
+        public async void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
+        {
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            bool result;
+            switch (account.AccountService) {
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                result = await TryRefreshGoogleOauth2 (Token);
+                break;
+
+            default:
+                Log.Error (Log.LOG_SYS, "Can not refresh {0}:{1}", account.Id, account.AccountService);
+                return;
+            }
             if (result) {
                 onSuccess (this);
             } else {

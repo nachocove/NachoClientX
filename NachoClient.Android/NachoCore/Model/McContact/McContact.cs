@@ -931,6 +931,7 @@ namespace NachoCore.Model
 
         private void DeleteStringAttribute (McContactStringType stringType)
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             NcModel.Instance.Db.Query<McContactStringAttribute> (
                 "DELETE FROM McContactStringAttribute WHERE ContactId = ? AND Type = ?", Id, (int)stringType);
         }
@@ -1449,7 +1450,7 @@ namespace NachoCore.Model
         {
             string prefixPattern = searchFor.Replace ('%', '_') + "%";
             return NcModel.Instance.Db.Query<McContact> (
-                "SELECT * FROM McContact WHERE FirstName LIKE ? OR LastName LIKE ? OR CompanyName LIKE ?",
+                "SELECT * FROM McContact WHERE FirstName LIKE ? OR LastName LIKE ? OR CompanyName LIKE ? LIMIT 100",
                 prefixPattern, prefixPattern, prefixPattern);
         }
 
@@ -1462,7 +1463,7 @@ namespace NachoCore.Model
             string prefixPattern = searchFor.Replace ('%', '_') + "%";
             string domainPattern = "%@" + prefixPattern;
             return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
-                "SELECT * FROM McContactEmailAddressAttribute WHERE Value LIKE ? OR Value LIKE ?",
+                "SELECT * FROM McContactEmailAddressAttribute WHERE Value LIKE ? OR Value LIKE ? LIMIT 100",
                 prefixPattern, domainPattern);
         }
 
@@ -1695,7 +1696,7 @@ namespace NachoCore.Model
                 var indexMatches = new List<MatchedItem> ();
                 foreach (var account in McAccount.GetAllAccounts ()) {
                     var index = NcBrain.SharedInstance.Index (account.Id);
-                    indexMatches.AddRange (index.SearchAllContactFields (searchFor));
+                    indexMatches.AddRange (index.SearchAllContactFields (searchFor, maxMatches: 100));
                 }
 
                 rawContacts.AddRange (McContact.QueryByIds (indexMatches.Select (x => x.Id).Distinct ().ToList ()));

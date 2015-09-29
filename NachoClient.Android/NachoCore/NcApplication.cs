@@ -720,6 +720,7 @@ namespace NachoCore
                 deviceAccount = McAccount.GetDeviceAccount ();
                 if (null == deviceAccount) {
                     deviceAccount = new McAccount ();
+                    deviceAccount.DisplayName = "Device";
                     deviceAccount.SetAccountType (McAccount.AccountTypeEnum.Device);
                     deviceAccount.Insert ();
                 }
@@ -738,7 +739,7 @@ namespace NachoCore
             });
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetDeviceCalendarsFolder ()) {
-                    var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
+                    var freshMade = McFolder.Create (deviceAccount.Id, true, true, true, "0",
                                         McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
                                         NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                     freshMade.Insert ();

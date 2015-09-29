@@ -278,7 +278,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\IAsStrategy.cs" />
     <Compile Include="NachoPlatform.Android\NotifAndroid.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs" />
-    <Compile Include="NachoCore\Model\McEmailAddress.cs" />
     <Compile Include="NachoCore\Model\McMapContactEmail.cs" />
     <Compile Include="NachoCore\Model\McConference.cs" />
     <Compile Include="NachoCore\Model\McEmailMessageCategory.cs" />
@@ -303,7 +302,6 @@
     <Compile Include="NachoPlatform.Android\PlatformUserColorIndex.cs" />
     <Compile Include="NachoCore\Model\McContactEmailAddressAttribute.cs" />
     <Compile Include="NachoPlatform.Android\ContactsAndroid.cs" />
-    <Compile Include="NachoCore\Model\EmailAddressScore.cs" />
     <Compile Include="NachoCore\Adapters\NcDeviceContacts.cs" />
     <Compile Include="NachoCore\Adapters\NcDeviceCalendars.cs" />
     <Compile Include="NachoPlatform.Android\CalendarsAndroid.cs" />
@@ -511,6 +509,13 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration43.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration44.cs" />
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration45.cs" />
+    <Compile Include="NachoCore\Model\McEmailAddress\EmailAddressScore.cs" />
+    <Compile Include="NachoCore\Model\McEmailAddress\McEmailAddress.cs" />
+    <Compile Include="NachoUI.Android\Support\SwipeMenuListView.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration46.cs" />
+    <Compile Include="NachoUI.Android\Support\A.cs" />
+    <Compile Include="NachoCore\Utils\NcEventDetail.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -574,6 +579,7 @@
     <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
+    <Folder Include="NachoCore\Model\McEmailAddress\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -990,5 +996,53 @@
     <AndroidResource Include="Resources\drawable\UserColor29.xml" />
     <AndroidResource Include="Resources\drawable\UserColor30.xml" />
     <AndroidResource Include="Resources\drawable\UserColor31.xml" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\files_forward_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\files_open_app_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_download_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_preview_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_attendee_optional_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_attendee_required_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_forward_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_late_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\contacts_call_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\contacts_email_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_archive_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_move_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\files_forward_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\files_open_app_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_download_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_preview_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_attendee_optional_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_attendee_required_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_forward_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_late_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\contacts_call_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\contacts_email_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_archive_swipe.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_move_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\files_open_app_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_download_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_preview_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_calendar_attendee_optional_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_calendar_attendee_required_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_forward_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_late_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\contacts_call_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\contacts_email_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_archive_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_move_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\files_forward_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\files_forward_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\files_open_app_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_download_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_preview_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_attendee_optional_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_attendee_required_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_forward_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_late_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\contacts_call_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\contacts_email_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_archive_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_move_swipe.png" />
   </ItemGroup>
 </Project>

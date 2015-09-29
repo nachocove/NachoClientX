@@ -335,6 +335,12 @@
     <Compile Include="..\Test.Android\LoginEventsTest.cs">
       <Link>LoginEventsTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\Oauth2RefreshTest.cs">
+      <Link>Oauth2RefreshTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\McCredTest.cs">
+      <Link>McCredTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

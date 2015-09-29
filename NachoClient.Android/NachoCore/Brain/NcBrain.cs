@@ -21,12 +21,17 @@ namespace NachoCore.Brain
 
         public static int StartupDelayMsec = 5000;
 
-        private static NcBrain _SharedInstance;
+        private static volatile NcBrain _SharedInstance;
+        private static object syncRoot = new Object ();
 
         public static NcBrain SharedInstance {
             get {
                 if (null == _SharedInstance) {
-                    _SharedInstance = new NcBrain ();
+                    lock (syncRoot) {
+                        if (null == _SharedInstance) {
+                            _SharedInstance = new NcBrain ();
+                        }
+                    }
                 }
                 return _SharedInstance;
             }

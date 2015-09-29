@@ -32,11 +32,18 @@ namespace NachoClient.iOS
 
         #endregion
 
-        #region iOS View Lifecycle
+        #region Authenticator Setup
 
-        public override void ViewDidLoad ()
+        void RestartAuthenticator ()
         {
-            base.ViewDidLoad ();
+            if (Authenticator != null) {
+                Authenticator.Completed -= AuthCompleted;
+                Authenticator.Error -= AuthError;
+            }
+            if (AuthView != null) {
+                AuthView.RemoveFromSuperview ();
+            }
+            WebAuthenticator.ClearCookies ();
             var scopes = new List<string> ();
             scopes.Add ("email");
             scopes.Add ("profile");
@@ -61,10 +68,21 @@ namespace NachoClient.iOS
             var vc = Authenticator.GetUI ();
             if (vc is UINavigationController) {
                 vc = ((UINavigationController)vc).TopViewController;
+                AddChildViewController (vc);
             }
             AuthView = vc.View;
             AuthView.Frame = View.Bounds;
             View.AddSubview (AuthView);
+        }
+
+        #endregion
+
+        #region iOS View Lifecycle
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            RestartAuthenticator ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -90,12 +108,11 @@ namespace NachoClient.iOS
                 e.Account.Properties.TryGetValue ("expires_in", out expires_in);
                 Log.Info (Log.LOG_SYS, "OAUTH2 Token acquired. expires_in={0}", expires_in);
 
-                int expires = 0;
                 string expiresString = "0";
-                DateTime expirationDateTime = DateTime.UtcNow;
+                uint expireSecs = 0;
                 if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
-                    if (int.TryParse (expiresString, out expires)) {
-                        expirationDateTime = expirationDateTime.AddSeconds (expires);
+                    if (!uint.TryParse (expiresString, out expireSecs)) {
+                        Log.Info (Log.LOG_UI, "AuthCompleted: Could not convert expires value {0} to int", expiresString);
                     }
                 }
 
@@ -105,7 +122,9 @@ namespace NachoClient.iOS
                 var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
 
                 if (LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"])) {
-                    Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser existing account: {0}", userInfo.Property ("email"));
+                    Log.Info (Log.LOG_UI, "GoogleCredentialsViewController existing account: {0}", userInfo.Property ("email"));
+                    NcAlertView.ShowMessage (this, "Account Exists", "An account with that email address already exists. Duplicate accounts are not supported.");
+                    RestartAuthenticator ();
                 } else {
                     if (Account != null) {
                         Log.Info (Log.LOG_UI, "GoogleCredentialsViewController removing account ID{0}", Account.Id);
@@ -116,7 +135,7 @@ namespace NachoClient.iOS
                         (string)userInfo ["email"],
                         access_token,
                         refresh_token,
-                        expirationDateTime);
+                        expireSecs);
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
                     Log.Info (Log.LOG_UI, "GoogleCredentialsViewController created account ID{0}", Account.Id);
 
