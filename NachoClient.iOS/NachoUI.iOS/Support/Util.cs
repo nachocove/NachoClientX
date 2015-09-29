@@ -546,10 +546,10 @@ namespace NachoClient
             }
         }
 
-        public static void PerformAction (string action, string number)
+        public static bool PerformAction (string action, string number)
         {
             var uristr = String.Format ("{0}:{1}", action, Uri.EscapeDataString(number));
-            UIApplication.SharedApplication.OpenUrl (new Uri (uristr));
+            return UIApplication.SharedApplication.OpenUrl (new Uri (uristr));
         }
 
 
@@ -1022,11 +1022,15 @@ namespace NachoClient
                     ComplainAbout ("No Phone Number", "This contact does not have a phone number, and we are unable to modify the contact.");
                 }
             } else if (1 == contact.PhoneNumbers.Count) {
-                Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ());
+                if (!Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ())) {
+                    ComplainAbout ("Could Not Dial", "We are unable to dial this phone number");
+                }
             } else {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
-                        Util.PerformAction ("tel", p.Value);
+                        if (!Util.PerformAction ("tel", p.Value)) {
+                            ComplainAbout ("Could Not Dial", "We are unable to dial this phone number");
+                        }
                         return; 
                     }
                 }
