@@ -123,9 +123,21 @@ namespace NachoClient.iOS
 
             var imapServer = McServer.QueryByAccountIdAndCapabilities (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
             if (imapServer == null) {
-                imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
-                imapServer.Insert ();
-                Log.Info (Log.LOG_UI, "ImapAdvancedFieldsViewController create IMAP server: {0}/{1}/{2}:{3}", account.Id, imapServer.Id, imapServerName, imapServerPort);
+                imapServer = McServer.QueryByHost (account.Id, imapServerName);
+                if (null != imapServer) {
+                    if (!imapServer.Capabilities.HasFlag (McAccount.AccountCapabilityEnum.EmailReaderWriter)) {
+                        // Owen: What to do here?
+                        Log.Error (Log.LOG_UI, "Existing server {0}:{1}:{2} does not have the EmailReaderWriter flag", imapServer.AccountId, imapServer.Host, imapServer.Capabilities);
+                    }
+                    if (imapServer.Port != imapServerPort) {
+                        // Owen: What to do here?
+                        Log.Error (Log.LOG_UI, "Existing server {0}:{1}:{2} does not have the right port ({3}) flag", imapServer.AccountId, imapServer.Host, imapServer.Port, imapServerPort);
+                    }
+                } else {
+                    imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
+                    imapServer.Insert ();
+                    Log.Info (Log.LOG_UI, "ImapAdvancedFieldsViewController create IMAP server: {0}/{1}/{2}:{3}", account.Id, imapServer.Id, imapServerName, imapServerPort);
+                }
             } else {
                 imapServer.Host = imapServerName;
                 imapServer.Port = imapServerPort;
@@ -135,9 +147,21 @@ namespace NachoClient.iOS
 
             var smtpServer = McServer.QueryByAccountIdAndCapabilities (account.Id, McAccount.AccountCapabilityEnum.EmailSender);
             if (smtpServer == null) {
-                smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
-                smtpServer.Insert ();
-                Log.Info (Log.LOG_UI, "ImapAdvancedFieldsViewController create SMTP server: {0}/{1}/{2}:{3}", account.Id, smtpServer.Id, smtpServerName, smtpServerPort);
+                smtpServer = McServer.QueryByHost (account.Id, smtpServerName);
+                if (null != smtpServer) {
+                    if (!smtpServer.Capabilities.HasFlag (McAccount.AccountCapabilityEnum.EmailSender)) {
+                        // Owen: What to do here?
+                        Log.Error (Log.LOG_UI, "Existing server {0}:{1}:{2} does not have the EmailSender flag", smtpServer.AccountId, smtpServer.Host, smtpServer.Capabilities);
+                    }
+                    if (smtpServer.Port != smtpServerPort) {
+                        // Owen: What to do here?
+                        Log.Error (Log.LOG_UI, "Existing server {0}:{1}:{2} does not have the right port ({3}) flag", smtpServer.AccountId, smtpServer.Host, smtpServer.Port, smtpServerPort);
+                    }
+                } else {
+                    smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
+                    smtpServer.Insert ();
+                    Log.Info (Log.LOG_UI, "ImapAdvancedFieldsViewController create SMTP server: {0}/{1}/{2}:{3}", account.Id, smtpServer.Id, smtpServerName, smtpServerPort);
+                }
             } else {
                 smtpServer.Host = smtpServerName;
                 smtpServer.Port = smtpServerPort;
