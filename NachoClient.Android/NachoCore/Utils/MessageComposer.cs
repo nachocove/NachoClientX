@@ -57,6 +57,7 @@ namespace NachoCore.Utils
         MessagePreparationStatus MessagePreparationState = MessagePreparationStatus.NotStarted;
         MessageDownloader MainMessageDownloader;
         MessageDownloader RelatedMessageDownloader;
+        List<BinaryReader> OpenReaders;
 
         #endregion
 
@@ -169,8 +170,10 @@ namespace NachoCore.Utils
             // TODO: It would be nice to do any heavy work like large file copying in a background task.
             // I'm not familiar enough with the details to set that up quite yet.
             copy.SetDisplayName (attachment.DisplayName);
-            copy.UpdateFileCopy (attachment.GetFilePath ());
             copy.Update ();
+            if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                copy.UpdateFileCopy (attachment.GetFilePath ());
+            }
         }
 
         private void DownloadRelatedMessage ()
@@ -353,9 +356,17 @@ namespace NachoCore.Utils
 
         public MimeMessage Save (string html)
         {
+            OpenReaders = new List<BinaryReader> ();
             var mime = BuildMimeMessage (html);
             var text = mime.GetTextBody (MimeKit.Text.TextFormat.Text);
             var preview = text.Substring (0, Math.Min (text.Length, 256));
+            if (Message.ReferencedEmailId != 0) {
+                var relatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.ReferencedEmailId);
+                // the referenced message may not exist anyore
+                if (relatedMessage != null) {
+                    EmailHelper.SetupReferences (ref mime, relatedMessage);
+                }
+            }
             McBody body;
             if (Message.BodyId != 0) {
                 body = McBody.QueryById<McBody> (Message.BodyId);
@@ -367,13 +378,7 @@ namespace NachoCore.Utils
                     mime.WriteTo (stream);
                 });
             }
-            if (Message.ReferencedEmailId != 0) {
-                var relatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.ReferencedEmailId);
-                // the referenced message may not exist anyore
-                if (relatedMessage != null) {
-                    EmailHelper.SetupReferences (ref mime, relatedMessage);
-                }
-            }
+            ClearReaders ();
             Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
                 var message = record as McEmailMessage;
                 message.Subject = Message.Subject;
@@ -386,7 +391,6 @@ namespace NachoCore.Utils
                 message.BodyId = body.Id;
                 message.BodyPreview = preview;
                 message.DateReceived = mime.Date.DateTime;
-//                message.QRType = Message.QRType;
                 return true;
             });
             Bundle.Invalidate ();
@@ -410,7 +414,7 @@ namespace NachoCore.Utils
             var htmlPart = HtmlPart (doc);
             alternative.Add (htmlPart);
             var attachments = McAttachment.QueryByItemId (Message);
-            if (attachments.Count > 0) {
+            if (false && attachments.Count > 0) {
                 var mixed = new Multipart ();
                 mixed.Add (alternative);
                 foreach (var attachment in attachments) {
@@ -447,9 +451,13 @@ namespace NachoCore.Utils
                     if (node.Name.Equals ("img")) {
                         if (node.Attributes.Contains ("nacho-bundle-entry")) {
                             var entryName = node.Attributes ["nacho-bundle-entry"].Value;
+                            var info = Bundle.MemberForEntryName (entryName);
                             hasRelatedParts = true;
-                            var attachment = new MimePart();
-                            // TODO: populate attachment part
+                            var attachment = new MimePart (info.ContentType);
+                            attachment.FileName = info.Filename;
+                            attachment.IsAttachment = true;
+                            attachment.ContentTransferEncoding = ContentEncoding.Base64;
+                            attachment.ContentObject = new ContentObject (info.Reader.BaseStream);
                             attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
                             related.Add (attachment);
                             node.SetAttributeValue ("src", "cid:" + attachment.ContentId);
@@ -469,6 +477,16 @@ namespace NachoCore.Utils
                 return related;
             }
             return htmlPart;
+        }
+
+        void ClearReaders ()
+        {
+            if (OpenReaders != null) {
+                foreach (var reader in OpenReaders) {
+                    reader.Close ();
+                }
+                OpenReaders = null;
+            }
         }
 
         #endregion

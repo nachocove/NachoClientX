@@ -54,6 +54,20 @@ namespace NachoCore.Utils
 
         }
 
+        public class MemberInfo {
+
+            public readonly string Filename;
+            public readonly string ContentType;
+            public readonly BinaryReader Reader;
+
+            public MemberInfo (string filename, string contentType, BinaryReader reader)
+            {
+                Filename = filename;
+                ContentType = contentType;
+                Reader = reader;
+            }
+        }
+
         private class ParseResult {
             public HtmlDocument FullHtmlDocument = null;
             public HtmlDocument TopHtmlDocument = null;
@@ -237,6 +251,16 @@ namespace NachoCore.Utils
             get {
                 return Storage.BaseUrl ();
             }
+        }
+
+        public MemberInfo MemberForEntryName (string entryName)
+        {
+            var entry = Manifest.Entries [entryName];
+            if (entry != null) {
+                var reader = Storage.BinaryReaderForPath (entry.Path);
+                return new MemberInfo (Path.GetFileName (entry.Path), entry.ContentType, reader);
+            }
+            return null;
         }
 
         #endregion
@@ -1131,7 +1155,13 @@ namespace NachoCore.Utils
                                 entry.ContentType = sourceEntry.ContentType;
                                 using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
                                     using (var reader = sourceBundle.Storage.BinaryReaderForPath (sourceEntry.Path)) {
-                                        writer.Write (reader.Read ());
+                                        int L = 1024;
+                                        byte [] buffer = new byte[L];
+                                        int bytesRead = 0;
+                                        do {
+                                            bytesRead = reader.Read (buffer, 0, L);
+                                            writer.Write(buffer, 0, bytesRead);
+                                        } while (bytesRead > 0);
                                     }
                                 }
                             } else {
