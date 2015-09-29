@@ -133,6 +133,12 @@ namespace NachoCore.Utils
 
         }
 
+        static public string FullDateYearTimeString (DateTime d)
+        {
+            NcAssert.True (DateTimeKind.Local != d.Kind);
+            return d.LocalT ().ToString ("ddd, MMM d, yyyy - h:mm ") + d.LocalT ().ToString ("tt").ToLower ();
+        }
+
         static public string UniversalFullDateTimeString (DateTime d)
         {
             return d.LocalT ().ToString ("U");

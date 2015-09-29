@@ -383,11 +383,19 @@ namespace NachoCore
                         lock (deviceCalendars) {
                             bool somethingHappened = false;
                             try {
-                                while (!deviceCalendars.ProcessNextCal ()) {
+                                while (!deviceCalendars.ProcessNextCalendarFolder ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
                                 }
-                                while (!deviceCalendars.RemoveNextStale ()) {
+                                while (!deviceCalendars.ProcessNextCalendarEvent ()) {
+                                    somethingHappened = true;
+                                    cToken.ThrowIfCancellationRequested ();
+                                }
+                                while (!deviceCalendars.RemoveNextStaleEvent ()) {
+                                    somethingHappened = true;
+                                    cToken.ThrowIfCancellationRequested ();
+                                }
+                                while (!deviceCalendars.RemoveNextStaleFolder ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
                                 }

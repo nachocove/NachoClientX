@@ -1667,11 +1667,20 @@
     <Compile Include="NachoUI.iOS\LikelyToReadViewController.designer.cs">
       <DependentUpon>LikelyToReadViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration45.cs">
+      <Link>NachoCore\Model\Migration\NcMigration45.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress\EmailAddressScore.cs">
       <Link>NachoCore\Model\McEmailAddress\EmailAddressScore.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress\McEmailAddress.cs">
       <Link>NachoCore\Model\McEmailAddress\McEmailAddress.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration46.cs">
+      <Link>NachoCore\Model\Migration\NcMigration46.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEventDetail.cs">
+      <Link>NachoCore\Utils\NcEventDetail.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

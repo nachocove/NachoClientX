@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using NachoCore.Utils;
 using NachoCore.Model;
+using System.Linq;
 
 namespace NachoCore
 {
@@ -55,6 +56,13 @@ namespace NachoCore
         protected NcResult FailureInd;
         protected Object LockObj = new Object ();
 
+        /// <summary>
+        /// Save the credential epoch here, so we can tell after an auth-fail if the credential was changed
+        /// while we were busy.
+        /// </summary>
+        /// <value>The cred epoch.</value>
+        protected int SavedCredEpoch;
+
         protected enum ResolveAction
         {
             None,
@@ -70,6 +78,7 @@ namespace NachoCore
             PendingResolveLockObj = new object ();
             InternalCts = new CancellationTokenSource ();
             Cts = CancellationTokenSource.CreateLinkedTokenSource (InternalCts.Token, BEContext.ProtoControl.Cts.Token);
+            SavedCredEpoch = BEContext.Cred.Epoch;
         }
 
         /// <summary>
