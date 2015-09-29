@@ -597,12 +597,11 @@ namespace NachoClient.iOS
                     string refresh_token;
                     e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
 
-                    int expires = 0;
                     string expiresString = "0";
-                    DateTime expirationDateTime = DateTime.UtcNow;
+                    uint expirationSecs = 0;
                     if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
-                        if (int.TryParse (expiresString, out expires)) {
-                            expirationDateTime = expirationDateTime.AddSeconds (expires);
+                        if (!uint.TryParse (expiresString, out expirationSecs)) {
+                            Log.Info (Log.LOG_UI, "StartGoogleLogin: Could not convert expires value {0} to int", expiresString);
                         }
                     }
 
@@ -618,8 +617,7 @@ namespace NachoClient.iOS
                     }
 
                     var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-                    cred.UpdateOauth2 (access_token, refresh_token, expirationDateTime);
-                    cred.Update ();
+                    cred.UpdateOauth2 (access_token, refresh_token, expirationSecs);
 
                     BackEnd.Instance.CredResp (account.Id);
 

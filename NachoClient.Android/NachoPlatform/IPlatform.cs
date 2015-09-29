@@ -191,15 +191,25 @@ namespace NachoPlatform
     {
         public abstract string ServerId { get; }
 
+        public abstract PlatformCalendarFolderRecord ParentFolder { get; }
+
         public abstract DateTime LastUpdate { get; }
 
         public abstract NcResult ToMcCalendar ();
     }
 
+    public abstract class PlatformCalendarFolderRecord
+    {
+        public abstract string ServerId { get; }
+
+        public abstract string DisplayName { get; }
+
+        public abstract NcResult ToMcFolder ();
+    }
+
     public interface IPlatformCalendars
     {
-        // Can be called from any thread.
-        IEnumerable<PlatformCalendarRecord> GetCalendars ();
+        void GetCalendars (out IEnumerable<PlatformCalendarFolderRecord> folders, out IEnumerable<PlatformCalendarRecord> events);
 
         event EventHandler ChangeIndicator;
 

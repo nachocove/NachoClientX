@@ -29,9 +29,10 @@ namespace NachoClient.iOS
     {
         // Model information
         protected McEvent e;
-        protected McCalendar root;
-        protected McAbstrCalendarRoot c;
-        protected McAccount account;
+        protected NcEventDetail detail;
+        //protected McCalendar root;
+        //protected McAbstrCalendarRoot c;
+        //protected McAccount account;
 
         // UI elements
         protected UIView eventCardView;
@@ -80,14 +81,14 @@ namespace NachoClient.iOS
         protected UIGestureRecognizer.Token notesTapGestureRecognizerTapToken;
 
         // Helper objects
-        protected bool isRecurring = false;
-        protected bool isOrganizer = false;
-        protected bool isAppointment = false;
+        //protected bool isRecurring = false;
+        //protected bool isOrganizer = false;
+        //protected bool isAppointment = false;
         protected bool hasLocation = false;
         protected bool hasAttachments = false;
         protected bool hasAttendees = false;
         protected bool hasNotes = false;
-        protected bool hasBeenEdited = false;
+        //protected bool hasBeenEdited = false;
         protected bool attachmentsDrawerOpen = false;
         // Keep track of the user's Attend/Maybe/Decline choice, so we don't have to worry about
         // whether or not the database item is up to date.
@@ -470,124 +471,60 @@ namespace NachoClient.iOS
 
             // This is not UI related, but this flag should be reset at the same time that the
             // view hierarchy is created.
-            hasBeenEdited = false;
+            if (null != detail) {
+                detail.HasBeenEdited = false;
+            }
         }
 
         protected override void ConfigureAndLayout ()
         {
             NcAssert.NotNull (e);
 
-            account = McAccount.QueryById<McAccount> (e.AccountId);
-            root = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            detail = new NcEventDetail (e);
 
-            if (0 == e.ExceptionId) {
-                c = root;
-            } else {
-                c = McException.QueryById<McException> (e.ExceptionId);
-            }
-            if (null == account || null == root || null == c) {
+            if (!detail.IsValid) {
                 ShowNothing ();
                 return;
             }
 
-            if (0 != root.recurrences.Count) {
-                isRecurring = true;
-            }
-
-            // If the meeting status field is not set, assume that this is an appointment owned by the user.
-            isAppointment = !root.MeetingStatusIsSet || NcMeetingStatus.Appointment == root.MeetingStatus;
-
-            isOrganizer = isAppointment ||
-                NcMeetingStatus.MeetingOrganizer == root.MeetingStatus ||
-                NcMeetingStatus.MeetingOrganizerCancelled == root.MeetingStatus;
-
-            // The event can be edited if (1) it is owned by the current user, (2) it is not a recurring event,
-            // (3) it is from a writable calendar, and (4) it is not a meeting on the device calendar.  (The
-            // recurring event restriction will be lifted at some future date.)
-            if (isOrganizer && !isRecurring && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && (0 == root.attendees.Count || McAccount.AccountTypeEnum.Device != account.AccountType)) {
+            if (detail.CanEdit) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
 
             if (!userResponseIsSet) {
-                userResponse = c.HasResponseType () ? c.GetResponseType () : NcResponseType.None;
+                userResponse = detail.SpecificItem.HasResponseType () ? detail.SpecificItem.GetResponseType () : NcResponseType.None;
                 userResponseIsSet = true;
             }
 
             ConfigureRsvpBar ();
 
-            // If the user has just edited the event, changing the start or end times, then the McEvent object
-            // that we have is stale.  There is not a reliable way to refresh the McEvent object.  Instead, we
-            // sometimes pull the start and end times from the McCalendar object rather than the McEvent object.
-            // TODO This logic doesn't work when a recurring meeting has been edited.  Recurring meetings can't
-            // be edited yet.  But when that support is added, this code will have to change.
-            DateTime startTime;
-            DateTime endTime;
-            if (hasBeenEdited && !isRecurring) {
-                // The user might have edited the event.  Use the McCalendar object.
-                if (c.AllDayEvent) {
-                    // If the time of the McEvent falls within the McCalendar's times, use the McEvent.
-                    // Otherwise, use the first day of the McCalendar.
-                    if (c.StartTime <= e.GetStartTimeUtc () && e.GetStartTimeUtc () < c.EndTime) {
-                        startTime = e.GetStartTimeUtc ();
-                        endTime = e.GetEndTimeUtc ();
-                    } else {
-                        // Convert the McCalendar's start time to the event's time zone, extract the date,
-                        // make that a local time, and then convert it to UTC.
-                        startTime = DateTime.SpecifyKind (
-                            CalendarHelper.ConvertTimeFromUtc (c.StartTime, new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ()).Date,
-                            DateTimeKind.Local).ToUniversalTime ();
-                        endTime = startTime.AddDays (1);
-                    }
-                } else {
-                    startTime = c.StartTime;
-                    endTime = c.EndTime;
-                }
-            } else {
-                startTime = e.GetStartTimeUtc ();
-                endTime = e.GetEndTimeUtc ();
-            }
-
-            NavigationItem.Title = startTime.ToLocalTime ().ToString ("Y");
+            NavigationItem.Title = detail.StartTime.ToLocalTime ().ToString ("Y");
 
             var titleLabel = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;
-            titleLabel.Text = c.GetSubject ();
+            titleLabel.Text = detail.SpecificItem.GetSubject ();
             titleLabel.Lines = 0;
             titleLabel.LineBreakMode = UILineBreakMode.WordWrap;
             titleLabel.SizeToFit ();
 
             var whenLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
-            whenLabel.Text = Pretty.ExtendedDateString (startTime);
+            whenLabel.Text = detail.DateString;
 
             var durationLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DURATION_TAG) as UILabel;
-            if (c.AllDayEvent) {
-                durationLabel.Text = "All day event";
-                if ((c.EndTime - c.StartTime) > TimeSpan.FromDays (1)) {
-                    durationLabel.Text = string.Format ("All day from {0} \nthrough {1}",
-                        Pretty.FullDateYearString (c.StartTime), Pretty.FullDateYearString (CalendarHelper.ReturnAllDayEventEndTime (c.EndTime)));
-                }
-            } else {
-                if (startTime.ToLocalTime ().DayOfYear == endTime.ToLocalTime ().DayOfYear) {
-                    durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (startTime), Pretty.FullTimeString (endTime));
-                } else {
-                    durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (startTime), Pretty.FullDateTimeString (endTime));
-                }
-            }
+            durationLabel.Text = detail.DurationString;
             durationLabel.Frame = new CGRect (durationLabel.Frame.X, durationLabel.Frame.Y, SCREEN_WIDTH - 90, 20);
             durationLabel.Lines = 0;
             durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
             durationLabel.SizeToFit ();
 
-            if (isRecurring) {
+            if (detail.IsRecurring) {
                 var recurrenceLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_RECURRENCE_TAG) as UILabel;
-                recurrenceLabel.Text = Pretty.MakeRecurrenceString (root.recurrences);
+                recurrenceLabel.Text = detail.RecurrenceString;
                 recurrenceLabel.Lines = 0;
                 recurrenceLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 recurrenceLabel.SizeToFit ();
             }
 
-            if (string.IsNullOrEmpty (c.GetLocation ())) {
+            if (string.IsNullOrEmpty (detail.SpecificItem.GetLocation ())) {
                 hasLocation = false;
                 View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = true;
                 locationView.Hidden = true;
@@ -595,7 +532,7 @@ namespace NachoClient.iOS
                 hasLocation = true;
                 View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = false;
                 locationView.Hidden = false;
-                locationView.SetText (c.GetLocation ());
+                locationView.SetText (detail.SpecificItem.GetLocation ());
             }
 
             // Phone disabled for now.
@@ -604,33 +541,30 @@ namespace NachoClient.iOS
             phoneButton.SetTitle ("Not available", UIControlState.Normal);
             phoneButton.Enabled = false;
             #endif
-            descriptionView.Configure (c, false);
+            descriptionView.Configure (detail.SpecificItem, false);
 
             var alertDetailLabel = View.ViewWithTag ((int)TagType.EVENT_ALERT_DETAIL_TAG) as UILabel;
-            alertDetailLabel.Text = Pretty.ReminderString (c.HasReminder (), c.GetReminder ());
+            alertDetailLabel.Text = detail.ReminderString;
             alertDetailLabel.SizeToFit ();
-            bool canChangeReminder =
-                account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) &&
-                (McAccount.AccountTypeEnum.Device != account.AccountType || !isRecurring);
-            eventAlertsViewArrow.Hidden = !canChangeReminder;
-            alertTapGestureRecognizer.Enabled = canChangeReminder;
+            eventAlertsViewArrow.Hidden = !detail.CanChangeReminder;
+            alertTapGestureRecognizer.Enabled = detail.CanChangeReminder;
 
-            hasAttachments = 0 != c.attachments.Count ();
+            hasAttachments = 0 != detail.SpecificItem.attachments.Count ();
             attachmentListView.Hidden = !hasAttachments;
             ConfigureAttachments ();
 
             // Organizer
-            if (!String.IsNullOrEmpty (root.OrganizerEmail) && !isOrganizer) {
+            if (detail.HasNonSelfOrganizer) {
                 var organizerEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_EMAIL_LABEL) as UILabel;
-                if (null != root.OrganizerName) {
+                if (null != detail.SeriesItem.OrganizerName) {
                     var organizerNameLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_NAME_LABEL) as UILabel;
-                    organizerNameLabel.Text = root.OrganizerName;
+                    organizerNameLabel.Text = detail.SeriesItem.OrganizerName;
                 } else {
                     organizerEmailLabel.Frame = new CGRect (92, (eventOrganizerView.Frame.Height / 2) - 2, eventOrganizerView.Frame.Width - 92 - 18, 20);
                 }
-                organizerEmailLabel.Text = root.OrganizerEmail;
+                organizerEmailLabel.Text = detail.SeriesItem.OrganizerEmail;
 
-                var userImage = Util.ImageOfSender (account.Id, root.OrganizerEmail);
+                var userImage = Util.ImageOfSender (detail.Account.Id, detail.SeriesItem.OrganizerEmail);
 
                 if (null != userImage) {
                     using (var rawImage = userImage) {
@@ -640,7 +574,7 @@ namespace NachoClient.iOS
                             userImageView.Layer.CornerRadius = (40.0f / 2.0f);
                             userImageView.Layer.MasksToBounds = true;
                             userImageView.Image = originalImage;
-                            userImageView.Layer.BorderWidth = .25f;
+                            userImageView.Layer.BorderWidth = 0.25f;
                             userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
                             eventOrganizerView.AddSubview (userImageView);
                         }
@@ -650,13 +584,13 @@ namespace NachoClient.iOS
                     // User userLabelView view, if no image
                     var userLabelView = new UILabel (new CGRect (42, 10 + 16, 40, 40));
                     userLabelView.Font = A.Font_AvenirNextRegular17;
-                    userLabelView.BackgroundColor = Util.GetCircleColorForEmail (root.OrganizerEmail, account.Id);
+                    userLabelView.BackgroundColor = Util.GetCircleColorForEmail (detail.SeriesItem.OrganizerEmail, detail.Account.Id);
                     userLabelView.TextColor = UIColor.White;
                     userLabelView.TextAlignment = UITextAlignment.Center;
                     userLabelView.LineBreakMode = UILineBreakMode.Clip;
                     userLabelView.Layer.CornerRadius = (40 / 2);
                     userLabelView.Layer.MasksToBounds = true;
-                    var nameString = (null != root.OrganizerName ? root.OrganizerName : root.OrganizerEmail);
+                    var nameString = (null != detail.SeriesItem.OrganizerName ? detail.SeriesItem.OrganizerName : detail.SeriesItem.OrganizerEmail);
                     userLabelView.Text = Util.NameToLetters (nameString);
                     eventOrganizerView.AddSubview (userLabelView);
                 }
@@ -676,7 +610,7 @@ namespace NachoClient.iOS
             var attendeeImageDiameter = 40;
             var iconSpace = EVENT_CARD_WIDTH - 60;
             var iconPadding = (iconSpace - (attendeeImageDiameter * 5)) / 4;
-            if (0 == c.attendees.Count) {
+            if (0 == detail.SpecificItem.attendees.Count) {
                 // Disable the attendees view.
                 hasAttendees = false;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = true;
@@ -687,19 +621,19 @@ namespace NachoClient.iOS
                 eventAttendeeView.Hidden = false;
                 nfloat spacing = 0;
                 int attendeeNum = 0;
-                foreach (var attendee in c.attendees) {
+                foreach (var attendee in detail.SpecificItem.attendees) {
 
-                    Util.CreateAttendeeButton (attendeeImageDiameter, spacing, titleOffset, attendee, attendeeNum, isOrganizer, eventAttendeeView);
+                    Util.CreateAttendeeButton (attendeeImageDiameter, spacing, titleOffset, attendee, attendeeNum, detail.IsOrganizer, eventAttendeeView);
 
                     spacing += (attendeeImageDiameter + iconPadding);
-                    if (4 <= ++attendeeNum && 5 < c.attendees.Count) {
+                    if (4 <= ++attendeeNum && 5 < detail.SpecificItem.attendees.Count) {
                         // There is room for five attendees in the view.  If the meeting
                         // has more than five attendees, only show four of them and save
                         // the last slot for showing the number of extra attendees.
                         break;
                     }
                 }
-                if (5 < c.attendees.Count) {
+                if (5 < detail.SpecificItem.attendees.Count) {
                     extraAttendeesButton = UIButton.FromType (UIButtonType.RoundedRect);
                     extraAttendeesButton.Layer.CornerRadius = attendeeImageDiameter / 2;
                     extraAttendeesButton.Layer.MasksToBounds = true;
@@ -709,7 +643,7 @@ namespace NachoClient.iOS
                     extraAttendeesButton.Font = A.Font_AvenirNextRegular14;
                     extraAttendeesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                     extraAttendeesButton.Tag = (int)TagType.EVENT_ATTENDEE_DETAIL_TAG;
-                    extraAttendeesButton.SetTitle (string.Format ("+{0}", c.attendees.Count - 4), UIControlState.Normal);
+                    extraAttendeesButton.SetTitle (string.Format ("+{0}", detail.SpecificItem.attendees.Count - 4), UIControlState.Normal);
                     extraAttendeesButton.AccessibilityLabel = "More";
                     extraAttendeesButton.TouchUpInside += ExtraAttendeesTouchUpInside;
                     eventAttendeeView.AddSubview (extraAttendeesButton);
@@ -725,20 +659,10 @@ namespace NachoClient.iOS
             eventNotes.SizeToFit ();
 
             var calendarName = (UILabel)View.ViewWithTag ((int)TagType.EVENT_CALENDAR_DETAIL_TAG);
-            string accountName = account.DisplayName;
-            string folderName = "(Unknown)";
-            var folder = McFolder.QueryByFolderEntryId<McCalendar> (root.AccountId, root.Id).FirstOrDefault ();
-            if (null != folder) {
-                folderName = folder.DisplayName;
-            }
-            if (string.IsNullOrEmpty(accountName) || accountName == folderName) {
-                calendarName.Text = folderName;
-            } else {
-                calendarName.Text = string.Format ("{0} : {1}", accountName, folderName);
-            }
+            calendarName.Text = detail.CalendarNameString;
 
             // Cancel meeting button.  Only visible for recurring meetings owned by the user in writable calendars
-            if (isOrganizer && isRecurring && hasAttendees && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+            if (detail.ShowCancelMeetingButton) {
                 cancelMeetingSeparatorLine.Hidden = false;
                 cancelMeetingButton.Hidden = false;
                 cancelMeetingLabel.Hidden = false;
@@ -856,7 +780,7 @@ namespace NachoClient.iOS
 
         protected string MyCalendarName (McCalendar c)
         {
-            var candidates = McFolder.QueryByFolderEntryId<McCalendar> (account.Id, c.Id);
+            var candidates = McFolder.QueryByFolderEntryId<McCalendar> (detail.Account.Id, c.Id);
             if ((null == candidates) || (0 == candidates.Count)) {
                 return "None";
             } else {
@@ -868,18 +792,20 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("EventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.Setup (null, account, c.attendees, c, false, CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr), 0 != root.recurrences.Count);
+                dc.Setup (null, detail.Account, detail.SpecificItem.attendees, detail.SpecificItem,
+                    false, CalendarHelper.IsOrganizer (detail.SeriesItem.OrganizerEmail, detail.Account.EmailAddr),
+                    detail.IsRecurring);
                 return;
             }
 
             if (segue.Identifier.Equals ("EventToAlert")) {
                 var dc = (AlertChooserViewController)segue.DestinationViewController;
-                dc.SetReminder (c.HasReminder (), c.GetReminder ());
+                dc.SetReminder (detail.SpecificItem.HasReminder (), detail.SpecificItem.GetReminder ());
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     uint reminder;
-                    c.ReminderIsSet = dc.GetReminder (out reminder);
-                    if (c.ReminderIsSet) {
-                        c.Reminder = reminder;
+                    detail.SpecificItem.ReminderIsSet = dc.GetReminder (out reminder);
+                    if (detail.SpecificItem.ReminderIsSet) {
+                        detail.SpecificItem.Reminder = reminder;
                     }
                     SyncMeetingRequest ();
                 };
@@ -900,7 +826,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EventToCal")) {
                 // TODO I don't this this segue is possible.
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
-                dc.SetCalendars (new NachoFolders (account.Id, NachoFolders.FilterForCalendars));
+                dc.SetCalendars (new NachoFolders (detail.Account.Id, NachoFolders.FilterForCalendars));
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     // TODO Do something with the calendar index that is returned.
                     // dc.GetCalIndex ();
@@ -910,7 +836,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this, c.GetSubject (), insertDate: false);
+                dc.SetOwner (this, detail.SpecificItem.GetSubject (), insertDate: false);
                 return;
             }
 
@@ -950,7 +876,7 @@ namespace NachoClient.iOS
         {
             attachmentListView.Reset ();
             bool firstAttachment = true;
-            foreach (var attachment in c.attachments) {
+            foreach (var attachment in detail.SpecificItem.attachments) {
                 if (!firstAttachment) {
                     attachmentListView.LastAttachmentView ().ShowSeparator ();
                 }
@@ -966,12 +892,12 @@ namespace NachoClient.iOS
             AdjustViewLayout (TagType.EVENT_TITLE_LABEL_TAG, 15 + 18, ref yOffset, 20, SCREEN_WIDTH - 66);
             AdjustY (eventCardView, yOffset + 15);
 
-            nfloat internalYOffset = isAppointment ? 0 : 60;
+            nfloat internalYOffset = detail.IsAppointment ? 0 : 60;
 
             AdjustViewLayout (TagType.EVENT_WHEN_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             AdjustViewLayout (TagType.EVENT_WHEN_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
             AdjustViewLayout (TagType.EVENT_WHEN_DURATION_TAG, 42, ref internalYOffset, 0);
-            if (isRecurring) {
+            if (detail.IsRecurring) {
                 AdjustViewLayout (TagType.EVENT_WHEN_RECURRENCE_TAG, 42, ref internalYOffset, 0);
             }
 
@@ -1003,7 +929,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            if (!String.IsNullOrEmpty (root.OrganizerEmail) && !isOrganizer) {
+            if (detail.HasNonSelfOrganizer) {
                 AdjustViewLayout (TagType.EVENT_ORGANIZER_VIEW_TAG, 0, ref internalYOffset, padding);
             }
 
@@ -1023,7 +949,7 @@ namespace NachoClient.iOS
             AdjustViewLayout (TagType.EVENT_CALENDAR_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             AdjustViewLayout (TagType.EVENT_CALENDAR_DETAIL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
 
-            if (isOrganizer && isRecurring && hasAttendees && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && McAccount.AccountTypeEnum.Device != account.AccountType) {
+            if (detail.ShowCancelMeetingButton) {
                 AdjustViewLayout (cancelMeetingSeparatorLine, 0, ref internalYOffset, 0);
                 AdjustViewLayout (cancelMeetingButton, 18, ref internalYOffset, 18);
                 ViewFramer.Create (cancelMeetingLabel).Y (cancelMeetingButton.Frame.Y);
@@ -1121,9 +1047,9 @@ namespace NachoClient.iOS
 
         public void ConfigureRsvpBar ()
         {
-            if (c.MeetingStatus == NcMeetingStatus.MeetingAttendeeCancelled) {
+            if (detail.SpecificItem.MeetingStatus == NcMeetingStatus.MeetingAttendeeCancelled) {
 
-                if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                     // Show "Remove from calendar"
                     messageLabel.Hidden = true;
                     acceptButton.Hidden = true;
@@ -1155,7 +1081,7 @@ namespace NachoClient.iOS
                     rsvpSeparatorLine.Hidden = false;
                 }
 
-            } else if (isAppointment) {
+            } else if (detail.IsAppointment) {
 
                 // It's an appointment.  Leave out the header section entirely.
                 messageLabel.Hidden = true;
@@ -1171,7 +1097,7 @@ namespace NachoClient.iOS
                 removeFromCalendarLabel.Hidden = true;
                 rsvpSeparatorLine.Hidden = true;
 
-            } else if (isOrganizer) {
+            } else if (detail.IsOrganizer) {
 
                 // Show "You are the organizer"
                 messageLabel.Hidden = false;
@@ -1257,15 +1183,15 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-            NcAssert.True (0 != c.Id);
-            c.Update ();
-            BackEnd.Instance.UpdateCalCmd (account.Id, c.Id, false);
-            c = McCalendar.QueryById<McCalendar> (c.Id);
+            NcAssert.True (0 != detail.SpecificItem.Id);
+            detail.SpecificItem.Update ();
+            BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
+            detail.Refresh ();
         }
 
         protected void UpdateStatus (NcResponseType response)
         {
-            if (isRecurring) {
+            if (detail.IsRecurring) {
                 if (NcResponseType.Declined == response) {
                     NcActionSheet.Show (View, this, null,
                         "Declining the meeting will also delete the meeting from your calendar.",
@@ -1311,55 +1237,50 @@ namespace NachoClient.iOS
             userResponseIsSet = true;
             if (occurrenceOnly) {
                 DateTime occurrenceStartTime;
-                if (c is McException) {
-                    occurrenceStartTime = ((McException)c).ExceptionStartTime;
+                if (detail.SpecificItem is McException) {
+                    occurrenceStartTime = ((McException)detail.SpecificItem).ExceptionStartTime;
                 } else {
                     occurrenceStartTime = e.StartTime;
                 }
-                BackEnd.Instance.RespondCalCmd (account.Id, root.Id, response, occurrenceStartTime);
-                if (root.ResponseRequestedIsSet && root.ResponseRequested) {
-                    var icalpart = CalendarHelper.MimeResponseFromCalendar (root, response, occurrenceStartTime);
+                BackEnd.Instance.RespondCalCmd (detail.Account.Id, detail.SeriesItem.Id, response, occurrenceStartTime);
+                if (detail.SeriesItem.ResponseRequestedIsSet && detail.SeriesItem.ResponseRequested) {
+                    var icalpart = CalendarHelper.MimeResponseFromCalendar (detail.SeriesItem, response, occurrenceStartTime);
                     var mimeBody = CalendarHelper.CreateMime ("", icalpart, new List<McAttachment> ());
-                    CalendarHelper.SendMeetingResponse (account, root, mimeBody, response);
+                    CalendarHelper.SendMeetingResponse (detail.Account, detail.SeriesItem, mimeBody, response);
                 }
             } else {
-                BackEnd.Instance.RespondCalCmd (account.Id, root.Id, response);
-                if (root.ResponseRequestedIsSet && root.ResponseRequested) {
-                    var iCalPart = CalendarHelper.MimeResponseFromCalendar (root, response);
+                BackEnd.Instance.RespondCalCmd (detail.Account.Id, detail.SeriesItem.Id, response);
+                if (detail.SeriesItem.ResponseRequestedIsSet && detail.SeriesItem.ResponseRequested) {
+                    var iCalPart = CalendarHelper.MimeResponseFromCalendar (detail.SeriesItem, response);
                     var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
-                    CalendarHelper.SendMeetingResponse (account, root, mimeBody, response);
+                    CalendarHelper.SendMeetingResponse (detail.Account, detail.SeriesItem, mimeBody, response);
                 }
             }
         }
 
         public string GetNoteText ()
         {
-            McNote Note;
-            if (null != c) {
-                Note = McNote.QueryByTypeId (c.Id, McNote.NoteType.Event).FirstOrDefault ();
-                return (null != Note ? Note.noteContent : "");
-            } else {
+            McNote Note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
+            if (null == Note) {
                 return "";
             }
+            return Note.noteContent;
         }
 
         public void SaveNote (string noteText)
         {
-            McNote Note;
-            if (null != c) {
-                Note = McNote.QueryByTypeId (c.Id, McNote.NoteType.Event).FirstOrDefault ();
-                if (null == Note) {
-                    Note = new McNote ();
-                    Note.AccountId = c.AccountId;
-                    Note.DisplayName = (c.GetSubject () + " - " + Pretty.ShortDateString (DateTime.UtcNow));
-                    Note.TypeId = c.Id;
-                    Note.noteType = McNote.NoteType.Event;
-                    Note.noteContent = noteText;
-                    Note.Insert ();
-                } else {
-                    Note.noteContent = noteText;
-                    Note.Update ();
-                }
+            McNote Note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
+            if (null == Note) {
+                Note = new McNote ();
+                Note.AccountId = detail.Account.Id;
+                Note.DisplayName = (detail.SpecificItem.GetSubject () + " - " + Pretty.ShortDateString (DateTime.UtcNow));
+                Note.TypeId = detail.SeriesItem.Id;
+                Note.noteType = McNote.NoteType.Event;
+                Note.noteContent = noteText;
+                Note.Insert ();
+            } else {
+                Note.noteContent = noteText;
+                Note.Update ();
             }
         }
 
@@ -1381,17 +1302,17 @@ namespace NachoClient.iOS
 
         private void AlertTapGestureRecognizerTap ()
         {
-            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+            if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 PerformSegue ("EventToAlert", this);
             }
         }
 
         private void OrganizerTapGestureRecognizerTap ()
         {
-            McContact contact = McContact.QueryByEmailAddress (account.Id, root.OrganizerEmail).FirstOrDefault ();
+            McContact contact = McContact.QueryByEmailAddress (detail.Account.Id, detail.SeriesItem.OrganizerEmail).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContacts (root.OrganizerEmail, account.Id, false);
-                contact = McContact.QueryByEmailAddress (account.Id, root.OrganizerEmail).FirstOrDefault ();
+                NcContactGleaner.GleanContacts (detail.SeriesItem.OrganizerEmail, detail.Account.Id, false);
+                contact = McContact.QueryByEmailAddress (detail.Account.Id, detail.SeriesItem.OrganizerEmail).FirstOrDefault ();
             }
             PerformSegue ("SegueToContactDetail", new SegueHolder (contact));
         }
@@ -1410,13 +1331,13 @@ namespace NachoClient.iOS
             NavigationController.PopViewController (true);
 
             // Remove the item from the calendar.
-            if (c is McException && NcMeetingStatus.MeetingAttendeeCancelled != root.MeetingStatus) {
+            if (detail.SpecificItem is McException && NcMeetingStatus.MeetingAttendeeCancelled != detail.SeriesItem.MeetingStatus) {
                 // The user is viewing an occurrence of a recurring meeting, and it appears that the
                 // entire series has not been canceled.  So delete just this one occurrence.
-                CalendarHelper.CancelOccurrence (root, ((McException)c).ExceptionStartTime);
-                BackEnd.Instance.UpdateCalCmd (root.AccountId, root.Id, sendBody: false);
+                CalendarHelper.CancelOccurrence (detail.SeriesItem, ((McException)detail.SpecificItem).ExceptionStartTime);
+                BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SeriesItem.Id, sendBody: false);
             } else {
-                BackEnd.Instance.DeleteCalCmd (root.AccountId, root.Id);
+                BackEnd.Instance.DeleteCalCmd (detail.Account.Id, detail.SeriesItem.Id);
             }
         }
 
@@ -1429,7 +1350,7 @@ namespace NachoClient.iOS
 
         private void AcceptButtonTouchUpInside (object sender, EventArgs e)
         {
-            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+            if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 SelectButtonForResponse (NcResponseType.Accepted);
                 UpdateStatus (NcResponseType.Accepted);
             } else {
@@ -1439,7 +1360,7 @@ namespace NachoClient.iOS
 
         private void TentativeButtonTouchUpInside (object sender, EventArgs e)
         {
-            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+            if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 SelectButtonForResponse (NcResponseType.Tentative);
                 UpdateStatus (NcResponseType.Tentative);
             } else {
@@ -1449,7 +1370,7 @@ namespace NachoClient.iOS
 
         private void DeclineButtonTouchUpInside (object sender, EventArgs e)
         {
-            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+            if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 SelectButtonForResponse (NcResponseType.Declined);
                 UpdateStatus (NcResponseType.Declined);
             } else {
@@ -1459,7 +1380,7 @@ namespace NachoClient.iOS
 
         private void EditButtonClicked (object sender, EventArgs e)
         {
-            hasBeenEdited = true;
+            detail.HasBeenEdited = true;
             PerformSegue ("EventToEditEvent", this);
         }
 
@@ -1469,19 +1390,19 @@ namespace NachoClient.iOS
                 "Cancel this occurrence of the meeting and send a cancellation notice to all of the attendees.",
                 new NcAlertAction ("Cancel this occurrence", NcAlertActionStyle.Destructive, () => {
                     DateTime occurrenceStartTime;
-                    if (c is McException) {
-                        occurrenceStartTime = ((McException)c).ExceptionStartTime;
+                    if (detail.SpecificItem is McException) {
+                        occurrenceStartTime = ((McException)detail.SpecificItem).ExceptionStartTime;
                     } else {
                         occurrenceStartTime = e.StartTime;
                     }
 
-                    CalendarHelper.CancelOccurrence (root, occurrenceStartTime);
-                    BackEnd.Instance.UpdateCalCmd (root.AccountId, root.Id, false);
+                    CalendarHelper.CancelOccurrence (detail.SeriesItem, occurrenceStartTime);
+                    BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SeriesItem.Id, false);
 
-                    var iCalCancelPart = CalendarHelper.MimeCancelFromOccurrence (root, c, e, occurrenceStartTime);
+                    var iCalCancelPart = CalendarHelper.MimeCancelFromOccurrence (detail.SeriesItem, detail.SpecificItem, detail.Occurrence, occurrenceStartTime);
                     var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
 
-                    CalendarHelper.SendMeetingCancelations (account, root, "Canceled: " + c.GetSubject (), mimeBody);
+                    CalendarHelper.SendMeetingCancelations (detail.Account, detail.SeriesItem, "Canceled: " + detail.SpecificItem.GetSubject (), mimeBody);
 
                     NavigationController.PopViewController (true);
                 }),
@@ -1512,7 +1433,7 @@ namespace NachoClient.iOS
         private void AttachmentsOnStateChange (bool isExpanded)
         {
             attachmentsDrawerOpen = !attachmentsDrawerOpen;
-            UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+            UIView.Animate (0.2, 0, UIViewAnimationOptions.CurveLinear,
                 () => {
                     LayoutView ();
                 },

@@ -31,9 +31,14 @@ using NachoPlatform;
  * The UI Must have started all accounts before modding the DB records associated
  * with those accounts - otherwise mod events will get dropped and not end up on the server.
  * */
+using System.Threading;
+
+
 namespace NachoCore
 {
-    public sealed class BackEnd : IBackEnd, INcProtoControlOwner
+    // This should be treated as a sealed class, although the sealed keyword is not here.
+    // We need to be able to inherit and override some functions for testing.
+    public class BackEnd : IBackEnd, INcProtoControlOwner
     {
         private static volatile BackEnd instance;
         private static object syncRoot = new Object ();
@@ -72,7 +77,72 @@ namespace NachoCore
 
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
-        private Dictionary<int, bool> CredReqActive;
+
+        /// <summary>
+        /// Gets or sets the refresh cancel source. 
+        /// </summary>
+        /// <value>The refresh cancel source.</value>
+        protected CancellationTokenSource Oauth2RefreshCancelSource { get; set; }
+
+        public enum CredReqActiveState
+        {
+            /// <summary>
+            /// We are attempting a token refresh.
+            /// </summary>
+            CredReqActive_AwaitingRefresh = 0,
+            /// <summary>
+            /// We're not waiting for anything, The UI should be told.
+            /// </summary>
+            CredReqActive_NeedUI,
+        }
+
+        protected class CredReqActiveStatus
+        {
+            /// <summary>
+            /// Current state of the CredReq.
+            /// </summary>
+            /// <value>The state.</value>
+            public CredReqActiveState State { get; set; }
+
+            /// <summary>
+            /// Set to true if the Controller called CredReq. This is a
+            /// reminder that we need to call CredResp when we have a new token.
+            /// </summary>
+            /// <value><c>true</c> if need cred resp; otherwise, <c>false</c>.</value>
+            public bool NeedCredResp { get; set; }
+
+            /// <summary>
+            /// Number of retries for the token.
+            /// </summary>
+            /// <value>The refresh retries.</value>
+            public uint RefreshRetries { get; set; }
+
+            public CredReqActiveStatus (CredReqActiveState state, bool needCredResp)
+            {
+                State = state;
+                NeedCredResp = needCredResp;
+                RefreshRetries = 0;
+            }
+        }
+
+        /// <summary>
+        /// Dictionary to keep track of currently being processed Cred-Requests.
+        /// If the account ID is an existing key in the dictionary, we know we 
+        /// are processing a cred request. The Dictionary value tells us
+        /// details about the CredReq.
+        /// 
+        /// An entry for an account must exist until a CredResp has been initiated. In the 
+        /// case of an OAuth2 refresh, where there might not have been a CredReq, and thus
+        /// no CredResp is called, the OAuth2 refresh callback must clean up the entry.
+        /// 
+        /// Since this is an in-memory dictionary, it will have no entries on reboot of the app.
+        /// This is OK, since when the app starts, either the Oauth2RefreshTimer will catch
+        /// expired tokens, or the controller will (when it tries to use it), which will cause a new
+        /// entry to be created. At worst, we retry a few more times. If this causes undue delay
+        /// for users, we should adjust KOauth2RefreshMaxFailure downwards.
+        /// </summary>
+        protected Dictionary<int, CredReqActiveStatus> CredReqActive;
+
         public NcPreFetchHints BodyFetchHints { get; set; }
 
         public IBackEndOwner Owner { set; private get; }
@@ -131,13 +201,13 @@ namespace NachoCore
         }
 
         // For IBackEnd.
-        private BackEnd ()
+        protected BackEnd ()
         {
             // Adjust system settings.
             ServicePointManager.DefaultConnectionLimit = 25;
 
             Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
-            CredReqActive = new Dictionary<int, bool> ();
+            CredReqActive = new Dictionary<int, CredReqActiveStatus> ();
             BodyFetchHints = new NcPreFetchHints ();
         }
 
@@ -153,6 +223,7 @@ namespace NachoCore
         public void Start ()
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start() called");
+            Oauth2RefreshCancelSource = new CancellationTokenSource ();
             // The callee does Task.Run.
             ApplyAcrossAccounts ("Start", (accountId) => {
                 Start (accountId);
@@ -165,6 +236,14 @@ namespace NachoCore
         public void Stop ()
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
+            // Cancel the refresh tokens, killing all currently active OAuth2 refresh attempts.
+            Oauth2RefreshCancelSource.Cancel ();
+            // stop the OAuth2 refresh timer.
+            // TODO: This is the only place we stop the timer. If we have the timer
+            // running, and stop/delete/remove all accounts with Oauth2 creds, the timer
+            // will keep running uselessly. This should OK, since it will not be started
+            // again, if all oauth2 accounts are disabled/deleted, after it has been stopped.
+            StopOauthRefreshTimer ();
             if (null != PendingOnTimeTimer) {
                 PendingOnTimeTimer.Dispose ();
                 PendingOnTimeTimer = null;
@@ -252,6 +331,12 @@ namespace NachoCore
                 }, "Start");
                 return NcResult.OK ();
             });
+            // See if we have an OAuth2 credential for this account. 
+            // If so, make sure the timer is started to refresh the token.
+            McCred cred = McCred.QueryByAccountId<McCred> (accountId).FirstOrDefault ();
+            if (null != cred && cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                StartOauthRefreshTimer ();
+            }
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
         }
 
@@ -265,7 +350,6 @@ namespace NachoCore
             }, "CertAskResp");
         }
 
-        // FIXME add capabilities.
         public void ServerConfResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool forceAutodiscovery)
         {
             NcTask.Run (delegate {
@@ -276,7 +360,7 @@ namespace NachoCore
             }, "ServerConfResp");
         }
 
-        public void CredResp (int accountId)
+        public virtual void CredResp (int accountId)
         {
             NcTask.Run (() => {
                 // Let every service know about the new creds.
@@ -399,15 +483,15 @@ namespace NachoCore
 
        
         private List<NcResult> DeleteMultiCmd (int accountId, McAccount.AccountCapabilityEnum capability, List<int> Ids,
-            Func<NcProtoControl, int, bool, NcResult> deleter)
+                                               Func<NcProtoControl, int, bool, NcResult> deleter)
         {
             var outer = ApplyToService (accountId, capability, (service) => {
                 var retval = new List<NcResult> ();
                 for (var iter = 0; iter < Ids.Count; ++iter) {
                     if (Ids.Count - 1 == iter) {
-                        retval.Add (deleter (service, Ids[iter], true));
-                        } else {
-                        retval.Add (deleter (service, Ids[iter], false));
+                        retval.Add (deleter (service, Ids [iter], true));
+                    } else {
+                        retval.Add (deleter (service, Ids [iter], false));
                     }
                 }
                 return NcResult.OK (retval);
@@ -416,15 +500,15 @@ namespace NachoCore
         }
 
         private List<NcResult> MoveMultiCmd (int accountId, McAccount.AccountCapabilityEnum capability, List<int> Ids, int destFolderId,
-            Func<NcProtoControl, int, int, bool, NcResult> mover)
+                                             Func<NcProtoControl, int, int, bool, NcResult> mover)
         {
             var outer = ApplyToService (accountId, capability, (service) => {
                 var retval = new List<NcResult> ();
                 for (var iter = 0; iter < Ids.Count; ++iter) {
                     if (Ids.Count - 1 == iter) {
-                        retval.Add (mover (service, Ids[iter], destFolderId, true));
+                        retval.Add (mover (service, Ids [iter], destFolderId, true));
                     } else {
-                        retval.Add (mover (service, Ids[iter], destFolderId, false));
+                        retval.Add (mover (service, Ids [iter], destFolderId, false));
                     }
                 }
                 return NcResult.OK (retval);
@@ -693,22 +777,37 @@ namespace NachoCore
 
         public BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
-            var result = ApplyToService (accountId, capabilities,
-                (service) => NcResult.OK (service.BackEndState));
+            var result = ApplyToService (accountId, capabilities, (service) => {
+                BackEndStateEnum state = service.BackEndState;
+                if (BackEndStateEnum.CredWait == state) {
+                    // HACK HACK: Lie to the UI, if we're in CredWait, but we're waiting for an OAUTH2 refresh.
+                    CredReqActiveStatus status;
+                    lock (CredReqActive) {
+                        if (CredReqActive.TryGetValue (accountId, out status)) {
+                            if (BackEnd.CredReqActiveState.CredReqActive_AwaitingRefresh == status.State) {
+                                state = (service.ProtocolState.HasSyncedInbox) ? 
+                                    BackEndStateEnum.PostAutoDPostInboxSync : 
+                                    BackEndStateEnum.PostAutoDPreInboxSync;
+                            }
+                        }
+                    }
+                }
+                return NcResult.OK (state);
+            });
             return result.isOK () ? result.GetValue<BackEndStateEnum> () : BackEndStateEnum.NotYetStarted;
         }
 
         public AutoDFailureReasonEnum AutoDFailureReason (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             var result = ApplyToService (accountId, capabilities,
-                (service) => NcResult.OK (service.AutoDFailureReason));
+                             (service) => NcResult.OK (service.AutoDFailureReason));
             return result.isOK () ? result.GetValue<AutoDFailureReasonEnum> () : AutoDFailureReasonEnum.Unknown;
         }
 
         public AutoDInfoEnum AutoDInfo (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             var result = ApplyToService (accountId, capabilities,
-                (service) => NcResult.OK (service.AutoDInfo));
+                             (service) => NcResult.OK (service.AutoDInfo));
             return result.isOK () ? result.GetValue<AutoDInfoEnum> () : AutoDInfoEnum.Unknown;
         }
 
@@ -743,30 +842,81 @@ namespace NachoCore
             });
         }
 
+        /// <summary>
+        /// Do we need to tell the UI about refreshing this Credentials?
+        /// </summary>
+        /// <returns><c>true</c>, if to pass req to user interface was needed, <c>false</c> otherwise.</returns>
+        /// <param name="accountId">Account identifier.</param>
+        protected bool NeedToPassReqToUi (int accountId)
+        {
+            lock (CredReqActive) {
+                CredReqActiveStatus status;
+                if (CredReqActive.TryGetValue (accountId, out status)) {
+                    // We want to pass the request up to the UI in the following cases:
+                    // - the ProtoController asked for creds, and we failed.
+                    //   We should have refreshed long before this, so if we reach this point, pass it up.
+                    // - The state was set to CredReqActive_NeedUI somehow (password auth gets this)
+                    if (status.NeedCredResp ||
+                        status.State == CredReqActiveState.CredReqActive_NeedUI) {
+                        return true;
+                    }
+                } else {
+                    Log.Warn (Log.LOG_BACKEND, "TokenRefreshFailure: No CredReqActive entry.");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Callback called after a failure to refresh the oauth2 token
+        /// </summary>
+        /// <param name="cred">Cred.</param>
+        protected virtual void TokenRefreshFailure (McCred cred)
+        {
+            if (NeedToPassReqToUi (cred.AccountId)) {
+                InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (cred.AccountId));
+            }
+        }
+
+        /// <summary>
+        /// Callback called after a successful OAuth2 refresh.
+        /// </summary>
+        /// <param name="cred">Cred.</param>
+        protected virtual void TokenRefreshSuccess (McCred cred)
+        {
+            lock (CredReqActive) {
+                CredReqActiveStatus status;
+                if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
+                    if (status.NeedCredResp) {
+                        CredResp (cred.AccountId);
+                    } else {
+                        CredReqActive.Remove (cred.AccountId);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Attempt a CredReq. Called from ProtoControl. If one is already active, just return.
+        /// </summary>
+        /// <param name="sender">Sender.</param>
         public void CredReq (NcProtoControl sender)
         {
-            // If we don't already have a request from this account, record it and send it up.
             lock (CredReqActive) {
-                if (CredReqActive.ContainsKey (sender.Account.Id)) {
+                CredReqActiveStatus status;
+                if (CredReqActive.TryGetValue (sender.Account.Id, out status)) {
+                    // remember that we had a CredReq, so that we send a response when we get a token updated.
+                    // This path can happen if the timer is already refreshing the token, but the controller
+                    // got an AuthFail and asks us for new credentials.
+                    status.NeedCredResp = true;
                     return;
                 }
-                CredReqActive.Add (sender.Account.Id, true);
+                CredReqActive.Add (sender.Account.Id, new CredReqActiveStatus (default(CredReqActiveState), true));
             }
-
-            Action<McCred> onSuccess = (cred) => {
-                CredResp (sender.AccountId);
-            };
-
-            Action<McCred> onFailure = (cred) => {
-                Log.Error (Log.LOG_BACKEND, "CredReq:onFailure called.");
-                InvokeOnUIThread.Instance.Invoke (delegate () {
-                    Owner.CredReq (sender.AccountId);
-                });
-            };
-            // FIXME - need a CancellationToken tied to Stop().
-            if (!sender.Cred.AttemptRefresh (onSuccess, onFailure)) {
-                onFailure (sender.Cred);
-            }
+            // This should only really happen if the timer is messed up and didn't try to refresh already.
+            // But we'll leave here as a backup.
+            RefreshToken (sender.Cred);
         }
 
         public void ServConfReq (NcProtoControl sender, BackEnd.AutoDFailureReasonEnum arg)
@@ -807,5 +957,152 @@ namespace NachoCore
             }
         }
 
+        #region Oauth2Refresh
+
+        /// OAuth2 refresh has the following cases:
+        /// 1) Oauth2RefreshTimer callback find a credentials and initiates a refresh.
+        ///    It creates an entry in CredReqActive to keep track of the refresh. This
+        ///    is also needed so that we know we're already working on it, should the controller
+        ///    initiate a CredReq. If the timer-initiated refresh finishes without the controller
+        ///    sending a CredReq, we don't need to send a CredResp. If it does, we do.
+        /// 2) Controller initiates a CredReq before the Oauth2RefreshTimer callback notices
+        ///    it needs to refresh a token. This can happen when the Backend is first Start()'ed.
+        ///    The timer will wait KOauth2RefreshIntervalSecs to run, but the Controller will
+        ///    start immediately, so we'll start the refresh via the CredReq. When the timer callback
+        ///    runs and notices it needs to refresh the token (assuming it hasn't finished already),
+        ///    it will not restart the refresh, and simply keep track.
+        /// 
+        /// Failures:
+        /// 1) If the refresh fails and there was a CredReq, we send a CredReq up the line to the UI.
+        ///    TODO: Perhaps we should not send it but wait for max-retries to expire, i.e. case 2?
+        /// 2) If there was no CredReq, we simply try again, until KOauth2RefreshMaxFailure have been tried.
+        /// 
+        /// Success:
+        /// 1) The refresh succeeds, and there was a CredReq: We need to send a CredResp. The CredResp 
+        ///    deletes the CredReqActive record.
+        /// 2) The refresh succeeds, and there was NO CredReq. We don't send a CredResp, and thus
+        ///    need to delete the CredReqActive entry ourselves.
+        /// 
+        /// TODO: We currently don't handle the case where the refreshtoken is invalidated somehow. Tokens
+        /// for google are valid forever (Other services may limit this to 2 weeks). The refresh token
+        /// can also be invalidated by the user. Currently we retry KOauth2RefreshMaxFailure times, but
+        /// we can do better if we catch an invalid refresh token in the McCred.RefreshOAuth2() and
+        /// immediately punt up the UI.
+
+        /// <summary>
+        /// Interval in seconds after which we (re-)check the OAuth2 credentials.
+        /// </summary>
+        const int KOauth2RefreshIntervalSecs = 300;
+
+        /// <summary>
+        /// The percentage of OAuth2-expiry after which we refresh the token.
+        /// </summary>
+        const int KOauth2RefreshPercent = 80;
+
+        /// <summary>
+        /// The OAuth2 Refresh NcTimer
+        /// </summary>
+        NcTimer Oauth2RefreshTimer = null;
+
+        /// <summary>
+        /// Number of retries after which we call the attempts failed, and tell the UI
+        /// to ask the user to log in anew. Not saved in the DB.
+        /// </summary>
+        public const uint KOauth2RefreshMaxFailure = 5;
+
+        /// <summary>
+        /// Starts the oauth refresh timer. 
+        /// 
+        /// This will keep ALL oauth2 tokens up to date, whether the backed for the associated
+        /// account is active or not.
+        /// </summary>
+        void StartOauthRefreshTimer ()
+        {
+            if (null == Oauth2RefreshTimer) {
+                var refreshMsecs = KOauth2RefreshIntervalSecs * 1000;
+                var x = new NcTimer ("McCred:Oauth2RefreshTimer", state => RefreshAllDueTokens (),
+                            null, refreshMsecs, refreshMsecs);
+                //x.Stfu = true;
+                // protect against stop having been called right during initialization.
+                if (!Oauth2RefreshCancelSource.IsCancellationRequested) {
+                    Oauth2RefreshTimer = x;
+                }
+            }            
+        }
+
+        /// <summary>
+        /// Find all the McCred's that are OAuth2, and which are within KOauth2RefreshPercent of expiring.
+        /// Mark them as CredReqActive, so we have handle this properly if/when the Controller sends
+        /// a CredReq for the same item (can happen if we timeout with no network connectivity, for example).
+        /// </summary>
+        protected void RefreshAllDueTokens ()
+        {
+            foreach (var cred in McCred.QueryByCredType (McCred.CredTypeEnum.OAuth2)) {
+                Oauth2RefreshCancelSource.Token.ThrowIfCancellationRequested ();
+                var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
+                if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
+                    lock (CredReqActive) {
+                        CredReqActiveStatus status;
+                        if (!CredReqActive.TryGetValue (cred.AccountId, out status)) {
+                            CredReqActive.Add (cred.AccountId, new CredReqActiveStatus (CredReqActiveState.CredReqActive_AwaitingRefresh, false));
+                        } else {
+                            if (status.State == CredReqActiveState.CredReqActive_NeedUI) {
+                                // We've decided to give up on this one
+                                continue;
+                            }
+                        }
+                    }
+                    RefreshToken (cred);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Stops the oauth refresh timer.
+        /// </summary>
+        void StopOauthRefreshTimer ()
+        {
+            if (null != Oauth2RefreshTimer) {
+                Oauth2RefreshTimer.Dispose ();
+                Oauth2RefreshTimer = null;
+            }
+        }
+
+        /// <summary>
+        /// Keep track of retries and do some error checking. Then Refresh the credential.
+        /// </summary>
+        /// <param name="cred">Cred.</param>
+        protected void RefreshToken (McCred cred)
+        {
+            if (!cred.CanRefresh ()) {
+                TokenRefreshFailure (cred);
+                return;
+            }
+            lock (CredReqActive) {
+                CredReqActiveStatus status;
+                if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
+                    if (status.State != CredReqActiveState.CredReqActive_AwaitingRefresh) {
+                        Log.Warn (Log.LOG_BACKEND, "RefreshToken ({0}): State should be CredReqActive_AwaitingRefresh", cred.AccountId);
+                    }
+                    // We've retried too many times. Guess we need the UI afterall.
+                    if (status.RefreshRetries++ >= KOauth2RefreshMaxFailure) {
+                        status.State = CredReqActiveState.CredReqActive_NeedUI;
+                        return;
+                    }
+                }
+            }
+            RefreshMcCred (cred);
+        }
+
+        /// <summary>
+        /// Refreshs the McCred. Exists so we can override it in testing
+        /// </summary>
+        /// <param name="cred">Cred.</param>
+        protected virtual void RefreshMcCred (McCred cred)
+        {
+            cred.RefreshOAuth2 (TokenRefreshSuccess, TokenRefreshFailure, Oauth2RefreshCancelSource.Token);
+        }
+
+        #endregion
     }
 }
