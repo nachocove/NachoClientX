@@ -29,6 +29,12 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer viewTapped;
         protected UITapGestureRecognizer.Token viewTappedToken;
 
+        UIButton removeButton;
+        UIImageView cellIconImageView;
+        UILabel textLabel;
+        UILabel detailTextlabel;
+        UIView separatorLine;
+
         public McAttachment attachment;
 
         public UcAttachmentCell (McAttachment attachment, nfloat parentWidth, bool editable, UcAttachmentCellAction tapAction, UcAttachmentCellAction removeAction)
@@ -46,7 +52,7 @@ namespace NachoClient.iOS
             nfloat xOffset = 0;
             if (editable) {
                 //Remove icon
-                var removeButton = new UIButton ();
+                removeButton = new UIButton ();
                 removeButton.AccessibilityLabel = "Remove";
                 removeButton.Tag = REMOVE_BUTTON_TAG;
                 removeButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
@@ -59,13 +65,13 @@ namespace NachoClient.iOS
             }
 
             //Cell icon
-            var cellIconImageView = new UIImageView (); 
+            cellIconImageView = new UIImageView (); 
             cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             cellIconImageView.Frame = new CGRect (xOffset + 18, 18, 24, 24);
             this.AddSubview (cellIconImageView);
 
             //Text label
-            var textLabel = new UILabel (); 
+            textLabel = new UILabel (); 
             textLabel.Font = A.Font_AvenirNextDemiBold14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
@@ -74,7 +80,7 @@ namespace NachoClient.iOS
             this.AddSubview (textLabel);
 
             //Detail text label
-            var detailTextlabel = new UILabel (); 
+            detailTextlabel = new UILabel (); 
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             detailTextlabel.Font = A.Font_AvenirNextRegular14;
             detailTextlabel.TextColor = A.Color_NachoTextGray;
@@ -83,7 +89,7 @@ namespace NachoClient.iOS
             this.AddSubview (detailTextlabel);
 
             //Separator line
-            var separatorLine = Util.AddHorizontalLine (xOffset + 60, 60, Bounds.Width - 60, A.Color_NachoBorderGray);
+            separatorLine = Util.AddHorizontalLine (xOffset + 60, 60, Bounds.Width - 60, A.Color_NachoBorderGray);
             separatorLine.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             this.AddSubview (separatorLine);
 
@@ -91,10 +97,10 @@ namespace NachoClient.iOS
             viewTappedToken = viewTapped.AddTarget (ViewTapped);
             this.AddGestureRecognizer (viewTapped);
 
-            ConfigureView (attachment, cellIconImageView, textLabel, detailTextlabel);
+            ConfigureView ();
         }
 
-        protected void ConfigureView (McAttachment attachment, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel)
+        public void ConfigureView ()
         {
             if (null != attachment) {
 
@@ -110,15 +116,15 @@ namespace NachoClient.iOS
                 if (0 != attachment.FileSize) {
                     detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
                 } 
-                detailTextLabel.Text = detailText;
+                detailTextlabel.Text = detailText;
 
                 if (Pretty.TreatLikeAPhoto(attachment.DisplayName)) {
-                    iconView.Image = UIImage.FromBundle ("email-att-photos");
+                    cellIconImageView.Image = UIImage.FromBundle ("email-att-photos");
                 } else {
-                    iconView.Image = UIImage.FromBundle ("email-att-files");
+                    cellIconImageView.Image = UIImage.FromBundle ("email-att-files");
                 }
             } else {
-                textLabel.Text = "File no longer exists"; 
+                textLabel.Text = "File no longer exists";
             }
         }
 
@@ -206,6 +212,16 @@ namespace NachoClient.iOS
                 if (original == a.attachment) {
                     a.attachment = replacement;
                     original.Delete ();
+                }
+            }
+        }
+
+        public void UpdateAttachment (McAttachment attachment)
+        {
+            foreach (var a in list) {
+                if (a.attachment.Id == attachment.Id) {
+                    a.attachment = attachment;
+                    a.ConfigureView ();
                 }
             }
         }

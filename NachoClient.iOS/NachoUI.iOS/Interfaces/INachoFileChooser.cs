@@ -21,6 +21,8 @@ namespace NachoClient.iOS
 
         void Append (McAttachment attachment);
 
+        void AttachmentUpdated (McAttachment attachment);
+
         void DismissPhotoPicker ();
     }
 }

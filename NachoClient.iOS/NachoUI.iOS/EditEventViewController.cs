@@ -1344,6 +1344,11 @@ namespace NachoClient.iOS
             attachmentView.Append (attachment);
         }
 
+        public void AttachmentUpdated (McAttachment attachment)
+        {
+            attachmentView.UpdateAttachment (attachment);
+        }
+
         /// <summary>
         /// INachoFileChooserParent delegate
         /// </summary>

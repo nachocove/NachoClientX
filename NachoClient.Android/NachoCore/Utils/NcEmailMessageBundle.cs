@@ -712,7 +712,8 @@ namespace NachoCore.Utils
                     parsed.FullHtmlDocument = TemplateHtmlDocument ();
                 }
                 var entry = new BundleManifest.Entry ();
-                entry.Path = SafeFilename ("image-attachment");
+                var ext = FileExtForEntity (entity);
+                entry.Path = SafeFilename ("image-attachment" + ext);
                 var entryKey = entry.Path;
                 Manifest.Entries [entryKey] = entry;
                 entry.ContentType = entity.ContentType.MimeType;
@@ -1000,7 +1001,8 @@ namespace NachoCore.Utils
                                 string entryKey;
                                 if (!parsed.ImageEntriesBySrc.ContainsKey (src)) {
                                     entry = new BundleManifest.Entry ();
-                                    entry.Path = SafeFilename ("image");
+                                    var ext = FileExtForEntity (imagePart);
+                                    entry.Path = SafeFilename ("image" + ext);
                                     entryKey = entry.Path;
                                     Manifest.Entries [entryKey] = entry;
                                     parsed.ImageEntriesBySrc [src] = entryKey;
@@ -1146,8 +1148,9 @@ namespace NachoCore.Utils
                             BundleManifest.Entry entry;
                             string entryKey;
                             if (!parsed.ImageEntriesBySrc.ContainsKey (src.Value)) {
+                                var ext = Path.HasExtension(src.Value) ? "." + Path.GetExtension (src.Value) : "";
                                 entry = new BundleManifest.Entry ();
-                                entry.Path = SafeFilename ("image");
+                                entry.Path = SafeFilename ("image" + ext);
                                 entryKey = entry.Path;
                                 Manifest.Entries [entryKey] = entry;
                                 parsed.ImageEntriesBySrc [src.Value] = entryKey;
@@ -1182,6 +1185,14 @@ namespace NachoCore.Utils
                     stack.Add (child);
                 }
             }
+        }
+
+        string FileExtForEntity (MimePart entity)
+        {
+            if (!String.IsNullOrEmpty (entity.FileName) && Path.HasExtension(entity.FileName)) {
+                return "." + Path.GetExtension (entity.FileName);
+            }
+            return "";
         }
 
         #endregion

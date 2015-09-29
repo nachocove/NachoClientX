@@ -244,14 +244,16 @@ namespace NachoClient.iOS
                                 PHImageManager.DefaultManager.RequestImageData (asset, imageOptions, (NSData data, NSString dataUti, UIImageOrientation orientation, NSDictionary info) => {
                                     var error = info.ObjectForKey (PHImageKeys.Error);
                                     if (error == null) {
+                                        attachment = McAttachment.QueryById<McAttachment> (attachment.Id);
                                         attachment.UpdateData (data.ToArray ());
                                         attachment.UpdateSaveFinish ();
-                                        // TODO: need to notify owner?
+                                        owner.AttachmentUpdated (attachment);
                                     } else {
                                         Log.Error (Log.LOG_UI, "AddAttachmentViewController error obtaining image data: {0}", error);
+                                        attachment = McAttachment.QueryById<McAttachment> (attachment.Id);
                                         attachment.FilePresence = McAbstrFileDesc.FilePresenceEnum.Error;
                                         attachment.Update ();
-                                        // TODO: need to notify owner?
+                                        owner.AttachmentUpdated (attachment);
                                     }
                                 });
                             } else if (type.Equals (UTType.Movie)) {
@@ -262,6 +264,7 @@ namespace NachoClient.iOS
                                 attachment.UpdateFileCopy (movieUrl.Path);
                                 attachment.UpdateSaveFinish ();
                             }
+                            attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
                             attachment.SetDisplayName (filename);
                             attachment.Update ();
                             owner.Append (attachment);

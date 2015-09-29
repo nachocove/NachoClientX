@@ -414,13 +414,22 @@ namespace NachoCore.Utils
             var htmlPart = HtmlPart (doc);
             alternative.Add (htmlPart);
             var attachments = McAttachment.QueryByItemId (Message);
-            if (false && attachments.Count > 0) {
+            if (attachments.Count > 0) {
                 var mixed = new Multipart ();
                 mixed.Add (alternative);
                 foreach (var attachment in attachments) {
-                    var attachmentPart = new MimePart ();
-                    // TODO: populate attachment part
-                    mixed.Add (attachmentPart);
+                    if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                        var attachmentPart = new MimePart (attachment.ContentType);
+                        attachmentPart.FileName = attachment.DisplayName;
+                        attachmentPart.IsAttachment = true;
+                        attachmentPart.ContentTransferEncoding = ContentEncoding.Base64;
+                        var reader = new BinaryReader (new FileStream (attachment.GetFilePath (), FileMode.Open));
+                        OpenReaders.Add (reader);
+                        attachmentPart.ContentObject = new ContentObject (reader.BaseStream);
+                        mixed.Add (attachmentPart);
+                    } else {
+                        Log.Error (Log.LOG_EMAIL, "MessageComposer could not include attachment ID#{0} because its state is {1}", attachment.Id, attachment.FilePresence);
+                    }
                 }
                 mime.Body = mixed;
             } else {

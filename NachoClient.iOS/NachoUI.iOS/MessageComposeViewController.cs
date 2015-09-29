@@ -423,6 +423,7 @@ namespace NachoClient.iOS
 
             if (attachment != null) {
                 attachment.ItemId = Composer.Message.Id;
+                attachment.ClassCode = Composer.Message.GetClassCode ();
                 attachment.Update ();
                 HeaderView.AttachmentsView.Append (attachment);
                 this.DismissViewController (true, null);
@@ -442,8 +443,14 @@ namespace NachoClient.iOS
         public void Append (McAttachment attachment)
         {
             attachment.ItemId = Composer.Message.Id;
+            attachment.ClassCode = Composer.Message.GetClassCode ();
             attachment.Update ();
             HeaderView.AttachmentsView.Append (attachment);
+        }
+
+        public void AttachmentUpdated (McAttachment attachment)
+        {
+            HeaderView.AttachmentsView.UpdateAttachment (attachment);
         }
 
         // Not really a direct user action, but caused by the user selecting a date for the intent
