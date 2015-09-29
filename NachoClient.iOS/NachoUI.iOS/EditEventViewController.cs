@@ -542,7 +542,7 @@ namespace NachoClient.iOS
             locationView.AddSubview (locationField);
 
             //Attachments
-            attachmentView = new UcAttachmentBlock (this, SCREEN_WIDTH, 44, true);
+            attachmentView = new UcAttachmentBlock (this, 44, true);
             attachmentView.Frame = new CGRect (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6), SCREEN_WIDTH, CELL_HEIGHT);
 
             attachmentBGView = new UIView (new CGRect (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6), SCREEN_WIDTH, CELL_HEIGHT * 2));

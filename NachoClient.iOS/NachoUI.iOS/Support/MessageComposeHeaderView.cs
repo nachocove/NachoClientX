@@ -178,7 +178,8 @@ namespace NachoClient.iOS
 
 //            intentDisplayLabel.Text = "NONE";
 
-            AttachmentsView = new UcAttachmentBlock (this, Bounds.Width, 40, true);
+            AttachmentsView = new UcAttachmentBlock (this, 40, true);
+            AttachmentsView.Frame = new CGRect (0, 0, Bounds.Width, 40);
             AttachmentsView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
             ToSeparator = SeparatorView ();

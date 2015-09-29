@@ -37,10 +37,11 @@ namespace NachoClient.iOS
             this.attachment = attachment;
             this.tapAction = tapAction;
             this.removeAction = editable ? removeAction : null;
-            CreateView (parentWidth, editable);
+            this.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            CreateView (editable);
         }
 
-        public void CreateView (nfloat parentWidth, bool editable)
+        public void CreateView (bool editable)
         {
             nfloat xOffset = 0;
             if (editable) {
@@ -68,7 +69,8 @@ namespace NachoClient.iOS
             textLabel.Font = A.Font_AvenirNextDemiBold14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            textLabel.Frame = new CGRect (xOffset + 60, 11, parentWidth - 60 - 52, 19.5f);
+            textLabel.Frame = new CGRect (xOffset + 60, 11, Bounds.Width - 60 - 52, 19.5f);
+            textLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             this.AddSubview (textLabel);
 
             //Detail text label
@@ -76,11 +78,13 @@ namespace NachoClient.iOS
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             detailTextlabel.Font = A.Font_AvenirNextRegular14;
             detailTextlabel.TextColor = A.Color_NachoTextGray;
-            detailTextlabel.Frame = new CGRect (xOffset + 60, 11 + 19.5f, parentWidth - 60 - 52, 19.5f);
+            detailTextlabel.Frame = new CGRect (xOffset + 60, 11 + 19.5f, Bounds.Width - 60 - 52, 19.5f);
+            detailTextlabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             this.AddSubview (detailTextlabel);
 
             //Separator line
-            var separatorLine = Util.AddHorizontalLine (xOffset + 60, 60, parentWidth - 60, A.Color_NachoBorderGray);
+            var separatorLine = Util.AddHorizontalLine (xOffset + 60, 60, Bounds.Width - 60, A.Color_NachoBorderGray);
+            separatorLine.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             this.AddSubview (separatorLine);
 
             viewTapped = new UITapGestureRecognizer ();
@@ -144,7 +148,6 @@ namespace NachoClient.iOS
     public class UcAttachmentBlock : UIView
     {
         protected IUcAttachmentBlockDelegate owner;
-        protected nfloat parentWidth;
         protected List<UcAttachmentCell> list = new List<UcAttachmentCell> ();
 
         protected int CELL_HEIGHT;
@@ -163,10 +166,9 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer toggleCompactTapped;
         protected UITapGestureRecognizer.Token toggleCompactTappedToken;
 
-        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, nfloat parentWidth, int cellHeight, bool editable)
+        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int cellHeight, bool editable)
         {
             this.owner = owner;
-            this.parentWidth = parentWidth;
             this.BackgroundColor = UIColor.White;
             this.CELL_HEIGHT = cellHeight;
             this.editable = editable;
@@ -225,7 +227,8 @@ namespace NachoClient.iOS
                 chooserButton.AccessibilityLabel = "Add attachment";
                 Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
                 chooserButton.SizeToFit ();
-                chooserButton.Frame = new CGRect (parentWidth - 43, 0, 40, CELL_HEIGHT);
+                chooserButton.Frame = new CGRect (Bounds.Width - 43, 0, 40, CELL_HEIGHT);
+                chooserButton.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
                 chooserButton.TouchUpInside += ChooserButtonClicked;
                 contentView.AddSubview (chooserButton);
             }
@@ -238,7 +241,7 @@ namespace NachoClient.iOS
 
         public void Append (McAttachment attachment)
         {
-            var c = new UcAttachmentCell (attachment, parentWidth, editable, (UcAttachmentCell cell) => {
+            var c = new UcAttachmentCell (attachment, Bounds.Width, editable, (UcAttachmentCell cell) => {
                 if (null != owner) {
                     owner.DisplayAttachmentForAttachmentBlock (cell.attachment);
                 }
@@ -322,7 +325,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            contentView.Frame = new CGRect (0, 0, parentWidth, yOffset);
+            contentView.Frame = new CGRect (0, 0, Bounds.Width, yOffset);
             this.Frame = new CGRect (this.Frame.Location, contentView.Frame.Size);
         }
 

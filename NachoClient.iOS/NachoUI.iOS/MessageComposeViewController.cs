@@ -152,10 +152,10 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            Composer.StartPreparingMessage ();
-            UpdateHeaderView ();
             RegisterForNotifications ();
             if (!HasShownOnce) {
+                Composer.StartPreparingMessage ();
+                UpdateHeaderView ();
                 if (StartWithQuickResponse) {
                     ShowQuickResponses ();
                 }
