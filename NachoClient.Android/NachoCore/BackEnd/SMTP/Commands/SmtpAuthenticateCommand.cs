@@ -11,18 +11,24 @@ namespace NachoCore.SMTP
         {
         }
 
+        public override Event ExecuteConnectAndAuthEvent ()
+        {
+            return TryLock (Client.SyncRoot, KLockTimeout, () => {
+                try {
+                    if (Client.IsConnected) {
+                        Client.Disconnect (false, Cts.Token);
+                    }
+                    return base.ExecuteConnectAndAuthEvent ();
+                } catch (NotSupportedException ex) {
+                    Log.Info (Log.LOG_SMTP, "SmtpAuthenticateCommand: NotSupportedException: {0}", ex.ToString ());
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SMTPAUTHHARD0");
+                }
+            });
+        }
+
         protected override Event ExecuteCommand ()
         {
-            try {
-                if (Client.IsConnected) {
-                    Client.Disconnect (false, Cts.Token);
-                }
-                ConnectAndAuthenticate ();
-                return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
-            } catch (NotSupportedException ex) {
-                Log.Info (Log.LOG_SMTP, "SmtpAuthenticateCommand: NotSupportedException: {0}", ex.ToString ());
-                return Event.Create ((uint)SmEvt.E.HardFail, "SMTPAUTHHARD0");
-            }
+            return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
         }
     }
 
