@@ -429,23 +429,20 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        public static string GetLoggablePassword (McAccount account, string password)
+        public void LogHashedPassword(ulong service, string logComment, string password)
         {
-            if (account == null) {
-                return "account:null";
-            }
-
-            string salt = account.GetLogSalt ();
+            string salt = GetLogSalt ();
             if (string.IsNullOrEmpty (salt)) {
-                // TODO Once we shake out the issues with not finding items in the keychain when
-                // they should be there, we should create a new LogSalt here. For now, just
-                // log that we didn't find one, and return a fabricated string.
-                Log.Error (Log.LOG_SYS, "Could not retrieve LogSalt for account {0}", account.Id);
-                return "saltNotFound";
+                Log.Error (Log.LOG_SYS, "Could not retrieve LogSalt for account {0}", Id);
+                return;
             }
-
             string hash = HashHelper.Sha256 (salt + password);
-            return hash.Substring (hash.Length - 3); // e.g. "f47"
+            var hashed = hash.Substring (hash.Length - 3); // e.g. "f47"
+            if (string.IsNullOrEmpty (hashed)) {
+                Log.Error (Log.LOG_SYS, "Could not hash password for account {0}", Id);
+                return;
+            }
+            Log.Info (service, "LoggablePasswordSaltedHash({0}): {1} passwordHash={2}", Id, logComment, hashed);
         }
 
         public async void PopulateProfilePhotoFromURL (Uri imageUrl)

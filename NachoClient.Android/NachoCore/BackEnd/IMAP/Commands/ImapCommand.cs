@@ -221,7 +221,7 @@ namespace NachoCore.IMAP
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 try {
-                    Log.Info (Log.LOG_IMAP, "ConnectAndAuthenticate{0}: LoggablePasswordSaltedHash {1}", AccountId, McAccount.GetLoggablePassword (BEContext.Account, cred));
+                    BEContext.Account.LogHashedPassword (Log.LOG_IMAP, "ConnectAndAuthenticate", cred);
                     Client.Authenticate (username, cred, Cts.Token);
                 } catch (ImapProtocolException e) {
                     Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", e);
