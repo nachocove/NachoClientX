@@ -191,7 +191,7 @@ namespace NachoClient.iOS
             accountInfoView.AddSubview (settingsButton);
 
             var unreadMessagesViewFrame = new CGRect (0, 120, accountInfoView.Frame.Width, 40);
-            var unreadMessagesView = new UnreadMessagesView (unreadMessagesViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked, LikelyClicked);
+            var unreadMessagesView = new UnreadMessagesView (unreadMessagesViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked);
             accountInfoView.AddSubview (unreadMessagesView);
 
             var yOffset = unreadMessagesView.Frame.Bottom;

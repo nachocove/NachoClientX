@@ -697,7 +697,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount)
+        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount)
         {
             var inboxFolder = NcEmailManager.InboxFolder (account.Id);
             unreadMessageCount = 0;
@@ -711,6 +711,11 @@ namespace NachoCore.Utils
             deferredMessageCount = 0;
             if (null != inboxFolder) {
                 deferredMessageCount = new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
+            }
+            likelyMessageCount = 0;
+            if (null != inboxFolder) {
+                // FIXME
+                likelyMessageCount = new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
             }
         }
 
