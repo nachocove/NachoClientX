@@ -23,6 +23,7 @@ namespace NachoCore.ActiveSync
             public Xml.Provision.MaxAgeFilterCode FilterCode { get; set; }
             public bool GetChanges { get; set; }
         }
+        public uint HeartbeatInterval { get; set; }
         public bool IsNarrow { get; set; }
         public int OverallWindowSize { get; set; }
         public List<PerFolder> PerFolders { get; set; }

@@ -610,6 +610,34 @@ namespace NachoCore.ActiveSync
             McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
         }
 
+        public SyncKit GenSyncKitFromPingKit(McProtocolState protocolState, PingKit pingKit)
+        {
+            if (0 == pingKit.Folders.Count) {
+                return null;
+            }
+            var perFolders = new List<SyncKit.PerFolder> ();
+            foreach (var iterFolder in pingKit.Folders) {
+                var folder = iterFolder;
+                if (!folder.AsSyncMetaToClientExpected) {
+                    folder = folder.UpdateSet_AsSyncMetaToClientExpected (true);
+                }
+                var rung = Scope.StrategyRung (protocolState);
+                var parms = ParametersProvider (folder, rung, true);
+                perFolders.Add (new SyncKit.PerFolder () {
+                    Folder = folder,
+                    Commands = new List<McPending> (),
+                    FilterCode = parms.Item1,
+                    WindowSize = parms.Item2,
+                    GetChanges = true,
+                });
+            }
+            return new SyncKit () {
+                OverallWindowSize = 1,
+                PerFolders = perFolders,
+                IsNarrow = true,
+                HeartbeatInterval = pingKit.MaxHeartbeatInterval,
+            };            
+        }
         public SyncKit GenSyncKit (McProtocolState protocolState)
         {
             return GenSyncKit (protocolState, SyncMode.Wide);
@@ -1245,9 +1273,18 @@ namespace NachoCore.ActiveSync
                     !BEContext.Server.HostIsAsGMail ()) {
                     var rlPingKit = GenPingKit (protocolState, true, stillHaveUnsyncedFolders, false);
                     if (null != rlPingKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                            new AsPingCommand (BEContext, rlPingKit));
+                        var account = McAccount.QueryById<McAccount> (AccountId);
+                        if (account.AccountService == McAccount.AccountServiceEnum.GoogleExchange) { // use Ping
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Ping");
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                                new AsPingCommand (BEContext, rlPingKit));
+                        } else { // use Sync
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Sync");
+                            SyncKit syncKit = null;
+                            syncKit = GenSyncKitFromPingKit (protocolState, rlPingKit);
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync,
+                                new AsSyncCommand (BEContext, syncKit));
+                        }
                     }
                     // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
                     // at the current filter setting, then wait.
@@ -1301,9 +1338,18 @@ namespace NachoCore.ActiveSync
                     pingKit = GenPingKit (protocolState, true, stillHaveUnsyncedFolders, false);
                 }
                 if (null != pingKit) {
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping");
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
-                        new AsPingCommand (BEContext, pingKit));
+                    var account = McAccount.QueryById<McAccount> (AccountId);
+                    if (account.AccountService == McAccount.AccountServiceEnum.GoogleExchange) { // use Ping
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping using EAS Ping");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                            new AsPingCommand (BEContext, pingKit));
+                    } else { // use Sync
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping using EAS Sync");
+                        SyncKit syncKit = null;
+                        syncKit = GenSyncKitFromPingKit (protocolState, pingKit);
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync,
+                            new AsSyncCommand (BEContext, syncKit));
+                    }
                 }
                 Log.Info (Log.LOG_AS, "Strategy:FG/BG:Wait");
                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
