@@ -37,6 +37,7 @@ namespace NachoClient.iOS
 {
     public class CidImageProtocol : NSUrlProtocol
     {
+
         [Export ("canInitWithRequest:")]
         public static bool canInitWithRequest (NSUrlRequest request)
         {

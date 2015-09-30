@@ -20,7 +20,7 @@ using WebKit;
 
 namespace NachoClient.iOS
 {
-
+    
     public interface MessageComposeViewDelegate {
 
         void MessageComposeViewDidBeginSend (MessageComposeViewController vc);
@@ -40,7 +40,8 @@ namespace NachoClient.iOS
         INachoDateControllerParent,
         INachoFileChooserParent,
         INachoContactChooserDelegate,
-        MessageComposerDelegate
+        MessageComposerDelegate,
+        NcWebViewMessageHandler
     {
 
         #region Properties
@@ -151,10 +152,14 @@ namespace NachoClient.iOS
             WebView = new UIWebView (View.Bounds);
             WebView.SuppressesIncrementalRendering = true;
             WebView.Delegate = this;
+            NcWebViewMessageProtocol.AddHandler (this, "nachoCompose");
+            NcWebViewMessageProtocol.AddHandler (this, "nacho");
 
             ScrollView.AddCompoundView (HeaderView);
             ScrollView.AddCompoundView (WebView);
             View.AddSubview (ScrollView);
+
+            NcWebViewMessageProtocol.Register ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -214,9 +219,9 @@ namespace NachoClient.iOS
         {
             var frame = View.Bounds;
             frame.Height = frame.Height - keyboardHeight;
-            ScrollView.Frame = frame;
-            ScrollView.SetNeedsLayout ();
-            ScrollView.LayoutIfNeeded ();
+//            ScrollView.Frame = frame;
+//            ScrollView.SetNeedsLayout ();
+//            ScrollView.LayoutIfNeeded ();
         }
 
         #endregion
@@ -675,6 +680,18 @@ namespace NachoClient.iOS
             JavaScriptQueue = null;
         }
 
+        // An approximation of what WKWebView does with WKScriptMessageHandler
+        public void HandleWebViewMessage (NcWebViewMessage message)
+        {
+            NSDictionary body = message.Body as NSDictionary;
+            string kind = body.ObjectForKey (new NSString("kind")).ToString ();
+            if (message.Name == "nachoCompose") {
+                if (kind == "editor-height-changed") {
+                    UpdateScrollViewSize ();
+                }
+            }
+        }
+
         private void EnableEditingInWebView ()
         {
             EvaluateJavaScript ("Editor.Enable()");
@@ -716,14 +733,15 @@ namespace NachoClient.iOS
             UpdateScrollViewSize ();
         }
 
-//        [Foundation.Export("scrollViewDidScroll:")]
-//        public void Scrolled (UIScrollView scrollView)
-//        {
+        [Foundation.Export("scrollViewDidScroll:")]
+        public void Scrolled (UIScrollView scrollView)
+        {
+            Log.Info (Log.LOG_UI, "ComposeView didScroll: {0}", scrollView.ContentOffset);
 //            var top = WebView.EvaluateJavascript ("window.getSelection().getRangeAt(0).getBoundingClientRect().top");
 //            var height = WebView.EvaluateJavascript ("window.innerHeight");
 //            var offset = WebView.EvaluateJavascript ("window.pageYOffset");
 //            Log.Info (Log.LOG_UI, "MessageComposeView scroll height: {0}, offset: {1}, top: {2}", height, offset, top);
-//        }
+        }
 
         #endregion
 
@@ -855,5 +873,116 @@ namespace NachoClient.iOS
         }
 
     }
+
+    #region Approximate WKScriptMessage for UIWebView
+
+    // WKWebView has a way for Javascript running in a web page to call back to objective-c/c# code.
+    // Communication from JS makes certain things easier, like knowing when the text in the web view has changed.
+    // What follows is an approximation of what WKWebView does, making use of a custom protocol on this end and 
+    // an XMLHttpRequest to a URL of that protocol on the JS end.
+    // The custom protocol deciphers the message from the URL query string and dispatches the info to a delegate
+    // similar to WKScriptMessageHandler
+
+    public class NcWebViewMessage
+    {
+        public readonly string Name;
+        public readonly NSObject Body;
+
+        public NcWebViewMessage (string name, NSObject body)
+        {
+            Name = name;
+            Body = body;
+        }
+    }
+
+    public interface NcWebViewMessageHandler {
+        void HandleWebViewMessage (NcWebViewMessage message);
+    }
+
+    public class NcWebViewMessageProtocol : NSUrlProtocol 
+    {
+
+        static bool Registered = false;
+        static Dictionary<string, List<NcWebViewMessageHandler>> Handlers;
+
+        public static void Register ()
+        {
+            if (!Registered) {
+                NSUrlProtocol.RegisterClass (new ObjCRuntime.Class (typeof(NcWebViewMessageProtocol)));
+                Registered = true;
+            }
+        }
+
+        public static void AddHandler (NcWebViewMessageHandler handler, string name)
+        {
+            if (Handlers == null) {
+                Handlers = new Dictionary<string, List<NcWebViewMessageHandler>> ();
+            }
+            if (!Handlers.ContainsKey (name)) {
+                Handlers [name] = new List<NcWebViewMessageHandler> ();
+            }
+            Handlers [name].Add (handler);
+        }
+
+        [Export ("canInitWithRequest:")]
+        public static bool canInitWithRequest (NSUrlRequest request)
+        {
+            if ((null == request) || (null == request.Url)) {
+                return false;
+            }
+            return request.Url.Scheme == "nachomessage";
+        }
+
+        [Export ("canonicalRequestForRequest:")]
+        public static new NSUrlRequest GetCanonicalRequest (NSUrlRequest forRequest)
+        {
+            return forRequest;
+        }
+
+        [Export ("initWithRequest:cachedResponse:client:")]
+        public NcWebViewMessageProtocol (NSUrlRequest request, NSCachedUrlResponse cachedResponse, INSUrlProtocolClient client) : base (request, cachedResponse, client)
+        {
+        }
+
+        public override void StartLoading ()
+        {
+            if ((null == Request) || (null == Request.Url)) {
+                return;
+            }
+            var name = Request.Url.Host;
+            var body = new NSMutableDictionary ();
+            var components = new NSUrlComponents (Request.Url, false);
+            foreach (var item in components.QueryItems) {
+                var key = new NSString (item.Name);
+                var value = new NSString (item.Value);
+                body.SetObject (value, key);
+            }
+            var message = new NcWebViewMessage (name, body);
+            using (var response = new NSUrlResponse (Request.Url, "text/plain", 0, "utf8")) {
+                Client.ReceivedResponse (this, response, NSUrlCacheStoragePolicy.NotAllowed);
+            }
+            Client.FinishedLoading (this);
+            Dispatch (message);
+        }
+
+        public override void StopLoading ()
+        {
+        }
+
+        void Dispatch (NcWebViewMessage message)
+        {
+            if (Handlers.ContainsKey (message.Name)) {
+                foreach (var handler in Handlers[message.Name]) {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        handler.HandleWebViewMessage (message);
+                    });
+                }
+            }
+        }
+
+    }
+
+    #endregion
+
         
 }

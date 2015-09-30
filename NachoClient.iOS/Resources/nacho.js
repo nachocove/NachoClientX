@@ -6,12 +6,45 @@ window.onerror = function(message, filename, lineno, colno, e){
     }
 };
 
+var NachoMessageHandler = function(name){
+    this.name = name;
+};
+
+
+NachoMessageHandler.prototype = {
+
+    postMessage: function(message){
+        var request = new XMLHttpRequest();
+        var query = "";
+        var sep = "?";
+        for (var k in message){
+            query += sep + k + "=" + message[k];
+            sep = "&";
+        }
+        request.open("POST", "nachomessage://" + this.name + "/" + query);
+        request.send();
+        // request.addEventListener('readystatechange', this);
+    },
+
+    handleEvent: function(e){
+        this[e.type](e);
+    },
+
+    readystatechange: function(e){
+        var request = e.currentTarget;
+        console.log(request.readyState, request.status);
+    }
+
+};
+
 var Editor = function(rootNode){
     this.rootNode = rootNode;
     this.document = this.rootNode.ownerDocument;
     this.window = document.defaultView;
     if (this.window.webkit && this.window.webkit.messageHandlers){
         this.messageHandler = this.window.webkit.messageHandlers.nachoCompose;
+    }else{
+        this.messageHandler = new NachoMessageHandler('nachoCompose');
     }
 };
 
@@ -46,12 +79,14 @@ Editor.prototype = {
         this.lockZoom();
         this.rootNode.addEventListener('input', this);
         this.rootNode.addEventListener('paste', this);
+        this.document.addEventListener('selectionchange', this);
     },
 
     disable: function(){
         this.rootNode.contentEditable = "false";
         this.rootNode.removeEventListener('input', this);
         this.rootNode.removeEventListener('paste', this);
+        this.document.removeEventListener('selectionchange', this);
     },
 
     lockZoom: function(){
@@ -77,6 +112,9 @@ Editor.prototype = {
             this.editorHeight = height;
             this.postMessage({kind: "editor-height-changed"});
         }
+    },
+
+    selectionchange: function(){
         this.ensureSelectionIsVisible();
     },
 
@@ -84,6 +122,7 @@ Editor.prototype = {
         var selection = this.window.getSelection();
         var range = selection.getRangeAt(0);
         var rect = range.getBoundingClientRect();
+        console.log(rect.top, this.window.pageYOffset);
         // TODO: postMessage requesting scroll
     },
 
