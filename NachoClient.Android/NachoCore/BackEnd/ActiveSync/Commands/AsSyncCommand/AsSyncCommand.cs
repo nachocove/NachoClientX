@@ -60,6 +60,17 @@ namespace NachoCore.ActiveSync
             });
         }
 
+        public override double TimeoutInSeconds {
+            get {
+                // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
+                if (TimeSpan.Zero == WaitInterval) {
+                    return 0.0;
+                } else {
+                    return WaitInterval.TotalSeconds + 10;
+                }
+            }
+        }
+
         private XElement ToEmailDelete (McPending pending)
         {
             return new XElement (m_ns + Xml.AirSync.Delete,
