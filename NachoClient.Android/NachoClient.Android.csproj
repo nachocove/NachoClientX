@@ -516,6 +516,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration46.cs" />
     <Compile Include="NachoUI.Android\Support\A.cs" />
     <Compile Include="NachoCore\Utils\NcEventDetail.cs" />
+    <Compile Include="NachoUI.Android\Activities\ChooseDeferralFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1044,5 +1045,48 @@
     <AndroidResource Include="Resources\drawable-hdpi\contacts_email_swipe.png" />
     <AndroidResource Include="Resources\drawable-hdpi\email_archive_swipe.png" />
     <AndroidResource Include="Resources\drawable-hdpi\email_move_swipe.png" />
+    <AndroidResource Include="Resources\layout\ChooseDeferralFragment.axml" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_forever.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_later_today.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_next_week.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_nextmonth.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_none.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_pick_date.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_this_week.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_tomorrow.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_tonight.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\modal_weekend.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_forever.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_later_today.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_next_week.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_nextmonth.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_none.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_pick_date.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_this_week.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_tomorrow.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_tonight.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\modal_weekend.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_forever.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_later_today.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_next_week.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_nextmonth.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_none.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_pick_date.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_this_week.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_tomorrow.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_tonight.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\modal_weekend.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_forever.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_later_today.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_next_week.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_nextmonth.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_none.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_pick_date.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_this_week.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_tomorrow.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_tonight.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\modal_weekend.png" />
+    <AndroidResource Include="Resources\layout\ChooseDeferralButton.axml" />
+    <AndroidResource Include="Resources\layout\DateTimePicker.axml" />
   </ItemGroup>
 </Project>

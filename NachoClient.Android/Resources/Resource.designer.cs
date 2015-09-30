@@ -2318,205 +2318,235 @@ namespace NachoClient.AndroidClient
 			public const int modal_close = 2130837681;
 			
 			// aapt resource value: 0x7f0200b2
-			public const int more_files = 2130837682;
+			public const int modal_forever = 2130837682;
 			
 			// aapt resource value: 0x7f0200b3
-			public const int more_files_active = 2130837683;
+			public const int modal_later_today = 2130837683;
 			
 			// aapt resource value: 0x7f0200b4
-			public const int more_nachomail = 2130837684;
+			public const int modal_next_week = 2130837684;
 			
 			// aapt resource value: 0x7f0200b5
-			public const int more_nachomail_active = 2130837685;
+			public const int modal_nextmonth = 2130837685;
 			
 			// aapt resource value: 0x7f0200b6
-			public const int more_settings = 2130837686;
+			public const int modal_none = 2130837686;
 			
 			// aapt resource value: 0x7f0200b7
-			public const int more_settings_active = 2130837687;
+			public const int modal_pick_date = 2130837687;
 			
 			// aapt resource value: 0x7f0200b8
-			public const int more_support = 2130837688;
+			public const int modal_this_week = 2130837688;
 			
 			// aapt resource value: 0x7f0200b9
-			public const int more_support_active = 2130837689;
+			public const int modal_tomorrow = 2130837689;
 			
 			// aapt resource value: 0x7f0200ba
-			public const int mr_ic_audio_vol = 2130837690;
+			public const int modal_tonight = 2130837690;
 			
 			// aapt resource value: 0x7f0200bb
-			public const int mr_ic_media_route_connecting_mono_dark = 2130837691;
+			public const int modal_weekend = 2130837691;
 			
 			// aapt resource value: 0x7f0200bc
-			public const int mr_ic_media_route_connecting_mono_light = 2130837692;
+			public const int more_files = 2130837692;
 			
 			// aapt resource value: 0x7f0200bd
-			public const int mr_ic_media_route_mono_dark = 2130837693;
+			public const int more_files_active = 2130837693;
 			
 			// aapt resource value: 0x7f0200be
-			public const int mr_ic_media_route_mono_light = 2130837694;
+			public const int more_nachomail = 2130837694;
 			
 			// aapt resource value: 0x7f0200bf
-			public const int mr_ic_pause_dark = 2130837695;
+			public const int more_nachomail_active = 2130837695;
 			
 			// aapt resource value: 0x7f0200c0
-			public const int mr_ic_pause_light = 2130837696;
+			public const int more_settings = 2130837696;
 			
 			// aapt resource value: 0x7f0200c1
-			public const int mr_ic_play_dark = 2130837697;
+			public const int more_settings_active = 2130837697;
 			
 			// aapt resource value: 0x7f0200c2
-			public const int mr_ic_play_light = 2130837698;
+			public const int more_support = 2130837698;
 			
 			// aapt resource value: 0x7f0200c3
-			public const int mr_ic_settings_dark = 2130837699;
+			public const int more_support_active = 2130837699;
 			
 			// aapt resource value: 0x7f0200c4
-			public const int mr_ic_settings_light = 2130837700;
+			public const int mr_ic_audio_vol = 2130837700;
 			
 			// aapt resource value: 0x7f0200c5
-			public const int nav_calendar = 2130837701;
+			public const int mr_ic_media_route_connecting_mono_dark = 2130837701;
 			
 			// aapt resource value: 0x7f0200c6
-			public const int nav_calendar_active = 2130837702;
+			public const int mr_ic_media_route_connecting_mono_light = 2130837702;
 			
 			// aapt resource value: 0x7f0200c7
-			public const int nav_contacts = 2130837703;
+			public const int mr_ic_media_route_mono_dark = 2130837703;
 			
 			// aapt resource value: 0x7f0200c8
-			public const int nav_contacts_active = 2130837704;
+			public const int mr_ic_media_route_mono_light = 2130837704;
 			
 			// aapt resource value: 0x7f0200c9
-			public const int nav_mail = 2130837705;
+			public const int mr_ic_pause_dark = 2130837705;
 			
 			// aapt resource value: 0x7f0200ca
-			public const int nav_mail_active = 2130837706;
+			public const int mr_ic_pause_light = 2130837706;
 			
 			// aapt resource value: 0x7f0200cb
-			public const int nav_nachonow = 2130837707;
+			public const int mr_ic_play_dark = 2130837707;
 			
 			// aapt resource value: 0x7f0200cc
-			public const int nav_nachonow_active = 2130837708;
-			
-			// aapt resource value: 0x7f0200f4
-			public const int notification_template_icon_bg = 2130837748;
+			public const int mr_ic_play_light = 2130837708;
 			
 			// aapt resource value: 0x7f0200cd
-			public const int now_addcalevent = 2130837709;
+			public const int mr_ic_settings_dark = 2130837709;
 			
 			// aapt resource value: 0x7f0200ce
-			public const int powered_by_google_dark = 2130837710;
+			public const int mr_ic_settings_light = 2130837710;
 			
 			// aapt resource value: 0x7f0200cf
-			public const int powered_by_google_light = 2130837711;
+			public const int nav_calendar = 2130837711;
 			
 			// aapt resource value: 0x7f0200d0
-			public const int snackbar_background = 2130837712;
+			public const int nav_calendar_active = 2130837712;
 			
 			// aapt resource value: 0x7f0200d1
-			public const int toolbar_icn_fwd = 2130837713;
+			public const int nav_contacts = 2130837713;
 			
 			// aapt resource value: 0x7f0200d2
-			public const int toolbar_icn_reply = 2130837714;
+			public const int nav_contacts_active = 2130837714;
 			
 			// aapt resource value: 0x7f0200d3
-			public const int toolbar_icn_reply_all = 2130837715;
+			public const int nav_mail = 2130837715;
 			
 			// aapt resource value: 0x7f0200d4
-			public const int UserColor0 = 2130837716;
+			public const int nav_mail_active = 2130837716;
 			
 			// aapt resource value: 0x7f0200d5
-			public const int UserColor1 = 2130837717;
+			public const int nav_nachonow = 2130837717;
 			
 			// aapt resource value: 0x7f0200d6
-			public const int UserColor10 = 2130837718;
+			public const int nav_nachonow_active = 2130837718;
+			
+			// aapt resource value: 0x7f0200fe
+			public const int notification_template_icon_bg = 2130837758;
 			
 			// aapt resource value: 0x7f0200d7
-			public const int UserColor11 = 2130837719;
+			public const int now_addcalevent = 2130837719;
 			
 			// aapt resource value: 0x7f0200d8
-			public const int UserColor12 = 2130837720;
+			public const int powered_by_google_dark = 2130837720;
 			
 			// aapt resource value: 0x7f0200d9
-			public const int UserColor13 = 2130837721;
+			public const int powered_by_google_light = 2130837721;
 			
 			// aapt resource value: 0x7f0200da
-			public const int UserColor14 = 2130837722;
+			public const int snackbar_background = 2130837722;
 			
 			// aapt resource value: 0x7f0200db
-			public const int UserColor15 = 2130837723;
+			public const int toolbar_icn_fwd = 2130837723;
 			
 			// aapt resource value: 0x7f0200dc
-			public const int UserColor16 = 2130837724;
+			public const int toolbar_icn_reply = 2130837724;
 			
 			// aapt resource value: 0x7f0200dd
-			public const int UserColor17 = 2130837725;
+			public const int toolbar_icn_reply_all = 2130837725;
 			
 			// aapt resource value: 0x7f0200de
-			public const int UserColor18 = 2130837726;
+			public const int UserColor0 = 2130837726;
 			
 			// aapt resource value: 0x7f0200df
-			public const int UserColor19 = 2130837727;
+			public const int UserColor1 = 2130837727;
 			
 			// aapt resource value: 0x7f0200e0
-			public const int UserColor2 = 2130837728;
+			public const int UserColor10 = 2130837728;
 			
 			// aapt resource value: 0x7f0200e1
-			public const int UserColor20 = 2130837729;
+			public const int UserColor11 = 2130837729;
 			
 			// aapt resource value: 0x7f0200e2
-			public const int UserColor21 = 2130837730;
+			public const int UserColor12 = 2130837730;
 			
 			// aapt resource value: 0x7f0200e3
-			public const int UserColor22 = 2130837731;
+			public const int UserColor13 = 2130837731;
 			
 			// aapt resource value: 0x7f0200e4
-			public const int UserColor23 = 2130837732;
+			public const int UserColor14 = 2130837732;
 			
 			// aapt resource value: 0x7f0200e5
-			public const int UserColor24 = 2130837733;
+			public const int UserColor15 = 2130837733;
 			
 			// aapt resource value: 0x7f0200e6
-			public const int UserColor25 = 2130837734;
+			public const int UserColor16 = 2130837734;
 			
 			// aapt resource value: 0x7f0200e7
-			public const int UserColor26 = 2130837735;
+			public const int UserColor17 = 2130837735;
 			
 			// aapt resource value: 0x7f0200e8
-			public const int UserColor27 = 2130837736;
+			public const int UserColor18 = 2130837736;
 			
 			// aapt resource value: 0x7f0200e9
-			public const int UserColor28 = 2130837737;
+			public const int UserColor19 = 2130837737;
 			
 			// aapt resource value: 0x7f0200ea
-			public const int UserColor29 = 2130837738;
+			public const int UserColor2 = 2130837738;
 			
 			// aapt resource value: 0x7f0200eb
-			public const int UserColor3 = 2130837739;
+			public const int UserColor20 = 2130837739;
 			
 			// aapt resource value: 0x7f0200ec
-			public const int UserColor30 = 2130837740;
+			public const int UserColor21 = 2130837740;
 			
 			// aapt resource value: 0x7f0200ed
-			public const int UserColor31 = 2130837741;
+			public const int UserColor22 = 2130837741;
 			
 			// aapt resource value: 0x7f0200ee
-			public const int UserColor4 = 2130837742;
+			public const int UserColor23 = 2130837742;
 			
 			// aapt resource value: 0x7f0200ef
-			public const int UserColor5 = 2130837743;
+			public const int UserColor24 = 2130837743;
 			
 			// aapt resource value: 0x7f0200f0
-			public const int UserColor6 = 2130837744;
+			public const int UserColor25 = 2130837744;
 			
 			// aapt resource value: 0x7f0200f1
-			public const int UserColor7 = 2130837745;
+			public const int UserColor26 = 2130837745;
 			
 			// aapt resource value: 0x7f0200f2
-			public const int UserColor8 = 2130837746;
+			public const int UserColor27 = 2130837746;
 			
 			// aapt resource value: 0x7f0200f3
-			public const int UserColor9 = 2130837747;
+			public const int UserColor28 = 2130837747;
+			
+			// aapt resource value: 0x7f0200f4
+			public const int UserColor29 = 2130837748;
+			
+			// aapt resource value: 0x7f0200f5
+			public const int UserColor3 = 2130837749;
+			
+			// aapt resource value: 0x7f0200f6
+			public const int UserColor30 = 2130837750;
+			
+			// aapt resource value: 0x7f0200f7
+			public const int UserColor31 = 2130837751;
+			
+			// aapt resource value: 0x7f0200f8
+			public const int UserColor4 = 2130837752;
+			
+			// aapt resource value: 0x7f0200f9
+			public const int UserColor5 = 2130837753;
+			
+			// aapt resource value: 0x7f0200fa
+			public const int UserColor6 = 2130837754;
+			
+			// aapt resource value: 0x7f0200fb
+			public const int UserColor7 = 2130837755;
+			
+			// aapt resource value: 0x7f0200fc
+			public const int UserColor8 = 2130837756;
+			
+			// aapt resource value: 0x7f0200fd
+			public const int UserColor9 = 2130837757;
 			
 			static Drawable()
 			{
@@ -2534,8 +2564,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0081
 			public const int about = 2131427457;
 			
-			// aapt resource value: 0x7f0b00c2
-			public const int account = 2131427522;
+			// aapt resource value: 0x7f0b00c6
+			public const int account = 2131427526;
 			
 			// aapt resource value: 0x7f0b007d
 			public const int account_email = 2131427453;
@@ -2549,8 +2579,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b007e
 			public const int account_settings = 2131427454;
 			
-			// aapt resource value: 0x7f0b00ca
-			public const int action0 = 2131427530;
+			// aapt resource value: 0x7f0b00ce
+			public const int action0 = 2131427534;
 			
 			// aapt resource value: 0x7f0b006c
 			public const int action_bar = 2131427436;
@@ -2576,8 +2606,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b006d
 			public const int action_context_bar = 2131427437;
 			
-			// aapt resource value: 0x7f0b00ce
-			public const int action_divider = 2131427534;
+			// aapt resource value: 0x7f0b00d2
+			public const int action_divider = 2131427538;
 			
 			// aapt resource value: 0x7f0b0004
 			public const int action_menu_divider = 2131427332;
@@ -2609,17 +2639,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0043
 			public const int always = 2131427395;
 			
-			// aapt resource value: 0x7f0b00ac
-			public const int archive = 2131427500;
+			// aapt resource value: 0x7f0b00b0
+			public const int archive = 2131427504;
 			
-			// aapt resource value: 0x7f0b00b8
-			public const int art = 2131427512;
+			// aapt resource value: 0x7f0b00bc
+			public const int art = 2131427516;
 			
 			// aapt resource value: 0x7f0b0041
 			public const int beginning = 2131427393;
 			
-			// aapt resource value: 0x7f0b009c
-			public const int body = 2131427484;
+			// aapt resource value: 0x7f0b00a0
+			public const int body = 2131427488;
 			
 			// aapt resource value: 0x7f0b001b
 			public const int book_now = 2131427355;
@@ -2627,14 +2657,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0028
 			public const int bottom = 2131427368;
 			
-			// aapt resource value: 0x7f0b00af
-			public const int btnDemo = 2131427503;
+			// aapt resource value: 0x7f0b00b3
+			public const int btnDemo = 2131427507;
 			
-			// aapt resource value: 0x7f0b00d8
-			public const int btnSkip = 2131427544;
+			// aapt resource value: 0x7f0b00dc
+			public const int btnSkip = 2131427548;
 			
-			// aapt resource value: 0x7f0b00da
-			public const int btnWelcome = 2131427546;
+			// aapt resource value: 0x7f0b00de
+			public const int btnWelcome = 2131427550;
 			
 			// aapt resource value: 0x7f0b0062
 			public const int buttonPanel = 2131427426;
@@ -2642,8 +2672,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0083
 			public const int button_bar = 2131427459;
 			
-			// aapt resource value: 0x7f0b00be
-			public const int buttons = 2131427518;
+			// aapt resource value: 0x7f0b00c2
+			public const int buttons = 2131427522;
 			
 			// aapt resource value: 0x7f0b0017
 			public const int buyButton = 2131427351;
@@ -2654,17 +2684,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b001d
 			public const int buy_with_google = 2131427357;
 			
-			// aapt resource value: 0x7f0b00c7
-			public const int calendar = 2131427527;
-			
 			// aapt resource value: 0x7f0b00cb
-			public const int cancel_action = 2131427531;
+			public const int calendar = 2131427531;
 			
-			// aapt resource value: 0x7f0b008e
-			public const int cc_label = 2131427470;
+			// aapt resource value: 0x7f0b00cf
+			public const int cancel_action = 2131427535;
 			
 			// aapt resource value: 0x7f0b008f
-			public const int cc_list = 2131427471;
+			public const int cc_label = 2131427471;
+			
+			// aapt resource value: 0x7f0b0090
+			public const int cc_list = 2131427472;
 			
 			// aapt resource value: 0x7f0b0029
 			public const int center = 2131427369;
@@ -2678,11 +2708,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0064
 			public const int checkbox = 2131427428;
 			
-			// aapt resource value: 0x7f0b00a5
-			public const int chili = 2131427493;
+			// aapt resource value: 0x7f0b00a9
+			public const int chili = 2131427497;
 			
-			// aapt resource value: 0x7f0b00d1
-			public const int chronometer = 2131427537;
+			// aapt resource value: 0x7f0b00d5
+			public const int chronometer = 2131427541;
 			
 			// aapt resource value: 0x7f0b001f
 			public const int classic = 2131427359;
@@ -2696,14 +2726,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0044
 			public const int collapseActionView = 2131427396;
 			
-			// aapt resource value: 0x7f0b008b
-			public const int compose = 2131427467;
+			// aapt resource value: 0x7f0b008c
+			public const int compose = 2131427468;
 			
-			// aapt resource value: 0x7f0b00c8
-			public const int contacts = 2131427528;
+			// aapt resource value: 0x7f0b00cc
+			public const int contacts = 2131427532;
 			
-			// aapt resource value: 0x7f0b0099
-			public const int content = 2131427481;
+			// aapt resource value: 0x7f0b009d
+			public const int content = 2131427485;
 			
 			// aapt resource value: 0x7f0b005d
 			public const int contentPanel = 2131427421;
@@ -2714,8 +2744,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0060
 			public const int customPanel = 2131427424;
 			
-			// aapt resource value: 0x7f0b00a4
-			public const int date = 2131427492;
+			// aapt resource value: 0x7f0b00a8
+			public const int date = 2131427496;
+			
+			// aapt resource value: 0x7f0b0098
+			public const int date_picker = 2131427480;
+			
+			// aapt resource value: 0x7f0b009a
+			public const int date_time_set = 2131427482;
 			
 			// aapt resource value: 0x7f0b006a
 			public const int decor_content_parent = 2131427434;
@@ -2723,11 +2759,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0055
 			public const int default_activity_button = 2131427413;
 			
-			// aapt resource value: 0x7f0b00b7
-			public const int default_control_frame = 2131427511;
+			// aapt resource value: 0x7f0b00bb
+			public const int default_control_frame = 2131427515;
 			
-			// aapt resource value: 0x7f0b00ad
-			public const int delete = 2131427501;
+			// aapt resource value: 0x7f0b00b1
+			public const int delete = 2131427505;
 			
 			// aapt resource value: 0x7f0b0048
 			public const int dialog = 2131427400;
@@ -2735,20 +2771,20 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b003b
 			public const int disableHome = 2131427387;
 			
-			// aapt resource value: 0x7f0b00bf
-			public const int disconnect = 2131427519;
+			// aapt resource value: 0x7f0b00c3
+			public const int disconnect = 2131427523;
 			
 			// aapt resource value: 0x7f0b001e
 			public const int donate_with_google = 2131427358;
 			
-			// aapt resource value: 0x7f0b00db
-			public const int drawer_item_1 = 2131427547;
+			// aapt resource value: 0x7f0b00df
+			public const int drawer_item_1 = 2131427551;
 			
-			// aapt resource value: 0x7f0b00dc
-			public const int drawer_item_2 = 2131427548;
+			// aapt resource value: 0x7f0b00e0
+			public const int drawer_item_2 = 2131427552;
 			
-			// aapt resource value: 0x7f0b0097
-			public const int drawer_layout = 2131427479;
+			// aapt resource value: 0x7f0b009b
+			public const int drawer_layout = 2131427483;
 			
 			// aapt resource value: 0x7f0b0049
 			public const int dropdown = 2131427401;
@@ -2756,14 +2792,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b006e
 			public const int edit_query = 2131427438;
 			
-			// aapt resource value: 0x7f0b0094
-			public const int email = 2131427476;
+			// aapt resource value: 0x7f0b0095
+			public const int email = 2131427477;
 			
 			// aapt resource value: 0x7f0b002e
 			public const int end = 2131427374;
 			
-			// aapt resource value: 0x7f0b00d6
-			public const int end_padder = 2131427542;
+			// aapt resource value: 0x7f0b00da
+			public const int end_padder = 2131427546;
 			
 			// aapt resource value: 0x7f0b0022
 			public const int enterAlways = 2131427362;
@@ -2780,8 +2816,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0063
 			public const int expanded_menu = 2131427427;
 			
-			// aapt resource value: 0x7f0b00b1
-			public const int files = 2131427505;
+			// aapt resource value: 0x7f0b00b5
+			public const int files = 2131427509;
 			
 			// aapt resource value: 0x7f0b002f
 			public const int fill = 2131427375;
@@ -2795,8 +2831,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0037
 			public const int @fixed = 2131427383;
 			
-			// aapt resource value: 0x7f0b00ab
-			public const int forward = 2131427499;
+			// aapt resource value: 0x7f0b00af
+			public const int forward = 2131427503;
 			
 			// aapt resource value: 0x7f0b007f
 			public const int go_to_inbox = 2131427455;
@@ -2804,8 +2840,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0020
 			public const int grayscale = 2131427360;
 			
-			// aapt resource value: 0x7f0b008a
-			public const int gridview = 2131427466;
+			// aapt resource value: 0x7f0b008b
+			public const int gridview = 2131427467;
 			
 			// aapt resource value: 0x7f0b0012
 			public const int holo_dark = 2131427346;
@@ -2819,11 +2855,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b003c
 			public const int homeAsUp = 2131427388;
 			
-			// aapt resource value: 0x7f0b00c3
-			public const int hot = 2131427523;
+			// aapt resource value: 0x7f0b00c7
+			public const int hot = 2131427527;
 			
-			// aapt resource value: 0x7f0b00c4
-			public const int hot_image = 2131427524;
+			// aapt resource value: 0x7f0b00c8
+			public const int hot_image = 2131427528;
 			
 			// aapt resource value: 0x7f0b000e
 			public const int hybrid = 2131427342;
@@ -2837,17 +2873,20 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0054
 			public const int image = 2131427412;
 			
-			// aapt resource value: 0x7f0b00c5
-			public const int inbox = 2131427525;
+			// aapt resource value: 0x7f0b00c9
+			public const int inbox = 2131427529;
 			
-			// aapt resource value: 0x7f0b00c6
-			public const int inbox_image = 2131427526;
+			// aapt resource value: 0x7f0b00ca
+			public const int inbox_image = 2131427530;
 			
-			// aapt resource value: 0x7f0b00d5
-			public const int info = 2131427541;
+			// aapt resource value: 0x7f0b00d9
+			public const int info = 2131427545;
 			
 			// aapt resource value: 0x7f0b0000
 			public const int item_touch_helper_previous_elevation = 2131427328;
+			
+			// aapt resource value: 0x7f0b008a
+			public const int label = 2131427466;
 			
 			// aapt resource value: 0x7f0b0032
 			public const int left = 2131427378;
@@ -2861,47 +2900,47 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0089
 			public const int left_button3 = 2131427465;
 			
-			// aapt resource value: 0x7f0b00cf
-			public const int line1 = 2131427535;
-			
 			// aapt resource value: 0x7f0b00d3
-			public const int line3 = 2131427539;
+			public const int line1 = 2131427539;
+			
+			// aapt resource value: 0x7f0b00d7
+			public const int line3 = 2131427543;
 			
 			// aapt resource value: 0x7f0b0039
 			public const int listMode = 2131427385;
 			
-			// aapt resource value: 0x7f0b00a7
-			public const int listView = 2131427495;
+			// aapt resource value: 0x7f0b00ab
+			public const int listView = 2131427499;
 			
 			// aapt resource value: 0x7f0b0056
 			public const int list_item = 2131427414;
 			
-			// aapt resource value: 0x7f0b00b0
-			public const int mail = 2131427504;
+			// aapt resource value: 0x7f0b00b4
+			public const int mail = 2131427508;
 			
 			// aapt resource value: 0x7f0b0019
 			public const int match_parent = 2131427353;
 			
-			// aapt resource value: 0x7f0b00cd
-			public const int media_actions = 2131427533;
+			// aapt resource value: 0x7f0b00d1
+			public const int media_actions = 2131427537;
 			
-			// aapt resource value: 0x7f0b00b6
-			public const int media_route_control_frame = 2131427510;
+			// aapt resource value: 0x7f0b00ba
+			public const int media_route_control_frame = 2131427514;
 			
-			// aapt resource value: 0x7f0b00b3
-			public const int media_route_list = 2131427507;
+			// aapt resource value: 0x7f0b00b7
+			public const int media_route_list = 2131427511;
 			
-			// aapt resource value: 0x7f0b00bc
-			public const int media_route_volume_layout = 2131427516;
+			// aapt resource value: 0x7f0b00c0
+			public const int media_route_volume_layout = 2131427520;
 			
-			// aapt resource value: 0x7f0b00bd
-			public const int media_route_volume_slider = 2131427517;
+			// aapt resource value: 0x7f0b00c1
+			public const int media_route_volume_slider = 2131427521;
 			
-			// aapt resource value: 0x7f0b0092
-			public const int message = 2131427474;
+			// aapt resource value: 0x7f0b0093
+			public const int message = 2131427475;
 			
-			// aapt resource value: 0x7f0b00a1
-			public const int message_read = 2131427489;
+			// aapt resource value: 0x7f0b00a5
+			public const int message_read = 2131427493;
 			
 			// aapt resource value: 0x7f0b0042
 			public const int middle = 2131427394;
@@ -2912,23 +2951,23 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0021
 			public const int monochrome = 2131427361;
 			
-			// aapt resource value: 0x7f0b00c9
-			public const int more = 2131427529;
+			// aapt resource value: 0x7f0b00cd
+			public const int more = 2131427533;
 			
 			// aapt resource value: 0x7f0b004a
 			public const int multiply = 2131427402;
 			
-			// aapt resource value: 0x7f0b009a
-			public const int myButton = 2131427482;
+			// aapt resource value: 0x7f0b009e
+			public const int myButton = 2131427486;
 			
-			// aapt resource value: 0x7f0b009b
-			public const int navigation = 2131427483;
+			// aapt resource value: 0x7f0b009f
+			public const int navigation = 2131427487;
 			
-			// aapt resource value: 0x7f0b00c1
-			public const int navigation_bar = 2131427521;
+			// aapt resource value: 0x7f0b00c5
+			public const int navigation_bar = 2131427525;
 			
-			// aapt resource value: 0x7f0b00a8
-			public const int navigation_toolbar = 2131427496;
+			// aapt resource value: 0x7f0b00ac
+			public const int navigation_toolbar = 2131427500;
 			
 			// aapt resource value: 0x7f0b0046
 			public const int never = 2131427398;
@@ -2939,8 +2978,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b000f
 			public const int normal = 2131427343;
 			
-			// aapt resource value: 0x7f0b00d7
-			public const int pager = 2131427543;
+			// aapt resource value: 0x7f0b00db
+			public const int pager = 2131427547;
 			
 			// aapt resource value: 0x7f0b0026
 			public const int parallax = 2131427366;
@@ -2948,23 +2987,23 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0059
 			public const int parentPanel = 2131427417;
 			
-			// aapt resource value: 0x7f0b0095
-			public const int password = 2131427477;
+			// aapt resource value: 0x7f0b0096
+			public const int password = 2131427478;
 			
 			// aapt resource value: 0x7f0b0027
 			public const int pin = 2131427367;
 			
-			// aapt resource value: 0x7f0b00b9
-			public const int play_pause = 2131427513;
+			// aapt resource value: 0x7f0b00bd
+			public const int play_pause = 2131427517;
 			
-			// aapt resource value: 0x7f0b00a0
-			public const int preview = 2131427488;
+			// aapt resource value: 0x7f0b00a4
+			public const int preview = 2131427492;
 			
 			// aapt resource value: 0x7f0b0014
 			public const int production = 2131427348;
 			
-			// aapt resource value: 0x7f0b00ae
-			public const int progress = 2131427502;
+			// aapt resource value: 0x7f0b00b2
+			public const int progress = 2131427506;
 			
 			// aapt resource value: 0x7f0b0007
 			public const int progress_circular = 2131427335;
@@ -2975,14 +3014,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0066
 			public const int radio = 2131427430;
 			
-			// aapt resource value: 0x7f0b00d9
-			public const int recyclerView = 2131427545;
+			// aapt resource value: 0x7f0b00dd
+			public const int recyclerView = 2131427549;
 			
-			// aapt resource value: 0x7f0b00a9
-			public const int reply = 2131427497;
+			// aapt resource value: 0x7f0b00ad
+			public const int reply = 2131427501;
 			
-			// aapt resource value: 0x7f0b00aa
-			public const int reply_all = 2131427498;
+			// aapt resource value: 0x7f0b00ae
+			public const int reply_all = 2131427502;
 			
 			// aapt resource value: 0x7f0b0033
 			public const int right = 2131427379;
@@ -2996,8 +3035,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0086
 			public const int right_button3 = 2131427462;
 			
-			// aapt resource value: 0x7f0b00b5
-			public const int route_name = 2131427509;
+			// aapt resource value: 0x7f0b00b9
+			public const int route_name = 2131427513;
 			
 			// aapt resource value: 0x7f0b0015
 			public const int sandbox = 2131427349;
@@ -3053,11 +3092,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0018
 			public const int selectionDetails = 2131427352;
 			
-			// aapt resource value: 0x7f0b00a3
-			public const int sender = 2131427491;
+			// aapt resource value: 0x7f0b00a7
+			public const int sender = 2131427495;
 			
-			// aapt resource value: 0x7f0b00b2
-			public const int settings = 2131427506;
+			// aapt resource value: 0x7f0b00b6
+			public const int settings = 2131427510;
 			
 			// aapt resource value: 0x7f0b0065
 			public const int shortcut = 2131427429;
@@ -3071,11 +3110,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b003f
 			public const int showTitle = 2131427391;
 			
-			// aapt resource value: 0x7f0b009f
-			public const int snackbar_action = 2131427487;
+			// aapt resource value: 0x7f0b00a3
+			public const int snackbar_action = 2131427491;
 			
-			// aapt resource value: 0x7f0b009e
-			public const int snackbar_text = 2131427486;
+			// aapt resource value: 0x7f0b00a2
+			public const int snackbar_text = 2131427490;
 			
 			// aapt resource value: 0x7f0b0009
 			public const int split_action_bar = 2131427337;
@@ -3092,35 +3131,35 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0034
 			public const int start = 2131427380;
 			
-			// aapt resource value: 0x7f0b00cc
-			public const int status_bar_latest_event_content = 2131427532;
+			// aapt resource value: 0x7f0b00d0
+			public const int status_bar_latest_event_content = 2131427536;
 			
-			// aapt resource value: 0x7f0b00c0
-			public const int stop = 2131427520;
+			// aapt resource value: 0x7f0b00c4
+			public const int stop = 2131427524;
 			
 			// aapt resource value: 0x7f0b0016
 			public const int strict_sandbox = 2131427350;
 			
+			// aapt resource value: 0x7f0b0092
+			public const int subject = 2131427474;
+			
 			// aapt resource value: 0x7f0b0091
-			public const int subject = 2131427473;
+			public const int subject_label = 2131427473;
 			
-			// aapt resource value: 0x7f0b0090
-			public const int subject_label = 2131427472;
-			
-			// aapt resource value: 0x7f0b0096
-			public const int submit = 2131427478;
+			// aapt resource value: 0x7f0b0097
+			public const int submit = 2131427479;
 			
 			// aapt resource value: 0x7f0b0077
 			public const int submit_area = 2131427447;
 			
-			// aapt resource value: 0x7f0b00bb
-			public const int subtitle = 2131427515;
+			// aapt resource value: 0x7f0b00bf
+			public const int subtitle = 2131427519;
 			
 			// aapt resource value: 0x7f0b0080
 			public const int support = 2131427456;
 			
-			// aapt resource value: 0x7f0b00a6
-			public const int swipe_refresh_layout = 2131427494;
+			// aapt resource value: 0x7f0b00aa
+			public const int swipe_refresh_layout = 2131427498;
 			
 			// aapt resource value: 0x7f0b003a
 			public const int tabMode = 2131427386;
@@ -3128,41 +3167,44 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0011
 			public const int terrain = 2131427345;
 			
-			// aapt resource value: 0x7f0b00d4
-			public const int text = 2131427540;
+			// aapt resource value: 0x7f0b00d8
+			public const int text = 2131427544;
 			
-			// aapt resource value: 0x7f0b00d2
-			public const int text2 = 2131427538;
+			// aapt resource value: 0x7f0b00d6
+			public const int text2 = 2131427542;
 			
 			// aapt resource value: 0x7f0b005f
 			public const int textSpacerNoButtons = 2131427423;
 			
-			// aapt resource value: 0x7f0b00ba
-			public const int text_wrapper = 2131427514;
+			// aapt resource value: 0x7f0b00be
+			public const int text_wrapper = 2131427518;
 			
 			// aapt resource value: 0x7f0b0082
 			public const int textview = 2131427458;
 			
-			// aapt resource value: 0x7f0b00d0
-			public const int time = 2131427536;
+			// aapt resource value: 0x7f0b00d4
+			public const int time = 2131427540;
+			
+			// aapt resource value: 0x7f0b0099
+			public const int time_picker = 2131427481;
 			
 			// aapt resource value: 0x7f0b0058
 			public const int title = 2131427416;
 			
-			// aapt resource value: 0x7f0b00b4
-			public const int title_bar = 2131427508;
+			// aapt resource value: 0x7f0b00b8
+			public const int title_bar = 2131427512;
 			
 			// aapt resource value: 0x7f0b005b
 			public const int title_template = 2131427419;
 			
-			// aapt resource value: 0x7f0b008c
-			public const int to_label = 2131427468;
-			
 			// aapt resource value: 0x7f0b008d
-			public const int to_list = 2131427469;
+			public const int to_label = 2131427469;
 			
-			// aapt resource value: 0x7f0b0098
-			public const int toolbar = 2131427480;
+			// aapt resource value: 0x7f0b008e
+			public const int to_list = 2131427470;
+			
+			// aapt resource value: 0x7f0b009c
+			public const int toolbar = 2131427484;
 			
 			// aapt resource value: 0x7f0b0035
 			public const int top = 2131427381;
@@ -3176,17 +3218,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0040
 			public const int useLogo = 2131427392;
 			
-			// aapt resource value: 0x7f0b00a2
-			public const int user_image = 2131427490;
+			// aapt resource value: 0x7f0b00a6
+			public const int user_image = 2131427494;
 			
 			// aapt resource value: 0x7f0b0001
 			public const int view_offset_helper = 2131427329;
 			
-			// aapt resource value: 0x7f0b009d
-			public const int webview = 2131427485;
+			// aapt resource value: 0x7f0b00a1
+			public const int webview = 2131427489;
 			
-			// aapt resource value: 0x7f0b0093
-			public const int welcome = 2131427475;
+			// aapt resource value: 0x7f0b0094
+			public const int welcome = 2131427476;
 			
 			// aapt resource value: 0x7f0b0047
 			public const int withText = 2131427399;
@@ -3338,166 +3380,175 @@ namespace NachoClient.AndroidClient
 			public const int ButtonBar = 2130903071;
 			
 			// aapt resource value: 0x7f030020
-			public const int ChooseProviderFragment = 2130903072;
+			public const int ChooseDeferralButton = 2130903072;
 			
 			// aapt resource value: 0x7f030021
-			public const int ChooserFragment = 2130903073;
+			public const int ChooseDeferralFragment = 2130903073;
 			
 			// aapt resource value: 0x7f030022
-			public const int ComposeFragment = 2130903074;
+			public const int ChooseProviderFragment = 2130903074;
 			
 			// aapt resource value: 0x7f030023
-			public const int CredentialsFragment = 2130903075;
+			public const int ChooserFragment = 2130903075;
 			
 			// aapt resource value: 0x7f030024
-			public const int design_navigation_item = 2130903076;
+			public const int ComposeFragment = 2130903076;
 			
 			// aapt resource value: 0x7f030025
-			public const int design_navigation_item_header = 2130903077;
+			public const int CredentialsFragment = 2130903077;
 			
 			// aapt resource value: 0x7f030026
-			public const int design_navigation_item_separator = 2130903078;
+			public const int DateTimePicker = 2130903078;
 			
 			// aapt resource value: 0x7f030027
-			public const int design_navigation_item_subheader = 2130903079;
+			public const int design_navigation_item = 2130903079;
 			
 			// aapt resource value: 0x7f030028
-			public const int design_navigation_menu = 2130903080;
+			public const int design_navigation_item_header = 2130903080;
 			
 			// aapt resource value: 0x7f030029
-			public const int drawer_header = 2130903081;
+			public const int design_navigation_item_separator = 2130903081;
 			
 			// aapt resource value: 0x7f03002a
-			public const int EventViewFragment = 2130903082;
+			public const int design_navigation_item_subheader = 2130903082;
 			
 			// aapt resource value: 0x7f03002b
-			public const int FolderFragment = 2130903083;
+			public const int design_navigation_menu = 2130903083;
 			
 			// aapt resource value: 0x7f03002c
-			public const int FolderListActivity = 2130903084;
+			public const int drawer_header = 2130903084;
 			
 			// aapt resource value: 0x7f03002d
-			public const int GoogleSignInFragment = 2130903085;
+			public const int EventViewFragment = 2130903085;
 			
 			// aapt resource value: 0x7f03002e
-			public const int HotMessageFragment = 2130903086;
+			public const int FolderFragment = 2130903086;
 			
 			// aapt resource value: 0x7f03002f
-			public const int InboxActivity = 2130903087;
+			public const int FolderListActivity = 2130903087;
 			
 			// aapt resource value: 0x7f030030
-			public const int IntentFragment = 2130903088;
+			public const int GoogleSignInFragment = 2130903088;
 			
 			// aapt resource value: 0x7f030031
-			public const int LaunchActivity = 2130903089;
+			public const int HotMessageFragment = 2130903089;
 			
 			// aapt resource value: 0x7f030032
-			public const int layout_snackbar = 2130903090;
+			public const int InboxActivity = 2130903090;
 			
 			// aapt resource value: 0x7f030033
-			public const int layout_snackbar_include = 2130903091;
+			public const int IntentFragment = 2130903091;
 			
 			// aapt resource value: 0x7f030034
-			public const int Main = 2130903092;
+			public const int LaunchActivity = 2130903092;
 			
 			// aapt resource value: 0x7f030035
-			public const int MessageCell = 2130903093;
+			public const int layout_snackbar = 2130903093;
 			
 			// aapt resource value: 0x7f030036
-			public const int MessageComposeActivity = 2130903094;
+			public const int layout_snackbar_include = 2130903094;
 			
 			// aapt resource value: 0x7f030037
-			public const int MessageHeader = 2130903095;
+			public const int Main = 2130903095;
 			
 			// aapt resource value: 0x7f030038
-			public const int MessageListFragment = 2130903096;
+			public const int MessageCell = 2130903096;
 			
 			// aapt resource value: 0x7f030039
-			public const int MessageToolbar = 2130903097;
+			public const int MessageComposeActivity = 2130903097;
 			
 			// aapt resource value: 0x7f03003a
-			public const int MessageViewFragment = 2130903098;
+			public const int MessageHeader = 2130903098;
 			
 			// aapt resource value: 0x7f03003b
-			public const int MigrationFragment = 2130903099;
+			public const int MessageListFragment = 2130903099;
 			
 			// aapt resource value: 0x7f03003c
-			public const int MoreFragment = 2130903100;
+			public const int MessageToolbar = 2130903100;
 			
 			// aapt resource value: 0x7f03003d
-			public const int mr_media_route_chooser_dialog = 2130903101;
+			public const int MessageViewFragment = 2130903101;
 			
 			// aapt resource value: 0x7f03003e
-			public const int mr_media_route_controller_material_dialog_b = 2130903102;
+			public const int MigrationFragment = 2130903102;
 			
 			// aapt resource value: 0x7f03003f
-			public const int mr_media_route_list_item = 2130903103;
+			public const int MoreFragment = 2130903103;
 			
 			// aapt resource value: 0x7f030040
-			public const int NavigationBar = 2130903104;
+			public const int mr_media_route_chooser_dialog = 2130903104;
 			
 			// aapt resource value: 0x7f030041
-			public const int NavigationToolbar = 2130903105;
+			public const int mr_media_route_controller_material_dialog_b = 2130903105;
 			
 			// aapt resource value: 0x7f030042
-			public const int notification_media_action = 2130903106;
+			public const int mr_media_route_list_item = 2130903106;
 			
 			// aapt resource value: 0x7f030043
-			public const int notification_media_cancel_action = 2130903107;
+			public const int NavigationBar = 2130903107;
 			
 			// aapt resource value: 0x7f030044
-			public const int notification_template_big_media = 2130903108;
+			public const int NavigationToolbar = 2130903108;
 			
 			// aapt resource value: 0x7f030045
-			public const int notification_template_big_media_narrow = 2130903109;
+			public const int notification_media_action = 2130903109;
 			
 			// aapt resource value: 0x7f030046
-			public const int notification_template_lines = 2130903110;
+			public const int notification_media_cancel_action = 2130903110;
 			
 			// aapt resource value: 0x7f030047
-			public const int notification_template_media = 2130903111;
+			public const int notification_template_big_media = 2130903111;
 			
 			// aapt resource value: 0x7f030048
-			public const int notification_template_part_chronometer = 2130903112;
+			public const int notification_template_big_media_narrow = 2130903112;
 			
 			// aapt resource value: 0x7f030049
-			public const int notification_template_part_time = 2130903113;
+			public const int notification_template_lines = 2130903113;
 			
 			// aapt resource value: 0x7f03004a
-			public const int NowActivity = 2130903114;
+			public const int notification_template_media = 2130903114;
 			
 			// aapt resource value: 0x7f03004b
-			public const int NowFragment = 2130903115;
+			public const int notification_template_part_chronometer = 2130903115;
 			
 			// aapt resource value: 0x7f03004c
-			public const int PriorityFragment = 2130903116;
+			public const int notification_template_part_time = 2130903116;
 			
 			// aapt resource value: 0x7f03004d
-			public const int RecoveryFragment = 2130903117;
+			public const int NowActivity = 2130903117;
 			
 			// aapt resource value: 0x7f03004e
-			public const int select_dialog_item_material = 2130903118;
+			public const int NowFragment = 2130903118;
 			
 			// aapt resource value: 0x7f03004f
-			public const int select_dialog_multichoice_material = 2130903119;
+			public const int PriorityFragment = 2130903119;
 			
 			// aapt resource value: 0x7f030050
-			public const int select_dialog_singlechoice_material = 2130903120;
+			public const int RecoveryFragment = 2130903120;
 			
 			// aapt resource value: 0x7f030051
-			public const int StartupFragment = 2130903121;
+			public const int select_dialog_item_material = 2130903121;
 			
 			// aapt resource value: 0x7f030052
-			public const int support_simple_spinner_dropdown_item = 2130903122;
+			public const int select_dialog_multichoice_material = 2130903122;
 			
 			// aapt resource value: 0x7f030053
-			public const int SwitchAccountFragment = 2130903123;
+			public const int select_dialog_singlechoice_material = 2130903123;
 			
 			// aapt resource value: 0x7f030054
-			public const int WaitingFragment = 2130903124;
+			public const int StartupFragment = 2130903124;
 			
 			// aapt resource value: 0x7f030055
-			public const int WelcomeFragment = 2130903125;
+			public const int support_simple_spinner_dropdown_item = 2130903125;
+			
+			// aapt resource value: 0x7f030056
+			public const int SwitchAccountFragment = 2130903126;
+			
+			// aapt resource value: 0x7f030057
+			public const int WaitingFragment = 2130903127;
+			
+			// aapt resource value: 0x7f030058
+			public const int WelcomeFragment = 2130903128;
 			
 			static Layout()
 			{
@@ -3729,6 +3780,9 @@ namespace NachoClient.AndroidClient
 			
 			// aapt resource value: 0x7f070003
 			public const int decline = 2131165187;
+			
+			// aapt resource value: 0x7f07006a
+			public const int defer_message_until = 2131165290;
 			
 			// aapt resource value: 0x7f070049
 			public const int demo = 2131165257;

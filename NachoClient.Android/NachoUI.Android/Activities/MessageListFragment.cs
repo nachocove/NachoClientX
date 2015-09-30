@@ -21,6 +21,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using Android.Graphics.Drawables;
+using NachoCore.Brain;
 
 namespace NachoClient.AndroidClient
 {
@@ -133,7 +134,7 @@ namespace NachoClient.AndroidClient
 //                    ShowFileChooser (messageThread);
                     break;
                 case DEFER_TAG:
-//                    ShowPriorityChooser (messageThread);
+                    ShowPriorityChooser (messageThread);
                     break;
                 case ARCHIVE_TAG:
                     ArchiveThisMessage (messageThread);
@@ -145,9 +146,7 @@ namespace NachoClient.AndroidClient
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
                 }
                 return false;
-            }
-            );
-
+            });
 
             return view;
         }
@@ -222,6 +221,22 @@ namespace NachoClient.AndroidClient
             NcAssert.NotNull (messageThread);
             NcEmailArchiver.Archive (messageThread);
         }
+
+        public void ShowPriorityChooser (McEmailMessageThread messageThread)
+        {
+            Console.WriteLine ("ShowPriorityChooser: {0}", messageThread);
+            var deferralFragment = ChooseDeferralFragment.newInstance (messageThread);
+            deferralFragment.setOnDeferralSelected (OnDeferralSelected);
+            var ft = FragmentManager.BeginTransaction ();
+            ft.AddToBackStack (null);
+            deferralFragment.Show (ft, "dialog");
+        }
+
+        public void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            NcMessageDeferral.DateSelected (NcMessageDeferral.MessageDateType.Defer, thread, request, selectedDate);
+        }
+
     }
 
     public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
