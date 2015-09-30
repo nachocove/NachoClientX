@@ -202,8 +202,20 @@ namespace NachoPlatform
             return null;
         }
 
+        /// <summary>
+        /// Turns a SecRecord into a string for logging.
+        /// 
+        /// NOTE: This will dump ALL FIELDS. Should only be used for queries, not responses, as
+        /// responses may contain passwords
+        /// </summary>
+        /// <returns>The query.</returns>
+        /// <param name="query">Query.</param>
         private string DumpQuery (SecRecord query)
         {
+            // make sure we don't ever use this dumper for SecKeyClass.Private or SecKeyClass.Symmetric keys.
+            // If we need this, we'll want to write a more restrictive dumper. This one
+            // dumps EVERYTHING.
+            NcAssert.True (query.KeyClass == SecKeyClass.Invalid || query.KeyClass == SecKeyClass.Public);
             string str = query.ToString () + " ";
             var qDict = query.ToDictionary ();
             foreach (var x in qDict) {
