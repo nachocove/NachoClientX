@@ -175,12 +175,15 @@ namespace NachoPlatform
             }
         }
 
-        const int KLogSaltGetMaxRetries = 5;
+        /// <summary>
+        /// The number of times we'll retry getting the value from the keychain in case of a failure.
+        /// </summary>
+        const int KSecKeyChainGetFailRetry = 5;
 
         private NSData Getter (SecRecord query, bool errorIfMissing = false)
         {
             SecStatusCode res;
-            for (var i = 0; i < KLogSaltGetMaxRetries; i++) {
+            for (var i = 0; i < KSecKeyChainGetFailRetry; i++) {
                 var match = SecKeyChain.QueryAsRecord (query, out res);
                 if (SecStatusCode.Success == res) {
                     if (null == match.ValueData || 0 == match.ValueData.Length) {
