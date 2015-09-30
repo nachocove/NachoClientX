@@ -66,7 +66,7 @@ namespace NachoPlatform
 
         public string GetPassword (int handle)
         {
-            var data = Getter (CreateQuery (handle));
+            var data = Getter (CreateQuery (handle), errorIfMissing: true);
             return StringFromNSData (data);
         }
 
@@ -182,11 +182,12 @@ namespace NachoPlatform
 
         private NSData Getter (SecRecord query, bool errorIfMissing = false)
         {
-            SecStatusCode res;
+            SecStatusCode res = default(SecStatusCode);
             for (var i = 0; i < KSecKeyChainGetFailRetry; i++) {
                 var match = SecKeyChain.QueryAsRecord (query, out res);
                 if (SecStatusCode.Success == res) {
                     if (null == match.ValueData || 0 == match.ValueData.Length) {
+                        // TODO should this also throw KeychainItemNotFoundException?
                         Log.Error (Log.LOG_SYS, "Getter: query={{{0}}} returned ValueData of null/(length==0)", DumpQuery (query));
                     }
                     return match.ValueData;
@@ -198,6 +199,9 @@ namespace NachoPlatform
                         break;
                     }
                 }
+            }
+            if (errorIfMissing) {
+                throw new KeychainItemNotFoundException (string.Format ("{0}: {1}", DumpQuery (query), res));
             }
             return null;
         }

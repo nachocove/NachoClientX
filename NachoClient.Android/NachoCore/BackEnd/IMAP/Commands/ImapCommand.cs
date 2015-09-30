@@ -18,6 +18,7 @@ using NachoClient.Build;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
 using MimeKit;
+using NachoPlatform;
 
 namespace NachoCore.IMAP
 {
@@ -111,6 +112,10 @@ namespace NachoCore.IMAP
                 ResolveAllDeferred ();
                 // No event posted to SM if cancelled.
                 return;
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_IMAP, "KeychainItemNotFoundException: {0}", ex.Message);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPKEYCHFAIL");
             } catch (CommandLockTimeOutException ex) {
                 Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);

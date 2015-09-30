@@ -456,9 +456,15 @@ namespace NachoCore.ActiveSync
 
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
-                string password = BEContext.Cred.GetPassword ();
-                BEContext.Account.LogHashedPassword (Log.LOG_HTTP, "AsHttpOperation", password);
-                client = GetEncryptedClient (AccountId, BEContext.Cred.Username, password);
+                try {
+                    string password = BEContext.Cred.GetPassword ();
+                    BEContext.Account.LogHashedPassword (Log.LOG_HTTP, "AsHttpOperation", password);
+                    client = GetEncryptedClient (AccountId, BEContext.Cred.Username, password);
+                } catch (KeychainItemNotFoundException ex) {
+                    Log.Error (Log.LOG_AS, "KeychainItemNotFoundException: {0}", ex.Message);
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPKEYCHAIN", null, string.Format ("KeychainItemNotFoundException: {0}, Uri: {1}", ex.Message, RedactedServerUri));
+                    return;
+                }
             } else {
                 client = GetClearClient ();
             }

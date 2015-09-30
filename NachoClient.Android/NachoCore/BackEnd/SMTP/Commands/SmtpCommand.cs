@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using MailKit.Net.Smtp;
 using NachoCore.IMAP;
 using NachoCore.Model;
+using NachoPlatform;
 
 namespace NachoCore.SMTP
 {
@@ -88,6 +89,10 @@ namespace NachoCore.SMTP
                     ResolveAllDeferred ();
                     // No event posted to SM if cancelled.
                     return;
+                } catch (KeychainItemNotFoundException ex) {
+                    Log.Error (Log.LOG_SMTP, "{0}: KeychainItemNotFoundException: {1}", cmdname, ex.Message);
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPKEYCHFAIL");
                 } catch (SocketException ex) {
                     Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.InvalidDest);

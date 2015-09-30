@@ -9,6 +9,7 @@ using CoreGraphics;
 
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -363,7 +364,12 @@ namespace NachoClient.iOS
             NcAssert.NotNull (creds);
 
             emailView.textField.Text = account.EmailAddr;
-            passwordView.textField.Text = creds.GetPassword ();
+            try {
+                passwordView.textField.Text = creds.GetPassword ();
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_UI, "Imap LoadAccount: KeychainItemNotFoundException {0}", ex.Message);
+                // Owen: What to do here.
+            }
 
             usernameView.textField.Text = creds.Username;
 

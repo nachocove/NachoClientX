@@ -200,19 +200,6 @@ namespace NachoCore.Utils
             return McAccount.GetDeviceAccount ();
         }
 
-        public static string GetPassword (McAccount account)
-        {
-            if (McAccount.AccountServiceEnum.GoogleDefault == account.AccountService) {
-                return "";
-            }
-            var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if (null == creds) {
-                return "";
-            } else {
-                return creds.GetPassword ();
-            }
-        }
-
         public static bool ConfiguredAccountExists (string emailAddress)
         {
             var existingAccount = McAccount.QueryByEmailAddr (emailAddress).SingleOrDefault ();

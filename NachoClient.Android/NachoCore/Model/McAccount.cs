@@ -431,7 +431,13 @@ namespace NachoCore.Model
 
         public void LogHashedPassword(ulong service, string logComment, string password)
         {
-            string salt = GetLogSalt ();
+            string salt = null;
+            try {
+                salt = GetLogSalt ();
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_SYS, "LoggablePasswordSaltedHash: Could not retrieve LogSalt for account {0}: KeychainItemNotFoundException {1}", Id, ex.Message);
+                return;
+            }
             if (string.IsNullOrEmpty (salt)) {
                 Log.Error (Log.LOG_SYS, "LoggablePasswordSaltedHash: Could not retrieve LogSalt for account {0}", Id);
                 return;

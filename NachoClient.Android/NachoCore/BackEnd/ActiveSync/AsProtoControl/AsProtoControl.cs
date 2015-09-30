@@ -1202,21 +1202,26 @@ namespace NachoCore.ActiveSync
             if (null == ping) {
                 return null; // should never happen
             }
-            return new NachoCore.PushAssistParameters () {
-                RequestUrl = ping.PushAssistRequestUrl (),
-                Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                WaitBeforeUseMsec = 60 * 1000,
+            try {
+                return new NachoCore.PushAssistParameters () {
+                    RequestUrl = ping.PushAssistRequestUrl (),
+                    Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                    ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                    WaitBeforeUseMsec = 60 * 1000,
 
-                MailServerCredentials = new Credentials {
-                    Username = ProtoControl.Cred.Username,
-                    Password = ProtoControl.Cred.GetPassword ()
-                },
-                RequestData = ping.PushAssistRequestData (),
-                RequestHeaders = ping.PushAssistRequestHeaders (),
-                ContentHeaders = ping.PushAssistContentHeaders (),
-                NoChangeResponseData = ping.PushAssistResponseData (),
-            };
+                    MailServerCredentials = new Credentials {
+                        Username = ProtoControl.Cred.Username,
+                        Password = ProtoControl.Cred.GetPassword ()
+                    },
+                    RequestData = ping.PushAssistRequestData (),
+                    RequestHeaders = ping.PushAssistRequestHeaders (),
+                    ContentHeaders = ping.PushAssistContentHeaders (),
+                    NoChangeResponseData = ping.PushAssistResponseData (),
+                };
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
+                return null;
+            }
         }
     }
 }

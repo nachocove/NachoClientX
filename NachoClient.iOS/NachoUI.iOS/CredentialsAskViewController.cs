@@ -211,9 +211,15 @@ namespace NachoClient.iOS
 
             var cred = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
             McAccount account = McAccount.QueryById<McAccount> (theAccountId); 
-            var password = cred.GetPassword ();
-            account.LogHashedPassword (Log.LOG_UI, "CredentialAskViewController - GetPassword", password);
-            return password;
+            try {
+                var password = cred.GetPassword ();
+                account.LogHashedPassword (Log.LOG_UI, "CredentialAskViewController - GetPassword", password);
+                return password;
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_UI, "KeychainItemNotFoundException: {0}", ex.Message);
+                return null;
+                // Owen: What to do here?
+            }
         }
 
         private void OnTextFieldChanged (NSNotification notification)
