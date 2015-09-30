@@ -398,6 +398,7 @@ namespace NachoClient.iOS
             contentView.AddGestureRecognizer (backgroundTapGesture);
 
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
+            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
 
             doneButton = new NcUIBarButtonItem ();
             cancelButton = new NcUIBarButtonItem ();
@@ -644,6 +645,7 @@ namespace NachoClient.iOS
 
             //Content View
             contentView.Frame = new CGRect (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 9) + (CELL_HEIGHT * 11));
+            contentView.AutoresizingMask = UIViewAutoresizing.None;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
             contentView.AddSubviews (new UIView[] {
                 titleView,

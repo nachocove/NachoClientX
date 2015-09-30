@@ -176,7 +176,8 @@ namespace NachoClient.iOS
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             // Main view
-            scrollView.Frame = View.Frame;
+            scrollView.Frame = new CGRect(0, 0, View.Frame.Width, View.Frame.Height);
+            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
             scrollView.BackgroundColor = contentViewBGColor;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             scrollView.Scrolled += ScrollViewScrolled;
@@ -186,6 +187,7 @@ namespace NachoClient.iOS
             scrollView.ViewForZoomingInScrollView = ViewForZooming;
 
             contentView.BackgroundColor = contentViewBGColor;
+            contentView.AutoresizingMask = UIViewAutoresizing.None;
 
             nfloat yOffset = 20;
 
