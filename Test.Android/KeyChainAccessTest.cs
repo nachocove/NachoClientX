@@ -51,7 +51,7 @@ namespace Test.iOS
             Assert.IsTrue (Keychain.Instance.HasKeychain ());
 
             var logSalt = "Foo1234";
-            var retryCount = 1000000;
+            var retryCount = 200000;
             var loopSalt = logSalt + "-0000";
             Assert.IsTrue (Keychain.Instance.SetLogSalt (KKeyChainId, loopSalt));
             for (var i = 0; i < retryCount; i++) {
