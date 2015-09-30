@@ -31,8 +31,7 @@ namespace NachoCore.ActiveSync
         private XNamespace TasksNs;
         private int WindowSize;
 
-        public uint WaitInterval { get; set; }
-        public uint HeartbeatInterval { get; set; }
+        public TimeSpan WaitInterval { get; set; }
 
         private bool IsNarrow;
 
@@ -46,9 +45,7 @@ namespace NachoCore.ActiveSync
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed);
             WindowSize = syncKit.OverallWindowSize;
-            HeartbeatInterval = syncKit.HeartbeatInterval;
-            // convert HeartbeatInterval to Wait since Wait is supported in more protocol versions
-            WaitInterval = HeartbeatIntervalToWait (HeartbeatInterval);
+            WaitInterval = syncKit.WaitInterval;
             IsNarrow = syncKit.IsNarrow;
             SyncKitList = syncKit.PerFolders;
             FoldersInRequest = new List<McFolder> ();
@@ -203,9 +200,9 @@ namespace NachoCore.ActiveSync
                 new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000"));
         }
 
-        private uint HeartbeatIntervalToWait (uint heartbeatInterval)
+        private uint WaitIntervalToWaitSeconds ()
         {
-            uint wait = heartbeatInterval / 60;
+            uint wait = (uint) WaitInterval.TotalSeconds / 60;
             if (wait < 0) { //min wait = 0
                 wait = 0;
             } else if (wait > 59) { // max wait 59
@@ -357,9 +354,9 @@ namespace NachoCore.ActiveSync
                 collections.Add (collection);
             }
             var sync = new XElement (m_ns + Xml.AirSync.Sync, collections);
-            // use WaitInterval instead of HeartbeatInterval since it is also supported in 12.1 while HeartbeatInterval is not 
-            if (WaitInterval != 0) {
-                sync.Add (new XElement (m_ns + Xml.AirSync.Wait, WaitInterval)); 
+            // use Wait instead of HeartbeatInterval since Wait is also supported in 12.1 while HeartbeatInterval is not 
+            if ((uint) WaitInterval.TotalSeconds > 0) {
+                sync.Add (new XElement (m_ns + Xml.AirSync.Wait, WaitIntervalToWaitSeconds ())); 
             }
             sync.Add (new XElement (m_ns + Xml.AirSync.WindowSize, WindowSize));
             var doc = AsCommand.ToEmptyXDocument ();

@@ -11,6 +11,7 @@ namespace NachoCore.ActiveSync
     {
         public uint MaxHeartbeatInterval { get; set; }
         public List<McFolder> Folders { get; set; }
+        public bool IsNarrow { get; set; }
     }
 
     public class SyncKit
@@ -23,7 +24,7 @@ namespace NachoCore.ActiveSync
             public Xml.Provision.MaxAgeFilterCode FilterCode { get; set; }
             public bool GetChanges { get; set; }
         }
-        public uint HeartbeatInterval { get; set; }
+        public TimeSpan WaitInterval { get; set; }
         public bool IsNarrow { get; set; }
         public int OverallWindowSize { get; set; }
         public List<PerFolder> PerFolders { get; set; }
