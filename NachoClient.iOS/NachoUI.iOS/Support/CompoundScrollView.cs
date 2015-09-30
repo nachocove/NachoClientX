@@ -93,7 +93,6 @@ namespace NachoClient.iOS
 
             public void DetermineContentSize ()
             {
-                Log.Info (Log.LOG_UI, "DetermineContentSize");
                 var size = new CGSize (Bounds.Width, 0.0f);
                 foreach (var subview in CompoundViews) {
                     var scrollView = ScrollViewForCompoundScrollView (subview);
@@ -139,7 +138,10 @@ namespace NachoClient.iOS
                                     frame.Y = y;
                                 }
                                 // Cap the frame's bottom at the bottom boundary, and make sure the final view extends there regardless
-                                nfloat availableHeight = Bounds.Y + Bounds.Height - frame.Y;
+                                nfloat minBoundsY = 0.0f;
+                                nfloat maxBoundsY = (nfloat)Math.Max (Bounds.Height, y + contentHeight) - Bounds.Height;
+                                nfloat boundsYWithoutBounce = (nfloat)Math.Max(minBoundsY, Math.Min(maxBoundsY, Bounds.Y));
+                                nfloat availableHeight = boundsYWithoutBounce + Bounds.Height - frame.Y;
                                 if (i == CompoundViews.Count - 1){
                                     frame.Height = availableHeight;
                                 }else{
@@ -201,7 +203,6 @@ namespace NachoClient.iOS
                         CGPoint expectedOffset = new CGPoint(compoundView.Frame.X, Math.Max(0, Bounds.Y - y));
                         CGPoint diff = new CGPoint (scrollView.ContentOffset.X - expectedOffset.X, scrollView.ContentOffset.Y - expectedOffset.Y);
                         if (diff.X != 0.0f || diff.Y != 0.0f) {
-                            Log.Info (Log.LOG_UI, "ComposeView adjust scroll by: {0}", diff);
                             DetermineContentSize ();
                             CGPoint newOuterOffset = new CGPoint (ScrollView.ContentOffset.X + diff.X, ScrollView.ContentOffset.Y + diff.Y);
                             ScrollView.ContentOffset = newOuterOffset;

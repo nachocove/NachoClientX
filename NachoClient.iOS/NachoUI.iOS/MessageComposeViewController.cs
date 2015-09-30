@@ -219,9 +219,9 @@ namespace NachoClient.iOS
         {
             var frame = View.Bounds;
             frame.Height = frame.Height - keyboardHeight;
-//            ScrollView.Frame = frame;
-//            ScrollView.SetNeedsLayout ();
-//            ScrollView.LayoutIfNeeded ();
+            ScrollView.Frame = frame;
+            ScrollView.SetNeedsLayout ();
+            ScrollView.LayoutIfNeeded ();
         }
 
         #endregion
@@ -709,7 +709,6 @@ namespace NachoClient.iOS
                 //         callback (result, error);
                 //     }
                 // });
-                Log.Info(Log.LOG_UI, "JAVASCRIPT: {0}", javascript);
                 WebView.EvaluateJavascript (javascript);
             } else {
                 JavaScriptQueue.Add (javascript);
@@ -736,11 +735,6 @@ namespace NachoClient.iOS
         [Foundation.Export("scrollViewDidScroll:")]
         public void Scrolled (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "ComposeView didScroll: {0}", scrollView.ContentOffset);
-//            var top = WebView.EvaluateJavascript ("window.getSelection().getRangeAt(0).getBoundingClientRect().top");
-//            var height = WebView.EvaluateJavascript ("window.innerHeight");
-//            var offset = WebView.EvaluateJavascript ("window.pageYOffset");
-//            Log.Info (Log.LOG_UI, "MessageComposeView scroll height: {0}, offset: {1}, top: {2}", height, offset, top);
         }
 
         #endregion
