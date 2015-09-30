@@ -1695,6 +1695,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEventDetail.cs">
       <Link>NachoCore\Utils\NcEventDetail.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\ImageiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

@@ -161,13 +161,7 @@ namespace NachoCore.Utils
             Storage = new NcBundleFileStorage (bundleRoot);
             HasHtmlUrl = true;
             Message = message;
-            Manifest = Storage.ObjectContentsForPath (ManifestPath, typeof(BundleManifest)) as BundleManifest;
-            if (Manifest != null) {
-                NeedsUpdate = Manifest.Version != LastestVersion;
-            } else {
-                Manifest = new BundleManifest (LastestVersion);
-                NeedsUpdate = true;
-            }
+            ReadManifest ();
         }
 
         public NcEmailMessageBundle (MimeMessage message, string storagePath = null)
@@ -180,6 +174,11 @@ namespace NachoCore.Utils
                 HasHtmlUrl = true;
             }
             MimeMessage = message;
+            ReadManifest ();
+        }
+
+        void ReadManifest ()
+        {
             Manifest = Storage.ObjectContentsForPath (ManifestPath, typeof(BundleManifest)) as BundleManifest;
             if (Manifest != null) {
                 NeedsUpdate = Manifest.Version != LastestVersion;
@@ -358,6 +357,7 @@ namespace NachoCore.Utils
         public void Invalidate ()
         {
             Storage.Delete ();
+            ReadManifest ();
         }
 
         public void SetFullText (string text)
@@ -1148,7 +1148,7 @@ namespace NachoCore.Utils
                             BundleManifest.Entry entry;
                             string entryKey;
                             if (!parsed.ImageEntriesBySrc.ContainsKey (src.Value)) {
-                                var ext = Path.HasExtension(src.Value) ? "." + Path.GetExtension (src.Value) : "";
+                                var ext = Path.HasExtension(src.Value) ? Path.GetExtension (src.Value) : "";
                                 entry = new BundleManifest.Entry ();
                                 entry.Path = SafeFilename ("image" + ext);
                                 entryKey = entry.Path;
@@ -1190,7 +1190,7 @@ namespace NachoCore.Utils
         string FileExtForEntity (MimePart entity)
         {
             if (!String.IsNullOrEmpty (entity.FileName) && Path.HasExtension(entity.FileName)) {
-                return "." + Path.GetExtension (entity.FileName);
+                return Path.GetExtension (entity.FileName);
             }
             return "";
         }

@@ -14,10 +14,13 @@ namespace NachoCore.Utils
     public interface MessageComposerDelegate
     {
         void MessageComposerDidCompletePreparation (MessageComposer composer);
+        PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, McAttachment attachment);
     }
 
     public class MessageComposer : MessageDownloadDelegate
     {
+        
+        protected static readonly long DEFAULT_MAX_SIZE = 2000000;
 
         #region Properties
 
@@ -44,8 +47,57 @@ namespace NachoCore.Utils
                 return MessagePreparationState == MessagePreparationStatus.Done;
             }
         }
+        public long MaxSize = DEFAULT_MAX_SIZE;
 
         private McEmailMessage RelatedMessage;
+        McBody Body;
+
+        public Tuple<float, float> SmallImageLengths = new Tuple<float, float> (240, 320);
+        public Tuple<float, float> MediumImageLengths = new Tuple<float, float> (480, 640);
+        public Tuple<float, float> LargeImageLengths = new Tuple<float, float> (960, 1280);
+
+        long _EstimatedSmallSizeDelta = 0;
+        long _EstimatedMediumSizeDelta = 0;
+        long _EstimatedLargeSizeDelta = 0;
+
+        public long EstimatedSmallSize {
+            get {
+                return MessageSize - _EstimatedSmallSizeDelta;
+            }
+        }
+
+        public long EstimatedMediumSize {
+            get {
+                return MessageSize - _EstimatedMediumSizeDelta;
+            }
+        }
+
+        public long EstimatedLargeSize {
+            get {
+                return MessageSize - _EstimatedLargeSizeDelta;
+            }
+        }
+
+        public bool CanResize {
+            get {
+                return _EstimatedLargeSizeDelta > 0 || _EstimatedMediumSizeDelta > 0 || _EstimatedSmallSizeDelta > 0;
+            }
+        }
+
+        public long MessageSize {
+            get {
+                if (Body != null) {
+                    return Body.FileSize;
+                }
+                return 0;
+            }
+        }
+
+        public bool IsOversize {
+            get {
+                return MessageSize > MaxSize;
+            }
+        }
 
         enum MessagePreparationStatus {
             NotStarted,
@@ -58,6 +110,7 @@ namespace NachoCore.Utils
         MessageDownloader MainMessageDownloader;
         MessageDownloader RelatedMessageDownloader;
         List<BinaryReader> OpenReaders;
+        MimeMessage Mime;
 
         #endregion
 
@@ -164,7 +217,7 @@ namespace NachoCore.Utils
                 ItemId = Message.Id,
                 ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email,
                 ContentId = attachment.ContentId,
-                ContentType = attachment.ContentType,
+                ContentType = attachment.ContentType
             };
             copy.Insert ();
             // TODO: It would be nice to do any heavy work like large file copying in a background task.
@@ -173,6 +226,8 @@ namespace NachoCore.Utils
             copy.Update ();
             if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
                 copy.UpdateFileCopy (attachment.GetFilePath ());
+            } else {
+                // Download attachment?
             }
         }
 
@@ -354,31 +409,20 @@ namespace NachoCore.Utils
 
         #region Save Message 
 
-        public MimeMessage Save (string html)
+        public void Save (string html)
         {
+            if (Bundle.NeedsUpdate) {
+                // If we resized images, it could be the second time through this save.
+                // The first time through would have invalidated the bundle, and we'll need
+                // to update it the second time through so it can create inline images properly
+                Bundle.Update ();
+            }
             OpenReaders = new List<BinaryReader> ();
-            var mime = BuildMimeMessage (html);
-            var text = mime.GetTextBody (MimeKit.Text.TextFormat.Text);
-            var preview = text.Substring (0, Math.Min (text.Length, 256));
-            if (Message.ReferencedEmailId != 0) {
-                var relatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.ReferencedEmailId);
-                // the referenced message may not exist anyore
-                if (relatedMessage != null) {
-                    EmailHelper.SetupReferences (ref mime, relatedMessage);
-                }
-            }
-            McBody body;
-            if (Message.BodyId != 0) {
-                body = McBody.QueryById<McBody> (Message.BodyId);
-                body.UpdateData ((FileStream stream) => {
-                    mime.WriteTo (stream);
-                });
-            } else {
-                body = McBody.InsertFile (Account.Id, McAbstrFileDesc.BodyTypeEnum.MIME_4, (FileStream stream) => {
-                    mime.WriteTo (stream);
-                });
-            }
+            BuildMimeMessage (html);
+            WriteBody ();
             ClearReaders ();
+            var text = Mime.GetTextBody (MimeKit.Text.TextFormat.Text);
+            var preview = text.Substring (0, Math.Min (text.Length, 256));
             Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
                 var message = record as McEmailMessage;
                 message.Subject = Message.Subject;
@@ -388,22 +432,39 @@ namespace NachoCore.Utils
                 message.Intent = Message.Intent;
                 message.IntentDate = Message.IntentDate;
                 message.IntentDateType = Message.IntentDateType;
-                message.BodyId = body.Id;
+                message.BodyId = Body.Id;
                 message.BodyPreview = preview;
-                message.DateReceived = mime.Date.DateTime;
+                message.DateReceived = Mime.Date.DateTime;
                 return true;
             });
             Bundle.Invalidate ();
-            return mime;
         }
 
-        public MimeMessage BuildMimeMessage (string html)
+        void WriteBody ()
         {
+            if (Message.BodyId != 0) {
+                Body = McBody.QueryById<McBody> (Message.BodyId);
+                Body.UpdateData ((FileStream stream) => {
+                    Mime.WriteTo (stream);
+                });
+                Body.UpdateSaveFinish ();
+            } else {
+                Body = McBody.InsertFile (Account.Id, McAbstrFileDesc.BodyTypeEnum.MIME_4, (FileStream stream) => {
+                    Mime.WriteTo (stream);
+                });
+            }
+        }
+
+        void BuildMimeMessage (string html)
+        {
+            _EstimatedLargeSizeDelta = 0;
+            _EstimatedMediumSizeDelta = 0;
+            _EstimatedSmallSizeDelta = 0;
             var toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, null, Message.To);
             var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, null, Message.Cc);
             var bccList = EmailHelper.AddressList (NcEmailAddress.Kind.Bcc, null, Message.Bcc);
-            var mime = EmailHelper.CreateMessage (Account, toList, ccList, bccList);
-            mime.Subject = Message.Subject ?? "";
+            Mime = EmailHelper.CreateMessage (Account, toList, ccList, bccList);
+            Mime.Subject = Message.Subject ?? "";
             var doc = new HtmlDocument ();
             doc.LoadHtml (html);
             var serializer = new HtmlTextSerializer (doc);
@@ -427,15 +488,22 @@ namespace NachoCore.Utils
                         OpenReaders.Add (reader);
                         attachmentPart.ContentObject = new ContentObject (reader.BaseStream);
                         mixed.Add (attachmentPart);
+                        AdjustEstimatedSizesForAttachment (attachment);
                     } else {
                         Log.Error (Log.LOG_EMAIL, "MessageComposer could not include attachment ID#{0} because its state is {1}", attachment.Id, attachment.FilePresence);
                     }
                 }
-                mime.Body = mixed;
+                Mime.Body = mixed;
             } else {
-                mime.Body = alternative;
+                Mime.Body = alternative;
             }
-            return mime;
+            if (Message.ReferencedEmailId != 0) {
+                var relatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.ReferencedEmailId);
+                // the referenced message may not exist anyore
+                if (relatedMessage != null) {
+                    EmailHelper.SetupReferences (ref Mime, relatedMessage);
+                }
+            }
         }
 
         MimeEntity HtmlPart (HtmlDocument doc)
@@ -471,6 +539,8 @@ namespace NachoCore.Utils
                             related.Add (attachment);
                             node.SetAttributeValue ("src", "cid:" + attachment.ContentId);
                             node.Attributes.Remove ("nacho-bundle-entry");
+                            // TODO: should we consider resizing inline images as well?
+                            // Probably ok not too since we don't add these ourselves yet.
                         }
                     }
                 }
@@ -500,14 +570,76 @@ namespace NachoCore.Utils
 
         #endregion
 
+        #region Image Resizing
+
+        public void ResizeImages (Tuple<float, float> lengths)
+        {
+            var attachments = McAttachment.QueryByItemId (Message);
+            foreach (var attachment in attachments) {
+                if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                    if (attachment.ContentType.StartsWith ("image/")) {
+                        var image = Delegate.ImageForMessageComposerAttachment (this, attachment);
+                        if (image != null) {
+                            using (var jpg = image.ResizedData (lengths.Item1, lengths.Item2)) {
+                                attachment.UpdateData ((FileStream stream) => {
+                                    jpg.CopyTo (stream);
+                                });
+                                attachment.ContentType = "image/jpeg";
+                                attachment.UpdateSaveFinish ();
+                            }
+                            image.Dispose ();
+                        }
+                    }
+                }
+            }
+        }
+
+        void AdjustEstimatedSizesForAttachment (McAttachment attachment)
+        {
+            if (attachment.ContentType.StartsWith("image/")) {
+                var image = Delegate.ImageForMessageComposerAttachment (this, attachment);
+                if (image != null) {
+                    // 4 / 3 is base64 encoding inflation
+                    long encodedByteSize = (long)((float)attachment.FileSize * 4.0 / 3.0);
+                    float smallRatio = RatioForSizedImage (image, SmallImageLengths);
+                    float mediumRatio = RatioForSizedImage (image, MediumImageLengths);
+                    float largeRatio = RatioForSizedImage (image, LargeImageLengths);
+                    long estimatedSmallEncodedSize = (long)((float)encodedByteSize * smallRatio * smallRatio);
+                    long estimatedMediumEncodedSize = (long)((float)encodedByteSize * mediumRatio * mediumRatio);
+                    long estimatedLargeEncodedSize = (long)((float)encodedByteSize * largeRatio * largeRatio);
+                    _EstimatedSmallSizeDelta += encodedByteSize - estimatedSmallEncodedSize;
+                    _EstimatedMediumSizeDelta += encodedByteSize - estimatedMediumEncodedSize;
+                    _EstimatedLargeSizeDelta += encodedByteSize - estimatedLargeEncodedSize;
+                    image.Dispose ();
+                }
+            }
+        }
+
+        float RatioForSizedImage (PlatformImage image, Tuple<float, float> newSize)
+        {
+            float width = image.Size.Item1;
+            float height = image.Size.Item2;
+            float widthRatio = 1.0f;
+            float heightRatio = 1.0f;
+            if (width > newSize.Item1) {
+                widthRatio = newSize.Item1 / width;
+            }
+            if (height > newSize.Item2) {
+                heightRatio = newSize.Item2 / height;
+            }
+            return Math.Min (widthRatio, heightRatio);
+        }
+
+        #endregion
+
         #region Send Message
 
-        public void Send (string html)
+        public void Send ()
         {
-            var mime = Save (html);
+            var subjectWithoutIntent = Message.Subject;
             Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
                 var message = record as McEmailMessage;
-                message.Subject = EmailHelper.CreateSubjectWithIntent (mime.Subject, Message.Intent, Message.IntentDateType, Message.IntentDate);
+                message.Subject = EmailHelper.CreateSubjectWithIntent (subjectWithoutIntent, Message.Intent, Message.IntentDateType, Message.IntentDate);
                 return true;
             });
             EmailHelper.SendTheMessage (Message, RelatedCalendarItem);

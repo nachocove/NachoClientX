@@ -10,6 +10,7 @@ using UIKit;
 using MimeKit;
 
 using NachoCore;
+using NachoPlatform;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -28,8 +29,8 @@ namespace NachoClient.iOS
     }
 
     public partial class MessageComposeViewController : NcUIViewController,
-        IWKNavigationDelegate,
-        IWKScriptMessageHandler,
+        // IWKNavigationDelegate,
+        // IWKScriptMessageHandler,
         IUIWebViewDelegate,
         IUIScrollViewDelegate,
         MessageComposeHeaderViewDelegate,
@@ -53,6 +54,8 @@ namespace NachoClient.iOS
         NcUIBarButtonItem SendButton;
         NcUIBarButtonItem QuickResponseButton;
         UIAlertController CloseAlertController;
+        UIAlertController SubjectAlertController;
+        UIAlertController SizeAlertController;
         bool HasShownOnce;
         UIStoryboard mainStorybaord;
         UIStoryboard MainStoryboard {
@@ -67,8 +70,7 @@ namespace NachoClient.iOS
 
         NSObject BackgroundNotification;
         NSObject ContentSizeCategoryChangedNotification;
-
-        protected static readonly long EMAIL_SIZE_ALERT_LIMIT = 2000000;
+        string ContentHtml;
 
         #endregion
 
@@ -134,12 +136,14 @@ namespace NachoClient.iOS
             HeaderView.Frame = new CGRect (0.0, 0.0, ScrollView.Bounds.Width, HeaderView.PreferredHeight);
             HeaderView.HeaderDelegate = this;
             HeaderView.AttachmentsAllowed = Composer.RelatedCalendarItem == null;
-//            var config = new WKWebViewConfiguration ();
-//            config.SuppressesIncrementalRendering = true;
-//            config.UserContentController.AddScriptMessageHandler (this, "nachoCompose");
-//            config.UserContentController.AddScriptMessageHandler (this, "nacho");
-//            WebView = new WKWebView (ScrollView.Bounds, config);
-//            WebView.NavigationDelegate = this;
+            // Was originally going to use WKWebView, but it won't load file:/// URLs on device (will in simulator, though).
+            // Might as well keep the code around for reference if we ever want to make the switch
+            // var config = new WKWebViewConfiguration ();
+            // config.SuppressesIncrementalRendering = true;
+            // config.UserContentController.AddScriptMessageHandler (this, "nachoCompose");
+            // config.UserContentController.AddScriptMessageHandler (this, "nacho");
+            // WebView = new WKWebView (ScrollView.Bounds, config);
+            // WebView.NavigationDelegate = this;
             WebView = new UIWebView (View.Bounds);
             WebView.SuppressesIncrementalRendering = true;
             WebView.Delegate = this;
@@ -156,6 +160,7 @@ namespace NachoClient.iOS
             if (!HasShownOnce) {
                 Composer.StartPreparingMessage ();
                 UpdateHeaderView ();
+                UpdateSendEnabled ();
                 if (StartWithQuickResponse) {
                     ShowQuickResponses ();
                 }
@@ -218,11 +223,87 @@ namespace NachoClient.iOS
         public void Send (object sender, EventArgs e)
         {
             View.EndEditing (true);
-            // TODO: preflight checks like size
-            // TODO: offer option to resize images
-            // TODO: send (can happen in background)
-            var html = GetHtmlContent ();
-            Composer.Send (html);
+            if (String.IsNullOrWhiteSpace (Composer.Message.Subject)) {
+                SubjectAlertController = UIAlertController.Create ("Empty Subject", "This message does not have a subject.  How would you like to proceed?", UIAlertControllerStyle.Alert);
+                SubjectAlertController.AddAction (UIAlertAction.Create ("Send Anyway", UIAlertActionStyle.Default, SendWithoutSubject));
+                SubjectAlertController.AddAction (UIAlertAction.Create ("Add Subject", UIAlertActionStyle.Default, AddSubject));
+                SubjectAlertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction obj) => { SubjectAlertController = null; }));
+                PresentViewController (SubjectAlertController, true, null);
+            } else {
+                CheckSizeBeforeSending ();
+            }
+        }
+
+        void SendWithoutSubject (UIAlertAction obj)
+        {
+            SubjectAlertController = null;
+            CheckSizeBeforeSending ();
+        }
+
+        void AddSubject (UIAlertAction obj)
+        {
+            SubjectAlertController = null;
+            HeaderView.SubjectField.BecomeFirstResponder ();
+        }
+
+        void CheckSizeBeforeSending ()
+        {
+            ContentHtml = GetHtmlContent ();
+            Composer.Save (ContentHtml);
+            if (Composer.IsOversize) {
+                if (Composer.CanResize) {
+                    SizeAlertController = UIAlertController.Create ("Large Message", String.Format ("This message is {0}.  You can make it smaller by sizing down the attached images.", Pretty.PrettyFileSize(Composer.MessageSize)), UIAlertControllerStyle.Alert);
+                    SizeAlertController.AddAction (UIAlertAction.Create (String.Format ("Small Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedSmallSize)), UIAlertActionStyle.Default, ResizeImagesSmall));
+                    SizeAlertController.AddAction (UIAlertAction.Create (String.Format ("Medium Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedMediumSize)), UIAlertActionStyle.Default, ResizeImagesMedium));
+                    SizeAlertController.AddAction (UIAlertAction.Create (String.Format ("Large Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedLargeSize)), UIAlertActionStyle.Default, ResizeImagesLarge));
+                    SizeAlertController.AddAction (UIAlertAction.Create (String.Format ("Actual Size ({0})", Pretty.PrettyFileSize(Composer.MessageSize)), UIAlertActionStyle.Default, AcknowlegeSizeWarning));
+                    SizeAlertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction obj) => { SizeAlertController = null; }));
+                    PresentViewController (SizeAlertController, true, null);
+                } else {
+                    SizeAlertController = UIAlertController.Create ("Large Message", String.Format ("This message is {0}", Pretty.PrettyFileSize(Composer.MessageSize)), UIAlertControllerStyle.Alert);
+                    SizeAlertController.AddAction (UIAlertAction.Create ("Send Anyway", UIAlertActionStyle.Default, AcknowlegeSizeWarning));
+                    SizeAlertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction obj) => { SizeAlertController = null; }));
+                    PresentViewController (SizeAlertController, true, null);
+                }
+            } else {
+                Send ();
+            }
+        }
+
+        void AcknowlegeSizeWarning (UIAlertAction obj)
+        {
+            SizeAlertController = null;
+            Send ();
+        }
+
+        void ResizeImagesLarge (UIAlertAction obj)
+        {
+            SizeAlertController = null;
+            ResizeImagesAndSend (Composer.LargeImageLengths);
+        }
+
+        void ResizeImagesMedium (UIAlertAction obj)
+        {
+            SizeAlertController = null;
+            ResizeImagesAndSend (Composer.MediumImageLengths);
+        }
+
+        void ResizeImagesSmall (UIAlertAction obj)
+        {
+            SizeAlertController = null;
+            ResizeImagesAndSend (Composer.SmallImageLengths);
+        }
+
+        void ResizeImagesAndSend (Tuple<float, float> lengths)
+        {
+            Composer.ResizeImages (lengths);
+            Composer.Save (ContentHtml);
+            Send ();
+        }
+
+        void Send ()
+        {
+            Composer.Send ();
             if (ComposeDelegate != null) {
                 ComposeDelegate.MessageComposeViewDidBeginSend (this);
             }
@@ -265,7 +346,7 @@ namespace NachoClient.iOS
             var html = GetHtmlContent ();
             Composer.Save (html);
             if (ComposeDelegate != null) {
-                ComposeDelegate.MessageComposeViewDidCancel (this);
+                ComposeDelegate.MessageComposeViewDidSaveDraft (this);
             }
             DismissViewController (true, null);
         }
@@ -325,6 +406,7 @@ namespace NachoClient.iOS
             } else {
                 NcAssert.CaseError ();
             }
+            UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address)
@@ -339,6 +421,7 @@ namespace NachoClient.iOS
             } else {
                 NcAssert.CaseError ();
             }
+            UpdateSendEnabled ();
         }
 
         // ??
@@ -408,14 +491,12 @@ namespace NachoClient.iOS
                 if (file != null) {
                     attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
                     attachment.SetDisplayName (file.DisplayName);
-                    attachment.IsInline = true;
                     attachment.UpdateFileCopy (file.GetFilePath ());
                 } else {
                     var note = obj as McNote;
                     if (note != null) {
                         attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
                         attachment.SetDisplayName (note.DisplayName + ".txt");
-                        attachment.IsInline = true;
                         attachment.UpdateData (note.noteContent);
                     }
                 }
@@ -490,26 +571,32 @@ namespace NachoClient.iOS
             DisplayMessageBody ();
         }
 
+        public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, McAttachment attachment)
+        {
+            return ImageiOS.FromPath (attachment.GetFilePath ());
+        }
+
         void DisplayMessageBody ()
         {
             if (Composer.Bundle != null) {
                 if (Composer.Bundle.FullHtmlUrl != null) {
                     var url = new NSUrl (Composer.Bundle.FullHtmlUrl.AbsoluteUri);
-//                    if (url.Scheme.ToLowerInvariant().Equals("file")){
-//                        var selector = new ObjCRuntime.Selector ("loadFileURL:allowingReadAccessToURL:");
-//                        if (WebView.RespondsToSelector (selector)) {
-//                            var baseUrl = new NSUrl (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments));
-//                            WebView.PerformSelector (selector, url, baseUrl);
-//                        } else {
-//                            // need a workaround for iOS 8
-//                            // - can run an http server
-//                            // - can copy files to /tmp
-//                            // - curious about symlink from /tmp -> Documents, but doubtful it will work
-//                        }
-//                    } else {
-//                        NSUrlRequest request = new NSUrlRequest (url);
-//                        WebView.LoadRequest (request);
-//                    }
+                    // Here's how WKWebView would work
+                    // if (url.Scheme.ToLowerInvariant().Equals("file")){
+                    //    var selector = new ObjCRuntime.Selector ("loadFileURL:allowingReadAccessToURL:");
+                    //     if (WebView.RespondsToSelector (selector)) {
+                    //         var baseUrl = new NSUrl (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments));
+                    //         WebView.PerformSelector (selector, url, baseUrl);
+                    //     } else {
+                    //         // need a workaround for iOS 8
+                    //         // - can run an http server
+                    //         // - can copy files to /tmp
+                    //         // - curious about symlink from /tmp -> Documents, but doubtful it will work
+                    //     }
+                    // } else {
+                    //     NSUrlRequest request = new NSUrlRequest (url);
+                    //     WebView.LoadRequest (request);
+                    // }
 
                     NSUrlRequest request = new NSUrlRequest (url);
                     WebView.LoadRequest (request);
@@ -525,51 +612,52 @@ namespace NachoClient.iOS
 
         #region Web View Delegate
 
-        [Export ("webView:didFinishNavigation:")]
-        public void DidFinishNavigation (WebKit.WKWebView webView, WebKit.WKNavigation navigation)
-        {
-            // The navigation is done, meaning the HTML has loaded in the web view, so we now have to
-            // tell our scroll view how big the webview is.
-            // Unfortunately, WebView.ScrollView.ContentSize.Height is still 0 at this point.
-            // It's a timing issue, and so we'll wait until it's not 0
-            UpdateScrollViewSizeOnceWebViewIsSized ();
-            EnableEditingInWebView ();
-        }
+        // These are WKWebView delegate methods
+        // [Export ("webView:didFinishNavigation:")]
+        // public void DidFinishNavigation (WebKit.WKWebView webView, WebKit.WKNavigation navigation)
+        // {
+        //     // The navigation is done, meaning the HTML has loaded in the web view, so we now have to
+        //     // tell our scroll view how big the webview is.
+        //     // Unfortunately, WebView.ScrollView.ContentSize.Height is still 0 at this point.
+        //     // It's a timing issue, and so we'll wait until it's not 0
+        //     UpdateScrollViewSizeOnceWebViewIsSized ();
+        //     EnableEditingInWebView ();
+        // }
 
-        [Export ("updateScrollViewSizeOnceWebViewIsSized")]
-        private void UpdateScrollViewSizeOnceWebViewIsSized ()
-        {
-            // The basic idea is to keep scheduling ourselves in the run loop until we see a non-zero height.
-            // Using the run loop is crucuial because it means we won't block anything.
-            // Experiements show this usually takes anywhere from 1-4 itereations.
-            if (WebView.ScrollView.ContentSize.Height == 0.0) {
-                var selector = new ObjCRuntime.Selector ("updateScrollViewSizeOnceWebViewIsSized");
-                var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
-                NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
-            } else {
-                UpdateScrollViewSize ();
-            }
-        }
+        // [Export ("updateScrollViewSizeOnceWebViewIsSized")]
+        // private void UpdateScrollViewSizeOnceWebViewIsSized ()
+        // {
+        //     // The basic idea is to keep scheduling ourselves in the run loop until we see a non-zero height.
+        //     // Using the run loop is crucuial because it means we won't block anything.
+        //     // Experiements show this usually takes anywhere from 1-4 itereations.
+        //     if (WebView.ScrollView.ContentSize.Height == 0.0) {
+        //         var selector = new ObjCRuntime.Selector ("updateScrollViewSizeOnceWebViewIsSized");
+        //         var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
+        //         NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
+        //     } else {
+        //         UpdateScrollViewSize ();
+        //     }
+        // }
 
-        [Export ("userContentController:didReceiveScriptMessage:")]
-        public void DidReceiveScriptMessage (WKUserContentController userContentController, WKScriptMessage message)
-        {
-            NSDictionary body = message.Body as NSDictionary;
-            string kind = body.ObjectForKey (new NSString("kind")).ToString ();
-            if (message.Name == "nacho") {
-                if (kind == "error") {
-                    string errorMessage = body.ObjectForKey (new NSString("message")).ToString ();
-                    string filename = body.ObjectForKey (new NSString("filename")).ToString ();
-                    string lineno = body.ObjectForKey (new NSString("lineno")).ToString ();
-                    string colno = body.ObjectForKey (new NSString("colno")).ToString ();
-                    Log.Error(Log.LOG_UI, "MessageComposeView javascript uncaught error: [{1}:{2}:{3}] {0}", errorMessage, filename, lineno, colno);
-                }
-            } else if (message.Name == "nachoCompose") {
-                if (kind == "editor-height-changed") {
-                    UpdateScrollViewSize ();
-                }
-            }
-        }
+        // [Export ("userContentController:didReceiveScriptMessage:")]
+        // public void DidReceiveScriptMessage (WKUserContentController userContentController, WKScriptMessage message)
+        // {
+        //     NSDictionary body = message.Body as NSDictionary;
+        //     string kind = body.ObjectForKey (new NSString("kind")).ToString ();
+        //     if (message.Name == "nacho") {
+        //         if (kind == "error") {
+        //             string errorMessage = body.ObjectForKey (new NSString("message")).ToString ();
+        //             string filename = body.ObjectForKey (new NSString("filename")).ToString ();
+        //             string lineno = body.ObjectForKey (new NSString("lineno")).ToString ();
+        //             string colno = body.ObjectForKey (new NSString("colno")).ToString ();
+        //             Log.Error(Log.LOG_UI, "MessageComposeView javascript uncaught error: [{1}:{2}:{3}] {0}", errorMessage, filename, lineno, colno);
+        //         }
+        //     } else if (message.Name == "nachoCompose") {
+        //         if (kind == "editor-height-changed") {
+        //             UpdateScrollViewSize ();
+        //         }
+        //     }
+        // }
 
         [Export ("webViewDidFinishLoad:")]
         public void LoadingFinished (UIWebView webView)
@@ -585,14 +673,15 @@ namespace NachoClient.iOS
 
         private void EvaluateJavaScript(string javascript, WKJavascriptEvaluationResult callback = null)
         {
-//            WebView.EvaluateJavaScript (new NSString(javascript), (NSObject result, NSError error) => {
-//                if (error !=  null){
-//                    Log.Error(Log.LOG_UI, "MessageComposeView error evaluating javascript '{0}': {1}", javascript, error);
-//                }
-//                if (callback != null) {
-//                    callback (result, error);
-//                }
-//            });
+            // Here's how WKWebView would work
+            // WebView.EvaluateJavaScript (new NSString(javascript), (NSObject result, NSError error) => {
+            //     if (error !=  null){
+            //         Log.Error(Log.LOG_UI, "MessageComposeView error evaluating javascript '{0}': {1}", javascript, error);
+            //     }
+            //     if (callback != null) {
+            //         callback (result, error);
+            //     }
+            // });
             WebView.EvaluateJavascript (javascript);
         }
 
@@ -614,6 +703,12 @@ namespace NachoClient.iOS
         #endregion
 
         #region Helpers
+
+        private void UpdateSendEnabled ()
+        {
+            bool hasRecipient = !String.IsNullOrWhiteSpace (Composer.Message.To) || !String.IsNullOrWhiteSpace (Composer.Message.Cc) || !String.IsNullOrWhiteSpace (Composer.Message.Bcc);
+            SendButton.Enabled = hasRecipient;
+        }
 
         private void ShowQuickResponses (bool animated = true)
         {

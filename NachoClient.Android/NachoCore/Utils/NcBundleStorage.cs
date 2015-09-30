@@ -126,6 +126,7 @@ namespace NachoCore.Utils
 
         public override void Delete ()
         {
+            MemoryStorage.Clear ();
         }
 
         public override string StringContentsForPath (string path)
@@ -239,6 +240,7 @@ namespace NachoCore.Utils
         public override void Delete ()
         {
             Directory.Delete (RootPath, true);
+            Directory.CreateDirectory (RootPath);
         }
 
         private string FullFilePathForLocalPath (string path)
