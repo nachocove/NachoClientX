@@ -80,13 +80,13 @@ namespace NachoPlatform
             return Deleter (CreateQuery (handle));
         }
 
-        public string GetStringForKey (string key)
+        private string GetStringForKey (string key)
         {
             var data = Getter (CreateQuery (key));
             return StringFromNSData (data);
         }
 
-        public bool SetStringForKey (string key, string value,
+        private bool SetStringForKey (string key, string value,
                                      SecAccessible accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly)
         {
             return Setter (CreateQuery (key), NSData.FromString (value), accessible);
