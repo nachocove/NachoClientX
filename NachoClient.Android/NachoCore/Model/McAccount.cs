@@ -437,6 +437,9 @@ namespace NachoCore.Model
 
             string salt = account.GetLogSalt ();
             if (string.IsNullOrEmpty (salt)) {
+                // TODO Once we shake out the issues with not finding items in the keychain when
+                // they should be there, we should create a new LogSalt here. For now, just
+                // log that we didn't find one, and return a fabricated string.
                 Log.Error (Log.LOG_SYS, "Could not retrieve LogSalt for account {0}", account.Id);
                 return "saltNotFound";
             }

@@ -3,6 +3,7 @@
 using System;
 using NUnit.Framework;
 using NachoPlatform;
+using NachoCore.Model;
 
 namespace Test.iOS
 {
@@ -30,10 +31,17 @@ namespace Test.iOS
         }
 
         [Test]
-        public void TestKeyChainLogSaltFail ()
+        public void TestLoggablePasswordFail ()
         {
             Keychain.Instance.DeleteLogSalt (KKeyChainId);
             Assert.IsNull (Keychain.Instance.GetLogSalt (KKeyChainId));
+
+            Assert.AreEqual ("account:null", McAccount.GetLoggablePassword (null, "foo1234"));
+            var account = new McAccount () {
+                Id = KKeyChainId,
+                LogSalt = null,
+            };
+            Assert.AreEqual ("saltNotFound", McAccount.GetLoggablePassword (account, "foo1234"));
         }
 
         [Test]
