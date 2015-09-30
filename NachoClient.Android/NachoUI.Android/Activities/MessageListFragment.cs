@@ -289,6 +289,12 @@ namespace NachoClient.AndroidClient
             var thread = messages.GetEmailThread (position);
             var message = thread.FirstMessageSpecialCase ();
             Bind.BindMessageHeader (thread, message, view);
+
+            // Preview label view
+            var previewView = view.FindViewById<Android.Widget.TextView>(Resource.Id.preview);
+            var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
+            previewView.SetText(Android.Text.Html.FromHtml (cookedPreview),Android.Widget.TextView.BufferType.Spannable);
+
             return view;
         }
 
