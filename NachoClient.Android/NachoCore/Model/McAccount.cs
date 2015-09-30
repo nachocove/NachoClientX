@@ -433,13 +433,13 @@ namespace NachoCore.Model
         {
             string salt = GetLogSalt ();
             if (string.IsNullOrEmpty (salt)) {
-                Log.Error (Log.LOG_SYS, "Could not retrieve LogSalt for account {0}", Id);
+                Log.Error (Log.LOG_SYS, "LoggablePasswordSaltedHash: Could not retrieve LogSalt for account {0}", Id);
                 return;
             }
             string hash = HashHelper.Sha256 (salt + password);
             var hashed = hash.Substring (hash.Length - 3); // e.g. "f47"
             if (string.IsNullOrEmpty (hashed)) {
-                Log.Error (Log.LOG_SYS, "Could not hash password for account {0}", Id);
+                Log.Error (Log.LOG_SYS, "LoggablePasswordSaltedHash: Could not hash password for account {0}", Id);
                 return;
             }
             Log.Info (service, "LoggablePasswordSaltedHash({0}): {1} passwordHash={2}", Id, logComment, hashed);
