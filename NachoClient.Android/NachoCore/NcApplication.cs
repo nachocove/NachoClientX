@@ -688,6 +688,7 @@ namespace NachoCore
             } else {
                 Log.Warn (Log.LOG_SYS, message);
             }
+            Log.Info (Log.LOG_SYS, "Monitor: Culture: {0} ({1})", CultureInfo.CurrentCulture.Name, CultureInfo.CurrentCulture.EnglishName);
             Log.Info (Log.LOG_SYS, "Monitor: Status: Comm {0}, Speed {1}, Battery {2:00}% {3}",
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
                 NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
