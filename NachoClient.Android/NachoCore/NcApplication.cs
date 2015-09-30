@@ -576,7 +576,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
             Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
-            Log.Info (Log.LOG_LIFECYCLE, "Culture: {0}", CultureInfo.CurrentCulture);
+            Log.Info (Log.LOG_LIFECYCLE, "Culture: {0} ({1})", CultureInfo.CurrentCulture.Name, CultureInfo.CurrentCulture.DisplayName);
             if (0 < BuildInfo.Source.Length) {
                 Log.Info (Log.LOG_LIFECYCLE, "Source Info: {0}", BuildInfo.Source);
             }
@@ -688,7 +688,6 @@ namespace NachoCore
             } else {
                 Log.Warn (Log.LOG_SYS, message);
             }
-            Log.Info (Log.LOG_SYS, "Monitor: Culture: {0} ({1})", CultureInfo.CurrentCulture.Name, CultureInfo.CurrentCulture.EnglishName);
             Log.Info (Log.LOG_SYS, "Monitor: Status: Comm {0}, Speed {1}, Battery {2:00}% {3}",
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
                 NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
