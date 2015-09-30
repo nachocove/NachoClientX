@@ -282,6 +282,7 @@ namespace NachoClient.iOS
                     }
                     var attachment = McAttachment.InsertSaveStart (account.Id);
                     attachment.SetDisplayName ("attachment.jpg");
+                    attachment.ContentType = "image/jpeg";
                     attachment.Update ();
                     using (var jpg = image.AsJPEG ()) {
                         attachment.UpdateData (jpg.ToArray ());

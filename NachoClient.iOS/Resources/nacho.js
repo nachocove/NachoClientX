@@ -3,8 +3,6 @@
 window.onerror = function(message, filename, lineno, colno, e){
     if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.nacho){
         window.webkit.messageHandlers.nacho.postMessage({kind: "error", message: message, filename: filename, lineno: lineno, colno: colno});
-    }else{
-        alert('[' + filename + ':' + lineno + ':' + colno + '] ' + message);
     }
 };
 
@@ -86,12 +84,7 @@ Editor.prototype = {
         var selection = this.window.getSelection();
         var range = selection.getRangeAt(0);
         var rect = range.getBoundingClientRect();
-        window.scrollTo(0, 1000);
-        if (rect.top > window.pageYOffset + window.innerHeight){
-            window.scrollTo(window.pageXOffset, rect.top);
-        }else if (rect.top + rect.height < window.pageYOffset){
-            window.scrollTo(window.pageXOffset, rect.top);
-        }
+        // TODO: postMessage requesting scroll
     },
 
     postMessage: function(message){
@@ -101,9 +94,59 @@ Editor.prototype = {
     },
 
     paste: function(e){
+        // TODO: watch for image paste and ignore (unless we can get the data somehow)
     },
 
     getEditorHeight: function(){
         return this.rootNode.offsetHeight;
+    },
+
+    clearUserText: function(){
+        var node = null;
+        var original = this.document.getElementById('quoted-original');
+        if (original === null){
+            node = this.rootNode.lastChild;
+        }else{
+            node = original.previousSibling;
+        }
+        var previous;
+        while (node !== null){
+            previous = node.previousSibling;
+            node.parentNode.removeChild(node);
+            node = previous;
+        }
+        var blank = this.document.createElement('div');
+        blank.appendChild(this.document.createElement('br'));
+        if (original === null){
+            this.rootNode.appendChild(blank);
+        }else{
+            this.rootNode.insertBefore(blank, original);
+        }
+    },
+
+    replaceUserText: function(text){
+        this.clearUserText();
+        this.insertText(text);
+    },
+
+    insertText: function(text){
+        var lines = text.split("\n");
+        var line;
+        var div;
+        var before = this.rootNode.firstChild;
+        for (var i = 0, l = lines.length; i < l; ++i){
+            line = lines[i];
+            div = this.document.createElement('div');
+            if (line.match(/^\s*$/) !== null){
+                div.appendChild(this.document.createElement('br'));
+            }else{
+                div.appendChild(this.document.createTextNode(line));
+            }
+            if (before !== null){
+                this.rootNode.insertBefore(div, before);
+            }else{
+                this.rootNode.appendChild(div);
+            }
+        }
     }
 };

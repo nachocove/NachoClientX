@@ -320,6 +320,7 @@ namespace NachoCore.Utils
             var body = doc.DocumentNode.Element ("html").Element ("body");
             HtmlNode blockquote = doc.CreateElement ("blockquote");
             blockquote.SetAttributeValue ("type", "cite");
+            blockquote.SetAttributeValue ("id", "quoted-original");
             var attribution = EmailHelper.AttributionLineForMessage (sourceMessage);
             var attributionLine = doc.CreateElement ("div");
             attributionLine.AppendChild (doc.CreateTextNodeWithEscaping (attribution));
@@ -397,7 +398,7 @@ namespace NachoCore.Utils
             }
         }
 
-        private string SignatureText ()
+        public string SignatureText ()
         {
             if (!String.IsNullOrEmpty (Account.Signature)) {
                 return "\n\n" + Account.Signature;
@@ -480,7 +481,7 @@ namespace NachoCore.Utils
                 mixed.Add (alternative);
                 foreach (var attachment in attachments) {
                     if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                        var attachmentPart = new MimePart (attachment.ContentType);
+                        var attachmentPart = new MimePart (attachment.ContentType ?? "application/octet-stream");
                         attachmentPart.FileName = attachment.DisplayName;
                         attachmentPart.IsAttachment = true;
                         attachmentPart.ContentTransferEncoding = ContentEncoding.Base64;
@@ -530,7 +531,7 @@ namespace NachoCore.Utils
                             var entryName = node.Attributes ["nacho-bundle-entry"].Value;
                             var info = Bundle.MemberForEntryName (entryName);
                             hasRelatedParts = true;
-                            var attachment = new MimePart (info.ContentType);
+                            var attachment = new MimePart (info.ContentType ?? "image/jpeg");
                             attachment.FileName = info.Filename;
                             attachment.IsAttachment = true;
                             attachment.ContentTransferEncoding = ContentEncoding.Base64;
