@@ -131,7 +131,7 @@ namespace NachoClient.AndroidClient
                 var messageThread = messages.GetEmailThread (position);
                 switch (index) {
                 case SAVE_TAG:
-//                    ShowFileChooser (messageThread);
+                    ShowFolderChooser (messageThread);
                     break;
                 case DEFER_TAG:
                     ShowPriorityChooser (messageThread);
@@ -232,9 +232,25 @@ namespace NachoClient.AndroidClient
             deferralFragment.Show (ft, "dialog");
         }
 
+        public void ShowFolderChooser (McEmailMessageThread messageThread)
+        {
+            Console.WriteLine ("ShowFolderChooser: {0}", messageThread);
+            var folderFragment = ChooseFolderFragment.newInstance (messageThread);
+            folderFragment.setOnFolderSelected (OnFolderSelected);
+            var ft = FragmentManager.BeginTransaction ();
+            ft.AddToBackStack (null);
+            folderFragment.Show (ft, "dialog");
+        }
+
         public void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
             NcMessageDeferral.DateSelected (NcMessageDeferral.MessageDateType.Defer, thread, request, selectedDate);
+        }
+
+        public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)
+        {
+            Console.WriteLine ("OnFolderSelected: {0}", thread);
+            NcEmailArchiver.Move (thread, folder);
         }
 
     }

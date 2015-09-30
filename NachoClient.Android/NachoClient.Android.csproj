@@ -517,6 +517,7 @@
     <Compile Include="NachoUI.Android\Support\A.cs" />
     <Compile Include="NachoCore\Utils\NcEventDetail.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooseDeferralFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1088,5 +1089,7 @@
     <AndroidResource Include="Resources\drawable-hdpi\modal_weekend.png" />
     <AndroidResource Include="Resources\layout\ChooseDeferralButton.axml" />
     <AndroidResource Include="Resources\layout\DateTimePicker.axml" />
+    <AndroidResource Include="Resources\layout\ChooseFolderFragment.axml" />
+    <AndroidResource Include="Resources\layout\ChooseFolderItem.axml" />
   </ItemGroup>
 </Project>

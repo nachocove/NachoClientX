@@ -34,7 +34,7 @@ namespace NachoClient.AndroidClient
             return fragment;
         }
 
-        public void SetMessageThread(McEmailMessageThread messageThread)
+        protected void SetMessageThread(McEmailMessageThread messageThread)
         {
             this.messageThread = messageThread;
         }
@@ -72,7 +72,7 @@ namespace NachoClient.AndroidClient
             mOnDeferralSelected = onDeferralSelected;
         }
 
-        void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thisIsNull, DateTime selectedDate)
         {
             if (null != mOnDeferralSelected) {
                 mOnDeferralSelected (request, messageThread, selectedDate);
