@@ -200,9 +200,9 @@ namespace NachoCore.ActiveSync
                 new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000"));
         }
 
-        private uint WaitIntervalToWaitSeconds ()
+        private uint WaitIntervalToWaitMinutes ()
         {
-            uint wait = (uint) WaitInterval.TotalSeconds / 60;
+            uint wait = (uint) WaitInterval.TotalMinutes;
             if (wait < 0) { //min wait = 0
                 wait = 0;
             } else if (wait > 59) { // max wait 59
@@ -355,8 +355,8 @@ namespace NachoCore.ActiveSync
             }
             var sync = new XElement (m_ns + Xml.AirSync.Sync, collections);
             // use Wait instead of HeartbeatInterval since Wait is also supported in 12.1 while HeartbeatInterval is not 
-            if ((uint) WaitInterval.TotalSeconds > 0) {
-                sync.Add (new XElement (m_ns + Xml.AirSync.Wait, WaitIntervalToWaitSeconds ())); 
+            if (TimeSpan.Zero != WaitInterval) {
+                sync.Add (new XElement (m_ns + Xml.AirSync.Wait, WaitIntervalToWaitMinutes ())); 
             }
             sync.Add (new XElement (m_ns + Xml.AirSync.WindowSize, WindowSize));
             var doc = AsCommand.ToEmptyXDocument ();
