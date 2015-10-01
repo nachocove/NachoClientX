@@ -74,19 +74,6 @@ namespace NachoClient
             }
         }
 
-     
-        public class PhoneAttributeComparer: IComparer<McContactStringAttribute>
-        {
-            public int Compare (McContactStringAttribute x, McContactStringAttribute y)
-            {
-                ContactsHelper contactHelper = new ContactsHelper ();
-                int xPriority = contactHelper.PhoneNames.IndexOf (x.Name);
-                int yPriority = contactHelper.PhoneNames.IndexOf (y.Name);
-
-                return xPriority.CompareTo (yPriority);
-            }
-        }
-
         public static DateTime LastUpdate (string key)
         {
             var s = Defaults.StringForKey (key);
