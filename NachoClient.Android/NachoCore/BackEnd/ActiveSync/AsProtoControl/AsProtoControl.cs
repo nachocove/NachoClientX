@@ -1204,22 +1204,27 @@ namespace NachoCore.ActiveSync
                 if (null == ping) {
                     return null; // should never happen
                 }
-                return new NachoCore.PushAssistParameters () {
-                    RequestUrl = ping.PushAssistRequestUrl (),
-                    Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                    ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                    WaitBeforeUseMsec = 60 * 1000,
-                    IsSyncRequest = false,
+                try {
+                    return new NachoCore.PushAssistParameters () {
+                        RequestUrl = ping.PushAssistRequestUrl (),
+                        Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                        ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                        WaitBeforeUseMsec = 60 * 1000,
+                        IsSyncRequest = false,
 
-                    MailServerCredentials = new Credentials {
-                        Username = ProtoControl.Cred.Username,
-                        Password = ProtoControl.Cred.GetPassword ()
-                    },
-                    RequestData = ping.PushAssistRequestData (),
-                    RequestHeaders = ping.PushAssistRequestHeaders (),
-                    ContentHeaders = ping.PushAssistContentHeaders (),
-                    NoChangeResponseData = ping.PushAssistNoChangeResponseData (),
-                };
+                        MailServerCredentials = new Credentials {
+                            Username = ProtoControl.Cred.Username,
+                            Password = ProtoControl.Cred.GetPassword ()
+                        },
+                        RequestData = ping.PushAssistRequestData (),
+                        RequestHeaders = ping.PushAssistRequestHeaders (),
+                        ContentHeaders = ping.PushAssistContentHeaders (),
+                        NoChangeResponseData = ping.PushAssistNoChangeResponseData (),
+                    };
+                } catch (KeychainItemNotFoundException ex) {
+                    Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
+                    return null;
+                }
             } else {  // use Sync
                 Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Sync");
                 SyncKit syncKit = Strategy.GenSyncKitFromPingKit (ProtocolState, pingKit);
@@ -1227,21 +1232,26 @@ namespace NachoCore.ActiveSync
                 if (null == sync) {
                     return null; // should never happen
                 }
-                return new NachoCore.PushAssistParameters () {
-                    RequestUrl = sync.PushAssistRequestUrl (),
-                    Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                    ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                    WaitBeforeUseMsec = 60 * 1000,
-                    IsSyncRequest = true,
+                try {
+                    return new NachoCore.PushAssistParameters () {
+                        RequestUrl = sync.PushAssistRequestUrl (),
+                        Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                        ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                        WaitBeforeUseMsec = 60 * 1000,
+                        IsSyncRequest = true,
 
-                    MailServerCredentials = new Credentials {
-                        Username = ProtoControl.Cred.Username,
-                        Password = ProtoControl.Cred.GetPassword ()
-                    },
-                    RequestData = sync.PushAssistRequestData (),
-                    RequestHeaders = sync.PushAssistRequestHeaders (),
-                    ContentHeaders = sync.PushAssistContentHeaders (),
-                };
+                        MailServerCredentials = new Credentials {
+                            Username = ProtoControl.Cred.Username,
+                            Password = ProtoControl.Cred.GetPassword ()
+                        },
+                        RequestData = sync.PushAssistRequestData (),
+                        RequestHeaders = sync.PushAssistRequestHeaders (),
+                        ContentHeaders = sync.PushAssistContentHeaders (),
+                    };
+                } catch (KeychainItemNotFoundException ex) {
+                    Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
+                    return null;
+                }
             }
         }
     }

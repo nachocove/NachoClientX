@@ -514,7 +514,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            contact.PhoneNumbers.Sort (new Util.PhoneAttributeComparer ());
+            contact.PhoneNumbers.Sort (new ContactsHelper.PhoneAttributeComparer ());
            
             if (contact.PhoneNumbers.Count > 0) {
                 foreach (var p in contact.PhoneNumbers) {
@@ -1051,15 +1051,14 @@ namespace NachoClient.iOS
                 return;
             }
             if (!PerformAction ("tel", number)) {
-                ComplainAbout ("Cannot dial", "The phone number seems to be invalid");
+                ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
             }
         }
 
         protected bool PerformAction (string action, string number)
         {
             try {
-                UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
-                return true;
+                return Util.PerformAction(action, number);
             } catch (Exception e) {
                 Log.Warn (Log.LOG_UI, "Cannot perform action {0} ({1})", action, e);
                 return false;

@@ -21,6 +21,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using Android.Graphics.Drawables;
+using NachoCore.Brain;
 
 namespace NachoClient.AndroidClient
 {
@@ -130,10 +131,10 @@ namespace NachoClient.AndroidClient
                 var messageThread = messages.GetEmailThread (position);
                 switch (index) {
                 case SAVE_TAG:
-//                    ShowFileChooser (messageThread);
+                    ShowFolderChooser (messageThread);
                     break;
                 case DEFER_TAG:
-//                    ShowPriorityChooser (messageThread);
+                    ShowPriorityChooser (messageThread);
                     break;
                 case ARCHIVE_TAG:
                     ArchiveThisMessage (messageThread);
@@ -145,9 +146,7 @@ namespace NachoClient.AndroidClient
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
                 }
                 return false;
-            }
-            );
-
+            });
 
             return view;
         }
@@ -222,6 +221,38 @@ namespace NachoClient.AndroidClient
             NcAssert.NotNull (messageThread);
             NcEmailArchiver.Archive (messageThread);
         }
+
+        public void ShowPriorityChooser (McEmailMessageThread messageThread)
+        {
+            Console.WriteLine ("ShowPriorityChooser: {0}", messageThread);
+            var deferralFragment = ChooseDeferralFragment.newInstance (messageThread);
+            deferralFragment.setOnDeferralSelected (OnDeferralSelected);
+            var ft = FragmentManager.BeginTransaction ();
+            ft.AddToBackStack (null);
+            deferralFragment.Show (ft, "dialog");
+        }
+
+        public void ShowFolderChooser (McEmailMessageThread messageThread)
+        {
+            Console.WriteLine ("ShowFolderChooser: {0}", messageThread);
+            var folderFragment = ChooseFolderFragment.newInstance (messageThread);
+            folderFragment.setOnFolderSelected (OnFolderSelected);
+            var ft = FragmentManager.BeginTransaction ();
+            ft.AddToBackStack (null);
+            folderFragment.Show (ft, "dialog");
+        }
+
+        public void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            NcMessageDeferral.DateSelected (NcMessageDeferral.MessageDateType.Defer, thread, request, selectedDate);
+        }
+
+        public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)
+        {
+            Console.WriteLine ("OnFolderSelected: {0}", thread);
+            NcEmailArchiver.Move (thread, folder);
+        }
+
     }
 
     public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
@@ -258,6 +289,12 @@ namespace NachoClient.AndroidClient
             var thread = messages.GetEmailThread (position);
             var message = thread.FirstMessageSpecialCase ();
             Bind.BindMessageHeader (thread, message, view);
+
+            // Preview label view
+            var previewView = view.FindViewById<Android.Widget.TextView>(Resource.Id.preview);
+            var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
+            previewView.SetText(Android.Text.Html.FromHtml (cookedPreview),Android.Widget.TextView.BufferType.Spannable);
+
             return view;
         }
 

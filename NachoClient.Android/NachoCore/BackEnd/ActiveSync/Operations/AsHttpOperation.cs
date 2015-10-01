@@ -456,9 +456,15 @@ namespace NachoCore.ActiveSync
 
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
-                string password = BEContext.Cred.GetPassword ();
-                Log.Info (Log.LOG_HTTP, "AsHttpOperation: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, password));              
-                client = GetEncryptedClient (AccountId, BEContext.Cred.Username, password);
+                try {
+                    string password = BEContext.Cred.GetPassword ();
+                    BEContext.Account.LogHashedPassword (Log.LOG_HTTP, "AsHttpOperation", password);
+                    client = GetEncryptedClient (AccountId, BEContext.Cred.Username, password);
+                } catch (KeychainItemNotFoundException ex) {
+                    Log.Error (Log.LOG_AS, "KeychainItemNotFoundException: {0}", ex.Message);
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPKEYCHAIN", null, string.Format ("KeychainItemNotFoundException: {0}, Uri: {1}", ex.Message, RedactedServerUri));
+                    return;
+                }
             } else {
                 client = GetClearClient ();
             }
@@ -528,7 +534,17 @@ namespace NachoCore.ActiveSync
                 }
 
                 if (!cToken.IsCancellationRequested) {
-                    var contentType = response.Content.Headers.ContentType;
+                    System.Net.Http.Headers.MediaTypeHeaderValue contentType = null;
+                    if (null == response || null == response.Content) {
+                        CancelTimeoutTimer ("response.Content");
+                        Log.Error (Log.LOG_HTTP, "Bad or missing response: {0}, response.Content: {1}",
+                            (null == response), (null == response || null == response.Content));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNRC");
+                        return;
+                    }
+                    if (null != response.Content.Headers) {
+                        contentType = response.Content.Headers.ContentType;
+                    }
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
                     try {
                         ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));

@@ -672,12 +672,12 @@ namespace NachoClient.AndroidClient
             mTouchState = TOUCH_STATE_NONE;
         }
 
-        public override void SetAdapter (IListAdapter adapter)
-        {
-            var a = new SwipeMenuAdapter (this.Context, adapter);
-            a.setOnMenuItemClickListener (MenuItemClickListener);
-            base.Adapter = a;
-        }
+//        public override void SetAdapter (IListAdapter adapter)
+//        {
+//            var a = new SwipeMenuAdapter (this.Context, adapter);
+//            a.setOnMenuItemClickListener (MenuItemClickListener);
+//            base.Adapter = a;
+//        }
 
         public override IListAdapter Adapter {
             set {
@@ -992,6 +992,7 @@ namespace NachoClient.AndroidClient
             return mAdapter.GetItemId (position);
         }
 
+        // FIXME: Do not re-use the view if the view type changes
         public View GetView (int position, View convertView, ViewGroup parent)
         {
             SwipeMenuLayout layout = null;

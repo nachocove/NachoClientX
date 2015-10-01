@@ -341,6 +341,9 @@
     <Compile Include="..\Test.Android\McCredTest.cs">
       <Link>McCredTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\KeyChainAccessTest.cs">
+      <Link>KeyChainAccessTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
