@@ -34,6 +34,7 @@ namespace NachoCore.ActiveSync
         public TimeSpan WaitInterval { get; set; }
 
         private bool IsNarrow;
+        private bool IsPinging;
 
         public static XNamespace Ns = Xml.AirSync.Ns;
 
@@ -47,6 +48,7 @@ namespace NachoCore.ActiveSync
             WindowSize = syncKit.OverallWindowSize;
             WaitInterval = syncKit.WaitInterval;
             IsNarrow = syncKit.IsNarrow;
+            IsPinging = syncKit.IsPinging;
             SyncKitList = syncKit.PerFolders;
             FoldersInRequest = new List<McFolder> ();
             foreach (var perFolder in SyncKitList) {
@@ -478,6 +480,11 @@ namespace NachoCore.ActiveSync
             }
             // ProcessTopLevelStatus will handle Status element, if  included.
             // If we get here, we know any TL Status is okay.
+            //
+            // Is this the right place for the following?
+            if (IsPinging) {
+                MarkFoldersPinged ();
+            }
             var xmlCollections = doc.Root.Element (m_ns + Xml.AirSync.Collections);
             if (null == xmlCollections) {
                 return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCODD");
@@ -743,6 +750,10 @@ namespace NachoCore.ActiveSync
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SYNCCANCEL1");
+            }
+            // Is this the right place for this?
+            if (IsPinging) {
+                MarkFoldersPinged ();
             }
             // FoldersInRequest NOT stale here.
             var now = DateTime.UtcNow;
@@ -1303,6 +1314,19 @@ namespace NachoCore.ActiveSync
             default:
                 return false;
             }
+        }
+
+        private void MarkFoldersPinged ()
+        {
+            foreach (var iterFolder in FoldersInRequest) {
+                iterFolder.UpdateSet_AsSyncLastPing (DateTime.UtcNow);
+            }
+            var protocolState = BEContext.ProtocolState;
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastPing = DateTime.UtcNow;
+                return true;
+            });
         }
     }
 }
