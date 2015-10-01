@@ -114,6 +114,7 @@ namespace NachoCore.Model
         {
             // Includes s.outlook.com, blu403-m.outlook.com, etc.
             var domain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Host);
+            // TODO should this use the large list of hotmail/outlook/live/msn domains in NcServiceHelper?
             return domain.Equals (McServer.HotMail_Suffix, StringComparison.OrdinalIgnoreCase) ||
                 domain.Equals (McServer.Outlook_Suffix, StringComparison.OrdinalIgnoreCase);
         }
