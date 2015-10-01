@@ -174,6 +174,7 @@ namespace NachoClient.iOS
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
                 } else {
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController updating account ID{0}", Account.Id);
+                    BackEnd.Instance.Stop (Account.Id);
                     Account.EmailAddr = email;
                     Account.Update ();
                     var cred = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
