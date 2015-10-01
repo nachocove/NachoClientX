@@ -393,6 +393,11 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
+            // I don't know where to put this.  It can't go in NcApplication.MonitorReport(), because
+            // C#'s TimeZoneInfo.Local has an ID and name of "Local", which is not helpful.  It has
+            // to be in iOS-specific code.
+            Log.Info (Log.LOG_LIFECYCLE, "Current time zone: {0}", NSTimeZone.LocalTimeZone.Description);
+
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
             return true;

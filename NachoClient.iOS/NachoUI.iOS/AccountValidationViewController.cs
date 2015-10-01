@@ -303,7 +303,7 @@ namespace NachoClient.iOS
             }
             var testCred = new McCred ();
             testCred.SetTestPassword (passwordField.Text);
-            Log.Info (Log.LOG_HTTP, "AccountValidationViewcontroller: Testing new password - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, passwordField.Text));              
+            account.LogHashedPassword (Log.LOG_HTTP, "AccountValidationViewcontroller - Testing new password", passwordField.Text);
 
             testCred.Username = creds.Username;
             testCred.UserSpecifiedUsername = creds.UserSpecifiedUsername;
@@ -361,7 +361,7 @@ namespace NachoClient.iOS
             HideStatusView ();
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
             if ((null != creds) && (McCred.CredTypeEnum.Password == creds.CredType)) {
-                Log.Info (Log.LOG_HTTP, "AccountValidationViewcontroller: Saving new password - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, passwordField.Text));              
+                account.LogHashedPassword (Log.LOG_HTTP, "AccountValidationViewcontroller - Saving new password", passwordField.Text);
                 creds.UpdatePassword (passwordField.Text);
                 creds.Update ();
                 BackEnd.Instance.CredResp (account.Id);

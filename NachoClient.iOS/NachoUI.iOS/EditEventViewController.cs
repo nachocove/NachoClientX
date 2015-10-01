@@ -93,12 +93,14 @@ namespace NachoClient.iOS
         protected static nfloat SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
         protected int CELL_HEIGHT = 44;
-        protected int START_PICKER_HEIGHT = 0;
-        protected int END_PICKER_HEIGHT = 0;
+        protected int PICKER_HEIGHT = 216;
         protected nfloat TEXT_LINE_HEIGHT = 19.124f;
         protected nfloat DESCRIPTION_OFFSET = 0f;
         protected nfloat DELETE_BUTTON_OFFSET = 0f;
         protected UIFont labelFont = A.Font_AvenirNextMedium14;
+
+        protected int currentStartPickerHeight = 0;
+        protected int currentEndPickerHeight = 0;
 
         protected bool startDateOpen = false;
         protected bool endDateOpen = false;
@@ -221,6 +223,12 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_CALENDAR, "The current account does not support writing to calendars. Using the device account instead.");
                 account = McAccount.GetDeviceAccount ();
                 calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+                if (0 == calendars.Count ()) {
+                    // This can happen if the user doesn't have permission to access the calendar.
+                    // Use the backstop device calendar folder so the UI can finish loading before
+                    // the user gets the popup message about the lack of permission.
+                    calendars = new NachoFolders (McFolder.GetDeviceCalendarsFolder ());
+                }
             }
 
             // There are additional restrictions on the event when it is on the device calendar.
@@ -390,6 +398,7 @@ namespace NachoClient.iOS
             contentView.AddGestureRecognizer (backgroundTapGesture);
 
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
+            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
 
             doneButton = new NcUIBarButtonItem ();
             cancelButton = new NcUIBarButtonItem ();
@@ -636,6 +645,7 @@ namespace NachoClient.iOS
 
             //Content View
             contentView.Frame = new CGRect (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 9) + (CELL_HEIGHT * 11));
+            contentView.AutoresizingMask = UIViewAutoresizing.None;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
             contentView.AddSubviews (new UIView[] {
                 titleView,
@@ -948,7 +958,7 @@ namespace NachoClient.iOS
             if (null != startDatePicker) {
                 return;
             }
-            startDatePicker = new UIDatePicker (new CGRect (0, 44, SCREEN_WIDTH, START_PICKER_HEIGHT));
+            startDatePicker = new UIDatePicker (new CGRect (0, 44, SCREEN_WIDTH, PICKER_HEIGHT));
             startDatePicker.Hidden = true;
             startDatePicker.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleBottomMargin;
             startDatePicker.ValueChanged += StartDatePickerValueChanged;
@@ -963,7 +973,7 @@ namespace NachoClient.iOS
             if (null != endDatePicker) {
                 return;
             }
-            endDatePicker = new UIDatePicker (new CGRect (0, CELL_HEIGHT, SCREEN_WIDTH, END_PICKER_HEIGHT));
+            endDatePicker = new UIDatePicker (new CGRect (0, CELL_HEIGHT, SCREEN_WIDTH, PICKER_HEIGHT));
             endDatePicker.Hidden = true;
             endDatePicker.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleBottomMargin;
             endDatePicker.ValueChanged += EndDatePickerValueChanged;
@@ -1031,10 +1041,10 @@ namespace NachoClient.iOS
             yOffset += CELL_HEIGHT;
             AdjustY (line5, yOffset);
 
-            startView.Frame = new CGRect (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT + START_PICKER_HEIGHT);
+            startView.Frame = new CGRect (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT + currentStartPickerHeight);
             yOffset += startView.Frame.Height;
             AdjustY (line6, yOffset);
-            endView.Frame = new CGRect (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT + END_PICKER_HEIGHT);
+            endView.Frame = new CGRect (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT + currentEndPickerHeight);
             yOffset += endView.Frame.Height;
             AdjustY (line7, yOffset);
             AdjustY (separator3, line7.Frame.Bottom);
@@ -1548,7 +1558,7 @@ namespace NachoClient.iOS
             if (startDateOpen) {
                 // Close the start date picker.
                 startDateOpen = false;
-                START_PICKER_HEIGHT = 0;
+                currentStartPickerHeight = 0;
                 startDateLabel.TextColor = A.Color_808080;
                 LayoutWithAnimation (() => {
                     // The views can't be marked as hidden until after the animation has completed.
@@ -1561,13 +1571,13 @@ namespace NachoClient.iOS
                 // closed, closing it again will have no effect.
                 InitializeStartDatePicker ();
                 startDateOpen = true;
-                START_PICKER_HEIGHT = 216;
+                currentStartPickerHeight = PICKER_HEIGHT;
                 startDatePicker.Hidden = false;
                 startDivider.Hidden = false;
                 endDateOpen = false;
-                END_PICKER_HEIGHT = 0;
+                currentEndPickerHeight = 0;
                 endDateLabel.TextColor = A.Color_808080;
-                scrollView.ScrollRectToVisible (new CGRect (0, startView.Frame.Y, 1, CELL_HEIGHT + START_PICKER_HEIGHT), true);
+                scrollView.ScrollRectToVisible (new CGRect (0, startView.Frame.Y, 1, CELL_HEIGHT + currentStartPickerHeight), true);
                 LayoutWithAnimation (() => {
                     // The views can't be marked as hidden until after the animation has completed.
                     if (null != endDatePicker) {
@@ -1584,7 +1594,7 @@ namespace NachoClient.iOS
             if (endDateOpen) {
                 // Close the end date picker.
                 endDateOpen = false;
-                END_PICKER_HEIGHT = 0;
+                currentEndPickerHeight = 0;
                 endDateLabel.TextColor = A.Color_808080;
                 LayoutWithAnimation (() => {
                     // The views can't be marked as hidden until after the animation has completed.
@@ -1605,16 +1615,16 @@ namespace NachoClient.iOS
                 // closed, closing it again will have no effect.
                 InitializeEndDatePicker ();
                 endDateOpen = true;
-                END_PICKER_HEIGHT = 216;
+                currentEndPickerHeight = PICKER_HEIGHT;
                 endDatePicker.Hidden = false;
                 endDivider.Hidden = false;
                 startDateOpen = false;
-                START_PICKER_HEIGHT = 0;
+                currentStartPickerHeight = 0;
                 startDateLabel.TextColor = A.Color_808080;
                 // We might be in the process of closing the start date picker, so the location of the end date
                 // picker may be about to change.  Create a rectangle that represents where the end date picker
                 // will be after all the adjustments have been made.
-                scrollView.ScrollRectToVisible (new CGRect (0, startView.Frame.Y + CELL_HEIGHT, 1, CELL_HEIGHT + END_PICKER_HEIGHT), true);
+                scrollView.ScrollRectToVisible (new CGRect (0, startView.Frame.Y + CELL_HEIGHT, 1, CELL_HEIGHT + currentEndPickerHeight), true);
                 LayoutWithAnimation (() => {
                     // The views can't be marked as hidden until after the animation has completed.
                     if (null != startDatePicker) {

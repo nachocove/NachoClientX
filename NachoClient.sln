@@ -884,5 +884,15 @@ Global
 		$0.TextStylePolicy = $38
 		$38.inheritsSet = null
 		$38.scope = application/t4-template
+		$0.TextStylePolicy = $39
+		$39.inheritsSet = null
+		$39.scope = application/xml
+		$0.XmlFormattingPolicy = $40
+		$40.DefaultFormat = $41
+		$41.AttributesInNewLine = True
+		$41.AlignAttributes = True
+		$40.inheritsSet = Mono
+		$40.inheritsScope = application/xml
+		$40.scope = application/xml
 	EndGlobalSection
 EndGlobal

@@ -18,6 +18,7 @@ using NachoClient.Build;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
 using MimeKit;
+using NachoPlatform;
 
 namespace NachoCore.IMAP
 {
@@ -69,7 +70,7 @@ namespace NachoCore.IMAP
             }, this.GetType ().Name);
         }
 
-        public Event ExecuteConnectAndAuthEvent()
+        public virtual Event ExecuteConnectAndAuthEvent()
         {
             Cts.Token.ThrowIfCancellationRequested ();
             NcCapture.AddKind (this.GetType ().Name);
@@ -111,6 +112,10 @@ namespace NachoCore.IMAP
                 ResolveAllDeferred ();
                 // No event posted to SM if cancelled.
                 return;
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_IMAP, "KeychainItemNotFoundException: {0}", ex.Message);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPKEYCHFAIL");
             } catch (CommandLockTimeOutException ex) {
                 Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
@@ -120,14 +125,24 @@ namespace NachoCore.IMAP
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
                 serverFailedGenerally = true;
-            } catch (AuthenticationException) {
-                Log.Info (Log.LOG_IMAP, "AuthenticationException");
+            } catch (AuthenticationException ex) {
+                Log.Info (Log.LOG_IMAP, "AuthenticationException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+                if (BEContext.Cred.Epoch == SavedCredEpoch) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+                } else {
+                    // credential was updated while we were running the command. Just try again.
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTH1TEMP");
+                }
             } catch (ServiceNotAuthenticatedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
+                if (BEContext.Cred.Epoch == SavedCredEpoch) {
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
+                } else {
+                    // credential was updated while we were running the command. Just try again.
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTH2TEMP");
+                }
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
@@ -211,7 +226,7 @@ namespace NachoCore.IMAP
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 try {
-                    Log.Info (Log.LOG_IMAP, "ConnectAndAuthenticate{0}: LoggablePasswordSaltedHash {1}", AccountId, McAccount.GetLoggablePassword (BEContext.Account, cred));
+                    BEContext.Account.LogHashedPassword (Log.LOG_IMAP, "ConnectAndAuthenticate", cred);
                     Client.Authenticate (username, cred, Cts.Token);
                 } catch (ImapProtocolException e) {
                     Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", e);

@@ -56,7 +56,7 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
-        void SyncCompleted (int accountId)
+        void SyncCompleted ()
         {
             if (null != account) {
                 account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
@@ -69,6 +69,7 @@ namespace NachoClient.AndroidClient
         public void handleStatusEnums ()
         {
             if (BackEndStateEnum.PostAutoDPostInboxSync == BackEnd.Instance.BackEndState (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter)) {
+                SyncCompleted ();
                 var parent = (LaunchActivity)Activity;
                 parent.WaitingFinished ();
             }
@@ -93,12 +94,12 @@ namespace NachoClient.AndroidClient
 
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: Info_EmailMessageSetChanged Status Ind (AdvancedView)");
-                SyncCompleted (accountId);
+                SyncCompleted ();
                 return;
             }
             if (NcResult.SubKindEnum.Info_InboxPingStarted == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: Info_InboxPingStarted Status Ind (AdvancedView)");
-                SyncCompleted (accountId);
+                SyncCompleted ();
                 return;
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
