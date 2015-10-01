@@ -9,6 +9,7 @@ using CoreGraphics;
 
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -297,7 +298,12 @@ namespace NachoClient.iOS
                 usernameView.textField.Text = username;
                 domainView.textField.Text = domain;
             }
-            passwordView.textField.Text = creds.GetPassword ();
+            try {
+                passwordView.textField.Text = creds.GetPassword ();
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_UI, "Exch LoadAccount: KeychainItemNotFoundException {0}", ex.Message);
+                // Owen: What to do here.
+            }
 
             var server = McServer.QueryByAccountId<McServer> (account.Id).FirstOrDefault ();
 

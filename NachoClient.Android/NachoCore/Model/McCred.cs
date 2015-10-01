@@ -234,13 +234,13 @@ namespace NachoCore.Model
         {
             var handler = new NativeMessageHandler ();
             var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
-            var query = "client_secret=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientSecret) +
-                        "&grant_type=" + "refresh_token" +
-                        "&refresh_token=" + Uri.EscapeDataString (GetRefreshToken ()) +
-                        "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
-            var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
-            var httpRequest = new HttpRequestMessage (HttpMethod.Post, requestUri);
             try {
+                var query = "client_secret=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientSecret) +
+                    "&grant_type=" + "refresh_token" +
+                    "&refresh_token=" + Uri.EscapeDataString (GetRefreshToken ()) +
+                    "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
+                var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
+                var httpRequest = new HttpRequestMessage (HttpMethod.Post, requestUri);
                 var httpResponse = await client.SendAsync (httpRequest, HttpCompletionOption.ResponseContentRead, Token);
                 if (httpResponse.StatusCode == System.Net.HttpStatusCode.OK) {
                     var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
