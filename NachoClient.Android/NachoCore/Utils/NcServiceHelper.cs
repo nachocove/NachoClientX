@@ -125,15 +125,6 @@ namespace NachoCore.Utils
             }
         }
 
-        public class GoogleExchangeVerifier : DomainVerifier
-        {
-            public override string[] validSuffixes {
-                get {
-                    return new string[]{ McServer.GMail_Suffix, };
-                }
-            }
-        }
-
         public class HotmailOutLookVerifier : DomainVerifier
         {
             // TODO: replace this code with data that gets pushed to the app.
