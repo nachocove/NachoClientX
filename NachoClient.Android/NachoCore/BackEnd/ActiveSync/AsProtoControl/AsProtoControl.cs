@@ -1198,25 +1198,52 @@ namespace NachoCore.ActiveSync
             if (null == pingKit) {
                 return null; // should never happen
             }
-            var ping = new AsPingCommand (this, pingKit);
-            if (null == ping) {
-                return null; // should never happen
-            }
-            return new NachoCore.PushAssistParameters () {
-                RequestUrl = ping.PushAssistRequestUrl (),
-                Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                WaitBeforeUseMsec = 60 * 1000,
+            if (Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+                Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Ping");
+                var ping = new AsPingCommand (this, pingKit);
+                if (null == ping) {
+                    return null; // should never happen
+                }
+                return new NachoCore.PushAssistParameters () {
+                    RequestUrl = ping.PushAssistRequestUrl (),
+                    Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                    ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                    WaitBeforeUseMsec = 60 * 1000,
 
-                MailServerCredentials = new Credentials {
-                    Username = ProtoControl.Cred.Username,
-                    Password = ProtoControl.Cred.GetPassword ()
-                },
-                RequestData = ping.PushAssistRequestData (),
-                RequestHeaders = ping.PushAssistRequestHeaders (),
-                ContentHeaders = ping.PushAssistContentHeaders (),
-                NoChangeResponseData = ping.PushAssistResponseData (),
-            };
+                    MailServerCredentials = new Credentials {
+                        Username = ProtoControl.Cred.Username,
+                        Password = ProtoControl.Cred.GetPassword ()
+                    },
+                    RequestData = ping.PushAssistRequestData (),
+                    RequestHeaders = ping.PushAssistRequestHeaders (),
+                    ContentHeaders = ping.PushAssistContentHeaders (),
+                    NoChangeResponseData = ping.PushAssistNoChangeResponseData (),
+                };
+            } else {  // use Sync
+                Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Sync");
+                SyncKit syncKit = Strategy.GenSyncKitFromPingKit (ProtocolState, pingKit);
+                var sync = new AsSyncCommand (this, syncKit);
+                if (null == sync) {
+                    return null; // should never happen
+                }
+                return new NachoCore.PushAssistParameters () {
+                    RequestUrl = sync.PushAssistRequestUrl (),
+                    Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                    ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                    WaitBeforeUseMsec = 60 * 1000,
+
+                    MailServerCredentials = new Credentials {
+                        Username = ProtoControl.Cred.Username,
+                        Password = ProtoControl.Cred.GetPassword ()
+                    },
+                    RequestData = sync.PushAssistRequestData (),
+                    RequestHeaders = sync.PushAssistRequestHeaders (),
+                    ContentHeaders = sync.PushAssistContentHeaders (),
+                    NoChangeResponseData = sync.PushAssistNoChangeResponseData (),
+                    ExpectedResponseData = sync.PushAssistExpectedResponseData (),
+
+                };
+            }
         }
     }
 }

@@ -62,6 +62,7 @@ namespace NachoCore.ActiveSync
         FetchKit GenFetchKitHints ();
         SyncKit GenSyncKit (McProtocolState protocolState);
         PingKit GenPingKit (McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected);
+        SyncKit GenSyncKitFromPingKit (McProtocolState protocolState, PingKit pingKit);
         Tuple<PickActionEnum, AsCommand> Pick ();
         Tuple<PickActionEnum, AsCommand> PickUserDemand ();
         int UploadTimeoutSecs (long length);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -1303,6 +1304,55 @@ namespace NachoCore.ActiveSync
             default:
                 return false;
             }
+        }
+
+        // PushAssist support.
+        public string PushAssistRequestUrl ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            return ServerUri (Op).ToString ();
+        }
+
+        public HttpRequestHeaders PushAssistRequestHeaders ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            HttpRequestMessage request;
+            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+                return null;
+            }
+            return request.Headers;
+        }
+
+        public HttpContentHeaders PushAssistContentHeaders ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            HttpRequestMessage request;
+            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+                return null;
+            }
+            return request.Content.Headers;
+        }
+
+        public byte[] PushAssistRequestData ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            return ToXDocument (Op).ToWbxml (doFiltering: false);
+        }
+
+        public byte[] PushAssistNoChangeResponseData ()
+        {
+            var response = ToEmptyXDocument ();
+            response.Add (new XElement (m_ns + Xml.AirSync.Ns,
+                new XElement (m_ns + Xml.AirSync.Status, "1")));
+            return response.ToWbxml (doFiltering: false);
+        }
+
+        public byte[] PushAssistExpectedResponseData ()
+        {
+            var response = ToEmptyXDocument ();
+            response.Add (new XElement (m_ns + Xml.AirSync.Ns,
+                new XElement (m_ns + Xml.AirSync.Status, "1")));
+            return response.ToWbxml (doFiltering: false);
         }
     }
 }
