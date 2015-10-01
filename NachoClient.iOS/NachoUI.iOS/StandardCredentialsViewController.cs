@@ -182,6 +182,7 @@ namespace NachoClient.iOS
                     if (IsShowingAdvanced) {
                         advancedFieldsViewController.PopulateAccountWithFields (Account);
                     }
+                    BackEnd.Instance.Stop (Account.Id);
                 }
                 StartReceivingLoginEvents ();
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController start ID{0}", Account.Id);
