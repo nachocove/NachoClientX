@@ -47,6 +47,16 @@ namespace NachoCore.Utils
                 return MessagePreparationState == MessagePreparationStatus.Done;
             }
         }
+
+        public bool HasRecipient {
+            get {
+                if (Message == null) {
+                    return false;
+                }
+                return !String.IsNullOrWhiteSpace (Message.To) || !String.IsNullOrWhiteSpace (Message.Cc) || !String.IsNullOrWhiteSpace (Message.Bcc);
+            }
+        }
+
         public long MaxSize = DEFAULT_MAX_SIZE;
 
         private McEmailMessage RelatedMessage;

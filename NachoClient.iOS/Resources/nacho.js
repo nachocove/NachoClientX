@@ -89,6 +89,16 @@ Editor.prototype = {
         this.document.removeEventListener('selectionchange', this);
     },
 
+    focus: function (){
+        this.rootNode.focus();
+        // var selection = this.window.getSelection();
+        // selection.removeAllRanges();
+        // var range = this.document.createRange();
+        // range.setStart(this.rootNode, 0);
+        // range.setEnd(this.rootNode, 0);
+        // selection.addRange(range);
+    },
+
     lockZoom: function(){
         var meta = this.document.getElementById('nacho-viewport');
         this.originalViewportContent = meta.getAttribute('content');

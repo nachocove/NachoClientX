@@ -76,6 +76,7 @@ namespace NachoClient.iOS
         string ContentHtml;
         bool IsWebViewLoaded = false;
         List<string> JavaScriptQueue;
+        bool MakeWebViewFirstResponderOnLoad = false;
 
         #endregion
 
@@ -154,6 +155,7 @@ namespace NachoClient.iOS
             WebView.SuppressesIncrementalRendering = true;
             WebView.Delegate = this;
             WebView.NcDisableInputAccessoryView ();
+            WebView.KeyboardDisplayRequiresUserAction = false;
             NcWebViewMessageProtocol.AddHandler (this, "nachoCompose");
             NcWebViewMessageProtocol.AddHandler (this, "nacho");
 
@@ -174,6 +176,16 @@ namespace NachoClient.iOS
                 UpdateSendEnabled ();
                 if (StartWithQuickResponse) {
                     ShowQuickResponses ();
+                } else {
+                    if (!Composer.HasRecipient) {
+                        HeaderView.ToView.SetEditFieldAsFirstResponder ();
+                    } else if (String.IsNullOrEmpty (Composer.Message.Subject)) {
+                        HeaderView.SubjectField.BecomeFirstResponder ();
+                    } else if (IsWebViewLoaded) {
+                        MakeWebViewFirstResponder ();
+                    } else {
+                        MakeWebViewFirstResponderOnLoad = true;
+                    }
                 }
                 HasShownOnce = true;
             }
@@ -680,6 +692,9 @@ namespace NachoClient.iOS
                 EvaluateJavaScript (script);
             }
             JavaScriptQueue = null;
+            if (MakeWebViewFirstResponderOnLoad) {
+                MakeWebViewFirstResponder ();
+            }
         }
 
         // An approximation of what WKWebView does with WKScriptMessageHandler
@@ -697,6 +712,11 @@ namespace NachoClient.iOS
         private void EnableEditingInWebView ()
         {
             EvaluateJavaScript ("Editor.Enable()");
+        }
+
+        private void MakeWebViewFirstResponder ()
+        {
+            EvaluateJavaScript ("Editor.defaultEditor.focus()");
         }
 
         private void EvaluateJavaScript(string javascript, WKJavascriptEvaluationResult callback = null)
@@ -731,7 +751,6 @@ namespace NachoClient.iOS
         [Foundation.Export("scrollViewWillBeginDragging:")]
         public void DraggingStarted (UIScrollView scrollView)
         {
-            UpdateScrollViewSize ();
         }
 
         [Foundation.Export("scrollViewDidScroll:")]
@@ -745,8 +764,7 @@ namespace NachoClient.iOS
 
         private void UpdateSendEnabled ()
         {
-            bool hasRecipient = !String.IsNullOrWhiteSpace (Composer.Message.To) || !String.IsNullOrWhiteSpace (Composer.Message.Cc) || !String.IsNullOrWhiteSpace (Composer.Message.Bcc);
-            SendButton.Enabled = hasRecipient;
+            SendButton.Enabled = Composer.HasRecipient;
         }
 
         private void ShowQuickResponses (bool animated = true)
