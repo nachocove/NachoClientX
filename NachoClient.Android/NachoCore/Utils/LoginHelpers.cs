@@ -5,6 +5,7 @@ using System.Linq;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using System.Globalization;
 
 namespace NachoCore.Utils
 {
@@ -148,15 +149,22 @@ namespace NachoCore.Utils
         {
             // Save most recently used
             SetMostRecentAccount (account);
-            var time = DateTime.UtcNow.ToString ();
+            var time = DateTime.UtcNow.ToString ("O");
             McMutables.Set (account.Id, "AccountSwitcher", "SwitchTo", time);
         }
 
         static public DateTime GetSwitchToTime (McAccount account)
         {
-            var defaultTime = DateTime.UtcNow.ToString ();
+            var defaultTime = DateTime.UtcNow.ToString ("O");
             var switchToTime = McMutables.GetOrCreate (account.Id, "AccountSwitcher", "SwitchTo", defaultTime);
-            return DateTime.Parse (switchToTime);
+            DateTime result;
+            if (!DateTime.TryParseExact(switchToTime, "O", null, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out result)) {
+                if (!DateTime.TryParse(switchToTime, out result)) {
+                    Log.Warn (Log.LOG_UTILS, "Could not parse switch-to time for account {0}: {1}", account.Id, switchToTime);
+                    result = DateTime.UtcNow;
+                }
+            }
+            return result;
         }
 
         static public void SetMostRecentAccount (McAccount account)
@@ -198,19 +206,6 @@ namespace NachoCore.Utils
             }
             // Default to device account
             return McAccount.GetDeviceAccount ();
-        }
-
-        public static string GetPassword (McAccount account)
-        {
-            if (McAccount.AccountServiceEnum.GoogleDefault == account.AccountService) {
-                return "";
-            }
-            var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if (null == creds) {
-                return "";
-            } else {
-                return creds.GetPassword ();
-            }
         }
 
         public static bool ConfiguredAccountExists (string emailAddress)

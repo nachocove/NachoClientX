@@ -233,7 +233,9 @@ namespace NachoClient.iOS
                 Util.ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
-            Util.PerformAction ("tel", number);
+            if (!Util.PerformAction ("tel", number)) {
+                Util.ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
+            }
         }
 
         protected void SwipedSMS (string number)

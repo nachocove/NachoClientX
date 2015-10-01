@@ -246,6 +246,14 @@ namespace NachoPlatform
         bool PowerStateIsPlugged ();
     }
 
+    public class KeychainItemNotFoundException : Exception
+    {
+        public KeychainItemNotFoundException (string Message) : base (Message)
+        {
+
+        }
+    }
+
     public interface IPlatformKeychain
     {
         bool HasKeychain ();

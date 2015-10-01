@@ -204,16 +204,16 @@ namespace NachoClient.AndroidClient
 
     public class NachoWebViewClient : Android.Webkit.WebViewClient
     {
-        public override void OnReceivedError (Android.Webkit.WebView view, Android.Webkit.ClientError errorCode, string description, string failingUrl)
-        {
-            base.OnReceivedError (view, errorCode, description, failingUrl);
-            Console.WriteLine ("OnReceivedError: {0}: {1} {2}", failingUrl, errorCode, description);
-        }
-
-        public override Android.Webkit.WebResourceResponse ShouldInterceptRequest (Android.Webkit.WebView view, Android.Webkit.IWebResourceRequest request)
-        {
-            Console.WriteLine ("ShouldInterceptRequest: {1} {0}", request.Url, request.Method);
-            return base.ShouldInterceptRequest (view, request);
-        }
+//        public override void OnReceivedError (Android.Webkit.WebView view, Android.Webkit.ClientError errorCode, string description, string failingUrl)
+//        {
+//            base.OnReceivedError (view, errorCode, description, failingUrl);
+//            Console.WriteLine ("OnReceivedError: {0}: {1} {2}", failingUrl, errorCode, description);
+//        }
+//
+//        public override Android.Webkit.WebResourceResponse ShouldInterceptRequest (Android.Webkit.WebView view, Android.Webkit.IWebResourceRequest request)
+//        {
+//            Console.WriteLine ("ShouldInterceptRequest: {1} {0}", request.Url, request.Method);
+//            return base.ShouldInterceptRequest (view, request);
+//        }
     }
 }

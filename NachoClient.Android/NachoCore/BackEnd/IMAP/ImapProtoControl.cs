@@ -947,17 +947,22 @@ namespace NachoCore.IMAP
             bool supportsExpunged = ProtoControl.ProtocolState.ImapServiceType != McAccount.AccountServiceEnum.Yahoo;
             bool supportsIdle = (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.Idle));
 
-            return new PushAssistParameters () {
-                RequestUrl = string.Format ("imap://{0}:{1}", ProtoControl.Server.Host, ProtoControl.Server.Port),
-                Protocol = PushAssistProtocol.IMAP,
-                ResponseTimeoutMsec = 600 * 1000,
-                WaitBeforeUseMsec = 60 * 1000,
+            try {
+                return new PushAssistParameters () {
+                    RequestUrl = string.Format ("imap://{0}:{1}", ProtoControl.Server.Host, ProtoControl.Server.Port),
+                    Protocol = PushAssistProtocol.IMAP,
+                    ResponseTimeoutMsec = 600 * 1000,
+                    WaitBeforeUseMsec = 60 * 1000,
 
-                IMAPAuthenticationBlob = PushAssistAuthBlob (),
-                IMAPFolderName = "INBOX",
-                IMAPSupportsIdle = supportsIdle,
-                IMAPSupportsExpunge = supportsExpunged,
-            };
+                    IMAPAuthenticationBlob = PushAssistAuthBlob (),
+                    IMAPFolderName = "INBOX",
+                    IMAPSupportsIdle = supportsIdle,
+                    IMAPSupportsExpunge = supportsExpunged,
+                };
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_IMAP, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
+                return null;
+            }
         }
 
         #endregion

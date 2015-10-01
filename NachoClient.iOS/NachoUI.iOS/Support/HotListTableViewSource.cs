@@ -217,7 +217,6 @@ namespace NachoClient.iOS
             view.AddSubview (reminderLabelView);
 
             var toolbar = new MessageToolbar (new CGRect (0, frame.Height - 44, frame.Width, 44));
-            toolbar.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth;
             toolbar.Tag = TOOLBAR_TAG;
             view.AddSubview (toolbar);
 
