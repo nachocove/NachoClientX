@@ -215,13 +215,7 @@ namespace NachoCore.ActiveSync
 
         private uint WaitIntervalToWaitMinutes ()
         {
-            uint wait = (uint) WaitInterval.TotalMinutes;
-            if (wait < 0) { //min wait = 0
-                wait = 0;
-            } else if (wait > 59) { // max wait 59
-                wait = 59;
-            }
-            return wait;
+            return Math.Min (Math.Max (0, (uint) WaitInterval.TotalMinutes), 59);
         }
 
         protected override XDocument ToXDocument (AsHttpOperation Sender)
