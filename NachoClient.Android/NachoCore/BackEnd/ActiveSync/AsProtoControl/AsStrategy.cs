@@ -610,6 +610,32 @@ namespace NachoCore.ActiveSync
             McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
         }
 
+        public SyncKit GenSyncKitFromPingKit(McProtocolState protocolState, PingKit pingKit)
+        {
+            var perFolders = new List<SyncKit.PerFolder> ();
+            foreach (var iterFolder in pingKit.Folders) {
+                var folder = iterFolder;
+                if (!folder.AsSyncMetaToClientExpected) {
+                    folder = folder.UpdateSet_AsSyncMetaToClientExpected (true);
+                }
+                var rung = Scope.StrategyRung (protocolState);
+                var parms = ParametersProvider (folder, rung, true);
+                perFolders.Add (new SyncKit.PerFolder () {
+                    Folder = folder,
+                    Commands = new List<McPending> (),
+                    FilterCode = parms.Item1,
+                    WindowSize = 1,
+                    GetChanges = true,
+                });
+            }
+            return new SyncKit () {
+                OverallWindowSize = pingKit.Folders.Count,
+                PerFolders = perFolders,
+                IsNarrow = pingKit.IsNarrow,
+                IsPinging = true,
+                WaitInterval = TimeSpan.FromSeconds((double) pingKit.MaxHeartbeatInterval)
+            };            
+        }
         public SyncKit GenSyncKit (McProtocolState protocolState)
         {
             return GenSyncKit (protocolState, SyncMode.Wide);
@@ -786,7 +812,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             if (protocolState.MaxFolders >= folders.Count) {
-                return new PingKit () { Folders = folders, MaxHeartbeatInterval = maxHeartbeatInterval };
+                return new PingKit () { Folders = folders, MaxHeartbeatInterval = maxHeartbeatInterval, IsNarrow = isNarrow };
             }
             // If we have too many folders, then whittle down the list, but keep default inbox & cal.
             List<McFolder> fewer = new List<McFolder> ();
@@ -803,7 +829,7 @@ namespace NachoCore.ActiveSync
             // Prefer the least-recently-ping'd.
             var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)protocolState.MaxFolders - fewer.Count);
             fewer.AddRange (stalest);
-            return new PingKit () { Folders = fewer, MaxHeartbeatInterval = maxHeartbeatInterval };
+            return new PingKit () { Folders = fewer, MaxHeartbeatInterval = maxHeartbeatInterval, IsNarrow = isNarrow };
         }
 
         public MoveKit GenMoveKit ()
@@ -1245,9 +1271,16 @@ namespace NachoCore.ActiveSync
                     !BEContext.Server.HostIsAsGMail ()) {
                     var rlPingKit = GenPingKit (protocolState, true, stillHaveUnsyncedFolders, false);
                     if (null != rlPingKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                            new AsPingCommand (BEContext, rlPingKit));
+                        if (BEContext.Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Ping");
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                                new AsPingCommand (BEContext, rlPingKit));
+                        } else { // use Sync
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Sync");
+                            SyncKit syncKit = GenSyncKitFromPingKit (protocolState, rlPingKit);
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync,
+                                new AsSyncCommand (BEContext, syncKit));
+                        }
                     }
                     // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
                     // at the current filter setting, then wait.
@@ -1301,9 +1334,16 @@ namespace NachoCore.ActiveSync
                     pingKit = GenPingKit (protocolState, true, stillHaveUnsyncedFolders, false);
                 }
                 if (null != pingKit) {
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping");
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
-                        new AsPingCommand (BEContext, pingKit));
+                    if (BEContext.Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping using EAS Ping");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                            new AsPingCommand (BEContext, pingKit));
+                    } else { // use Sync
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping using EAS Sync");
+                        SyncKit syncKit = GenSyncKitFromPingKit (protocolState, pingKit);
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync,
+                            new AsSyncCommand (BEContext, syncKit));
+                    }
                 }
                 Log.Info (Log.LOG_AS, "Strategy:FG/BG:Wait");
                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
