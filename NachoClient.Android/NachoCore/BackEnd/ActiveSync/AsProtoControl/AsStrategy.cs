@@ -632,6 +632,7 @@ namespace NachoCore.ActiveSync
                 OverallWindowSize = pingKit.Folders.Count,
                 PerFolders = perFolders,
                 IsNarrow = pingKit.IsNarrow,
+                IsPinging = true,
                 WaitInterval = TimeSpan.FromSeconds((double) pingKit.MaxHeartbeatInterval)
             };            
         }

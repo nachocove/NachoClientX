@@ -26,6 +26,7 @@ namespace NachoCore.ActiveSync
         }
         public TimeSpan WaitInterval { get; set; }
         public bool IsNarrow { get; set; }
+        public bool IsPinging { get; set; }
         public int OverallWindowSize { get; set; }
         public List<PerFolder> PerFolders { get; set; }
     }
