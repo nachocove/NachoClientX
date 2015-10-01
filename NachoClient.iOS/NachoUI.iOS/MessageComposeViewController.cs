@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using CoreGraphics;
 using Foundation;
@@ -152,6 +153,7 @@ namespace NachoClient.iOS
             WebView = new UIWebView (View.Bounds);
             WebView.SuppressesIncrementalRendering = true;
             WebView.Delegate = this;
+            WebView.NcDisableInputAccessoryView ();
             NcWebViewMessageProtocol.AddHandler (this, "nachoCompose");
             NcWebViewMessageProtocol.AddHandler (this, "nacho");
 
@@ -978,5 +980,98 @@ namespace NachoClient.iOS
 
     #endregion
 
-        
+
+
+    public delegate UIView NcInputAccessoryViewDelegate();
+
+    public static class NcWebViewInputAccessoryRemover {
+
+        [DllImport ("/usr/lib/libobjc.dylib")]
+        extern static IntPtr objc_allocateClassPair (IntPtr superclass, string name, IntPtr extraBytes);
+
+        [DllImport ("/usr/lib/libobjc.dylib")]
+        extern static void objc_registerClassPair (IntPtr cls);
+
+        [DllImport ("/usr/lib/libobjc.dylib")]
+        internal extern static bool class_addMethod (IntPtr cls, IntPtr name, IntPtr imp, IntPtr types);
+
+        [DllImport ("/usr/lib/libobjc.dylib")]
+        internal extern static IntPtr class_getInstanceMethod (IntPtr cls, IntPtr sel);
+
+        [DllImport ("/usr/lib/libobjc.dylib")]
+        internal extern static IntPtr class_getMethodImplementation (IntPtr cls, IntPtr sel);
+
+        [DllImport ("/usr/lib/libobjc.dylib")]
+        internal extern static IntPtr object_setClass (IntPtr obj, IntPtr cls);
+
+        [DllImport ("/usr/lib/libobjc.dylib")]
+        internal extern static IntPtr method_getTypeEncoding (IntPtr method);
+
+        private static string BrowserViewClassWithoutAccessoryViewName = "UIWebBrowserViewWithoutAccessoryView";
+        private static ObjCRuntime.Class BrowserViewClassWithoutAccessoryView = null;
+
+        public static void NcDisableInputAccessoryView (this UIWebView webView)
+        {
+            // UIWebView adds a bar along the top of the keyboard with <, > and Done buttons.
+            // It's useful in a normal webpage to jump from field to field, but in our case
+            // we have just one big editable field and the bar serves no useful purpose.
+            //
+            // The bar is added using the standard iOS inputAccessoryView of a UIResponder.
+            // UIWebView is tricky, however, because it isn't the actual responder that provides the
+            // accessory view.  A private subview, UIWebBrowserView does. So we need to alter the
+            // inputAccessoryView method of the private UIWebBrowserView.
+            //
+            // We make the switch by finding the browser view and turning it into an instance of a newly created
+            // subclass of UIBrowserView that has an inputAccessoryView method that always returns null.
+            var browserView = webView.NcBrowserView ();
+            if (browserView != null) {
+                if (BrowserViewClassWithoutAccessoryView == null) {
+                    CreateBrowserViewClassWithoutAccessoryView (browserView.Class);
+                }
+                if (!browserView.IsKindOfClass (BrowserViewClassWithoutAccessoryView)) {
+                    object_setClass (browserView.Handle, BrowserViewClassWithoutAccessoryView.Handle);
+                }
+            }
+        }
+
+        public static UIView NcBrowserView (this UIWebView webView)
+        {
+            // This depends entirely on private Apple conventions of naming and view tree construction.
+            // So if Apple changes things, this will break.  But it works for now...
+            // We're looking for something called UIWebBrowserView, but we'll do a StartsWith search because
+            // we still want to find the browser view even after we've switched to our subclass, which is named
+            // UIWebBrowserViewWithoutAccessoryView.
+            foreach (var subview in webView.ScrollView.Subviews) {
+                if (subview.Class.Name.StartsWith ("UIWebBrowserView")) {
+                    return subview;
+                }
+            }
+            return null;
+        }
+
+        public static void CreateBrowserViewClassWithoutAccessoryView (ObjCRuntime.Class browserViewClass)
+        {
+            // We have to create a new subclass at runtime because UIWebBrowserView is private.  Runtime requires us to use
+            // the low level objc_* methods, which we've loaded into c# land using the import statements above.
+            // The basic steps are:
+            // 1. Allocate a new subclass of browserViewClass
+            // 2. Set the inputAccessoryView method of the new subclass to a method that returns null
+            // 3. Register the new class
+            IntPtr newClassHandle = objc_allocateClassPair (browserViewClass.Handle, BrowserViewClassWithoutAccessoryViewName, IntPtr.Zero);
+            var selector = new ObjCRuntime.Selector("inputAccessoryView");
+            // It seemes easiest to grab the inputAccessoryView method from UIResponder, which does nothing, and use it
+            // as the method for our subclass.  Other techniques involve creating an entirely new method, but those are
+            // more complicated.  Since UIResponder is the base class, we know its inputAccessoryView is the correct signature.
+            var responderClass = new ObjCRuntime.Class ("UIResponder");
+            var method = class_getInstanceMethod (responderClass.Handle, selector.Handle);
+            var imp = class_getMethodImplementation (responderClass.Handle, selector.Handle);
+            var types = method_getTypeEncoding (method);
+            class_addMethod(newClassHandle, selector.Handle, imp, types);
+            objc_registerClassPair(newClassHandle);
+            BrowserViewClassWithoutAccessoryView = new ObjCRuntime.Class (newClassHandle);
+        }
+
+
+    }
+
 }
