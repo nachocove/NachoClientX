@@ -1209,6 +1209,7 @@ namespace NachoCore.ActiveSync
                     Protocol = PushAssistProtocol.ACTIVE_SYNC,
                     ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
                     WaitBeforeUseMsec = 60 * 1000,
+                    IsSyncRequest = false,
 
                     MailServerCredentials = new Credentials {
                         Username = ProtoControl.Cred.Username,
@@ -1231,6 +1232,7 @@ namespace NachoCore.ActiveSync
                     Protocol = PushAssistProtocol.ACTIVE_SYNC,
                     ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
                     WaitBeforeUseMsec = 60 * 1000,
+                    IsSyncRequest = true,
 
                     MailServerCredentials = new Credentials {
                         Username = ProtoControl.Cred.Username,
@@ -1239,9 +1241,6 @@ namespace NachoCore.ActiveSync
                     RequestData = sync.PushAssistRequestData (),
                     RequestHeaders = sync.PushAssistRequestHeaders (),
                     ContentHeaders = sync.PushAssistContentHeaders (),
-                    NoChangeResponseData = sync.PushAssistNoChangeResponseData (),
-                    ExpectedResponseData = sync.PushAssistExpectedResponseData (),
-
                 };
             }
         }

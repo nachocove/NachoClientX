@@ -43,6 +43,7 @@ namespace NachoCore
         public string RequestData;
         public string ExpectedReply;
         public string NoChangeReply;
+        public bool ASIsSyncRequest;
 
         public string IMAPAuthenticationBlob;
         public string IMAPFolderName;
@@ -55,6 +56,7 @@ namespace NachoCore
     public class DeferSessionRequest : SessionRequest
     {
         public int ResponseTimeout;
+        public string RequestData;
     }
 
     public class StopSessionRequest : SessionRequest

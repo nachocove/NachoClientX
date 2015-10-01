@@ -744,6 +744,7 @@ namespace NachoCore
                 RequestData = SafeToBase64 (parameters.RequestData),
                 ExpectedReply = SafeToBase64 (parameters.ExpectedResponseData),
                 NoChangeReply = SafeToBase64 (parameters.NoChangeResponseData),
+                ASIsSyncRequest = parameters.IsSyncRequest,
 
                 // IMAP elements
                 IMAPAuthenticationBlob = SafeToBase64 (parameters.IMAPAuthenticationBlob),
@@ -844,6 +845,7 @@ namespace NachoCore
                 PostHardFail ("DEFER_PARAM_ERROR");
             }
             var jsonRequest = new DeferSessionRequest () {
+                RequestData = SafeToBase64 (parameters.RequestData),
                 Token = SessionToken,
                 ResponseTimeout = parameters.ResponseTimeoutMsec
             };

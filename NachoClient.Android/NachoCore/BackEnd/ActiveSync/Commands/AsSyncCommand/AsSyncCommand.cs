@@ -1344,22 +1344,6 @@ namespace NachoCore.ActiveSync
             return ToXDocument (Op).ToWbxml (doFiltering: false);
         }
 
-        public byte[] PushAssistNoChangeResponseData ()
-        {
-            var response = ToEmptyXDocument ();
-            response.Add (new XElement (m_ns + Xml.AirSync.Ns,
-                new XElement (m_ns + Xml.AirSync.Status, "1")));
-            return response.ToWbxml (doFiltering: false);
-        }
-
-        public byte[] PushAssistExpectedResponseData ()
-        {
-            var response = ToEmptyXDocument ();
-            response.Add (new XElement (m_ns + Xml.AirSync.Ns,
-                new XElement (m_ns + Xml.AirSync.Status, "1")));
-            return response.ToWbxml (doFiltering: false);
-        }
-
         private void MarkFoldersPinged ()
         {
             foreach (var iterFolder in FoldersInRequest) {
