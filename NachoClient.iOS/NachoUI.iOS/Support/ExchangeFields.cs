@@ -302,7 +302,6 @@ namespace NachoClient.iOS
                 passwordView.textField.Text = creds.GetPassword ();
             } catch (KeychainItemNotFoundException ex) {
                 Log.Error (Log.LOG_UI, "Exch LoadAccount: KeychainItemNotFoundException {0}", ex.Message);
-                // Owen: What to do here.
             }
 
             var server = McServer.QueryByAccountId<McServer> (account.Id).FirstOrDefault ();

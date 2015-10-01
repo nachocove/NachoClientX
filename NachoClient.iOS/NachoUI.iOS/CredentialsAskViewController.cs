@@ -218,7 +218,6 @@ namespace NachoClient.iOS
             } catch (KeychainItemNotFoundException ex) {
                 Log.Error (Log.LOG_UI, "KeychainItemNotFoundException: {0}", ex.Message);
                 return null;
-                // Owen: What to do here?
             }
         }
 

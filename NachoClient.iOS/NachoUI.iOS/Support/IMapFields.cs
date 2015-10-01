@@ -368,7 +368,6 @@ namespace NachoClient.iOS
                 passwordView.textField.Text = creds.GetPassword ();
             } catch (KeychainItemNotFoundException ex) {
                 Log.Error (Log.LOG_UI, "Imap LoadAccount: KeychainItemNotFoundException {0}", ex.Message);
-                // Owen: What to do here.
             }
 
             usernameView.textField.Text = creds.Username;

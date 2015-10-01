@@ -54,7 +54,6 @@ namespace NachoClient.iOS
                     passwordField.Text = creds.GetPassword ();
                 } catch (KeychainItemNotFoundException ex) {
                     Log.Error (Log.LOG_UI, "KeychainItemNotFoundException {0}", ex.Message);
-                    // Owen: What to do here.
                 }
             }
             passwordField.WeakDelegate = this;
