@@ -32,6 +32,9 @@
     <string name="demo_date">Wed, Jun 17 - 2:58pm</string>
     <string name="demo_preview">Get the most from your inbox today!  Get Nacho Mail pronto for your Chromebook."</string>
     <string name="demo_initials">JB</string>
+    <string name="demo_contact_name">Joe Smith</string>
+    <string name="demo_contact_email">joe@smith.com</string>
+    <string name="demo_contact_phone">505 555 5678</string>
     <string name="to_inbox">Go to Inbox</string>
     <string name="to_deadline">Go to Deadlines</string>
     <string name="to_deferred">Go to Deferred Messages</string>

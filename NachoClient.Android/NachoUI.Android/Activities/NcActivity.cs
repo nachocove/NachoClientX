@@ -109,7 +109,14 @@ namespace NachoClient.AndroidClient
 
         void ContactsButton_Click (object sender, EventArgs e)
         {
+            MaybePopMoreFragment ();
 
+            if (this is ContactsActivity) {
+                return;
+            } 
+            var intent = new Intent ();
+            intent.SetClass (this, typeof(ContactsActivity));
+            StartActivity (intent);
         }
 
         void CalendarButton_Click (object sender, EventArgs e)

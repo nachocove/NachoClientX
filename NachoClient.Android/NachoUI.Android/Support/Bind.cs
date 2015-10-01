@@ -28,14 +28,14 @@ namespace NachoClient.AndroidClient
     public static class Bind
     {
 
-        public static void SetVisibility(ViewStates state, params View[] views)
+        public static void SetVisibility (ViewStates state, params View[] views)
         {
             foreach (var view in views) {
                 view.Visibility = state;
             }
         }
 
-        public static void BindMessageHeader(McEmailMessageThread thread, McEmailMessage message, View view)
+        public static void BindMessageHeader (McEmailMessageThread thread, McEmailMessage message, View view)
         {
             var isUnreadView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.message_read);
             isUnreadView.Visibility = ViewStates.Invisible;
@@ -69,11 +69,11 @@ namespace NachoClient.AndroidClient
             }
 
             userImageView.Text = message.cachedFromLetters;
-            userImageView.SetBackgroundResource (ColorForUser(message.cachedFromColor));
+            userImageView.SetBackgroundResource (ColorForUser (message.cachedFromColor));
 
             int chiliImageId;
             if ((null != thread) && thread.HasMultipleMessages ()) {
-                chiliImageId = (message.isHot () ? Resource.Drawable.email_not_hot: Resource.Drawable.email_nothothread);
+                chiliImageId = (message.isHot () ? Resource.Drawable.email_not_hot : Resource.Drawable.email_nothothread);
             } else {
                 chiliImageId = (message.isHot () ? Resource.Drawable.email_hot : Resource.Drawable.email_not_hot);
             }
@@ -90,6 +90,63 @@ namespace NachoClient.AndroidClient
 
             // FIXME attachment icon
 
+        }
+
+        public static int BindContactCell (McContact contact, View view, string alternateEmailAddress = null)
+        {
+            var titleLabel = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_title);
+            var subtitle1Label = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_subtitle1);
+            var subtitle2Label = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_subtitle2);
+
+            var displayTitle = contact.GetDisplayName ();
+            var displayTitleColor = A.Color_NachoDarkText;
+
+            var displaySubtitle1 = (null == alternateEmailAddress ? contact.GetPrimaryCanonicalEmailAddress () : alternateEmailAddress);
+            var displaySubtitle1Color = A.Color_NachoDarkText;
+
+            var displaySubtitle2 = contact.GetPrimaryPhoneNumber ();
+            var displaySubtitle2Color = A.Color_NachoDarkText;
+
+//             var contactColor = Util.GetContactColor (contact);
+
+            int viewType = 3;
+
+            if (String.IsNullOrEmpty (displayTitle) && !String.IsNullOrEmpty (displaySubtitle1)) {
+                displayTitle = displaySubtitle1;
+                displaySubtitle1 = "No name for this contact";
+                displaySubtitle1Color = A.Color_NachoTextGray;
+            }
+
+            if (String.IsNullOrEmpty (displayTitle)) {
+                displayTitle = "No name for this contact";
+                displayTitleColor = A.Color_NachoLightText;
+            }
+
+            if (String.IsNullOrEmpty (displaySubtitle1)) {
+                displaySubtitle1 = "No email address for this contact";
+                displaySubtitle1Color = A.Color_NachoLightText;
+                viewType &= ~1;
+            }
+
+            if (String.IsNullOrEmpty (displaySubtitle2)) {
+                displaySubtitle2 = "No phone number for this contact";
+                displaySubtitle2Color = A.Color_NachoLightText;
+                viewType &= ~2;
+            }
+
+            titleLabel.Text = displayTitle;
+            titleLabel.SetTextColor (displayTitleColor);
+
+            subtitle1Label.Text = displaySubtitle1;
+            subtitle1Label.SetTextColor (displaySubtitle1Color);
+
+            subtitle2Label.Text = displaySubtitle2;
+            subtitle2Label.SetTextColor (displaySubtitle2Color);
+
+            var userInitials = view.FindViewById<Android.Widget.TextView>(Resource.Id.user_initials);
+            userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
+
+            return viewType;
         }
 
         public static int ColorForUser (int index)
