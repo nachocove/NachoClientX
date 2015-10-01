@@ -15,9 +15,11 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.AndroidClient</AssemblyName>
-    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
+    <ReleaseVersion>2.1.0</ReleaseVersion>
+    <SynchReleaseVersion>false</SynchReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -58,6 +60,8 @@
     </CustomCommands>
     <DebugSymbols>true</DebugSymbols>
     <AndroidSupportedAbis>armeabi-v7a;x86</AndroidSupportedAbis>
+    <MandroidI18n>cjk;mideast;other;west</MandroidI18n>
+    <AndroidKeyStore>True</AndroidKeyStore>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -1176,5 +1180,6 @@
     <AndroidResource Include="Resources\drawable-hdpi\contacts_vip_checked.png" />
     <AndroidResource Include="Resources\drawable-hdpi\contacts_vip.png" />
     <AndroidResource Include="Resources\drawable\menu_contacts.png" />
+    <AndroidResource Include="Resources\layout\ContactViewCell.axml" />
   </ItemGroup>
 </Project>

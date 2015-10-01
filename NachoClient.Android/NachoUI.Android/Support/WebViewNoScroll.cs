@@ -25,9 +25,9 @@ namespace NachoClient.AndroidClient
         {
         }
 
-        public WebViewNoScroll (Context context, Android.Util.IAttributeSet attrs, int defStyleAttr, int defStyleRes) : base (context, attrs, defStyleAttr, defStyleRes)
-        {
-        }
+//        public WebViewNoScroll (Context context, Android.Util.IAttributeSet attrs, int defStyleAttr, int defStyleRes) : base (context, attrs, defStyleAttr, defStyleRes)
+//        {
+//        }
 
         public WebViewNoScroll (Context context, Android.Util.IAttributeSet attrs, int defStyleAttr, bool privateBrowsing) : base (context, attrs, defStyleAttr, privateBrowsing)
         {
