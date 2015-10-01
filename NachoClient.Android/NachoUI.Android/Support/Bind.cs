@@ -145,6 +145,7 @@ namespace NachoClient.AndroidClient
 
             var userInitials = view.FindViewById<Android.Widget.TextView>(Resource.Id.user_initials);
             userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
+            userInitials.SetBackgroundResource (Bind.ColorForUser(contact.CircleColor));
 
             return viewType;
         }
@@ -160,6 +161,14 @@ namespace NachoClient.AndroidClient
                 index = 1;
             }
             return userColorMap [index];
+        }
+
+        static Random random = new Random ();
+
+        public static int PickRandomColorForUser ()
+        {
+            int randomNumber = random.Next (2, userColorMap.Length);
+            return randomNumber;
         }
 
         static int[] userColorMap = {
