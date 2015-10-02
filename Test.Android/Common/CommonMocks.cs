@@ -36,7 +36,7 @@ namespace Test.iOS
     };
 
     // reusable request/response data
-    public class CommonMockData
+    public static class CommonMockData
     {
         // utopiasystems is used because they have an Autodiscover SRV response
         public static Uri MockUri = new Uri ("https://utopiasystems.net");
@@ -201,6 +201,7 @@ namespace Test.iOS
                 Username = "dummy",
             };
             Cred.Insert ();
+            Cred.UpdatePassword ("DummyPassword");
         }
     }
 
