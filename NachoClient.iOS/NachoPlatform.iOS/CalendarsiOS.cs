@@ -66,13 +66,16 @@ namespace NachoPlatform
 
             public override string DisplayName {
                 get {
+                    if (null != Folder.Source && !string.IsNullOrEmpty (Folder.Source.Title)) {
+                        return string.Format ("{0} : {1}", Folder.Source.Title, Folder.Title);
+                    }
                     return Folder.Title;
                 }
             }
 
             public override NcResult ToMcFolder ()
             {
-                var mcFolder = McFolder.Create (McAccount.GetDeviceAccount ().Id, true, false, false, "0", Folder.CalendarIdentifier, Folder.Title,
+                var mcFolder = McFolder.Create (McAccount.GetDeviceAccount ().Id, true, false, false, "0", Folder.CalendarIdentifier, DisplayName,
                     isDefault ? Xml.FolderHierarchy.TypeCode.DefaultCal_8 : Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                 return NcResult.OK (mcFolder);
             }
