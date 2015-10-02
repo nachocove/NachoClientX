@@ -390,6 +390,11 @@ namespace Test.iOS
             };
         }
 
+        public SyncKit GenSyncKitFromPingKit (McProtocolState protocolState, PingKit pingKit)
+        {
+            throw new NotImplementedException ();
+        }
+
         public Tuple<PickActionEnum, AsCommand> PickUserDemand ()
         {
             return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait, null);
