@@ -66,7 +66,8 @@ namespace NachoClient.iOS
             NavigationItem.Title = "Calendars";
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
-            tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
+            tableView = new UITableView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), UITableViewStyle.Grouped);
+            tableView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
             tableView.ScrollEnabled = true;
             source = new CalendarChoicesSource (this, calFolderList);
             tableView.Source = source;
