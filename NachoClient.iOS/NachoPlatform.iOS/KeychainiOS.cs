@@ -237,7 +237,7 @@ namespace NachoPlatform
                 match.ValueData = value;
                 res = SecKeyChain.Update (query, match);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Remove returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Remove returned {0}:{1}", res.ToString (), DumpQuery (query));
                     return false;
                 }
             } else {
@@ -245,25 +245,25 @@ namespace NachoPlatform
                 query.Accessible = accessible;
                 res = SecKeyChain.Add (query);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Add returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Add returned {0}:{1}", res.ToString (), DumpQuery (query));
                     return false;
                 }
             }
             return true;
         }
 
-        private bool Deleter (SecRecord query)
+        private bool Deleter (SecRecord query, bool errorIfMissing = false)
         {
             SecStatusCode res;
             SecKeyChain.QueryAsRecord (query, out res);
             if (SecStatusCode.Success == res) {
                 res = SecKeyChain.Remove (query);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Remove returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Remove returned {0}:{1}", res.ToString (), DumpQuery (query));
                     return false;
                 }
-            } else { 
-                Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Delete returned {0}", res.ToString ());
+            } else if (errorIfMissing) {
+                Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Delete returned {0}:{1}", res.ToString (), DumpQuery (query));
                 return false;
             }
             return true;        
