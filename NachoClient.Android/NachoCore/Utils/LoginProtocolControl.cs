@@ -89,7 +89,6 @@ namespace NachoCore.Utils
                     _Owner.NetworkDown ();
                 });
             }
-            // TODO Why not QueryById here?
             var accounts = McAccount.GetAllAccounts ();
             foreach (var account in accounts) {
                 if (_accountId.HasValue && _accountId.Value != account.Id) {
@@ -98,7 +97,7 @@ namespace NachoCore.Utils
                 var states = _BackEnd.BackEndStates (account.Id);
                 if (null == states) {
                     // no services yet
-                    return;
+                    continue;
                 }
 
                 var credReqCalled = false;
