@@ -38,28 +38,27 @@ namespace NachoCore.IMAP
         private Event ExecuteCommandInternal ()
         {
             bool Initial = !BEContext.ProtocolState.ImapDiscoveryDone;
+            Tuple<ResolveAction, string> action = new Tuple<ResolveAction, string> (ResolveAction.None, null);
 
             Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
-            var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
-            errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
             bool serverFailedGenerally = false;
             try {
-                return TryLock (Client.SyncRoot, KLockTimeout, () => {
+                Cts.Token.ThrowIfCancellationRequested ();
+                evt = TryLock (Client.SyncRoot, KLockTimeout, () => {
                     if (Client.IsConnected) {
                         Client.Disconnect (false, Cts.Token);
                     }
                     return base.ExecuteConnectAndAuthEvent ();
                 });
+                Cts.Token.ThrowIfCancellationRequested ();
             } catch (CommandLockTimeOutException ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: CommandLockTimeOutException: {0}", ex.Message);
-                ResolveAllDeferred ();
+                action = new Tuple<ResolveAction, string> (ResolveAction.DeferAll, ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOLOKTIME");
-                errResult.Message = ex.Message;
             } catch (OperationCanceledException ex) {
-                ResolveAllDeferred ();
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.DeferAll, ex.Message);
             } catch (UriFormatException ex) {
                 // this can't (shouldn't?) really happen except if Initial=true
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
@@ -68,7 +67,7 @@ namespace NachoCore.IMAP
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPURLHARD");
                 }
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (SocketException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
                 if (Initial) {
@@ -76,33 +75,33 @@ namespace NachoCore.IMAP
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMP");
                 }
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: AuthenticationException {0}", ex.Message);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (ServiceNotAuthenticatedException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ServiceNotAuthenticatedException: {0}", ex.Message);
                 evt =  Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (InvalidOperationException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
                 evt =  Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (ImapProtocolException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapProtocolException {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOEXTEMP");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapCommandException {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCOMMEXTEMP");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (IOException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
@@ -111,14 +110,30 @@ namespace NachoCore.IMAP
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPUNKHARD");
                 }
-                errResult.Message = ex.Message;
+                action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
             } finally {
-                ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
-            if (Initial) {
-                StatusInd (errResult);
+
+            if (Cts.Token.IsCancellationRequested) {
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL1"); // will be ignored by the caller
+            }
+            ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
+            switch (action.Item1) {
+            case ResolveAction.None:
+                break;
+            case ResolveAction.DeferAll:
+                ResolveAllDeferred ();
+                break;
+            case ResolveAction.FailAll:
+                if (Initial) {
+                    var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+                    errResult.Message = action.Item2; // gets filled in by the various exceptions.
+                    StatusInd (errResult);
+                }
+                break;
             }
             return evt;
         }
