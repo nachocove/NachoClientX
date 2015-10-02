@@ -546,6 +546,8 @@ namespace NachoPlatform
                     Account = ConstMcAccount.NotAccountSpecific,
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_NeedCalPermission),
                 });
+                folders = new List<PlatformCalendarFolderRecord> ();
+                events = new List<PlatformCalendarRecord> ();
                 return;
             }
             if (null == Es) {
