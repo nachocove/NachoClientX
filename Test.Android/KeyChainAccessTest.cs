@@ -34,7 +34,7 @@ namespace Test.iOS
         public void TestGetLogSaltFail ()
         {
             Keychain.Instance.DeleteLogSalt (KKeyChainId);
-            Assert.IsNull (Keychain.Instance.GetLogSalt (KKeyChainId));
+            Assert.Throws<KeychainItemNotFoundException> (() => Keychain.Instance.GetLogSalt (KKeyChainId));
         }
 
         [Test]
