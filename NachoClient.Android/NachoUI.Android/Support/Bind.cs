@@ -143,11 +143,55 @@ namespace NachoClient.AndroidClient
             subtitle2Label.Text = displaySubtitle2;
             subtitle2Label.SetTextColor (displaySubtitle2Color);
 
-            var userInitials = view.FindViewById<Android.Widget.TextView>(Resource.Id.user_initials);
+            var userInitials = view.FindViewById<Android.Widget.TextView> (Resource.Id.user_initials);
             userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
-            userInitials.SetBackgroundResource (Bind.ColorForUser(contact.CircleColor));
+            userInitials.SetBackgroundResource (Bind.ColorForUser (contact.CircleColor));
 
             return viewType;
+        }
+
+        public static void BindEventCell (McEvent ev, View view)
+        {
+            var colorView = view.FindViewById <View> (Resource.Id.calendar_color);
+            var titleView = view.FindViewById <Android.Widget.TextView> (Resource.Id.event_title);
+            var durationView = view.FindViewById<Android.Widget.TextView> (Resource.Id.event_duration);
+            var locationView = view.FindViewById<Android.Widget.TextView> (Resource.Id.event_location);
+            var locationImageView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.event_location_image);
+
+            var detailView = new NcEventDetail (ev);
+
+            int colorIndex = 0;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (detailView.Account.Id, detailView.SpecificItem.Id).FirstOrDefault ();
+            if (null != folder) {
+                colorIndex = folder.DisplayColor;
+            }
+            colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
+
+            titleView.Text = Pretty.SubjectString(detailView.SpecificItem.Subject);
+
+            var startAndDuration = "";
+            if (detailView.SpecificItem.AllDayEvent) {
+                startAndDuration = "ALL DAY";
+            } else {
+                var start = Pretty.ShortTimeString (detailView.SpecificItem.StartTime);
+                if (detailView.SpecificItem.EndTime > detailView.SpecificItem.StartTime) {
+                    var duration = Pretty.CompactDuration (detailView.SpecificItem.StartTime, detailView.SpecificItem.EndTime);
+                    startAndDuration = String.Join (" - ", new string[] { start, duration });
+                } else {
+                    startAndDuration = start;
+                }
+            }
+            durationView.Text = startAndDuration;
+
+            var location = detailView.SpecificItem.Location;
+            if (String.IsNullOrEmpty (location)) {
+                locationView.Text = "";
+                locationImageView.Visibility = ViewStates.Invisible;
+            } else {
+                locationView.Text = location;
+                locationImageView.Visibility = ViewStates.Visible;
+            }
+
         }
 
         public static int ColorForUser (int index)

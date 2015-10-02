@@ -114,6 +114,11 @@ namespace NachoCore
             return days [day + 1] - days [day];
         }
 
+        public int NumberOfEvents()
+        {
+            return events.Count;
+        }
+
         public DateTime GetDateUsingDayIndex (int day)
         {
             return firstDay.AddDays (day);
@@ -122,6 +127,11 @@ namespace NachoCore
         public McEvent GetEvent (int day, int item)
         {
             return events [days [day] + item];
+        }
+
+        public McEvent GetEventByIndex(int index)
+        {
+            return events [index];
         }
 
         public McAbstrCalendarRoot GetEventDetail (int day, int item)

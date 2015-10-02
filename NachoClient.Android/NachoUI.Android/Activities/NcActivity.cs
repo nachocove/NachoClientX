@@ -121,7 +121,14 @@ namespace NachoClient.AndroidClient
 
         void CalendarButton_Click (object sender, EventArgs e)
         {
+            MaybePopMoreFragment ();
 
+            if (this is CalendarActivity) {
+                return;
+            } 
+            var intent = new Intent ();
+            intent.SetClass (this, typeof(CalendarActivity));
+            StartActivity (intent);
         }
 
     }

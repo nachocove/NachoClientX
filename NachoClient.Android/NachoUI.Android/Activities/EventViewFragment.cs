@@ -11,14 +11,18 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
     public class EventViewFragment : Fragment
     {
-        public static EventViewFragment newInstance ()
+        McEvent ev;
+
+        public static EventViewFragment newInstance (McEvent ev)
         {
             var fragment = new EventViewFragment ();
+            fragment.ev = ev;
             return fragment;
         }
 

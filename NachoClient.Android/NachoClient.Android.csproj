@@ -525,6 +525,8 @@
     <Compile Include="NachoUI.Android\Activities\ContactsActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\EventListFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\CalendarActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1181,5 +1183,10 @@
     <AndroidResource Include="Resources\drawable-hdpi\contacts_vip.png" />
     <AndroidResource Include="Resources\drawable\menu_contacts.png" />
     <AndroidResource Include="Resources\layout\ContactViewCell.axml" />
+    <AndroidResource Include="Resources\layout\EventListFragment.axml" />
+    <AndroidResource Include="Resources\layout\CalendarActivity.axml" />
+    <AndroidResource Include="Resources\layout\EventCell.axml" />
+    <AndroidResource Include="Resources\drawable-mdpi\cal_icn_pin.png" />
+    <AndroidResource Include="Resources\drawable\cal_icn_pin.png" />
   </ItemGroup>
 </Project>
