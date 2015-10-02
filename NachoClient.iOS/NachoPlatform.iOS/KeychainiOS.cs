@@ -195,7 +195,7 @@ namespace NachoPlatform
                     if (errorIfMissing || SecStatusCode.ItemNotFound != res) {
                         Log.Error (Log.LOG_SYS, "Getter: Error: {0} query={{{1}}} iter={2}", res, DumpQuery (query), i);
                     }
-                    if (errorIfMissing == false) {
+                    if (!errorIfMissing) {
                         break;
                     }
                 }
@@ -220,7 +220,7 @@ namespace NachoPlatform
             // If we need this, we'll want to write a more restrictive dumper. This one
             // dumps EVERYTHING.
             NcAssert.True (query.KeyClass == SecKeyClass.Invalid || query.KeyClass == SecKeyClass.Public);
-            string str = query.ToString () + " ";
+            string str = string.Format ("{0} ", query);
             var qDict = query.ToDictionary ();
             foreach (var x in qDict) {
                 str += string.Format ("{0}={1} ", x.Key, x.Value);
