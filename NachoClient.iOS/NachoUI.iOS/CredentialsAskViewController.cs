@@ -39,7 +39,8 @@ namespace NachoClient.iOS
             LayoutView ();
             ConfigureView ();
 
-            certificateView = new CertificateView (View.Frame, this);
+            certificateView = new CertificateView (View.Bounds, this);
+            certificateView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             View.Add (certificateView);
         }
 
