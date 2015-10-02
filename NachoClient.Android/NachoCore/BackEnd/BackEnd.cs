@@ -765,8 +765,16 @@ namespace NachoCore
             });
         }
 
+        /// <summary>
+        /// Backs the end states. Returns null if there are no services at all.
+        /// </summary>
+        /// <returns>The list of all backend states.</returns>
+        /// <param name="accountId">Account identifier.</param>
         public List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> BackEndStates (int accountId)
         {
+            if (!AccountHasServices (accountId)) {
+                return null;
+            }
             var states = new List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> ();
             ApplyAcrossServices (accountId, "BackEndStates", (service) => {
                 states.Add (new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (service.BackEndState, service.Capabilities));
