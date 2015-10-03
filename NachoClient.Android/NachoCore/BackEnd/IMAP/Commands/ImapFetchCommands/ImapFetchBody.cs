@@ -67,6 +67,10 @@ namespace NachoCore.IMAP
                 if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
                     Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure");
                 } else {
+//                    var debugStr = new MemoryStream ();
+//                    DumpToStream (debugStr, imapBody);
+//                    debugStr.Flush ();
+//                    Log.Info (Log.LOG_IMAP, "Imap Body: {0}", Encoding.ASCII.GetString (debugStr.GetBuffer ()));
                     bodyType = BodyTypeFromBodyPart (imapBody);
                 }
             }
@@ -114,7 +118,6 @@ namespace NachoCore.IMAP
             List<DownloadPart> Parts;
             if (CanDownloadAll (imapBody, out Parts)) {
                 result = DownloadEntireMessage (ref body, mailKitFolder, uid, imapBody);
-                result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, Parts, imapBody.ContentType.Boundary);
             } else {
                 result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, Parts, imapBody.ContentType.Boundary);
             }
@@ -181,16 +184,20 @@ namespace NachoCore.IMAP
             uint attachCount = CountAttachments (body, ref attachSize);
             bool downloadAll = false;
             uint partCount = CountDownloadableParts (body, Parts);
-            if (attachCount == 0 || partCount == 1) {
-                // no attachments and few parts. Just download it all.
+            if (attachCount == 0) {
+                // no attachments Just download it all.
                 downloadAll = true;
             } else if (attachSize < DownloadAttachTotalSizeWithCommStatus ()) {
+                // total attachment size is within acceptable range. Download all.
+                downloadAll = true;
+            } else if (partCount == 1 && attachCount == 0) {
+                // There's only one part (the main one). Download it whole.
                 downloadAll = true;
             }
 
-            if (partCount == 1 ||
-                (!downloadAll && partCount > MaxPartsWithCommStatus ())) {
+            if (!downloadAll && partCount > MaxPartsWithCommStatus ()) {
                 // there's too many individual parts. Don't download them separately.
+                // TODO Should probably also check the size.
                 downloadAll = true;
             }
             return downloadAll;
@@ -206,46 +213,91 @@ namespace NachoCore.IMAP
         class DownloadPart
         {
             int AccountId;
-            string PartSpecifier;
-            string MimeType;
+            public string PartSpecifier { get; protected set; }
+            public string MimeType { get; protected set; }
+            public List<DownloadPart> Parts { get; set; }
+            public string Boundary { get; protected set; }
 
-            public int Length;
-            public int Offset;
-            public bool DownloadAll;
+            public bool HeadersOnly { get; protected set; }
+            public int Length { get; protected set; }
+            public int Offset { get; protected set; }
+            public bool DownloadAll {
+                get {
+                    return (Offset == 0 && Length == -1);
+                }
+                set {
+                    HeadersOnly = false;
+                    Offset = 0;
+                    Length = -1;
+                }
+            }
             public ITransferProgress ProgressOwner;
 
-            public DownloadPart (int accountId, BodyPart part, ITransferProgress Owner = null)
+            public DownloadPart (int accountId, BodyPart part, bool headersOnly, ITransferProgress Owner = null)
             {
                 PartSpecifier = part.PartSpecifier;
+                HeadersOnly = headersOnly;
                 MimeType = part.ContentType.MimeType;
+                Boundary = part.ContentType.Boundary;
+
                 if (string.IsNullOrEmpty (PartSpecifier)) {
                     throw new ImapFetchDnldInvalidPartException ("PartSpecifier can not be empty");
                 }
-                DownloadAll = true;
                 ProgressOwner = Owner;
                 AccountId = accountId;
+                DownloadAll = true;
+            }
+
+            public override string ToString ()
+            {
+                string me = string.Format ("{0} {1}:{2}", this.GetType ().Name, PartSpecifier, MimeType);
+                if (!string.IsNullOrEmpty (Boundary)) {
+                    me += string.Format (" Boundary={0}", Boundary);
+                }
+                if (null != Parts) {
+                    me += string.Format (" SubParts={0}", Parts.Count);
+                }
+                if (!DownloadAll) {
+                    me += string.Format (" <{0}..{1}", Offset, Length);
+                }
+                return me;
+            }
+
+            public void Truncate ()
+            {
+                HeadersOnly = true;
+                Length = 0;
+                Offset = 0;
+            }
+
+            public void Subset (int offset, int length)
+            {
+                NcAssert.True (length >= 0 && offset >= 0);
+                if (offset == 0 && length == 0) {
+                    Truncate ();
+                }
+                HeadersOnly = false;
+                Offset = offset;
+                Length = length;
             }
 
             public void Download (NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
             {
                 DownloadMimeHeaders (mailKitFolder, uid, stream, Token);
-                DownloadPartData (mailKitFolder, uid, stream, Token);
+                if (!HeadersOnly) {
+                    DownloadPartData (mailKitFolder, uid, stream, Token);
+                }
             }
 
             public void DownloadMimeHeaders (NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
             {
-                string partSpec;
-                if (PartSpecifier.Length > 0) {
-                    partSpec = PartSpecifier + ".MIME";
-                } else {
-                    partSpec = "HEADER";
-                }
                 var tmp = NcModel.Instance.TmpPath (AccountId);
                 try {
                     mailKitFolder.SetStreamContext (uid, tmp);
                     NcCapture.AddKind (KImapFetchPartCommandFetch);
                     using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
-                        using (Stream st = mailKitFolder.GetStream (uid, partSpec, Token, ProgressOwner)) {
+                        Log.Info (Log.LOG_IMAP, "Fetching HEADERS {0}", this.ToString ());
+                        using (Stream st = mailKitFolder.GetStream (uid, PartSpecifier + ".MIME", Token, ProgressOwner)) {
                             st.CopyTo (stream);
                         }
                     }
@@ -257,29 +309,19 @@ namespace NachoCore.IMAP
 
             public void DownloadPartData (NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
             {
-                string partSpec;
-                if (PartSpecifier.Length > 0) {
-                    partSpec = PartSpecifier;
-                } else {
-                    partSpec = "TEXT";
-                }
-
                 var tmp = NcModel.Instance.TmpPath (AccountId);
                 try {
                     mailKitFolder.SetStreamContext (uid, tmp);
                     NcCapture.AddKind (KImapFetchPartCommandFetch);
                     using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
                         if (DownloadAll) {
-                            using (Stream st = mailKitFolder.GetStream (uid, partSpec, Token, ProgressOwner)) {
-                                st.CopyTo (stream);
-                            }
-                        } else if (Length > Offset) {
-                            using (Stream st = mailKitFolder.GetStream (uid, partSpec, Offset, Length, Token, ProgressOwner)) {
+                            Log.Info (Log.LOG_IMAP, "Fetching Entire Part {0}", this.ToString ());
+                            using (Stream st = mailKitFolder.GetStream (uid, PartSpecifier, Token, ProgressOwner)) {
                                 st.CopyTo (stream);
                             }
                         } else {
-                            //FIXME Write out the mime header. Can we do this with with offset 0 and length 0?
-                            using (Stream st = mailKitFolder.GetStream (uid, partSpec, 0, 0, Token, ProgressOwner)) {
+                            Log.Info (Log.LOG_IMAP, "Fetching Part {0}", this.ToString ());
+                            using (Stream st = mailKitFolder.GetStream (uid, PartSpecifier, Offset, Length, Token, ProgressOwner)) {
                                 st.CopyTo (stream);
                             }
                         }
@@ -294,53 +336,64 @@ namespace NachoCore.IMAP
         private uint CountDownloadableParts (BodyPart body, List<DownloadPart> Parts, uint depth = 0)
         {
             if (depth > 10) {
-                Log.Error (Log.LOG_IMAP, "Recursion excceeds max of 10");
-                return 0;
+                throw new Exception ("CountDownloadableParts: Recursion excceeds max of 10");
             }
             uint count = 0;
             var multi = body as BodyPartMultipart;
             if (null != multi) {
-                if (multi.ContentType.Matches ("multipart", "related")) {
-                    Parts.Add (new DownloadPart (AccountId, multi, this));
-                    return 1;
+                DownloadPart d = null;
+                if (!string.IsNullOrEmpty (multi.PartSpecifier)) {
+                    d = new DownloadPart (AccountId, multi, true, this);
+                }
+                var newParts = new List<DownloadPart> ();
+                foreach (var part in multi.BodyParts) {
+                    count += CountDownloadableParts (part, newParts, depth + 1);
+                }
+                if (null != d) {
+                    d.Parts = newParts;
+                    Parts.Add (d);
                 } else {
-                    foreach (var part in multi.BodyParts) {
-                        count += CountDownloadableParts (part, Parts, depth + 1);
-                    }
+                    Parts.AddRange (newParts);
                 }
                 return count;
             }
             var basic = body as BodyPartBasic;
             if (null != basic) {
                 if (!string.IsNullOrEmpty (basic.PartSpecifier)) {
-                    DownloadPart d = new DownloadPart (AccountId, basic, this);
+                    DownloadPart d = new DownloadPart (AccountId, basic, false, this);
                     bool isAttachment = basic.IsAttachment;
-                    if (isAttachment && basic.ContentType.Matches ("text", "*")) {
-                        var regex = new Regex (@"^ATT\d{5,}\.(txt|html?)$");
-                        if (regex.IsMatch (basic.ContentDisposition.FileName)) {
-                            isAttachment = false;
-                        }
+                    if (isAttachment && isExchangeATTAttachment(basic)) {
+                        isAttachment = false;
                     }
                     if (isAttachment && basic.Octets > DownloadAttachSizeWithCommStatus ()) {
-                        d.Length = 0; // truncate it
-                        d.DownloadAll = false;
-                        // FIXME Do we need to adjust the Mime headers after download to reflect the truncated size?
-                        // I.e. will MimeKit Choke on this truncated part?
+                        d.Truncate ();
                     }
                     Parts.Add (d);
                 }
             } else {
                 Log.Error (Log.LOG_IMAP, "Unhandled BodyPart {0}. Downloading it whole.", body.GetType ().Name);
-                Parts.Add (new DownloadPart (AccountId, body, this));
+                if (!string.IsNullOrEmpty (multi.PartSpecifier)) {
+                    Parts.Add (new DownloadPart (AccountId, body, false, this));
+                }
             }
             return 1;
+        }
+
+        private static bool isExchangeATTAttachment (BodyPartBasic basic)
+        {
+            if (basic.IsAttachment && basic.ContentType.Matches ("text", "*")) {
+                var regex = new Regex (@"^ATT\d{5,}\.(txt|html?)$");
+                if (regex.IsMatch (basic.ContentDisposition.FileName)) {
+                    return true;
+                }
+            }
+            return false ;      
         }
 
         private uint CountAttachments (BodyPart body, ref uint Size, uint depth = 0)
         {
             if (depth > 10) {
-                Log.Error (Log.LOG_IMAP, "Recursion excceeds max of 10");
-                return 0;
+                throw new Exception ("CountAttachments: Recursion excceeds max of 10");
             }
             uint count = 0;
             var multi = body as BodyPartMultipart;
@@ -361,6 +414,27 @@ namespace NachoCore.IMAP
             return 0;
         }
 
+        private void DumpToStream (Stream stream, BodyPart body, int depth = 0)
+        {
+            if (depth > 10) {
+                throw new Exception ("DumpToStream: Recursion excceeds max of 10");
+            }
+            var multi = body as BodyPartMultipart;
+            if (null != multi) {
+                WriteString (stream, string.Format ("{0}{1}:{2}\n", String.Concat(Enumerable.Repeat("  ", depth)),
+                    multi.PartSpecifier.Length > 0 ? multi.PartSpecifier : "MAINBODY", multi.ContentType.MimeType));
+                foreach (var part in multi.BodyParts) {
+                    DumpToStream (stream, part, depth + 1);
+                }
+            }
+
+            var basic = body as BodyPartBasic;
+            if (null != basic) {
+                WriteString (stream, string.Format ("{0}{1}:{2}\n", String.Concat(Enumerable.Repeat("  ", depth)), basic.PartSpecifier, basic.ContentType.MimeType));
+            }
+            return;
+        }
+
         private NcResult DownloadEntireMessage (ref McBody body, NcImapFolder mailKitFolder, UniqueId uid, BodyPart imapBody)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
@@ -369,6 +443,7 @@ namespace NachoCore.IMAP
                 NcCapture.AddKind (KImapFetchBodyCommandFetch);
                 long bytes;
                 using (var cap = NcCapture.CreateAndStart (KImapFetchBodyCommandFetch)) {
+                    Log.Info (Log.LOG_IMAP, "Fetching part {0}:{1}", imapBody.PartSpecifier, imapBody.ContentType.MimeType);
                     using (Stream st = mailKitFolder.GetStream (uid, imapBody.PartSpecifier, Cts.Token, this)) {
                         bytes = st.Length;
                         var path = body.GetFilePath ();
@@ -421,86 +496,22 @@ namespace NachoCore.IMAP
             return NcResult.OK ();
         }
 
-        private void AllPartSpecifiers (BodyPart part, List<string> Parts, int level = 0)
+        private void WriteBoundary (Stream stream, string boundary, bool final)
         {
-            if (level > 10) {
-                Log.Error (Log.LOG_IMAP, "walkBodyParts: recursion too deep");
-                return;
-            }
-            var multipart = part as BodyPartMultipart;
-            if (null != multipart) {
-                if (multipart.ContentType.Matches ("multipart", "related")) {
-                    Parts.Add (multipart.PartSpecifier);
-                } else {
-                    AllPartSpecifiers (multipart, Parts, level + 1);
-                }
-                return;
-            }
-
-            var basic = part as BodyPartBasic;
-            if (null != basic) {
-                Parts.Add (basic.PartSpecifier);
-
-            } else {
-                Log.Error (Log.LOG_IMAP, "Unhandled part {0}:{1}", part.GetType ().Name);
-                Parts.Add (basic.PartSpecifier);
-            }
+            WriteString (stream, string.Format ("--{0}{1}\n", boundary, final ? "--" : "")); 
         }
-
-        /*
-         *             var multipart = part as BodyPartMultipart;
-            if (null != multipart) {
-                if (multipart.ContentType.Matches ("multipart", "related")) {
-                    // download the whole thing.
-                    if (!string.IsNullOrEmpty (multipart.PartSpecifier)) {
-                        Parts.Add (multipart.PartSpecifier);
-                    }
-                    s += " <DOWNLOAD ALL>";
-                } else {
-                    s += " <WRITE PART HEADER>";
-                }
-                // dig deeper
-                foreach (var x in multipart.BodyParts) {
-                    WriteString (stream, "\n");
-                    if (!walkBodyParts (x, stream, level + 1)) {
-                        return false;
-                    }
-                }
-                WriteString (stream, s);
-                return true;
-            }
-
-            var basic = part as BodyPartBasic;
-            if (null != basic) {
-                if (isAttachment && basic.ContentDisposition.Size <= 4096) {
-                }
-                if (isAttachment) {
-                    // skip this, but write the headers
-                    s += " <SKIP ME>";
-                } else {
-                    s += " <DOWNLOAD ME>";
-                }
-                WriteString (stream, s);
-                return true;
-            }
-
-            WriteString (stream, " <UNHANDLED CASE>");
-            return true;
-        }
-
-*/
         private NcResult DownloadIndividualParts (McEmailMessage email, ref McBody body, NcImapFolder mailKitFolder, UniqueId uid, List<DownloadPart> Parts, string boundary)
         {
+            NcAssert.True (null != Parts && Parts.Any ());
             var tmp = NcModel.Instance.TmpPath (AccountId);
             try {
                 using (FileStream stream = new FileStream (tmp, FileMode.CreateNew)) {
                     WriteString (stream, email.Headers);
-                    WriteString (stream, "\n");
                     foreach (var part in Parts) {
-                        WriteString (stream, boundary+"\n"); 
-                        part.Download (mailKitFolder, uid, stream, Cts.Token);
+                        WriteBoundary (stream, boundary, false);
+                        DownloadIndividualPart(stream, mailKitFolder, uid, part);
                     }
-                    WriteString (stream, string.Format ("--{0}\n", boundary)); 
+                    WriteBoundary (stream, boundary, true);
                 }
                 body.UpdateFileMove (tmp);
                 tmp = null;
@@ -522,6 +533,21 @@ namespace NachoCore.IMAP
                 }
             }
             return NcResult.OK ();
+        }
+
+        private void DownloadIndividualPart (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, DownloadPart Part, int depth = 0)
+        {
+            if (depth > 10) {
+                throw new Exception ("DownloadIndividualPart: Recursion excceeds max of 10");
+            }
+            Part.Download (mailKitFolder, uid, stream, Cts.Token);
+            if (null != Part.Parts) {
+                foreach (var part in Part.Parts) {
+                    WriteBoundary (stream, Part.Boundary, false);
+                    DownloadIndividualPart (stream, mailKitFolder, uid, part, depth + 1);
+                }
+                WriteBoundary (stream, Part.Boundary, true);
+            }
         }
 
 
@@ -562,6 +588,7 @@ namespace NachoCore.IMAP
         {
             byte[] x = Encoding.ASCII.GetBytes (s);
             stream.Write (x, 0, x.Length);
+            stream.Flush ();
         }
 
         /// <summary>
