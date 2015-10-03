@@ -28,7 +28,7 @@ namespace NachoCore.IMAP
         {
             NcResult result = null;
             foreach (var body in fetchkit.FetchBodies) {
-                var fetchResult = FetchOneBody (body.ServerId, body.ParentId);
+                var fetchResult = FetchOneBody (body);
                 if (fetchResult.isError ()) {
                     Log.Error (Log.LOG_IMAP, "FetchBodies: {0}", fetchResult);
                     // TODO perhaps we should accumulate all errors into one, instead of
@@ -45,46 +45,33 @@ namespace NachoCore.IMAP
 
         private NcResult FetchOneBody (McPending pending)
         {
-            return FetchOneBody (pending.ServerId, pending.ParentId);
+            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, pending.ServerId);
+            if (null == email) {
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", pending.ServerId);
+                return NcResult.Error ("Unknown email ServerId");
+            }
+            var fetchBody = ImapStrategy.FetchBodyFromEmail (email);
+            return FetchOneBody (fetchBody);
         }
 
-        private NcResult FetchOneBody (string ServerId, string ParentId)
+        private NcResult FetchOneBody (FetchKit.FetchBody fetchBody)
         {
-            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, ServerId);
+            NcResult result;
+            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, fetchBody.ServerId);
             if (null == email) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", ServerId);
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", fetchBody.ServerId);
                 return NcResult.Error ("Unknown email ServerId");
             }
             Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
-            McFolder folder = McFolder.QueryByServerId (AccountId, ParentId);
+            McFolder folder = McFolder.QueryByServerId (AccountId, fetchBody.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
-
-            BodyPart imapBody = null;
-            HeaderList headers;
-            McAbstrFileDesc.BodyTypeEnum bodyType = McAbstrFileDesc.BodyTypeEnum.None;
-            if (!string.IsNullOrEmpty (email.ImapBodyStructure)) {
-                if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
-                    Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure");
-                } else {
-//                    var debugStr = new MemoryStream ();
-//                    DumpToStream (debugStr, imapBody);
-//                    debugStr.Flush ();
-//                    Log.Info (Log.LOG_IMAP, "Imap Body: {0}", Encoding.ASCII.GetString (debugStr.GetBuffer ()));
-                    bodyType = BodyTypeFromBodyPart (imapBody);
-                }
-            }
-            if (bodyType == McAbstrFileDesc.BodyTypeEnum.None &&
-                !string.IsNullOrEmpty (email.Headers)) {
-                headers = ParseHeaders (email.Headers);
-                if (null != headers && headers.Any ()) {
-                    bodyType = BodyTypeFromHeaders (headers);
-                }
-            }
-
-            NcResult result;
             var uid = new UniqueId (email.ImapUid);
-            if (null == imapBody || McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
+
+            BodyPart imapBody;
+            McAbstrFileDesc.BodyTypeEnum bodyType = ImapStrategy.BodyTypeFromEmail(email, out imapBody, Cts.Token);
+            if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
+                // couldn't determine it from the email message. See if we can get it from the server
                 result = messageBodyPart (uid, mailKitFolder, out bodyType);
                 if (!result.isOK ()) {
                     return result;
@@ -115,11 +102,10 @@ namespace NachoCore.IMAP
                 }
             }
 
-            List<DownloadPart> Parts;
-            if (CanDownloadAll (imapBody, out Parts)) {
+            if (null == fetchBody.Parts) {
                 result = DownloadEntireMessage (ref body, mailKitFolder, uid, imapBody);
             } else {
-                result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, Parts, imapBody.ContentType.Boundary);
+                result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, fetchBody.Parts, imapBody.ContentType.Boundary);
             }
             if (!result.isOK ()) {
                 // The message doesn't exist. Delete it locally.
@@ -160,258 +146,6 @@ namespace NachoCore.IMAP
             BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);
             MimeHelpers.PossiblyExtractAttachmentsFromBody (body, email);
             return result;
-        }
-
-        private uint DownloadAttachTotalSizeWithCommStatus ()
-        {
-            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 50 * 1024 : 100 * 1024);
-        }
-
-        private uint DownloadAttachSizeWithCommStatus ()
-        {
-            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 1 * 1024 : 5 * 1024);
-        }
-
-        private uint MaxPartsWithCommStatus ()
-        {
-            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 10 : 50);
-        }
-
-        private bool CanDownloadAll (BodyPart body, out List<DownloadPart> Parts)
-        {
-            Parts = new List<DownloadPart> ();
-            uint attachSize = 0;
-            uint attachCount = CountAttachments (body, ref attachSize);
-            bool downloadAll = false;
-            uint partCount = CountDownloadableParts (body, Parts);
-            if (attachCount == 0) {
-                // no attachments Just download it all.
-                downloadAll = true;
-            } else if (attachSize < DownloadAttachTotalSizeWithCommStatus ()) {
-                // total attachment size is within acceptable range. Download all.
-                downloadAll = true;
-            } else if (partCount == 1 && attachCount == 0) {
-                // There's only one part (the main one). Download it whole.
-                downloadAll = true;
-            }
-
-            if (!downloadAll && partCount > MaxPartsWithCommStatus ()) {
-                // there's too many individual parts. Don't download them separately.
-                // TODO Should probably also check the size.
-                downloadAll = true;
-            }
-            return downloadAll;
-        }
-
-        class ImapFetchDnldInvalidPartException: Exception
-        {
-            public ImapFetchDnldInvalidPartException (string message) : base (message)
-            {
-                
-            }
-        }
-        class DownloadPart
-        {
-            int AccountId;
-            public string PartSpecifier { get; protected set; }
-            public string MimeType { get; protected set; }
-            public List<DownloadPart> Parts { get; set; }
-            public string Boundary { get; protected set; }
-
-            public bool HeadersOnly { get; protected set; }
-            public int Length { get; protected set; }
-            public int Offset { get; protected set; }
-            public bool DownloadAll {
-                get {
-                    return (Offset == 0 && Length == -1);
-                }
-                set {
-                    HeadersOnly = false;
-                    Offset = 0;
-                    Length = -1;
-                }
-            }
-            public ITransferProgress ProgressOwner;
-
-            public DownloadPart (int accountId, BodyPart part, bool headersOnly, ITransferProgress Owner = null)
-            {
-                PartSpecifier = part.PartSpecifier;
-                HeadersOnly = headersOnly;
-                MimeType = part.ContentType.MimeType;
-                Boundary = part.ContentType.Boundary;
-
-                if (string.IsNullOrEmpty (PartSpecifier)) {
-                    throw new ImapFetchDnldInvalidPartException ("PartSpecifier can not be empty");
-                }
-                ProgressOwner = Owner;
-                AccountId = accountId;
-                DownloadAll = true;
-            }
-
-            public override string ToString ()
-            {
-                string me = string.Format ("{0} {1}:{2}", this.GetType ().Name, PartSpecifier, MimeType);
-                if (!string.IsNullOrEmpty (Boundary)) {
-                    me += string.Format (" Boundary={0}", Boundary);
-                }
-                if (null != Parts) {
-                    me += string.Format (" SubParts={0}", Parts.Count);
-                }
-                if (!DownloadAll) {
-                    me += string.Format (" <{0}..{1}", Offset, Length);
-                }
-                return me;
-            }
-
-            public void Truncate ()
-            {
-                HeadersOnly = true;
-                Length = 0;
-                Offset = 0;
-            }
-
-            public void Subset (int offset, int length)
-            {
-                NcAssert.True (length >= 0 && offset >= 0);
-                if (offset == 0 && length == 0) {
-                    Truncate ();
-                }
-                HeadersOnly = false;
-                Offset = offset;
-                Length = length;
-            }
-
-            public void Download (NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
-            {
-                DownloadMimeHeaders (mailKitFolder, uid, stream, Token);
-                if (!HeadersOnly) {
-                    DownloadPartData (mailKitFolder, uid, stream, Token);
-                }
-            }
-
-            public void DownloadMimeHeaders (NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
-            {
-                var tmp = NcModel.Instance.TmpPath (AccountId);
-                try {
-                    mailKitFolder.SetStreamContext (uid, tmp);
-                    NcCapture.AddKind (KImapFetchPartCommandFetch);
-                    using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
-                        Log.Info (Log.LOG_IMAP, "Fetching HEADERS {0}", this.ToString ());
-                        using (Stream st = mailKitFolder.GetStream (uid, PartSpecifier + ".MIME", Token, ProgressOwner)) {
-                            st.CopyTo (stream);
-                        }
-                    }
-                } finally {
-                    mailKitFolder.UnsetStreamContext ();
-                    File.Delete (tmp);
-                }
-            }
-
-            public void DownloadPartData (NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
-            {
-                var tmp = NcModel.Instance.TmpPath (AccountId);
-                try {
-                    mailKitFolder.SetStreamContext (uid, tmp);
-                    NcCapture.AddKind (KImapFetchPartCommandFetch);
-                    using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
-                        if (DownloadAll) {
-                            Log.Info (Log.LOG_IMAP, "Fetching Entire Part {0}", this.ToString ());
-                            using (Stream st = mailKitFolder.GetStream (uid, PartSpecifier, Token, ProgressOwner)) {
-                                st.CopyTo (stream);
-                            }
-                        } else {
-                            Log.Info (Log.LOG_IMAP, "Fetching Part {0}", this.ToString ());
-                            using (Stream st = mailKitFolder.GetStream (uid, PartSpecifier, Offset, Length, Token, ProgressOwner)) {
-                                st.CopyTo (stream);
-                            }
-                        }
-                    }
-                } finally {
-                    mailKitFolder.UnsetStreamContext ();
-                    File.Delete (tmp);
-                }
-            }
-        }
-
-        private uint CountDownloadableParts (BodyPart body, List<DownloadPart> Parts, uint depth = 0)
-        {
-            if (depth > 10) {
-                throw new Exception ("CountDownloadableParts: Recursion excceeds max of 10");
-            }
-            uint count = 0;
-            var multi = body as BodyPartMultipart;
-            if (null != multi) {
-                DownloadPart d = null;
-                if (!string.IsNullOrEmpty (multi.PartSpecifier)) {
-                    d = new DownloadPart (AccountId, multi, true, this);
-                }
-                var newParts = new List<DownloadPart> ();
-                foreach (var part in multi.BodyParts) {
-                    count += CountDownloadableParts (part, newParts, depth + 1);
-                }
-                if (null != d) {
-                    d.Parts = newParts;
-                    Parts.Add (d);
-                } else {
-                    Parts.AddRange (newParts);
-                }
-                return count;
-            }
-            var basic = body as BodyPartBasic;
-            if (null != basic) {
-                if (!string.IsNullOrEmpty (basic.PartSpecifier)) {
-                    DownloadPart d = new DownloadPart (AccountId, basic, false, this);
-                    bool isAttachment = basic.IsAttachment;
-                    if (isAttachment && isExchangeATTAttachment(basic)) {
-                        isAttachment = false;
-                    }
-                    if (isAttachment && basic.Octets > DownloadAttachSizeWithCommStatus ()) {
-                        d.Truncate ();
-                    }
-                    Parts.Add (d);
-                }
-            } else {
-                Log.Error (Log.LOG_IMAP, "Unhandled BodyPart {0}. Downloading it whole.", body.GetType ().Name);
-                if (!string.IsNullOrEmpty (multi.PartSpecifier)) {
-                    Parts.Add (new DownloadPart (AccountId, body, false, this));
-                }
-            }
-            return 1;
-        }
-
-        private static bool isExchangeATTAttachment (BodyPartBasic basic)
-        {
-            if (basic.IsAttachment && basic.ContentType.Matches ("text", "*")) {
-                var regex = new Regex (@"^ATT\d{5,}\.(txt|html?)$");
-                if (regex.IsMatch (basic.ContentDisposition.FileName)) {
-                    return true;
-                }
-            }
-            return false ;      
-        }
-
-        private uint CountAttachments (BodyPart body, ref uint Size, uint depth = 0)
-        {
-            if (depth > 10) {
-                throw new Exception ("CountAttachments: Recursion excceeds max of 10");
-            }
-            uint count = 0;
-            var multi = body as BodyPartMultipart;
-            if (null != multi) {
-                foreach (var part in multi.BodyParts) {
-                    count += CountAttachments (part, ref Size, depth + 1);
-                }
-                return count;
-            }
-
-            var basic = body as BodyPartBasic;
-            if (null != basic) {
-                if (basic.IsAttachment) {
-                    Size += basic.Octets;
-                    return 1;
-                }
-            }
-            return 0;
         }
 
         private void DumpToStream (Stream stream, BodyPart body, int depth = 0)
@@ -496,11 +230,55 @@ namespace NachoCore.IMAP
             return NcResult.OK ();
         }
 
+        protected void DownloadMimeHeaders (FetchKit.DownloadPart dp, NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
+        {
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            try {
+                mailKitFolder.SetStreamContext (uid, tmp);
+                NcCapture.AddKind (KImapFetchPartCommandFetch);
+                using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
+                    Log.Info (Log.LOG_IMAP, "Fetching HEADERS {0}", this.ToString ());
+                    using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier + ".MIME", Token, this)) {
+                        st.CopyTo (stream);
+                    }
+                }
+            } finally {
+                mailKitFolder.UnsetStreamContext ();
+                File.Delete (tmp);
+            }
+        }
+
+        protected void DownloadPartData (FetchKit.DownloadPart dp, NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
+        {
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            try {
+                mailKitFolder.SetStreamContext (uid, tmp);
+                NcCapture.AddKind (KImapFetchPartCommandFetch);
+                using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
+                    if (dp.DownloadAll) {
+                        Log.Info (Log.LOG_IMAP, "Fetching Entire Part {0}", this.ToString ());
+                        using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, Token, this)) {
+                            st.CopyTo (stream);
+                        }
+                    } else {
+                        Log.Info (Log.LOG_IMAP, "Fetching Part {0}", this.ToString ());
+                        using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, dp.Offset, dp.Length, Token, this)) {
+                            st.CopyTo (stream);
+                        }
+                    }
+                }
+            } finally {
+                mailKitFolder.UnsetStreamContext ();
+                File.Delete (tmp);
+            }
+        }
+
+
         private void WriteBoundary (Stream stream, string boundary, bool final)
         {
             WriteString (stream, string.Format ("--{0}{1}\n", boundary, final ? "--" : "")); 
         }
-        private NcResult DownloadIndividualParts (McEmailMessage email, ref McBody body, NcImapFolder mailKitFolder, UniqueId uid, List<DownloadPart> Parts, string boundary)
+        private NcResult DownloadIndividualParts (McEmailMessage email, ref McBody body, NcImapFolder mailKitFolder, UniqueId uid, List<FetchKit.DownloadPart> Parts, string boundary)
         {
             NcAssert.True (null != Parts && Parts.Any ());
             var tmp = NcModel.Instance.TmpPath (AccountId);
@@ -535,18 +313,21 @@ namespace NachoCore.IMAP
             return NcResult.OK ();
         }
 
-        private void DownloadIndividualPart (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, DownloadPart Part, int depth = 0)
+        private void DownloadIndividualPart (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp, int depth = 0)
         {
             if (depth > 10) {
                 throw new Exception ("DownloadIndividualPart: Recursion excceeds max of 10");
             }
-            Part.Download (mailKitFolder, uid, stream, Cts.Token);
-            if (null != Part.Parts) {
-                foreach (var part in Part.Parts) {
-                    WriteBoundary (stream, Part.Boundary, false);
+            DownloadMimeHeaders (dp, mailKitFolder, uid, stream, Cts.Token);
+            if (!dp.HeadersOnly) {
+                DownloadPartData (dp, mailKitFolder, uid, stream, Cts.Token);
+            }
+            if (null != dp.Parts) {
+                foreach (var part in dp.Parts) {
+                    WriteBoundary (stream, dp.Boundary, false);
                     DownloadIndividualPart (stream, mailKitFolder, uid, part, depth + 1);
                 }
-                WriteBoundary (stream, Part.Boundary, true);
+                WriteBoundary (stream, dp.Boundary, true);
             }
         }
 
@@ -648,13 +429,6 @@ namespace NachoCore.IMAP
             return result;
         }
 
-        private HeaderList ParseHeaders (string headers)
-        {
-            var stream = new MemoryStream (Encoding.ASCII.GetBytes (headers));
-            var parser = new MimeParser (ParserOptions.Default, stream);
-            return parser.ParseHeaders (Cts.Token);
-        }
-
         /// <summary>
         /// Given an IMAP summary, figure out the ContentType, and return the 
         /// McAbstrFileDesc.BodyTypeEnum that corresponds to it.
@@ -673,9 +447,9 @@ namespace NachoCore.IMAP
                 return NcResult.Error (string.Format ("No headers nor body."));
             }
 
-            McAbstrFileDesc.BodyTypeEnum bodyType = BodyTypeFromBodyPart (summary.Body);
+            McAbstrFileDesc.BodyTypeEnum bodyType = ImapStrategy.BodyTypeFromBodyPart (summary.Body);
             if (bodyType == McAbstrFileDesc.BodyTypeEnum.None) {
-                bodyType = BodyTypeFromHeaders (summary.Headers);
+                bodyType = ImapStrategy.BodyTypeFromHeaders (summary.Headers);
             }
 
             if (bodyType == McAbstrFileDesc.BodyTypeEnum.None) {
@@ -685,46 +459,6 @@ namespace NachoCore.IMAP
             NcResult result = NcResult.OK ();
             result.Value = bodyType;
             return result;
-        }
-
-        public static McAbstrFileDesc.BodyTypeEnum BodyTypeFromHeaders (HeaderList headers)
-        {
-            McAbstrFileDesc.BodyTypeEnum bodyType = McAbstrFileDesc.BodyTypeEnum.None;
-            if (null == headers) {
-                Log.Warn (Log.LOG_IMAP, "No headers.");
-            } else {
-                if (headers.Contains (HeaderId.MimeVersion)) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                }
-            }
-            return bodyType;
-        }
-
-        public static McAbstrFileDesc.BodyTypeEnum BodyTypeFromBodyPart (BodyPart body)
-        {
-            McAbstrFileDesc.BodyTypeEnum bodyType = McAbstrFileDesc.BodyTypeEnum.None;
-            if (null != body && null == body.ContentType) {
-                Log.Warn (Log.LOG_IMAP, "No ContentType found in body.");
-            }
-
-            if (null != body && null != body.ContentType) {
-                // If we have a body and a content type, get the body type from that.
-                if (body.ContentType.Matches ("multipart", "*")) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                } else if (body.ContentType.Matches ("text", "*")) {
-                    if (body.ContentType.Matches ("text", "html")) {
-                        bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                    } else if (body.ContentType.Matches ("text", "plain")) {
-                        bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                    } else {
-                        Log.Warn (Log.LOG_IMAP, "Unhandled text subtype {0}", body.ContentType.MediaSubtype);
-                    }
-                } else {
-                    Log.Warn (Log.LOG_IMAP, "Unhandled contenttype {0}:{1}", body.ContentType.MediaType, body.ContentType.MediaSubtype);
-                }
-            } 
-
-            return bodyType;
         }
 
         /// <summary>

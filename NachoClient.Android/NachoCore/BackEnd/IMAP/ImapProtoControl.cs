@@ -682,7 +682,12 @@ namespace NachoCore.IMAP
                 MaxConcurrentExtraRequests > ConcurrentExtraRequests) {
                 NcImapClient Client = new NcImapClient ();  // Presumably this will get cleaned up by GC?
                 Interlocked.Increment (ref ConcurrentExtraRequests);
-                var pack = Strategy.PickUserDemand (Client);
+                Tuple<PickActionEnum, ImapCommand> pack;
+                try {
+                    pack = Strategy.PickUserDemand (Client, Cts.Token);
+                } catch (OperationCanceledException) {
+                    pack = null;
+                }
                 if (null == pack) {
                     // If strategy could not find something to do, we won't be using the side channel.
                     Interlocked.Decrement (ref ConcurrentExtraRequests);
@@ -772,8 +777,12 @@ namespace NachoCore.IMAP
             Sm.ClearEventQueue ();
             Tuple<PickActionEnum, ImapCommand> pack;
             using (var cap = NcCapture.CreateAndStart (KImapStrategyPick)) {
-                pack = Strategy.Pick (MainClient);
-                cap.Stop ();
+                try {
+                    pack = Strategy.Pick (MainClient, Cts.Token);
+                } catch (OperationCanceledException) {
+                    DoPark ();
+                    return Lst.Parked;
+                }
             }
             var transition = pack.Item1;
             var cmd = pack.Item2;

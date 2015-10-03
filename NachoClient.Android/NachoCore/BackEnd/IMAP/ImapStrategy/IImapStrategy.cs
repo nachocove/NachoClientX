@@ -145,18 +145,87 @@ namespace NachoCore.IMAP
         {
             public string ParentId { get; set; }
             public string ServerId { get; set; }
-            public Xml.AirSync.TypeCode BodyPref { get; set; }
-        }
-
-        public class FetchPending
-        {
-            public McPending Pending { get; set; }
-            public Xml.AirSync.TypeCode BodyPref { get; set; }
+            public List<DownloadPart>Parts { get; set; }
         }
 
         public List<FetchBody> FetchBodies { get; set; }
         public List<McAttachment> FetchAttachments { get; set; }
-        public List<FetchPending> Pendings { get; set; }
+
+        public class DownloadPart
+        {
+            public string PartSpecifier { get; protected set; }
+            public string MimeType { get; protected set; }
+            public List<DownloadPart> Parts { get; set; }
+            public string Boundary { get; protected set; }
+
+            public bool HeadersOnly { get; protected set; }
+            public int Length { get; protected set; }
+            public int Offset { get; protected set; }
+            public bool DownloadAll {
+                get {
+                    return (Offset == 0 && Length == -1);
+                }
+                set {
+                    HeadersOnly = false;
+                    Offset = 0;
+                    Length = -1;
+                }
+            }
+
+            public class ImapFetchDnldInvalidPartException: Exception
+            {
+                public ImapFetchDnldInvalidPartException (string message) : base (message)
+                {
+
+                }
+            }
+
+            public DownloadPart (BodyPart part, bool headersOnly)
+            {
+                PartSpecifier = part.PartSpecifier;
+                HeadersOnly = headersOnly;
+                MimeType = part.ContentType.MimeType;
+                Boundary = part.ContentType.Boundary;
+
+                if (string.IsNullOrEmpty (PartSpecifier)) {
+                    throw new ImapFetchDnldInvalidPartException ("PartSpecifier can not be empty");
+                }
+                DownloadAll = true;
+            }
+
+            public override string ToString ()
+            {
+                string me = string.Format ("{0} {1}:{2}", this.GetType ().Name, PartSpecifier, MimeType);
+                if (!string.IsNullOrEmpty (Boundary)) {
+                    me += string.Format (" Boundary={0}", Boundary);
+                }
+                if (null != Parts) {
+                    me += string.Format (" SubParts={0}", Parts.Count);
+                }
+                if (!DownloadAll) {
+                    me += string.Format (" <{0}..{1}", Offset, Length);
+                }
+                return me;
+            }
+
+            public void Truncate ()
+            {
+                HeadersOnly = true;
+                Length = 0;
+                Offset = 0;
+            }
+
+            public void Subset (int offset, int length)
+            {
+                NcAssert.True (length >= 0 && offset >= 0);
+                if (offset == 0 && length == 0) {
+                    Truncate ();
+                }
+                HeadersOnly = false;
+                Offset = offset;
+                Length = length;
+            }
+        }
     }
 
 
