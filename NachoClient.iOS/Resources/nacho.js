@@ -10,10 +10,10 @@ var NachoMessageHandler = function(name){
     this.name = name;
 };
 
-
 NachoMessageHandler.prototype = {
 
     postMessage: function(message){
+        // console.log("postMessage", message);
         var request = new XMLHttpRequest();
         var query = "";
         var sep = "?";
@@ -32,7 +32,7 @@ NachoMessageHandler.prototype = {
 
     readystatechange: function(e){
         var request = e.currentTarget;
-        console.log(request.readyState, request.status);
+        // console.log(request.readyState, request.status);
     }
 
 };
@@ -113,6 +113,7 @@ Editor.prototype = {
     },
 
     handleEvent: function(e){
+        // console.log(e.type);
         this[e.type](e);
     },
 
@@ -122,18 +123,114 @@ Editor.prototype = {
             this.editorHeight = height;
             this.postMessage({kind: "editor-height-changed"});
         }
+        this.ensureVisibilityOnSelectionChange = true;
     },
 
     selectionchange: function(){
-        this.ensureSelectionIsVisible();
+        var rect = this._selectionRect();
+        if (this.ensureVisibilityOnSelectionChange){
+            this.ensureVisibilityOnSelectionChange = false;
+            var rectTopInViewport = rect.top;
+            var delta = null;
+            if (rectTopInViewport < 0){
+                delta = rectTopInViewport;
+            }else if (rectTopInViewport + rect.height > this.window.innerHeight){
+                delta = rectTopInViewport + rect.height - this.window.innerHeight;
+                if (delta > rectTopInViewport){
+                    delta = rectTopInViewport;
+                }
+            }
+            if (delta !== null){
+                this.window.scrollTo(this.window.pageXOffset, this.window.pageYOffset + delta);
+            }
+        }
     },
 
-    ensureSelectionIsVisible: function(){
+    _rectNearest: function (node, offset){
+        var l, rect;
+        if (node.nodeType == Node.TEXT_NODE){
+            l = node.nodeValue.length;
+            if (l > 0){
+                if (offset == -1){
+                    offset = l;   
+                }
+                var range = this.document.createRange();
+                if (offset < l){
+                    range.setStart(node, offset)
+                    range.setEnd(node, offset + 1);
+                }else{
+                    range.setStart(node, offset - 1);
+                    range.setEnd(node, offset);
+                }
+                var rect = range.getBoundingClientRect();
+                return {
+                    top: rect.top,
+                    left: rect.left,
+                    width: 0,
+                    height: rect.height
+                };
+            }
+        }else if (node.nodeType == Node.ELEMENT_NODE){
+            l = node.childNodes.length;
+            if (offset == -1){
+                offset = l;
+            }
+            if (l > 0){
+                var child = node.childNodes[offset];
+                if (child.nodeType == Node.TEXT_NODE){
+                    if (offset == l){
+                        return this._rectNearest(child, -1);
+                    }else{
+                        return this._rectNearest(child, 0);
+                    }
+                }else{
+                    rect = child.getBoundingClientRect();
+                }
+            }else{
+                rect = node.getBoundingClientRect();
+            }
+            return {
+                top: rect.top,
+                left: rect.left + (offset == l && l > 0 ? rect.width : 0),
+                width: 0,
+                height: rect.height
+            };
+        }
+        var previous = node.previousSibling;
+        while (previous !== null && previous.nodeType != Node.TEXT_NODE && previous.nodeType != Node.ELEMENT_NODE){
+            previous = previous.previousSibling;
+        }
+        if (previous != null){
+            return this._rectNearest(previous, -1);
+        }
+        var next = node.nextSibling;
+        while (next !== null && next.nodeType != Node.TEXT_NODE && next.nodeType != Node.ELEMENT_NODE){
+            next = next.nextSibling;
+        }
+        if (next != null){
+            return this._rectNearest(next, 0);
+        }
+        rect = node.parentNode.getBoundingClientRect();
+        return {
+            top: rect.top,
+            left: rect.left + rect.width,
+            width: 0,
+            height: 0
+        };
+    },
+
+    _selectionRect: function(){
         var selection = this.window.getSelection();
         var range = selection.getRangeAt(0);
-        var rect = range.getBoundingClientRect();
-        console.log(rect.top, this.window.pageYOffset);
-        // TODO: postMessage requesting scroll
+        var rect;
+        if (range.collapsed){
+            // UIWebView always returns a rect (0,0,0,0) if the range is collaped.
+            // So we'll create a non-collapsed range to approximate the collapsed range's position
+            rect = this._rectNearest(range.startContainer, range.startOffset);
+        }else{
+            rect = range.getBoundingClientRect();   
+        }
+        return rect;
     },
 
     postMessage: function(message){
