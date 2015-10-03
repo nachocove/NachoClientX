@@ -35,6 +35,18 @@
     <string name="demo_contact_name">Joe Smith</string>
     <string name="demo_contact_email">joe@smith.com</string>
     <string name="demo_contact_phone">505 555 5678</string>
+    <string name="demo_event_subject">Today\'s event</string>
+    <string name="demo_event_when">Friday, October 2</string>
+    <string name="demo_event_duration">from 8am until noon</string>
+    <string name="demo_event_recurrence">daily meeting</string>
+    <string name="demo_event_location">Conference room 2</string>
+    <string name="demo_event_description">Fun meeting</string>
+    <string name="demo_event_reminder">15 minutes before</string>
+    <string name="demo_event_notes">Tra la la</string>
+    <string name="demo_event_calendar">Office 365 Calendar"</string>
+    <string name="demo_event_organizer">Bob Smith</string>
+    <string name="demo_event_organizer_initials">BS</string>
+    <string name="demo_event_organizer_email">bob@smith.com</string>
     <string name="to_inbox">Go to Inbox</string>
     <string name="to_deadline">Go to Deadlines</string>
     <string name="to_deferred">Go to Deferred Messages</string>
@@ -47,4 +59,20 @@
     <string name="choose_folder">Choose Folder</string>
     <string name="email">Email</string>
     <string name="call">Call</string>
+    <string name="event_self_organizer">You are the organizer</string>
+    <string name="event_organizer">ORGANIZER</string>
+    <string name="event_when">WHEN</string>
+    <string name="event_location">LOCATION</string>
+    <string name="event_description">DESCRIPTION</string>
+    <string name="event_reminder">REMINDER</string>
+    <string name="event_attendees">ATTENDEES</string>
+    <string name="event_notes">NOTES</string>
+    <string name="event_calendar">CALENDAR</string>
+    <string name="event_cancel">Cancel this meeting</string>
+    <string name="event_remove">Remove from calendar</string>
+    <string name="event_cancelled">The meeting has been cancelled</string>
+    <string name="event_attend">Attend</string>
+    <string name="event_maybe">Maybe</string>
+    <string name="event_decline">Decline</string>
+
 </resources>
