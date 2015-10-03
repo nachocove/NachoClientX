@@ -154,7 +154,7 @@ namespace NachoClient.iOS
             WebView = new UIWebView (View.Bounds);
             WebView.SuppressesIncrementalRendering = true;
             WebView.Delegate = this;
-            WebView.NcDisableInputAccessoryView ();
+            WebView.NcHijack ();
             WebView.KeyboardDisplayRequiresUserAction = false;
             NcWebViewMessageProtocol.AddHandler (this, "nachoCompose");
             NcWebViewMessageProtocol.AddHandler (this, "nacho");
@@ -998,11 +998,7 @@ namespace NachoClient.iOS
 
     #endregion
 
-
-
-    public delegate UIView NcInputAccessoryViewDelegate();
-
-    public static class NcWebViewInputAccessoryRemover {
+    public static class MessageComposeViewControllerWebViewHijacker {
 
         [DllImport ("/usr/lib/libobjc.dylib")]
         extern static IntPtr objc_allocateClassPair (IntPtr superclass, string name, IntPtr extraBytes);
@@ -1025,29 +1021,26 @@ namespace NachoClient.iOS
         [DllImport ("/usr/lib/libobjc.dylib")]
         internal extern static IntPtr method_getTypeEncoding (IntPtr method);
 
-        private static string BrowserViewClassWithoutAccessoryViewName = "UIWebBrowserViewWithoutAccessoryView";
-        private static ObjCRuntime.Class BrowserViewClassWithoutAccessoryView = null;
+        [DllImport ("/usr/lib/libobjc.dylib")]
+        internal extern static IntPtr method_getImplementation (IntPtr method);
 
-        public static void NcDisableInputAccessoryView (this UIWebView webView)
+        private static string BrowserViewClassWithoutAccessoryViewName = "UIWebBrowserViewNcHijacked";
+        private static ObjCRuntime.Class HijackedBrowserViewClass = null;
+
+        public static void NcHijack (this UIWebView webView)
         {
-            // UIWebView adds a bar along the top of the keyboard with <, > and Done buttons.
-            // It's useful in a normal webpage to jump from field to field, but in our case
-            // we have just one big editable field and the bar serves no useful purpose.
-            //
-            // The bar is added using the standard iOS inputAccessoryView of a UIResponder.
-            // UIWebView is tricky, however, because it isn't the actual responder that provides the
-            // accessory view.  A private subview, UIWebBrowserView does. So we need to alter the
-            // inputAccessoryView method of the private UIWebBrowserView.
-            //
-            // We make the switch by finding the browser view and turning it into an instance of a newly created
-            // subclass of UIBrowserView that has an inputAccessoryView method that always returns null.
+            // Several UIWebView behaviors (input accessory bar above keyboard, menu controller actions)
+            // are actually executed by a private subview of UIWebView, the UIWebBrowserView.  Since it's
+            // a private class, we can't subclass it directly and override methods.  Instead, we'll create a
+            // new subclass dynamically at runtime and switch the private browser view instance of this web view
+            // into an instance of our new subclass
             var browserView = webView.NcBrowserView ();
             if (browserView != null) {
-                if (BrowserViewClassWithoutAccessoryView == null) {
-                    CreateBrowserViewClassWithoutAccessoryView (browserView.Class);
+                if (HijackedBrowserViewClass == null) {
+                    CreateHijackedBrowserViewClass (browserView.Class);
                 }
-                if (!browserView.IsKindOfClass (BrowserViewClassWithoutAccessoryView)) {
-                    object_setClass (browserView.Handle, BrowserViewClassWithoutAccessoryView.Handle);
+                if (!browserView.IsKindOfClass (HijackedBrowserViewClass)) {
+                    object_setClass (browserView.Handle, HijackedBrowserViewClass.Handle);
                 }
             }
         }
@@ -1058,7 +1051,7 @@ namespace NachoClient.iOS
             // So if Apple changes things, this will break.  But it works for now...
             // We're looking for something called UIWebBrowserView, but we'll do a StartsWith search because
             // we still want to find the browser view even after we've switched to our subclass, which is named
-            // UIWebBrowserViewWithoutAccessoryView.
+            // UIWebBrowserViewNcHijacked.
             foreach (var subview in webView.ScrollView.Subviews) {
                 if (subview.Class.Name.StartsWith ("UIWebBrowserView")) {
                     return subview;
@@ -1067,28 +1060,130 @@ namespace NachoClient.iOS
             return null;
         }
 
-        public static void CreateBrowserViewClassWithoutAccessoryView (ObjCRuntime.Class browserViewClass)
+        public static void CreateHijackedBrowserViewClass (ObjCRuntime.Class browserViewClass)
         {
             // We have to create a new subclass at runtime because UIWebBrowserView is private.  Runtime requires us to use
             // the low level objc_* methods, which we've loaded into c# land using the import statements above.
             // The basic steps are:
             // 1. Allocate a new subclass of browserViewClass
-            // 2. Set the inputAccessoryView method of the new subclass to a method that returns null
+            // 2. Add new methods to the subclass that override UIWebBrowserView methods
             // 3. Register the new class
-            IntPtr newClassHandle = objc_allocateClassPair (browserViewClass.Handle, BrowserViewClassWithoutAccessoryViewName, IntPtr.Zero);
-            var selector = new ObjCRuntime.Selector("inputAccessoryView");
-            // It seemes easiest to grab the inputAccessoryView method from UIResponder, which does nothing, and use it
-            // as the method for our subclass.  Other techniques involve creating an entirely new method, but those are
-            // more complicated.  Since UIResponder is the base class, we know its inputAccessoryView is the correct signature.
-            var responderClass = new ObjCRuntime.Class ("UIResponder");
-            var method = class_getInstanceMethod (responderClass.Handle, selector.Handle);
-            var imp = class_getMethodImplementation (responderClass.Handle, selector.Handle);
-            var types = method_getTypeEncoding (method);
-            class_addMethod(newClassHandle, selector.Handle, imp, types);
-            objc_registerClassPair(newClassHandle);
-            BrowserViewClassWithoutAccessoryView = new ObjCRuntime.Class (newClassHandle);
+            IntPtr hijackedClassHandle = objc_allocateClassPair (browserViewClass.Handle, BrowserViewClassWithoutAccessoryViewName, IntPtr.Zero);
+
+            HijackBrowserViewAccessoryInputView (browserViewClass, hijackedClassHandle);
+            HijackBrowserViewCanPerformAction (browserViewClass, hijackedClassHandle);
+            HijackBrowserViewPaste (browserViewClass, hijackedClassHandle);
+
+            objc_registerClassPair(hijackedClassHandle);
+            HijackedBrowserViewClass = new ObjCRuntime.Class (hijackedClassHandle);
         }
 
+        #region InputAccessoryView
+
+        public static void HijackBrowserViewAccessoryInputView (ObjCRuntime.Class browserViewClass, IntPtr hijackedClassHandle)
+        {
+            // We want to hijack the inputAccessoryView method because the default implementation adds a bar above the keyboar
+            // with <, >, and Done buttons.  The bar is pointless in our use case and it just takes up space.  So our replacement
+            // method will return null, removing the bar.  We could design our own bar and return that if we wanted.
+            var selector = new ObjCRuntime.Selector ("inputAccessoryView");
+            var baseMethod = class_getInstanceMethod (browserViewClass.Handle, selector.Handle);
+            var types = method_getTypeEncoding (baseMethod);
+            InputAccessoryViewDelegate d = BrowserView_InputAccessoryView;
+            var imp = Marshal.GetFunctionPointerForDelegate(d);
+            class_addMethod (hijackedClassHandle, selector.Handle, imp, types);
+        }
+
+        // Our C# Delegate signatures are derived from the low-level Objective-C IMP signatures.
+        // IMPs are function pointers that are derived from the high-level Objetive-C method definitions.
+        //
+        // IMPs take at least two arguments: self (an id) and selector (a SEL).
+        // Any further arguments are the actual method arguments.
+        //
+        // To get from C to C#, pointer types turn into IntPtr and primitives remian the same.  Objective-C
+        // has a lot of typedefs that obscure the reality that most of them are just pointers
+        // (e.g. id is "typedef struct objc_object *id", or SEL is "typedef struct objc_selector *SEL")
+        //
+        // Starting from an Objective-C signature, we can get the appropriate C# signature:
+        //    Objective-C signature: - (UIView *)inputAccessoryView
+        // -> IMP signature: id(*)(id self, SEL selector)
+        // -> C# signature IntPtr (IntPtr self, IntPtr selector)
+        //
+        // Underneath the hood, Objective-C methods are function pointers that always have self and the selector as the
+        // first two arguments.  Any further arguments are the actual method arguments.
+        // To convert from and IMP signature to a C# signature, pointers become IntPtr and primitives 
+        [ObjCRuntime.MonoNativeFunctionWrapper]
+        delegate IntPtr InputAccessoryViewDelegate (IntPtr self, IntPtr selector);
+
+        [ObjCRuntime.MonoPInvokeCallback (typeof (InputAccessoryViewDelegate))]
+        static IntPtr BrowserView_InputAccessoryView (IntPtr self, IntPtr selector)
+        {
+            return new IntPtr(0);
+        }
+
+        #endregion
+
+        #region CanPerformAction
+
+        public static void HijackBrowserViewCanPerformAction (ObjCRuntime.Class browserViewClass, IntPtr hijackedClassHandle)
+        {
+            // We want to hijack the canPerformAction:withSender: method so we can add our own menu controller options (like Attach),
+            // or remove predefined ones in cases where they can't work (like Paste, sometimes).  Since we'll generally fallback to the
+            // original implementation, we'll keep a reference to call in situations where base() would be used for a typical subclass.
+            var selector = new ObjCRuntime.Selector ("canPerformAction:withSender:");
+            var baseMethod = class_getInstanceMethod (browserViewClass.Handle, selector.Handle);
+            var types = method_getTypeEncoding (baseMethod);
+            BrowserView_OriginalCanPerformAction = method_getImplementation (baseMethod);
+            CanPerformActionDelegate d = BrowserView_CanPerformAction;
+            var imp = Marshal.GetFunctionPointerForDelegate(d);
+            class_addMethod (hijackedClassHandle, selector.Handle, imp, types);
+        }
+
+        static IntPtr BrowserView_OriginalCanPerformAction;
+
+        [ObjCRuntime.MonoNativeFunctionWrapper]
+        delegate bool CanPerformActionDelegate (IntPtr self, IntPtr selector, IntPtr action, IntPtr sender);
+
+        [ObjCRuntime.MonoPInvokeCallback (typeof (CanPerformActionDelegate))]
+        static bool BrowserView_CanPerformAction (IntPtr selfHandle, IntPtr selectorHandle, IntPtr actionHandle, IntPtr senderHandle)
+        {
+            var action = new ObjCRuntime.Selector (actionHandle);
+            Log.Info (Log.LOG_UI, "NcWebBrowserViewProxy CanPerform: {0}", action.Name);
+            var d = (CanPerformActionDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalCanPerformAction, typeof(CanPerformActionDelegate));
+            bool canPerform = d (selfHandle, selectorHandle, actionHandle, senderHandle);
+            return canPerform;
+        }
+
+        #endregion
+
+        #region Paste
+
+        public static void HijackBrowserViewPaste (ObjCRuntime.Class browserViewClass, IntPtr hijackedClassHandle)
+        {
+            // We want to hijack the paste: method so we can handle pasting of images.  The default implementation adds an image
+            // to the web view with a private webkit-fake-url:// scheme, and we can't get the data.  But if we intercept the paste
+            // before it even gets there, we can capture the image and insert our own HTML.
+            var selector = new ObjCRuntime.Selector ("paste:");
+            var baseMethod = class_getInstanceMethod (browserViewClass.Handle, selector.Handle);
+            var types = method_getTypeEncoding (baseMethod);
+            BrowserView_OriginalPaste = method_getImplementation (baseMethod);
+            PasteDelegate d = BrowserView_Paste;
+            var imp = Marshal.GetFunctionPointerForDelegate(d);
+            class_addMethod (hijackedClassHandle, selector.Handle, imp, types);
+        }
+
+        static IntPtr BrowserView_OriginalPaste;
+
+        [ObjCRuntime.MonoNativeFunctionWrapper]
+        delegate void PasteDelegate (IntPtr self, IntPtr selector, IntPtr sender);
+
+        [ObjCRuntime.MonoPInvokeCallback (typeof (PasteDelegate))]
+        static void BrowserView_Paste (IntPtr self, IntPtr selector, IntPtr sender)
+        {
+            var d = (PasteDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalPaste, typeof(PasteDelegate));
+            d (self, selector, sender);
+        }
+
+        #endregion
 
     }
 
