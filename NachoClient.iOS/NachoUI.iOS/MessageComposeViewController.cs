@@ -93,12 +93,12 @@ namespace NachoClient.iOS
 
         #region Presenters
 
-        public void Present (Action completionHandler = null)
+        public void Present (bool animated = true, Action completionHandler = null)
         {
             var window = UIApplication.SharedApplication.Delegate.GetWindow ();
             var navigationController = new UINavigationController (this);
             NachoClient.Util.ConfigureNavBar (false, navigationController);
-            window.RootViewController.PresentViewController (navigationController, true, completionHandler);
+            window.RootViewController.PresentViewController (navigationController, animated, completionHandler);
         }
 
         #endregion

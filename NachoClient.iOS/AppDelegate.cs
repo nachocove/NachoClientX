@@ -393,6 +393,19 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
+            if (launchOptions != null) {
+                var shortcutItem = launchOptions.ObjectForKey (UIApplication.LaunchOptionsShortcutItemKey) as UIApplicationShortcutItem;
+                if (shortcutItem != null) {
+                    // TODO: handle shortcut on launch
+                }
+            }
+
+//            if (application.RespondsToSelector (new ObjCRuntime.Selector ("shortcutItems"))) {
+//                application.ShortcutItems = new UIApplicationShortcutItem[] {
+//                    new UIApplicationShortcutItem ("com.nachocove.nachomail.newmessage", "New Message", null, UIApplicationShortcutIcon.FromTemplateImageName ("shortcut-compose"), null)
+//                };
+//            }
+
             // I don't know where to put this.  It can't go in NcApplication.MonitorReport(), because
             // C#'s TimeZoneInfo.Local has an ID and name of "Local", which is not helpful.  It has
             // to be in iOS-specific code.
@@ -416,6 +429,21 @@ namespace NachoClient.iOS
                     }
                     File.Copy (resourcePath, destinationPath);
                 }
+            }
+        }
+
+        public override void PerformActionForShortcutItem (UIApplication application, UIApplicationShortcutItem shortcutItem, UIOperationHandler completionHandler)
+        {
+            if (shortcutItem.Type.Equals ("com.nachocove.nachomail.newmessage")) {
+                // TODO: verify that we're not setting up an account
+                // TODO: check if another compose is already up
+                var composeViewController = new MessageComposeViewController ();
+                composeViewController.Present (false, () => {
+                    completionHandler (true);
+                });
+            } else {
+                Log.Error (Log.LOG_UI, "Application received unknown shortcut action: {0}", shortcutItem.Type);
+                completionHandler (false);
             }
         }
 
