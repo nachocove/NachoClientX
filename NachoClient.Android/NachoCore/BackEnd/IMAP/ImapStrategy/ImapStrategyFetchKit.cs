@@ -235,14 +235,16 @@ namespace NachoCore.IMAP
                     d = new FetchKit.DownloadPart (multi, headersOnly: true);
                 }
                 var newParts = new List<FetchKit.DownloadPart> ();
-                foreach (var part in multi.BodyParts) {
-                    count += CountDownloadableParts (part, newParts, depth + 1);
-                }
-                if (0 == count) {
-                    d.DownloadAll = true;
+                if (!multi.ContentType.Matches ("multipart", "alternative")) {
+                    foreach (var part in multi.BodyParts) {
+                        count += CountDownloadableParts (part, newParts, depth + 1);
+                    }
                 }
                 if (null != d) {
-                    d.Parts = newParts;
+                    if (0 == count) {
+                        d.DownloadAll = true;
+                    }
+                    d.Parts.AddRange (newParts);
                     Parts.Add (d);
                 } else {
                     Parts.AddRange (newParts);
