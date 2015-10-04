@@ -1494,6 +1494,14 @@ namespace NachoCore.Model
             return s.StartsWith (substring, StringComparison.InvariantCultureIgnoreCase);
         }
 
+        private static bool Contains (string s, string substring)
+        {
+            if (null == s) {
+                return false;
+            }
+            return 0 <= s.IndexOf (substring, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         /// <summary>
         /// Return the quality or value of the contact based on its source.
         /// </summary>
@@ -1592,8 +1600,17 @@ namespace NachoCore.Model
                         score += 3 * word.Length;
                     } else if (StartsWith (match.contact.CompanyName, word)) {
                         score += 2 * word.Length;
-                    } else if (0 <= match.email.IndexOf ("@" + word, StringComparison.InvariantCultureIgnoreCase)) {
+                    } else if (Contains (match.email, "@" + word)) {
                         score += 2 * word.Length;
+                    }
+                }
+                if (1 < searchWords.Length) {
+                    if (Contains (match.contact.LastName, searchFor)) {
+                        score += 8 * searchFor.Length;
+                    } else if (Contains(match.contact.FirstName, searchFor)) {
+                        score += 6 * searchFor.Length;
+                    } else if (Contains(match.contact.CompanyName, searchFor)) {
+                        score += 4 * searchFor.Length;
                     }
                 }
                 if (0 != match.contact.PortraitId) {
@@ -1739,8 +1756,17 @@ namespace NachoCore.Model
                         score += 3 * word.Length;
                     } else if (StartsWith (match.email, word)) {
                         score += 3 * word.Length;
-                    } else if (0 <= match.email.IndexOf ("@" + word, StringComparison.InvariantCultureIgnoreCase)) {
+                    } else if (Contains (match.email, "@" + word)) {
                         score += 2 * word.Length;
+                    }
+                }
+                if (1 < searchWords.Length) {
+                    if (Contains (match.contact.LastName, searchFor)) {
+                        score += 10 * searchFor.Length;
+                    } else if (Contains (match.contact.FirstName, searchFor)) {
+                        score += 8 * searchFor.Length;
+                    } else if (Contains (match.contact.CompanyName, searchFor)) {
+                        score += 6 * searchFor.Length;
                     }
                 }
                 if (0 != match.contact.PortraitId) {

@@ -33,5 +33,10 @@ namespace NachoClient.AndroidClient
         public static Color Color_NachoSwipeContactEmail = Color.Rgb (245, 152, 39);
         public static int Id_NachoSwipeContactCall = Resource.Drawable.contacts_call_swipe;
         public static int Id_NachoSwipeContactEmail = Resource.Drawable.contacts_email_swipe;
+
+        public static Color Color_NachoSwipeCalendarLate = Color.Rgb (0xff, 0x47, 0x47);
+        public static Color Color_NachoSwipeCalendarForward = Color.Rgb (0x00, 0xBA, 0xD7);
+        public static int Id_NachoSwipeCalendarLate = Resource.Drawable.calendar_late_swipe;
+        public static int Id_NachoSwipeCalendarForward = Resource.Drawable.calendar_forward_swipe;
     }
 }
