@@ -160,6 +160,8 @@ namespace NachoCore.IMAP
 
             public string MimeType { get; protected set; }
 
+            public bool IsAttachment { get; protected set; }
+
             public List<DownloadPart> Parts { get; set; }
 
             public string Boundary { get; protected set; }
@@ -169,6 +171,14 @@ namespace NachoCore.IMAP
             public int Length { get; protected set; }
 
             public int Offset { get; protected set; }
+
+            public bool IsTruncated {
+                get {
+                    // TODO Using length != -1 is possibly prone to error, if the caller sets Length to the
+                    // actual length of the body part. In that case, IsTruncated will erroneously say true.
+                    return HeadersOnly || Offset != 0 || Length != -1;
+                }
+            }
 
             public bool DownloadAll {
                 get {
@@ -204,6 +214,12 @@ namespace NachoCore.IMAP
                 HeadersOnly = headersOnly;
                 MimeType = part.ContentType.MimeType;
                 Boundary = part.ContentType.Boundary;
+                var basic = part as BodyPartBasic;
+                if (null != basic) {
+                    IsAttachment = basic.IsAttachment;
+                } else {
+                    IsAttachment = false;
+                }
                 Offset = 0;
                 Length = -1;
                 Parts = new List<DownloadPart>();

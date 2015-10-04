@@ -277,14 +277,15 @@ namespace NachoCore.IMAP
             NcCapture.AddKind (KImapFetchPartCommandFetch);
             using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
                 if (dp.DownloadAll) {
-                    GetBodyPartFull (stream, mailKitFolder, uid, dp);
+                    GetBodyPart (stream, mailKitFolder, uid, dp);
                 } else {
-                    GetBodyPartMimeHeader (stream, mailKitFolder, uid, dp);
+                    GetBodyPartHeader (stream, mailKitFolder, uid, dp);
                     if (!dp.HeadersOnly) {
                         GetBodyPartData (stream, mailKitFolder, uid, dp);
                     }
                 }
             }
+
             if (dp.Parts.Any ()) {
                 foreach (var part in dp.Parts) {
                     WriteBoundary (stream, dp.Boundary, false);
@@ -294,7 +295,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private void GetBodyPartFull (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
+        private void GetBodyPart (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
             try {
@@ -307,14 +308,16 @@ namespace NachoCore.IMAP
             }
         }
 
-        private void GetBodyPartMimeHeader (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
+        private void GetBodyPartHeader (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
             try {
                 mailKitFolder.SetStreamContext (uid, tmp);
-                using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier + ".MIME", Cts.Token, this)) {
-                    st.CopyTo (stream);
+                var mime = mailKitFolder.GetBodyPart (uid, dp.PartSpecifier, true, Cts.Token, this);
+                if (dp.IsTruncated) {
+                    mime.ContentDisposition.Size = dp.Length > 0 ? dp.Length : 0;
                 }
+                mime.WriteTo (stream);
             } finally {
                 mailKitFolder.UnsetStreamContext ();
                 File.Delete (tmp);

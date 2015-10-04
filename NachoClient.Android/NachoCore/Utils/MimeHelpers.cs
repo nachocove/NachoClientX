@@ -824,12 +824,14 @@ namespace NachoCore.Utils
                         }
                         MimeEntity match = duplicateContentId ? null : (contentIdMatch ?? (duplicateDisplayName ? null : displayNameMatch));
                         if (null != match) {
-                            itemAttachment.UpdateData ((stream) => {
-                                ((MimeKit.MimePart)match).ContentObject.DecodeTo (stream);
-                            });
-                            itemAttachment.SetFilePresence (McAttachment.FilePresenceEnum.Complete);
-                            itemAttachment.Truncated = false;
-                            itemAttachment.Update ();
+                            if (match.ContentDisposition.Size > 0) {
+                                itemAttachment.UpdateData ((stream) => {
+                                    ((MimeKit.MimePart)match).ContentObject.DecodeTo (stream);
+                                });
+                                itemAttachment.SetFilePresence (McAttachment.FilePresenceEnum.Complete);
+                                itemAttachment.Truncated = false;
+                                itemAttachment.Update ();
+                            }
                         }
                     }
                 }
