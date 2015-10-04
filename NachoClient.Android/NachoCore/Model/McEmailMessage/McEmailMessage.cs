@@ -957,6 +957,12 @@ namespace NachoCore.Model
                 }
             }
         }
+
+        public void UpdateThreadCount(string threadId)
+        {
+            var threadAdapter = Source.GetAdapterForThread(threadId);
+            MessageCount = threadAdapter.Count ();
+        }
     }
 
     public class McEmailMessageThreadIndexComparer : IEqualityComparer<McEmailMessageThread>
