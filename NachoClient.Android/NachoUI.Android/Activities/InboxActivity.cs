@@ -38,7 +38,7 @@ namespace NachoClient.AndroidClient
 
         void onMessageClick (object sender, McEmailMessageThread thread)
         {
-            Console.WriteLine ("MessageListFragment_onMessageClick: {0}", thread);
+            Console.WriteLine ("InboxActivity onMessageClick: {0}", thread);
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
@@ -67,7 +67,10 @@ namespace NachoClient.AndroidClient
                 this.FragmentManager.PopBackStack ();
             }
             if (f is MessageListFragment) {
-                this.FragmentManager.PopBackStack ();
+                // Don't pop if we are the top, e.g. Inbox
+                if (1 < this.FragmentManager.BackStackEntryCount) {
+                    this.FragmentManager.PopBackStack ();
+                }
             }
         }
 

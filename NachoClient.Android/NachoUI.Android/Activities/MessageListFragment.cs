@@ -285,17 +285,32 @@ namespace NachoClient.AndroidClient
             View view = convertView; // re-use an existing view, if one is available
             if (view == null) {
                 view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCell, parent, false);
+                var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+                chiliView.Click += ChiliView_Click;
             }
             var thread = messages.GetEmailThread (position);
             var message = thread.FirstMessageSpecialCase ();
             Bind.BindMessageHeader (thread, message, view);
 
             // Preview label view
-            var previewView = view.FindViewById<Android.Widget.TextView>(Resource.Id.preview);
+            var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
             var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
-            previewView.SetText(Android.Text.Html.FromHtml (cookedPreview),Android.Widget.TextView.BufferType.Spannable);
+            previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+
+            var chiliTagView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+            chiliTagView.Tag = position;
 
             return view;
+        }
+
+        void ChiliView_Click (object sender, EventArgs e)
+        {
+            var chiliView = (Android.Widget.ImageView)sender;
+            var position = (int)chiliView.Tag;
+            var thread = messages.GetEmailThread (position);
+            var message = thread.FirstMessageSpecialCase ();
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            Bind.BindMessageChili (thread, message, chiliView);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

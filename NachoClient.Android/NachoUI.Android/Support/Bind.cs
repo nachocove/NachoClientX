@@ -71,13 +71,7 @@ namespace NachoClient.AndroidClient
             userImageView.Text = message.cachedFromLetters;
             userImageView.SetBackgroundResource (ColorForUser (message.cachedFromColor));
 
-            int chiliImageId;
-            if ((null != thread) && thread.HasMultipleMessages ()) {
-                chiliImageId = (message.isHot () ? Resource.Drawable.email_not_hot : Resource.Drawable.email_nothothread);
-            } else {
-                chiliImageId = (message.isHot () ? Resource.Drawable.email_hot : Resource.Drawable.email_not_hot);
-            }
-            chiliView.SetImageResource (chiliImageId);
+            BindMessageChili (thread, message, chiliView);
 
             senderView.Text = Pretty.SenderString (message.From);
             senderView.Visibility = ViewStates.Visible;
@@ -90,6 +84,22 @@ namespace NachoClient.AndroidClient
 
             // FIXME attachment icon
 
+        }
+
+        public static void BindMessageChili (McEmailMessage message, Android.Widget.ImageView chiliView)
+        {
+            int chiliImageId = (message.isHot () ? Resource.Drawable.email_hot : Resource.Drawable.email_not_hot);
+            chiliView.SetImageResource (chiliImageId);
+        }
+
+        public static void BindMessageChili (McEmailMessageThread thread, McEmailMessage message, Android.Widget.ImageView chiliView)
+        {
+            if ((null != thread) && thread.HasMultipleMessages ()) {
+                int chiliImageId = (message.isHot () ? Resource.Drawable.email_hotthread : Resource.Drawable.email_nothothread);
+                chiliView.SetImageResource (chiliImageId);
+            } else {
+                BindMessageChili (message, chiliView);
+            }
         }
 
         public static int BindContactCell (McContact contact, View view, string alternateEmailAddress = null)
@@ -106,8 +116,6 @@ namespace NachoClient.AndroidClient
 
             var displaySubtitle2 = contact.GetPrimaryPhoneNumber ();
             var displaySubtitle2Color = A.Color_NachoDarkText;
-
-//             var contactColor = Util.GetContactColor (contact);
 
             int viewType = 3;
 
