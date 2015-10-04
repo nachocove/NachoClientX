@@ -285,7 +285,7 @@ namespace NachoCore.IMAP
                     }
                 }
             }
-            if (null != dp.Parts) {
+            if (dp.Parts.Any ()) {
                 foreach (var part in dp.Parts) {
                     WriteBoundary (stream, dp.Boundary, false);
                     DownloadIndividualPart (stream, mailKitFolder, uid, part, depth + 1);

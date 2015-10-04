@@ -206,6 +206,7 @@ namespace NachoCore.IMAP
                 Boundary = part.ContentType.Boundary;
                 Offset = 0;
                 Length = -1;
+                Parts = new List<DownloadPart>();
             }
 
             public override string ToString ()
@@ -214,7 +215,7 @@ namespace NachoCore.IMAP
                 if (!string.IsNullOrEmpty (Boundary)) {
                     me += string.Format (" Boundary={0}", Boundary);
                 }
-                if (null != Parts) {
+                if (Parts.Any ()) {
                     me += string.Format (" SubParts={0}", Parts.Count);
                 }
                 if (!DownloadAll) {
@@ -250,7 +251,7 @@ namespace NachoCore.IMAP
                         query += string.Format ("<{0}..{1}>", Offset, Length);
                     }
                 }
-                if (null != Parts) {
+                if (Parts.Any ()) {
                     foreach (var dp in Parts) {
                         query += " " + dp.ToQuery ();
                     }
