@@ -82,7 +82,7 @@ namespace NachoCore.IMAP
             return new FetchKit.FetchBody () {
                 ServerId = email.ServerId,
                 ParentId = folders [0].ServerId,
-                Parts = DownloadBodyParts(email),
+                Parts = DownloadBodyParts (email),
             };
         }
 
@@ -232,11 +232,14 @@ namespace NachoCore.IMAP
             if (null != multi) {
                 FetchKit.DownloadPart d = null;
                 if (!string.IsNullOrEmpty (multi.PartSpecifier)) {
-                    d = new FetchKit.DownloadPart (multi, true);
+                    d = new FetchKit.DownloadPart (multi, headersOnly: true);
                 }
                 var newParts = new List<FetchKit.DownloadPart> ();
                 foreach (var part in multi.BodyParts) {
                     count += CountDownloadableParts (part, newParts, depth + 1);
+                }
+                if (0 == count) {
+                    d.DownloadAll = true;
                 }
                 if (null != d) {
                     d.Parts = newParts;
@@ -249,9 +252,9 @@ namespace NachoCore.IMAP
             var basic = body as BodyPartBasic;
             if (null != basic) {
                 if (!string.IsNullOrEmpty (basic.PartSpecifier)) {
-                    FetchKit.DownloadPart d = new FetchKit.DownloadPart (basic, false);
+                    FetchKit.DownloadPart d = new FetchKit.DownloadPart (basic, headersOnly: false);
                     bool isAttachment = basic.IsAttachment;
-                    if (isAttachment && isExchangeATTAttachment(basic)) {
+                    if (isAttachment && isExchangeATTAttachment (basic)) {
                         isAttachment = false;
                     }
                     if (isAttachment && basic.Octets > DownloadAttachSizeWithCommStatus ()) {
@@ -262,7 +265,7 @@ namespace NachoCore.IMAP
             } else {
                 Log.Error (Log.LOG_IMAP, "Unhandled BodyPart {0}. Downloading it whole.", body.GetType ().Name);
                 if (!string.IsNullOrEmpty (multi.PartSpecifier)) {
-                    Parts.Add (new FetchKit.DownloadPart (body, false));
+                    Parts.Add (new FetchKit.DownloadPart (body, headersOnly: false));
                 }
             }
             return 1;
@@ -276,7 +279,7 @@ namespace NachoCore.IMAP
                     return true;
                 }
             }
-            return false ;      
+            return false;      
         }
 
         private static uint CountAttachments (BodyPart body, ref uint Size, uint depth = 0)
