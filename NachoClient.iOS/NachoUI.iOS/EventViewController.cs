@@ -825,17 +825,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("EventToCal")) {
-                // TODO I don't this this segue is possible.
-                var dc = (ChooseCalendarViewController)segue.DestinationViewController;
-                dc.SetCalendars (new NachoFolders (detail.Account.Id, NachoFolders.FilterForCalendars));
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    // TODO Do something with the calendar index that is returned.
-                    // dc.GetCalIndex ();
-                };
-                return;
-            }
-
             if (segue.Identifier.Equals ("EventToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetOwner (this, detail.SpecificItem.GetSubject (), insertDate: false);
