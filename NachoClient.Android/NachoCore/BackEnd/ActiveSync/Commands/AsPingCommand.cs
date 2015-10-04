@@ -156,7 +156,7 @@ namespace NachoCore.ActiveSync
             return ToXDocument (Op).ToWbxml (doFiltering: false);
         }
 
-        public byte[] PushAssistResponseData ()
+        public byte[] PushAssistNoChangeResponseData ()
         {
             var response = ToEmptyXDocument ();
             response.Add (new XElement (m_ns + Xml.Ping.Ns,

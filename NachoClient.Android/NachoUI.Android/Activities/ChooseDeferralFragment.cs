@@ -74,10 +74,10 @@ namespace NachoClient.AndroidClient
 
         void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thisIsNull, DateTime selectedDate)
         {
+            Dismiss ();
             if (null != mOnDeferralSelected) {
                 mOnDeferralSelected (request, messageThread, selectedDate);
             }
-            Dismiss ();
         }
 
 

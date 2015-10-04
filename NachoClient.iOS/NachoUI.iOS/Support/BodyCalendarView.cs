@@ -244,7 +244,7 @@ namespace NachoClient.iOS
                         organizerPhotoFallbackView.Hidden = false;
                         organizerPhotoFallbackView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, accountId);
                         var nameString = (null != organizerName ? organizerName : organizerEmail);
-                        organizerPhotoFallbackView.Text = Util.NameToLetters (nameString);
+                        organizerPhotoFallbackView.Text = ContactsHelper.NameToLetters (nameString);
                     }
 
                 }

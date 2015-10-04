@@ -11,6 +11,7 @@ namespace NachoCore.ActiveSync
     {
         public uint MaxHeartbeatInterval { get; set; }
         public List<McFolder> Folders { get; set; }
+        public bool IsNarrow { get; set; }
     }
 
     public class SyncKit
@@ -23,7 +24,9 @@ namespace NachoCore.ActiveSync
             public Xml.Provision.MaxAgeFilterCode FilterCode { get; set; }
             public bool GetChanges { get; set; }
         }
+        public TimeSpan WaitInterval { get; set; }
         public bool IsNarrow { get; set; }
+        public bool IsPinging { get; set; }
         public int OverallWindowSize { get; set; }
         public List<PerFolder> PerFolders { get; set; }
     }
@@ -60,6 +63,7 @@ namespace NachoCore.ActiveSync
         FetchKit GenFetchKitHints ();
         SyncKit GenSyncKit (McProtocolState protocolState);
         PingKit GenPingKit (McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected);
+        SyncKit GenSyncKitFromPingKit (McProtocolState protocolState, PingKit pingKit);
         Tuple<PickActionEnum, AsCommand> Pick ();
         Tuple<PickActionEnum, AsCommand> PickUserDemand ();
         int UploadTimeoutSecs (long length);

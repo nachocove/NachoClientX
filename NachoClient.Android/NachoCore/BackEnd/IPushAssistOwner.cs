@@ -39,6 +39,8 @@ namespace NachoCore
 
         public Credentials MailServerCredentials;
 
+        public bool IsSyncRequest;
+
 
         // IMAP elements
         public byte[] IMAPAuthenticationBlob;

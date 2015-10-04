@@ -36,7 +36,7 @@ namespace Test.iOS
     };
 
     // reusable request/response data
-    public class CommonMockData
+    public static class CommonMockData
     {
         // utopiasystems is used because they have an Autodiscover SRV response
         public static Uri MockUri = new Uri ("https://utopiasystems.net");
@@ -201,6 +201,7 @@ namespace Test.iOS
                 Username = "dummy",
             };
             Cred.Insert ();
+            Cred.UpdatePassword ("DummyPassword");
         }
     }
 
@@ -388,6 +389,11 @@ namespace Test.iOS
                 MaxHeartbeatInterval = 600,
                 Folders = new List<McFolder> (),
             };
+        }
+
+        public SyncKit GenSyncKitFromPingKit (McProtocolState protocolState, PingKit pingKit)
+        {
+            throw new NotImplementedException ();
         }
 
         public Tuple<PickActionEnum, AsCommand> PickUserDemand ()

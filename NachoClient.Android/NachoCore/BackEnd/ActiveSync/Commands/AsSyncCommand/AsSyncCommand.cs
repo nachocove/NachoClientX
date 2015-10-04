@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -30,7 +31,11 @@ namespace NachoCore.ActiveSync
         private XNamespace EmailNs;
         private XNamespace TasksNs;
         private int WindowSize;
+
+        public TimeSpan WaitInterval { get; set; }
+
         private bool IsNarrow;
+        private bool IsPinging;
 
         public static XNamespace Ns = Xml.AirSync.Ns;
 
@@ -42,7 +47,9 @@ namespace NachoCore.ActiveSync
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed);
             WindowSize = syncKit.OverallWindowSize;
+            WaitInterval = syncKit.WaitInterval;
             IsNarrow = syncKit.IsNarrow;
+            IsPinging = syncKit.IsPinging;
             SyncKitList = syncKit.PerFolders;
             FoldersInRequest = new List<McFolder> ();
             foreach (var perFolder in SyncKitList) {
@@ -54,6 +61,17 @@ namespace NachoCore.ActiveSync
                     pending.MarkDispached ();
                 }
             });
+        }
+
+        public override double TimeoutInSeconds {
+            get {
+                // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
+                if (TimeSpan.Zero == WaitInterval) {
+                    return 0.0;
+                } else {
+                    return WaitInterval.TotalSeconds + 10;
+                }
+            }
         }
 
         private XElement ToEmailDelete (McPending pending)
@@ -194,6 +212,11 @@ namespace NachoCore.ActiveSync
             return new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                 new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)bodyType),
                 new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000"));
+        }
+
+        private uint WaitIntervalToWaitMinutes ()
+        {
+            return Math.Min (Math.Max (0, (uint) WaitInterval.TotalMinutes), 59);
         }
 
         protected override XDocument ToXDocument (AsHttpOperation Sender)
@@ -339,6 +362,10 @@ namespace NachoCore.ActiveSync
                 collections.Add (collection);
             }
             var sync = new XElement (m_ns + Xml.AirSync.Sync, collections);
+            // use Wait instead of HeartbeatInterval since Wait is also supported in 12.1 while HeartbeatInterval is not 
+            if (TimeSpan.Zero != WaitInterval) {
+                sync.Add (new XElement (m_ns + Xml.AirSync.Wait, WaitIntervalToWaitMinutes ())); 
+            }
             sync.Add (new XElement (m_ns + Xml.AirSync.WindowSize, WindowSize));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sync);
@@ -448,6 +475,11 @@ namespace NachoCore.ActiveSync
             }
             // ProcessTopLevelStatus will handle Status element, if  included.
             // If we get here, we know any TL Status is okay.
+            //
+            // Is this the right place for the following?
+            if (IsPinging) {
+                MarkFoldersPinged ();
+            }
             var xmlCollections = doc.Root.Element (m_ns + Xml.AirSync.Collections);
             if (null == xmlCollections) {
                 return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCODD");
@@ -713,6 +745,10 @@ namespace NachoCore.ActiveSync
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SYNCCANCEL1");
+            }
+            // Is this the right place for this?
+            if (IsPinging) {
+                MarkFoldersPinged ();
             }
             // FoldersInRequest NOT stale here.
             var now = DateTime.UtcNow;
@@ -1273,6 +1309,52 @@ namespace NachoCore.ActiveSync
             default:
                 return false;
             }
+        }
+
+        // PushAssist support.
+        public string PushAssistRequestUrl ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            return ServerUri (Op).ToString ();
+        }
+
+        public HttpRequestHeaders PushAssistRequestHeaders ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            HttpRequestMessage request;
+            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+                return null;
+            }
+            return request.Headers;
+        }
+
+        public HttpContentHeaders PushAssistContentHeaders ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            HttpRequestMessage request;
+            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+                return null;
+            }
+            return request.Content.Headers;
+        }
+
+        public byte[] PushAssistRequestData ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            return ToXDocument (Op).ToWbxml (doFiltering: false);
+        }
+
+        private void MarkFoldersPinged ()
+        {
+            foreach (var iterFolder in FoldersInRequest) {
+                iterFolder.UpdateSet_AsSyncLastPing (DateTime.UtcNow);
+            }
+            var protocolState = BEContext.ProtocolState;
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastPing = DateTime.UtcNow;
+                return true;
+            });
         }
     }
 }

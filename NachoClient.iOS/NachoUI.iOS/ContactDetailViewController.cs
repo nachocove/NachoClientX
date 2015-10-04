@@ -508,7 +508,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            contact.PhoneNumbers.Sort (new Util.PhoneAttributeComparer ());
+            contact.PhoneNumbers.Sort (new ContactsHelper.PhoneAttributeComparer ());
            
             if (contact.PhoneNumbers.Count > 0) {
                 foreach (var p in contact.PhoneNumbers) {

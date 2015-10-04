@@ -416,7 +416,7 @@ namespace NachoClient.iOS
                 textLabel.TextColor = A.Color_0B3239;
                 textLabel.Font = A.Font_AvenirNextDemiBold17;
                 labelView.Hidden = hasImage;
-                labelView.Text = Util.NameToLetters (displayEmailAddress);
+                labelView.Text = ContactsHelper.NameToLetters (displayEmailAddress);
                 labelView.BackgroundColor = Util.ColorForUser (colorIndex);
                 return;
             }
@@ -430,7 +430,7 @@ namespace NachoClient.iOS
                 detailTextLabel.TextColor = UIColor.LightGray;
                 detailTextLabel.Font = A.Font_AvenirNextRegular12;
                 labelView.Hidden = hasImage;
-                labelView.Text = Util.NameToLetters (displayName);
+                labelView.Text = ContactsHelper.NameToLetters (displayName);
                 labelView.BackgroundColor = Util.ColorForUser (colorIndex);
                 return;
             }
@@ -444,7 +444,7 @@ namespace NachoClient.iOS
             detailTextLabel.Font = A.Font_AvenirNextRegular14;
 
             labelView.Hidden = hasImage;
-            labelView.Text = Util.NameToLetters (displayName);
+            labelView.Text = ContactsHelper.NameToLetters (displayName);
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
 
             // Attendee Meeting Status

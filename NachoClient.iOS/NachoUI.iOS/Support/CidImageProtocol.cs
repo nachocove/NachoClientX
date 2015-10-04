@@ -41,10 +41,16 @@ namespace NachoClient.iOS
         [Export ("canInitWithRequest:")]
         public static bool canInitWithRequest (NSUrlRequest request)
         {
-            if ((null == request) || (null == request.Url)) {
-                return false;
+            bool retval = false;
+            try {
+                if ((null == request) || (null == request.Url)) {
+                    return false;
+                }
+                retval = (request.Url.Scheme == "cid");
+            } catch (NullReferenceException) {
+                Log.Error (Log.LOG_UI, "XAMMIT: CidImageProtocol.canInitWithRequest NullReferenceException");
             }
-            return request.Url.Scheme == "cid";
+            return retval;
         }
 
         [Export ("canonicalRequestForRequest:")]

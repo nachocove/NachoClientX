@@ -593,7 +593,7 @@ namespace NachoClient.iOS
                     userLabelView.Layer.CornerRadius = (40 / 2);
                     userLabelView.Layer.MasksToBounds = true;
                     var nameString = (null != detail.SeriesItem.OrganizerName ? detail.SeriesItem.OrganizerName : detail.SeriesItem.OrganizerEmail);
-                    userLabelView.Text = Util.NameToLetters (nameString);
+                    userLabelView.Text = ContactsHelper.NameToLetters (nameString);
                     eventOrganizerView.AddSubview (userLabelView);
                 }
                 eventOrganizerView.Hidden = false;
