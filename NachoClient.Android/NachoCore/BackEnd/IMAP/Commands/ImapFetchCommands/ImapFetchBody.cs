@@ -69,7 +69,7 @@ namespace NachoCore.IMAP
             var uid = new UniqueId (email.ImapUid);
 
             BodyPart imapBody;
-            McAbstrFileDesc.BodyTypeEnum bodyType = ImapStrategy.BodyTypeFromEmail(email, out imapBody, Cts.Token);
+            McAbstrFileDesc.BodyTypeEnum bodyType = ImapStrategy.BodyTypeFromEmail (email, out imapBody, Cts.Token);
             if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
                 // couldn't determine it from the email message. See if we can get it from the server
                 result = messageBodyPart (uid, mailKitFolder, out bodyType);
@@ -155,7 +155,7 @@ namespace NachoCore.IMAP
             }
             var multi = body as BodyPartMultipart;
             if (null != multi) {
-                WriteString (stream, string.Format ("{0}{1}:{2}\n", String.Concat(Enumerable.Repeat("  ", depth)),
+                WriteString (stream, string.Format ("{0}{1}:{2}\n", String.Concat (Enumerable.Repeat ("  ", depth)),
                     multi.PartSpecifier.Length > 0 ? multi.PartSpecifier : "MAINBODY", multi.ContentType.MimeType));
                 foreach (var part in multi.BodyParts) {
                     DumpToStream (stream, part, depth + 1);
@@ -164,7 +164,7 @@ namespace NachoCore.IMAP
 
             var basic = body as BodyPartBasic;
             if (null != basic) {
-                WriteString (stream, string.Format ("{0}{1}:{2}\n", String.Concat(Enumerable.Repeat("  ", depth)), basic.PartSpecifier, basic.ContentType.MimeType));
+                WriteString (stream, string.Format ("{0}{1}:{2}\n", String.Concat (Enumerable.Repeat ("  ", depth)), basic.PartSpecifier, basic.ContentType.MimeType));
             }
             return;
         }
@@ -229,51 +229,11 @@ namespace NachoCore.IMAP
             return NcResult.OK ();
         }
 
-        protected void DownloadMimeHeaders (FetchKit.DownloadPart dp, NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
-        {
-            var tmp = NcModel.Instance.TmpPath (AccountId);
-            try {
-                mailKitFolder.SetStreamContext (uid, tmp);
-                NcCapture.AddKind (KImapFetchPartCommandFetch);
-                using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
-                    using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier + ".MIME", Token, this)) {
-                        st.CopyTo (stream);
-                    }
-                }
-            } finally {
-                mailKitFolder.UnsetStreamContext ();
-                File.Delete (tmp);
-            }
-        }
-
-        protected void DownloadPartData (FetchKit.DownloadPart dp, NcImapFolder mailKitFolder, UniqueId uid, Stream stream, CancellationToken Token)
-        {
-            var tmp = NcModel.Instance.TmpPath (AccountId);
-            try {
-                mailKitFolder.SetStreamContext (uid, tmp);
-                NcCapture.AddKind (KImapFetchPartCommandFetch);
-                using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
-                    if (dp.DownloadAll) {
-                        using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, Token, this)) {
-                            st.CopyTo (stream);
-                        }
-                    } else {
-                        using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, dp.Offset, dp.Length, Token, this)) {
-                            st.CopyTo (stream);
-                        }
-                    }
-                }
-            } finally {
-                mailKitFolder.UnsetStreamContext ();
-                File.Delete (tmp);
-            }
-        }
-
-
         private void WriteBoundary (Stream stream, string boundary, bool final)
         {
             WriteString (stream, string.Format ("--{0}{1}\n", boundary, final ? "--" : "")); 
         }
+
         private NcResult DownloadIndividualParts (McEmailMessage email, ref McBody body, NcImapFolder mailKitFolder, UniqueId uid, List<FetchKit.DownloadPart> Parts, string boundary)
         {
             NcAssert.True (null != Parts && Parts.Any ());
@@ -283,7 +243,7 @@ namespace NachoCore.IMAP
                     WriteString (stream, email.Headers);
                     foreach (var part in Parts) {
                         WriteBoundary (stream, boundary, false);
-                        DownloadIndividualPart(stream, mailKitFolder, uid, part);
+                        DownloadIndividualPart (stream, mailKitFolder, uid, part);
                     }
                     WriteBoundary (stream, boundary, true);
                 }
@@ -314,9 +274,16 @@ namespace NachoCore.IMAP
             if (depth > 10) {
                 throw new Exception ("DownloadIndividualPart: Recursion excceeds max of 10");
             }
-            DownloadMimeHeaders (dp, mailKitFolder, uid, stream, Cts.Token);
-            if (!dp.HeadersOnly) {
-                DownloadPartData (dp, mailKitFolder, uid, stream, Cts.Token);
+            NcCapture.AddKind (KImapFetchPartCommandFetch);
+            using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
+                if (dp.DownloadAll) {
+                    GetBodyPartFull (stream, mailKitFolder, uid, dp);
+                } else {
+                    GetBodyPartMimeHeader (stream, mailKitFolder, uid, dp);
+                    if (!dp.HeadersOnly) {
+                        GetBodyPartData (stream, mailKitFolder, uid, dp);
+                    }
+                }
             }
             if (null != dp.Parts) {
                 foreach (var part in dp.Parts) {
@@ -327,6 +294,46 @@ namespace NachoCore.IMAP
             }
         }
 
+        private void GetBodyPartFull (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
+        {
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            try {
+                mailKitFolder.SetStreamContext (uid, tmp);
+                var mime = mailKitFolder.GetBodyPart (uid, dp.PartSpecifier, Cts.Token, this);
+                mime.WriteTo (stream);
+            } finally {
+                mailKitFolder.UnsetStreamContext ();
+                File.Delete (tmp);
+            }
+        }
+
+        private void GetBodyPartMimeHeader (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
+        {
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            try {
+                mailKitFolder.SetStreamContext (uid, tmp);
+                using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier + ".MIME", Cts.Token, this)) {
+                    st.CopyTo (stream);
+                }
+            } finally {
+                mailKitFolder.UnsetStreamContext ();
+                File.Delete (tmp);
+            }
+        }
+
+        private void GetBodyPartData (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
+        {
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            try {
+                mailKitFolder.SetStreamContext (uid, tmp);
+                using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, dp.Offset, dp.Length, Cts.Token, this)) {
+                    st.CopyTo (stream);
+                }
+            } finally {
+                mailKitFolder.UnsetStreamContext ();
+                File.Delete (tmp);
+            }
+        }
 
         /// <summary>
         /// Copies a downloaded email from one stream to another, skipping the rfc822 mail headers.
