@@ -177,7 +177,6 @@ namespace NachoCore.IMAP
                 NcCapture.AddKind (KImapFetchBodyCommandFetch);
                 long bytes;
                 using (var cap = NcCapture.CreateAndStart (KImapFetchBodyCommandFetch)) {
-                    Log.Info (Log.LOG_IMAP, "Fetching part {0}:{1}", imapBody.PartSpecifier, imapBody.ContentType.MimeType);
                     using (Stream st = mailKitFolder.GetStream (uid, imapBody.PartSpecifier, Cts.Token, this)) {
                         bytes = st.Length;
                         var path = body.GetFilePath ();
@@ -237,7 +236,6 @@ namespace NachoCore.IMAP
                 mailKitFolder.SetStreamContext (uid, tmp);
                 NcCapture.AddKind (KImapFetchPartCommandFetch);
                 using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
-                    Log.Info (Log.LOG_IMAP, "Fetching HEADERS {0}", this.ToString ());
                     using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier + ".MIME", Token, this)) {
                         st.CopyTo (stream);
                     }
@@ -256,12 +254,10 @@ namespace NachoCore.IMAP
                 NcCapture.AddKind (KImapFetchPartCommandFetch);
                 using (var cap = NcCapture.CreateAndStart (KImapFetchPartCommandFetch)) {
                     if (dp.DownloadAll) {
-                        Log.Info (Log.LOG_IMAP, "Fetching Entire Part {0}", this.ToString ());
                         using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, Token, this)) {
                             st.CopyTo (stream);
                         }
                     } else {
-                        Log.Info (Log.LOG_IMAP, "Fetching Part {0}", this.ToString ());
                         using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, dp.Offset, dp.Length, Token, this)) {
                             st.CopyTo (stream);
                         }
