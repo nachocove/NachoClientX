@@ -144,31 +144,46 @@ namespace NachoCore.IMAP
         public class FetchBody
         {
             public string ParentId { get; set; }
+
             public string ServerId { get; set; }
+
             public List<DownloadPart>Parts { get; set; }
         }
 
         public List<FetchBody> FetchBodies { get; set; }
+
         public List<McAttachment> FetchAttachments { get; set; }
 
         public class DownloadPart
         {
             public string PartSpecifier { get; protected set; }
+
             public string MimeType { get; protected set; }
+
             public List<DownloadPart> Parts { get; set; }
+
             public string Boundary { get; protected set; }
 
             public bool HeadersOnly { get; protected set; }
+
             public int Length { get; protected set; }
+
             public int Offset { get; protected set; }
+
             public bool DownloadAll {
                 get {
-                    return (Offset == 0 && Length == -1);
+                    return (Offset == 0 && Length == -1 && HeadersOnly == false);
                 }
                 set {
-                    HeadersOnly = false;
-                    Offset = 0;
-                    Length = -1;
+                    if (value) {
+                        HeadersOnly = false;
+                        Offset = 0;
+                        Length = -1;
+                    } else {
+                        HeadersOnly = true;
+                        Offset = 0;
+                        Length = 0;
+                    }
                 }
             }
 
@@ -182,15 +197,15 @@ namespace NachoCore.IMAP
 
             public DownloadPart (BodyPart part, bool headersOnly)
             {
+                if (string.IsNullOrEmpty (part.PartSpecifier)) {
+                    throw new ImapFetchDnldInvalidPartException ("PartSpecifier can not be empty");
+                }
                 PartSpecifier = part.PartSpecifier;
                 HeadersOnly = headersOnly;
                 MimeType = part.ContentType.MimeType;
                 Boundary = part.ContentType.Boundary;
-
-                if (string.IsNullOrEmpty (PartSpecifier)) {
-                    throw new ImapFetchDnldInvalidPartException ("PartSpecifier can not be empty");
-                }
-                DownloadAll = true;
+                Offset = 0;
+                Length = -1;
             }
 
             public override string ToString ()
@@ -225,6 +240,23 @@ namespace NachoCore.IMAP
                 Offset = offset;
                 Length = length;
             }
+
+            public string ToQuery ()
+            {
+                string query = string.Format ("BODY[{0}.MIME]", PartSpecifier);
+                if (!HeadersOnly) {
+                    query += string.Format (" BODY[{0}]", PartSpecifier);
+                    if (!DownloadAll) {
+                        query += string.Format ("<{0}..{1}>", Offset, Length);
+                    }
+                }
+                if (null != Parts) {
+                    foreach (var dp in Parts) {
+                        query += " " + dp.ToQuery ();
+                    }
+                }
+                return query;
+            }
         }
     }
 
@@ -232,10 +264,13 @@ namespace NachoCore.IMAP
     public interface IImapStrategy
     {
         SyncKit GenSyncKit (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt, McPending pending);
+
         SyncKit GenSyncKit (McProtocolState protocolState, McPending pending);
+
         SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync);
 
         FetchKit GenFetchKit ();
+
         FetchKit GenFetchKitHints ();
     }
 }
