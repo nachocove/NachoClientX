@@ -329,8 +329,14 @@ namespace NachoCore.IMAP
             var tmp = NcModel.Instance.TmpPath (AccountId);
             try {
                 mailKitFolder.SetStreamContext (uid, tmp);
-                using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, dp.Offset, dp.Length, Cts.Token, this)) {
-                    st.CopyTo (stream);
+                if (dp.IsTruncated) {
+                    using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, dp.Offset, dp.Length, Cts.Token, this)) {
+                        st.CopyTo (stream);
+                    }
+                } else {
+                    using (Stream st = mailKitFolder.GetStream (uid, dp.PartSpecifier, Cts.Token, this)) {
+                        st.CopyTo (stream);
+                    }
                 }
             } finally {
                 mailKitFolder.UnsetStreamContext ();

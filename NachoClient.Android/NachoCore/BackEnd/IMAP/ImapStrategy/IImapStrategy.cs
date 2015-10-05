@@ -168,27 +168,33 @@ namespace NachoCore.IMAP
 
             public bool HeadersOnly { get; protected set; }
 
+            /// <summary>
+            /// Gets or sets the length. A length of -1 means 'ALL'
+            /// </summary>
+            /// <value>The length.</value>
             public int Length { get; protected set; }
+
+            const int All = -1;
 
             public int Offset { get; protected set; }
 
             public bool IsTruncated {
                 get {
-                    // TODO Using length != -1 is possibly prone to error, if the caller sets Length to the
+                    // TODO Using length > All is possibly prone to error, if the caller sets Length to the
                     // actual length of the body part. In that case, IsTruncated will erroneously say true.
-                    return HeadersOnly || Offset != 0 || Length != -1;
+                    return Offset != 0 || Length > All;
                 }
             }
 
             public bool DownloadAll {
                 get {
-                    return (Offset == 0 && Length == -1 && HeadersOnly == false);
+                    return (!IsTruncated && HeadersOnly == false);
                 }
                 set {
                     if (value) {
                         HeadersOnly = false;
                         Offset = 0;
-                        Length = -1;
+                        Length = All;
                     } else {
                         HeadersOnly = true;
                         Offset = 0;
@@ -221,7 +227,7 @@ namespace NachoCore.IMAP
                     IsAttachment = false;
                 }
                 Offset = 0;
-                Length = -1;
+                Length = All;
                 Parts = new List<DownloadPart>();
             }
 
@@ -234,8 +240,8 @@ namespace NachoCore.IMAP
                 if (Parts.Any ()) {
                     me += string.Format (" SubParts={0}", Parts.Count);
                 }
-                if (!DownloadAll) {
-                    me += string.Format (" <{0}..{1}", Offset, Length);
+                if (IsTruncated) {
+                    me += string.Format (" <{0}..{1}>", Offset, Length);
                 }
                 return me;
             }
