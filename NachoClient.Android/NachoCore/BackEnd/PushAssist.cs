@@ -843,6 +843,10 @@ namespace NachoCore
             
             var clientId = NcApplication.Instance.ClientId;
             var parameters = Owner.PushAssistParameters ();
+            if (null == parameters) {
+                ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_NO_PARAMS");
+                return;
+            }
             if (String.IsNullOrEmpty (clientId) ||
                 String.IsNullOrEmpty (ClientContext) ||
                 String.IsNullOrEmpty (SessionToken)) {

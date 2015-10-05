@@ -522,6 +522,7 @@ namespace NachoCore.ActiveSync
                             }
                             target.SyncAttemptCount += 1;
                             target.LastSyncAttempt = now;
+                            target.DidAsSyncAfterRestart = true;
                             return true;
                         });
                     } else {
@@ -758,6 +759,7 @@ namespace NachoCore.ActiveSync
                     target.AsSyncMetaToClientExpected = false;
                     target.SyncAttemptCount += 1;
                     target.LastSyncAttempt = now;
+                    target.DidAsSyncAfterRestart = true;
                     return true;
                 });
             }

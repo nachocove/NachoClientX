@@ -43,7 +43,8 @@ namespace NachoCore.Model
         public int SyncAttemptCount { get; set; }
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
-
+        // Have we had a successful sync after restart?
+        public bool DidAsSyncAfterRestart { get; set; }
 
         #region IMAP Folder metadata
         // Nacho Mail Code requires the McEmailMessage.ServerId to be unique across all folders. In IMAP,
@@ -790,6 +791,16 @@ namespace NachoCore.Model
             var folder = UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 target.AsSyncFailRun = 0;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder ResetDidAsSyncAfterRestart ()
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.DidAsSyncAfterRestart = false;
                 return true;
             });
             return folder;

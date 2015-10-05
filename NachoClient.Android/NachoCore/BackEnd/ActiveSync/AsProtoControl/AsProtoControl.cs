@@ -1109,6 +1109,7 @@ namespace NachoCore.ActiveSync
 
         private void DoDrive ()
         {
+            ResetInboxDidAsSyncAfterRestart ();
             if (null != PushAssist) {
                 if (PushAssist.IsStartOrParked ()) {
                     PushAssist.Execute ();
@@ -1227,6 +1228,13 @@ namespace NachoCore.ActiveSync
                 }
             } else {  // use Sync
                 Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Sync");
+                McFolder inbox = McFolder.GetDefaultInboxFolder (AccountId);
+                if (inbox.AsSyncKey == "0") { // haven't completed first sync, PushAssist will schedule retry
+                    return null;
+                }
+                if (inbox.DidAsSyncAfterRestart == false) { // haven't completed first sync after restart, PushAssist will schedule retry
+                    return null;
+                }
                 SyncKit syncKit = Strategy.GenSyncKitFromPingKit (ProtocolState, pingKit);
                 var sync = new AsSyncCommand (this, syncKit);
                 if (null == sync) {
