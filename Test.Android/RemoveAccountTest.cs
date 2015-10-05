@@ -78,8 +78,14 @@ namespace Test.iOS
 
             // confirm that the password is deleted from the keychain
             if (Keychain.Instance.HasKeychain ()) {
-                string retPassword = Keychain.Instance.GetPassword (cred.Id);
-                Assert.Null (retPassword);
+                var gotEx = false;
+                try {
+                    string retPassword = Keychain.Instance.GetPassword (cred.Id);
+                    Assert.Null (retPassword);
+                } catch (KeychainItemNotFoundException) {
+                    gotEx = true;
+                }
+                Assert.IsTrue (gotEx);
             }
         }
 
