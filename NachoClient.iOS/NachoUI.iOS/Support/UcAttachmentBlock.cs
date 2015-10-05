@@ -196,6 +196,12 @@ namespace NachoClient.iOS
             SetNeedsLayout ();
         }
 
+        public int AttachmentCount {
+            get {
+                return list.Count;
+            }
+        }
+
         public List<McAttachment> AttachmentList {
             get {
                 var l = new List<McAttachment> ();

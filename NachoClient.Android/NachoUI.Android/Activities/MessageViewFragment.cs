@@ -155,6 +155,8 @@ namespace NachoClient.AndroidClient
         void ChiliButton_Click (object sender, EventArgs e)
         {
             Console.WriteLine ("ChiliButton_Click");
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            Bind.BindMessageChili (message, (Android.Widget.ImageView)sender);
         }
 
         void ArchiveButton_Click (object sender, EventArgs e)

@@ -15,17 +15,30 @@ using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "InboxActivity")]            
-    public class InboxActivity : NcActivity
+    [Activity (Label = "FoldersActivity")]            
+    public class FoldersActivity : NcActivity
     {
+        INachoEmailMessages messages;
+
+        FolderListFragment folderListFragment;
         MessageViewFragment messageViewFragment;
         MessageListFragment messageListFragment;
 
         protected override void OnCreate (Bundle bundle)
         {
-            base.OnCreate (bundle, Resource.Layout.InboxActivity);
+            base.OnCreate (bundle, Resource.Layout.FoldersActivity);
 
-            var messages = NcEmailManager.Inbox (NcApplication.Instance.Account.Id);
+
+            folderListFragment = FolderListFragment.newInstance ();
+            folderListFragment.onFolderSelected += onFolderSelected;
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, folderListFragment).AddToBackStack ("Folders").Commit ();
+        }
+
+        void onFolderSelected (McFolder folder)
+        {
+            Console.WriteLine ("FoldersActivity onFolderClick: {0}", folder);
+
+            messages = new NachoEmailMessages (folder);
 
             List<int> adds;
             List<int> deletes;
@@ -33,30 +46,23 @@ namespace NachoClient.AndroidClient
 
             messageListFragment = MessageListFragment.newInstance (messages);
             messageListFragment.onMessageClick += onMessageClick;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Mail").Commit ();
+
         }
 
         void onMessageClick (object sender, McEmailMessageThread thread)
         {
-            Console.WriteLine ("InboxActivity onMessageClick: {0}", thread);
+            Console.WriteLine ("FoldersActivity onMessageClick: {0}", thread);
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
                 messageViewFragment = MessageViewFragment.newInstance (message);
                 this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
             } else {
-                var threadMessage = new NachoThreadedEmailMessages (McFolder.GetDefaultInboxFolder (NcApplication.Instance.Account.Id), thread.GetThreadId ());
-                messageListFragment = MessageListFragment.newInstance (threadMessage);
+                var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
+                messageListFragment = MessageListFragment.newInstance (threadMessages);
                 messageListFragment.onMessageClick += onMessageClick;
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
-            }
-        }
-
-        public void DoneWithMessage ()
-        {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MessageViewFragment) {
-                this.FragmentManager.PopBackStack ();
+                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Mail").Commit ();
             }
         }
 
@@ -67,10 +73,7 @@ namespace NachoClient.AndroidClient
                 this.FragmentManager.PopBackStack ();
             }
             if (f is MessageListFragment) {
-                // Don't pop if we are the top, e.g. Inbox
-                if (1 < this.FragmentManager.BackStackEntryCount) {
-                    this.FragmentManager.PopBackStack ();
-                }
+                this.FragmentManager.PopBackStack ();
             }
         }
 

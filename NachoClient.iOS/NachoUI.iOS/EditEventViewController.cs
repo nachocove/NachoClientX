@@ -32,12 +32,9 @@ namespace NachoClient.iOS
         protected McCalendar item;
         protected McCalendar c;
         protected DateTime startingDate;
-        protected McFolder folder;
         protected McAccount account;
-        protected NachoFolders calendars;
-        protected bool calendarChanged;
         protected string TempPhone = "";
-        protected int calendarIndex = 0;
+        protected McFolder calendarFolder;
 
         UITextField titleField;
         UITextView descriptionTextView;
@@ -195,6 +192,7 @@ namespace NachoClient.iOS
                 this.item = null;
             } else {
                 this.item = McCalendar.QueryById<McCalendar> (e.CalendarId);
+                calendarFolder = GetCalendarFolderForItem ();
             }
             this.action = action;
             SetAccount ();
@@ -207,6 +205,7 @@ namespace NachoClient.iOS
                 this.action = CalendarItemEditorAction.create;
             } else {
                 this.action = CalendarItemEditorAction.edit;
+                calendarFolder = GetCalendarFolderForItem ();
             }
             SetAccount ();
         }
@@ -218,32 +217,45 @@ namespace NachoClient.iOS
             } else {
                 account = NcApplication.Instance.Account;
             }
-            calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
-            if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == calendars.Count ()) {
+            var accountCalendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+            if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == accountCalendars.Count ()) {
                 Log.Info (Log.LOG_CALENDAR, "The current account does not support writing to calendars. Using the device account instead.");
                 account = McAccount.GetDeviceAccount ();
-                calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
-                if (0 == calendars.Count ()) {
-                    // This can happen if the user doesn't have permission to access the calendar.
-                    // Use the backstop device calendar folder so the UI can finish loading before
-                    // the user gets the popup message about the lack of permission.
-                    calendars = new NachoFolders (McFolder.GetDeviceCalendarsFolder ());
-                }
             }
 
             // There are additional restrictions on the event when it is on the device calendar.
             if (McAccount.AccountTypeEnum.Device == account.AccountType) {
-                isSimpleEvent = true;
                 if (!Calendars.Instance.AuthorizationStatus) {
-                    // The app doesn't have access to the calendar
+                    // The current account does not support calendars, and the device calendar
+                    // is not accessible.  Look for any account that has a writable calendar.
+                    Log.Info (Log.LOG_CALENDAR, "The device calendar is not accessible. Looking for another account to use for the new calendar item.");
                     noCalendarAccess = true;
+                    foreach (var candidateAccountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+                        var candidateAccount = McAccount.QueryById<McAccount> (candidateAccountId);
+                        if (candidateAccount.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && 0 < new NachoFolders (candidateAccountId, NachoFolders.FilterForCalendars).Count ()) {
+                            noCalendarAccess = false;
+                            account = candidateAccount;
+                            break;
+                        }
+                    }
+                } else {
+                    isSimpleEvent = true;
+                    if (CalendarItemEditorAction.create == action && null != item) {
+                        // The Create Event gesture on an email message will create a meeting with attendees.
+                        // But the app does not support creating meetings on the device calendar.  Remove any
+                        // attendees from the calendar item.
+                        item.attendees = new List<McAttendee> ();
+                    }
                 }
-                if (CalendarItemEditorAction.create == action && null != item) {
-                    // The Create Event gesture on an email message will create a meeting with attendees.
-                    // But the app does not support creating meetings on the device calendar.  Remove any
-                    // attendees from the calendar item.
-                    item.attendees = new List<McAttendee> ();
-                }
+            }
+        }
+
+        private void ChangeToAccount (int newAccountId) {
+            account = McAccount.QueryById<McAccount> (newAccountId);
+            isSimpleEvent = McAccount.AccountTypeEnum.Device == account.AccountType;
+            if (isSimpleEvent) {
+                // Calendar items in the device calendar don't support attendees or attachments.
+                c.attendees = new List<McAttendee> ();
             }
         }
 
@@ -312,16 +324,6 @@ namespace NachoClient.iOS
             NavigationController.PopViewController (true);
         }
 
-        protected string MyCalendarName (McCalendar c)
-        {
-            var candidates = McFolder.QueryByFolderEntryId<McCalendar> (account.Id, c.Id);
-            if ((null == candidates) || (0 == candidates.Count)) {
-                return "None";
-            } else {
-                return candidates.First ().DisplayName;
-            }
-        }
-
         protected override void OnKeyboardChanged ()
         {
             LayoutView ();
@@ -378,11 +380,15 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EditEventToCalendarChooser")) {
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
                 ExtractValues ();
-                dc.SetCalendars (calendars);
-                dc.SetSelectedCalIndex (calendarIndex);
+                dc.SetCalendars (GetChoosableCalendars (), calendarFolder);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    calendarIndex = dc.GetCalIndex ();
-                    calendarChanged = true;
+                    var newCalendar = dc.GetSelectedCalendar ();
+                    if (null != newCalendar) {
+                        if (newCalendar.AccountId != calendarFolder.AccountId) {
+                            ChangeToAccount (newCalendar.AccountId);
+                        }
+                        calendarFolder = newCalendar;
+                    }
                 };
                 return;
             }
@@ -814,35 +820,26 @@ namespace NachoClient.iOS
             alertDetailLabelView.Frame = new CGRect (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 
             //calendar view
-            var calFolder = new McFolder ();
-            if (!calendarChanged) {
-                if (action == CalendarItemEditorAction.create) {
-                    // The initial setting of the calendar picker should be the default calendar folder.
-                    // (In most cases, there is only one calendar folder.  But Hotmail does things
-                    // differently, and choosing the correct folder is vital.)  Start with the first
-                    // calendar in the list, regardless of its type.  But then look for a default
-                    // calendar folder elsewhere in the calendar list.
-                    calFolder = calendars.GetFolder (0);
-                    for (int i = 1; i < calendars.Count (); ++i) {
-                        var cal = calendars.GetFolder (i);
-                        if (Xml.FolderHierarchy.TypeCode.DefaultCal_8 == cal.Type) {
-                            calFolder = cal;
-                            break;
-                        }
+            if (null == calendarFolder && CalendarItemEditorAction.create == action && !noCalendarAccess) {
+                // Choose the initial calendar for the item.  Look for a default calendar folder within
+                // the selected account.
+                var accountCalendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+                calendarFolder = accountCalendars.GetFolder (0);
+                for (int f = 0; f < accountCalendars.Count(); ++f) {
+                    var calendar = accountCalendars.GetFolder (f);
+                    if (Xml.FolderHierarchy.TypeCode.DefaultCal_8 == calendar.Type) {
+                        calendarFolder = calendar;
+                        break;
                     }
-                } else {
-                    calFolder = GetCalendarFolder ();
-                    if (null == calFolder) {
-                        calFolder = calendars.GetFolder (0);
-                    } 
                 }
-            } else {
-                calFolder = calendars.GetFolder (calendarIndex);
             }
-            SetCalIndex (calFolder);
 
             var calendarDetailLabelView = contentView.ViewWithTag (CAL_DETAIL_TAG) as UILabel;
-            calendarDetailLabelView.Text = calendars.GetFolder (calendarIndex).DisplayName;
+            if (null == calendarFolder) {
+                calendarDetailLabelView.Text = "";
+            } else {
+                calendarDetailLabelView.Text = calendarFolder.DisplayName;
+            }
             calendarDetailLabelView.SizeToFit ();
             calendarDetailLabelView.Frame = new CGRect (SCREEN_WIDTH - calendarDetailLabelView.Frame.Width - 34, 12.438f, calendarDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 
@@ -983,25 +980,41 @@ namespace NachoClient.iOS
             endView.AddSubview (endDatePicker);
         }
 
-        protected McFolder GetCalendarFolder ()
+        protected McFolder GetCalendarFolderForItem ()
         {
-            for (var i = 0; i < calendars.Count (); i++) {
-                var calFolderMap = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (account.Id, (calendars.GetFolder (i)).Id, c.Id, c.GetClassCode ());
-                if (null != calFolderMap) {
-                    return calendars.GetFolderByFolderID (calFolderMap.FolderId);
-                }
-            }
-            return null;
+            return McFolder.QueryByFolderEntryId<McCalendar> (item.AccountId, item.Id).FirstOrDefault ();
         }
 
-        protected void SetCalIndex (McFolder folder)
+        protected List<Tuple<McAccount, NachoFolders>> GetChoosableCalendars ()
         {
-            for (var i = 0; i < calendars.Count (); i++) {
-                if (folder.Id == (calendars.GetFolder (i)).Id) {
-                    calendarIndex = i;
-                    return;
+            var result = new List<Tuple<McAccount, NachoFolders>> ();
+            IEnumerable<McAccount> candidateAccounts;
+            // If the user has added any attachments to the event, there is likely an attachment body
+            // sitting in a file in an account-specific location.  Switching accounts at this point
+            // would be complicated.  So don't allow changing accounts if the user has already added
+            // an attachment.
+            if (CalendarItemEditorAction.create == action && 0 == attachmentView.AttachmentCount) {
+                candidateAccounts = McAccount.GetAllAccounts ();
+            } else {
+                candidateAccounts = new McAccount[] { account };
+            }
+            foreach (var account in candidateAccounts) {
+                if (account.HasCapability(McAccount.AccountCapabilityEnum.CalWriter)) {
+                    var calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+                    if (0 < calendars.Count ()) {
+                        result.Add (new Tuple<McAccount, NachoFolders> (account, calendars));
+                    }
                 }
             }
+            if (0 == result.Count) {
+                Log.Error (Log.LOG_CALENDAR, "Couldn't find any calendars for the event editor's calendar chooser.");
+                if (null == item) {
+                    result.Add (new Tuple<McAccount, NachoFolders> (McAccount.GetDeviceAccount (), new NachoFolders (McFolder.GetDeviceCalendarsFolder ())));
+                } else {
+                    result.Add (new Tuple<McAccount, NachoFolders> (account, new NachoFolders (GetCalendarFolderForItem ())));
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -1149,7 +1162,7 @@ namespace NachoClient.iOS
                 c.StartTime = startDate;
                 c.EndTime = endDate;
             }
-            //c.attendees is already set via PullAttendees
+            // c.attendees is already set via PullAttendees
             c.Location = locationField.Text;
             c.attachments = attachmentView.AttachmentList;
                 
@@ -1191,14 +1204,13 @@ namespace NachoClient.iOS
         {
             if (0 == c.Id) {
                 c.Insert (); // new entry
-                folder = calendars.GetFolder (calendarIndex);
-                folder.Link (c);
-                BackEnd.Instance.CreateCalCmd (account.Id, c.Id, folder.Id);
+                calendarFolder.Link (c);
+                BackEnd.Instance.CreateCalCmd (account.Id, c.Id, calendarFolder.Id);
             } else {
                 c.RecurrencesGeneratedUntil = DateTime.MinValue; // Force regeneration of events
                 c.Update ();
-                var oldFolder = GetCalendarFolder ();
-                var newFolder = calendars.GetFolder (calendarIndex);
+                var oldFolder = GetCalendarFolderForItem ();
+                var newFolder = calendarFolder;
                 if (newFolder.Id != oldFolder.Id) {
                     BackEnd.Instance.MoveCalCmd (account.Id, c.Id, newFolder.Id);
                     oldFolder.Unlink (c);
