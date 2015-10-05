@@ -17,20 +17,20 @@ namespace NachoClient.iOS
         INachoCertificateResponderParent owner;
 
         UIView certificateView;
+        UITextView certificateViewTitle;
+        UILabel descriptionOfProblem;
+        UITextView certificateInformation;
+        UIButton trustCertificateButton;
+        UIButton dontTrustCertificateButton;
+        UIView horizontalLineAboveButtons;
+        UIView verticalLineBetweenButtons;
+        UIView horizontalLineAfterDescriptionOfProblem;
 
         int callbackAccountId;
 
         protected string certInfo;
         protected string certCommonName;
         protected string certOrganization;
-
-        const int GRAY_BACKGROUND_TAG = 20;
-        const int CERTIFICATE_VIEW_TAG = 21;
-        const int CERTIFICATE_INFORMATION_TEXT_TAG = 22;
-        const int TRUST_CERTIFICATE_BUTTON_TAG = 23;
-        const int CANCEL_CERTIFICATE_BUTTON_TAG = 24;
-        const int PROBLEM_TAG = 25;
-        const int CERTIFICATE_LINE_TAG = 26;
 
 
         public CertificateView (IntPtr handle) : base (handle)
@@ -42,17 +42,16 @@ namespace NachoClient.iOS
             this.owner = owner;
             this.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (.7f);
 
-            nfloat VIEW_HEIGHT = this.Frame.Height - 64f;
-
-            certificateView = new UIView (new CGRect (20, 64, Frame.Width - 40, VIEW_HEIGHT - 64));
-            certificateView.Tag = CERTIFICATE_VIEW_TAG;
+            certificateView = new UIView (new CGRect (20, 64, Bounds.Width - 40, Bounds.Height - 128));
+            certificateView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             certificateView.BackgroundColor = UIColor.White;
             certificateView.Layer.CornerRadius = 7.0f;
             certificateView.Alpha = 1.0f;
             certificateView.AccessibilityLabel = "Security Warning";
             certificateView.AccessibilityIdentifier = "SecurityWarning";
 
-            var certificateViewTitle = new UITextView (new CGRect (8, 2, certificateView.Frame.Width - 16, 40));
+            certificateViewTitle = new UITextView (new CGRect (8, 2, certificateView.Bounds.Width - 16, 40));
+            certificateViewTitle.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             certificateViewTitle.BackgroundColor = UIColor.White;
             certificateViewTitle.Alpha = 1.0f;
             certificateViewTitle.Font = UIFont.SystemFontOfSize (17);
@@ -62,33 +61,32 @@ namespace NachoClient.iOS
             certificateViewTitle.Editable = false;
             certificateView.Add (certificateViewTitle);
 
-            var descriptionOfProblem = new UILabel (new CGRect (15, 47, certificateView.Frame.Width - 30, 230));
-
+            descriptionOfProblem = new UILabel (new CGRect (15, 47, certificateView.Bounds.Width - 30, 230));
+            descriptionOfProblem.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             descriptionOfProblem.TextColor = UIColor.Black;
             descriptionOfProblem.Font = A.Font_AvenirNextMedium12;
             descriptionOfProblem.Alpha = 1.0f;
             descriptionOfProblem.BackgroundColor = UIColor.White;
             descriptionOfProblem.LineBreakMode = UILineBreakMode.WordWrap;
             descriptionOfProblem.Lines = 0;
-            descriptionOfProblem.Tag = PROBLEM_TAG;
             certificateView.Add (descriptionOfProblem);
 
             //Create certificate body: Main body of text giving all information about the certificate
-            var certificateInformation = new UITextView (new CGRect (15, 47 + 236, certificateView.Frame.Width - 30, certificateView.Frame.Height - 100 - 236));
+            certificateInformation = new UITextView (new CGRect (15, 47 + 236, certificateView.Bounds.Width - 30, certificateView.Bounds.Height - 100 - 236));
+            certificateInformation.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             certificateInformation.BackgroundColor = UIColor.White;
             certificateInformation.TextColor = UIColor.Black;
             certificateInformation.Font = A.Font_AvenirNextRegular12;
             certificateInformation.Alpha = 1.0f;
             certificateInformation.TextAlignment = UITextAlignment.Left;
-            certificateInformation.Tag = CERTIFICATE_INFORMATION_TEXT_TAG;
             certificateInformation.Editable = false;
             certificateView.Add (certificateInformation);
 
             //Create trust button: Button on bottom-left side of view that says "Trust"
-            var trustCertificateButton = new UIButton (new CGRect (0, certificateView.Frame.Height - 44, certificateView.Frame.Width / 2, 44));
+            trustCertificateButton = new UIButton (new CGRect (0, certificateView.Bounds.Height - 44, certificateView.Bounds.Width / 2, 44));
+            trustCertificateButton.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin;
             trustCertificateButton.Layer.CornerRadius = 10.0f;
             trustCertificateButton.BackgroundColor = UIColor.White;
-            trustCertificateButton.Tag = TRUST_CERTIFICATE_BUTTON_TAG;
             trustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             trustCertificateButton.SetTitle ("Allow", UIControlState.Normal);
             trustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal); 
@@ -101,14 +99,14 @@ namespace NachoClient.iOS
             certificateView.Add (trustCertificateButton);
 
             //Create cancel button: Button on bottom-right side of view that says "Cancel"
-            var dontTrustCertificateButton = new UIButton (new CGRect (certificateView.Frame.Width / 2, certificateView.Frame.Height - 44, certificateView.Frame.Width / 2, 44));
+            dontTrustCertificateButton = new UIButton (new CGRect (certificateView.Bounds.Width / 2, certificateView.Bounds.Height - 44, certificateView.Bounds.Width / 2, 44));
+            dontTrustCertificateButton.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleLeftMargin;
             dontTrustCertificateButton.Layer.CornerRadius = 10.0f;
             dontTrustCertificateButton.BackgroundColor = UIColor.White;
             dontTrustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             dontTrustCertificateButton.SetTitle ("Cancel", UIControlState.Normal);
             dontTrustCertificateButton.AccessibilityLabel = "Cancel";
             dontTrustCertificateButton.AccessibilityIdentifier = "Cancel";
-            dontTrustCertificateButton.Tag = CANCEL_CERTIFICATE_BUTTON_TAG;
             dontTrustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             dontTrustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissView ();
@@ -116,16 +114,18 @@ namespace NachoClient.iOS
             };
             certificateView.Add (dontTrustCertificateButton);
 
-            UIView horizontalLineAboveButtons = new UIView (new CGRect (0, certificateView.Frame.Height - 45, certificateView.Frame.Width, .5f));
+            horizontalLineAboveButtons = new UIView (new CGRect (0, certificateView.Bounds.Height - 45, certificateView.Bounds.Width, .5f));
+            horizontalLineAboveButtons.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleWidth;
             horizontalLineAboveButtons.BackgroundColor = UIColor.LightGray;
             certificateView.Add (horizontalLineAboveButtons);
 
-            UIView verticalLineBetweenButtons = new UIView (new CGRect (certificateView.Frame.Width / 2, certificateView.Frame.Height - 45, .5f, 45));
+            verticalLineBetweenButtons = new UIView (new CGRect (certificateView.Bounds.Width / 2, certificateView.Bounds.Height - 45, .5f, 45));
+            verticalLineBetweenButtons.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleRightMargin;
             verticalLineBetweenButtons.BackgroundColor = UIColor.LightGray;
             certificateView.Add (verticalLineBetweenButtons);
 
-            UIView horizontalLineAfterDescriptionOfProblem = new UIView (new CGRect (15, 47 + 236, certificateView.Frame.Width - 30, .5f));
-            horizontalLineAfterDescriptionOfProblem.Tag = CERTIFICATE_LINE_TAG;
+            horizontalLineAfterDescriptionOfProblem = new UIView (new CGRect (15, 47 + 236, certificateView.Frame.Width - 30, .5f));
+            horizontalLineAfterDescriptionOfProblem.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             horizontalLineAfterDescriptionOfProblem.BackgroundColor = UIColor.LightGray;
             certificateView.Add (horizontalLineAfterDescriptionOfProblem);
 
@@ -137,19 +137,28 @@ namespace NachoClient.iOS
 
         public void ConfigureView ()
         {
-            var descriptionOfProblem = (UILabel)certificateView.ViewWithTag (PROBLEM_TAG);
             descriptionOfProblem.Text = String.Format (problemFormat, certCommonName, certOrganization);
-            descriptionOfProblem.SizeToFit ();
+            certificateInformation.Text = certInfo;
+            SetNeedsLayout ();
+        }
 
-            var horizontalLineAfterDescriptionOfProblem = certificateView.ViewWithTag (CERTIFICATE_LINE_TAG);
-            ViewFramer.Create (horizontalLineAfterDescriptionOfProblem).Y (descriptionOfProblem.Frame.Bottom + 5);
+        public override void LayoutSubviews ()
+        {
+            base.LayoutSubviews ();
 
-            var certY = horizontalLineAfterDescriptionOfProblem.Frame.Bottom + 5;
+            var size = descriptionOfProblem.SizeThatFits (descriptionOfProblem.Frame.Size);
+            var frame = descriptionOfProblem.Frame;
+            frame.Height = size.Height;
+            descriptionOfProblem.Frame = frame;
 
-            var certInfoTextView = (UITextView)certificateView.ViewWithTag (CERTIFICATE_INFORMATION_TEXT_TAG);
-            ViewFramer.Create (certInfoTextView).Y (certY);
-            ViewFramer.Create (certInfoTextView).Height (certificateView.Frame.Height - 50 - certY);
-            certInfoTextView.Text = certInfo;
+            frame = horizontalLineAfterDescriptionOfProblem.Frame;
+            frame.Y = descriptionOfProblem.Frame.Bottom + 5;
+            horizontalLineAfterDescriptionOfProblem.Frame = frame;
+
+            frame = certificateInformation.Frame;
+            frame.Y = horizontalLineAfterDescriptionOfProblem.Frame.Bottom + 5;
+            frame.Height = certificateView.Bounds.Height - 50 - frame.Y;
+            certificateInformation.Frame = frame;
         }
 
         public void SetCertificateInformation (int accountId, NachoCore.Model.McAccount.AccountCapabilityEnum capability)

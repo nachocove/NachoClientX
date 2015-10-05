@@ -35,7 +35,17 @@ namespace NachoClient.AndroidClient
             var activity = (NcActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
+            var folderView = view.FindViewById<View> (Resource.Id.mail);
+            folderView.Click += FolderView_Click;
+
             return view;
+        }
+
+        void FolderView_Click (object sender, EventArgs e)
+        {
+            var intent = new Intent ();
+            intent.SetClass (this.Activity, typeof(FoldersActivity));
+            StartActivity (intent);
         }
     }
 }

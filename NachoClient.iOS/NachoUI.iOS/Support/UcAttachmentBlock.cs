@@ -143,7 +143,6 @@ namespace NachoClient.iOS
 
     public class UcAttachmentBlock : UIView
     {
-        protected int accountId;
         protected IUcAttachmentBlockDelegate owner;
         protected nfloat parentWidth;
         protected List<UcAttachmentCell> list = new List<UcAttachmentCell> ();
@@ -164,10 +163,9 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer toggleCompactTapped;
         protected UITapGestureRecognizer.Token toggleCompactTappedToken;
 
-        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, nfloat parentWidth, int cellHeight, bool editable)
+        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, nfloat parentWidth, int cellHeight, bool editable)
         {
             this.owner = owner;
-            this.accountId = accountId;
             this.parentWidth = parentWidth;
             this.BackgroundColor = UIColor.White;
             this.CELL_HEIGHT = cellHeight;
@@ -182,6 +180,12 @@ namespace NachoClient.iOS
         public void SetCompact (bool isCompact)
         {
             this.isCompact = isCompact;
+        }
+
+        public int AttachmentCount {
+            get {
+                return list.Count;
+            }
         }
 
         public List<McAttachment> AttachmentList {

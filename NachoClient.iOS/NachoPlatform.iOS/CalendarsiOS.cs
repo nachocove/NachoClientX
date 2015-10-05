@@ -60,12 +60,18 @@ namespace NachoPlatform
 
             public override string ServerId {
                 get {
+                    if (null == Folder) {
+                        return McFolder.ClientOwned_DeviceCalendars;
+                    }
                     return Folder.CalendarIdentifier;
                 }
             }
 
             public override string DisplayName {
                 get {
+                    if (null == Folder) {
+                        return "Device Calendars";
+                    }
                     if (null != Folder.Source && !string.IsNullOrEmpty (Folder.Source.Title)) {
                         return string.Format ("{0} : {1}", Folder.Source.Title, Folder.Title);
                     }
@@ -75,8 +81,13 @@ namespace NachoPlatform
 
             public override NcResult ToMcFolder ()
             {
-                var mcFolder = McFolder.Create (McAccount.GetDeviceAccount ().Id, true, false, false, "0", Folder.CalendarIdentifier, DisplayName,
-                    isDefault ? Xml.FolderHierarchy.TypeCode.DefaultCal_8 : Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                McFolder mcFolder;
+                if (null == Folder) {
+                    mcFolder = McFolder.GetDeviceCalendarsFolder ();
+                } else {
+                    mcFolder = McFolder.Create (McAccount.GetDeviceAccount ().Id, true, false, false, "0", Folder.CalendarIdentifier, DisplayName,
+                        isDefault ? Xml.FolderHierarchy.TypeCode.DefaultCal_8 : Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                }
                 return NcResult.OK (mcFolder);
             }
         }
@@ -733,6 +744,9 @@ namespace NachoPlatform
                 var parentFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
                 if (null == parentFolder) {
                     Log.Error (Log.LOG_SYS, "Device calendar item that is being changed is not in any folder.");
+                } else if (parentFolder.Id == McFolder.GetDeviceCalendarsFolder ().Id) {
+                    Log.Info (Log.LOG_SYS, "Device calendar item that is being changed is in the backstop folder. " +
+                        "No attempt will be made to change the device calendar for the event.");
                 } else if (parentFolder.ServerId != ekEvent.Calendar.CalendarIdentifier) {
                     var newEkCalendar = Es.GetCalendar (parentFolder.ServerId);
                     if (null == newEkCalendar) {

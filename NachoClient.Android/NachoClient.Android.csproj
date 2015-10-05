@@ -443,8 +443,6 @@
     <Compile Include="NachoUI.Android\Activities\ComposeFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\CredentialsFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\EventViewFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\FolderFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\FolderListActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\GoogleSignInFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\HotMessageFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\InboxActivity.cs" />
@@ -531,6 +529,9 @@
     <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\EventListFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\CalendarActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\FoldersActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\FolderListFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -949,8 +950,6 @@
     <AndroidResource Include="Resources\layout\CredentialsFragment.axml" />
     <AndroidResource Include="Resources\layout\drawer_header.xml" />
     <AndroidResource Include="Resources\layout\EventViewFragment.axml" />
-    <AndroidResource Include="Resources\layout\FolderFragment.axml" />
-    <AndroidResource Include="Resources\layout\FolderListActivity.axml" />
     <AndroidResource Include="Resources\layout\GoogleSignInFragment.axml" />
     <AndroidResource Include="Resources\layout\HotMessageFragment.axml" />
     <AndroidResource Include="Resources\layout\InboxActivity.axml" />
@@ -1248,5 +1247,8 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\event_phone.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\event_reminder.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\event_when.png" />
+    <AndroidResource Include="Resources\layout\FoldersActivity.axml" />
+    <AndroidResource Include="Resources\layout\FolderListFragment.axml" />
+    <AndroidResource Include="Resources\layout\FolderCell.axml" />
   </ItemGroup>
 </Project>

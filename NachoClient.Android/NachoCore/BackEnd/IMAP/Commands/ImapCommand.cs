@@ -177,13 +177,13 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD2");
                 serverFailedGenerally = true;
             } finally {
-                ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Finished (failed {2})", this.GetType ().Name, AccountId, serverFailedGenerally);
             }
             if (Cts.Token.IsCancellationRequested) {
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
                 return;
             }
+            ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
             switch (action.Item1) {
             case ResolveAction.None:
                 break;

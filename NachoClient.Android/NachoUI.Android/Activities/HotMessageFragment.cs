@@ -29,12 +29,17 @@ namespace NachoClient.AndroidClient
 
         BodyDownloader bodyDownloader;
 
+        // Display first message of a thread in a cardview
         public static HotMessageFragment newInstance (McEmailMessageThread thread)
         {
             var fragment = new HotMessageFragment ();
 
             fragment.thread = thread;
             fragment.message = thread.FirstMessageSpecialCase ();
+
+            // Hot query returns single messages for threads so
+            // fix up the number of messages in the thread here
+            fragment.thread.UpdateThreadCount(fragment.message.ConversationId);
 
             return fragment;
         }
@@ -46,11 +51,6 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
-
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.HotMessageFragment, container, false);
 
             view.Click += View_Click;
@@ -155,6 +155,8 @@ namespace NachoClient.AndroidClient
         void ChiliButton_Click (object sender, EventArgs e)
         {
             Console.WriteLine ("ChiliButton_Click");
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            Bind.BindMessageChili (thread, message, (Android.Widget.ImageView)sender);
         }
 
         void ArchiveButton_Click (object sender, EventArgs e)
