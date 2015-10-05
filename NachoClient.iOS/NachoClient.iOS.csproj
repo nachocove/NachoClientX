@@ -1696,6 +1696,7 @@
       <Link>NachoCore\Utils\NcEventDetail.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\ImageiOS.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcWebViewMessageProtocol.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
