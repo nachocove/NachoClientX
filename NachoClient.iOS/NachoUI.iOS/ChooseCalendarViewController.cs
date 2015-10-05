@@ -44,12 +44,15 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_UI,
                 "The selected calendar that was passed to ChooseCalendarViewController.SetCalendars is not in the set of candidate calendars.");
-            selectedAccountIndex = 0;
-            selectedFolderIndex = 0;
+            selectedAccountIndex = -1;
+            selectedFolderIndex = -1;
         }
 
         public McFolder GetSelectedCalendar ()
         {
+            if (0 > selectedAccountIndex) {
+                return null;
+            }
             return calendars [selectedAccountIndex].Item2.GetFolder (selectedFolderIndex);
         }
 
@@ -86,7 +89,9 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            tableView.ScrollToRow (NSIndexPath.FromRowSection (selectedFolderIndex, selectedAccountIndex), UITableViewScrollPosition.Middle, true);
+            if (0 <= selectedAccountIndex) {
+                tableView.ScrollToRow (NSIndexPath.FromRowSection (selectedFolderIndex, selectedAccountIndex), UITableViewScrollPosition.Middle, true);
+            }
         }
 
         private class CalendarChoicesSource : UITableViewSource

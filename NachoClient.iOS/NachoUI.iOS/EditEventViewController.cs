@@ -383,10 +383,12 @@ namespace NachoClient.iOS
                 dc.SetCalendars (GetChoosableCalendars (), calendarFolder);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     var newCalendar = dc.GetSelectedCalendar ();
-                    if (newCalendar.AccountId != calendarFolder.AccountId) {
-                        ChangeToAccount (newCalendar.AccountId);
+                    if (null != newCalendar) {
+                        if (newCalendar.AccountId != calendarFolder.AccountId) {
+                            ChangeToAccount (newCalendar.AccountId);
+                        }
+                        calendarFolder = newCalendar;
                     }
-                    calendarFolder = newCalendar;
                 };
                 return;
             }
