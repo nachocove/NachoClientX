@@ -11,19 +11,33 @@ using Android.Support.Design.Widget;
 
 using NachoCore;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "Nacho Mail", MainLauncher = true, Icon = "@drawable/icon")]
+    [Activity (Label = "Nacho Mail", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.NachoMail")]
     public class MainActivity : AppCompatActivity
     {
+        bool StatusIndCallbackIsSet = false;
+
+        enum StartupViewState
+        {
+            Startup,
+            Incompatible,
+            Setup,
+            Migration,
+            Recovery,
+            Blank,
+            App
+        }
+
+        StartupViewState currentState = StartupViewState.Startup;
+
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
 
             MainApplication.Startup ();
-
-            SkipIfStarted ();
 
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.Main);
@@ -36,22 +50,154 @@ namespace NachoClient.AndroidClient
         {
             base.OnStart ();
 
+            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: StartBasalServices");
             NcApplication.Instance.StartBasalServices ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
 
+            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: AppStartupTasks");
             NcApplication.Instance.AppStartupTasks ();
+
+            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: OnStart finished");
         }
 
         protected override void OnResume ()
         {
             base.OnResume ();
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            if (!NcMigration.IsCompatible ()) {
+                Log.Info (Log.LOG_UI, "MainActivity: found incompatible migration");
+                currentState = StartupViewState.Incompatible;
+                // Display an alert view and wait to get out
+                new Android.Support.V7.App.AlertDialog.Builder (this).SetTitle (Resource.String.incompatible_version).SetMessage (Resource.String.incompatible_message).Show ();
+                return;
+            }
+            if (currentState == StartupViewState.Startup) {
+                Log.Info (Log.LOG_UI, "MainActivity: onResume in Startup state, determining where to go");
+                ShowScreenForApplicationState ();
+            }
         }
 
-        void SkipIfStarted ()
+        protected override void OnPause ()
+        {
+            base.OnPause ();
+        }
+
+        void ShowScreenForApplicationState ()
         {
             if (NcApplication.Instance.IsUp ()) {
-                Skip ();
+                StopListeningForApplicationStatus ();
+                var configAccount = McAccount.GetAccountBeingConfigured ();
+                var deviceAccount = McAccount.GetDeviceAccount ();
+                var mdmAccount = McAccount.GetMDMAccount ();
+                if (null != configAccount) {
+                    Log.Info (Log.LOG_UI, "MainActivity: found account being configured");
+                    ShowSetupScreen ();
+                } else if (null == mdmAccount && NcMdmConfig.Instance.IsPopulated) {
+                    ShowSetupScreen ();
+                } else if (null == NcApplication.Instance.Account) {
+                    Log.Info (Log.LOG_UI, "MainActivity: null NcApplication.Instance.Account");
+                    ShowSetupScreen ();
+                } else if ((null != deviceAccount) && (deviceAccount.Id == NcApplication.Instance.Account.Id)) {
+                    Log.Info (Log.LOG_UI, "MainActivity: NcApplication.Instance.Account is deviceAccount");
+                    ShowSetupScreen ();
+                } else if (!NcApplication.ReadyToStartUI ()) {
+                    Log.Info (Log.LOG_UI, "MainActivity: not ready to start UI, assuming tutorial still needs display");
+                    // This should only be if the app closed before the tutorial was dismissed;
+                    ShowSetupScreen (true);
+                } else {
+                    Log.Info (Log.LOG_UI, "MainActivity: Ready to go, showing application");
+                    ShowApplication ();
+                }
+            } else {
+                StartListeningForApplicationStatus ();
+                if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Migrating) {
+                    Log.Info (Log.LOG_UI, "MainActivity: instance isn't up yet, in Migrating state");
+                    ShowMigrationScreen ();
+                } else if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Initializing) {
+                    Log.Info (Log.LOG_UI, "MainActivity: instance isn't up yet, in Initializing state");
+                    if (NcApplication.Instance.InSafeMode ()) {
+                        ShowRecoveryScreen ();
+                    } else {
+                        Log.Info (Log.LOG_UI, "MainActivity initializing, but not in safe mode, keeping current screen");
+                    }
+                } else {
+                    // I don't think we can ever get here based on the definition of NcApplication.IsUp.  If things
+                    // change (like a new state is added to NcApplication), this will just result in a blank screen
+                    // until the application is up.
+                    currentState = StartupViewState.Blank;
+                    Log.Info (Log.LOG_UI, "MainActivity instance isn't up yet, in unexpected state, showing BLANK");
+                }
+            }
+        }
+
+        void ShowApplication ()
+        {
+            if (currentState == StartupViewState.App) {
+                return;
+            }
+            currentState = StartupViewState.App;
+
+            Log.Info (Log.LOG_UI, "MainActivity ShowApplication");
+
+            var intent = new Intent ();
+            intent.SetClass (this, typeof(NowActivity));
+            StartActivity (intent);
+        }
+
+        void ShowSetupScreen (bool startWithTutorial = false)
+        {
+            if (currentState == StartupViewState.Setup) {
+                return;
+            }
+            currentState = StartupViewState.Setup;
+
+            Log.Info (Log.LOG_UI, "MainActivity ShowApplication");
+
+            var intent = new Intent ();
+            intent.SetClass (this, typeof(LaunchActivity));
+            StartActivity (intent);
+        }
+
+        void ShowRecoveryScreen ()
+        {
+            if (currentState == StartupViewState.Recovery) {
+                return;
+            }
+            currentState = StartupViewState.Recovery;
+
+            Log.Info (Log.LOG_UI, "MainActivity ShowRecoveryScreen");
+
+            var recoveryFragment = new RecoveryFragment ();
+            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, recoveryFragment).Commit ();
+        }
+
+        void ShowMigrationScreen ()
+        {
+            if (currentState == StartupViewState.Migration) {
+                return;
+            }
+            currentState = StartupViewState.Migration;
+
+            Log.Info (Log.LOG_UI, "MainActivity ShowMigrationScreen");
+
+            var migrationFragment = new MigrationFragment ();
+            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, migrationFragment).Commit ();
+
+            currentState = StartupViewState.Migration;
+        }
+
+        void StartListeningForApplicationStatus ()
+        {
+            if (!StatusIndCallbackIsSet) {
+                StatusIndCallbackIsSet = true;
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+        }
+
+        void StopListeningForApplicationStatus ()
+        {
+            if (StatusIndCallbackIsSet) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                StatusIndCallbackIsSet = false;
             }
         }
 
@@ -59,45 +205,9 @@ namespace NachoClient.AndroidClient
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_ExecutionContextChanged == s.Status.SubKind) {
-                if (NcApplication.Instance.IsUp ()) {
-                    NachoPlatform.InvokeOnUIThread.Instance.Invoke (delegate () {
-                        Skip ();
-                    });
-                }
+                Log.Info (Log.LOG_UI, "MainActivity got ExecutionContextChanged event");
+                ShowScreenForApplicationState ();
             }
-        }
-
-        protected override void OnPause ()
-        {
-            base.OnPause ();
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-        }
-
-        public void StartupFinished ()
-        {
-            var recoveryFragment = new RecoveryFragment ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, recoveryFragment).Commit ();
-        }
-
-        public void RecoveryFinished ()
-        {
-            var migrationFragment = new MigrationFragment ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, migrationFragment).Commit ();
-        }
-
-        public void MigrationFinished ()
-        {
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(LaunchActivity));
-            StartActivity (intent);
-        }
-
-        // Demo only
-        public void Skip ()
-        {
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(LaunchActivity));
-            StartActivity (intent);
         }
 
         public override void OnConfigurationChanged (Android.Content.Res.Configuration newConfig)

@@ -32,32 +32,14 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MigrationFragment, container, false);
-            var tv = view.FindViewById<TextView> (Resource.Id.textview);
-            tv.Text = "Migration fragment";
 
             var progressBar = view.FindViewById<ProgressBar> (Resource.Id.progress);
             progressBar.Max = NumberOfMigrations;
 
             UpdateProgressMessage (view);
 
-            var demoButton = view.FindViewById<Button> (Resource.Id.btnDemo);
-            demoButton.Click += DemoButton_Click;
-
             return view;
-        }
-
-        void DemoButton_Click (object sender, EventArgs e)
-        {
-            currentMigration += 1;
-            if (currentMigration > 2) {
-                var parent = (MainActivity)Activity;
-                parent.MigrationFinished ();
-            } else {
-                UpdateProgressMessage (View);
-            }
         }
 
         void UpdateProgressMessage (View parentView)
