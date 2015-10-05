@@ -47,14 +47,11 @@ namespace NachoClient.iOS
                         NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
                     });
                 } else {
-                    int curVersion = searcher.Version;
                     var results = McContact.SearchIndexAllContacts (searchString);
-                    if (curVersion == searcher.Version) {
-                        InvokeOnUIThread.Instance.Invoke (() => {
-                            SetSearchResults (results);
-                            NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
-                        });
-                    }
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        SetSearchResults (results);
+                        NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
+                    });
                 }
             });
         }
