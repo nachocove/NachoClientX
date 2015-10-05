@@ -9,13 +9,8 @@ using NachoCore.Model;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-using MimeKit.IO;
-using MimeKit.IO.Filters;
 using System;
 using System.Linq;
-using System.Text.RegularExpressions;
-using NachoPlatform;
-using System.Threading;
 
 namespace NachoCore.IMAP
 {
