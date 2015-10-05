@@ -20,6 +20,21 @@ namespace NachoCore.IMAP
     {
         public const int KBaseFetchSize = 5;
 
+        private static uint DownloadAttachTotalSizeWithCommStatus ()
+        {
+            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 50 * 1024 : 100 * 1024);
+        }
+
+        private static uint DownloadAttachSizeWithCommStatus ()
+        {
+            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 1 * 1024 : 5 * 1024);
+        }
+
+        private static uint MaxPartsWithCommStatus ()
+        {
+            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 10 : 50);
+        }
+
         // Returns null if nothing to do.
         public FetchKit GenFetchKit ()
         {
@@ -179,21 +194,6 @@ namespace NachoCore.IMAP
                 }
             }
             return Parts;
-        }
-
-        private static uint DownloadAttachTotalSizeWithCommStatus ()
-        {
-            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 50 * 1024 : 100 * 1024);
-        }
-
-        private static uint DownloadAttachSizeWithCommStatus ()
-        {
-            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 1 * 1024 : 5 * 1024);
-        }
-
-        private static uint MaxPartsWithCommStatus ()
-        {
-            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 10 : 50);
         }
 
         private static bool CanDownloadAll (BodyPart body, out List<FetchKit.DownloadPart> Parts)
