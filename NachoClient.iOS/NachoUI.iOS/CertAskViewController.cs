@@ -40,7 +40,8 @@ namespace NachoClient.iOS
             if (owner == null) {
                 owner = this;
             }
-            certificateView = new CertificateView (View.Frame, owner);
+            certificateView = new CertificateView (View.Bounds, owner);
+            certificateView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
             ViewFramer.Create (certificateView).Y (0);
             View.Add (certificateView);
 
