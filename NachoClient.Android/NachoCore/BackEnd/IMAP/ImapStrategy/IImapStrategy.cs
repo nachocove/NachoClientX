@@ -269,7 +269,7 @@ namespace NachoCore.IMAP
                 string query = string.Format ("BODY[{0}.MIME]", PartSpecifier);
                 if (!HeadersOnly) {
                     query += string.Format (" BODY[{0}]", PartSpecifier);
-                    if (!DownloadAll) {
+                    if (IsTruncated) {
                         query += string.Format ("<{0}..{1}>", Offset, Length);
                     }
                 }
