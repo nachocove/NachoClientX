@@ -32,7 +32,7 @@ namespace NachoCore.IMAP
 
         private static uint MaxPartsWithCommStatus ()
         {
-            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 10 : 50);
+            return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 5 : 25);
         }
 
         // Returns null if nothing to do.
@@ -196,38 +196,54 @@ namespace NachoCore.IMAP
             return Parts;
         }
 
+        /// <summary>
+        /// Determines if can download all Parts in one query, or if we want to download parts individually.
+        /// </summary>
+        /// <returns><c>true</c> if can download all the specified body Parts; otherwise, <c>false</c>.</returns>
+        /// <param name="body">Body.</param>
+        /// <param name="Parts">Parts.</param>
         private static bool CanDownloadAll (BodyPart body, out List<FetchKit.DownloadPart> Parts)
         {
             Parts = new List<FetchKit.DownloadPart> ();
             uint attachSize = 0;
             uint attachCount = CountAttachments (body, ref attachSize);
             bool downloadAll = false;
-            uint partCount = CountDownloadableParts (body, Parts);
+            uint allDownloadSize = 0;
+            GetDownloadableParts (body, Parts, ref allDownloadSize);
             if (attachCount == 0) {
                 // no attachments Just download it all.
                 downloadAll = true;
             } else if (attachSize < DownloadAttachTotalSizeWithCommStatus ()) {
                 // total attachment size is within acceptable range. Download all.
                 downloadAll = true;
-            } else if (partCount == 1 && attachCount == 0) {
+            } else if (Parts.Count == 1 && attachCount == 0) {
                 // There's only one part (the main one). Download it whole.
                 downloadAll = true;
             }
 
-            if (!downloadAll && partCount > MaxPartsWithCommStatus ()) {
+            if (!downloadAll && Parts.Count > MaxPartsWithCommStatus ()) {
                 // there's too many individual parts. Don't download them separately.
-                // TODO Should probably also check the size.
+                // TODO Should probably also check the size, but what's a good measure of a total message size?
                 downloadAll = true;
             }
             return downloadAll;
         }
 
-        private static uint CountDownloadableParts (BodyPart body, List<FetchKit.DownloadPart> Parts, uint depth = 0)
+        /// <summary>
+        /// Get the downloadable parts.
+        /// The count of downloadable parts is important in so far as each separate download incurs extra time to ask the
+        /// IMAP server for the data.
+        /// </summary>
+        /// <returns>The downloadable parts.</returns>
+        /// <param name="body">Body.</param>
+        /// <param name="Parts">Parts.</param>
+        /// <param name = "AllPartSize"></param>
+        /// <param name="depth">Depth.</param>
+        private static void GetDownloadableParts (BodyPart body, List<FetchKit.DownloadPart> Parts, ref uint AllPartSize, uint depth = 0)
         {
             if (depth > 10) {
                 throw new Exception ("CountDownloadableParts: Recursion excceeds max of 10");
             }
-            uint count = 0;
             var multi = body as BodyPartMultipart;
             if (null != multi) {
                 FetchKit.DownloadPart d = null;
@@ -237,11 +253,11 @@ namespace NachoCore.IMAP
                 var newParts = new List<FetchKit.DownloadPart> ();
                 if (!multi.ContentType.Matches ("multipart", "alternative")) {
                     foreach (var part in multi.BodyParts) {
-                        count += CountDownloadableParts (part, newParts, depth + 1);
+                        GetDownloadableParts (part, newParts, ref AllPartSize, depth + 1);
                     }
                 }
                 if (null != d) {
-                    if (0 == count) {
+                    if (!newParts.Any ()) {
                         d.DownloadAll = true;
                     }
                     d.Parts.AddRange (newParts);
@@ -249,8 +265,9 @@ namespace NachoCore.IMAP
                 } else {
                     Parts.AddRange (newParts);
                 }
-                return count;
+                return;
             }
+
             var basic = body as BodyPartBasic;
             if (null != basic) {
                 if (!string.IsNullOrEmpty (basic.PartSpecifier)) {
@@ -263,14 +280,16 @@ namespace NachoCore.IMAP
                         d.Truncate ();
                     }
                     Parts.Add (d);
+                    AllPartSize += basic.Octets;
                 }
+                return;
             } else {
                 Log.Error (Log.LOG_IMAP, "Unhandled BodyPart {0}. Downloading it whole.", body.GetType ().Name);
                 if (!string.IsNullOrEmpty (multi.PartSpecifier)) {
                     Parts.Add (new FetchKit.DownloadPart (body, headersOnly: false));
                 }
+                return;
             }
-            return 1;
         }
 
         private static bool isExchangeATTAttachment (BodyPartBasic basic)
