@@ -593,7 +593,7 @@ namespace NachoClient.iOS
                     userLabelView.Layer.CornerRadius = (40 / 2);
                     userLabelView.Layer.MasksToBounds = true;
                     var nameString = (null != detail.SeriesItem.OrganizerName ? detail.SeriesItem.OrganizerName : detail.SeriesItem.OrganizerEmail);
-                    userLabelView.Text = Util.NameToLetters (nameString);
+                    userLabelView.Text = ContactsHelper.NameToLetters (nameString);
                     eventOrganizerView.AddSubview (userLabelView);
                 }
                 eventOrganizerView.Hidden = false;
@@ -821,17 +821,6 @@ namespace NachoClient.iOS
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     // TODO Do something with the phone number that is returned.
                     // dc.GetPhone ();
-                };
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EventToCal")) {
-                // TODO I don't this this segue is possible.
-                var dc = (ChooseCalendarViewController)segue.DestinationViewController;
-                dc.SetCalendars (new NachoFolders (detail.Account.Id, NachoFolders.FilterForCalendars));
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    // TODO Do something with the calendar index that is returned.
-                    // dc.GetCalIndex ();
                 };
                 return;
             }

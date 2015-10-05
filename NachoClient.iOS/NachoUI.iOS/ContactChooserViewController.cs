@@ -56,16 +56,13 @@ namespace NachoClient.iOS
                         resultsTableView.ReloadData ();
                     });
                 } else {
-                    int curVersion = searcher.Version;
                     var results = McContact.SearchAllContactsForEmail (searchString);
-                    if (curVersion == searcher.Version) {
-                        InvokeOnUIThread.Instance.Invoke (() => {
-                            searchResults = results;
-                            NcAbate.HighPriority("ContactChooserUpdateAuotCompleteResults");
-                            resultsTableView.ReloadData ();
-                            NcAbate.RegularPriority("ContactChooserUpdateAuotCompleteResults");
-                        });
-                    }
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        searchResults = results;
+                        NcAbate.HighPriority ("ContactChooserUpdateAuotCompleteResults");
+                        resultsTableView.ReloadData ();
+                        NcAbate.RegularPriority ("ContactChooserUpdateAuotCompleteResults");
+                    });
                 }
             });
         }

@@ -35,6 +35,7 @@ namespace NachoClient.AndroidClient
             return fragment;
         }
 
+        // Null is ok; messageThread is just a cookie
         public void SetMessageThread (McEmailMessageThread messageThread)
         {
             this.messageThread = messageThread;
@@ -67,10 +68,11 @@ namespace NachoClient.AndroidClient
 
         void OnFolderSelected (McFolder folder, McEmailMessageThread thisIsNull)
         {
+            Dismiss ();
             if (null != mOnFolderSelected) {
                 mOnFolderSelected (folder, this.messageThread);
             }
-            Dismiss ();
+
         }
     }
 

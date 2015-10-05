@@ -468,13 +468,13 @@ namespace NachoCore.Utils
         {
             int numFd = PlatformProcess.GetCurrentNumberOfFileDescriptors ();
             int numOpenFd = PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ();
-            Log.Info (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", numOpenFd);
+            Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", numOpenFd);
             for (int fd = 0; fd < numFd; fd++) {
                 var path = PlatformProcess.GetFileNameForDescriptor (fd);
                 if (null == path) {
                     continue;
                 }
-                Log.Warn (Log.LOG_SYS, "fd {0}: {1}", fd, path);
+                Log.Info (Log.LOG_SYS, "fd {0}: {1}", fd, path);
             }
         }
 

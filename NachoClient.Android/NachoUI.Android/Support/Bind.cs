@@ -71,13 +71,7 @@ namespace NachoClient.AndroidClient
             userImageView.Text = message.cachedFromLetters;
             userImageView.SetBackgroundResource (ColorForUser (message.cachedFromColor));
 
-            int chiliImageId;
-            if ((null != thread) && thread.HasMultipleMessages ()) {
-                chiliImageId = (message.isHot () ? Resource.Drawable.email_not_hot : Resource.Drawable.email_nothothread);
-            } else {
-                chiliImageId = (message.isHot () ? Resource.Drawable.email_hot : Resource.Drawable.email_not_hot);
-            }
-            chiliView.SetImageResource (chiliImageId);
+            BindMessageChili (thread, message, chiliView);
 
             senderView.Text = Pretty.SenderString (message.From);
             senderView.Visibility = ViewStates.Visible;
@@ -90,6 +84,22 @@ namespace NachoClient.AndroidClient
 
             // FIXME attachment icon
 
+        }
+
+        public static void BindMessageChili (McEmailMessage message, Android.Widget.ImageView chiliView)
+        {
+            int chiliImageId = (message.isHot () ? Resource.Drawable.email_hot : Resource.Drawable.email_not_hot);
+            chiliView.SetImageResource (chiliImageId);
+        }
+
+        public static void BindMessageChili (McEmailMessageThread thread, McEmailMessage message, Android.Widget.ImageView chiliView)
+        {
+            if ((null != thread) && thread.HasMultipleMessages ()) {
+                int chiliImageId = (message.isHot () ? Resource.Drawable.email_hotthread : Resource.Drawable.email_nothothread);
+                chiliView.SetImageResource (chiliImageId);
+            } else {
+                BindMessageChili (message, chiliView);
+            }
         }
 
         public static int BindContactCell (McContact contact, View view, string alternateEmailAddress = null)
@@ -106,8 +116,6 @@ namespace NachoClient.AndroidClient
 
             var displaySubtitle2 = contact.GetPrimaryPhoneNumber ();
             var displaySubtitle2Color = A.Color_NachoDarkText;
-
-//             var contactColor = Util.GetContactColor (contact);
 
             int viewType = 3;
 
@@ -143,11 +151,55 @@ namespace NachoClient.AndroidClient
             subtitle2Label.Text = displaySubtitle2;
             subtitle2Label.SetTextColor (displaySubtitle2Color);
 
-            var userInitials = view.FindViewById<Android.Widget.TextView>(Resource.Id.user_initials);
+            var userInitials = view.FindViewById<Android.Widget.TextView> (Resource.Id.user_initials);
             userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
-            userInitials.SetBackgroundResource (Bind.ColorForUser(contact.CircleColor));
+            userInitials.SetBackgroundResource (Bind.ColorForUser (contact.CircleColor));
 
             return viewType;
+        }
+
+        public static void BindEventCell (McEvent ev, View view)
+        {
+            var colorView = view.FindViewById <View> (Resource.Id.calendar_color);
+            var titleView = view.FindViewById <Android.Widget.TextView> (Resource.Id.event_title);
+            var durationView = view.FindViewById<Android.Widget.TextView> (Resource.Id.event_duration);
+            var locationView = view.FindViewById<Android.Widget.TextView> (Resource.Id.event_location);
+            var locationImageView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.event_location_image);
+
+            var detailView = new NcEventDetail (ev);
+
+            int colorIndex = 0;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (detailView.Account.Id, detailView.SpecificItem.Id).FirstOrDefault ();
+            if (null != folder) {
+                colorIndex = folder.DisplayColor;
+            }
+            colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
+
+            titleView.Text = Pretty.SubjectString(detailView.SpecificItem.Subject);
+
+            var startAndDuration = "";
+            if (detailView.SpecificItem.AllDayEvent) {
+                startAndDuration = "ALL DAY";
+            } else {
+                var start = Pretty.ShortTimeString (detailView.SpecificItem.StartTime);
+                if (detailView.SpecificItem.EndTime > detailView.SpecificItem.StartTime) {
+                    var duration = Pretty.CompactDuration (detailView.SpecificItem.StartTime, detailView.SpecificItem.EndTime);
+                    startAndDuration = String.Join (" - ", new string[] { start, duration });
+                } else {
+                    startAndDuration = start;
+                }
+            }
+            durationView.Text = startAndDuration;
+
+            var location = detailView.SpecificItem.Location;
+            if (String.IsNullOrEmpty (location)) {
+                locationView.Text = "";
+                locationImageView.Visibility = ViewStates.Invisible;
+            } else {
+                locationView.Text = location;
+                locationImageView.Visibility = ViewStates.Visible;
+            }
+
         }
 
         public static int ColorForUser (int index)

@@ -33,6 +33,7 @@ namespace NachoClient.AndroidClient
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
 
+        // Pages thru hot messages
         public static NowFragment newInstance ()
         {
             var fragment = new NowFragment ();
@@ -46,8 +47,6 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.NowFragment, container, false);
 
             var activity = (NcActivity)this.Activity;
@@ -97,7 +96,6 @@ namespace NachoClient.AndroidClient
             }
         }
 
-
         void NewMeetingButton_Click (object sender, EventArgs e)
         {
 
@@ -110,7 +108,6 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
     }
-
 
     public class GenericFragmentPagerAdaptor : Android.Support.V13.App.FragmentPagerAdapter
     {

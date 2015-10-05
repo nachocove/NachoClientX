@@ -15,6 +15,9 @@ using Android.Support.V4.Widget;
 using Android.Support.V7.App;
 using Android.Support.V7.Widget;
 using Android.Support.Design.Widget;
+using NachoCore.Model;
+using NachoCore;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -47,7 +50,7 @@ namespace NachoClient.AndroidClient
             var accountButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.account);
             accountButton.SetImageResource (Resource.Drawable.gen_avatar_backarrow);
 
-            accountAdapter = new AccountAdapter ();
+            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.AccountSwitcher);
 
             recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
             recyclerView.SetAdapter (accountAdapter);
@@ -62,6 +65,48 @@ namespace NachoClient.AndroidClient
 
     public class AccountAdapter : RecyclerView.Adapter
     {
+        const int HEADER_TYPE = 1;
+        const int FOOTER_TYPE = 2;
+        const int ROW_TYPE = 3;
+
+        public enum DisplayMode
+        {
+            AccountSwitcher,
+            SettingsListview,
+        };
+
+        public DisplayMode displayMode;
+
+        List<McAccount> accounts;
+
+        public  AccountAdapter (DisplayMode displayMode)
+        {
+            this.displayMode = displayMode;
+
+            Refresh ();
+        }
+
+        public void Refresh ()
+        {
+            accounts = new List<McAccount> ();
+
+            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
+                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
+                    accounts.Add (account);
+                }
+            }
+
+            // Remove the device account (for now)
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            if (null != deviceAccount) {
+                accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
+            }
+
+            // Remove the current account from the switcher view.
+            if (DisplayMode.AccountSwitcher == displayMode) {
+                accounts.RemoveAll ((McAccount account) => (account.Id == NcApplication.Instance.Account.Id));
+            }
+        }
 
         class AccountHolder : RecyclerView.ViewHolder
         {
@@ -70,32 +115,15 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        class Data
-        {
-            public int r;
-            public string a;
-            public string e;
-        };
-
-        const int HEADER_TYPE = 1;
-        const int FOOTER_TYPE = 2;
-        const int ROW_TYPE = 3;
-
-        Data[] data = new Data[] {
-            new Data { r = Resource.Drawable.avatar_imap, a = "imap", e = "rascal2210@europa.com" },
-            new Data { r = Resource.Drawable.avatar_gmail, a = "Gmail", e = "rascal2210@gmail.com" },
-            new Data { r = Resource.Drawable.avatar_googleapps, a = "Google Apps", e = "steve@nac02.com" },
-            new Data { r = Resource.Drawable.avatar_hotmail, a = "Hotmal", e = "rascal2210@hotmail.com" },
-            new Data { r = Resource.Drawable.avatar_msexchange, a = "Exchange", e = "steves@nachocove.com" },
-            new Data { r = Resource.Drawable.avatar_yahoo, a = "Yahoo", e = "rascal2210@yahoo.com" },
-        };
-
         public override int GetItemViewType (int position)
         {
-            if (0 == position) {
-                return HEADER_TYPE;
+            // Switcher has a header
+            if (DisplayMode.AccountSwitcher == displayMode) {
+                if (0 == position) {
+                    return HEADER_TYPE;
+                }
             }
-            if (data.Length == position) {
+            if ((ItemCount-1) == position) {
                 return FOOTER_TYPE;
             }
             return ROW_TYPE;
@@ -103,7 +131,13 @@ namespace NachoClient.AndroidClient
 
         public override int ItemCount {
             get {
-                return data.Length + 1; // plus 1 for footer
+                switch (displayMode) {
+                case DisplayMode.AccountSwitcher:
+                    return accounts.Count + 2; // header and footer
+                case DisplayMode.SettingsListview:
+                    return accounts.Count + 1; // plus 1 for footer
+                }
+                return 0;
             }
         }
 
@@ -128,17 +162,25 @@ namespace NachoClient.AndroidClient
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
         {
-            if (FOOTER_TYPE == holder.ItemViewType) {
+            McAccount account = null;
+            switch (holder.ItemViewType) {
+            case FOOTER_TYPE:
                 return;
+            case HEADER_TYPE:
+                account = NcApplication.Instance.Account;
+                break;
+            case ROW_TYPE:
+                account = accounts [position - 1];
+                break;
             }
+
             var icon = holder.ItemView.FindViewById<Android.Widget.ImageView> (Resource.Id.account_icon);
-            icon.SetImageResource (data [position].r);
-
             var name = holder.ItemView.FindViewById<Android.Widget.TextView> (Resource.Id.account_name);
-            name.Text = data [position].a;
-
             var email = holder.ItemView.FindViewById<Android.Widget.TextView> (Resource.Id.account_email);
-            email.Text = data [position].e;
+
+            icon.SetImageResource (Util.GetAccountServiceImageId (account.AccountService));
+            name.Text = Pretty.AccountName (account);
+            email.Text = account.EmailAddr;
         }
 
     }

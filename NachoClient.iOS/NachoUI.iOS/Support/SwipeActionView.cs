@@ -273,19 +273,35 @@ namespace NachoClient.iOS
             if (0.0 == movePercentage) {
                 ViewFramer.Create (snapshotView).X (0);
             } else if (0.0 > movePercentage) {
-                ViewFramer.Create (snapshotView).X (clippedPercentage * rightOffsets [0]);
+                if (rightOffsets.Length == 0) {
+                    Log.Error (Log.LOG_UI, "SwipeAction MoveByMovePercentage has no rightOffsets");
+                } else {
+                    ViewFramer.Create (snapshotView).X (clippedPercentage * rightOffsets [0]);
+                }
             } else {
-                ViewFramer.Create (snapshotView).X (clippedPercentage * leftOffsets [0]);
+                if (leftOffsets.Length == 0) {
+                    Log.Error (Log.LOG_UI, "SwipeAction MoveByMovePercentage has no leftOffsets");
+                } else {
+                    ViewFramer.Create (snapshotView).X (clippedPercentage * leftOffsets [0]);
+                }
             }
 
             for (int i = 0; i < leftActionButtons.Count; i++) {
                 button = leftActionButtons [i];
-                ViewFramer.Create (button).X (-button.Frame.Width + (clippedPercentage * leftOffsets [i]));
+                if (leftOffsets.Length <= i) {
+                    Log.Error (Log.LOG_UI, "SwipeAction MoveByMovePercentage has no leftOffset for button index {0}", i);
+                } else {
+                    ViewFramer.Create (button).X (-button.Frame.Width + (clippedPercentage * leftOffsets [i]));
+                }
             }
 
             for (int i = 0; i < rightActionButtons.Count; i++) {
                 button = rightActionButtons [i];
-                ViewFramer.Create (button).X (Frame.Width + (clippedPercentage * rightOffsets [i]));
+                if (rightOffsets.Length <= i) {
+                    Log.Error (Log.LOG_UI, "SwipeAction MoveByMovePercentage has no rightOffset for button index {0}", i);
+                } else {
+                    ViewFramer.Create (button).X (Frame.Width + (clippedPercentage * rightOffsets [i]));
+                }
             }
 
             //ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug

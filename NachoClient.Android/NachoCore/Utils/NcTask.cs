@@ -126,7 +126,7 @@ namespace NachoCore.Utils
             }
 
             if (LoginRunningTasks.Contains (name)) {
-                Log.Warn (Log.LOG_SYS, "NcTask {0} will be long running", name);
+                Log.Info (Log.LOG_SYS, "NcTask {0} will be long running", name);
                 option = TaskCreationOptions.LongRunning;
             }
 
@@ -156,7 +156,7 @@ namespace NachoCore.Utils
                     var count = NcModel.Instance.NumberDbConnections;
                     if (15 < count) {
                         NcModel.Instance.Db = null;
-                        Log.Warn (Log.LOG_SYS, "NcTask closing DB, connections: {0}", count);
+                        Log.Info (Log.LOG_SYS, "NcTask closing DB, connections: {0}", count);
                     }
                 }
                 if (!stfu) {

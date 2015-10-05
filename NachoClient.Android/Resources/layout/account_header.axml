@@ -153,4 +153,8 @@
             android:text="@string/to_deferred"
             android:paddingLeft="10dp" />
     </LinearLayout>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="2dp"
+        android:background="@color/NachoLightGray" />
 </LinearLayout>

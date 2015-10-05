@@ -9,6 +9,7 @@ using Android.Support.V4.Widget;
 using Android.Support.V7.App;
 using Android.Support.Design.Widget;
 using Android.Graphics;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
@@ -49,7 +50,7 @@ namespace NachoClient.AndroidClient
         {
             var switchAccountButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.account);
             switchAccountButton.Click += SwitchAccountButton_Click;
-            switchAccountButton.SetImageResource (Resource.Drawable.avatar_gmail);
+            switchAccountButton.SetImageResource (Util.GetAccountServiceImageId(NcApplication.Instance.Account.AccountService));
         }
 
         void SwitchAccountButton_Click (object sender, EventArgs e)
@@ -121,7 +122,14 @@ namespace NachoClient.AndroidClient
 
         void CalendarButton_Click (object sender, EventArgs e)
         {
+            MaybePopMoreFragment ();
 
+            if (this is CalendarActivity) {
+                return;
+            } 
+            var intent = new Intent ();
+            intent.SetClass (this, typeof(CalendarActivity));
+            StartActivity (intent);
         }
 
     }
