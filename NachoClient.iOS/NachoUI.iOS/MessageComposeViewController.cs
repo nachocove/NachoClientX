@@ -77,6 +77,7 @@ namespace NachoClient.iOS
         bool IsWebViewLoaded = false;
         List<string> JavaScriptQueue;
         bool MakeWebViewFirstResponderOnLoad = false;
+        bool AddAttachmentInline = false;
 
         #endregion
 
@@ -164,6 +165,10 @@ namespace NachoClient.iOS
             View.AddSubview (ScrollView);
 
             NcWebViewMessageProtocol.Register ();
+
+            UIMenuController.SharedMenuController.MenuItems = new UIMenuItem[] {
+                new UIMenuItem("Attach", new ObjCRuntime.Selector("attach:"))
+            };
         }
 
         public override void ViewWillAppear (bool animated)
@@ -491,10 +496,7 @@ namespace NachoClient.iOS
         // User tapping on add attachment
         public void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view)
         {
-            AddAttachmentViewController attachmentViewController = MainStoryboard.InstantiateViewController ("AddAttachmentViewController") as AddAttachmentViewController;
-            attachmentViewController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
-            attachmentViewController.SetOwner (this, Composer.Account);
-            PresentViewController (attachmentViewController, true, null);
+            ShowAddAttachment ();
         }
 
         // User tapping on a specific attachment to display
@@ -583,6 +585,50 @@ namespace NachoClient.iOS
             // So we need to pop it from the stack
             vc.Cleanup ();
             NavigationController.PopViewController (true);
+        }
+
+        #endregion
+
+        #region User Actions - Web View
+
+        public void WebViewDidSelectAddInlineAttachment (UIWebView webView)
+        {
+            ShowAddAttachment (true);
+        }
+
+        public void WebViewDidPasteImages (UIImage[] images, bool[] isPNG)
+        {
+            var i = 0;
+            foreach (var image in images)
+            {
+                bool png = isPNG [i];
+                string ext;
+                string contentType;
+                if (png) {
+                    ext = ".png";
+                    contentType = "image/png";
+                } else {
+                    ext = ".jpg";
+                    contentType = "image/jpeg";
+                }
+                var attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
+                attachment.SetDisplayName ("attachment" + ext);
+                attachment.ItemId = Composer.Message.Id;
+                attachment.ContentType = contentType;
+                attachment.ClassCode = Composer.Message.GetClassCode ();
+                attachment.Update ();
+                if (png) {
+                    using (var pngData = image.AsPNG ()) {
+                        attachment.UpdateData (pngData.ToArray ());
+                    }
+                } else {
+                    using (var jpg = image.AsJPEG ()) {
+                        attachment.UpdateData (jpg.ToArray ());
+                    }
+                }
+                HeaderView.AttachmentsView.Append (attachment);
+                ++i;
+            }
         }
 
         #endregion
@@ -765,6 +811,15 @@ namespace NachoClient.iOS
         private void UpdateSendEnabled ()
         {
             SendButton.Enabled = Composer.HasRecipient;
+        }
+
+        private void ShowAddAttachment (bool inline = false)
+        {
+            AddAttachmentInline = inline;
+            AddAttachmentViewController attachmentViewController = MainStoryboard.InstantiateViewController ("AddAttachmentViewController") as AddAttachmentViewController;
+            attachmentViewController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+            attachmentViewController.SetOwner (this, Composer.Account);
+            PresentViewController (attachmentViewController, true, null);
         }
 
         private void ShowQuickResponses (bool animated = true)
@@ -964,6 +1019,7 @@ namespace NachoClient.iOS
             HijackBrowserViewAccessoryInputView (browserViewClass, hijackedClassHandle);
             HijackBrowserViewCanPerformAction (browserViewClass, hijackedClassHandle);
             HijackBrowserViewPaste (browserViewClass, hijackedClassHandle);
+            AddBrowserViewAttach (browserViewClass, hijackedClassHandle);
 
             objc_registerClassPair(hijackedClassHandle);
             HijackedBrowserViewClass = new ObjCRuntime.Class (hijackedClassHandle);
@@ -1038,7 +1094,12 @@ namespace NachoClient.iOS
         static bool BrowserView_CanPerformAction (IntPtr selfHandle, IntPtr selectorHandle, IntPtr actionHandle, IntPtr senderHandle)
         {
             var action = new ObjCRuntime.Selector (actionHandle);
-            Log.Info (Log.LOG_UI, "NcWebBrowserViewProxy CanPerform: {0}", action.Name);
+            if (action.Name.Equals ("attach:")) {
+                // TODO: support inline attachments
+                // not supporting yet because there's a bit a work (determining if type can be inlined, adding to bundle, inserting HTML into web view, resizing inline images on send)
+                // return true;
+                return false;
+            }
             var d = (CanPerformActionDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalCanPerformAction, typeof(CanPerformActionDelegate));
             bool canPerform = d (selfHandle, selectorHandle, actionHandle, senderHandle);
             return canPerform;
@@ -1068,10 +1129,64 @@ namespace NachoClient.iOS
         delegate void PasteDelegate (IntPtr self, IntPtr selector, IntPtr sender);
 
         [ObjCRuntime.MonoPInvokeCallback (typeof (PasteDelegate))]
-        static void BrowserView_Paste (IntPtr self, IntPtr selector, IntPtr sender)
+        static void BrowserView_Paste (IntPtr selfHandle, IntPtr selector, IntPtr sender)
         {
-            var d = (PasteDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalPaste, typeof(PasteDelegate));
-            d (self, selector, sender);
+            // Since this hijack class overrides behavior specifically for the message compose view controller,
+            // there's no need to setup some kind of abstract delegate to communciate back to the compose view,
+            // we'll just go straight there via out parent web view's delegate.
+            var self = ObjCRuntime.Runtime.GetNSObject (selfHandle) as UIView;
+            var webView = self.Superview.Superview as UIWebView;
+            var composeViewController = webView.Delegate as MessageComposeViewController;
+            var pasteboard = UIPasteboard.General;
+            if (pasteboard.Images.Length > 0) {
+                var pngIndexes = pasteboard.ItemSetWithPasteboardTypes (new string[] { MobileCoreServices.UTType.PNG });
+                // FIXME: should be using UIPasteboard.TypeListImage, but I think there's a xamarin bug with that property
+                // becaue anytime I try to access it, I get a crash.  For now we'll just recreate the list.
+                var allImageIndexes = pasteboard.ItemSetWithPasteboardTypes (new string[] {
+                    MobileCoreServices.UTType.PNG,
+                    MobileCoreServices.UTType.JPEG,
+                    MobileCoreServices.UTType.GIF,
+                    MobileCoreServices.UTType.TIFF
+                });
+                var isPNG = new bool[pasteboard.Images.Length];
+                int i = 0;
+                allImageIndexes.EnumerateIndexes ((nuint idx, ref bool stop) => {
+                    isPNG[i] = pngIndexes.Contains (idx);
+                    ++i;
+                });
+                composeViewController.WebViewDidPasteImages (pasteboard.Images, isPNG);
+            } else {
+                var d = (PasteDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalPaste, typeof(PasteDelegate));
+                d (selfHandle, selector, sender);
+            }
+        }
+
+        #endregion
+
+        #region Attach
+
+        public static void AddBrowserViewAttach (ObjCRuntime.Class browserViewClass, IntPtr hijackedClassHandle)
+        {
+            var selector = new ObjCRuntime.Selector ("attach:");
+            var similarSelector = new ObjCRuntime.Selector ("paste:");
+            var similarMethod = class_getInstanceMethod (browserViewClass.Handle, similarSelector.Handle);
+            var types = method_getTypeEncoding (similarMethod);
+            AttachDelegate d = BrowserView_Attach;
+            var imp = Marshal.GetFunctionPointerForDelegate (d);
+            class_addMethod (hijackedClassHandle, selector.Handle, imp, types);
+        }
+
+        [ObjCRuntime.MonoNativeFunctionWrapper]
+        delegate void AttachDelegate (IntPtr self, IntPtr selector, IntPtr sender);
+
+        [ObjCRuntime.MonoPInvokeCallback (typeof (AttachDelegate))]
+        static void BrowserView_Attach (IntPtr selfHandle, IntPtr selector, IntPtr sender)
+        {
+            var self = ObjCRuntime.Runtime.GetNSObject (selfHandle) as UIView;
+            var webView = self.Superview.Superview as UIWebView;
+            var composeViewController = webView.Delegate as MessageComposeViewController;
+            UIMenuController.SharedMenuController.MenuVisible = false;
+            composeViewController.WebViewDidSelectAddInlineAttachment (webView);
         }
 
         #endregion
