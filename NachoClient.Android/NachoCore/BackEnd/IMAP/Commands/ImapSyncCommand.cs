@@ -586,7 +586,7 @@ namespace NachoCore.IMAP
                 cachedFromLetters = string.Empty,
                 cachedFromColor = 1,
                 cachedHasAttachments = summary.Attachments.Any (),
-                ImapBodyStructure = summary.Body.ToString (),
+                ImapBodyStructure = summary.Body != null ? summary.Body.ToString () : null,
             };
 
             emailMessage.To = summary.Envelope.To.ToString ();
