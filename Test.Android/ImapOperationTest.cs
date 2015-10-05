@@ -70,6 +70,8 @@ namespace Test.iOS
             imapSummary.Envelope.Subject = TestSubject;
             imapSummary.Envelope.To.Add (TestTo);
             imapSummary.Envelope.From.Add (TestFrom);
+            imapSummary.Body = new BodyPartBasic ();
+            imapSummary.Body.ContentType = new ContentType ("text", "html");
 
             bool changed;
             bool created;
