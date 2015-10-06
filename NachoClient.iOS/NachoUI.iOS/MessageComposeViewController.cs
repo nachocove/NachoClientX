@@ -163,8 +163,6 @@ namespace NachoClient.iOS
             ScrollView.AddCompoundView (WebView);
             View.AddSubview (ScrollView);
 
-            NcWebViewMessageProtocol.Register ();
-
             UIMenuController.SharedMenuController.MenuItems = new UIMenuItem[] {
                 new UIMenuItem("Attach", new ObjCRuntime.Selector("attach:"))
             };
@@ -210,6 +208,13 @@ namespace NachoClient.iOS
         public override void ViewDidDisappear (bool animated)
         {
             base.ViewDidDisappear (animated);
+        }
+
+        public override void ViewDidUnload ()
+        {
+            base.ViewDidUnload ();
+            NcWebViewMessageProtocol.RemoveHandler (this, "nachoCompose");
+            NcWebViewMessageProtocol.RemoveHandler (this, "nacho");
         }
 
         #endregion

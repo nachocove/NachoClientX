@@ -36,11 +36,19 @@ namespace NachoClient.iOS
         static bool Registered = false;
         static Dictionary<string, List<NcWebViewMessageHandler>> Handlers;
 
-        public static void Register ()
+        static void Register ()
         {
             if (!Registered) {
                 NSUrlProtocol.RegisterClass (new ObjCRuntime.Class (typeof(NcWebViewMessageProtocol)));
                 Registered = true;
+            }
+        }
+
+        static void Unregister ()
+        {
+            if (Registered) {
+                NSUrlProtocol.UnregisterClass (new ObjCRuntime.Class (typeof(NcWebViewMessageProtocol)));
+                Registered = false;
             }
         }
 
@@ -49,10 +57,26 @@ namespace NachoClient.iOS
             if (Handlers == null) {
                 Handlers = new Dictionary<string, List<NcWebViewMessageHandler>> ();
             }
+            Register ();
             if (!Handlers.ContainsKey (name)) {
                 Handlers [name] = new List<NcWebViewMessageHandler> ();
             }
             Handlers [name].Add (handler);
+        }
+
+        public static void RemoveHandler (NcWebViewMessageHandler handler, string name)
+        {
+            if (Handlers != null) {
+                if (Handlers.ContainsKey (name)) {
+                    Handlers [name].Remove (handler);
+                    if (Handlers [name].Count == 0) {
+                        Handlers.Remove (name);
+                        if (Handlers.Count == 0) {
+                            Unregister ();
+                        }
+                    }
+                }
+            }
         }
 
         [Export ("canInitWithRequest:")]
