@@ -1199,7 +1199,10 @@ namespace NachoCore.ActiveSync
             if (null == pingKit) {
                 return null; // should never happen
             }
-            if (Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+            //if (Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+            bool isGoogleApps = Server.HostIsAsGMail ();
+            isGoogleApps = true; /// always use ping
+            if (isGoogleApps == true) {
                 Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Ping");
                 var ping = new AsPingCommand (this, pingKit);
                 if (null == ping) {
