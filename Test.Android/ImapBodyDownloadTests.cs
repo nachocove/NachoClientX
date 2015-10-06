@@ -77,73 +77,54 @@ namespace Test.iOS
         }
 
         [Test]
-        public void TestBodyTypeFromSummary ()
+        public void TestBodyTypeFromBodyPart ()
         {
-            NcResult result;
-            MessageSummary imapSummary = new MessageSummary (someIndex);
-
-            // No headers and no body. Expect an error.
-            result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
-            Assert.NotNull (result);
-            Assert.True (result.isError ());
-            Assert.True (result.GetMessage ().Contains ("No headers nor body"));
-
-            // Add headers, but not mime content type.
-            imapSummary.Headers = new HeaderList ();
-            result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
-            Assert.NotNull (result);
-            Assert.True (result.isError ());
-            Assert.True (result.GetMessage ().Contains ("No Body Type found"));
+            // No body.
+            var bodyType = ImapStrategy.BodyTypeFromBodyPart (null);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.None, bodyType);
 
             // Add a body part, but no content type
-            imapSummary.Body = new BodyPartMultipart ();
-            result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
-            Assert.NotNull (result);
-            Assert.True (result.isError ());
-            Assert.True (result.GetMessage ().Contains ("No Body Type found"));
+            var Body = new BodyPartMultipart ();
+            bodyType = ImapStrategy.BodyTypeFromBodyPart (Body);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.None, bodyType);
 
             // add a bogus Body content type
-            imapSummary.Body.ContentType = new ContentType ("foo", "bar");
-            result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
-            Assert.NotNull (result);
-            Assert.True (result.isError ());
-            Assert.True (result.GetMessage ().Contains ("No Body Type found"));
+            Body.ContentType = new ContentType ("foo", "bar");
+            bodyType = ImapStrategy.BodyTypeFromBodyPart (Body);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.None, bodyType);
 
-            imapSummary.Body.ContentType = new ContentType ("text", "foo");
-            result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
-            Assert.NotNull (result);
-            Assert.True (result.isError ());
-            Assert.True (result.GetMessage ().Contains ("No Body Type found"));
+            Body.ContentType = new ContentType ("text", "foo");
+            bodyType = ImapStrategy.BodyTypeFromBodyPart (Body);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.None, bodyType);
 
-            imapSummary.Body.ContentType = new ContentType ("multipart", "foo");
-            result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
-            Assert.NotNull (result);
-            Assert.True (result.isOK ());
-            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.MIME_4,
-                result.GetValue<McAbstrFileDesc.BodyTypeEnum> ());
+            Body.ContentType = new ContentType ("multipart", "foo");
+            bodyType = ImapStrategy.BodyTypeFromBodyPart (Body);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.MIME_4, bodyType);
 
-            imapSummary.Body.ContentType = new ContentType ("text", "html");
-            result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
-            Assert.NotNull (result);
-            Assert.True (result.isOK ());
-            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.HTML_2,
-                result.GetValue<McAbstrFileDesc.BodyTypeEnum> ());
+            Body.ContentType = new ContentType ("text", "html");
+            bodyType = ImapStrategy.BodyTypeFromBodyPart (Body);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.HTML_2, bodyType);
 
-            imapSummary.Body.ContentType = new ContentType ("text", "plain");
-            result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
-            Assert.NotNull (result);
-            Assert.True (result.isOK ());
-            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.PlainText_1,
-                result.GetValue<McAbstrFileDesc.BodyTypeEnum> ());
+            Body.ContentType = new ContentType ("text", "plain");
+            bodyType = ImapStrategy.BodyTypeFromBodyPart (Body);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyType);
+        }
 
-            // add a mime header. Header takes precedence over the bogus body content type.
-            imapSummary.Body.ContentType = new ContentType ("foo", "bar");
-            imapSummary.Headers.Add (new Header (HeaderId.MimeVersion, "XXX"));
-            result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
-            Assert.NotNull (result);
-            Assert.True (result.isOK ());
-            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.MIME_4,
-                result.GetValue<McAbstrFileDesc.BodyTypeEnum> ());
+        [Test]
+        public void TestBodyTypeFromHeaders ()
+        {
+            var bodyType = ImapStrategy.BodyTypeFromHeaders (null);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.None, bodyType);
+
+            // Add headers, but not mime content type.
+            var Headers = new HeaderList ();
+            bodyType = ImapStrategy.BodyTypeFromHeaders (Headers);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.None, bodyType);
+
+            // add a mime header.
+            Headers.Add (new Header (HeaderId.MimeVersion, "XXX"));
+            bodyType = ImapStrategy.BodyTypeFromHeaders (Headers);
+            Assert.AreEqual (McAbstrFileDesc.BodyTypeEnum.MIME_4, bodyType);
         }
 
     }
