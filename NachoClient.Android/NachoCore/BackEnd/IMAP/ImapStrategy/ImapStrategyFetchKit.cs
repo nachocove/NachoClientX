@@ -101,49 +101,6 @@ namespace NachoCore.IMAP
             };
         }
 
-        public static McAbstrFileDesc.BodyTypeEnum BodyTypeFromEmail (McEmailMessage email, out BodyPart imapBody, CancellationToken Token)
-        {
-            imapBody = null;
-            McAbstrFileDesc.BodyTypeEnum bodyType = McAbstrFileDesc.BodyTypeEnum.None;
-            if (!string.IsNullOrEmpty (email.ImapBodyStructure)) {
-                if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
-                    Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure: {0}", email.ImapBodyStructure);
-                } else {
-                    bodyType = BodyTypeFromBodyPart (imapBody);
-                }
-            }
-            Token.ThrowIfCancellationRequested ();
-            if (bodyType == McAbstrFileDesc.BodyTypeEnum.None &&
-                !string.IsNullOrEmpty (email.Headers)) {
-                HeaderList headers = ParseHeaders (email.Headers, Token);
-                if (null != headers && headers.Any ()) {
-                    bodyType = BodyTypeFromHeaders (headers);
-                }
-            }
-            Token.ThrowIfCancellationRequested ();
-            return bodyType;
-        }
-
-        public static McAbstrFileDesc.BodyTypeEnum BodyTypeFromHeaders (HeaderList headers)
-        {
-            McAbstrFileDesc.BodyTypeEnum bodyType = McAbstrFileDesc.BodyTypeEnum.None;
-            if (null == headers) {
-                Log.Warn (Log.LOG_IMAP, "No headers.");
-            } else {
-                if (headers.Contains (HeaderId.MimeVersion)) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                }
-            }
-            return bodyType;
-        }
-
-        private static HeaderList ParseHeaders (string headers, CancellationToken Token)
-        {
-            var stream = new MemoryStream (Encoding.ASCII.GetBytes (headers));
-            var parser = new MimeParser (ParserOptions.Default, stream);
-            return parser.ParseHeaders (Token);
-        }
-
         public static McAbstrFileDesc.BodyTypeEnum BodyTypeFromBodyPart (BodyPart body)
         {
             McAbstrFileDesc.BodyTypeEnum bodyType = McAbstrFileDesc.BodyTypeEnum.None;
@@ -171,6 +128,25 @@ namespace NachoCore.IMAP
             return bodyType;
         }
 
+        public static McAbstrFileDesc.BodyTypeEnum BodyTypeFromHeaders (HeaderList headers)
+        {
+            McAbstrFileDesc.BodyTypeEnum bodyType = McAbstrFileDesc.BodyTypeEnum.None;
+            if (null == headers) {
+                Log.Warn (Log.LOG_IMAP, "No headers.");
+            } else {
+                if (headers.Contains (HeaderId.MimeVersion)) {
+                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                }
+            }
+            return bodyType;
+        }
+
+        public static HeaderList ParseHeaders (string headers, CancellationToken Token)
+        {
+            var stream = new MemoryStream (Encoding.ASCII.GetBytes (headers));
+            var parser = new MimeParser (ParserOptions.Default, stream);
+            return parser.ParseHeaders (Token);
+        }
 
         /// <summary>
         /// Determine the individual body parts (if any) to download. Returns null if the message as a whole needs to be downloaded.

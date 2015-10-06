@@ -13,6 +13,7 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using System.Text;
 using MailKit.Search;
+using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -286,14 +287,7 @@ namespace NachoCore.IMAP
                         if (Synckit.GetHeaders && string.IsNullOrEmpty (emailMessage.Headers)) {
                             NcCapture.AddKind (KImapFetchHeaders);
                             using (var cap3 = NcCapture.CreateAndStart (KImapFetchHeaders)) {
-                                var headers = FetchHeaders (mailKitFolder, summ);
-                                if (!string.IsNullOrEmpty (headers)) {
-                                    emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                                        var target = (McEmailMessage)record;
-                                        target.Headers = headers;
-                                        return true;
-                                    });
-                                }
+                                emailMessage = FetchHeaders (emailMessage, mailKitFolder, Cts.Token);
                             }
                         }
                         summaryUids.Add (imapSummary.UniqueId);
@@ -696,15 +690,24 @@ namespace NachoCore.IMAP
             return changed;
         }
 
-        private string FetchHeaders (NcImapFolder mailKitFolder, MessageSummary summary)
+        public static McEmailMessage FetchHeaders (McEmailMessage email, NcImapFolder mailKitFolder, CancellationToken Token)
         {
-            var stream = mailKitFolder.GetStream (summary.UniqueId, "HEADER", Cts.Token);
+            var uid = new UniqueId (email.ImapUid);
+            var stream = mailKitFolder.GetStream (uid, "HEADER", Token);
             using (var decoded = new MemoryStream ()) {
                 stream.CopyTo (decoded);
                 var buffer = decoded.GetBuffer ();
                 var length = (int)decoded.Length;
-                return Encoding.UTF8.GetString (buffer, 0, length);
+                var headers = Encoding.UTF8.GetString (buffer, 0, length);
+                if (!string.IsNullOrEmpty (headers)) {
+                    email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var target = (McEmailMessage)record;
+                        target.Headers = headers;
+                        return true;
+                    });
+                }
             }
+            return email;
         }
 
         public static void InsertAttachments (McEmailMessage msg, MessageSummary imapSummary)

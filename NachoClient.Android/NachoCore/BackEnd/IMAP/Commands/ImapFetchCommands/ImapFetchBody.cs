@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Text;
 using System;
 using System.Linq;
+using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -63,23 +64,47 @@ namespace NachoCore.IMAP
             var mailKitFolder = GetOpenMailkitFolder (folder);
             var uid = new UniqueId (email.ImapUid);
 
-            BodyPart imapBody;
-            McAbstrFileDesc.BodyTypeEnum bodyType = ImapStrategy.BodyTypeFromEmail (email, out imapBody, Cts.Token);
-            if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
-                // couldn't determine it from the email message. See if we can get it from the server
-                result = messageBodyPart (uid, mailKitFolder, out bodyType);
-                if (!result.isOK ()) {
-                    return result;
+            Cts.Token.ThrowIfCancellationRequested ();
+
+            if (string.IsNullOrEmpty (email.ImapBodyStructure)) {
+                // backwards compatibility: Current code fills this in, but older code didn't. So fetch it now.
+                email = FillInBodyStructure (email, mailKitFolder, Cts.Token);
+                if (email == null) {
+                    return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                        NcResult.WhyEnum.MissingOnServer);
                 }
-                imapBody = result.GetValue<BodyPart> ();
+            }
+
+            Cts.Token.ThrowIfCancellationRequested ();
+
+            if (string.IsNullOrEmpty (email.Headers)) {
+                // sync didn't fetch them for us. Do it now.
+                email = ImapSyncCommand.FetchHeaders (email, mailKitFolder, Cts.Token);
+            }
+
+            BodyPart imapBody;
+            if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
+                Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure: {0}", email.ImapBodyStructure);
+                return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                    NcResult.WhyEnum.BadOrMalformed);
+            }
+
+            McAbstrFileDesc.BodyTypeEnum bodyType = ImapStrategy.BodyTypeFromBodyPart (imapBody);
+            if (bodyType == McAbstrFileDesc.BodyTypeEnum.None &&
+                !string.IsNullOrEmpty (email.Headers)) {
+                HeaderList headers = ImapStrategy.ParseHeaders (email.Headers, Cts.Token);
+                if (null != headers && headers.Any ()) {
+                    bodyType = ImapStrategy.BodyTypeFromHeaders (headers);
+                }
+            }
+
+            if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: unknown body type {0}. Using Default Mime", bodyType);
+                bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
             }
 
             McBody body;
             if (0 == email.BodyId) {
-                if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
-                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: unknown body type {0}. Using Default Mime", bodyType);
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                }
                 body = new McBody () {
                     AccountId = AccountId,
                     BodyType = bodyType,
@@ -91,17 +116,20 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Existing body for {0} was saved with unknown body type {1}.", email.ServerId, body.BodyType);
                     body = body.UpdateWithOCApply<McBody> ((record) => {
                         var target = (McBody)record;
-                        target.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                        target.BodyType = bodyType;
                         return true;
                     });
                 }
             }
+
+            Cts.Token.ThrowIfCancellationRequested ();
 
             if (null == fetchBody.Parts) {
                 result = DownloadEntireMessage (ref body, mailKitFolder, uid, imapBody);
             } else {
                 result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, fetchBody.Parts, imapBody.ContentType.Boundary);
             }
+            Cts.Token.ThrowIfCancellationRequested ();
             if (!result.isOK ()) {
                 // The message doesn't exist. Delete it locally.
                 email.Delete ();
@@ -123,6 +151,8 @@ namespace NachoCore.IMAP
                 return true;
             });
 
+            Cts.Token.ThrowIfCancellationRequested ();
+
             if (string.IsNullOrEmpty (email.BodyPreview)) {
                 // The Sync didn't create a preview. Do it now.
                 var preview = BodyToPreview (body);
@@ -137,10 +167,12 @@ namespace NachoCore.IMAP
                     StatusInd (status);
                 }
             }
-            result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
+            Cts.Token.ThrowIfCancellationRequested ();
+
             BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);
-            MimeHelpers.PossiblyExtractAttachmentsFromBody (body, email);
-            return result;
+            MimeHelpers.PossiblyExtractAttachmentsFromBody (body, email, Cts.Token);
+
+            return NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
         }
 
         /// <summary>
@@ -456,98 +488,34 @@ namespace NachoCore.IMAP
             }
         }
 
-        #region GetBodyTypeFromServer
-
-        /// <summary>
-        /// Find the message part of for a give UID. This makes a FETCH query to the server, similar to what sync
-        /// does (i.e. fetching BODYSTRUCTURE and some other things), but doesn't do the full fetch that sync does.
-        /// It then analyzes the BODYSTRUCTURE to find the relevant part we want to download.
-        /// backwards compatibitlity. Older clients will definitely not have the BodyStructure,
-        /// and possibly not the Headers (depending on how old they are)
-        /// </summary>
-        /// <returns>The body part.</returns>
-        /// <param name="uid">Uid.</param>
-        /// <param name="mailKitFolder">Mail kit folder.</param>
-        /// <param name="bodyType">Body type.</param>
-        private NcResult messageBodyPart (UniqueId uid, IMailFolder mailKitFolder, out McAbstrFileDesc.BodyTypeEnum bodyType)
+        public static McEmailMessage FillInBodyStructure (McEmailMessage email, NcImapFolder mailKitFolder, CancellationToken Token)
         {
-            bodyType = McAbstrFileDesc.BodyTypeEnum.None;
-            NcResult result;
-
-            Log.Info (Log.LOG_IMAP, "Fetching summary again");
             var UidList = new List<UniqueId> ();
+            var uid = new UniqueId (email.ImapUid);
             UidList.Add (uid);
             MessageSummaryItems flags = MessageSummaryItems.BodyStructure | MessageSummaryItems.UniqueId;
             HashSet<HeaderId> fetchHeaders = new HashSet<HeaderId> ();
-            fetchHeaders.Add (HeaderId.MimeVersion);
-            fetchHeaders.Add (HeaderId.ContentType);
-            fetchHeaders.Add (HeaderId.ContentTransferEncoding);
-
-            var isummary = mailKitFolder.Fetch (UidList, flags, fetchHeaders, Cts.Token);
+            var isummary = mailKitFolder.Fetch (UidList, flags, fetchHeaders, Token);
             if (null == isummary || isummary.Count < 1) {
                 Log.Info (Log.LOG_IMAP, "Could not get summary for uid {0}", uid);
-                return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
-                    NcResult.WhyEnum.MissingOnServer);
+                return null;
             }
-
             var summary = isummary [0] as MessageSummary;
             if (null == summary) {
                 Log.Error (Log.LOG_IMAP, "Could not convert summary to MessageSummary");
-                return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
-                    NcResult.WhyEnum.Unknown);
-
-            }
-            result = BodyTypeFromSummary (summary);
-            if (!result.isOK ()) {
-                // we couldn't find the content type. Try to continue assuming MIME.
-                Log.Error (Log.LOG_IMAP, "BodyTypeFromSummary error: {0}. Defaulting to Mime.", result.GetMessage ());
-                bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-            } else {
-                bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
+                return null;
             }
 
-            if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
-                // We don't like this, but keep going. The UI will try its best to figure it out.
-                Log.Error (Log.LOG_IMAP, "messageBodyPart: unknown body type {0}", bodyType);
+            if (string.IsNullOrEmpty (email.ImapBodyStructure)) {
+                // save it for next time we might need it.
+                email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.ImapBodyStructure = summary.Body.ToString ();
+                    return true;
+                });
             }
-            result = NcResult.OK ();
-            result.Value = summary.Body;
-            return result;
+            return email;
         }
-
-        /// <summary>
-        /// Given an IMAP summary, figure out the ContentType, and return the 
-        /// McAbstrFileDesc.BodyTypeEnum that corresponds to it.
-        /// </summary>
-        /// <description>
-        /// Using the values from the body-summary is much more accurate. If we don't have
-        /// any body-summary, then the headers are a good hint. If the header contains
-        /// the Mime-version header, then we just default to mime. But that masks some of the
-        /// plain parts with funky encodings (transfer encoding).
-        /// </description>
-        /// <returns>The type from summary.</returns>
-        /// <param name="summary">Summary.</param>
-        public static NcResult BodyTypeFromSummary (MessageSummary summary)
-        {
-            if (null == summary.Headers && null == summary.Body) {
-                return NcResult.Error (string.Format ("No headers nor body."));
-            }
-
-            McAbstrFileDesc.BodyTypeEnum bodyType = ImapStrategy.BodyTypeFromBodyPart (summary.Body);
-            if (bodyType == McAbstrFileDesc.BodyTypeEnum.None) {
-                bodyType = ImapStrategy.BodyTypeFromHeaders (summary.Headers);
-            }
-
-            if (bodyType == McAbstrFileDesc.BodyTypeEnum.None) {
-                return NcResult.Error (string.Format ("No Body Type found"));
-            }
-
-            NcResult result = NcResult.OK ();
-            result.Value = bodyType;
-            return result;
-        }
-
-        #endregion
 
         /// <summary>
         /// Given a McBody, generate the preview from it.
