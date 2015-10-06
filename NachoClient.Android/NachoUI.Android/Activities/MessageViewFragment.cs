@@ -149,11 +149,14 @@ namespace NachoClient.AndroidClient
         void SaveButton_Click (object sender, EventArgs e)
         {
             Console.WriteLine ("SaveButton_Click");
+            ShowFolderChooser ();
         }
 
         void ChiliButton_Click (object sender, EventArgs e)
         {
             Console.WriteLine ("ChiliButton_Click");
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            Bind.BindMessageChili (message, (Android.Widget.ImageView)sender);
         }
 
         void ArchiveButton_Click (object sender, EventArgs e)
@@ -199,6 +202,24 @@ namespace NachoClient.AndroidClient
         {
             Console.WriteLine ("View_Click");
         }
+
+        public void ShowFolderChooser ()
+        {
+            Console.WriteLine ("ShowFolderChooser: {0}", message);
+            var folderFragment = ChooseFolderFragment.newInstance (null);
+            folderFragment.setOnFolderSelected (OnFolderSelected);
+            var ft = FragmentManager.BeginTransaction ();
+            ft.AddToBackStack (null);
+            folderFragment.Show (ft, "dialog");
+        }
+
+        public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)
+        {
+            Console.WriteLine ("OnFolderSelected: {0}", message);
+            NcEmailArchiver.Move (message, folder);
+            DoneWithMessage ();
+        }
+
     }
 
 

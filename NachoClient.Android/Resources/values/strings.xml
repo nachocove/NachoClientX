@@ -74,5 +74,9 @@
     <string name="event_attend">Attend</string>
     <string name="event_maybe">Maybe</string>
     <string name="event_decline">Decline</string>
+    <string name="welcometo">Welcome to</string>
+    <string name="nachomail">Nacho Mail</string>
+    <string name="incompatible_version">Incompatible Version</string>
+    <string name="incompatible_message">"Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app."</string>
 
 </resources>

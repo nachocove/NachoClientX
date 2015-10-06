@@ -52,4 +52,8 @@
                 android:background="@android:color/white" />
         </LinearLayout>
     </LinearLayout>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="2dp"
+        android:background="@color/NachoLightGray" />
 </LinearLayout>

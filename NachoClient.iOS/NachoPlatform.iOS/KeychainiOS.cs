@@ -195,7 +195,7 @@ namespace NachoPlatform
                     if (errorIfMissing || SecStatusCode.ItemNotFound != res) {
                         Log.Error (Log.LOG_SYS, "Getter: Error: {0} query={{{1}}} iter={2}", res, DumpQuery (query), i);
                     }
-                    if (errorIfMissing == false) {
+                    if (!errorIfMissing) {
                         break;
                     }
                 }
@@ -220,7 +220,7 @@ namespace NachoPlatform
             // If we need this, we'll want to write a more restrictive dumper. This one
             // dumps EVERYTHING.
             NcAssert.True (query.KeyClass == SecKeyClass.Invalid || query.KeyClass == SecKeyClass.Public);
-            string str = query.ToString () + " ";
+            string str = string.Format ("{0} ", query);
             var qDict = query.ToDictionary ();
             foreach (var x in qDict) {
                 str += string.Format ("{0}={1} ", x.Key, x.Value);
@@ -237,7 +237,7 @@ namespace NachoPlatform
                 match.ValueData = value;
                 res = SecKeyChain.Update (query, match);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Remove returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Remove returned {0}:{1}", res.ToString (), DumpQuery (query));
                     return false;
                 }
             } else {
@@ -245,25 +245,25 @@ namespace NachoPlatform
                 query.Accessible = accessible;
                 res = SecKeyChain.Add (query);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Add returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Add returned {0}:{1}", res.ToString (), DumpQuery (query));
                     return false;
                 }
             }
             return true;
         }
 
-        private bool Deleter (SecRecord query)
+        private bool Deleter (SecRecord query, bool errorIfMissing = false)
         {
             SecStatusCode res;
             SecKeyChain.QueryAsRecord (query, out res);
             if (SecStatusCode.Success == res) {
                 res = SecKeyChain.Remove (query);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Remove returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Remove returned {0}:{1}", res.ToString (), DumpQuery (query));
                     return false;
                 }
-            } else { 
-                Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Delete returned {0}", res.ToString ());
+            } else if (errorIfMissing) {
+                Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Delete returned {0}:{1}", res.ToString (), DumpQuery (query));
                 return false;
             }
             return true;        
