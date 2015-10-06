@@ -1109,7 +1109,6 @@ namespace NachoCore.ActiveSync
 
         private void DoDrive ()
         {
-            ResetInboxDidAsSyncAfterRestart ();
             if (null != PushAssist) {
                 if (PushAssist.IsStartOrParked ()) {
                     PushAssist.Execute ();
@@ -1200,75 +1199,31 @@ namespace NachoCore.ActiveSync
                 return null; // should never happen
             }
             //if (Server.HostIsAsGMail ()) { // GoogleExchange use Ping
-            bool isGoogleApps = Server.HostIsAsGMail ();
-            isGoogleApps = true; /// always use ping
-            if (isGoogleApps == true) {
-                Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Ping");
-                var ping = new AsPingCommand (this, pingKit);
-                if (null == ping) {
-                    return null; // should never happen
-                }
-                try {
-                    return new NachoCore.PushAssistParameters () {
-                        RequestUrl = ping.PushAssistRequestUrl (),
-                        Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                        ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                        WaitBeforeUseMsec = 60 * 1000,
-                        IsSyncRequest = false,
+            Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Ping");
+            var ping = new AsPingCommand (this, pingKit);
+            if (null == ping) {
+                return null; // should never happen
+            }
+            try {
+                return new NachoCore.PushAssistParameters () {
+                    RequestUrl = ping.PushAssistRequestUrl (),
+                    Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                    ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                    WaitBeforeUseMsec = 60 * 1000,
+                    IsSyncRequest = false,
 
-                        MailServerCredentials = new Credentials {
-                            Username = ProtoControl.Cred.Username,
-                            Password = ProtoControl.Cred.GetPassword ()
-                        },
-                        RequestData = ping.PushAssistRequestData (),
-                        RequestHeaders = ping.PushAssistRequestHeaders (),
-                        ContentHeaders = ping.PushAssistContentHeaders (),
-                        NoChangeResponseData = ping.PushAssistNoChangeResponseData (),
-                    };
-                } catch (KeychainItemNotFoundException ex) {
-                    Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
-                    return null;
-                }
-            } else {  // use Sync
-                Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Sync");
-                McFolder inbox = McFolder.GetDefaultInboxFolder (AccountId);
-                if (inbox == null) {
-                    Log.Info (Log.LOG_AS, "PushAssistParameters: we don't have default inbox folder yet; PushAssist will have to schedule retry.");
-                    return null;
-                }
-                if (inbox.AsSyncKey == "0") { // haven't completed first sync, PushAssist will schedule retry
-                    Log.Info (Log.LOG_AS, "PushAssistParameters: we haven't completed first sync; PushAssist will have to schedule retry.");
-                    return null;
-                }
-                if (inbox.DidAsSyncAfterRestart == false) { // haven't completed first sync after restart, PushAssist will schedule retry
-                    Log.Info (Log.LOG_AS, "PushAssistParameters: we haven't completed first sync after restart; PushAssist will have to schedule retry.");
-                    return null;
-                }
-                SyncKit syncKit = Strategy.GenSyncKitFromPingKit (ProtocolState, pingKit);
-                var sync = new AsSyncCommand (this, syncKit);
-                if (null == sync) {
-                    return null; // should never happen
-                }
-                try {
-                    return new NachoCore.PushAssistParameters () {
-                        RequestUrl = sync.PushAssistRequestUrl (),
-                        Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                        ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                        WaitBeforeUseMsec = 60 * 1000,
-                        IsSyncRequest = true,
-
-                        MailServerCredentials = new Credentials {
-                            Username = ProtoControl.Cred.Username,
-                            Password = ProtoControl.Cred.GetPassword ()
-                        },
-                        RequestData = sync.PushAssistRequestData (),
-                        RequestHeaders = sync.PushAssistRequestHeaders (),
-                        ContentHeaders = sync.PushAssistContentHeaders (),
-                    };
-                } catch (KeychainItemNotFoundException ex) {
-                    Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
-                    return null;
-                }
+                    MailServerCredentials = new Credentials {
+                        Username = ProtoControl.Cred.Username,
+                        Password = ProtoControl.Cred.GetPassword ()
+                    },
+                    RequestData = ping.PushAssistRequestData (),
+                    RequestHeaders = ping.PushAssistRequestHeaders (),
+                    ContentHeaders = ping.PushAssistContentHeaders (),
+                    NoChangeResponseData = ping.PushAssistNoChangeResponseData (),
+                };
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
+                return null;
             }
         }
     }
