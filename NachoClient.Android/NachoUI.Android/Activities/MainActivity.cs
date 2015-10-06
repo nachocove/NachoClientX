@@ -15,7 +15,7 @@ using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "Nacho Mail", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.NachoMail")]
+    [Activity (Label = "Nacho Mail", MainLauncher = true, Icon = "@drawable/icon")]
     public class MainActivity : AppCompatActivity
     {
         bool StatusIndCallbackIsSet = false;
