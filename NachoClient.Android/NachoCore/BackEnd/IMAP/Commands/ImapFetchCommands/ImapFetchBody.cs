@@ -249,6 +249,7 @@ namespace NachoCore.IMAP
         /// This function mimics reading the entire MIME message, but it does so selectively, as dictated by the Parts. The
         /// Parts are assembled by strategy, and include things like "get only the mime header" (e.g. for large attachments)
         /// or "download the entire "multipart/alternative" part as one (instead of its components).
+        /// TODO: See if the function can use MimeEntities, so we don't have to write out the mime boundaries, etc, by hand.
         /// </description>
         /// <returns>The individual parts.</returns>
         /// <param name="email">McEmailMessage</param>
