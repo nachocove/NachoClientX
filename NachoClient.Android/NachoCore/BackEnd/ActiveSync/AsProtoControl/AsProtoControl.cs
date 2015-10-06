@@ -1229,10 +1229,16 @@ namespace NachoCore.ActiveSync
             } else {  // use Sync
                 Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Sync");
                 McFolder inbox = McFolder.GetDefaultInboxFolder (AccountId);
+                if (inbox == null) {
+                    Log.Info (Log.LOG_AS, "PushAssistParameters: we don't have default inbox folder yet; PushAssist will have to schedule retry.");
+                    return null;
+                }
                 if (inbox.AsSyncKey == "0") { // haven't completed first sync, PushAssist will schedule retry
+                    Log.Info (Log.LOG_AS, "PushAssistParameters: we haven't completed first sync; PushAssist will have to schedule retry.");
                     return null;
                 }
                 if (inbox.DidAsSyncAfterRestart == false) { // haven't completed first sync after restart, PushAssist will schedule retry
+                    Log.Info (Log.LOG_AS, "PushAssistParameters: we haven't completed first sync after restart; PushAssist will have to schedule retry.");
                     return null;
                 }
                 SyncKit syncKit = Strategy.GenSyncKitFromPingKit (ProtocolState, pingKit);

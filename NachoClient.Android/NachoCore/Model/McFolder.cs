@@ -796,7 +796,7 @@ namespace NachoCore.Model
             return folder;
         }
 
-        public McFolder ResetDidAsSyncAfterRestart ()
+        public McFolder UpdateReset_DidAsSyncAfterRestart ()
         {
             var folder = UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
