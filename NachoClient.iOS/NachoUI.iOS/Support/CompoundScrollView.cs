@@ -38,14 +38,15 @@ namespace NachoClient.iOS
             }
 
             UIView ZoomingView;
-            CGPoint ZoomingViewOffsetAtZoomStart;
-            CGPoint ScrollViewOffsetAtZoomStart;
-            int ZoomingViewLevel;
+//            CGPoint ZoomingViewOffsetAtZoomStart;
+//            CGPoint ScrollViewOffsetAtZoomStart;
+//            int ZoomingViewLevel;
             List<UIView> CompoundViews;
             bool IsLayingOutSubviews;
 
             public CompoundScrollViewContainerView (CGRect frame) : base(frame)
             {
+                ZoomingView = null;
             }
 
             public static UIScrollView ScrollViewForCompoundScrollView (UIView view)

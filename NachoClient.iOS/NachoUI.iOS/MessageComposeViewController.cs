@@ -77,7 +77,6 @@ namespace NachoClient.iOS
         bool IsWebViewLoaded = false;
         List<string> JavaScriptQueue;
         bool MakeWebViewFirstResponderOnLoad = false;
-        bool AddAttachmentInline = false;
 
         #endregion
 
@@ -814,7 +813,6 @@ namespace NachoClient.iOS
 
         private void ShowAddAttachment (bool inline = false)
         {
-            AddAttachmentInline = inline;
             AddAttachmentViewController attachmentViewController = MainStoryboard.InstantiateViewController ("AddAttachmentViewController") as AddAttachmentViewController;
             attachmentViewController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
             attachmentViewController.SetOwner (this, Composer.Account);
