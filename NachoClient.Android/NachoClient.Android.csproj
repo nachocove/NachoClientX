@@ -461,7 +461,6 @@
     <Compile Include="NachoUI.Android\Activities\StartupFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\WaitingFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\WelcomeFragment.cs" />
     <Compile Include="NachoUI.Android\Support\RoundedImageView.cs" />
     <Compile Include="NachoUI.Android\Support\VerticalViewPager.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
@@ -528,6 +527,7 @@
     <Compile Include="NachoUI.Android\Activities\FoldersActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\FolderListFragment.cs" />
     <Compile Include="NachoUI.Android\Support\Util.cs" />
+    <Compile Include="NachoUI.Android\Activities\GettingStartedFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -969,7 +969,6 @@
     <AndroidResource Include="Resources\layout\StartupFragment.axml" />
     <AndroidResource Include="Resources\layout\SwitchAccountFragment.axml" />
     <AndroidResource Include="Resources\layout\WaitingFragment.axml" />
-    <AndroidResource Include="Resources\layout\WelcomeFragment.axml" />
     <AndroidResource Include="Resources\menu\drawer.xml" />
     <AndroidResource Include="Resources\values\colors.xml" />
     <AndroidResource Include="Resources\values\styles.xml" />
@@ -1246,5 +1245,7 @@
     <AndroidResource Include="Resources\layout\FoldersActivity.axml" />
     <AndroidResource Include="Resources\layout\FolderListFragment.axml" />
     <AndroidResource Include="Resources\layout\FolderCell.axml" />
+    <AndroidResource Include="Resources\layout\GettingStartedFragment.axml" />
+    <AndroidResource Include="Resources\layout\ChooseProviderCell.axml" />
   </ItemGroup>
 </Project>
