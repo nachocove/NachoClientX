@@ -173,9 +173,9 @@ namespace NachoCore.IMAP
 
 
         /// <summary>
-        /// Determine if we cah .
+        /// Determine the individual body parts (if any) to download. Returns null if the message as a whole needs to be downloaded.
         /// </summary>
-        /// <returns>The body parts.</returns>
+        /// <returns>The body parts or null.</returns>
         /// <param name="email">Email.</param>
         private static List<FetchKit.DownloadPart> DownloadBodyParts (McEmailMessage email)
         {
