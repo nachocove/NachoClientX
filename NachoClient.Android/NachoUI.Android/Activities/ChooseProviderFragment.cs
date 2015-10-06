@@ -13,6 +13,7 @@ using Android.Views;
 using Android.Widget;
 
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -26,21 +27,14 @@ namespace NachoClient.AndroidClient
             return fragment;
         }
 
-
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.ChooseProviderFragment, container, false);
-            var tv = view.FindViewById<TextView> (Resource.Id.textview);
-            tv.Text = "ChooseProvider fragment";
 
             var gridview = view.FindViewById<GridView> (Resource.Id.gridview);
             providerAdapter = new ProviderAdapter (view.Context);
@@ -61,10 +55,12 @@ namespace NachoClient.AndroidClient
     public class ProviderAdapter : BaseAdapter
     {
         Context context;
+        LayoutInflater inflater;
 
         public ProviderAdapter (Context c)
         {
             context = c;
+            inflater = (LayoutInflater)context.GetSystemService (Context.LayoutInflaterService);
         }
 
         public override int Count {
@@ -78,7 +74,7 @@ namespace NachoClient.AndroidClient
 
         public override long GetItemId (int position)
         {
-            return 0;
+            return position;
         }
 
         public McAccount.AccountServiceEnum GetItemService (int position)
@@ -89,16 +85,14 @@ namespace NachoClient.AndroidClient
         // create a new ImageView for each item referenced by the Adapter
         public override View GetView (int position, View convertView, ViewGroup parent)
         {
-            RoundedImageView imageView;
+            var view = inflater.Inflate (Resource.Layout.ChooseProviderCell, null);
+            var imageview = view.FindViewById<RoundedImageView> (Resource.Id.image);
+            var labelview = view.FindViewById<TextView> (Resource.Id.label);
 
-            if (convertView == null) {  // if it's not recycled, initialize some attributes
-                imageView = new RoundedImageView (context);
-            } else {
-                return convertView;
-                imageView = (RoundedImageView)convertView;
-            }
-            imageView.SetImageResource (data [position].i);
-            return imageView;
+            imageview.SetImageResource (data [position].i);
+            labelview.Text = NcServiceHelper.AccountServiceName (data [position].e);
+
+            return view;
         }
 
         struct Data
