@@ -143,6 +143,13 @@ namespace NachoCore.IMAP
             return result;
         }
 
+        /// <summary>
+        /// Recursively dump the PartSpecifier+MimeTypeString to the strem for debugging.
+        /// Useful for debugging, but not currently used.
+        /// </summary>
+        /// <param name="stream">Stream.</param>
+        /// <param name="body">Body.</param>
+        /// <param name="depth">Depth.</param>
         private void DumpToStream (Stream stream, BodyPart body, int depth = 0)
         {
             if (depth > 10) {
@@ -150,7 +157,7 @@ namespace NachoCore.IMAP
             }
             var multi = body as BodyPartMultipart;
             if (null != multi) {
-                WriteString (stream, string.Format ("{0}{1}:{2}\n", String.Concat (Enumerable.Repeat ("  ", depth)),
+                WriteASCIIString (stream, string.Format ("{0}{1}:{2}\n", String.Concat (Enumerable.Repeat ("  ", depth)),
                     multi.PartSpecifier.Length > 0 ? multi.PartSpecifier : "MAINBODY", multi.ContentType.MimeType));
                 foreach (var part in multi.BodyParts) {
                     DumpToStream (stream, part, depth + 1);
@@ -159,11 +166,21 @@ namespace NachoCore.IMAP
 
             var basic = body as BodyPartBasic;
             if (null != basic) {
-                WriteString (stream, string.Format ("{0}{1}:{2}\n", String.Concat (Enumerable.Repeat ("  ", depth)), basic.PartSpecifier, basic.ContentType.MimeType));
+                WriteASCIIString (stream, string.Format ("{0}{1}:{2}\n", String.Concat (Enumerable.Repeat ("  ", depth)), basic.PartSpecifier, basic.ContentType.MimeType));
             }
             return;
         }
 
+        #region DownloadData
+
+        /// <summary>
+        /// Downloads the entire message in one query to the IMAP server.
+        /// </summary>
+        /// <returns>The entire message.</returns>
+        /// <param name="body">Body.</param>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="uid">Uid.</param>
+        /// <param name="imapBody">Imap body.</param>
         private NcResult DownloadEntireMessage (ref McBody body, NcImapFolder mailKitFolder, UniqueId uid, BodyPart imapBody)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
@@ -224,18 +241,29 @@ namespace NachoCore.IMAP
             return NcResult.OK ();
         }
 
-        private void WriteBoundary (Stream stream, string boundary, bool final)
-        {
-            WriteString (stream, string.Format ("--{0}{1}\n", boundary, final ? "--" : "")); 
-        }
-
+        /// <summary>
+        /// Downloads the individual BodyParts, i.e. walk the List<FetchKit.DownloadPart> Parts and write them to the Stream,
+        /// which writes to a tmp file.
+        /// </summary>
+        /// <description>
+        /// This function mimics reading the entire MIME message, but it does so selectively, as dictated by the Parts. The
+        /// Parts are assembled by strategy, and include things like "get only the mime header" (e.g. for large attachments)
+        /// or "download the entire "multipart/alternative" part as one (instead of its components).
+        /// </description>
+        /// <returns>The individual parts.</returns>
+        /// <param name="email">McEmailMessage</param>
+        /// <param name="body">McBody</param>
+        /// <param name="mailKitFolder">MailKit folder.</param>
+        /// <param name="uid">Imap Uid.</param>
+        /// <param name="Parts">Parts</param>
+        /// <param name="boundary">Top level Boundary (usually from the rfc822 email header</param>
         private NcResult DownloadIndividualParts (McEmailMessage email, ref McBody body, NcImapFolder mailKitFolder, UniqueId uid, List<FetchKit.DownloadPart> Parts, string boundary)
         {
             NcAssert.True (null != Parts && Parts.Any ());
             var tmp = NcModel.Instance.TmpPath (AccountId);
             try {
                 using (FileStream stream = new FileStream (tmp, FileMode.CreateNew)) {
-                    WriteString (stream, email.Headers);
+                    WriteASCIIString (stream, email.Headers);
                     foreach (var part in Parts) {
                         WriteBoundary (stream, boundary, false);
                         DownloadIndividualPart (stream, mailKitFolder, uid, part);
@@ -264,6 +292,14 @@ namespace NachoCore.IMAP
             return NcResult.OK ();
         }
 
+        /// <summary>
+        /// Download a BodyPart. If the BodyPart has children, recursively fetch those as well, adding them to stream.
+        /// </summary>
+        /// <param name="stream">Stream to write the downloaded part(s) to.</param>
+        /// <param name="mailKitFolder">MailKit folder.</param>
+        /// <param name="uid">Uid.</param>
+        /// <param name="dp">DownloadPart</param>
+        /// <param name="depth">Recursion Depth.</param>
         private void DownloadIndividualPart (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp, int depth = 0)
         {
             if (depth > 10) {
@@ -290,6 +326,13 @@ namespace NachoCore.IMAP
             }
         }
 
+        /// <summary>
+        /// Gets the entire BodyPart, including the data and the MIME headers.
+        /// </summary>
+        /// <param name="stream">Stream.</param>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="uid">Uid.</param>
+        /// <param name="dp">Dp.</param>
         private void GetBodyPart (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
@@ -303,6 +346,15 @@ namespace NachoCore.IMAP
             }
         }
 
+        /// <summary>
+        /// Gets the BodyPart MIME header.
+        /// If we aren't going to download the entire data, then adjust the ContentDisposition.Size of the downloaded header.
+        /// This is used to omit large attachments from the download.
+        /// </summary>
+        /// <param name="stream">Stream.</param>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="uid">Uid.</param>
+        /// <param name="dp">Dp.</param>
         private void GetBodyPartHeader (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
@@ -319,6 +371,13 @@ namespace NachoCore.IMAP
             }
         }
 
+        /// <summary>
+        /// Get only the actual data for the BodyPart, possibly truncated.
+        /// </summary>
+        /// <param name="stream">Stream.</param>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="uid">Uid.</param>
+        /// <param name="dp">Dp.</param>
         private void GetBodyPartData (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
@@ -338,6 +397,30 @@ namespace NachoCore.IMAP
                 File.Delete (tmp);
             }
         }
+
+        /// <summary>
+        /// Writes the string to the stream. Assumes ASCII encoding, so the caller should be sure that's OK for the given string.
+        /// </summary>
+        /// <param name="stream">Stream.</param>
+        /// <param name="s">S.</param>
+        private void WriteASCIIString (Stream stream, string s)
+        {
+            byte[] x = Encoding.ASCII.GetBytes (s);
+            stream.Write (x, 0, x.Length);
+        }
+
+        /// <summary>
+        /// Writes the MIME boundary.
+        /// </summary>
+        /// <param name="stream">Stream.</param>
+        /// <param name="boundary">Boundary string</param>
+        /// <param name="final">If true, the boundary is the final MIME boundary.</param>
+        private void WriteBoundary (Stream stream, string boundary, bool final)
+        {
+            WriteASCIIString (stream, string.Format ("--{0}{1}\n", boundary, final ? "--" : "")); 
+        }
+
+        #endregion
 
         /// <summary>
         /// Copies a downloaded email from one stream to another, skipping the rfc822 mail headers.
@@ -372,12 +455,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private void WriteString (Stream stream, string s)
-        {
-            byte[] x = Encoding.ASCII.GetBytes (s);
-            stream.Write (x, 0, x.Length);
-            stream.Flush ();
-        }
+        #region GetBodyTypeFromServer
 
         /// <summary>
         /// Find the message part of for a give UID. This makes a FETCH query to the server, similar to what sync
@@ -467,6 +545,8 @@ namespace NachoCore.IMAP
             result.Value = bodyType;
             return result;
         }
+
+        #endregion
 
         /// <summary>
         /// Given a McBody, generate the preview from it.
