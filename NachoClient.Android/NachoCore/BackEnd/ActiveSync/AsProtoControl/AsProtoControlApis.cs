@@ -468,7 +468,6 @@ namespace NachoCore.ActiveSync
         {
             McFolder inbox = McFolder.GetDefaultInboxFolder (AccountId);
             Log.Debug (Log.LOG_AS, "Resetting DidAsSyncAfterRestart for Inbox");
-            inbox.DidAsSyncAfterRestart = false;
             inbox.ResetDidAsSyncAfterRestart ();
         }
     }
