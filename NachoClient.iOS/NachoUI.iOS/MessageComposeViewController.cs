@@ -324,8 +324,7 @@ namespace NachoClient.iOS
 
         void ResizeImagesAndSend (Tuple<float, float> lengths)
         {
-            Composer.ResizeImages (lengths);
-            Composer.Save (ContentHtml);
+            Composer.ImageLengths = lengths;
             Send ();
         }
 
@@ -640,9 +639,9 @@ namespace NachoClient.iOS
             DisplayMessageBody ();
         }
 
-        public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, McAttachment attachment)
+        public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
         {
-            return ImageiOS.FromPath (attachment.GetFilePath ());
+            return ImageiOS.FromStream (stream);
         }
 
         void DisplayMessageBody ()

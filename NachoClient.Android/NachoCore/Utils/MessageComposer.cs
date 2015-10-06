@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using NachoCore.Model;
 using NachoPlatform;
 using HtmlAgilityPack;
@@ -14,7 +15,7 @@ namespace NachoCore.Utils
     public interface MessageComposerDelegate
     {
         void MessageComposerDidCompletePreparation (MessageComposer composer);
-        PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, McAttachment attachment);
+        PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream);
     }
 
     public class MessageComposer : MessageDownloadDelegate
@@ -58,6 +59,7 @@ namespace NachoCore.Utils
         }
 
         public long MaxSize = DEFAULT_MAX_SIZE;
+        public Tuple <float, float> ImageLengths = null;
 
         private McEmailMessage RelatedMessage;
         McBody Body;
@@ -121,6 +123,8 @@ namespace NachoCore.Utils
         MessageDownloader RelatedMessageDownloader;
         List<BinaryReader> OpenReaders;
         MimeMessage Mime;
+        Dictionary <string, McAttachment> AttachmentsBySrc;
+        Dictionary <int, bool> AttachmentsInHtml;
 
         #endregion
 
@@ -182,8 +186,6 @@ namespace NachoCore.Utils
             // could inlude a quick reply, or it could be quoting another message.
             if (RelatedThread != null) {
                 if (Kind == EmailHelper.Action.Forward) {
-                    // FIXME: we may want to skip inline attachments here...gotta put everything together and test
-                    // to see what works best
                     CopyAttachments (McAttachment.QueryByItemId (RelatedMessage));
                 }
                 DownloadRelatedMessage ();
@@ -227,7 +229,8 @@ namespace NachoCore.Utils
                 ItemId = Message.Id,
                 ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email,
                 ContentId = attachment.ContentId,
-                ContentType = attachment.ContentType
+                ContentType = attachment.ContentType,
+                IsInline = attachment.IsInline
             };
             copy.Insert ();
             // TODO: It would be nice to do any heavy work like large file copying in a background task.
@@ -283,6 +286,8 @@ namespace NachoCore.Utils
                 doc.LoadHtml (relatedBundle.FullHtml);
                 if (EmailHelper.IsReplyAction(Kind)){
                     ReplaceInlineImages (doc);
+                } else {
+                    StripAttachedImagesInlinedByBundle (doc);
                 }
                 if (Kind == EmailHelper.Action.Forward || EmailHelper.IsReplyAction(Kind)){
                     QuoteHtml (doc, RelatedMessage);
@@ -384,6 +389,27 @@ namespace NachoCore.Utils
                 }
             }
         }
+        void StripAttachedImagesInlinedByBundle (HtmlDocument doc)
+        {
+            HtmlNode node;
+            var stack = new List<HtmlNode> ();
+            var body = doc.DocumentNode.Element ("html").Element ("body");
+            stack.Add (body);
+            while (stack.Count > 0) {
+                node = stack [0];
+                stack.RemoveAt (0);
+                if (node.NodeType == HtmlNodeType.Element) {
+                    if (node.Name.Equals ("img")) {
+                        if (node.Attributes.Contains ("nacho-image-attachment")) {
+                            node.Remove ();
+                        }
+                    }
+                }
+                foreach (var child in node.ChildNodes) {
+                    stack.Add (child);
+                }
+            }
+        }
 
         void PrepareMessageBody ()
         {
@@ -471,9 +497,17 @@ namespace NachoCore.Utils
             _EstimatedLargeSizeDelta = 0;
             _EstimatedMediumSizeDelta = 0;
             _EstimatedSmallSizeDelta = 0;
+            AttachmentsBySrc = new Dictionary<string, McAttachment> ();
+            AttachmentsInHtml = new Dictionary<int, bool> ();
             var toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, null, Message.To);
             var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, null, Message.Cc);
             var bccList = EmailHelper.AddressList (NcEmailAddress.Kind.Bcc, null, Message.Bcc);
+            var attachments = McAttachment.QueryByItemId (Message);
+            foreach (var attachment in attachments) {
+                if (!String.IsNullOrEmpty (attachment.ContentId)) {
+                    AttachmentsBySrc ["cid:" + attachment.ContentId] = attachment;
+                }
+            }
             Mime = EmailHelper.CreateMessage (Account, toList, ccList, bccList);
             Mime.Subject = Message.Subject ?? "";
             var doc = new HtmlDocument ();
@@ -485,12 +519,14 @@ namespace NachoCore.Utils
             alternative.Add (plainPart);
             var htmlPart = HtmlPart (doc);
             alternative.Add (htmlPart);
-            var attachments = McAttachment.QueryByItemId (Message);
-            if (attachments.Count > 0) {
-                var mixed = new Multipart ();
-                mixed.Add (alternative);
-                foreach (var attachment in attachments) {
+            Multipart mixed = null;
+            foreach (var attachment in attachments) {
+                if (!AttachmentsInHtml.ContainsKey(attachment.Id)) {
                     if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                        if (mixed == null) {
+                            mixed = new Multipart ();
+                            mixed.Add (alternative);
+                        }
                         var attachmentPart = new MimePart (attachment.ContentType ?? "application/octet-stream");
                         attachmentPart.FileName = attachment.DisplayName;
                         attachmentPart.IsAttachment = true;
@@ -499,11 +535,13 @@ namespace NachoCore.Utils
                         OpenReaders.Add (reader);
                         attachmentPart.ContentObject = new ContentObject (reader.BaseStream);
                         mixed.Add (attachmentPart);
-                        AdjustEstimatedSizesForAttachment (attachment);
+                        AdjustEstimatedSizesForAttachment (reader.BaseStream);
                     } else {
                         Log.Error (Log.LOG_EMAIL, "MessageComposer could not include attachment ID#{0} because its state is {1}", attachment.Id, attachment.FilePresence);
                     }
                 }
+            }
+            if (mixed != null) {
                 Mime.Body = mixed;
             } else {
                 Mime.Body = alternative;
@@ -523,6 +561,7 @@ namespace NachoCore.Utils
             var related = new MultipartRelated ();
             var htmlPart = new TextPart ("html");
             related.Root = htmlPart;
+            var SrcsByEntryName = new Dictionary<string, string> ();
             var stack = new List<HtmlNode> ();
             HtmlNode node;
             stack.Add (doc.DocumentNode);
@@ -537,21 +576,43 @@ namespace NachoCore.Utils
                         node.Attributes.Remove ("contenteditable");
                     }
                     if (node.Name.Equals ("img")) {
+                        if (node.Attributes.Contains ("nacho-image-attachment")){
+                            node.Attributes.Remove ("nacho-image-attachment");
+                        }
                         if (node.Attributes.Contains ("nacho-bundle-entry")) {
                             var entryName = node.Attributes ["nacho-bundle-entry"].Value;
-                            var info = Bundle.MemberForEntryName (entryName);
-                            hasRelatedParts = true;
-                            var attachment = new MimePart (info.ContentType ?? "image/jpeg");
-                            attachment.FileName = info.Filename;
-                            attachment.IsAttachment = true;
-                            attachment.ContentTransferEncoding = ContentEncoding.Base64;
-                            attachment.ContentObject = new ContentObject (info.Reader.BaseStream);
-                            attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
-                            related.Add (attachment);
-                            node.SetAttributeValue ("src", "cid:" + attachment.ContentId);
+                            if (!SrcsByEntryName.ContainsKey (entryName)) {
+                                McAttachment mcattachment = null;
+                                if (node.Attributes.Contains ("nacho-original-src")) {
+                                    var originalSrc = node.Attributes ["nacho-original-src"].Value;
+                                    if (AttachmentsBySrc.ContainsKey (originalSrc)) {
+                                        mcattachment = AttachmentsBySrc [originalSrc];
+                                    }
+                                    node.Attributes.Remove ("nacho-original-src");
+                                }
+                                var info = Bundle.MemberForEntryName (entryName);
+                                OpenReaders.Add (info.Reader);
+                                hasRelatedParts = true;
+                                var attachment = new MimePart (info.ContentType ?? "image/jpeg");
+                                attachment.FileName = info.Filename;
+                                attachment.IsAttachment = true;
+                                attachment.ContentTransferEncoding = ContentEncoding.Base64;
+                                attachment.ContentObject = new ContentObject (info.Reader.BaseStream);
+                                attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
+                                related.Add (attachment);
+                                var src = "cid:" + attachment.ContentId;
+                                node.SetAttributeValue ("src", src);
+                                AdjustEstimatedSizesForAttachment (info.Reader.BaseStream);
+                                SrcsByEntryName [entryName] = src;
+                                if (mcattachment != null) {
+                                    mcattachment.ContentId = attachment.ContentId;
+                                    mcattachment.Update ();
+                                    AttachmentsInHtml [mcattachment.Id] = true;
+                                }
+                            } else {
+                                node.SetAttributeValue ("src", SrcsByEntryName [entryName]);
+                            }
                             node.Attributes.Remove ("nacho-bundle-entry");
-                            // TODO: should we consider resizing inline images as well?
-                            // Probably ok not too since we don't add these ourselves yet.
                         }
                     }
                 }
@@ -583,53 +644,73 @@ namespace NachoCore.Utils
 
         #region Image Resizing
 
-        public void ResizeImages (Tuple<float, float> lengths)
+        public void ResizeImages ()
         {
-            var attachments = McAttachment.QueryByItemId (Message);
-            foreach (var attachment in attachments) {
-                if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                    if (attachment.ContentType.StartsWith ("image/")) {
-                        var image = Delegate.ImageForMessageComposerAttachment (this, attachment);
-                        if (image != null) {
-                            using (var jpg = image.ResizedData (lengths.Item1, lengths.Item2)) {
-                                attachment.UpdateData ((FileStream stream) => {
-                                    jpg.CopyTo (stream);
-                                });
-                                attachment.ContentType = "image/jpeg";
-                                attachment.UpdateSaveFinish ();
-                            }
-                            image.Dispose ();
-                        }
+            long length;
+            using (var stream = Message.ToMime (out length)) {
+                Mime = MimeMessage.Load (stream);
+            }
+            var openStreams = new List<FileStream> ();
+            foreach (var entity in Mime.BodyParts.Where(p => p.ContentType.Matches("image", "*"))) {
+                var part = entity as MimePart;
+                if (part != null) {
+                    var tmpFilePath = Path.GetTempFileName ();
+                    using (var stream = new FileStream (tmpFilePath, FileMode.Create)) {
+                        part.ContentObject.DecodeTo (stream);
+                    }
+                    var tmpStream = new FileStream (tmpFilePath, FileMode.Open);
+                    var image = Delegate.ImageForMessageComposerAttachment (this, tmpStream);
+                    tmpStream.Dispose ();
+                    if (image != null) {
+                        tmpStream = new FileStream (tmpFilePath, FileMode.Create);
+                        var jpg = image.ResizedData (ImageLengths.Item1, ImageLengths.Item2);
+                        jpg.CopyTo (tmpStream);
+                        tmpStream.Dispose ();
+                        jpg.Dispose ();
+                        tmpStream = new FileStream (tmpFilePath, FileMode.Open);
+                        openStreams.Add (tmpStream);
+                        part.ContentType.MediaSubtype = "jpeg";
+                        part.ContentObject = new ContentObject (tmpStream);
+                        image.Dispose ();
                     }
                 }
             }
-        }
-
-        void AdjustEstimatedSizesForAttachment (McAttachment attachment)
-        {
-            if (attachment.ContentType.StartsWith("image/")) {
-                var image = Delegate.ImageForMessageComposerAttachment (this, attachment);
-                if (image != null) {
-                    // 4 / 3 is base64 encoding inflation
-                    long encodedByteSize = (long)((float)attachment.FileSize * 4.0 / 3.0);
-                    float smallRatio = RatioForSizedImage (image, SmallImageLengths);
-                    float mediumRatio = RatioForSizedImage (image, MediumImageLengths);
-                    float largeRatio = RatioForSizedImage (image, LargeImageLengths);
-                    long estimatedSmallEncodedSize = (long)((float)encodedByteSize * smallRatio * smallRatio);
-                    long estimatedMediumEncodedSize = (long)((float)encodedByteSize * mediumRatio * mediumRatio);
-                    long estimatedLargeEncodedSize = (long)((float)encodedByteSize * largeRatio * largeRatio);
-                    _EstimatedSmallSizeDelta += encodedByteSize - estimatedSmallEncodedSize;
-                    _EstimatedMediumSizeDelta += encodedByteSize - estimatedMediumEncodedSize;
-                    _EstimatedLargeSizeDelta += encodedByteSize - estimatedLargeEncodedSize;
-                    image.Dispose ();
-                }
+            WriteBody ();
+            foreach (var stream in openStreams) {
+                stream.Dispose ();
+                File.Delete (stream.Name);
             }
         }
 
-        float RatioForSizedImage (PlatformImage image, Tuple<float, float> newSize)
+        void AdjustEstimatedSizesForAttachment (Stream stream)
         {
-            float width = image.Size.Item1;
-            float height = image.Size.Item2;
+            stream.Seek (0, 0);
+            var image = Delegate.ImageForMessageComposerAttachment (this, stream);
+            if (image != null) {
+                AdjustEstimatedSizesForImageWithProperties (stream.Length, image.Size);
+                image.Dispose ();
+            }
+            stream.Seek (0, 0);
+        }
+
+        void AdjustEstimatedSizesForImageWithProperties (long fileSize, Tuple<float, float> imageSize)
+        {
+            long encodedByteSize = (long)((float)fileSize * 4.0 / 3.0);
+                float smallRatio = RatioForSizedImage (imageSize, SmallImageLengths);
+                float mediumRatio = RatioForSizedImage (imageSize, MediumImageLengths);
+                float largeRatio = RatioForSizedImage (imageSize, LargeImageLengths);
+                long estimatedSmallEncodedSize = (long)((float)encodedByteSize * smallRatio * smallRatio);
+                long estimatedMediumEncodedSize = (long)((float)encodedByteSize * mediumRatio * mediumRatio);
+                long estimatedLargeEncodedSize = (long)((float)encodedByteSize * largeRatio * largeRatio);
+                _EstimatedSmallSizeDelta += encodedByteSize - estimatedSmallEncodedSize;
+                _EstimatedMediumSizeDelta += encodedByteSize - estimatedMediumEncodedSize;
+                _EstimatedLargeSizeDelta += encodedByteSize - estimatedLargeEncodedSize;
+        }
+
+        float RatioForSizedImage (Tuple<float, float> imageSize, Tuple<float, float> newSize)
+        {
+            float width = imageSize.Item1;
+            float height = imageSize.Item2;
             float widthRatio = 1.0f;
             float heightRatio = 1.0f;
             if (width > newSize.Item1) {
@@ -653,6 +734,9 @@ namespace NachoCore.Utils
                 message.Subject = EmailHelper.CreateSubjectWithIntent (subjectWithoutIntent, Message.Intent, Message.IntentDateType, Message.IntentDate);
                 return true;
             });
+            if (ImageLengths != null) {
+                ResizeImages ();
+            }
             EmailHelper.SendTheMessage (Message, RelatedCalendarItem);
         }
 

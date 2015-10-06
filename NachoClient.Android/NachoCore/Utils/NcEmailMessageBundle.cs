@@ -1021,6 +1021,7 @@ namespace NachoCore.Utils
                                 } else {
                                     node.SetAttributeValue ("src", Storage.UrlForPath (entry.Path, entry.ContentType).ToString ());
                                 }
+                                node.SetAttributeValue ("nacho-original-src", src);
                             }
                         }
                     }

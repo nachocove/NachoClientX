@@ -1,8 +1,10 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.IO;
 using NachoPlatform;
 using UIKit;
+using Foundation;
 using CoreGraphics;
 
 namespace NachoClient.iOS
@@ -14,6 +16,15 @@ namespace NachoClient.iOS
         public static ImageiOS FromPath (string path)
         {
             var image = new UIImage (path);
+            if (image != null) {
+                return new ImageiOS (image);
+            }
+            return null;
+        }
+
+        public static ImageiOS FromStream (Stream stream)
+        {
+            var image = new UIImage (NSData.FromStream (stream));
             if (image != null) {
                 return new ImageiOS (image);
             }
