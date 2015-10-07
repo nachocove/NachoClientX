@@ -331,6 +331,12 @@ namespace NachoClient.iOS
 
         #region Layout
 
+        public void ShowIntentField ()
+        {
+            HasOpenedSubject = true;
+            SetNeedsLayout ();
+        }
+
         public void AddressBlockNeedsLayout (UcAddressBlock view)
         {
             SetNeedsLayout ();

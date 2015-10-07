@@ -395,11 +395,11 @@ namespace NachoClient.iOS
             } else {
                 Composer.InitialText = response.body;
             }
-            // TODO: show the intent field if hidden
             Composer.Message.Intent = intentType;
             Composer.Message.IntentDate = DateTime.MinValue;
             Composer.Message.IntentDateType = MessageDeferralType.None;
             UpdateHeaderIntentView ();
+            HeaderView.ShowIntentField ();
         }
 
         #endregion
