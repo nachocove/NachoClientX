@@ -1038,7 +1038,9 @@ namespace NachoCore
         protected void RefreshAllDueTokens ()
         {
             foreach (var cred in McCred.QueryByCredType (McCred.CredTypeEnum.OAuth2)) {
-                Oauth2RefreshCancelSource.Token.ThrowIfCancellationRequested ();
+                if (Oauth2RefreshCancelSource.Token.IsCancellationRequested) {
+                    return;
+                }
                 var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
                 if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
                     lock (CredReqActive) {

@@ -1198,60 +1198,32 @@ namespace NachoCore.ActiveSync
             if (null == pingKit) {
                 return null; // should never happen
             }
-            if (Server.HostIsAsGMail ()) { // GoogleExchange use Ping
-                Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Ping");
-                var ping = new AsPingCommand (this, pingKit);
-                if (null == ping) {
-                    return null; // should never happen
-                }
-                try {
-                    return new NachoCore.PushAssistParameters () {
-                        RequestUrl = ping.PushAssistRequestUrl (),
-                        Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                        ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                        WaitBeforeUseMsec = 60 * 1000,
-                        IsSyncRequest = false,
+            //if (Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+            Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Ping");
+            var ping = new AsPingCommand (this, pingKit);
+            if (null == ping) {
+                return null; // should never happen
+            }
+            try {
+                return new NachoCore.PushAssistParameters () {
+                    RequestUrl = ping.PushAssistRequestUrl (),
+                    Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                    ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                    WaitBeforeUseMsec = 60 * 1000,
+                    IsSyncRequest = false,
 
-                        MailServerCredentials = new Credentials {
-                            Username = ProtoControl.Cred.Username,
-                            Password = ProtoControl.Cred.GetPassword ()
-                        },
-                        RequestData = ping.PushAssistRequestData (),
-                        RequestHeaders = ping.PushAssistRequestHeaders (),
-                        ContentHeaders = ping.PushAssistContentHeaders (),
-                        NoChangeResponseData = ping.PushAssistNoChangeResponseData (),
-                    };
-                } catch (KeychainItemNotFoundException ex) {
-                    Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
-                    return null;
-                }
-            } else {  // use Sync
-                Log.Info (Log.LOG_AS, "PushAssistParameters using EAS Sync");
-                SyncKit syncKit = Strategy.GenSyncKitFromPingKit (ProtocolState, pingKit);
-                var sync = new AsSyncCommand (this, syncKit);
-                if (null == sync) {
-                    return null; // should never happen
-                }
-                try {
-                    return new NachoCore.PushAssistParameters () {
-                        RequestUrl = sync.PushAssistRequestUrl (),
-                        Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                        ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                        WaitBeforeUseMsec = 60 * 1000,
-                        IsSyncRequest = true,
-
-                        MailServerCredentials = new Credentials {
-                            Username = ProtoControl.Cred.Username,
-                            Password = ProtoControl.Cred.GetPassword ()
-                        },
-                        RequestData = sync.PushAssistRequestData (),
-                        RequestHeaders = sync.PushAssistRequestHeaders (),
-                        ContentHeaders = sync.PushAssistContentHeaders (),
-                    };
-                } catch (KeychainItemNotFoundException ex) {
-                    Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
-                    return null;
-                }
+                    MailServerCredentials = new Credentials {
+                        Username = ProtoControl.Cred.Username,
+                        Password = ProtoControl.Cred.GetPassword ()
+                    },
+                    RequestData = ping.PushAssistRequestData (),
+                    RequestHeaders = ping.PushAssistRequestHeaders (),
+                    ContentHeaders = ping.PushAssistContentHeaders (),
+                    NoChangeResponseData = ping.PushAssistNoChangeResponseData (),
+                };
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_AS, "PushAssistParameters: KeychainItemNotFoundException {0}", ex.Message);
+                return null;
             }
         }
     }

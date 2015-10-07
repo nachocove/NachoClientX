@@ -44,7 +44,6 @@ namespace NachoCore.Model
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
 
-
         #region IMAP Folder metadata
         // Nacho Mail Code requires the McEmailMessage.ServerId to be unique across all folders. In IMAP,
         // the UID is unique only within a folder (otehr folders may have messages with the same UID).

@@ -13,19 +13,20 @@ using Android.Views;
 using Android.Widget;
 
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
     public class CredentialsFragment : Fragment
     {
-        public McAccount.AccountServiceEnum service;
+        McAccount.AccountServiceEnum service;
 
-        public static CredentialsFragment newInstance ()
+        public static CredentialsFragment newInstance (McAccount.AccountServiceEnum service)
         {
             var fragment = new CredentialsFragment ();
+            fragment.service = service;
             return fragment;
         }
-
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -36,14 +37,19 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.CredentialsFragment, container, false);
-            var tv = view.FindViewById<TextView> (Resource.Id.textview);
-            tv.Text = "Credentials fragment";
 
             var button = view.FindViewById<Button> (Resource.Id.submit);
             button.Click += Button_Click;
+
+            var imageview = view.FindViewById<RoundedImageView> (Resource.Id.service_image);
+            var labelview = view.FindViewById<TextView> (Resource.Id.service_prompt);
+
+            imageview.SetImageResource (Util.GetAccountServiceImageId(service));
+
+            var serviceFormat = GetString (Resource.String.get_credentials);
+            labelview.Text = String.Format(serviceFormat, NcServiceHelper.AccountServiceName (service));
+
             return view;
         }
 

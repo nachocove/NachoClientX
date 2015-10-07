@@ -29,43 +29,26 @@ namespace NachoClient.AndroidClient
             return true;
         }
 
-
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
 
-            // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.LaunchActivity);
 
-//            var welcomeFragment = new WelcomeFragment ();
-//            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, welcomeFragment).Commit ();
-
-            if (ReadyToStart ()) {
-                Skip ();
-            } else {
-                var account = McAccount.GetAccountBeingConfigured ();
-                if (null == account) {
-                    WelcomeFinished ();
-                } else {
-                    var waitingFragment = WaitingFragment.newInstance (account);
-                    FragmentManager.BeginTransaction ().Replace (Resource.Id.content, waitingFragment).Commit ();
-                }
-            }
-
+            var gettingStartedFragment = GettingStartedFragment.newInstance ();
+            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, gettingStartedFragment).Commit ();
         }
 
-        public void WelcomeFinished ()
+        public void GettingStartedFinished ()
         {
-            var chooseProviderFragment = new ChooseProviderFragment ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, chooseProviderFragment).Commit ();
+            var chooseProviderFragment = ChooseProviderFragment.newInstance ();
+            FragmentManager.BeginTransaction ().Add(Resource.Id.content, chooseProviderFragment).AddToBackStack("ChooseProvider").Commit ();
         }
 
         public void ChooseProviderFinished (McAccount.AccountServiceEnum service)
         {
-            var credentialsFragment = new CredentialsFragment ();
-            credentialsFragment.service = service;
-
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, credentialsFragment).Commit ();
+            var credentialsFragment = CredentialsFragment.newInstance(service);
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, credentialsFragment).AddToBackStack("Credentials").Commit ();
         }
 
         public void GoogleSignInFinished ()
@@ -110,7 +93,16 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-            //            base.OnBackPressed ();
+            var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is GettingStartedFragment) {
+                this.FragmentManager.PopBackStack (); // Let me go!
+            }
+            if (f is ChooseProviderFragment) {
+                this.FragmentManager.PopBackStack (); // Let me go!
+            }
+            if (f is CredentialsFragment) {
+                this.FragmentManager.PopBackStack (); // Let me go!
+            }
         }
 
         protected override void OnSaveInstanceState (Bundle outState)
