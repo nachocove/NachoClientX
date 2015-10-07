@@ -12,6 +12,8 @@ using Android.Support.Design.Widget;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
+using System.Threading.Tasks;
+using NachoClient.Build;
 
 namespace NachoClient.AndroidClient
 {
@@ -36,6 +38,8 @@ namespace NachoClient.AndroidClient
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
+
+            SetupHockeyApp ();
 
             MainApplication.Startup ();
 
@@ -224,6 +228,36 @@ namespace NachoClient.AndroidClient
         {
             base.OnSaveInstanceState (outState);
         }
+
+        private void SetupHockeyApp ()
+        {
+            // Register the crash manager before Initializing the trace writer
+            HockeyApp.CrashManager.Register (this, BuildInfo.HockeyAppAppId); 
+
+            //Register to with the Update Manager
+            HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId);
+
+            // Initialize the Trace Writer
+            HockeyApp.TraceWriter.Initialize ();
+
+            // Wire up Unhandled Expcetion handler from Android
+            AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => 
+            {
+                // Use the trace writer to log exceptions so HockeyApp finds them
+                HockeyApp.TraceWriter.WriteTrace(args.Exception);
+                args.Handled = true;
+            };
+
+            // Wire up the .NET Unhandled Exception handler
+            AppDomain.CurrentDomain.UnhandledException +=
+                (sender, args) => HockeyApp.TraceWriter.WriteTrace(args.ExceptionObject);
+
+            // Wire up the unobserved task exception handler
+            TaskScheduler.UnobservedTaskException += 
+                (sender, args) => HockeyApp.TraceWriter.WriteTrace(args.Exception);
+
+        }
+
     }
 }
 
