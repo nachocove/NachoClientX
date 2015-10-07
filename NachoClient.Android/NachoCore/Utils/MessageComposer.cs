@@ -16,6 +16,7 @@ namespace NachoCore.Utils
     public interface MessageComposerDelegate
     {
         void MessageComposerDidCompletePreparation (MessageComposer composer);
+        void MessageComposerDidFailToLoadMessage (MessageComposer composer);
         PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream);
     }
 
@@ -270,10 +271,10 @@ namespace NachoCore.Utils
 
         public void MessageDownloadDidFail (MessageDownloader downloader, NcResult result)
         {
-            // TODO: probably just continue with blank content?
-            // Maybe notify Delegate so it can show an alert or something
             if (downloader == MainMessageDownloader) {
+                Delegate.MessageComposerDidFailToLoadMessage (this);
             } else if (downloader == RelatedMessageDownloader) {
+                FinishPreparingMessage ();
             } else {
                 NcAssert.CaseError ();
             }

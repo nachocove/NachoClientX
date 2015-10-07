@@ -643,6 +643,15 @@ namespace NachoClient.iOS
             DisplayMessageBody ();
         }
 
+        public void MessageComposerDidFailToLoadMessage (MessageComposer composer)
+        {
+            var alertController = UIAlertController.Create ("Could not load message", "Sorry, we could not load your message.  Please try again.", UIAlertControllerStyle.Alert);
+            alertController.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Default, (UIAlertAction obj) => { 
+                DismissViewController (true, null);
+            }));
+            PresentViewController (alertController, true, null);
+        }
+
         public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
         {
             return ImageiOS.FromStream (stream);
