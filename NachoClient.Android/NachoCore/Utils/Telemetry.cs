@@ -17,7 +17,7 @@ namespace NachoCore.Utils
 {
     public class Telemetry
     {
-        #if __IOS__
+        #if __IOS__ || __ANDROID__
         public static bool ENABLED = true;
         #else
         public static bool ENABLED = false;

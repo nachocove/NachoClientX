@@ -42,13 +42,14 @@ namespace NachoCore
                     }
 
                     _Instance = new UserIdFile ();
-
+#if __IOS__
                     // Check if the there is a new file (user_id). If yes, migrate
                     // the user ID to keychain
                     if (_Instance.Exists ()) {
                         _Instance.Write (_Instance.ReadFile ());
                         File.Delete (_Instance.FilePath);
                     }
+#endif
                 }
                 return _Instance;
             }
@@ -77,15 +78,46 @@ namespace NachoCore
             }
         }
 
+        protected void WriteFile (string userId)
+        {
+            using (var stream = new FileStream (FilePath, FileMode.OpenOrCreate, FileAccess.Write)) {
+                using (var writer = new StreamWriter (stream)) {
+                    writer.WriteLine (userId);
+                }
+            }
+        }
+
         public string Read ()
         {
+#if __IOS__
             return Keychain.Instance.GetUserId ();
+#elif __ANDROID__
+            //http://developer.android.com/guide/topics/data/data-storage.html#pref
+            //https://forums.xamarin.com/discussion/4758/android-shared-preference
+            //var c = (Context)this;
+            //ISharedPreferences prefs = c.GetSharedPreferences ("nachomail", FileCreationMode.Private);
+            //return prefs.GetString("cog-user-id", null);
+            return ReadFile ();
+#else
+#error NO PERSISTENT STORAGE
+#endif
         }
 
         public void Write (string userId)
         {
             Console.WriteLine ("Writing UserId {0}", userId);
+#if __IOS__
             Keychain.Instance.SetUserId (userId);
+#elif __ANDROID__
+            //var c = (Context)this;
+            //ISharedPreferences prefs = c.GetSharedPreferences ("nachomail", FileCreationMode.Private);
+            //var editor = prefs.Edit();
+            //editor.PutString("cog-user-id", userId);
+            //editor.Commit();
+            WriteFile (userId);
+#else
+#error NO PERSISTENT STORAGE
+#endif
         }
     }
 
