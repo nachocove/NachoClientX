@@ -87,6 +87,17 @@ namespace NachoClient.AndroidClient
                 locationLabel.Text = location;
             }
 
+            var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.event_description_webview);
+            var body = McBody.QueryById<McBody> (detail.SpecificItem.BodyId);
+            if (McBody.IsNontruncatedBodyComplete (body)) {
+                var bodyRenderer = new BodyRenderer ();
+                bodyRenderer.Start (webview, body, detail.SpecificItem.NativeBodyType);
+                var webClient = new NachoWebViewClient ();
+                webview.SetWebViewClient (webClient);
+            } else {
+                webview.Visibility = ViewStates.Gone;
+            }
+
             var reminderView = view.FindViewById<TextView> (Resource.Id.event_reminder_label);
             reminderView.Text = detail.ReminderString;
 
@@ -109,6 +120,14 @@ namespace NachoClient.AndroidClient
                 }
             }
 
+            var notesLabel = view.FindViewById<TextView> (Resource.Id.event_notes_label);
+            var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
+            if (null == note) {
+                notesLabel.Text = "";
+            } else {
+                notesLabel.Text = note.noteContent;
+            }
+
             var calendarView = view.FindViewById<TextView> (Resource.Id.event_calendar_label);
             calendarView.Text = detail.CalendarNameString;
 
@@ -125,7 +144,7 @@ namespace NachoClient.AndroidClient
             var rsvpView = view.FindViewById<View> (Resource.Id.event_rsvp_view);
             var removeView = view.FindViewById<View> (Resource.Id.event_remove_view);
             var cancelledView = view.FindViewById<View> (Resource.Id.event_cancelled_view);
-            var organizerView = view.FindViewById<View> (Resource.Id.event_organizer_view);
+            var organizerView = view.FindViewById<View> (Resource.Id.event_self_organizer_view);
             var separatorView = view.FindViewById<View> (Resource.Id.event_top_separator);
 
             rsvpView.Visibility = ViewStates.Gone;
@@ -154,7 +173,6 @@ namespace NachoClient.AndroidClient
                 rsvpView.Visibility = ViewStates.Visible;
             }
         }
-
     }
 }
 

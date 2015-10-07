@@ -64,6 +64,7 @@ namespace NachoClient.AndroidClient
             }
             var parent = (LaunchActivity)Activity;
             parent.WaitingFinished ();
+            LoginHelpers.SetHasViewedTutorial (true);
         }
 
         public void handleStatusEnums ()

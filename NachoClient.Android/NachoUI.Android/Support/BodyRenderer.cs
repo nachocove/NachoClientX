@@ -43,6 +43,7 @@ namespace NachoClient.AndroidClient
                 break;
             case McAbstrFileDesc.BodyTypeEnum.RTF_3:
                 // FIXME
+                RenderTextString ("[RTF body type is not yet supported.]");
                 break;
             case McAbstrFileDesc.BodyTypeEnum.MIME_4:
                 RenderMime (body, nativeBodyType);
@@ -75,13 +76,13 @@ namespace NachoClient.AndroidClient
                 var part = (MimePart)entity;
                 if (part.ContentType.Matches ("text", "html")) {
                     RenderHtmlPart (part);
-                    return;
                 } else if (part.ContentType.Matches ("text", "rtf")) {
-                    // FIXME
+                    RenderRtfPart (part);
                 } else if (part.ContentType.Matches ("text", "*")) {
                     RenderTextPart (part);
                 } else if (part.ContentType.Matches ("image", "*")) {
                     // FIXME
+                    RenderTextString ("[Image MIME part is not yet supported.]");
                 }
             }
         }
@@ -96,6 +97,11 @@ namespace NachoClient.AndroidClient
             RenderHtmlString ((part as TextPart).Text);
         }
 
+        private void RenderRtfPart (MimePart part)
+        {
+            // FIXME
+            RenderTextString ("[RTF MIME part is not yet supported.]");
+        }
     }
 
 }
