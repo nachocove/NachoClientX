@@ -756,14 +756,7 @@ namespace NachoCore
                 IMAPUIDNEXT = parameters.IMAPUIDNEXT,
             };
             McAccount account = McAccount.QueryById<McAccount> (AccountId);
-            try {
-                string password = cred.GetPassword ();
-                account.LogHashedPassword (Log.LOG_PUSH, "PushAssist->DoStartSession", password);
-            } catch (KeychainItemNotFoundException ex) {
-                Log.Error (Log.LOG_UI, "KeychainItemNotFoundException: {0}", ex.Message);
-                PostTempFail ("KeychainItemNotFoundException");
-                return;
-            }
+            account.LogHashedPassword (Log.LOG_PUSH, "PushAssist->DoStartSession", cred);
             FillOutIdentInfo (jsonRequest);
 
             NcTask.Run (() => {
