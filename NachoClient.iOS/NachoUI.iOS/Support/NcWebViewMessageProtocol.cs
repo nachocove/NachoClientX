@@ -110,7 +110,7 @@ namespace NachoClient.iOS
             foreach (var item in components.QueryItems) {
                 var key = new NSString (item.Name);
                 var value = new NSString (item.Value);
-                body.SetObject (value, key);
+                body.SetValueForKey (value, key);
             }
             var message = new NcWebViewMessage (name, body);
             using (var response = new NSUrlResponse (Request.Url, "text/plain", 0, "utf8")) {
