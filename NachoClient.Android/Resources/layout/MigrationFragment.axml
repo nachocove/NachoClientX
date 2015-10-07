@@ -4,13 +4,6 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
     <TextView
-        android:id="@+id/textview"
-        android:textColor="@android:color/white"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0"
-        android:paddingBottom="4dip" />
-    <TextView
         android:id="@+id/message"
         android:textColor="@android:color/white"
         android:layout_width="match_parent"
@@ -27,16 +20,4 @@
         android:gravity="center"
         android:padding="25dp"
         android:layout_below="@id/message" />
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:keepScreenOn="true"
-        android:padding="3dp"
-        android:text="@string/demo"
-        android:textSize="17dp"
-        android:textStyle="normal"
-        android:minWidth="130dp"
-        android:id="@+id/btnDemo"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true" />
 </RelativeLayout>
