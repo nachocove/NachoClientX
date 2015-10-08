@@ -79,6 +79,7 @@ Editor.prototype = {
         this.lockZoom();
         this.rootNode.addEventListener('input', this);
         this.rootNode.addEventListener('paste', this);
+        this.rootNode.addEventListener('keypress', this);
         this.document.addEventListener('selectionchange', this);
     },
 
@@ -86,6 +87,7 @@ Editor.prototype = {
         this.rootNode.contentEditable = "false";
         this.rootNode.removeEventListener('input', this);
         this.rootNode.removeEventListener('paste', this);
+        this.rootNode.removeEventListener('keypress', this);
         this.document.removeEventListener('selectionchange', this);
     },
 
@@ -124,6 +126,82 @@ Editor.prototype = {
             this.postMessage({kind: "editor-height-changed"});
         }
         this.ensureVisibilityOnSelectionChange = true;
+    },
+
+    keypress: function(e){
+        if (e.keyCode == 13){
+            var selection = this.window.getSelection();
+            var anchorContainer = this._outermostQuoteContainer(selection.anchorNode);
+            var endContainer = this._outermostQuoteContainer(selection.focusNode);
+            if (anchorContainer && endContainer){
+                if (anchorContainer == endContainer){
+                    if (selection.isCollapsed){
+                        this._splitNode(selection.anchorNode, selection.anchorOffset, anchorContainer);
+                        var blank = this.document.createElement('div');
+                        blank.appendChild(this.document.createElement('br'));
+                        anchorContainer.parentNode.insertBefore(blank, anchorContainer.nextSibling);
+                        var range = this.document.createRange();
+                        range.setStart(blank, 0);
+                        range.setEnd(blank, 0);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        e.preventDefault();
+                    }else{
+                        // If the selection isn't collapsed, we'll just let the default behavior happen
+                        // which will collapse the selection allowing a subsequent enter to break the quote.
+                    }
+                }
+            }else{
+                // Similarly, if the selection is across siblig blockquotes, let the default behavior
+                // collapse the selection
+            }
+        }
+    },
+
+    _splitNode: function(node, offset, throughNode){
+        if (node.nodeType == Node.TEXT_NODE){
+            node.splitText(offset);
+        }else if (node.nodeType == Node.ELEMENT_NODE){
+            var copy = node.cloneNode(false);
+            while (offset < node.childNodes.length){
+                copy.appendChild(node.childNodes[offset]);
+            }
+            if (node.nextSibling){
+                node.parentNode.insertBefore(copy, node.nextSibling);
+            }else{
+                node.parentNode.appendChild(copy);
+            }
+            // Not sure why, but this doesn't seem to be sticking...it's gone in the debugger,
+            // but shows up in the HTML we send
+            copy.id = null;
+        }
+        if (node !== throughNode){
+            var nodeOffset = node.parentNode.childNodes.length;
+            for (var i = 0, l = node.parentNode.childNodes.length; i < l; ++i){
+                if (node.parentNode.childNodes[i] === node){
+                    nodeOffset = i + 1;
+                    break;
+                }
+            }
+            this._splitNode(node.parentNode, nodeOffset, throughNode);
+        }
+    },
+
+    _outermostQuoteContainer: function(node){
+        var ancestors = [];
+        while (node != null){
+            ancestors.push(node);
+            node = node.parentNode;
+        }
+        for (var i = ancestors.length - 1; i >= 0; --i){
+            node = ancestors[i];
+            if (node.nodeType == Node.ELEMENT_NODE){
+                if (node.tagName.toLowerCase() == 'blockquote'){
+                    return node;
+                }
+            }
+        }
+        return null;
     },
 
     selectionchange: function(){
