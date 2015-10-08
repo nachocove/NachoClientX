@@ -66,6 +66,7 @@
     <string name="event_location">LOCATION</string>
     <string name="event_description">DESCRIPTION</string>
     <string name="event_reminder">REMINDER</string>
+    <string name="event_attachments">ATTACHMENTS</string>
     <string name="event_attendees">ATTENDEES</string>
     <string name="event_notes">NOTES</string>
     <string name="event_calendar">CALENDAR</string>
