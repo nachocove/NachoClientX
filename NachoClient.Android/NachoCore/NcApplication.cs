@@ -79,13 +79,22 @@ namespace NachoCore
 
         public string Read ()
         {
-            return Keychain.Instance.GetUserId ();
+            if (Keychain.Instance.HasKeychain ()) {
+                return Keychain.Instance.GetUserId ();
+            } else {
+                return UserId;
+            }
         }
 
+        string UserId = null;
         public void Write (string userId)
         {
             Console.WriteLine ("Writing UserId {0}", userId);
-            Keychain.Instance.SetUserId (userId);
+            if (Keychain.Instance.HasKeychain ()) {
+                Keychain.Instance.SetUserId (userId);
+            } else {
+                UserId = userId;
+            }
         }
     }
 
