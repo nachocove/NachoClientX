@@ -48,6 +48,11 @@ namespace NachoClient.AndroidClient
         }
     }
 
+    public interface CredentialsFragmentDelegate
+    {
+        void CredentialsValidated (McAccount account);
+    }
+
     public class CredentialsFragment : Fragment, ILoginEvents, AccountAdvancedFieldsViewControllerDelegate
     {
         McAccount Account;
@@ -480,7 +485,7 @@ namespace NachoClient.AndroidClient
         {
             IsSubmitting = false;
             Log.Info (Log.LOG_UI, "CredentialsFragment PostAutoDPreInboxSync for reader or writer");
-            var parent = (LaunchActivity)Activity;
+            var parent = (CredentialsFragmentDelegate)Activity;
             parent.CredentialsValidated (Account);
         }
 

@@ -145,7 +145,7 @@ namespace NachoClient.AndroidClient
                         var imageUrlString = ((string)picture).Replace ("/photo.jpg", "/s200-c-k/photo.jpg");
                         Account.PopulateProfilePhotoFromURL (new Uri (imageUrlString));
                     }
-                    var parent = (LaunchActivity)Activity;
+                    var parent = (CredentialsFragmentDelegate)Activity;
                     parent.CredentialsValidated (Account);
                 }
             } else {

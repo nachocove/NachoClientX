@@ -2669,8 +2669,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0081
 			public const int about = 2131427457;
 			
-			// aapt resource value: 0x7f0b00f9
-			public const int account = 2131427577;
+			// aapt resource value: 0x7f0b0106
+			public const int account = 2131427590;
 			
 			// aapt resource value: 0x7f0b007d
 			public const int account_email = 2131427453;
@@ -2684,8 +2684,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b007e
 			public const int account_settings = 2131427454;
 			
-			// aapt resource value: 0x7f0b0103
-			public const int action0 = 2131427587;
+			// aapt resource value: 0x7f0b0110
+			public const int action0 = 2131427600;
 			
 			// aapt resource value: 0x7f0b006c
 			public const int action_bar = 2131427436;
@@ -2711,8 +2711,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b006d
 			public const int action_context_bar = 2131427437;
 			
-			// aapt resource value: 0x7f0b0107
-			public const int action_divider = 2131427591;
+			// aapt resource value: 0x7f0b0114
+			public const int action_divider = 2131427604;
 			
 			// aapt resource value: 0x7f0b0004
 			public const int action_menu_divider = 2131427332;
@@ -2753,17 +2753,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0043
 			public const int always = 2131427395;
 			
-			// aapt resource value: 0x7f0b00e4
-			public const int archive = 2131427556;
+			// aapt resource value: 0x7f0b00f1
+			public const int archive = 2131427569;
 			
-			// aapt resource value: 0x7f0b00ef
-			public const int art = 2131427567;
+			// aapt resource value: 0x7f0b00fc
+			public const int art = 2131427580;
 			
 			// aapt resource value: 0x7f0b0041
 			public const int beginning = 2131427393;
 			
-			// aapt resource value: 0x7f0b00d6
-			public const int body = 2131427542;
+			// aapt resource value: 0x7f0b00e3
+			public const int body = 2131427555;
 			
 			// aapt resource value: 0x7f0b001b
 			public const int book_now = 2131427355;
@@ -2780,8 +2780,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b008d
 			public const int button_bar = 2131427469;
 			
-			// aapt resource value: 0x7f0b00f5
-			public const int buttons = 2131427573;
+			// aapt resource value: 0x7f0b0102
+			public const int buttons = 2131427586;
 			
 			// aapt resource value: 0x7f0b0017
 			public const int buyButton = 2131427351;
@@ -2792,20 +2792,20 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b001d
 			public const int buy_with_google = 2131427357;
 			
-			// aapt resource value: 0x7f0b00fe
-			public const int calendar = 2131427582;
+			// aapt resource value: 0x7f0b010b
+			public const int calendar = 2131427595;
 			
 			// aapt resource value: 0x7f0b00b7
 			public const int calendar_color = 2131427511;
 			
-			// aapt resource value: 0x7f0b00ff
-			public const int calendar_image = 2131427583;
+			// aapt resource value: 0x7f0b010c
+			public const int calendar_image = 2131427596;
 			
 			// aapt resource value: 0x7f0b00a9
 			public const int call = 2131427497;
 			
-			// aapt resource value: 0x7f0b0104
-			public const int cancel_action = 2131427588;
+			// aapt resource value: 0x7f0b0111
+			public const int cancel_action = 2131427601;
 			
 			// aapt resource value: 0x7f0b009b
 			public const int cc_label = 2131427483;
@@ -2825,14 +2825,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0064
 			public const int checkbox = 2131427428;
 			
-			// aapt resource value: 0x7f0b00df
-			public const int chili = 2131427551;
+			// aapt resource value: 0x7f0b00ec
+			public const int chili = 2131427564;
 			
 			// aapt resource value: 0x7f0b00b2
 			public const int chips = 2131427506;
 			
-			// aapt resource value: 0x7f0b010a
-			public const int chronometer = 2131427594;
+			// aapt resource value: 0x7f0b0117
+			public const int chronometer = 2131427607;
 			
 			// aapt resource value: 0x7f0b001f
 			public const int classic = 2131427359;
@@ -2858,11 +2858,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b00a1
 			public const int contact_title = 2131427489;
 			
-			// aapt resource value: 0x7f0b0100
-			public const int contacts = 2131427584;
+			// aapt resource value: 0x7f0b010d
+			public const int contacts = 2131427597;
 			
-			// aapt resource value: 0x7f0b0101
-			public const int contacts_image = 2131427585;
+			// aapt resource value: 0x7f0b010e
+			public const int contacts_image = 2131427598;
 			
 			// aapt resource value: 0x7f0b0094
 			public const int content = 2131427476;
@@ -2876,8 +2876,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0060
 			public const int customPanel = 2131427424;
 			
-			// aapt resource value: 0x7f0b00de
-			public const int date = 2131427550;
+			// aapt resource value: 0x7f0b00eb
+			public const int date = 2131427563;
 			
 			// aapt resource value: 0x7f0b00b4
 			public const int date_picker = 2131427508;
@@ -2891,11 +2891,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0055
 			public const int default_activity_button = 2131427413;
 			
-			// aapt resource value: 0x7f0b00ee
-			public const int default_control_frame = 2131427566;
+			// aapt resource value: 0x7f0b00fb
+			public const int default_control_frame = 2131427579;
 			
-			// aapt resource value: 0x7f0b00e5
-			public const int delete = 2131427557;
+			// aapt resource value: 0x7f0b00f2
+			public const int delete = 2131427570;
 			
 			// aapt resource value: 0x7f0b0048
 			public const int dialog = 2131427400;
@@ -2903,17 +2903,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b003b
 			public const int disableHome = 2131427387;
 			
-			// aapt resource value: 0x7f0b00f6
-			public const int disconnect = 2131427574;
+			// aapt resource value: 0x7f0b0103
+			public const int disconnect = 2131427587;
 			
 			// aapt resource value: 0x7f0b001e
 			public const int donate_with_google = 2131427358;
 			
-			// aapt resource value: 0x7f0b0112
-			public const int drawer_item_1 = 2131427602;
+			// aapt resource value: 0x7f0b011f
+			public const int drawer_item_1 = 2131427615;
 			
-			// aapt resource value: 0x7f0b0113
-			public const int drawer_item_2 = 2131427603;
+			// aapt resource value: 0x7f0b0120
+			public const int drawer_item_2 = 2131427616;
 			
 			// aapt resource value: 0x7f0b0049
 			public const int dropdown = 2131427401;
@@ -2927,8 +2927,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b002e
 			public const int end = 2131427374;
 			
-			// aapt resource value: 0x7f0b010f
-			public const int end_padder = 2131427599;
+			// aapt resource value: 0x7f0b011c
+			public const int end_padder = 2131427612;
 			
 			// aapt resource value: 0x7f0b0022
 			public const int enterAlways = 2131427362;
@@ -2936,17 +2936,56 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0023
 			public const int enterAlwaysCollapsed = 2131427363;
 			
+			// aapt resource value: 0x7f0b00ce
+			public const int event_attachment_placeholder = 2131427534;
+			
+			// aapt resource value: 0x7f0b00cd
+			public const int event_attachments_view = 2131427533;
+			
 			// aapt resource value: 0x7f0b00bf
 			public const int event_attend_view = 2131427519;
 			
-			// aapt resource value: 0x7f0b00d2
-			public const int event_calendar_label = 2131427538;
+			// aapt resource value: 0x7f0b00d4
+			public const int event_attendee_0 = 2131427540;
+			
+			// aapt resource value: 0x7f0b00d6
+			public const int event_attendee_1 = 2131427542;
+			
+			// aapt resource value: 0x7f0b00d8
+			public const int event_attendee_2 = 2131427544;
+			
+			// aapt resource value: 0x7f0b00da
+			public const int event_attendee_3 = 2131427546;
+			
+			// aapt resource value: 0x7f0b00dc
+			public const int event_attendee_4 = 2131427548;
+			
+			// aapt resource value: 0x7f0b00d5
+			public const int event_attendee_name_0 = 2131427541;
+			
+			// aapt resource value: 0x7f0b00d7
+			public const int event_attendee_name_1 = 2131427543;
+			
+			// aapt resource value: 0x7f0b00d9
+			public const int event_attendee_name_2 = 2131427545;
+			
+			// aapt resource value: 0x7f0b00db
+			public const int event_attendee_name_3 = 2131427547;
+			
+			// aapt resource value: 0x7f0b00dd
+			public const int event_attendee_name_4 = 2131427549;
 			
 			// aapt resource value: 0x7f0b00d3
-			public const int event_cancel_separator = 2131427539;
+			public const int event_attendee_view = 2131427539;
 			
-			// aapt resource value: 0x7f0b00d4
-			public const int event_cancel_view = 2131427540;
+			// aapt resource value: 0x7f0b00df
+			public const int event_calendar_label = 2131427551;
+			
+			// aapt resource value: 0x7f0b00e0
+			public const int event_cancel_separator = 2131427552;
+			
+			// aapt resource value: 0x7f0b00e1
+			public const int event_cancel_view = 2131427553;
 			
 			// aapt resource value: 0x7f0b00c3
 			public const int event_cancelled_view = 2131427523;
@@ -2975,20 +3014,20 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b00c0
 			public const int event_maybe_view = 2131427520;
 			
-			// aapt resource value: 0x7f0b00d1
-			public const int event_notes_label = 2131427537;
+			// aapt resource value: 0x7f0b00de
+			public const int event_notes_label = 2131427550;
+			
+			// aapt resource value: 0x7f0b00d2
+			public const int event_organizer_email_label = 2131427538;
 			
 			// aapt resource value: 0x7f0b00d0
-			public const int event_organizer_email_label = 2131427536;
+			public const int event_organizer_initials = 2131427536;
 			
-			// aapt resource value: 0x7f0b00ce
-			public const int event_organizer_initials = 2131427534;
+			// aapt resource value: 0x7f0b00d1
+			public const int event_organizer_label = 2131427537;
 			
 			// aapt resource value: 0x7f0b00cf
-			public const int event_organizer_label = 2131427535;
-			
-			// aapt resource value: 0x7f0b00cd
-			public const int event_organizer_view = 2131427533;
+			public const int event_organizer_view = 2131427535;
 			
 			// aapt resource value: 0x7f0b00c7
 			public const int event_recurrence_label = 2131427527;
@@ -3035,8 +3074,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0063
 			public const int expanded_menu = 2131427427;
 			
-			// aapt resource value: 0x7f0b00e8
-			public const int files = 2131427560;
+			// aapt resource value: 0x7f0b00f5
+			public const int files = 2131427573;
 			
 			// aapt resource value: 0x7f0b002f
 			public const int fill = 2131427375;
@@ -3050,8 +3089,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0037
 			public const int @fixed = 2131427383;
 			
-			// aapt resource value: 0x7f0b00e3
-			public const int forward = 2131427555;
+			// aapt resource value: 0x7f0b00f0
+			public const int forward = 2131427568;
 			
 			// aapt resource value: 0x7f0b007f
 			public const int go_to_inbox = 2131427455;
@@ -3074,11 +3113,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b003c
 			public const int homeAsUp = 2131427388;
 			
-			// aapt resource value: 0x7f0b00fa
-			public const int hot = 2131427578;
+			// aapt resource value: 0x7f0b0107
+			public const int hot = 2131427591;
 			
-			// aapt resource value: 0x7f0b00fb
-			public const int hot_image = 2131427579;
+			// aapt resource value: 0x7f0b0108
+			public const int hot_image = 2131427592;
 			
 			// aapt resource value: 0x7f0b000e
 			public const int hybrid = 2131427342;
@@ -3107,14 +3146,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0087
 			public const int imap_username = 2131427463;
 			
-			// aapt resource value: 0x7f0b00fc
-			public const int inbox = 2131427580;
+			// aapt resource value: 0x7f0b0109
+			public const int inbox = 2131427593;
 			
-			// aapt resource value: 0x7f0b00fd
-			public const int inbox_image = 2131427581;
+			// aapt resource value: 0x7f0b010a
+			public const int inbox_image = 2131427594;
 			
-			// aapt resource value: 0x7f0b010e
-			public const int info = 2131427598;
+			// aapt resource value: 0x7f0b011b
+			public const int info = 2131427611;
 			
 			// aapt resource value: 0x7f0b0000
 			public const int item_touch_helper_previous_elevation = 2131427328;
@@ -3134,11 +3173,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0093
 			public const int left_button3 = 2131427475;
 			
-			// aapt resource value: 0x7f0b0108
-			public const int line1 = 2131427592;
+			// aapt resource value: 0x7f0b0115
+			public const int line1 = 2131427605;
 			
-			// aapt resource value: 0x7f0b010c
-			public const int line3 = 2131427596;
+			// aapt resource value: 0x7f0b0119
+			public const int line3 = 2131427609;
 			
 			// aapt resource value: 0x7f0b0039
 			public const int listMode = 2131427385;
@@ -3155,32 +3194,32 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b00c8
 			public const int location_view = 2131427528;
 			
-			// aapt resource value: 0x7f0b00e7
-			public const int mail = 2131427559;
+			// aapt resource value: 0x7f0b00f4
+			public const int mail = 2131427572;
 			
 			// aapt resource value: 0x7f0b0019
 			public const int match_parent = 2131427353;
 			
-			// aapt resource value: 0x7f0b0106
-			public const int media_actions = 2131427590;
+			// aapt resource value: 0x7f0b0113
+			public const int media_actions = 2131427603;
 			
-			// aapt resource value: 0x7f0b00ed
-			public const int media_route_control_frame = 2131427565;
+			// aapt resource value: 0x7f0b00fa
+			public const int media_route_control_frame = 2131427578;
 			
-			// aapt resource value: 0x7f0b00ea
-			public const int media_route_list = 2131427562;
+			// aapt resource value: 0x7f0b00f7
+			public const int media_route_list = 2131427575;
 			
-			// aapt resource value: 0x7f0b00f3
-			public const int media_route_volume_layout = 2131427571;
+			// aapt resource value: 0x7f0b0100
+			public const int media_route_volume_layout = 2131427584;
 			
-			// aapt resource value: 0x7f0b00f4
-			public const int media_route_volume_slider = 2131427572;
+			// aapt resource value: 0x7f0b0101
+			public const int media_route_volume_slider = 2131427585;
 			
 			// aapt resource value: 0x7f0b009f
 			public const int message = 2131427487;
 			
-			// aapt resource value: 0x7f0b00db
-			public const int message_read = 2131427547;
+			// aapt resource value: 0x7f0b00e8
+			public const int message_read = 2131427560;
 			
 			// aapt resource value: 0x7f0b0042
 			public const int middle = 2131427394;
@@ -3191,17 +3230,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0021
 			public const int monochrome = 2131427361;
 			
-			// aapt resource value: 0x7f0b0102
-			public const int more = 2131427586;
+			// aapt resource value: 0x7f0b010f
+			public const int more = 2131427599;
 			
 			// aapt resource value: 0x7f0b004a
 			public const int multiply = 2131427402;
 			
-			// aapt resource value: 0x7f0b00f8
-			public const int navigation_bar = 2131427576;
+			// aapt resource value: 0x7f0b0105
+			public const int navigation_bar = 2131427589;
 			
-			// aapt resource value: 0x7f0b00e0
-			public const int navigation_toolbar = 2131427552;
+			// aapt resource value: 0x7f0b00ed
+			public const int navigation_toolbar = 2131427565;
 			
 			// aapt resource value: 0x7f0b0046
 			public const int never = 2131427398;
@@ -3212,8 +3251,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b000f
 			public const int normal = 2131427343;
 			
-			// aapt resource value: 0x7f0b0110
-			public const int pager = 2131427600;
+			// aapt resource value: 0x7f0b011d
+			public const int pager = 2131427613;
 			
 			// aapt resource value: 0x7f0b0026
 			public const int parallax = 2131427366;
@@ -3227,17 +3266,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0027
 			public const int pin = 2131427367;
 			
-			// aapt resource value: 0x7f0b00f0
-			public const int play_pause = 2131427568;
+			// aapt resource value: 0x7f0b00fd
+			public const int play_pause = 2131427581;
 			
-			// aapt resource value: 0x7f0b00da
-			public const int preview = 2131427546;
+			// aapt resource value: 0x7f0b00e7
+			public const int preview = 2131427559;
 			
 			// aapt resource value: 0x7f0b0014
 			public const int production = 2131427348;
 			
-			// aapt resource value: 0x7f0b00e6
-			public const int progress = 2131427558;
+			// aapt resource value: 0x7f0b00f3
+			public const int progress = 2131427571;
 			
 			// aapt resource value: 0x7f0b0007
 			public const int progress_circular = 2131427335;
@@ -3248,17 +3287,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0066
 			public const int radio = 2131427430;
 			
-			// aapt resource value: 0x7f0b0111
-			public const int recyclerView = 2131427601;
+			// aapt resource value: 0x7f0b011e
+			public const int recyclerView = 2131427614;
 			
 			// aapt resource value: 0x7f0b00ca
 			public const int relativeLayout2 = 2131427530;
 			
-			// aapt resource value: 0x7f0b00e1
-			public const int reply = 2131427553;
+			// aapt resource value: 0x7f0b00ee
+			public const int reply = 2131427566;
 			
-			// aapt resource value: 0x7f0b00e2
-			public const int reply_all = 2131427554;
+			// aapt resource value: 0x7f0b00ef
+			public const int reply_all = 2131427567;
 			
 			// aapt resource value: 0x7f0b0033
 			public const int right = 2131427379;
@@ -3272,8 +3311,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0090
 			public const int right_button3 = 2131427472;
 			
-			// aapt resource value: 0x7f0b00ec
-			public const int route_name = 2131427564;
+			// aapt resource value: 0x7f0b00f9
+			public const int route_name = 2131427577;
 			
 			// aapt resource value: 0x7f0b0015
 			public const int sandbox = 2131427349;
@@ -3329,8 +3368,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0018
 			public const int selectionDetails = 2131427352;
 			
-			// aapt resource value: 0x7f0b00dd
-			public const int sender = 2131427549;
+			// aapt resource value: 0x7f0b00ea
+			public const int sender = 2131427562;
 			
 			// aapt resource value: 0x7f0b00ad
 			public const int service_image = 2131427501;
@@ -3338,8 +3377,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b00ae
 			public const int service_prompt = 2131427502;
 			
-			// aapt resource value: 0x7f0b00e9
-			public const int settings = 2131427561;
+			// aapt resource value: 0x7f0b00f6
+			public const int settings = 2131427574;
 			
 			// aapt resource value: 0x7f0b0065
 			public const int shortcut = 2131427429;
@@ -3359,11 +3398,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b008a
 			public const int smtp_server = 2131427466;
 			
-			// aapt resource value: 0x7f0b00d9
-			public const int snackbar_action = 2131427545;
+			// aapt resource value: 0x7f0b00e6
+			public const int snackbar_action = 2131427558;
 			
-			// aapt resource value: 0x7f0b00d8
-			public const int snackbar_text = 2131427544;
+			// aapt resource value: 0x7f0b00e5
+			public const int snackbar_text = 2131427557;
 			
 			// aapt resource value: 0x7f0b00b3
 			public const int spinner = 2131427507;
@@ -3383,11 +3422,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0034
 			public const int start = 2131427380;
 			
-			// aapt resource value: 0x7f0b0105
-			public const int status_bar_latest_event_content = 2131427589;
+			// aapt resource value: 0x7f0b0112
+			public const int status_bar_latest_event_content = 2131427602;
 			
-			// aapt resource value: 0x7f0b00f7
-			public const int stop = 2131427575;
+			// aapt resource value: 0x7f0b0104
+			public const int stop = 2131427588;
 			
 			// aapt resource value: 0x7f0b0016
 			public const int strict_sandbox = 2131427350;
@@ -3404,8 +3443,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0077
 			public const int submit_area = 2131427447;
 			
-			// aapt resource value: 0x7f0b00f2
-			public const int subtitle = 2131427570;
+			// aapt resource value: 0x7f0b00ff
+			public const int subtitle = 2131427583;
 			
 			// aapt resource value: 0x7f0b0080
 			public const int support = 2131427456;
@@ -3419,23 +3458,23 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0011
 			public const int terrain = 2131427345;
 			
-			// aapt resource value: 0x7f0b010d
-			public const int text = 2131427597;
+			// aapt resource value: 0x7f0b011a
+			public const int text = 2131427610;
 			
-			// aapt resource value: 0x7f0b010b
-			public const int text2 = 2131427595;
+			// aapt resource value: 0x7f0b0118
+			public const int text2 = 2131427608;
 			
 			// aapt resource value: 0x7f0b005f
 			public const int textSpacerNoButtons = 2131427423;
 			
-			// aapt resource value: 0x7f0b00f1
-			public const int text_wrapper = 2131427569;
+			// aapt resource value: 0x7f0b00fe
+			public const int text_wrapper = 2131427582;
 			
 			// aapt resource value: 0x7f0b008c
 			public const int textview = 2131427468;
 			
-			// aapt resource value: 0x7f0b0109
-			public const int time = 2131427593;
+			// aapt resource value: 0x7f0b0116
+			public const int time = 2131427606;
 			
 			// aapt resource value: 0x7f0b00b5
 			public const int time_picker = 2131427509;
@@ -3443,8 +3482,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0058
 			public const int title = 2131427416;
 			
-			// aapt resource value: 0x7f0b00eb
-			public const int title_bar = 2131427563;
+			// aapt resource value: 0x7f0b00f8
+			public const int title_bar = 2131427576;
 			
 			// aapt resource value: 0x7f0b005b
 			public const int title_template = 2131427419;
@@ -3467,8 +3506,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0040
 			public const int useLogo = 2131427392;
 			
-			// aapt resource value: 0x7f0b00dc
-			public const int user_image = 2131427548;
+			// aapt resource value: 0x7f0b00e9
+			public const int user_image = 2131427561;
 			
 			// aapt resource value: 0x7f0b00a0
 			public const int user_initials = 2131427488;
@@ -3482,11 +3521,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b00a4
 			public const int vip = 2131427492;
 			
-			// aapt resource value: 0x7f0b00d7
-			public const int webview = 2131427543;
+			// aapt resource value: 0x7f0b00e4
+			public const int webview = 2131427556;
 			
-			// aapt resource value: 0x7f0b00d5
-			public const int welcome = 2131427541;
+			// aapt resource value: 0x7f0b00e2
+			public const int welcome = 2131427554;
 			
 			// aapt resource value: 0x7f0b0047
 			public const int withText = 2131427399;
@@ -3958,8 +3997,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f07005c
 			public const int add_account = 2131165276;
 			
-			// aapt resource value: 0x7f070094
-			public const int advanced_signin = 2131165332;
+			// aapt resource value: 0x7f070095
+			public const int advanced_signin = 2131165333;
 			
 			// aapt resource value: 0x7f070044
 			public const int app_name = 2131165252;
@@ -3982,8 +4021,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f07007b
 			public const int choose_folder = 2131165307;
 			
-			// aapt resource value: 0x7f070092
-			public const int choose_provider = 2131165330;
+			// aapt resource value: 0x7f070093
+			public const int choose_provider = 2131165331;
 			
 			// aapt resource value: 0x7f070047
 			public const int close = 2131165255;
@@ -4087,11 +4126,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070003
 			public const int decline = 2131165187;
 			
-			// aapt resource value: 0x7f0700a0
-			public const int default_imap_port = 2131165344;
-			
 			// aapt resource value: 0x7f0700a1
-			public const int default_smtp_port = 2131165345;
+			public const int default_imap_port = 2131165345;
+			
+			// aapt resource value: 0x7f0700a2
+			public const int default_smtp_port = 2131165346;
 			
 			// aapt resource value: 0x7f07007a
 			public const int defer_message_until = 2131165306;
@@ -4162,8 +4201,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f07005f
 			public const int demo_subject = 2131165279;
 			
-			// aapt resource value: 0x7f070098
-			public const int domain = 2131165336;
+			// aapt resource value: 0x7f070099
+			public const int domain = 2131165337;
 			
 			// aapt resource value: 0x7f07007c
 			public const int email = 2131165308;
@@ -4171,26 +4210,29 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f07004f
 			public const int email_hint = 2131165263;
 			
-			// aapt resource value: 0x7f070093
-			public const int enter_credentials = 2131165331;
-			
-			// aapt resource value: 0x7f07008a
-			public const int event_attend = 2131165322;
+			// aapt resource value: 0x7f070094
+			public const int enter_credentials = 2131165332;
 			
 			// aapt resource value: 0x7f070084
-			public const int event_attendees = 2131165316;
+			public const int event_attachments = 2131165316;
 			
-			// aapt resource value: 0x7f070086
-			public const int event_calendar = 2131165318;
+			// aapt resource value: 0x7f07008b
+			public const int event_attend = 2131165323;
+			
+			// aapt resource value: 0x7f070085
+			public const int event_attendees = 2131165317;
 			
 			// aapt resource value: 0x7f070087
-			public const int event_cancel = 2131165319;
+			public const int event_calendar = 2131165319;
 			
-			// aapt resource value: 0x7f070089
-			public const int event_cancelled = 2131165321;
+			// aapt resource value: 0x7f070088
+			public const int event_cancel = 2131165320;
 			
-			// aapt resource value: 0x7f07008c
-			public const int event_decline = 2131165324;
+			// aapt resource value: 0x7f07008a
+			public const int event_cancelled = 2131165322;
+			
+			// aapt resource value: 0x7f07008d
+			public const int event_decline = 2131165325;
 			
 			// aapt resource value: 0x7f070082
 			public const int event_description = 2131165314;
@@ -4198,11 +4240,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070081
 			public const int event_location = 2131165313;
 			
-			// aapt resource value: 0x7f07008b
-			public const int event_maybe = 2131165323;
+			// aapt resource value: 0x7f07008c
+			public const int event_maybe = 2131165324;
 			
-			// aapt resource value: 0x7f070085
-			public const int event_notes = 2131165317;
+			// aapt resource value: 0x7f070086
+			public const int event_notes = 2131165318;
 			
 			// aapt resource value: 0x7f07007f
 			public const int event_organizer = 2131165311;
@@ -4210,8 +4252,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070083
 			public const int event_reminder = 2131165315;
 			
-			// aapt resource value: 0x7f070088
-			public const int event_remove = 2131165320;
+			// aapt resource value: 0x7f070089
+			public const int event_remove = 2131165321;
 			
 			// aapt resource value: 0x7f07007e
 			public const int event_self_organizer = 2131165310;
@@ -4228,35 +4270,35 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f07004d
 			public const int get_started = 2131165261;
 			
-			// aapt resource value: 0x7f070091
-			public const int gettingstarted = 2131165329;
+			// aapt resource value: 0x7f070092
+			public const int gettingstarted = 2131165330;
 			
 			// aapt resource value: 0x7f070043
 			public const int hello = 2131165251;
 			
-			// aapt resource value: 0x7f070095
-			public const int hide_advanced_signin = 2131165333;
+			// aapt resource value: 0x7f070096
+			public const int hide_advanced_signin = 2131165334;
 			
-			// aapt resource value: 0x7f07009f
-			public const int host = 2131165343;
+			// aapt resource value: 0x7f0700a0
+			public const int host = 2131165344;
 			
 			// aapt resource value: 0x7f070052
 			public const int hot = 2131165266;
 			
-			// aapt resource value: 0x7f07009c
-			public const int imap_server_example = 2131165340;
+			// aapt resource value: 0x7f07009d
+			public const int imap_server_example = 2131165341;
 			
 			// aapt resource value: 0x7f070053
 			public const int inbox = 2131165267;
 			
-			// aapt resource value: 0x7f07009a
-			public const int incoming_mail_server = 2131165338;
+			// aapt resource value: 0x7f07009b
+			public const int incoming_mail_server = 2131165339;
+			
+			// aapt resource value: 0x7f070091
+			public const int incompatible_message = 2131165329;
 			
 			// aapt resource value: 0x7f070090
-			public const int incompatible_message = 2131165328;
-			
-			// aapt resource value: 0x7f07008f
-			public const int incompatible_version = 2131165327;
+			public const int incompatible_version = 2131165328;
 			
 			// aapt resource value: 0x7f070040
 			public const int library_name = 2131165248;
@@ -4300,23 +4342,23 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070028
 			public const int mr_user_route_category_name = 2131165224;
 			
-			// aapt resource value: 0x7f07008e
-			public const int nachomail = 2131165326;
+			// aapt resource value: 0x7f07008f
+			public const int nachomail = 2131165327;
 			
 			// aapt resource value: 0x7f070046
 			public const int open = 2131165254;
 			
-			// aapt resource value: 0x7f07009b
-			public const int outgoing_mail_server = 2131165339;
+			// aapt resource value: 0x7f07009c
+			public const int outgoing_mail_server = 2131165340;
 			
 			// aapt resource value: 0x7f070050
 			public const int password_hint = 2131165264;
 			
-			// aapt resource value: 0x7f07009e
-			public const int port = 2131165342;
+			// aapt resource value: 0x7f07009f
+			public const int port = 2131165343;
 			
-			// aapt resource value: 0x7f070097
-			public const int server = 2131165335;
+			// aapt resource value: 0x7f070098
+			public const int server = 2131165336;
 			
 			// aapt resource value: 0x7f070057
 			public const int settings = 2131165271;
@@ -4324,8 +4366,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f07004a
 			public const int skip = 2131165258;
 			
-			// aapt resource value: 0x7f07009d
-			public const int smtp_server_example = 2131165341;
+			// aapt resource value: 0x7f07009e
+			public const int smtp_server_example = 2131165342;
 			
 			// aapt resource value: 0x7f07003f
 			public const int status_bar_notification_info_overflow = 2131165247;
@@ -4345,8 +4387,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070058
 			public const int support = 2131165272;
 			
-			// aapt resource value: 0x7f070096
-			public const int syncing = 2131165334;
+			// aapt resource value: 0x7f070097
+			public const int syncing = 2131165335;
 			
 			// aapt resource value: 0x7f070076
 			public const int to = 2131165302;
@@ -4360,8 +4402,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070072
 			public const int to_inbox = 2131165298;
 			
-			// aapt resource value: 0x7f070099
-			public const int username = 2131165337;
+			// aapt resource value: 0x7f07009a
+			public const int username = 2131165338;
 			
 			// aapt resource value: 0x7f070022
 			public const int wallet_buy_button_place_holder = 2131165218;
@@ -4372,8 +4414,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f07004c
 			public const int welcome_back = 2131165260;
 			
-			// aapt resource value: 0x7f07008d
-			public const int welcometo = 2131165325;
+			// aapt resource value: 0x7f07008e
+			public const int welcometo = 2131165326;
 			
 			static String()
 			{
