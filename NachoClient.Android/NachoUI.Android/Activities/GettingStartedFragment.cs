@@ -17,6 +17,11 @@ using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
+    public interface GettingStartedDelegate
+    {
+        void GettingStartedFinished();
+    }
+
     public class GettingStartedFragment : Fragment
     {
         int welcomeId;
@@ -48,7 +53,7 @@ namespace NachoClient.AndroidClient
 
         void SubmitButton_Click (object sender, EventArgs e)
         {
-            var parent = (LaunchActivity)Activity;
+            var parent = (GettingStartedDelegate)Activity;
             parent.GettingStartedFinished ();
         }
     }

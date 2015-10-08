@@ -17,6 +17,11 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
+    public interface ChooseProviderDelegate
+    {
+        void ChooseProviderFinished (McAccount.AccountServiceEnum service);
+    }
+
     public class ChooseProviderFragment : Fragment
     {
         ProviderAdapter providerAdapter;
@@ -47,7 +52,7 @@ namespace NachoClient.AndroidClient
         void Gridview_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
             var s = providerAdapter.GetItemService (e.Position);
-            var parent = (LaunchActivity)Activity;
+            var parent = (ChooseProviderDelegate)Activity;
             parent.ChooseProviderFinished (s);   
         }
     }

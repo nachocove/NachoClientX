@@ -16,7 +16,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "LaunchActivity")]            
-    public class LaunchActivity : AppCompatActivity
+    public class LaunchActivity : AppCompatActivity, GettingStartedDelegate, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
     {
         McAccount account;
 

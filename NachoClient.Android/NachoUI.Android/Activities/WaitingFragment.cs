@@ -18,6 +18,11 @@ using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
+    public interface WaitingFragmentDelegate
+    {
+        void WaitingFinished (McAccount account);
+    }
+
     public class WaitingFragment : Fragment, ILoginEvents
     {
         TextView statusLabel;
@@ -38,7 +43,7 @@ namespace NachoClient.AndroidClient
         }
 
         private McAccount account;
-        private bool IsVisible;
+        private bool mIsVisible;
         private bool DismissOnVisible;
         private NcTimer DismissTimer;
 
@@ -77,10 +82,10 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
-            IsVisible = true;
+            mIsVisible = true;
             Update ();
 
-            IsVisible = true;
+            mIsVisible = true;
             if (Message.IsWorking) {
                 activityIndicatorView.Visibility = ViewStates.Visible;
             }
@@ -93,13 +98,13 @@ namespace NachoClient.AndroidClient
         public override void OnPause ()
         {
             base.OnPause ();
-            IsVisible = false;
+            mIsVisible = false;
         }
 
         void Update ()
         {
             statusLabel.Text = Message.Details;
-            if (IsVisible) {
+            if (mIsVisible) {
                 if (Message.IsWorking) {
                     activityIndicatorView.Visibility = ViewStates.Visible;
                 } else {
@@ -146,7 +151,7 @@ namespace NachoClient.AndroidClient
                 DismissTimer = null;
             }
 
-            var parent = (LaunchActivity)Activity;
+            var parent = (WaitingFragmentDelegate)Activity;
             parent.WaitingFinished (account);
         }
 
@@ -205,7 +210,7 @@ namespace NachoClient.AndroidClient
             CompleteAccount ();
             Message = message;
             Update ();
-            if (IsVisible) {
+            if (mIsVisible) {
                 Log.Info (Log.LOG_UI, "AccountSyncingViewController will set dismiss delay immediately");
                 DismissAfterDelay ();
             } else {
