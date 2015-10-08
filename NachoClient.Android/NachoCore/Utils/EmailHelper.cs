@@ -261,7 +261,7 @@ namespace NachoCore.Utils
         public static string AttributionLineForMessage (McEmailMessage message)
         {
             var attribution = "";
-            attribution += message.DateReceived.ToString ("'On' MMM d, yyyy 'at' h:mm tt");
+            attribution += message.DateReceived.ToLocalTime().ToString ("'On' MMM d, yyyy 'at' h:mm tt");
             if (!String.IsNullOrWhiteSpace (message.From)) {
                 if (attribution.Length > 0) {
                     attribution += ", ";
