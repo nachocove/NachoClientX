@@ -39,6 +39,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
+            base.OnBackPressed ();
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is EventViewFragment) {
                 this.FragmentManager.PopBackStack ();
