@@ -14,6 +14,7 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using System.Threading.Tasks;
 using NachoClient.Build;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -39,7 +40,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle);
 
-            SetupHockeyApp ();
+            SetupHockeyAppUpdateManager ();
 
             MainApplication.Startup ();
 
@@ -67,6 +68,8 @@ namespace NachoClient.AndroidClient
         {
             base.OnResume ();
 
+            SetupHockeyAppCrashManager ();
+
             if (!NcMigration.IsCompatible ()) {
                 Log.Info (Log.LOG_UI, "MainActivity: found incompatible migration");
                 currentState = StartupViewState.Incompatible;
@@ -83,6 +86,13 @@ namespace NachoClient.AndroidClient
         protected override void OnPause ()
         {
             base.OnPause ();
+            UnregisterHockeyAppManagers ();
+        }
+
+        protected override void OnDestroy ()
+        {
+            base.OnDestroy ();
+            UnregisterHockeyAppManagers ();
         }
 
         void ShowScreenForApplicationState ()
@@ -229,13 +239,33 @@ namespace NachoClient.AndroidClient
             base.OnSaveInstanceState (outState);
         }
 
-        private void SetupHockeyApp ()
+        #region HockeyApp
+        public class MyCustomCrashManagerListener : HockeyApp.CrashManagerListener
+        {
+            public override bool ShouldAutoUploadCrashes ()
+            {
+                return true;
+            }
+            public override string Description {
+                get {
+                    Log.Info (Log.LOG_SYS, "HA: Fetching Description");
+                    return string.Format ("JANV TEST\nUserID: {0}\nDeviceId: {1}", UserIdFile.SharedInstance.Read (), Device.Instance.Identity());
+                }
+            }
+            public override bool IncludeDeviceData ()
+            {
+                return true;
+            }
+            public override bool IncludeDeviceIdentifier ()
+            {
+                return true;
+            }
+        }
+
+        private void SetupHockeyAppCrashManager ()
         {
             // Register the crash manager before Initializing the trace writer
-            HockeyApp.CrashManager.Register (this, BuildInfo.HockeyAppAppId); 
-
-            //Register to with the Update Manager
-            HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId);
+            HockeyApp.CrashManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomCrashManagerListener ()); 
 
             // Initialize the Trace Writer
             HockeyApp.TraceWriter.Initialize ();
@@ -255,9 +285,19 @@ namespace NachoClient.AndroidClient
             // Wire up the unobserved task exception handler
             TaskScheduler.UnobservedTaskException += 
                 (sender, args) => HockeyApp.TraceWriter.WriteTrace(args.Exception);
-
         }
 
+        private void SetupHockeyAppUpdateManager ()
+        {
+            //Register to with the Update Manager
+            HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId);
+        }
+
+        private void UnregisterHockeyAppManagers ()
+        {
+            HockeyApp.UpdateManager.Unregister ();
+        }
+        #endregion
     }
 }
 
