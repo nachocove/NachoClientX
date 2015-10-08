@@ -287,10 +287,25 @@ namespace NachoClient.AndroidClient
                 (sender, args) => HockeyApp.TraceWriter.WriteTrace(args.Exception);
         }
 
+        public class MyCustomUpdateManagerListener : HockeyApp.UpdateManagerListener
+        {
+            public override void OnUpdateAvailable ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnUpdateAvailable");
+                base.OnUpdateAvailable ();
+            }
+
+            public override void OnNoUpdateAvailable ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnNoUpdateAvailable");
+                base.OnNoUpdateAvailable ();
+            }
+        }
+
         private void SetupHockeyAppUpdateManager ()
         {
             //Register to with the Update Manager
-            HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId);
+            HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener(), true);
         }
 
         private void UnregisterHockeyAppManagers ()
