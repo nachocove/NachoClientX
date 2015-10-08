@@ -58,13 +58,7 @@ namespace NachoPlatform
         public string Identity() {
             // NOTE: The native email client uses "android1325419235512".
             // The NitroDesk client uses "49515649525250545154575557495751".
-            var androidId = Settings.Secure.AndroidId;
-            if (androidId.Contains ("_") || 16 != androidId.Length) {
-                // FIXME need to save a GUID.
-                return "android1325419235511";
-            } else {
-                return "android" + androidId;
-            }
+            return "Ncho" + Settings.Secure.GetString(Application.Context.ContentResolver, Settings.Secure.AndroidId);
         }
         public string Os () {
             return "Android " + Build.VERSION.Release;
