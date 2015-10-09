@@ -61,9 +61,9 @@ namespace NachoPlatform
             var androidId = Settings.Secure.AndroidId;
             if (androidId.Contains ("_") || 16 != androidId.Length) {
                 // FIXME need to save a GUID.
-                return "android1325419235511";
+                return "Ncho1325419235511";
             } else {
-                return "android" + androidId;
+                return "Ncho" + androidId;
             }
         }
         public string Os () {
