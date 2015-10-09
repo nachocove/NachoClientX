@@ -12,6 +12,9 @@ using Android.Support.Design.Widget;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
+using System.Threading.Tasks;
+using NachoClient.Build;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -36,6 +39,8 @@ namespace NachoClient.AndroidClient
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
+
+            SetupHockeyAppUpdateManager ();
 
             MainApplication.Startup ();
 
@@ -63,6 +68,8 @@ namespace NachoClient.AndroidClient
         {
             base.OnResume ();
 
+            SetupHockeyAppCrashManager ();
+
             if (!NcMigration.IsCompatible ()) {
                 Log.Info (Log.LOG_UI, "MainActivity: found incompatible migration");
                 currentState = StartupViewState.Incompatible;
@@ -79,6 +86,13 @@ namespace NachoClient.AndroidClient
         protected override void OnPause ()
         {
             base.OnPause ();
+            UnregisterHockeyAppManagers ();
+        }
+
+        protected override void OnDestroy ()
+        {
+            base.OnDestroy ();
+            UnregisterHockeyAppManagers ();
         }
 
         void ShowScreenForApplicationState ()
@@ -224,6 +238,109 @@ namespace NachoClient.AndroidClient
         {
             base.OnSaveInstanceState (outState);
         }
+
+        #region HockeyApp
+        public class MyCustomCrashManagerListener : HockeyApp.CrashManagerListener
+        {
+            public override bool ShouldAutoUploadCrashes ()
+            {
+                return true;
+            }
+            public override bool OnCrashesFound ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnCrashesFound");
+                return base.OnCrashesFound ();
+            }
+
+            public override void OnCrashesSent ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnCrashesSent");
+                base.OnCrashesSent ();
+            }
+
+            public override void OnCrashesNotSent ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnCrashesNotSent");
+                base.OnCrashesNotSent ();
+            }
+            public override void OnConfirmedCrashesFound ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnConfirmedCrashesFound");
+                base.OnConfirmedCrashesFound ();
+            }
+
+            public override void OnNewCrashesFound ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnNewCrashesFound");
+                base.OnNewCrashesFound ();
+            }
+            public override string Description {
+                get {
+                    Log.Info (Log.LOG_SYS, "HA: Fetching Description");
+                    return string.Format ("JANV TEST\nUserID: {0}\nDeviceId: {1}", UserIdFile.SharedInstance.Read (), Device.Instance.Identity());
+                }
+            }
+            public override bool IncludeDeviceData ()
+            {
+                return true;
+            }
+            public override bool IncludeDeviceIdentifier ()
+            {
+                return true;
+            }
+        }
+
+        private void SetupHockeyAppCrashManager ()
+        {
+            // Register the crash manager before Initializing the trace writer
+            HockeyApp.CrashManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomCrashManagerListener ()); 
+
+            // Initialize the Trace Writer
+            HockeyApp.TraceWriter.Initialize ();
+
+            // Wire up Unhandled Expcetion handler from Android
+            AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => 
+            {
+                // Use the trace writer to log exceptions so HockeyApp finds them
+                HockeyApp.TraceWriter.WriteTrace(args.Exception);
+                args.Handled = true;
+            };
+
+            // Wire up the .NET Unhandled Exception handler
+            AppDomain.CurrentDomain.UnhandledException +=
+                (sender, args) => HockeyApp.TraceWriter.WriteTrace(args.ExceptionObject);
+
+            // Wire up the unobserved task exception handler
+            TaskScheduler.UnobservedTaskException += 
+                (sender, args) => HockeyApp.TraceWriter.WriteTrace(args.Exception);
+        }
+
+        public class MyCustomUpdateManagerListener : HockeyApp.UpdateManagerListener
+        {
+            public override void OnUpdateAvailable ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnUpdateAvailable");
+                base.OnUpdateAvailable ();
+            }
+
+            public override void OnNoUpdateAvailable ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnNoUpdateAvailable");
+                base.OnNoUpdateAvailable ();
+            }
+        }
+
+        private void SetupHockeyAppUpdateManager ()
+        {
+            //Register to with the Update Manager
+            HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener(), true);
+        }
+
+        private void UnregisterHockeyAppManagers ()
+        {
+            HockeyApp.UpdateManager.Unregister ();
+        }
+        #endregion
     }
 }
 

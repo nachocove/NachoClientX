@@ -51,6 +51,7 @@ namespace NachoClient.AndroidClient
             accountButton.SetImageResource (Resource.Drawable.gen_avatar_backarrow);
 
             accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.AccountSwitcher);
+            accountAdapter.AddAccount += AccountAdapter_AddAccount;
 
             recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
             recyclerView.SetAdapter (accountAdapter);
@@ -59,6 +60,12 @@ namespace NachoClient.AndroidClient
             recyclerView.SetLayoutManager (layoutManager);
 
             return view;
+        }
+
+        void AccountAdapter_AddAccount (object sender, EventArgs e)
+        {
+            var parent = (NcActivity)Activity;
+            parent.AddAccount ();
         }
 
     }
@@ -74,6 +81,8 @@ namespace NachoClient.AndroidClient
             AccountSwitcher,
             SettingsListview,
         };
+
+        public event EventHandler AddAccount;
 
         public DisplayMode displayMode;
 
@@ -110,8 +119,9 @@ namespace NachoClient.AndroidClient
 
         class AccountHolder : RecyclerView.ViewHolder
         {
-            public AccountHolder (View view) : base (view)
+            public AccountHolder (View view, Action<int> listener) : base (view)
             {
+                view.Click += (object sender, EventArgs e) => listener (AdapterPosition);
             }
         }
 
@@ -123,7 +133,7 @@ namespace NachoClient.AndroidClient
                     return HEADER_TYPE;
                 }
             }
-            if ((ItemCount-1) == position) {
+            if ((ItemCount - 1) == position) {
                 return FOOTER_TYPE;
             }
             return ROW_TYPE;
@@ -157,7 +167,7 @@ namespace NachoClient.AndroidClient
                 break;
             }
             var view = LayoutInflater.From (parent.Context).Inflate (resId, parent, false);
-            return new AccountHolder (view);
+            return new AccountHolder (view, OnClickAddAccount);
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
@@ -181,6 +191,16 @@ namespace NachoClient.AndroidClient
             icon.SetImageResource (Util.GetAccountServiceImageId (account.AccountService));
             name.Text = Pretty.AccountName (account);
             email.Text = account.EmailAddr;
+        }
+
+        void OnClickAddAccount (int position)
+        {
+            // Footer?
+            if ((ItemCount - 1) == position) {
+                if (AddAccount != null) {
+                    AddAccount (this, null);
+                }
+            }
         }
 
     }
