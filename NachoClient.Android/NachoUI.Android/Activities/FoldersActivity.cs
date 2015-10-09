@@ -12,6 +12,7 @@ using Android.Widget;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -35,7 +36,7 @@ namespace NachoClient.AndroidClient
 
         void onFolderSelected (McFolder folder)
         {
-            Console.WriteLine ("FoldersActivity onFolderClick: {0}", folder);
+            Log.Info (Log.LOG_UI, "FoldersActivity onFolderClick: {0}", folder);
 
             messages = new NachoEmailMessages (folder);
 
@@ -51,7 +52,7 @@ namespace NachoClient.AndroidClient
 
         void onMessageClick (object sender, McEmailMessageThread thread)
         {
-            Console.WriteLine ("FoldersActivity onMessageClick: {0}", thread);
+            Log.Info (Log.LOG_UI, "FoldersActivity onMessageClick: {0}", thread);
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
