@@ -26,7 +26,7 @@ namespace NachoClient.AndroidClient
 
         protected override void OnCreate (Bundle bundle)
         {
-            Console.WriteLine ("NowActivity OnCreate");
+            Log.Info (Log.LOG_UI, "NowActivity OnCreate");
 
             base.OnCreate (bundle, Resource.Layout.NowActivity);
 
@@ -37,7 +37,7 @@ namespace NachoClient.AndroidClient
 
         void onMessageClick (object sender, McEmailMessageThread thread)
         {
-            Console.WriteLine ("NowActivity onMessageClick: {0}", thread);
+            Log.Info (Log.LOG_UI, "NowActivity onMessageClick: {0}", thread);
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();

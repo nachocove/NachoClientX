@@ -12,6 +12,7 @@ using Android.Widget;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -46,7 +47,7 @@ namespace NachoClient.AndroidClient
 
         void onMessageClick (object sender, McEmailMessageThread thread)
         {
-            Console.WriteLine ("InboxActivity onMessageClick: {0}", thread);
+            Log.Info (Log.LOG_UI, "InboxActivity onMessageClick: {0}", thread);
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
@@ -94,7 +95,7 @@ namespace NachoClient.AndroidClient
             MaybeSwitchAccount ();
         }
 
-        void MaybeSwitchAccount()
+        void MaybeSwitchAccount ()
         {
             if ((null != account) && (NcApplication.Instance.Account.Id == account.Id)) {
                 return;

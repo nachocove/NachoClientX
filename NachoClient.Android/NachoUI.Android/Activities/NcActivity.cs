@@ -18,14 +18,39 @@ namespace NachoClient.AndroidClient
     [Activity (Label = "NcActivity")]            
     public class NcActivity : AppCompatActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate, AccountListDelegate
     {
+        private string ClassName;
+
         MoreFragment moreFragment = new MoreFragment ();
         SwitchAccountFragment switchAccountFragment = new SwitchAccountFragment ();
 
         protected void OnCreate (Bundle bundle, int layoutId)
         {
-            base.OnCreate (bundle);
+            ClassName = this.GetType ().Name;
 
+            base.OnCreate (bundle);
             SetContentView (layoutId);
+        }
+
+        protected override void OnStart ()
+        {
+            base.OnStart ();
+            NachoCore.Utils.NcAbate.HighPriority ("NcActivity OnStart");
+        }
+
+        protected override void OnResume ()
+        {
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_BEGIN");
+            base.OnResume ();
+            NachoCore.Utils.NcAbate.RegularPriority ("NcActivity OnResume");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_END");
+        }
+
+        protected override void OnPause ()
+        {
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_BEGIN");
+            base.OnPause ();
+            NachoCore.Utils.NcAbate.RegularPriority ("NcActivity OnPause");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_END");
         }
 
         public void HookNavigationToolbar (Android.Views.View view)

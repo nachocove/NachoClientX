@@ -116,7 +116,7 @@ namespace NachoClient.AndroidClient
             message = (McEmailMessage)McAbstrItem.RefreshItem (message);
 
             if (null == View) {
-                Console.WriteLine ("MessageViewFragment: BodyDownloader_Finished: View is null");
+                Log.Info (Log.LOG_UI, "MessageViewFragment: BodyDownloader_Finished: View is null");
                 return;
             }
 
@@ -148,46 +148,46 @@ namespace NachoClient.AndroidClient
 
         void SaveButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("SaveButton_Click");
+            Log.Info (Log.LOG_UI, "SaveButton_Click");
             ShowFolderChooser ();
         }
 
         void ChiliButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ChiliButton_Click");
+            Log.Info (Log.LOG_UI, "ChiliButton_Click");
             NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
             Bind.BindMessageChili (message, (Android.Widget.ImageView)sender);
         }
 
         void ArchiveButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ArchiveButton_Click");
+            Log.Info (Log.LOG_UI, "ArchiveButton_Click");
             NcEmailArchiver.Archive (message);
             DoneWithMessage ();
         }
 
         void DeleteButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("DeleteButton_Click");
+            Log.Info (Log.LOG_UI, "DeleteButton_Click");
             NcEmailArchiver.Delete (message);
             DoneWithMessage ();
         }
 
         void ForwardButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ForwardButton_Click");
+            Log.Info (Log.LOG_UI, "ForwardButton_Click");
             StartComposeActivity (EmailHelper.Action.Forward);
         }
 
         void ReplyButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ReplyButton_Click");
+            Log.Info (Log.LOG_UI, "ReplyButton_Click");
             StartComposeActivity (EmailHelper.Action.Reply);
         }
 
         void ReplyAllButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ReplyAllButton_Click");
+            Log.Info (Log.LOG_UI, "ReplyAllButton_Click");
             StartComposeActivity (EmailHelper.Action.ReplyAll);
         }
 
@@ -200,12 +200,12 @@ namespace NachoClient.AndroidClient
 
         void View_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("View_Click");
+            Log.Info (Log.LOG_UI, "View_Click");
         }
 
         public void ShowFolderChooser ()
         {
-            Console.WriteLine ("ShowFolderChooser: {0}", message);
+            Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", message);
             var folderFragment = ChooseFolderFragment.newInstance (null);
             folderFragment.setOnFolderSelected (OnFolderSelected);
             var ft = FragmentManager.BeginTransaction ();
@@ -215,7 +215,7 @@ namespace NachoClient.AndroidClient
 
         public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)
         {
-            Console.WriteLine ("OnFolderSelected: {0}", message);
+            Log.Info (Log.LOG_UI, "OnFolderSelected: {0}", message);
             NcEmailArchiver.Move (message, folder);
             DoneWithMessage ();
         }
@@ -228,12 +228,12 @@ namespace NachoClient.AndroidClient
 //        public override void OnReceivedError (Android.Webkit.WebView view, Android.Webkit.ClientError errorCode, string description, string failingUrl)
 //        {
 //            base.OnReceivedError (view, errorCode, description, failingUrl);
-//            Console.WriteLine ("OnReceivedError: {0}: {1} {2}", failingUrl, errorCode, description);
+//            Log.Info (Log.LOG_UI, "OnReceivedError: {0}: {1} {2}", failingUrl, errorCode, description);
 //        }
 //
 //        public override Android.Webkit.WebResourceResponse ShouldInterceptRequest (Android.Webkit.WebView view, Android.Webkit.IWebResourceRequest request)
 //        {
-//            Console.WriteLine ("ShouldInterceptRequest: {1} {0}", request.Url, request.Method);
+//            Log.Info (Log.LOG_UI, "ShouldInterceptRequest: {1} {0}", request.Url, request.Method);
 //            return base.ShouldInterceptRequest (view, request);
 //        }
     }
