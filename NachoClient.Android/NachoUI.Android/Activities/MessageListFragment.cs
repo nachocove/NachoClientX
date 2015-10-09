@@ -253,6 +253,13 @@ namespace NachoClient.AndroidClient
             NcEmailArchiver.Move (thread, folder);
         }
 
+        public void SwitchAccount (INachoEmailMessages newMessages)
+        {
+            messages = newMessages;
+            messageListAdapter = new MessageListAdapter (messages);
+            listView.Adapter = messageListAdapter;
+        }
+
     }
 
     public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>

@@ -21,6 +21,13 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
+    public interface AccountListDelegate
+    {
+        void AddAccount ();
+
+        void AccountSelected (McAccount account);
+    }
+
     public class SwitchAccountFragment : Fragment
     {
         RecyclerView recyclerView;
@@ -52,6 +59,7 @@ namespace NachoClient.AndroidClient
 
             accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.AccountSwitcher);
             accountAdapter.AddAccount += AccountAdapter_AddAccount;
+            accountAdapter.AccountSelected += AccountAdapter_AccountSelected;
 
             recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
             recyclerView.SetAdapter (accountAdapter);
@@ -62,9 +70,16 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        void AccountAdapter_AccountSelected (object sender, McAccount account)
+        {
+            NcApplication.Instance.Account = account;
+            var parent = (AccountListDelegate)Activity;
+            parent.AccountSelected (account);
+        }
+
         void AccountAdapter_AddAccount (object sender, EventArgs e)
         {
-            var parent = (NcActivity)Activity;
+            var parent = (AccountListDelegate)Activity;
             parent.AddAccount ();
         }
 
@@ -83,6 +98,7 @@ namespace NachoClient.AndroidClient
         };
 
         public event EventHandler AddAccount;
+        public event EventHandler<McAccount> AccountSelected;
 
         public DisplayMode displayMode;
 
@@ -167,7 +183,7 @@ namespace NachoClient.AndroidClient
                 break;
             }
             var view = LayoutInflater.From (parent.Context).Inflate (resId, parent, false);
-            return new AccountHolder (view, OnClickAddAccount);
+            return new AccountHolder (view, OnClick);
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
@@ -193,12 +209,21 @@ namespace NachoClient.AndroidClient
             email.Text = account.EmailAddr;
         }
 
-        void OnClickAddAccount (int position)
+        void OnClick (int position)
         {
-            // Footer?
-            if ((ItemCount - 1) == position) {
+            if (0 == position) {
+                // Header
+                return;
+            } else if ((ItemCount - 1) == position) {
+                // Footer
                 if (AddAccount != null) {
                     AddAccount (this, null);
+                }
+            } else {
+                // Account selected, do we need to adjust position on account of the header?
+                int accountIndex = (DisplayMode.AccountSwitcher == displayMode ? position - 1 : position);
+                if (AccountSelected != null) {
+                    AccountSelected (this, accounts [accountIndex]);
                 }
             }
         }

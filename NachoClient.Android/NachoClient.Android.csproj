@@ -532,6 +532,7 @@
     <Compile Include="NachoUI.Android\Support\NcAlertView.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedImapView.cs" />
+    <Compile Include="NachoUI.Android\Activities\NcFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
