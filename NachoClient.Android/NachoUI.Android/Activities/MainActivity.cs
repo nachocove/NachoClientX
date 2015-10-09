@@ -246,6 +246,34 @@ namespace NachoClient.AndroidClient
             {
                 return true;
             }
+            public override bool OnCrashesFound ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnCrashesFound");
+                return base.OnCrashesFound ();
+            }
+
+            public override void OnCrashesSent ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnCrashesSent");
+                base.OnCrashesSent ();
+            }
+
+            public override void OnCrashesNotSent ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnCrashesNotSent");
+                base.OnCrashesNotSent ();
+            }
+            public override void OnConfirmedCrashesFound ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnConfirmedCrashesFound");
+                base.OnConfirmedCrashesFound ();
+            }
+
+            public override void OnNewCrashesFound ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnNewCrashesFound");
+                base.OnNewCrashesFound ();
+            }
             public override string Description {
                 get {
                     Log.Info (Log.LOG_SYS, "HA: Fetching Description");
