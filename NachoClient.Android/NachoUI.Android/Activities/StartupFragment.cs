@@ -18,7 +18,7 @@ namespace NachoClient.AndroidClient
 {
     public class StartupFragment : Fragment
     {
-        // Just shows "Welcome to NachoMail"
+        // Just shows "Let's get started"
         public static StartupFragment newInstance ()
         {
             var fragment = new StartupFragment ();

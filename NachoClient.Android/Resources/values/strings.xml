@@ -10,8 +10,9 @@
     <string name="demo">Continue</string>
     <string name="skip">Skip</string>
     <string name="welcome">Start by choosing your email service provider</string>
+    <string name="welcome_back">Welcome Back!  We need to finish setting up your account.</string>
     <string name="get_started">Get Started</string>
-    <string name="get_credentials">Enter your account information</string>
+    <string name="get_credentials">Please provide your {0} information</string>
     <string name="email_hint">Email Address</string>
     <string name="password_hint">Password</string>
     <string name="customersupport">Customer Support</string>
@@ -65,6 +66,7 @@
     <string name="event_location">LOCATION</string>
     <string name="event_description">DESCRIPTION</string>
     <string name="event_reminder">REMINDER</string>
+    <string name="event_attachments">ATTACHMENTS</string>
     <string name="event_attendees">ATTENDEES</string>
     <string name="event_notes">NOTES</string>
     <string name="event_calendar">CALENDAR</string>
@@ -78,5 +80,21 @@
     <string name="nachomail">Nacho Mail</string>
     <string name="incompatible_version">Incompatible Version</string>
     <string name="incompatible_message">"Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app."</string>
-
+    <string name="gettingstarted">Start by choosing your email service provider</string>
+    <string name="choose_provider">Choose Provider</string>
+    <string name="enter_credentials">Enter Credentials</string>
+    <string name="advanced_signin">Advanced Sign In</string>
+    <string name="hide_advanced_signin">Hide Advanced Sign In</string>
+    <string name="syncing">Syncing your inbox...</string>
+    <string name="server">Server</string>
+    <string name="domain">Domain</string>
+    <string name="username">Username</string>
+    <string name="incoming_mail_server">Incoming Mail Server</string>
+    <string name="outgoing_mail_server">Outgoing Mail Serer</string>
+    <string name="imap_server_example">imap.example.com</string>
+    <string name="smtp_server_example">smtp.example.com</string>
+    <string name="port">Port</string>
+    <string name="host">Host</string>
+    <string name="default_imap_port">993</string>
+    <string name="default_smtp_port">587</string>
 </resources>

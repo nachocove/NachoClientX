@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/NachoGreen">
+    <ImageView
+        android:src="@drawable/Bootscreen_1"
+        android:gravity="center"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:background="@color/NachoGreen" />
+    <TextView
+        android:id="@+id/welcome"
+        android:text="@string/gettingstarted"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="18dp"
+        android:gravity="center"
+        android:textSize="18dp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white" />
+    <Button
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:paddingLeft="40dp"
+        android:paddingRight="40dp"
+        android:keepScreenOn="true"
+        android:text="@string/get_started"
+        android:textSize="17dp"
+        android:textStyle="bold"
+        android:id="@+id/submit"
+        android:textColor="@android:color/white"
+        android:background="@color/NachoSubmitButton"
+        android:minHeight="40dp"
+        android:maxHeight="40dp"
+        android:layout_marginTop="20dp" />
+</LinearLayout>

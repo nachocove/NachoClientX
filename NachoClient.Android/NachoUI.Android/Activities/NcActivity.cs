@@ -10,11 +10,13 @@ using Android.Support.V7.App;
 using Android.Support.Design.Widget;
 using Android.Graphics;
 using NachoCore;
+using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "NcActivity")]            
-    public class NcActivity : AppCompatActivity
+    public class NcActivity : AppCompatActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
     {
         MoreFragment moreFragment = new MoreFragment ();
         SwitchAccountFragment switchAccountFragment = new SwitchAccountFragment ();
@@ -26,7 +28,7 @@ namespace NachoClient.AndroidClient
             SetContentView (layoutId);
         }
 
-        public void HookNavigationToolbar(Android.Views.View view)
+        public void HookNavigationToolbar (Android.Views.View view)
         {
             var hotButton = view.FindViewById<Android.Views.View> (Resource.Id.hot);
             hotButton.Click += HotButton_Click;
@@ -46,11 +48,11 @@ namespace NachoClient.AndroidClient
             HookSwitchAccountView (view);
         }
 
-        public void HookSwitchAccountView(Android.Views.View view)
+        public void HookSwitchAccountView (Android.Views.View view)
         {
             var switchAccountButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.account);
             switchAccountButton.Click += SwitchAccountButton_Click;
-            switchAccountButton.SetImageResource (Util.GetAccountServiceImageId(NcApplication.Instance.Account.AccountService));
+            switchAccountButton.SetImageResource (Util.GetAccountServiceImageId (NcApplication.Instance.Account.AccountService));
         }
 
         void SwitchAccountButton_Click (object sender, EventArgs e)
@@ -130,6 +132,60 @@ namespace NachoClient.AndroidClient
             var intent = new Intent ();
             intent.SetClass (this, typeof(CalendarActivity));
             StartActivity (intent);
+        }
+
+        public void AddAccount ()
+        {
+            var chooseProviderFragment = ChooseProviderFragment.newInstance ();
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, chooseProviderFragment).AddToBackStack ("ChooseProvider").Commit ();
+        }
+
+        public void ChooseProviderFinished (McAccount.AccountServiceEnum service)
+        {
+            switch (service) {
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                var googleSignInFragment = GoogleSignInFragment.newInstance (service, null);
+                FragmentManager.BeginTransaction ().Add (Resource.Id.content, googleSignInFragment).AddToBackStack ("GoogleSignIn").Commit ();
+                break;
+            default:
+                var credentialsFragment = CredentialsFragment.newInstance (service, null);
+                FragmentManager.BeginTransaction ().Add (Resource.Id.content, credentialsFragment).AddToBackStack ("Credentials").Commit ();
+                break;
+            }
+        }
+
+        // Credentials have been verified
+        public void CredentialsValidated (McAccount account)
+        {
+            var waitingFragment = WaitingFragment.newInstance (account);
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, waitingFragment).AddToBackStack ("Waiting").Commit ();
+        }
+
+        public void WaitingFinished (McAccount account)
+        {
+            Log.Info (Log.LOG_UI, "NcActivity syncing complete");
+            if (null != account) {
+                NcApplication.Instance.Account = account;
+                LoginHelpers.SetSwitchToTime (account);
+            }
+            FragmentManager.PopBackStack ("ChooseProvider", PopBackStackFlags.Inclusive);
+        }
+
+        public override void OnBackPressed ()
+        {
+            var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is ChooseProviderFragment) {
+                this.FragmentManager.PopBackStack ();
+            }
+            if (f is CredentialsFragment) {
+                this.FragmentManager.PopBackStack ();
+            }
+            if (f is GoogleSignInFragment) {
+                this.FragmentManager.PopBackStack ();
+            }
+            if (f is WaitingFragment) {
+                this.FragmentManager.PopBackStack ();
+            }
         }
 
     }
