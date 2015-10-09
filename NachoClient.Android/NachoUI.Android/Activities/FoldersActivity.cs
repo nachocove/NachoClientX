@@ -28,7 +28,6 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle, Resource.Layout.FoldersActivity);
 
-
             folderListFragment = FolderListFragment.newInstance ();
             folderListFragment.onFolderSelected += onFolderSelected;
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, folderListFragment).AddToBackStack ("Folders").Commit ();
@@ -46,7 +45,7 @@ namespace NachoClient.AndroidClient
 
             messageListFragment = MessageListFragment.newInstance (messages);
             messageListFragment.onMessageClick += onMessageClick;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Mail").Commit ();
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Messages").Commit ();
 
         }
 
@@ -57,12 +56,12 @@ namespace NachoClient.AndroidClient
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
                 messageViewFragment = MessageViewFragment.newInstance (message);
-                this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
+                this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("Message").Commit ();
             } else {
                 var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
                 messageListFragment = MessageListFragment.newInstance (threadMessages);
                 messageListFragment.onMessageClick += onMessageClick;
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Mail").Commit ();
+                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Thread").Commit ();
             }
         }
 
@@ -81,6 +80,17 @@ namespace NachoClient.AndroidClient
         protected override void OnSaveInstanceState (Bundle outState)
         {
             base.OnSaveInstanceState (outState);
+        }
+
+        public override void SwitchAccount (McAccount account)
+        {
+            base.SwitchAccount (account);
+
+            FragmentManager.PopBackStackImmediate ("Folders", PopBackStackFlags.None);
+
+            if (null != folderListFragment) {
+                folderListFragment.SwitchAccount ();
+            }
         }
     }
 }

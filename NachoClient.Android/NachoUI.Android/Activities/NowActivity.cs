@@ -26,6 +26,8 @@ namespace NachoClient.AndroidClient
 
         protected override void OnCreate (Bundle bundle)
         {
+            Console.WriteLine ("NowActivity OnCreate");
+
             base.OnCreate (bundle, Resource.Layout.NowActivity);
 
             nowFragment = new NowFragment ();
@@ -68,6 +70,16 @@ namespace NachoClient.AndroidClient
                 if (1 < this.FragmentManager.BackStackEntryCount) {
                     this.FragmentManager.PopBackStack ();
                 }
+            }
+        }
+
+        public override void SwitchAccount (McAccount account)
+        {
+            base.SwitchAccount (account);
+
+            FragmentManager.PopBackStackImmediate ("Now", PopBackStackFlags.None);
+            if (null != nowFragment) {
+                nowFragment.SwitchAccount ();
             }
         }
 
