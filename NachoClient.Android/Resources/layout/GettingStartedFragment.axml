@@ -12,6 +12,7 @@
         android:layout_height="80dp"
         android:background="@color/NachoGreen" />
     <TextView
+        android:id="@+id/welcome"
         android:text="@string/gettingstarted"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"

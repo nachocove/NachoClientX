@@ -93,7 +93,7 @@ def create_buildinfo(options):
         build_info.add('Source', '')
     else:
         build_info.add('Source', source)
-    build_info.add('HockeyAppAppId', project['hockeyapp']['app_id'])
+    build_info.add('HockeyAppAppId', project['hockeyapp']['app_id'][options.architecture])
     build_info.add('AwsPrefix', aws['prefix'])
     build_info.add('AwsAccountId', aws['account_id'])
     build_info.add('AwsIdentityPoolId', aws['identity_pool_id'])
@@ -171,7 +171,12 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('--csproj-file', help='Xamarin project file', default=None)
     parser.add_argument('--root', help='Root directory of the project', default=None)
+    parser.add_argument('--architecture', help='Target architecture', default=None, choices=('ios', 'android'))
     options = parser.parse_args()
+
+    if not options.csproj_file or not options.root or not options.architecture:
+        print "ERROR: Missing arguments\n%s" % parser.format_help()
+        exit(1)
 
     create_buildinfo(options)
 

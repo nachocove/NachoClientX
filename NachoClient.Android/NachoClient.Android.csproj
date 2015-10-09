@@ -35,7 +35,7 @@
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --architecture android --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
@@ -52,7 +52,7 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --architecture android --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
@@ -99,6 +99,9 @@
       <HintPath>..\packages\Xamarin.GooglePlayServices.22.0.0.2\lib\MonoAndroid41\GooglePlayServicesLib.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="HockeyApp.Android">
+      <HintPath>HockeyApp\hockeyappandroid-3.5.0\lib\android\HockeyApp.Android.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -435,8 +438,6 @@
     <Compile Include="NachoCore\BackEnd\IMAP\NcImapClient.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\NcSmtpClient.cs" />
     <Compile Include="NachoCore\Utils\NcMailKitProtocolLogger.cs" />
-    <Compile Include="NachoUI.Android\Activities\AdvancedExchangeFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\AdvancedImapFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooseProviderFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooserFragment.cs" />
@@ -532,6 +533,9 @@
     <Compile Include="NachoUI.Android\Activities\FolderListFragment.cs" />
     <Compile Include="NachoUI.Android\Support\Util.cs" />
     <Compile Include="NachoUI.Android\Activities\GettingStartedFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\NcAlertView.cs" />
+    <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
+    <Compile Include="NachoUI.Android\Activities\AdvancedImapView.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -940,8 +944,6 @@
     <AndroidResource Include="Resources\layout\account_footer.axml" />
     <AndroidResource Include="Resources\layout\account_header.axml" />
     <AndroidResource Include="Resources\layout\account_row.axml" />
-    <AndroidResource Include="Resources\layout\AdvancedExchangeFragment.axml" />
-    <AndroidResource Include="Resources\layout\AdvancedImapFragment.axml" />
     <AndroidResource Include="Resources\layout\AttachmentFragment.axml" />
     <AndroidResource Include="Resources\layout\ButtonBar.axml" />
     <AndroidResource Include="Resources\layout\ChooseProviderFragment.axml" />
@@ -1251,5 +1253,7 @@
     <AndroidResource Include="Resources\layout\FolderCell.axml" />
     <AndroidResource Include="Resources\layout\GettingStartedFragment.axml" />
     <AndroidResource Include="Resources\layout\ChooseProviderCell.axml" />
+    <AndroidResource Include="Resources\layout\AdvancedExchangeView.axml" />
+    <AndroidResource Include="Resources\layout\AdvancedImapView.axml" />
   </ItemGroup>
 </Project>

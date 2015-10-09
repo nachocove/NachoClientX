@@ -33,7 +33,7 @@ namespace NachoPlatform
 
         public void ImmediateNotification (int handle, string message)
         {
-            NcAssert.True (false);
+            Log.Info (Log.LOG_CALENDAR, "ImmediateNotification not implemented for Android.");
         }
 
         public void ScheduleNotification (int handle, DateTime when, string message)
@@ -55,7 +55,7 @@ namespace NachoPlatform
 
         public void CancelNotification (int handle)
         {
-            NcAssert.True (false);
+            Log.Info (Log.LOG_CALENDAR, "CancelNotification not implemented for Android.");
         }
 
         public static void DumpNotifications ()

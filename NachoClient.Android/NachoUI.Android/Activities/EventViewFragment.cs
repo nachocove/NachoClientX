@@ -87,8 +87,26 @@ namespace NachoClient.AndroidClient
                 locationLabel.Text = location;
             }
 
+            var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.event_description_webview);
+            var body = McBody.QueryById<McBody> (detail.SpecificItem.BodyId);
+            if (McBody.IsNontruncatedBodyComplete (body)) {
+                var bodyRenderer = new BodyRenderer ();
+                bodyRenderer.Start (webview, body, detail.SpecificItem.NativeBodyType);
+                var webClient = new NachoWebViewClient ();
+                webview.SetWebViewClient (webClient);
+            } else {
+                webview.Visibility = ViewStates.Gone;
+            }
+
             var reminderView = view.FindViewById<TextView> (Resource.Id.event_reminder_label);
             reminderView.Text = detail.ReminderString;
+
+            if (0 == detail.SpecificItem.attachments.Count) {
+                view.FindViewById<View> (Resource.Id.event_attachments_view).Visibility = ViewStates.Gone;
+            } else {
+                var attachmentTextView = view.FindViewById<TextView> (Resource.Id.event_attachment_placeholder);
+                attachmentTextView.Text = string.Format ("{0} attachments. Not yet implemented.", detail.SpecificItem.attachments.Count);
+            }
 
             var organizer_view = view.FindViewById<View> (Resource.Id.event_organizer_view);
             organizer_view.Visibility = VisibleIfTrue (detail.HasNonSelfOrganizer);
@@ -109,6 +127,33 @@ namespace NachoClient.AndroidClient
                 }
             }
 
+            var attendees = detail.SpecificItem.attendees;
+            if (0 == attendees.Count) {
+                view.FindViewById<View> (Resource.Id.event_attendee_view).Visibility = ViewStates.Gone;
+            } else {
+                for (int a = 0; a < 5; ++a) {
+                    if (4 == a && 5 < attendees.Count) {
+                        AttendeeInitialsView (view, a).Text = string.Format ("+{0}", attendees.Count - a);
+                        AttendeeNameView (view, a).Text = "";
+                    } else if (a < attendees.Count) {
+                        var attendee = attendees [a];
+                        AttendeeInitialsView (view, a).Text = ContactsHelper.NameToLetters (attendee.DisplayName);
+                        AttendeeNameView (view, a).Text = GetFirstName (attendee.DisplayName);
+                    } else {
+                        AttendeeInitialsView (view, a).Visibility = ViewStates.Gone;
+                        AttendeeNameView (view, a).Visibility = ViewStates.Gone;
+                    }
+                }
+            }
+
+            var notesLabel = view.FindViewById<TextView> (Resource.Id.event_notes_label);
+            var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
+            if (null == note) {
+                notesLabel.Text = "";
+            } else {
+                notesLabel.Text = note.noteContent;
+            }
+
             var calendarView = view.FindViewById<TextView> (Resource.Id.event_calendar_label);
             calendarView.Text = detail.CalendarNameString;
 
@@ -125,7 +170,7 @@ namespace NachoClient.AndroidClient
             var rsvpView = view.FindViewById<View> (Resource.Id.event_rsvp_view);
             var removeView = view.FindViewById<View> (Resource.Id.event_remove_view);
             var cancelledView = view.FindViewById<View> (Resource.Id.event_cancelled_view);
-            var organizerView = view.FindViewById<View> (Resource.Id.event_organizer_view);
+            var organizerView = view.FindViewById<View> (Resource.Id.event_self_organizer_view);
             var separatorView = view.FindViewById<View> (Resource.Id.event_top_separator);
 
             rsvpView.Visibility = ViewStates.Gone;
@@ -155,6 +200,69 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        private TextView AttendeeInitialsView (View parent, int attendeeIndex)
+        {
+            int id;
+            switch (attendeeIndex) {
+            case 0:
+                id = Resource.Id.event_attendee_0;
+                break;
+            case 1:
+                id = Resource.Id.event_attendee_1;
+                break;
+            case 2:
+                id = Resource.Id.event_attendee_2;
+                break;
+            case 3:
+                id = Resource.Id.event_attendee_3;
+                break;
+            case 4:
+                id = Resource.Id.event_attendee_4;
+                break;
+            default:
+                NcAssert.CaseError (string.Format ("Attendee index {0} is out of range. It must be [0..4]", attendeeIndex));
+                return null;
+            }
+            return parent.FindViewById<TextView> (id);
+        }
+
+        private TextView AttendeeNameView (View parent, int attendeeIndex)
+        {
+            int id;
+            switch (attendeeIndex) {
+            case 0:
+                id = Resource.Id.event_attendee_name_0;
+                break;
+            case 1:
+                id = Resource.Id.event_attendee_name_1;
+                break;
+            case 2:
+                id = Resource.Id.event_attendee_name_2;
+                break;
+            case 3:
+                id = Resource.Id.event_attendee_name_3;
+                break;
+            case 4:
+                id = Resource.Id.event_attendee_name_4;
+                break;
+            default:
+                NcAssert.CaseError (string.Format ("Attendee index {0} is out of range. It must be [0..4]", attendeeIndex));
+                return null;
+            }
+            return parent.FindViewById<TextView> (id);
+        }
+
+        private static string GetFirstName (string displayName)
+        {
+            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (names [0] == null) {
+                return "";
+            }
+            if (names [0].Length > 1) {
+                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
+            }
+            return names [0].ToUpper ();
+        }
     }
 }
 
