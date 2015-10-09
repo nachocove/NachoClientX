@@ -337,4 +337,23 @@ namespace NachoPlatform
     {
         void ExtractValues ();
     }
+
+    public interface IPlatformRtfConverter {
+
+        string ToHtml (string rtf);
+        string ToTxt (string rtf);
+
+    }
+
+    public abstract class PlatformImage : IDisposable {
+        
+        public abstract Tuple<float, float> Size { get; }
+        public abstract Stream ResizedData (float width, float height);
+
+        public virtual void Dispose ()
+        {
+        }
+
+    }
+
 }

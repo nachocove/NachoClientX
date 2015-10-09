@@ -1192,6 +1192,12 @@ namespace NachoCore.ActiveSync
                     if (null != contentId) {
                         attachment.ContentId = contentId.Value;
                     }
+                    var contentType = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentType);
+                    if (null != contentType) {
+                        attachment.ContentType = contentType.Value;
+                    } else if (displayName != null) {
+                        attachment.ContentType = MimeKit.MimeTypes.GetMimeType (displayName.Value);
+                    }
                     var isInline = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.IsInline);
                     if (null != isInline) {
                         attachment.IsInline = ParseXmlBoolean (isInline);

@@ -301,6 +301,8 @@ namespace NachoClient.iOS
                 MdmConfig.Instance.ExtractValues ();
             }
 
+            CopyResourcesToDocuments ();
+
             if ((null != launchOptions) && launchOptions.ContainsKey (UIApplication.LaunchOptionsRemoteNotificationKey)) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Remote notification");
             }
@@ -391,6 +393,19 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
+            if (launchOptions != null) {
+                var shortcutItem = launchOptions.ObjectForKey (UIApplication.LaunchOptionsShortcutItemKey) as UIApplicationShortcutItem;
+                if (shortcutItem != null) {
+                    // TODO: handle shortcut on launch
+                }
+            }
+
+//            if (application.RespondsToSelector (new ObjCRuntime.Selector ("shortcutItems"))) {
+//                application.ShortcutItems = new UIApplicationShortcutItem[] {
+//                    new UIApplicationShortcutItem ("com.nachocove.nachomail.newmessage", "New Message", null, UIApplicationShortcutIcon.FromTemplateImageName ("shortcut-compose"), null)
+//                };
+//            }
+
             // I don't know where to put this.  It can't go in NcApplication.MonitorReport(), because
             // C#'s TimeZoneInfo.Local has an ID and name of "Local", which is not helpful.  It has
             // to be in iOS-specific code.
@@ -399,6 +414,37 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
             return true;
+        }
+
+        public void CopyResourcesToDocuments ()
+        {
+            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            string [] resources = {"nacho.html", "nacho.css", "nacho.js"};
+            foreach (var resourceName in resources) {
+                var resourcePath = NSBundle.MainBundle.PathForResource (resourceName, null);
+                var destinationPath = Path.Combine (documentsPath, resourceName);
+                if (!File.Exists (destinationPath) || File.GetLastWriteTime (destinationPath) < File.GetLastWriteTime (resourcePath)) {
+                    if (File.Exists (destinationPath)) {
+                        File.Delete (destinationPath);
+                    }
+                    File.Copy (resourcePath, destinationPath);
+                }
+            }
+        }
+
+        public override void PerformActionForShortcutItem (UIApplication application, UIApplicationShortcutItem shortcutItem, UIOperationHandler completionHandler)
+        {
+            if (shortcutItem.Type.Equals ("com.nachocove.nachomail.newmessage")) {
+                // TODO: verify that we're not setting up an account
+                // TODO: check if another compose is already up
+                var composeViewController = new MessageComposeViewController ();
+                composeViewController.Present (false, () => {
+                    completionHandler (true);
+                });
+            } else {
+                Log.Error (Log.LOG_UI, "Application received unknown shortcut action: {0}", shortcutItem.Type);
+                completionHandler (false);
+            }
         }
 
         /// <Docs>Reference to the UIApplication that invoked this delegate method.</Docs>

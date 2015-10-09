@@ -343,7 +343,7 @@ namespace NachoClient.iOS
             }
             var layoutHeight = subview.Frame.Height;
             if (maxHeight.HasValue) {
-                layoutHeight = subview.SizeThatFits (new CGSize (durationLabel.Frame.Width, maxHeight.Value)).Height;
+                layoutHeight = subview.SizeThatFits (new CGSize (subview.Frame.Width, maxHeight.Value)).Height;
             }
             if (layoutHeight < minHeight) {
                 layoutHeight = minHeight;

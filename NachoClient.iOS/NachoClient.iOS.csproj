@@ -508,7 +508,6 @@
     <Compile Include="NachoUI.iOS\Support\Util.cs" />
     <Compile Include="NachoUI.iOS\Support\PlatformHelpers.cs" />
     <Compile Include="NachoUI.iOS\Support\CidImageProtocol.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\INachoMessageController.cs" />
     <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\ServerTracker.cs">
       <Link>NachoCore\BackEnd\NcCommStatus\ServerTracker.cs</Link>
@@ -1657,11 +1656,29 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration43.cs">
       <Link>NachoCore\Model\Migration\NcMigration43.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEmailMessageBundle.cs">
+      <Link>NachoCore\Utils\NcEmailMessageBundle.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcBundleStorage.cs">
+      <Link>NachoCore\Utils\NcBundleStorage.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Html.cs">
+      <Link>NachoCore\Utils\Html.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration44.cs">
       <Link>NachoCore\Model\Migration\NcMigration44.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ScoringHelpers.cs">
       <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\CompoundScrollView.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageComposeHeaderView.cs" />
+    <Compile Include="NachoPlatform.iOS\RtfConverteriOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessageDownloader.cs">
+      <Link>NachoCore\Utils\MessageDownloader.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MessageComposer.cs">
+      <Link>NachoCore\Utils\MessageComposer.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration45.cs">
       <Link>NachoCore\Model\Migration\NcMigration45.cs</Link>
@@ -1678,6 +1695,8 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEventDetail.cs">
       <Link>NachoCore\Utils\NcEventDetail.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\ImageiOS.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcWebViewMessageProtocol.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2575,6 +2594,9 @@
     <BundleResource Include="Resources\gen-avatar-alert%403x.png" />
     <BundleResource Include="Resources\gen-avatar-alert%404x.png" />
     <BundleResource Include="Resources\gen-avatar-alert%406x.png" />
+    <BundleResource Include="Resources\nacho.html" />
+    <BundleResource Include="Resources\nacho.css" />
+    <BundleResource Include="Resources\nacho.js" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
@@ -2695,5 +2717,9 @@
     <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\triangles.png" />
     <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\triangles%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\triangles%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\shortcut-compose.png" />
+    <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\shortcut-compose%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\shortcut-compose.imageset\shortcut-compose%403x.png" />
   </ItemGroup>
 </Project>
