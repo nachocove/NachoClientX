@@ -135,9 +135,7 @@
     <Compile Include="TelemetryJsonEventTest.cs" />
     <Compile Include="TelemetryJsonFileTest.cs" />
     <Compile Include="NcBrainHelpersTest.cs" />
-    <Compile Include="ImapOperationTest.cs">
-      <DependentUpon>KeyChainAccessTest.cs</DependentUpon>
-    </Compile>
+    <Compile Include="ImapOperationTest.cs" />
     <Compile Include="McEmailMessageScoreTest.cs" />
     <Compile Include="EmailMessageScoreTest.cs" />
     <Compile Include="ContactsBinningHelperTest.cs" />
