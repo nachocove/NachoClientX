@@ -27,7 +27,7 @@ namespace NachoCore.Utils
         }
 
         // Message is saved into Outbox
-        public static void SendTheMessage (Action action, McEmailMessage messageToSend, bool originalEmailIsEmbedded, McEmailMessage referencedMessage, bool calendarInviteIsSet, McAbstrCalendarRoot calendarInviteItem)
+        public static void SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
         {
             var outbox = McFolder.GetClientOwnedOutboxFolder (messageToSend.AccountId);
             if (null != outbox) {
@@ -35,40 +35,43 @@ namespace NachoCore.Utils
             } else {
                 Log.Warn (Log.LOG_EMAIL, "GetOutboxFolder returned null");
             }
+            McEmailMessage referencedMessage = null;
+            if (messageToSend.ReferencedEmailId != 0) {
+                referencedMessage = McEmailMessage.QueryById<McEmailMessage> (messageToSend.ReferencedEmailId);
+            }
 
             bool messageSent = false;
-            if (EmailHelper.IsForwardOrReplyAction (action) || calendarInviteIsSet) {
-                List<McFolder> folders;
-                if (calendarInviteIsSet) {
-                    folders = McFolder.QueryByFolderEntryId<McCalendar> (calendarInviteItem.AccountId, calendarInviteItem.Id);
-                } else {
-                    folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
-                }
+            List<McFolder> folders = null;
+            if (calendarInviteItem != null) {
+                folders = McFolder.QueryByFolderEntryId<McCalendar> (calendarInviteItem.AccountId, calendarInviteItem.Id);
                 if (folders.Count == 0) {
-                    Log.Error (Log.LOG_UI, "The message or event being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
-                    // Fall through and send it as a regular message.  Or don't send it at all if it is an event.
+                    Log.Error (Log.LOG_UI, "The event being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
                 } else {
-                    if (folders.Count > 1) {
-                        Log.Warn (Log.LOG_UI, "The message or event being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message.", folders.Count);
-                    }
                     int folderId = folders [0].Id;
-                    if (calendarInviteIsSet) {
-                        NachoCore.BackEnd.Instance.ForwardCalCmd (
-                            messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
-                    } else if (EmailHelper.IsForwardAction (action)) {
-                        NachoCore.BackEnd.Instance.ForwardEmailCmd (
-                            messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
-                    } else {
-                        NachoCore.BackEnd.Instance.ReplyEmailCmd (
-                            messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
-                    }
+                    NachoCore.BackEnd.Instance.ForwardCalCmd (messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
                     messageSent = true;
                 }
-            }
-            if (!messageSent && !calendarInviteIsSet) {
-                // A new outgoing message.  Or a forward/reply that has problems.
-                NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
-                messageSent = true;
+            } else {
+                if (referencedMessage != null) {
+                    folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
+                    if (folders.Count == 0) {
+                        Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
+                    } else {
+                        int folderId = folders [0].Id;
+                        if (messageToSend.ReferencedIsForward) {
+                            NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                            messageSent = true;
+                        } else {
+                            NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                            messageSent = true;
+                        }
+                    }
+                }
+                if (!messageSent) {
+                    // A new outgoing message.  Or a forward/reply that has problems.
+                    NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
+                    messageSent = true;
+                }
             }
             if (messageSent) {
                 // Send status ind because the message is in the outbox
@@ -78,7 +81,6 @@ namespace NachoCore.Utils
                     Account = McAccount.QueryById<McAccount> (messageToSend.AccountId),
                 });
             }
-
         }
 
         private static bool MustSaveMessageToSent(int accountId)
@@ -254,6 +256,33 @@ namespace NachoCore.Utils
             } else {
                 return Pretty.Join ("Re:", referencedSubject, " ");
             }
+        }
+
+        public static string AttributionLineForMessage (McEmailMessage message)
+        {
+            var attribution = "";
+            attribution += message.DateReceived.ToLocalTime().ToString ("'On' MMM d, yyyy 'at' h:mm tt");
+            if (!String.IsNullOrWhiteSpace (message.From)) {
+                if (attribution.Length > 0) {
+                    attribution += ", ";
+                }
+                var address = new NcEmailAddress (NcEmailAddress.Kind.From, message.From);
+                var mailbox = address.ToMailboxAddress (true);
+                if (mailbox != null) {
+                    if (!String.IsNullOrWhiteSpace(mailbox.Name)) {
+                        attribution += String.Format ("{0} <{1}>", mailbox.Name, mailbox.Address);
+                    } else {
+                        attribution += mailbox.Address;
+                    }
+                } else {
+                    attribution += message.From;
+                }
+                attribution += " wrote";
+            }
+            if (attribution.Length > 0) {
+                attribution += ":";
+            }
+            return attribution;
         }
 
 
@@ -500,6 +529,47 @@ namespace NachoCore.Utils
             return true;
         }
 
+        public static McEmailMessage MessageFromMailTo (McAccount account, string urlString, out string body)
+        {
+            List<NcEmailAddress> addresses;
+            string subject;
+            if (!ParseMailTo(urlString, out addresses, out subject, out body)) {
+                subject = "";
+                body = null;
+                addresses = new List<NcEmailAddress> ();
+            }
+            var message = McEmailMessage.MessageWithSubject (account, subject);
+            var toList = new List<NcEmailAddress> ();
+            var ccList = new List<NcEmailAddress> ();
+            var bccList = new List<NcEmailAddress> ();
+            foreach (var address in addresses) {
+                if (address.kind == NcEmailAddress.Kind.To) {
+                    toList.Add (address);
+                } else if (address.kind == NcEmailAddress.Kind.Cc) {
+                    ccList.Add (address);
+                } else if (address.kind == NcEmailAddress.Kind.Bcc) {
+                    bccList.Add (address);
+                }
+            }
+            message.To = AddressStringFromList (toList);
+            message.Cc = AddressStringFromList (ccList);
+            message.Bcc = AddressStringFromList (bccList);
+            return message;
+        }
+
+        public static string AddressStringFromList (List<NcEmailAddress> addresses)
+        {
+            MailboxAddress mailbox;
+            var addressStrings = new List<string> (addresses.Count);
+            foreach (var address in addresses) {
+                mailbox = address.ToMailboxAddress (mustUseAddress: true);
+                if (mailbox != null) {
+                    addressStrings.Add (mailbox.ToString ());
+                }
+            }
+            return String.Join (",", addressStrings);
+        }
+
         private static bool IsAccountAlias (InternetAddress accountInternetAddress, string match)
         {
             if (null == accountInternetAddress) {
@@ -515,6 +585,47 @@ namespace NachoCore.Utils
             var target = accountMailboxAddress.Address;
             return String.Equals (target, match, StringComparison.OrdinalIgnoreCase);
 
+        }
+
+        public static void PopulateMessageRecipients (McAccount account, McEmailMessage message, Action action, McEmailMessage referencedMessage)
+        {
+            var toList = new List<NcEmailAddress> ();
+            var recipientExclusions = new List<string> ();
+            recipientExclusions.Add (account.EmailAddr);
+            if (EmailHelper.IsReplyAction (action)) {
+                string toString = null;
+                // Reply-To trumps From
+                if (null != referencedMessage.ReplyTo) {
+                    toString = referencedMessage.ReplyTo;
+                }else if (null != referencedMessage.From) {
+                    toString = referencedMessage.From;
+                }
+                // Some validation
+                if (toString != null) {
+                    InternetAddress toAddress;
+                    if (MailboxAddress.TryParse (toString, out toAddress)){
+                        if (String.Equals ((toAddress as MailboxAddress).Address, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
+                            // If it looks like we're replying to ourself, we should instead reply to the entire To list from the
+                            // referenced message.  This behavior is consistent with other clients, and is typically seen when
+                            // replying to a message you sent.  It's an interesting case where a reply could go to multiple people
+                            // even though it wasn't a reply-all.  If there was anyone in the CC list of the referenced message,
+                            // they'll get picked up in the reply-all scenario in the next block.
+                            toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, recipientExclusions, referencedMessage.To);
+                        } else {
+                            toList.Add(new NcEmailAddress (NcEmailAddress.Kind.To, toString));
+                        }
+                    }
+                }
+            }
+            foreach (var to in toList) {
+                recipientExclusions.Add (to.address);
+            }
+            message.To = AddressStringFromList (toList);
+            if (EmailHelper.Action.ReplyAll == action) {
+                // Add the To & Cc list to the CC list, not included this user
+                var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, recipientExclusions, referencedMessage.To, referencedMessage.Cc);
+                message.Cc = AddressStringFromList (ccList);
+            }
         }
 
         public static List<NcEmailAddress> CcList (string accountEmailAddress, string toString, string ccString)

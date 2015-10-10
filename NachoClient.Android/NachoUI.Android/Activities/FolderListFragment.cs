@@ -56,6 +56,13 @@ namespace NachoClient.AndroidClient
                 onFolderSelected (folder);
             }
         }
+
+        public void SwitchAccount()
+        {
+            if (null != folderListAdapter) {
+                folderListAdapter.SwitchAccount ();
+            }
+        }
     }
 
 
@@ -73,6 +80,12 @@ namespace NachoClient.AndroidClient
             context = c;
             inflater = (LayoutInflater)context.GetSystemService (Context.LayoutInflaterService);
             Folders = new NachoFolders (NcApplication.Instance.Account.Id, NachoFolders.FilterForEmail);
+        }
+
+        public void SwitchAccount()
+        {
+            Folders = new NachoFolders (NcApplication.Instance.Account.Id, NachoFolders.FilterForEmail);
+            this.NotifyDataSetChanged ();
         }
 
         public void setOnFolderSelected (FolderListFragment.OnFolderSelectedListener onFolderSelected)

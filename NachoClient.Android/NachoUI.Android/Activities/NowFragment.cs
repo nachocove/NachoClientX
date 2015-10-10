@@ -7,7 +7,6 @@ using System.Text;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
-using Android.Util;
 using Android.Views;
 using Android.Support.V4.App;
 using Android.Support.V4.View;
@@ -22,16 +21,17 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public class NowFragment : Android.App.Fragment
+    public class NowFragment : NcFragment
     {
+        McAccount account;
+
         Android.Widget.ImageView composeButton;
         Android.Widget.ImageView newMeetingButton;
 
         ViewPager pager;
-        GenericFragmentPagerAdaptor adapter;
+        PriorityInboxPagerAdaptor adapter;
 
         public event EventHandler<McEmailMessageThread> onMessageClick;
-
 
         // Pages thru hot messages
         public static NowFragment newInstance ()
@@ -48,10 +48,8 @@ namespace NachoClient.AndroidClient
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             var view = inflater.Inflate (Resource.Layout.NowFragment, container, false);
-
             var activity = (NcActivity)this.Activity;
             activity.HookNavigationToolbar (view);
-
             composeButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
             composeButton.SetImageResource (Resource.Drawable.contact_newemail);
             composeButton.Visibility = Android.Views.ViewStates.Visible;
@@ -66,27 +64,18 @@ namespace NachoClient.AndroidClient
             var hotImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.hot_image);
             hotImage.SetImageResource (Resource.Drawable.nav_nachonow_active);
 
-            pager = view.FindViewById<ViewPager> (Resource.Id.pager);
-            adapter = new GenericFragmentPagerAdaptor (ChildFragmentManager);
-
-            adapter.onMessageClick += Adapter_onMessageClick;
-
-            pager.Adapter = adapter;
-
             return view;
         }
 
         public override void OnResume ()
         {
             base.OnResume ();
-
-            Console.WriteLine ("NowFragment: OnResume {0}", pager);
+            MaybeSwitchAccount ();
         }
 
         public override void OnPause ()
         {
             base.OnPause ();
-            Console.WriteLine ("NowFragment: OnPause {0}", pager);
         }
 
         void Adapter_onMessageClick (object sender, McEmailMessageThread thread)
@@ -107,15 +96,34 @@ namespace NachoClient.AndroidClient
             intent.SetClass (this.Activity, typeof(MessageComposeActivity));
             StartActivity (intent);
         }
+
+        public override void SwitchAccount ()
+        {
+            MaybeSwitchAccount ();
+        }
+
+        void MaybeSwitchAccount ()
+        {
+            if ((null != account) && (NcApplication.Instance.Account.Id == account.Id)) {
+                return;
+            }
+            account = NcApplication.Instance.Account;
+            pager = View.FindViewById<ViewPager> (Resource.Id.pager);
+            pager.Adapter = null; // Seems to be required
+            adapter = new PriorityInboxPagerAdaptor (ChildFragmentManager);
+            adapter.onMessageClick += Adapter_onMessageClick;
+            pager.Adapter = adapter;
+        }
+
     }
 
-    public class GenericFragmentPagerAdaptor : Android.Support.V13.App.FragmentPagerAdapter
+    public class PriorityInboxPagerAdaptor : Android.Support.V13.App.FragmentStatePagerAdapter
     {
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
         INachoEmailMessages messages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
 
-        public GenericFragmentPagerAdaptor (Android.App.FragmentManager fm) : base (fm)
+        public PriorityInboxPagerAdaptor (Android.App.FragmentManager fm) : base (fm)
         {
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
@@ -162,7 +170,6 @@ namespace NachoClient.AndroidClient
                 this.NotifyDataSetChanged ();
             }
         }
-
 
     }
    

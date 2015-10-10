@@ -53,7 +53,7 @@ namespace NachoClient.AndroidClient
         void CredentialsValidated (McAccount account);
     }
 
-    public class CredentialsFragment : Fragment, ILoginEvents, AccountAdvancedFieldsViewControllerDelegate
+    public class CredentialsFragment : NcFragment, ILoginEvents, AccountAdvancedFieldsViewControllerDelegate
     {
         McAccount Account;
         McAccount.AccountServiceEnum service;
@@ -179,13 +179,17 @@ namespace NachoClient.AndroidClient
         public override void OnDestroy ()
         {
             base.OnDestroy ();
-
             LoginEvents.Owner = null;
+        }
+
+        public override void OnBackPressed ()
+        {
+            base.OnBackPressed ();
             if (Account != null) {
                 NcAccountHandler.Instance.RemoveAccount (Account.Id);
             }
         }
-
+            
         void SubmitButton_Click (object sender, EventArgs e)
         {
             var email = emailField.Text.Trim ();

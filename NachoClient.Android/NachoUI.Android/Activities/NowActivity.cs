@@ -26,6 +26,8 @@ namespace NachoClient.AndroidClient
 
         protected override void OnCreate (Bundle bundle)
         {
+            Log.Info (Log.LOG_UI, "NowActivity OnCreate");
+
             base.OnCreate (bundle, Resource.Layout.NowActivity);
 
             nowFragment = new NowFragment ();
@@ -35,7 +37,7 @@ namespace NachoClient.AndroidClient
 
         void onMessageClick (object sender, McEmailMessageThread thread)
         {
-            Console.WriteLine ("NowActivity onMessageClick: {0}", thread);
+            Log.Info (Log.LOG_UI, "NowActivity onMessageClick: {0}", thread);
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
@@ -68,6 +70,16 @@ namespace NachoClient.AndroidClient
                 if (1 < this.FragmentManager.BackStackEntryCount) {
                     this.FragmentManager.PopBackStack ();
                 }
+            }
+        }
+
+        public override void SwitchAccount (McAccount account)
+        {
+            base.SwitchAccount (account);
+
+            FragmentManager.PopBackStackImmediate ("Now", PopBackStackFlags.None);
+            if (null != nowFragment) {
+                nowFragment.SwitchAccount ();
             }
         }
 

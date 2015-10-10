@@ -140,19 +140,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
-                var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var c = holder.value as McCalendar;
-                if ((bool)holder.value2) {
-                    dc.SetCalendarInvite (c);
-                    dc.SetEmailPresetFields (null, "Fwd: " + c.Subject, "");
-                } else {
-                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
-                }
-                return;
-            }
-
             if (segue.Identifier == "CalendarToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -957,18 +944,26 @@ namespace NachoClient.iOS
         // ICalendarTableViewSourceDelegate
         public void SendRunningLateMessage (int eventId)
         {
-            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
-            if (null != c) {
-                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, false));
+            var calendarInvite = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+            if (null != calendarInvite) {
+                var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, calendarInvite.Subject);
+                message.To = calendarInvite.OrganizerEmail;
+                var composeViewController = new MessageComposeViewController ();
+                composeViewController.Composer.InitialText = "Running late";
+                composeViewController.Composer.Message = message;
+                composeViewController.Present ();
             }
         }
 
         // ICalendarTableViewSourceDelegate
         public void ForwardInvite (int eventId)
         {
-            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
-            if (null != c) {
-                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, true));
+            var calendarInvite = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+            if (null != calendarInvite) {
+                var composeViewController = new MessageComposeViewController ();
+                composeViewController.Composer.RelatedCalendarItem  = calendarInvite;
+                composeViewController.Composer.Message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + calendarInvite.Subject);
+                composeViewController.Present ();
             }
         }
 

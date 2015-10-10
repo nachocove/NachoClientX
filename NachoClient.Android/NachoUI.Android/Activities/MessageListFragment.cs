@@ -224,7 +224,7 @@ namespace NachoClient.AndroidClient
 
         public void ShowPriorityChooser (McEmailMessageThread messageThread)
         {
-            Console.WriteLine ("ShowPriorityChooser: {0}", messageThread);
+            Log.Info (Log.LOG_UI, "ShowPriorityChooser: {0}", messageThread);
             var deferralFragment = ChooseDeferralFragment.newInstance (messageThread);
             deferralFragment.setOnDeferralSelected (OnDeferralSelected);
             var ft = FragmentManager.BeginTransaction ();
@@ -234,7 +234,7 @@ namespace NachoClient.AndroidClient
 
         public void ShowFolderChooser (McEmailMessageThread messageThread)
         {
-            Console.WriteLine ("ShowFolderChooser: {0}", messageThread);
+            Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
             var folderFragment = ChooseFolderFragment.newInstance (messageThread);
             folderFragment.setOnFolderSelected (OnFolderSelected);
             var ft = FragmentManager.BeginTransaction ();
@@ -249,8 +249,15 @@ namespace NachoClient.AndroidClient
 
         public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)
         {
-            Console.WriteLine ("OnFolderSelected: {0}", thread);
+            Log.Info (Log.LOG_UI, "OnFolderSelected: {0}", thread);
             NcEmailArchiver.Move (thread, folder);
+        }
+
+        public void SwitchAccount (INachoEmailMessages newMessages)
+        {
+            messages = newMessages;
+            messageListAdapter = new MessageListAdapter (messages);
+            listView.Adapter = messageListAdapter;
         }
 
     }

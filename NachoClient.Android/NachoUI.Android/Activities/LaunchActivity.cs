@@ -95,6 +95,7 @@ namespace NachoClient.AndroidClient
                 this.FragmentManager.PopBackStack (); // Let me go!
             }
             if (f is CredentialsFragment) {
+                ((CredentialsFragment)f).OnBackPressed ();
                 this.FragmentManager.PopBackStack (); // Let me go!
             }
             if (f is GoogleSignInFragment) {

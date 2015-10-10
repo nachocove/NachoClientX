@@ -16,16 +16,41 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "NcActivity")]            
-    public class NcActivity : AppCompatActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
+    public class NcActivity : AppCompatActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate, AccountListDelegate
     {
+        private string ClassName;
+
         MoreFragment moreFragment = new MoreFragment ();
         SwitchAccountFragment switchAccountFragment = new SwitchAccountFragment ();
 
         protected void OnCreate (Bundle bundle, int layoutId)
         {
-            base.OnCreate (bundle);
+            ClassName = this.GetType ().Name;
 
+            base.OnCreate (bundle);
             SetContentView (layoutId);
+        }
+
+        protected override void OnStart ()
+        {
+            base.OnStart ();
+            NachoCore.Utils.NcAbate.HighPriority ("NcActivity OnStart");
+        }
+
+        protected override void OnResume ()
+        {
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_BEGIN");
+            base.OnResume ();
+            NachoCore.Utils.NcAbate.RegularPriority ("NcActivity OnResume");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_END");
+        }
+
+        protected override void OnPause ()
+        {
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_BEGIN");
+            base.OnPause ();
+            NachoCore.Utils.NcAbate.RegularPriority ("NcActivity OnPause");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_END");
         }
 
         public void HookNavigationToolbar (Android.Views.View view)
@@ -52,6 +77,12 @@ namespace NachoClient.AndroidClient
         {
             var switchAccountButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.account);
             switchAccountButton.Click += SwitchAccountButton_Click;
+            SetSwitchAccountButtonImage (view);
+        }
+
+        public void SetSwitchAccountButtonImage (Android.Views.View view)
+        {
+            var switchAccountButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.account);
             switchAccountButton.SetImageResource (Util.GetAccountServiceImageId (NcApplication.Instance.Account.AccountService));
         }
 
@@ -171,6 +202,23 @@ namespace NachoClient.AndroidClient
             FragmentManager.PopBackStack ("ChooseProvider", PopBackStackFlags.Inclusive);
         }
 
+        public virtual void SwitchAccount (McAccount account)
+        {
+        }
+
+        // Callback from account switcher
+        public void AccountSelected (McAccount account)
+        {
+            Log.Info (Log.LOG_UI, "NcActivity account selected {0}", account.DisplayName);
+            SwitchAccount (account);
+
+            // Pop the switcher if the activity hasn't already done it.
+            var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is SwitchAccountFragment) {
+                FragmentManager.PopBackStack ();
+            } 
+        }
+
         public override void OnBackPressed ()
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
@@ -178,6 +226,7 @@ namespace NachoClient.AndroidClient
                 this.FragmentManager.PopBackStack ();
             }
             if (f is CredentialsFragment) {
+                ((CredentialsFragment)f).OnBackPressed ();
                 this.FragmentManager.PopBackStack ();
             }
             if (f is GoogleSignInFragment) {

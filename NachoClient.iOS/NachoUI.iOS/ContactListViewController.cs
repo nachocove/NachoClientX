@@ -219,18 +219,6 @@ namespace NachoClient.iOS
                 destinationViewController.account = a;
                 return;
             }
-            if (segue.Identifier.Equals ("ContactsToQuickMessageCompose")) {
-                var h = sender as SegueHolder;
-                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
-                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToMessageCompose")) {
-                var h = sender as SegueHolder;
-                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
-                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -266,12 +254,6 @@ namespace NachoClient.iOS
         }
 
         /// IContactsTableViewSourceDelegate
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
-        {
-            PerformSegue (identifier, sender);
-        }
-
-        /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
             PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
@@ -280,7 +262,24 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void EmailSwipeHandler (McContact contact)
         {
-            Util.EmailContact ("SegueToContactDefaultSelection", contact, this);
+            if (contact == null) {
+                Util.ComplainAbout ("No Email Address", "This contact does not have an email address.");
+            } else {
+                var address = Util.GetContactDefaultEmail (contact);
+                if (address == null) {
+                    if (contact.EmailAddresses.Count == 0) {
+                        if (contact.CanUserEdit ()) {
+                            PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                        } else {
+                            Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+                        }
+                    } else {
+                        PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+                    }
+                } else {
+                    ComposeMessage (address);
+                }
+            }
         }
 
         /// IContactsTableViewSourceDelegate
@@ -294,9 +293,18 @@ namespace NachoClient.iOS
             contactTableViewSource.ScrollToSectionIncludingRecent (TableView, index);
         }
 
-        public void PerformSegueForContactDefaultSelector (string identifier, NSObject sender)
+        public void ContactDefaultSelectorComposeMessage (string address)
         {
-            PerformSegue (identifier, sender);
+            ComposeMessage (address);
+        }
+
+        public void ComposeMessage (string address)
+        {
+            var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
+            message.To = address;
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Composer.Message = message;
+            composeViewController.Present ();
         }
 
         public class LettersSwipeViewDelegate : SwipeViewDelegate

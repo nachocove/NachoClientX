@@ -98,6 +98,7 @@
     <Reference Include="GooglePlayServicesLib">
       <HintPath>..\packages\Xamarin.GooglePlayServices.22.0.0.2\lib\MonoAndroid41\GooglePlayServicesLib.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="HockeyApp.Android">
       <HintPath>HockeyApp\hockeyappandroid-3.5.0\lib\android\HockeyApp.Android.dll</HintPath>
     </Reference>
@@ -509,8 +510,13 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration42.cs" />
     <Compile Include="NachoCore\BackEnd\NcPreFetchHints.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration43.cs" />
+    <Compile Include="NachoCore\Utils\NcEmailMessageBundle.cs" />
+    <Compile Include="NachoCore\Utils\NcBundleStorage.cs" />
+    <Compile Include="NachoCore\Utils\Html.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration44.cs" />
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
+    <Compile Include="NachoCore\Utils\MessageDownloader.cs" />
+    <Compile Include="NachoCore\Utils\MessageComposer.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration45.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress\EmailAddressScore.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress\McEmailAddress.cs" />
@@ -532,6 +538,7 @@
     <Compile Include="NachoUI.Android\Support\NcAlertView.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedImapView.cs" />
+    <Compile Include="NachoUI.Android\Activities\NcFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

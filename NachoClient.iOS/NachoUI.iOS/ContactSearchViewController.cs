@@ -158,12 +158,6 @@ namespace NachoClient.iOS
         }
 
         /// IContactsTableViewSourceDelegate
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
-        {
-            PerformSegue (identifier, sender);
-        }
-
-        /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
             address.contact = contact;

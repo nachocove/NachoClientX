@@ -106,7 +106,7 @@ namespace NachoClient.AndroidClient
 
         void View_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("View_Click");
+            Log.Info (Log.LOG_UI, "View_Click");
         }
     }
 

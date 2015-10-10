@@ -18,7 +18,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent, INachoContactDefaultSelector
+    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent, INachoContactDefaultSelector
     {
         public McContact contact;
 
@@ -181,12 +181,6 @@ namespace NachoClient.iOS
                 destinationController.SetContact (c);
                 destinationController.viewType = type;
                 destinationController.owner = this;
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToMessageCompose")) {
-                var h = sender as SegueHolder;
-                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
-                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
                 return;
             }
             if (segue.Identifier.Equals ("ContactToNotes")) {
@@ -700,7 +694,24 @@ namespace NachoClient.iOS
 
         protected void DefaultEmailTapHandler ()
         {
-            Util.EmailContact ("SegueToContactDefaultSelector", contact, this);
+            if (contact == null) {
+                Util.ComplainAbout ("No Email Address", "This contact does not have an email address.");
+            } else {
+                var address = Util.GetContactDefaultEmail (contact);
+                if (address == null) {
+                    if (contact.EmailAddresses.Count == 0) {
+                        if (contact.CanUserEdit ()) {
+                            PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                        } else {
+                            Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+                        }
+                    } else {
+                        PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+                    }
+                } else {
+                    ComposeMessage (address);
+                }
+            }
         }
 
         protected void DefaultCallTapHandler ()
@@ -1041,7 +1052,11 @@ namespace NachoClient.iOS
                 ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
-            PerformSegue ("SegueToMessageCompose", new SegueHolder (address));
+            var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
+            message.To = address;
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Composer.Message = message;
+            composeViewController.Present ();
         }
 
         protected void TouchedCallButton (string number)
@@ -1141,37 +1156,6 @@ namespace NachoClient.iOS
             vc.DismissDateController (true, null);
         }
 
-        public void DismissChildMessageEditor (INachoMessageEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new Action (delegate {
-                this.DismissViewController (true, null);
-            }));
-        }
-
-        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var m = thread.FirstMessageSpecialCase ();
-            if (null != m) {
-                var t = CalendarHelper.CreateTask (m);
-                vc.SetOwner (null);
-                vc.DismissMessageEditor (false, new Action (delegate {
-                    PerformSegue ("", new SegueHolder (t));
-                }));
-            }
-        }
-
-        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            var m = thread.FirstMessageSpecialCase ();
-            if (null != m) {
-                var c = CalendarHelper.CreateMeeting (m);
-                vc.DismissMessageEditor (false, new Action (delegate {
-                    PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
-                }));
-            }
-        }
-
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
         {
             vc.SetOwner (null);
@@ -1235,9 +1219,18 @@ namespace NachoClient.iOS
             }
         }
 
-        public void PerformSegueForContactDefaultSelector (string identifier, NSObject sender)
+        public void ContactDefaultSelectorComposeMessage (string address)
         {
-            PerformSegue (identifier, sender);
+            ComposeMessage (address);
+        }
+
+        private void ComposeMessage (string address)
+        {
+            var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
+            message.To = address;
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Composer.Message = message;
+            composeViewController.Present ();
         }
 
         public class LongPressCopyData
@@ -1269,6 +1262,19 @@ namespace NachoClient.iOS
                 longPress.RemoveTarget (longPressToken);
                 longPress.ShouldRecognizeSimultaneously = null;
             }
+        }
+
+        public void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action)
+        {
+            ComposeResponse (thread, action);
+        }
+
+        private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
+        {
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Composer.Kind = action;
+            composeViewController.Composer.RelatedThread = thread;
+            composeViewController.Present ();
         }
 
     }

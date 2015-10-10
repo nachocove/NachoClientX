@@ -18,12 +18,16 @@ public class FadeCustomSegue : UIStoryboardSegue
 
     public override void Perform ()
     {
-        var transition = CATransition.CreateAnimation ();
+        Transition (this.SourceViewController, this.DestinationViewController);
+    }
 
+    public static void Transition (UIViewController source, UIViewController destination)
+    {
+        var transition = CATransition.CreateAnimation ();
         transition.Duration = 0.3;
         transition.Type = CATransition.TransitionFade;
 
-        this.SourceViewController.NavigationController.View.Layer.AddAnimation (transition, CALayer.Transition);
-        this.SourceViewController.NavigationController.PushViewController (this.DestinationViewController, false);
+        source.NavigationController.View.Layer.AddAnimation (transition, CALayer.Transition);
+        source.NavigationController.PushViewController (destination, false);
     }
 }

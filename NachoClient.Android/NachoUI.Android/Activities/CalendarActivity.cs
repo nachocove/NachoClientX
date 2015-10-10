@@ -12,6 +12,7 @@ using Android.Widget;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -32,7 +33,7 @@ namespace NachoClient.AndroidClient
 
         void EventListFragment_onEventClick (object sender, McEvent ev)
         {
-            Console.WriteLine ("EventListFragment_onEventClick: {0}", ev);
+            Log.Info (Log.LOG_UI, "EventListFragment_onEventClick: {0}", ev);
             eventViewFragment = EventViewFragment.newInstance (ev);
             this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, eventViewFragment).AddToBackStack ("View").Commit ();
         }

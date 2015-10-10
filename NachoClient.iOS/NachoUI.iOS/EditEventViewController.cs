@@ -557,7 +557,7 @@ namespace NachoClient.iOS
             locationView.AddSubview (locationField);
 
             //Attachments
-            attachmentView = new UcAttachmentBlock (this, SCREEN_WIDTH, 44, true);
+            attachmentView = new UcAttachmentBlock (this, 44, true);
             attachmentView.Frame = new CGRect (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6), SCREEN_WIDTH, CELL_HEIGHT);
 
             attachmentBGView = new UIView (new CGRect (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6), SCREEN_WIDTH, CELL_HEIGHT * 2));
@@ -1275,9 +1275,15 @@ namespace NachoClient.iOS
         }
 
         /// IUcAttachmentBlock delegate
-        public void PerformSegueForAttachmentBlock (string identifier, SegueHolder segueHolder)
+        public void ShowChooserForAttachmentBlock ()
         {
-            PerformSegue (identifier, segueHolder);
+            PerformSegue ("SegueToAddAttachment", new SegueHolder (null));
+        }
+
+        /// IUcAttachmentBlock delegate
+        public void ToggleCompactForAttachmentBlock ()
+        {
+            attachmentView.ToggleCompact ();
         }
 
         /// IUcAttachmentBlock delegate
@@ -1287,9 +1293,8 @@ namespace NachoClient.iOS
         }
 
         /// IUcAttachmentBlock delegate
-        public void PresentViewControllerForAttachmentBlock (UIViewController viewControllerToPresent, bool animated, Action completionHandler)
+        public void RemoveAttachmentForAttachmentBlock (McAttachment attachment)
         {
-            this.PresentViewController (viewControllerToPresent, animated, completionHandler);
         }
 
         public void UpdateAttendeeList (IList<McAttendee> attendees)
@@ -1353,6 +1358,11 @@ namespace NachoClient.iOS
         public void Append (McAttachment attachment)
         {
             attachmentView.Append (attachment);
+        }
+
+        public void AttachmentUpdated (McAttachment attachment)
+        {
+            attachmentView.UpdateAttachment (attachment);
         }
 
         /// <summary>
