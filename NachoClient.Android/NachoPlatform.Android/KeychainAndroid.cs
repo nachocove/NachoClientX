@@ -164,14 +164,10 @@ namespace NachoPlatform
 
         public bool SetKeyString (string key, string value)
         {
-            try {
-                Log.Info (Log.LOG_SYS, "Keychain.Android: SetKeyString: {0}:{1}", key, value);
-                var editor = Prefs.Edit ();
-                editor.PutString(key, value);
-                editor.Commit();
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_SYS, "SetKeyString Exception: {0}", ex);
-            }
+            Log.Info (Log.LOG_SYS, "Keychain.Android: SetKeyString: {0}:{1}", key, value);
+            var editor = Prefs.Edit ();
+            editor.PutString(key, value);
+            editor.Commit();
             return true;
         }
 
