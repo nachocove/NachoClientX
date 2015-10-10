@@ -158,13 +158,11 @@ namespace NachoPlatform
         public string GetKeyString (string key)
         {
             var r = Prefs.GetString(key, null);
-            Log.Info (Log.LOG_SYS, "Keychain.Android: GetKeyString: {0}:{1}", key, r);
             return r;
         }
 
         public bool SetKeyString (string key, string value)
         {
-            Log.Info (Log.LOG_SYS, "Keychain.Android: SetKeyString: {0}:{1}", key, value);
             var editor = Prefs.Edit ();
             editor.PutString(key, value);
             editor.Commit();
