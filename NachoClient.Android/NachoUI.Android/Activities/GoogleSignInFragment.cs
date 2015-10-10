@@ -14,6 +14,7 @@ using Android.Widget;
 using Xamarin.Auth;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
@@ -46,6 +47,14 @@ namespace NachoClient.AndroidClient
         public override void OnStart ()
         {
             base.OnStart ();
+
+            var account = McAccount.GetAccountBeingConfigured ();
+            if ((null != account) && (McAccount.ConfigurationInProgressEnum.CredentialsValidated == account.ConfigurationInProgress)) {
+                var parent = (CredentialsFragmentDelegate)Activity;
+                parent.CredentialsValidated (account);
+                return;
+            }
+
             if (null == Authenticator) {
                 RestartAuthenticator ();
             }
@@ -53,7 +62,8 @@ namespace NachoClient.AndroidClient
 
         public override void OnResume ()
         {
-            base.OnResume (); 
+            base.OnResume ();
+
         }
 
         void RestartAuthenticator ()
@@ -145,8 +155,9 @@ namespace NachoClient.AndroidClient
                         var imageUrlString = ((string)picture).Replace ("/photo.jpg", "/s200-c-k/photo.jpg");
                         Account.PopulateProfilePhotoFromURL (new Uri (imageUrlString));
                     }
-                    var parent = (CredentialsFragmentDelegate)Activity;
-                    parent.CredentialsValidated (Account);
+                    Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.CredentialsValidated;
+                    Account.Update ();
+                    BackEnd.Instance.Start (Account.Id);
                 }
             } else {
                 Log.Info (Log.LOG_UI, "GoogleCredentialsViewController completed unauthenticated");
