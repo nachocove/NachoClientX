@@ -2,6 +2,9 @@
 //
 using System;
 using NachoCore.Utils;
+using Android.Content;
+using Android.Preferences;
+using NachoClient.AndroidClient;
 
 namespace NachoPlatform
 {
@@ -22,93 +25,163 @@ namespace NachoPlatform
             }
         }
 
+        private const string KDefaultAccount = "device";
+        private const string KIdentifierForVendor = "IdentifierForVendor";
+        private const string KAccessToken = "AccessToken";
+        private const string KRefreshToken = "RefreshToken";
+        private const string KUserId = "UserId";
+        private const string KLogSalt = "LogSalt";
+
         public bool HasKeychain ()
         {
-            return false;
+            return true;
+        }
+
+        #region Password
+        public string PasswordKey (int handle)
+        {
+            return handle.ToString ();
         }
 
         public string GetPassword (int handle)
         {
-            NcAssert.True (false);
-            return null;
+            return GetKeyString (PasswordKey (handle));
         }
 
         public bool SetPassword (int handle, string password)
         {
-            NcAssert.True (false);
-            return false;
+            return SetKeyString (PasswordKey (handle), password);
         }
 
         public bool DeletePassword (int handle)
         {
-            NcAssert.True (false);
-            return false;
+            return DeleteKey (PasswordKey (handle));
         }
+        #endregion
 
-        public bool SetAccessToken (int handle, string token)
+        #region AccessToken
+        public static string AccessTokenKey (int handle)
         {
-            NcAssert.True (false);
-            return false;
+            return string.Format ("{0}.{1}", handle, KAccessToken);
         }
 
         public string GetAccessToken (int handle)
         {
-            NcAssert.True (false);
-            return null;
+            return GetKeyString (AccessTokenKey (handle));
+        }
+
+        public bool SetAccessToken (int handle, string token)
+        {
+            return SetKeyString (AccessTokenKey (handle), token);
         }
 
         public bool DeleteAccessToken (int handle)
         {
-            NcAssert.True (false);
-            return false;
+            return DeleteKey (AccessTokenKey (handle));
         }
+        #endregion
 
-        public bool SetRefreshToken (int handle, string token)
+        #region RefreshToken
+        public static string RefreshTokenKey (int handle)
         {
-            NcAssert.True (false);
-            return false;
+            return string.Format ("{0}.{1}", handle, KRefreshToken);
         }
 
         public string GetRefreshToken (int handle)
         {
-            NcAssert.True (false);
-            return null;
+            return GetKeyString (RefreshTokenKey (handle));
         }
 
-        public string GetLogSalt (int handle)
+        public bool SetRefreshToken (int handle, string token)
         {
-            NcAssert.True (false);
-            return null;
+            return SetKeyString (RefreshTokenKey (handle), token);
         }
 
         public bool DeleteRefreshToken (int handle)
         {
-            NcAssert.True (false);
-            return false;
+            return DeleteKey (RefreshTokenKey (handle));
+        }
+        #endregion
+
+        #region LogSalt
+        public static string LogSaltKey (int handle)
+        {
+            return string.Format ("{0}.{1}", handle, KLogSalt);
+        }
+
+        public string GetLogSalt (int handle)
+        {
+            return GetKeyString (RefreshTokenKey (handle));
         }
 
         public bool SetLogSalt(int handle, string logSalt)
         {
-            NcAssert.True (false);
-            return false;
-        }
-
-        public string GetUserId ()
-        {
-            NcAssert.True (false);
-            return null;
-        }
-
-        public bool SetUserId (string userId)
-        {
-            NcAssert.True (false);
-            return false;
+            return SetKeyString (LogSaltKey (handle), logSalt);
         }
 
         public bool DeleteLogSalt (int handle)
         {
-            NcAssert.True (false);
-            return false;
+            return DeleteKey (LogSaltKey (handle));
         }
+        #endregion
+
+        #region UserId
+        public static string UserIdKey ()
+        {
+            return KUserId;
+        }
+
+        public string GetUserId ()
+        {
+            return GetKeyString (UserIdKey ());
+        }
+
+        public bool SetUserId (string userId)
+        {
+            return SetKeyString (UserIdKey (), userId);
+        }
+        #endregion
+
+        #region ISharedPreferences
+        ISharedPreferences _Prefs = null;
+        ISharedPreferences Prefs
+        {
+            get
+            {
+                if (_Prefs == null) {
+                    _Prefs = PreferenceManager.GetDefaultSharedPreferences (MainApplication.Instance.ApplicationContext);
+                }
+                return _Prefs;
+            }
+        }
+
+        public string GetKeyString (string key)
+        {
+            var r = Prefs.GetString(key, null);
+            Log.Info (Log.LOG_SYS, "Keychain.Android: GetKeyString: {0}:{1}", key, r);
+            return r;
+        }
+
+        public bool SetKeyString (string key, string value)
+        {
+            try {
+                Log.Info (Log.LOG_SYS, "Keychain.Android: SetKeyString: {0}:{1}", key, value);
+                var editor = Prefs.Edit ();
+                editor.PutString(key, value);
+                editor.Commit();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "SetKeyString Exception: {0}", ex);
+            }
+            return true;
+        }
+
+        public bool DeleteKey (string key)
+        {
+            var editor = Prefs.Edit ();
+            editor.Remove (key);
+            editor.Commit ();
+            return true;
+        }
+        #endregion
     }
 }
