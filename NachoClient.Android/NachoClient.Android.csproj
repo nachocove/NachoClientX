@@ -1258,5 +1258,6 @@
     <AndroidResource Include="Resources\layout\ChooseProviderCell.axml" />
     <AndroidResource Include="Resources\layout\AdvancedExchangeView.axml" />
     <AndroidResource Include="Resources\layout\AdvancedImapView.axml" />
+    <AndroidResource Include="Resources\layout\EventDateCell.axml" />
   </ItemGroup>
 </Project>

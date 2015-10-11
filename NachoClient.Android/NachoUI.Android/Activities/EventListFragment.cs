@@ -27,6 +27,10 @@ namespace NachoClient.AndroidClient
 {
     public class EventListFragment : Fragment
     {
+        public const int DATE_HEADER_CELL_TYPE = 0;
+        public const int EVENT_CELL_TYPE = 1;
+        public const int NUM_CELL_TYPES = 2;
+
         private const int LATE_TAG = 1;
         private const int FORWARD_TAG = 2;
 
@@ -81,24 +85,27 @@ namespace NachoClient.AndroidClient
             listView.ItemClick += ListView_ItemClick;
 
             listView.setMenuCreator ((menu) => {
-                SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
-                lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
-                lateItem.setWidth (dp2px (90));
-                lateItem.setTitle ("I'm Late");
-                lateItem.setTitleSize (14);
-                lateItem.setTitleColor (A.Color_White);
-                lateItem.setIcon (A.Id_NachoSwipeCalendarLate);
-                lateItem.setId (LATE_TAG);
-                menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
-                SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
-                forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
-                forwardItem.setWidth (dp2px (90));
-                forwardItem.setTitle ("Forward");
-                forwardItem.setTitleSize (14);
-                forwardItem.setTitleColor (A.Color_White);
-                forwardItem.setIcon (A.Id_NachoSwipeCalendarForward);
-                forwardItem.setId (FORWARD_TAG);
-                menu.addMenuItem (forwardItem, SwipeMenu.SwipeSide.RIGHT);
+                if (EVENT_CELL_TYPE == menu.getViewType ()) {
+                    SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                    lateItem.setWidth (dp2px (90));
+                    lateItem.setTitle ("I'm Late");
+                    lateItem.setTitleSize (14);
+                    lateItem.setTitleColor (A.Color_White);
+                    lateItem.setIcon (A.Id_NachoSwipeCalendarLate);
+                    lateItem.setId (LATE_TAG);
+                    menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
+
+                    SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                    forwardItem.setWidth (dp2px (90));
+                    forwardItem.setTitle ("Forward");
+                    forwardItem.setTitleSize (14);
+                    forwardItem.setTitleColor (A.Color_White);
+                    forwardItem.setIcon (A.Id_NachoSwipeCalendarForward);
+                    forwardItem.setId (FORWARD_TAG);
+                    menu.addMenuItem (forwardItem, SwipeMenu.SwipeSide.RIGHT);
+                }
             });
 
             listView.setOnMenuItemClickListener (( position, menu, index) => {
@@ -175,44 +182,83 @@ namespace NachoClient.AndroidClient
 
         public EventListAdapter ()
         {
-            RefreshEventsIfVisible ();
+            eventCalendarMap = new NcAllEventsCalendarMap ();
+            eventCalendarMap.Refresh (() => {
+                NotifyDataSetChanged ();
+            });
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         protected void RefreshEventsIfVisible ()
         {
-            eventCalendarMap = new NcAllEventsCalendarMap ();
-            eventCalendarMap.Refresh (completionAction: null);
+            eventCalendarMap.Refresh (() => {
+                NotifyDataSetChanged ();
+            });
         }
 
         public override long GetItemId (int position)
         {
-            var ev = eventCalendarMap.GetEventByIndex (position);
-            return ev.Id;
+            int day, item;
+            eventCalendarMap.IndexToDayItem (position, out day, out item);
+            if (-1 == item) {
+                return eventCalendarMap.GetDateUsingDayIndex (day).Ticks;
+            }
+            return eventCalendarMap.GetEvent (day, item).Id;
         }
 
         public override int Count {
             get {
-                return eventCalendarMap.NumberOfEvents ();
+                return eventCalendarMap.NumberOfDays () + eventCalendarMap.NumberOfEvents ();
             }
         }
 
         public override McEvent this [int position] {  
             get {
-                return eventCalendarMap.GetEventByIndex (position);
+                int day, item;
+                eventCalendarMap.IndexToDayItem (position, out day, out item);
+                if (-1 == item) {
+                    return new McEvent ();
+                }
+                return eventCalendarMap.GetEvent (day, item);
             }
+        }
+
+        public override bool IsEnabled (int position)
+        {
+            int day, item;
+            eventCalendarMap.IndexToDayItem (position, out day, out item);
+            return -1 != item;
+        }
+
+        public override int ViewTypeCount {
+            get {
+                return EventListFragment.NUM_CELL_TYPES;
+            }
+        }
+
+        public override int GetItemViewType (int position)
+        {
+            int day, item;
+            eventCalendarMap.IndexToDayItem (position, out day, out item);
+            if (-1 == item) {
+                return EventListFragment.DATE_HEADER_CELL_TYPE;
+            }
+            return EventListFragment.EVENT_CELL_TYPE;
         }
 
         public override View GetView (int position, View convertView, ViewGroup parent)
         {
-            View view = convertView; // re-use an existing view, if one is available
-            if (view == null) {
-                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.EventCell, parent, false);
+            int day, item;
+            eventCalendarMap.IndexToDayItem (position, out day, out item);
+            if (-1 == item) {
+                var cellView = convertView ?? LayoutInflater.From (parent.Context).Inflate (Resource.Layout.EventDateCell, parent, false);
+                Bind.BindEventDateCell (eventCalendarMap.GetDateUsingDayIndex (day), cellView);
+                return cellView;
+            } else {
+                var cellView = convertView ?? LayoutInflater.From (parent.Context).Inflate (Resource.Layout.EventCell, parent, false);
+                Bind.BindEventCell (eventCalendarMap.GetEvent (day, item), cellView);
+                return cellView;
             }
-            var ev = this [position];
-            Bind.BindEventCell (ev, view);
-
-            return view;
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
