@@ -34,8 +34,8 @@ namespace NachoCore
 
         void StopTrackingEventChanges ();
 
-        int NumberOfEvents();
+        void IndexToDayItem (int index, out int day, out int item);
 
-        McEvent GetEventByIndex(int index);
+        int NumberOfEvents();
     }
 }
