@@ -71,12 +71,9 @@
         android:layout_width="fill_parent"
         android:layout_height="1dp"
         android:background="@color/NachoLightGray" />
-    <EditText
+    <WebView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:textColor="@android:color/black"
-        android:inputType="textLongMessage"
         android:background="@android:color/white"
-        android:id="@+id/message"
-        android:padding="5dp" />
+        android:id="@+id/message" />
 </LinearLayout>

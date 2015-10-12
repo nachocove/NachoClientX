@@ -102,6 +102,7 @@
     <Reference Include="HockeyApp.Android">
       <HintPath>HockeyApp\hockeyappandroid-3.5.0\lib\android\HockeyApp.Android.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.Android.Export" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -618,6 +619,15 @@
     <AndroidAsset Include="Assets\xsd\common\provision.xsd" />
     <AndroidAsset Include="Assets\xsd\common\rightsmanagement.xsd" />
     <AndroidAsset Include="Assets\xsd\common\tasks.xsd" />
+    <AndroidAsset Include="..\NachoClient.iOS\Resources\nacho.css">
+      <Link>Assets\nacho.css</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.iOS\Resources\nacho.html">
+      <Link>Assets\nacho.html</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.iOS\Resources\nacho.js">
+      <Link>Assets\nacho.js</Link>
+    </AndroidAsset>
   </ItemGroup>
   <ItemGroup>
     <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />

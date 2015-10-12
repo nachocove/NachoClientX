@@ -1,14 +1,37 @@
 ﻿'use strict';
 
 window.onerror = function(message, filename, lineno, colno, e){
-    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.nacho){
-        window.webkit.messageHandlers.nacho.postMessage({kind: "error", message: message, filename: filename, lineno: lineno, colno: colno});
+    try {
+        NachoMessageHandler.ErrorHandler.postMessage({kind: "error", message: message, filename: filename, lineno: lineno, colno: colno});
+    }catch (e){
     }
 };
 
 var NachoMessageHandler = function(name){
     this.name = name;
 };
+
+NachoMessageHandler.FromName = function(name){
+    var androidVariableName = '_android_messageHandlers_' + name;
+    if (window[androidVariableName]){
+        return window[androidVariableName];
+    }else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[name]){
+        return window.webkit.messageHandlers[name]
+    }else{
+        return new NachoMessageHandler('nachoCompose');
+    }
+};
+
+Object.defineProperty(NachoMessageHandler, 'ErrorHandler', {
+    configurable: true,
+    get: function(){
+        var handler = NachoMessageHandler.FromName("nacho");
+        Object.defineProperty(NachoMessageHandler, 'ErrorHandler', {
+            value: handler
+        });
+        return handler;
+    }
+});
 
 NachoMessageHandler.prototype = {
 
@@ -41,11 +64,7 @@ var Editor = function(rootNode){
     this.rootNode = rootNode;
     this.document = this.rootNode.ownerDocument;
     this.window = document.defaultView;
-    if (this.window.webkit && this.window.webkit.messageHandlers){
-        this.messageHandler = this.window.webkit.messageHandlers.nachoCompose;
-    }else{
-        this.messageHandler = new NachoMessageHandler('nachoCompose');
-    }
+    this.messageHandler = NachoMessageHandler.FromName("nacho");
 };
 
 Editor.defaultEditor = null;
