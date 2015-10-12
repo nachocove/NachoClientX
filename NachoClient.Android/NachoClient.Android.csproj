@@ -1266,5 +1266,9 @@
     <AndroidResource Include="Resources\anim\slide_out_right.xml" />
     <AndroidResource Include="Resources\anim\fade_in.xml" />
     <AndroidResource Include="Resources\anim\fade_out.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_empty_cal_alt.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_empty_cal_alt.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_empty_cal_alt.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_empty_cal_alt.png" />
   </ItemGroup>
 </Project>

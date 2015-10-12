@@ -127,6 +127,11 @@ namespace NachoCore
             item = -1;
         }
 
+        public int IndexFromDayItem (int day, int item)
+        {
+            return day + days [day] + item + 1;
+        }
+
         public int NumberOfEvents()
         {
             return events.Count;
