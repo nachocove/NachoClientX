@@ -36,6 +36,8 @@ namespace NachoCore
 
         void IndexToDayItem (int index, out int day, out int item);
 
+        int IndexFromDayItem (int day, int item);
+
         int NumberOfEvents();
     }
 }
