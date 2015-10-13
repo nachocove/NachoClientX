@@ -193,6 +193,7 @@
                         <segue destination="S8F-Mj-kVD" kind="push" identifier="SegueToHotList" id="zOx-eF-clw"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToCompose" id="urW-p2-x1h"/>
                         <segue destination="Png-41-0bk" kind="push" identifier="SegueToDrafts" id="ob4-Hl-1Og"/>
+                        <segue destination="PLY-NH-kiA" kind="push" identifier="SegueToLikelyToRead" id="oUa-Te-1to"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -769,13 +770,13 @@
                         <segue destination="xfD-Vu-nBF" kind="relationship" relationship="viewControllers" id="XQg-JR-vxA"/>
                         <segue destination="PGe-ip-eZd" kind="relationship" relationship="viewControllers" id="aB0-7O-hbe"/>
                         <segue destination="v0a-Zq-Chs" kind="relationship" relationship="viewControllers" id="haI-Fc-A7q"/>
+                        <segue destination="9uN-rN-Nz8" kind="relationship" relationship="viewControllers" id="z3Q-nX-cwl"/>
                         <segue destination="YbX-PP-2fM" kind="relationship" relationship="viewControllers" id="oIU-MH-zyI"/>
                         <segue destination="7B7-RS-wHJ" kind="relationship" relationship="viewControllers" id="O32-d6-g3n"/>
                         <segue destination="Ond-cj-T9D" kind="relationship" relationship="viewControllers" id="L3g-YM-YjM"/>
                         <segue destination="BOY-39-YAe" kind="relationship" relationship="viewControllers" id="CgA-hJ-TPb"/>
                         <segue destination="aHn-x6-ar8" kind="relationship" relationship="viewControllers" id="Eb2-K0-nI3"/>
                         <segue destination="KWh-cK-EXH" kind="relationship" relationship="viewControllers" id="wDR-Yl-thJ"/>
-                        <segue destination="9uN-rN-Nz8" kind="relationship" relationship="viewControllers" id="z3Q-nX-cwl"/>
                     </connections>
                 </tabBarController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="o80-D6-q8C" userLabel="First Responder" sceneMemberID="firstResponder"/>
