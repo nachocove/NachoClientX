@@ -92,7 +92,7 @@ namespace NachoPlatform
         #endregion
 
         #region AccessToken
-        public static string AccessTokenKey (int handle)
+        public string AccessTokenKey (int handle)
         {
             return CreateQuery (handle, KAccessToken);
         }
@@ -114,7 +114,7 @@ namespace NachoPlatform
         #endregion
 
         #region RefreshToken
-        public static string RefreshTokenKey (int handle)
+        public string RefreshTokenKey (int handle)
         {
             return CreateQuery (handle, KRefreshToken);
         }
@@ -136,7 +136,7 @@ namespace NachoPlatform
         #endregion
 
         #region LogSalt
-        public static string LogSaltKey (int handle)
+        public string LogSaltKey (int handle)
         {
             return CreateQuery (handle, KLogSalt);
         }
@@ -158,7 +158,7 @@ namespace NachoPlatform
         #endregion
 
         #region UserId
-        public static string UserIdKey ()
+        public string UserIdKey ()
         {
             return CreateQuery (KUserId);
         }
