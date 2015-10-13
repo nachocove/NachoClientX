@@ -22,6 +22,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using Android.Graphics.Drawables;
+using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
@@ -200,6 +201,18 @@ namespace NachoClient.AndroidClient
                 locationImageView.Visibility = ViewStates.Visible;
             }
 
+        }
+
+        public static void BindEventDateCell (DateTime date, View view)
+        {
+            var dayOfMonthView = view.FindViewById<TextView> (Resource.Id.event_date_bignum);
+            dayOfMonthView.Text = date.Day.ToString ();
+
+            var dayOfWeekView = view.FindViewById<TextView> (Resource.Id.event_date_day_of_week);
+            dayOfWeekView.Text = date.ToString ("dddd");
+
+            var monthDayView = view.FindViewById<TextView> (Resource.Id.event_date_month_day);
+            monthDayView.Text = date.ToString ("MMMM d, yyyy");
         }
 
         public static int ColorForUser (int index)

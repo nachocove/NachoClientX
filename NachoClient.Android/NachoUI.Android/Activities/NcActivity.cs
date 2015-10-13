@@ -222,6 +222,9 @@ namespace NachoClient.AndroidClient
         public override void OnBackPressed ()
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is SwitchAccountFragment) {
+                this.FragmentManager.PopBackStack ();
+            }
             if (f is ChooseProviderFragment) {
                 this.FragmentManager.PopBackStack ();
             }

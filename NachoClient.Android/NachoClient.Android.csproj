@@ -77,30 +77,30 @@
     </Reference>
     <Reference Include="System.Json" />
     <Reference Include="System.Web.Services" />
-    <Reference Include="Xamarin.Android.Support.v4">
-      <HintPath>..\packages\Xamarin.Android.Support.v4.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.Design">
-      <HintPath>..\packages\Xamarin.Android.Support.Design.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.Design.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v13">
-      <HintPath>..\packages\Xamarin.Android.Support.v13.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v13.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.RecyclerView">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.RecyclerView.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.RecyclerView.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.MediaRouter">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.MediaRouter.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.MediaRouter.dll</HintPath>
-    </Reference>
-    <Reference Include="GooglePlayServicesLib">
-      <HintPath>..\packages\Xamarin.GooglePlayServices.22.0.0.2\lib\MonoAndroid41\GooglePlayServicesLib.dll</HintPath>
-    </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="HockeyApp.Android">
       <HintPath>HockeyApp\hockeyappandroid-3.5.0\lib\android\HockeyApp.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v4">
+      <HintPath>..\packages\Xamarin.Android.Support.v4.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Design">
+      <HintPath>..\packages\Xamarin.Android.Support.Design.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.Design.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v13">
+      <HintPath>..\packages\Xamarin.Android.Support.v13.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v13.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.MediaRouter">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.MediaRouter.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v7.MediaRouter.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.RecyclerView">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.RecyclerView.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v7.RecyclerView.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.CardView">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.CardView.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v7.CardView.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -603,6 +603,7 @@
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
     <Folder Include="NachoCore\Model\McEmailAddress\" />
+    <Folder Include="Resources\anim\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -1258,5 +1259,16 @@
     <AndroidResource Include="Resources\layout\ChooseProviderCell.axml" />
     <AndroidResource Include="Resources\layout\AdvancedExchangeView.axml" />
     <AndroidResource Include="Resources\layout\AdvancedImapView.axml" />
+    <AndroidResource Include="Resources\layout\EventDateCell.axml" />
+    <AndroidResource Include="Resources\anim\slide_in_left.xml" />
+    <AndroidResource Include="Resources\anim\slide_in_right.xml" />
+    <AndroidResource Include="Resources\anim\slide_out_left.xml" />
+    <AndroidResource Include="Resources\anim\slide_out_right.xml" />
+    <AndroidResource Include="Resources\anim\fade_in.xml" />
+    <AndroidResource Include="Resources\anim\fade_out.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_empty_cal_alt.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_empty_cal_alt.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_empty_cal_alt.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_empty_cal_alt.png" />
   </ItemGroup>
 </Project>

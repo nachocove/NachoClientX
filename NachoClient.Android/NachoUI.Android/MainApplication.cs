@@ -13,9 +13,17 @@ namespace NachoClient.AndroidClient
     [Application]
     public class MainApplication : Application
     {
+        static MainApplication _instance;
+
         public MainApplication (IntPtr javaReference, JniHandleOwnership transfer) : base (javaReference, transfer)
         {
             _instance = this;
+        }
+
+        public static MainApplication Instance {
+            get {
+                return _instance;
+            }
         }
 
         public override void OnCreate ()
@@ -35,13 +43,5 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
         }
 
-        #region Instance
-        static MainApplication _instance = null;
-
-        public static MainApplication Instance
-        {
-            get { return _instance; }
-        }
-        #endregion
     }
 }
