@@ -16,7 +16,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "ContactsActivity")]            
+    [Activity (Label = "ContactsActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
     public class ContactsActivity : NcActivity
     {
         ContactViewFragment contactViewFragment;
@@ -42,6 +42,9 @@ namespace NachoClient.AndroidClient
         {
             base.OnBackPressed ();
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is ContactsListFragment) {
+                ((ContactsListFragment)f).OnBackPressed ();
+            }
             if (f is ContactViewFragment) {
                 this.FragmentManager.PopBackStack ();
             }

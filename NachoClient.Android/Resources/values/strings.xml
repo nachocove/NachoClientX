@@ -97,4 +97,6 @@
     <string name="host">Host</string>
     <string name="default_imap_port">993</string>
     <string name="default_smtp_port">587</string>
+    <string name="search">Search</string>
+    <string name="cancel">Cancel</string>
 </resources>
