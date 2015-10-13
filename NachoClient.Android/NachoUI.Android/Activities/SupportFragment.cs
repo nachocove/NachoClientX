@@ -1,0 +1,61 @@
+﻿
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using Android.App;
+using Android.Content;
+using Android.OS;
+using Android.Runtime;
+using Android.Util;
+using Android.Views;
+using Android.Widget;
+
+namespace NachoClient.AndroidClient
+{
+    public class SupportFragment : Fragment
+    {
+        public static SupportFragment newInstance ()
+        {
+            var fragment = new SupportFragment ();
+            return fragment;
+        }
+
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.SupportFragment, container, false);
+
+            var activity = (NcActivity)this.Activity;
+            activity.HookNavigationToolbar (view);
+
+            var account = view.FindViewById (Resource.Id.account);
+            account.Visibility = ViewStates.Invisible;
+
+            var emailSupport = view.FindViewById<View> (Resource.Id.email_support);
+            emailSupport.Click += EmailSupport_Click;
+
+            var callSupport = view.FindViewById<View> (Resource.Id.call_support);
+            callSupport.Click += CallSupport_Click;
+
+            // FIXME: Un-highlight any highlighted tab bar items.
+
+            return view;
+        }
+
+        void CallSupport_Click (object sender, EventArgs e)
+        {
+            var number = Android.Net.Uri.Parse ("tel:19718036226");
+            Intent callIntent = new Intent(Intent.ActionDial, number);
+            StartActivity(callIntent);
+        }
+
+        void EmailSupport_Click (object sender, EventArgs e)
+        {
+            var parent = (SupportActivity)Activity;
+            parent.EmailSupportClick ();
+        }
+
+    }
+}
+

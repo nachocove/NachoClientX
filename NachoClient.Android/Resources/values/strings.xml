@@ -97,4 +97,18 @@
     <string name="host">Host</string>
     <string name="default_imap_port">993</string>
     <string name="default_smtp_port">587</string>
+    <string name="search">Search</string>
+    <string name="cancel">Cancel</string>
+    <string name="happy">We\'re always more than happy to hear from you.</string>
+    <string name="phone_support">Call us at +1 (971) 803-6226</string>
+    <string name="email_support">Send us a message at support@nachocove.com</string>
+    <string name="version_string">Nacho Mail version 0.0.1 (001)</string>
+    <string name="reach">How can we reach you?</string>
+    <string name="reach_prompt">yourname@email.com</string>
+    <string name="assist">What can we help you with?</string>
+    <string name="assist_prompt">Briefly describe what\'s going on</string>
+    <string name="mission_1">Nacho Cove believes that productivity software is more than just a great email app with contacts and calendar capability.</string>
+    <string name="mission_2">In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time and reduce clutter that gets in your way.
+</string>
+    <string name="message_support">Message Support</string>
 </resources>

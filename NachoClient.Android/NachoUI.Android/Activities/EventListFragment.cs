@@ -22,6 +22,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using Android.Graphics.Drawables;
 using NachoCore.Brain;
+using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
@@ -39,7 +40,10 @@ namespace NachoClient.AndroidClient
 
         SwipeRefreshLayout mSwipeRefreshLayout;
 
-        Android.Widget.ImageView addButton;
+        ImageView addButton;
+        ImageView todayButton;
+
+        private bool firstTime = true;
 
         public event EventHandler<McEvent> onEventClick;
 
@@ -52,6 +56,8 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+
+            eventListAdapter = new EventListAdapter ();
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -68,16 +74,19 @@ namespace NachoClient.AndroidClient
                 rearmRefreshTimer (3);
             };
 
-            addButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
+            addButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
             addButton.SetImageResource (Android.Resource.Drawable.IcMenuAdd);
-            addButton.Visibility = Android.Views.ViewStates.Visible;
+            addButton.Visibility = ViewStates.Visible;
             addButton.Click += AddButton_Click;
+
+            todayButton = view.FindViewById<ImageView> (Resource.Id.right_button2);
+            todayButton.SetImageResource (Resource.Drawable.calendar_empty_cal_alt);
+            todayButton.Visibility = ViewStates.Visible;
+            todayButton.Click += TodayButton_Click;
 
             // Highlight the tab bar icon of this activity
             var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.calendar_image);
             inboxImage.SetImageResource (Resource.Drawable.nav_calendar_active);
-
-            eventListAdapter = new EventListAdapter ();
 
             listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = eventListAdapter;
@@ -120,7 +129,19 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
+            if (firstTime) {
+                firstTime = false;
+                eventListAdapter.Refresh (() => {
+                    listView.SetSelection (eventListAdapter.PositionForToday);
+                });
+            }
+
             return view;
+        }
+
+        void TodayButton_Click (object sender, EventArgs e)
+        {
+            listView.SmoothScrollToPositionFromTop (eventListAdapter.PositionForToday, offset: 0, duration: 200);
         }
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
@@ -189,11 +210,20 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
-        protected void RefreshEventsIfVisible ()
+        public void Refresh (Action completionAction = null)
         {
             eventCalendarMap.Refresh (() => {
                 NotifyDataSetChanged ();
+                if (null != completionAction) {
+                    completionAction ();
+                }
             });
+        }
+
+        public int PositionForToday {
+            get {
+                return eventCalendarMap.IndexFromDayItem (eventCalendarMap.IndexOfDate (DateTime.Today), -1);
+            }
         }
 
         public override long GetItemId (int position)
@@ -267,7 +297,7 @@ namespace NachoClient.AndroidClient
 
             switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_CalendarSetChanged:
-                RefreshEventsIfVisible ();
+                Refresh ();
                 break;
             }
         }

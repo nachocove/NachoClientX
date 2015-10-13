@@ -15,7 +15,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "LaunchActivity")]            
+    [Activity (Label = "LaunchActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
     public class LaunchActivity : AppCompatActivity, GettingStartedDelegate, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
     {
         McAccount account;
@@ -43,7 +43,9 @@ namespace NachoClient.AndroidClient
                 ChooseProviderFinished (account.AccountService);
             } else {
                 var chooseProviderFragment = ChooseProviderFragment.newInstance ();
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, chooseProviderFragment).AddToBackStack ("ChooseProvider").Commit ();
+                var ft = FragmentManager.BeginTransaction ();
+                ft.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
+                ft.Add (Resource.Id.content, chooseProviderFragment).AddToBackStack ("ChooseProvider").Commit ();
             }
         }
 
@@ -52,11 +54,15 @@ namespace NachoClient.AndroidClient
             switch (service) {
             case McAccount.AccountServiceEnum.GoogleDefault:
                 var googleSignInFragment = GoogleSignInFragment.newInstance (service, account);
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, googleSignInFragment).AddToBackStack ("GoogleSignIn").Commit ();
+                var ft1 = FragmentManager.BeginTransaction ();
+                ft1.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
+                ft1.Add (Resource.Id.content, googleSignInFragment).AddToBackStack ("GoogleSignIn").Commit ();
                 break;
             default:
                 var credentialsFragment = CredentialsFragment.newInstance (service, account);
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, credentialsFragment).AddToBackStack ("Credentials").Commit ();
+                var ft2 = FragmentManager.BeginTransaction ();
+                ft2.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
+                ft2.Add (Resource.Id.content, credentialsFragment).AddToBackStack ("Credentials").Commit ();
                 break;
             }
         }
@@ -65,7 +71,9 @@ namespace NachoClient.AndroidClient
         public void CredentialsValidated (McAccount account)
         {
             var waitingFragment = WaitingFragment.newInstance (account);
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, waitingFragment).AddToBackStack ("Waiting").Commit ();
+            var ft = FragmentManager.BeginTransaction ();
+            ft.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
+            ft.Add (Resource.Id.content, waitingFragment).AddToBackStack ("Waiting").Commit ();
         }
 
         public void WaitingFinished (McAccount account)
