@@ -26,6 +26,9 @@ namespace NachoCore.Model
         [Indexed]
         public double Score { get; set; }
 
+        // We don't use Score2 yet.
+        public double Score2 { get; set; }
+
         [Indexed]
         public int NeedUpdate { get; set; }
 
@@ -93,20 +96,22 @@ namespace NachoCore.Model
             bottom += ScoreStates.CcEmailsReceived + ScoreStates.CcEmailsDeleted;
         }
 
-        public double Classify ()
+        public Tuple<double,double> Classify ()
         {
             int top = 0, bottom = 0;
             GetParts (ref top, ref bottom);
             if (0 == bottom) {
-                return 0.0;
+                return new Tuple<double, double> (0.0, 0.0);
             }
-            return (double)top / (double)bottom;
+            return new Tuple<double, double> ((double)top / (double)bottom, 0.0);
         }
 
         public void Analyze ()
         {
             ScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
-            Score = Classify ();
+            var newScores = Classify ();
+            Score = newScores.Item1;
+            Score2 = newScores.Item2;
             UpdateByBrain ();
         }
 

@@ -469,16 +469,16 @@ namespace Test.Common
             Assert.AreEqual (0, message.NeedUpdate);
 
             message.Score = 1.0;
-            message.UpdateScoreAndNeedUpdate ();
+            message.UpdateScoresAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 1.0, 0);
 
             message.NeedUpdate = 1;
-            message.UpdateScoreAndNeedUpdate ();
+            message.UpdateScoresAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 1.0, 1);
 
             message.Score = 0.5;
             message.NeedUpdate = 0;
-            message.UpdateScoreAndNeedUpdate ();
+            message.UpdateScoresAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 0.5, 0);
         }
 
