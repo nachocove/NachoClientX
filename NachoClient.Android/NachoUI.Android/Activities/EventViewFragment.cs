@@ -62,6 +62,10 @@ namespace NachoClient.AndroidClient
         {
             var detail = new NcEventDetail (ev);
 
+            var buttonBarTitleView = view.FindViewById<TextView> (Resource.Id.title);
+            buttonBarTitleView.Text = ev.GetStartTimeLocal ().ToString ("MMMMM yyyy");
+            buttonBarTitleView.Visibility = ViewStates.Visible;
+
             ConfigureRsvpBar (detail, view);
 
             var titleView = view.FindViewById<TextView> (Resource.Id.event_title);
