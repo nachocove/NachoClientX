@@ -43,6 +43,8 @@ namespace NachoClient.AndroidClient
         ImageView addButton;
         ImageView todayButton;
 
+        private bool firstTime = true;
+
         public event EventHandler<McEvent> onEventClick;
 
         public static EventListFragment newInstance ()
@@ -54,6 +56,8 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+
+            eventListAdapter = new EventListAdapter ();
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -83,8 +87,6 @@ namespace NachoClient.AndroidClient
             // Highlight the tab bar icon of this activity
             var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.calendar_image);
             inboxImage.SetImageResource (Resource.Drawable.nav_calendar_active);
-
-            eventListAdapter = new EventListAdapter (this);
 
             listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = eventListAdapter;
@@ -127,12 +129,14 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
-            return view;
-        }
+            if (firstTime) {
+                firstTime = false;
+                eventListAdapter.Refresh (() => {
+                    listView.SetSelection (eventListAdapter.PositionForToday);
+                });
+            }
 
-        public void SetPositionToToday ()
-        {
-            listView.SetSelection (eventListAdapter.PositionForToday);
+            return view;
         }
 
         void TodayButton_Click (object sender, EventArgs e)
@@ -195,24 +199,24 @@ namespace NachoClient.AndroidClient
 
     public class EventListAdapter : Android.Widget.BaseAdapter<McEvent>
     {
-        protected EventListFragment eventList;
         protected INcEventProvider eventCalendarMap;
 
-        public EventListAdapter (EventListFragment eventList)
+        public EventListAdapter ()
         {
-            this.eventList = eventList;
             eventCalendarMap = new NcAllEventsCalendarMap ();
             eventCalendarMap.Refresh (() => {
                 NotifyDataSetChanged ();
-                this.eventList.SetPositionToToday ();
             });
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
-        protected void RefreshEventsIfVisible ()
+        public void Refresh (Action completionAction = null)
         {
             eventCalendarMap.Refresh (() => {
                 NotifyDataSetChanged ();
+                if (null != completionAction) {
+                    completionAction ();
+                }
             });
         }
 
@@ -293,7 +297,7 @@ namespace NachoClient.AndroidClient
 
             switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_CalendarSetChanged:
-                RefreshEventsIfVisible ();
+                Refresh ();
                 break;
             }
         }

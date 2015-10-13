@@ -35,7 +35,12 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "EventListFragment_onEventClick: {0}", ev);
             eventViewFragment = EventViewFragment.newInstance (ev);
-            this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, eventViewFragment).AddToBackStack ("View").Commit ();
+            // Switch the view from the event list to the event detail.
+            this.FragmentManager.BeginTransaction ()
+                .Add (Resource.Id.content, eventViewFragment)
+                .Remove (eventListFragment)
+                .AddToBackStack ("View")
+                .Commit ();
         }
 
         public override void OnBackPressed ()
