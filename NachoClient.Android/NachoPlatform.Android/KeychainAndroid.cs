@@ -9,6 +9,8 @@ using Java.Security;
 using Android.Security;
 using Javax.Crypto;
 using Javax.Crypto.Spec;
+using Portable.Text;
+using System.IO;
 
 namespace NachoPlatform
 {
@@ -175,7 +177,7 @@ namespace NachoPlatform
             if (null != r) {
                 return DecryptString (r);
             } else {
-                throw new Exception ("No string found");
+                return null;
             }
         }
 
@@ -185,8 +187,7 @@ namespace NachoPlatform
                 throw new Exception ("Null string passed");
             }
             var enc = EncryptString (value);
-
-            // DEBUG
+            // Make sure we encrypted properly
             var dec = DecryptString (enc);
             NcAssert.True (value == dec);
 
@@ -207,40 +208,129 @@ namespace NachoPlatform
 
         #region PrefsKey
         private ISecretKey PrefsKey;
+        private ISecretKey PrefsMacKey;
         private Mac PrefsMac;
+        private Cipher AesCipher;
         const string KPrefsKeyKey = "PreferencesKey";
+        const string KPrefsMACKey = "PreferencesHMAC";
+        const int AES_IV_LEN = 16; // 128 bits, i.e. AES block len
+        const int SHA256_LEN = 32;
+        const int AES_KEY_LEN = 32; // 256 bits
+
         private void GetPrefsKey ()
         {
             if (null == PrefsKey) {
                 DeleteKey (KPrefsKeyKey); // DEBUG
                 var r = Prefs.GetString (KPrefsKeyKey, null);
                 if (null == r) {
-                    byte[] raw = new byte[32]; // 32*8 == 256
-                    new SecureRandom ().NextBytes (raw);
-                    var key = new SecretKeySpec (raw, "AES");
                     var editor = Prefs.Edit ();
-                    editor.PutString (KPrefsKeyKey, RSAEncryptKey (key));
+                    editor.PutString (KPrefsKeyKey, RSAEncryptKey (MakeAES256Key ()));
                     editor.Commit ();
                     r = Prefs.GetString (KPrefsKeyKey, null);
                     NcAssert.True (null != r);
                 }
                 PrefsKey = (ISecretKey)RSADecryptKey (r);
-                PrefsMac = Mac.GetInstance("HmacSHA256");
-                PrefsMac.Init(PrefsKey); // TODO Same key? If not, we'll need to create a new one and also encrypt and store it.
+                NcAssert.True (PrefsKey.GetEncoded ().Length == AES_KEY_LEN);
             }
+            if (null == PrefsMacKey) {
+                DeleteKey (KPrefsMACKey); // DEBUG
+                var r = Prefs.GetString (KPrefsMACKey, null);
+                if (null == r) {
+                    var editor = Prefs.Edit ();
+                    editor.PutString (KPrefsMACKey, RSAEncryptKey (MakeAES256Key ()));
+                    editor.Commit ();
+                    r = Prefs.GetString (KPrefsMACKey, null);
+                    NcAssert.True (null != r);
+                }
+                PrefsMacKey = (ISecretKey)RSADecryptKey (r);
+                NcAssert.True (PrefsMacKey.GetEncoded ().Length == AES_KEY_LEN);
+            }
+            AesCipher = Cipher.GetInstance ("AES/CBC/PKCS5Padding", "BC");
+            PrefsMac = Mac.GetInstance("HmacSHA256");
+        }
+
+        private IKey MakeAES256Key ()
+        {
+            byte[] raw = new byte[32];
+            new SecureRandom ().NextBytes (raw);
+            return new SecretKeySpec (raw, "AES");
         }
 
         private string DecryptString (string encryptedTextB64)
         {
-            Log.Error (Log.LOG_SYS, "DEBUG DecryptString DEBUG");
-            return encryptedTextB64;
+            byte[] encryptedPackage = Convert.FromBase64String (encryptedTextB64);
+            if (encryptedPackage[0] != (byte)0) {
+                throw new Exception (string.Format ("WRONG version {0}", encryptedPackage [0]));
+            }
+
+            byte[] iv = new byte[AES_IV_LEN];
+            byte[] hmac = new byte[SHA256_LEN];
+            int enc_len = encryptedPackage.Length - (1 + AES_IV_LEN + SHA256_LEN); // +1 for version
+            byte[] encData = new byte[enc_len];
+
+            int offset = 1; // skip version
+            Array.Copy (encryptedPackage, offset, iv, 0, AES_IV_LEN);
+            offset += AES_IV_LEN;
+            Array.Copy (encryptedPackage, offset, hmac, 0, SHA256_LEN);
+            offset += SHA256_LEN;
+            Array.Copy (encryptedPackage, offset, encData, 0, enc_len);
+            offset += enc_len;
+
+            PrefsMac.Init (PrefsMacKey);
+            PrefsMac.Reset ();
+            byte[] computedHmac = PrefsMac.DoFinal (encData);
+            if (!FixedTimeCompare(computedHmac, hmac)) {
+                throw new Exception ("HMAC FAILED");
+            }
+
+            var ips = new IvParameterSpec (iv);
+            AesCipher.Init (CipherMode.DecryptMode, PrefsKey, ips);
+            byte[] decryptedData = AesCipher.DoFinal (encData);
+
+            return Encoding.UTF8.GetString (decryptedData);
         }
 
         private string EncryptString (string data)
         {
-            Log.Error (Log.LOG_SYS, "DEBUG EncryptString DEBUG");
-            return data;
+            byte[] iv = new byte[AES_IV_LEN];
+            new SecureRandom ().NextBytes (iv);
+            var ips = new IvParameterSpec (iv);
+
+            AesCipher.Init (CipherMode.EncryptMode, PrefsKey, ips);
+            byte[] encrypted = AesCipher.DoFinal (Encoding.UTF8.GetBytes (data));
+
+            PrefsMac.Init (PrefsMacKey);
+            PrefsMac.Reset ();
+            byte[] hmac = PrefsMac.DoFinal (encrypted);
+            NcAssert.True (hmac.Length == SHA256_LEN);
+
+            var encPackage = new MemoryStream();
+            encPackage.WriteByte ((byte)0); // version number 0
+            encPackage.Write (iv, 0, AES_IV_LEN);
+            encPackage.Write (hmac, 0, SHA256_LEN);
+            encPackage.Write (encrypted, 0, encrypted.Length);
+            int encLen = (int)encPackage.Length;
+            encPackage.Close ();
+            byte[] encryptedData = new byte[encLen];
+            Array.Copy (encPackage.GetBuffer (), encryptedData, encLen);
+            return Convert.ToBase64String (encryptedData);
         }
+
+        private bool FixedTimeCompare (byte[] a, byte[] b)
+        {
+            int result = a.Length ^ b.Length;
+            for (var i=0; i<a.Length && i<b.Length; i++) {
+                result |= a[i] ^ b[i];
+            }
+            return result == 0;
+        }
+
+        public static string ByteArrayToString(byte[] ba)
+        {
+            string hex = BitConverter.ToString(ba);
+            return string.Format ("({0}):{1}", ba.Length, hex.Replace ("-", ""));
+        }
+
         #endregion
 
         #region Keystore
