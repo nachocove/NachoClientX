@@ -54,119 +54,134 @@ namespace NachoPlatform
             return true;
         }
 
+        private string CreateQuery (int handle, string subKey)
+        {
+            return CreateQuery (string.Format ("{0}:{1}", handle, subKey));
+        }
+
+        private string CreateQuery (string handle)
+        {
+            return  handle;
+        }
+
+        private string CreateQuery (int handle)
+        {
+            return CreateQuery (handle.ToString ());
+        }
+
         #region Password
         public string PasswordKey (int handle)
         {
-            return handle.ToString ();
+            return CreateQuery (handle);
         }
 
         public string GetPassword (int handle)
         {
-            return GetKeyString (PasswordKey (handle));
+            return Getter (PasswordKey (handle));
         }
 
         public bool SetPassword (int handle, string password)
         {
-            return SetKeyString (PasswordKey (handle), password);
+            return Setter (PasswordKey (handle), password);
         }
 
         public bool DeletePassword (int handle)
         {
-            return DeleteKey (PasswordKey (handle));
+            return Deleter (PasswordKey (handle));
         }
         #endregion
 
         #region AccessToken
         public static string AccessTokenKey (int handle)
         {
-            return string.Format ("{0}.{1}", handle, KAccessToken);
+            return CreateQuery (handle, KAccessToken);
         }
 
         public string GetAccessToken (int handle)
         {
-            return GetKeyString (AccessTokenKey (handle));
+            return Getter (AccessTokenKey (handle));
         }
 
         public bool SetAccessToken (int handle, string token)
         {
-            return SetKeyString (AccessTokenKey (handle), token);
+            return Setter (AccessTokenKey (handle), token);
         }
 
         public bool DeleteAccessToken (int handle)
         {
-            return DeleteKey (AccessTokenKey (handle));
+            return Deleter (AccessTokenKey (handle));
         }
         #endregion
 
         #region RefreshToken
         public static string RefreshTokenKey (int handle)
         {
-            return string.Format ("{0}.{1}", handle, KRefreshToken);
+            return CreateQuery (handle, KRefreshToken);
         }
 
         public string GetRefreshToken (int handle)
         {
-            return GetKeyString (RefreshTokenKey (handle));
+            return Getter (RefreshTokenKey (handle));
         }
 
         public bool SetRefreshToken (int handle, string token)
         {
-            return SetKeyString (RefreshTokenKey (handle), token);
+            return Setter (RefreshTokenKey (handle), token);
         }
 
         public bool DeleteRefreshToken (int handle)
         {
-            return DeleteKey (RefreshTokenKey (handle));
+            return Deleter (RefreshTokenKey (handle));
         }
         #endregion
 
         #region LogSalt
         public static string LogSaltKey (int handle)
         {
-            return string.Format ("{0}.{1}", handle, KLogSalt);
+            return CreateQuery (handle, KLogSalt);
         }
 
         public string GetLogSalt (int handle)
         {
-            return GetKeyString (RefreshTokenKey (handle));
+            return Getter (RefreshTokenKey (handle));
         }
 
         public bool SetLogSalt(int handle, string logSalt)
         {
-            return SetKeyString (LogSaltKey (handle), logSalt);
+            return Setter (LogSaltKey (handle), logSalt);
         }
 
         public bool DeleteLogSalt (int handle)
         {
-            return DeleteKey (LogSaltKey (handle));
+            return Deleter (LogSaltKey (handle));
         }
         #endregion
 
         #region UserId
         public static string UserIdKey ()
         {
-            return KUserId;
+            return CreateQuery (KUserId);
         }
 
         public string GetUserId ()
         {
-            return GetKeyString (UserIdKey ());
+            return Getter (UserIdKey ());
         }
 
         public bool SetUserId (string userId)
         {
-            return SetKeyString (UserIdKey (), userId);
+            return Setter (UserIdKey (), userId);
         }
         #endregion
 
         public string GetIdentifierForVendor ()
         {
-            return GetKeyString (KIdentifierForVendor);
+            return Getter (CreateQuery (KIdentifierForVendor));
         }
 
         public bool SetIdentifierForVendor (string ident)
         {
-            return SetKeyString (KIdentifierForVendor, ident);
+            return Setter (CreateQuery (KIdentifierForVendor), ident);
         }
 
         #region ISharedPreferences
@@ -182,17 +197,20 @@ namespace NachoPlatform
             }
         }
 
-        public string GetKeyString (string key)
+        private string Getter (string query, bool errorIfMissing = false)
         {
-            var r = Prefs.GetString(key, null);
+            var r = Prefs.GetString(query, null);
             if (null != r) {
                 return DecryptString (r);
             } else {
+                if (errorIfMissing) {
+                    throw new Exception (string.Format ("Missing entry for {0}", query));
+                }
                 return null;
             }
         }
 
-        public bool SetKeyString (string key, string value)
+        public bool Setter (string query, string value)
         {
             if (null == value) {
                 throw new Exception ("Null string passed");
@@ -203,15 +221,15 @@ namespace NachoPlatform
             NcAssert.True (value == dec);
 
             var editor = Prefs.Edit ();
-            editor.PutString(key, enc);
+            editor.PutString(query, enc);
             editor.Commit();
             return true;
         }
 
-        public bool DeleteKey (string key)
+        public bool Deleter (string query)
         {
             var editor = Prefs.Edit ();
-            editor.Remove (key);
+            editor.Remove (query);
             editor.Commit ();
             return true;
         }
@@ -231,7 +249,7 @@ namespace NachoPlatform
         private void GetPrefsKey ()
         {
             if (null == PrefsKey) {
-                DeleteKey (KPrefsKeyKey); // DEBUG
+                Deleter (KPrefsKeyKey); // DEBUG
                 var r = Prefs.GetString (KPrefsKeyKey, null);
                 if (null == r) {
                     var editor = Prefs.Edit ();
@@ -244,7 +262,7 @@ namespace NachoPlatform
                 NcAssert.True (PrefsKey.GetEncoded ().Length == AES_KEY_LEN);
             }
             if (null == PrefsMacKey) {
-                DeleteKey (KPrefsMACKey); // DEBUG
+                Deleter (KPrefsMACKey); // DEBUG
                 var r = Prefs.GetString (KPrefsMACKey, null);
                 if (null == r) {
                     var editor = Prefs.Edit ();
