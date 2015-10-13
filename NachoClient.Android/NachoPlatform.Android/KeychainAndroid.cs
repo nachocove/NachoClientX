@@ -43,6 +43,7 @@ namespace NachoPlatform
             }
         }
 
+        private const string KIdentifierForVendor = "IdentifierForVendor";
         private const string KAccessToken = "AccessToken";
         private const string KRefreshToken = "RefreshToken";
         private const string KUserId = "UserId";
@@ -157,6 +158,16 @@ namespace NachoPlatform
             return SetKeyString (UserIdKey (), userId);
         }
         #endregion
+
+        public string GetIdentifierForVendor ()
+        {
+            return GetKeyString (KIdentifierForVendor);
+        }
+
+        public bool SetIdentifierForVendor (string ident)
+        {
+            return SetKeyString (KIdentifierForVendor, ident);
+        }
 
         #region ISharedPreferences
         ISharedPreferences _Prefs;
