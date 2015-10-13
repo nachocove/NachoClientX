@@ -16,13 +16,7 @@ namespace NachoClient.iOS
 
         protected override INachoEmailMessages GetNachoEmailMessages (int accountId)
         {
-            return new NachoDeferredEmailMessages (accountId);
-        }
-
-        protected override void SetRowHeight ()
-        {
-            TableView.RowHeight = MessageTableViewConstants.DATED_ROW_HEIGHT;
-            searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewConstants.DATED_ROW_HEIGHT;
+            return NcEmailManager.LikelyToReadInbox (accountId);
         }
 
         public override bool HasAccountSwitcher ()
