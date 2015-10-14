@@ -200,7 +200,7 @@
     </Reference>
     <Reference Include="System.Json" />
     <Reference Include="HockeyApp.iOS">
-      <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
+      <HintPath>HockeyApp\hockeyappios-3.8.2.1\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.iOS" />
     <Reference Include="System.Web.Services" />
