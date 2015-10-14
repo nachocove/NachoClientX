@@ -52,7 +52,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPFUPSUC");
             } else {
                 mailKitFolder.Rename (encapsulatingFolder, oldName, Cts.Token);
-                Log.Error (Log.LOG_IMAP, "Folder {0} should have been changed but wasn't", mailKitFolder.FullName);
+                Log.Error (Log.LOG_IMAP, "Folder should have been changed but wasn't");
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFUPHRD");
             }
         }
