@@ -5,6 +5,8 @@ using System.Linq;
 using SQLite;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
+using Portable.Text;
+using System.Security.Cryptography;
 
 namespace NachoCore.Model
 {
@@ -148,6 +150,15 @@ namespace NachoCore.Model
         public string ImapFolderNameRedacted ()
         {
             return string.Format ("{0}<{1}>", ImapGuid, IsDistinguished ? ServerId : "User Folder");
+        }
+
+        public string ServerIdHashString ()
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(ServerId);
+            SHA256Managed hashstring = new SHA256Managed();
+            byte[] hash = hashstring.ComputeHash(bytes);
+            string hex = BitConverter.ToString(hash);
+            return hex.Replace("-","");
         }
 
         // "factory" to create folders.
