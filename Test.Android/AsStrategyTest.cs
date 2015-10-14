@@ -673,7 +673,7 @@ namespace Test.iOS
 
         private void Fetch_InjectEmails (int accountId, int count)
         {
-            if (null != Fetch_Folder) {
+            if (null == Fetch_Folder) {
                 Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
                 Fetch_Folder.Insert ();
             }
