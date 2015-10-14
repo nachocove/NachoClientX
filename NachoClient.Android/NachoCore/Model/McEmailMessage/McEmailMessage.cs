@@ -586,7 +586,7 @@ namespace NachoCore.Model
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
                 " likelihood (e.FlagUtcStartDate < ?, 0.99) AND " +
-                " likelihood (e.Score <= ? AND e.Score > ?, 0.1) AND " +
+                " likelihood (e.Score < ? AND e.Score >= ?, 0.1) AND " +
                 " likelihood (e.UserAction <= 0, 0.99) " +
                 " ) " +
                 " GROUP BY ConversationId " +

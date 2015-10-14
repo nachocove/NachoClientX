@@ -21,7 +21,7 @@ namespace NachoClient.iOS
 
         public override bool HasAccountSwitcher ()
         {
-            return true;
+            return false;
         }
     }
 }
