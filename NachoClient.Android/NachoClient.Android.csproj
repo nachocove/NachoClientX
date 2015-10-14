@@ -524,6 +524,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration46.cs" />
     <Compile Include="NachoUI.Android\Support\A.cs" />
     <Compile Include="NachoCore\Utils\NcEventDetail.cs" />
+    <Compile Include="NachoCore\Adapters\NachoLikelyToReadEmailMessages.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooseDeferralFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactsActivity.cs" />

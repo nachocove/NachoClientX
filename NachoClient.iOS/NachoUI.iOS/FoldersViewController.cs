@@ -145,6 +145,9 @@ namespace NachoClient.iOS
             if ("SegueToDeferredList" == segue.Identifier) {
                 return;
             }
+            if ("SegueToLikelyToRead" == segue.Identifier) {
+                return;
+            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -321,6 +324,10 @@ namespace NachoClient.iOS
                 }
                 CreateTopFolderCell ("Hot List", topFolderCount, true, () => {
                     PerformSegue ("SegueToHotList", new SegueHolder (null));
+                });
+                topFolderCount += 1;
+                CreateTopFolderCell ("Likely To Read", topFolderCount, true, () => {
+                    PerformSegue ("SegueToLikelyToRead", new SegueHolder (null));
                 });
                 topFolderCount += 1;
                 CreateTopFolderCell ("Deferred Messages", topFolderCount, false, () => {

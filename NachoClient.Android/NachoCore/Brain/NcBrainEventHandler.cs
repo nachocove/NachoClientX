@@ -20,7 +20,7 @@ namespace NachoCore.Brain
             EventQueue = new NcQueue<NcBrainEvent> ();
             OpenedIndexes = new OpenedIndexSet (this);
             Scheduler = new RoundRobinList ();
-            Scheduler.Add ("update hi priority email messages", new RoundRobinSource (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScore, 5), 3);
+            Scheduler.Add ("update hi priority email messages", new RoundRobinSource (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScores, 5), 3);
             ContactIndexingSource = new RoundRobinSource (McContact.QueryNeedIndexingObjects, IndexContact, 5);
             Scheduler.Add ("index contacts", ContactIndexingSource, 10);
             Scheduler.Add ("analyze email messages", new RoundRobinSource (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 5), 2);
@@ -143,7 +143,7 @@ namespace NachoCore.Brain
                         if (IsInterrupted ()) {
                             break;
                         }
-                        UpdateEmailMessageScore (emailMessage);
+                        UpdateEmailMessageScores (emailMessage);
                     }
                 }
             } finally {
@@ -188,7 +188,7 @@ namespace NachoCore.Brain
                 case NcBrainEventType.UPDATE_ADDRESS_SCORE:
                     var updateAddressEvent = brainEvent as NcBrainUpdateAddressScoreEvent;
                     var emailAddress = McEmailAddress.QueryById<McEmailAddress> ((int)updateAddressEvent.EmailAddressId);
-                    UpdateEmailAddressScore (emailAddress, updateAddressEvent.ForceUpdateDependentMessages);
+                    UpdateEmailAddressScores (emailAddress, updateAddressEvent.ForceUpdateDependentMessages);
                     break;
                 case NcBrainEventType.UPDATE_MESSAGE_SCORE:
                     long emailMesasgeId;
@@ -203,7 +203,7 @@ namespace NachoCore.Brain
                     }
                     NcModel.Instance.RunInTransaction (() => {
                         var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)emailMesasgeId);
-                        if (UpdateEmailMessageScore (emailMessage)) {
+                        if (UpdateEmailMessageScores (emailMessage)) {
                             if ((0 != action) && (0 != emailMessage.FromEmailAddressId)) {
                                 var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
                                 UpdateAddressUserAction (fromEmailAddress, action);
@@ -301,10 +301,11 @@ namespace NachoCore.Brain
                 if (IsInterrupted ()) {
                     break;
                 }
-                var newScore = emailMessage.Classify ();
+                var newScores = emailMessage.Classify ();
                 emailMessage.UpdateByBrain ((item) => {
                     var em = (McEmailMessage)item;
-                    em.Score = newScore;
+                    em.Score = newScores.Item1;
+                    em.Score2 = newScores.Item2;
                     return true;
                 });
                 numScored++;
