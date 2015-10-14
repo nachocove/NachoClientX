@@ -24,7 +24,7 @@ namespace NachoCore.IMAP
                     return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
                 }
                 var fetchResult = FetchAttachment (folder, attachment, email);
-                if (!fetchResult.isOK ()) {
+                if (fetchResult.isError ()) {
                     Log.Error (Log.LOG_IMAP, "FetchAttachments: {0}", fetchResult);
                     result = fetchResult;
                 }
