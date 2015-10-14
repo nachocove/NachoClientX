@@ -2,6 +2,7 @@
 //
 using System;
 using Android.Support.V7.App;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -13,8 +14,20 @@ namespace NachoClient.AndroidClient
         /// </summary>
         public static void ShowMessage (Android.Content.Context context, string title, string message)
         {
+            Telemetry.RecordUiAlertView (title, message);
             new AlertDialog.Builder (context).SetTitle (title).SetMessage (message).Show ();
         }
+
+        public static void Show (Android.Content.Context context, string title, string message, Action action)
+        {
+            Telemetry.RecordUiAlertView (title, message);
+            var alert = new AlertDialog.Builder (context).SetTitle (title).SetMessage (message);
+            alert.SetPositiveButton ("OK", (dialog, which) => {
+                action ();
+            });
+            alert.Show ();
+        }
+
     }
 }
 

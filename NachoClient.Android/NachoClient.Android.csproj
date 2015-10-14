@@ -539,6 +539,11 @@
     <Compile Include="NachoUI.Android\Activities\AdvancedExchangeView.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedImapView.cs" />
     <Compile Include="NachoUI.Android\Activities\NcFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AboutActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\SupportActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\SupportFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\SupportMessageFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AboutFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1270,5 +1275,11 @@
     <AndroidResource Include="Resources\drawable-mdpi\calendar_empty_cal_alt.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\calendar_empty_cal_alt.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\calendar_empty_cal_alt.png" />
+    <AndroidResource Include="Resources\layout\AboutActivity.axml" />
+    <AndroidResource Include="Resources\layout\SupportActivity.axml" />
+    <AndroidResource Include="Resources\layout\SupportFragment.axml" />
+    <AndroidResource Include="Resources\layout\SupportMessageFragment.axml" />
+    <AndroidResource Include="Resources\layout\scratch.axml" />
+    <AndroidResource Include="Resources\layout\AboutFragment.axml" />
   </ItemGroup>
 </Project>
