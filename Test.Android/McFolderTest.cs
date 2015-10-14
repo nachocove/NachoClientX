@@ -381,9 +381,9 @@ namespace Test.iOS
                 folder3 = folder3.UpdateSet_LastAccessed (now3);
 
                 List<McFolder> recentlyAccessed = McFolder.QueryByMostRecentlyAccessedVisibleFolders (accountId);
-                FoldersAreEqual (folder3, recentlyAccessed [0], "folder3 should be the first folder in the list");
+                FoldersAreEqual (folder1, recentlyAccessed [0], "folder1 should be the first folder in the list");
                 FoldersAreEqual (folder2, recentlyAccessed [1], "folder2 should be the second folder in the list");
-                FoldersAreEqual (folder1, recentlyAccessed [2], "folder1 should be the last folder in the list");
+                FoldersAreEqual (folder3, recentlyAccessed [2], "folder3 should be the last folder in the list");
             }
         }
 
