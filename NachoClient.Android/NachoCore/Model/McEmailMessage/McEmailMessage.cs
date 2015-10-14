@@ -725,7 +725,7 @@ namespace NachoCore.Model
             string sql = string.Format ("SELECT f.Id FROM McEmailMessage AS f WHERE " +
                          " likelihood (f.AccountId = ?, 1.0) AND " +
                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                         " likelihood (f.ServerId IN ({0}), 0.001) ", String.Join (",", serverIds));
+                         " likelihood (f.ServerId IN ('{0}'), 0.001) ", String.Join ("','", serverIds));
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (sql, accountId);
         }
 

@@ -47,6 +47,11 @@ namespace NachoCore.IMAP
                 //   not have the right destId, because that folder doesn't yet exist, so we fail in the Move Command.
                 Log.Info (Log.LOG_IMAP, "Created folder {0}", newFolder.FullName);
             }
+            if (folder == null) {
+                Log.Error (Log.LOG_IMAP, "Could not create new folder");
+                newFolder.Delete (Cts.Token);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFCRHARD");
+            }
             UpdateImapSetting (newFolder, ref folder);
 
             var applyFolderCreate = new ApplyCreateFolder (AccountId) {

@@ -1704,6 +1704,9 @@
     </Compile>
     <Compile Include="NachoPlatform.iOS\ImageiOS.cs" />
     <Compile Include="NachoUI.iOS\Support\NcWebViewMessageProtocol.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration47.cs">
+      <Link>NachoCore\Model\Migration\NcMigration47.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
