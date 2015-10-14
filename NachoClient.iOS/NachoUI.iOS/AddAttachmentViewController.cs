@@ -10,6 +10,9 @@ using System.IO;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using MobileCoreServices;
+using Photos;
+using AVFoundation;
 
 namespace NachoClient.iOS
 {
@@ -200,6 +203,7 @@ namespace NachoClient.iOS
 
             imagePicker.FinishedPickingMedia += HandleFinishedPickingMedia;
             imagePicker.Canceled += HandleCanceled;
+            imagePicker.MediaTypes = new string[]{ UTType.Image.ToString (), UTType.Movie.ToString () };
 
             imagePicker.ModalPresentationStyle = UIModalPresentationStyle.CurrentContext;
             this.PresentViewController (imagePicker, true, null);
@@ -215,38 +219,88 @@ namespace NachoClient.iOS
 
         protected void HandleFinishedPickingMedia (object sender, UIImagePickerMediaPickedEventArgs e)
         {
-
-            bool isImage = false;
-            switch (e.Info [UIImagePickerController.MediaType].ToString ()) {
-            case "public.image":
-                isImage = true;
-                break;
-            case "public.video":
-                // TODO: Implement videos
-                Log.Info (Log.LOG_UI, "video ignored");
-                break;
-            default:
-                // TODO: Implement videos
-                Log.Error (Log.LOG_UI, "unknown media type selected");
-                break;
-            }
-
-            if (isImage) {
-                var image = e.Info [UIImagePickerController.EditedImage] as UIImage;
-                if (null == image) {
-                    image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
-                }
-                NcAssert.True (null != image);
-                var attachment = McAttachment.InsertFile (account.Id, ((FileStream stream) => {
-                    using (var jpg = image.AsJPEG ().AsStream ()) {
-                        jpg.CopyTo (stream);
+            var type = e.Info [UIImagePickerController.MediaType].ToString ();
+            if (type.Equals (UTType.Image) || type.Equals (UTType.Movie)) {
+                var referenceUrl = e.Info [UIImagePickerController.ReferenceUrl] as NSUrl;
+                var metadata = e.Info [UIImagePickerController.MediaMetadata] as NSDictionary;
+                if (referenceUrl != null) {
+                    // picked an image or movie
+                    var options = new PHFetchOptions ();
+                    var assets = PHAsset.FetchAssets (new NSUrl[] { referenceUrl }, options);
+                    if (assets.Count > 0){
+                        var asset = assets.firstObject as PHAsset;
+                        if (asset != null) {
+                            var attachment = McAttachment.InsertSaveStart (account.Id);
+                            var filenameObj = asset.ValueForKey (new NSString ("filename")) as NSString;
+                            var filename = filenameObj != null ? filenameObj.ToString () : null;
+                            if (type.Equals (UTType.Image)) {
+                                if (filename == null) {
+                                    filename = "attachment.jpg";
+                                }
+                                var imageOptions = new PHImageRequestOptions ();
+                                imageOptions.Version = PHImageRequestOptionsVersion.Current;
+                                imageOptions.DeliveryMode = PHImageRequestOptionsDeliveryMode.HighQualityFormat;
+                                imageOptions.NetworkAccessAllowed = true;
+                                PHImageManager.DefaultManager.RequestImageData (asset, imageOptions, (NSData data, NSString dataUti, UIImageOrientation orientation, NSDictionary info) => {
+                                    var error = info.ObjectForKey (PHImageKeys.Error);
+                                    if (error == null) {
+                                        attachment = McAttachment.QueryById<McAttachment> (attachment.Id);
+                                        attachment.UpdateData (data.ToArray ());
+                                        attachment.UpdateSaveFinish ();
+                                        owner.AttachmentUpdated (attachment);
+                                    } else {
+                                        Log.Error (Log.LOG_UI, "AddAttachmentViewController error obtaining image data: {0}", error);
+                                        attachment = McAttachment.QueryById<McAttachment> (attachment.Id);
+                                        attachment.FilePresence = McAbstrFileDesc.FilePresenceEnum.Error;
+                                        attachment.Update ();
+                                        owner.AttachmentUpdated (attachment);
+                                    }
+                                });
+                            } else if (type.Equals (UTType.Movie)) {
+                                var movieUrl = e.Info [UIImagePickerController.MediaURL] as NSUrl;
+                                if (filename == null) {
+                                    filename = movieUrl.LastPathComponent;
+                                }
+                                attachment.UpdateFileCopy (movieUrl.Path);
+                                attachment.UpdateSaveFinish ();
+                            }
+                            attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
+                            attachment.SetDisplayName (filename);
+                            attachment.Update ();
+                            owner.Append (attachment);
+                        } else {
+                            Log.Error (Log.LOG_UI, "AddAttachmentViewController first result is not a PHAsset");
+                        }
+                    }else{
+                        Log.Error (Log.LOG_UI, "AddAttachmentViewController could not find asset: {0}", referenceUrl);
                     }
-                }));
-                attachment.SetDisplayName (attachment.Id.ToString () + ".jpg");
-                attachment.UpdateSaveFinish ();
-                owner.Append (attachment);
+                } else if (metadata != null) {
+                    // Took a picture with the camera.
+                    var image = e.Info [UIImagePickerController.EditedImage] as UIImage;
+                    if (image == null) {
+                        image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
+                    }
+                    var attachment = McAttachment.InsertSaveStart (account.Id);
+                    attachment.SetDisplayName ("attachment.jpg");
+                    attachment.ContentType = "image/jpeg";
+                    attachment.Update ();
+                    using (var jpg = image.AsJPEG ()) {
+                        attachment.UpdateData (jpg.ToArray ());
+                    }
+                    PHPhotoLibrary.SharedPhotoLibrary.PerformChanges (() => {
+                        PHAssetChangeRequest.FromImage (image);
+                    }, (bool success, NSError error) => {
+                        if (!success){
+                            Log.Error (Log.LOG_UI, "AddAttachmentViewController could not add to photos: {0}", error);
+                        }
+                    });
+                    owner.Append (attachment);
+                } else {
+                    Log.Error (Log.LOG_UI, "AddAttachmentViewController no reference or metadata: {0}", e.Info);
+                }
+            }else{
+                Log.Error (Log.LOG_UI, "AddAttachmentViewController unknown media type selected: {0}", type);
             }
-
             e.Info.Dispose ();
             owner.DismissPhotoPicker ();
             MaintainLightStyleStatusBar ();

@@ -409,6 +409,14 @@ namespace NachoCore.Model
             }
         }
 
+        public static McEmailMessage MessageWithSubject (McAccount account, string subject)
+        {
+            var message = new McEmailMessage ();
+            message.AccountId = account.Id;
+            message.Subject = subject;
+            return message;
+        }
+
         public static List<McEmailMessageThread> QueryInteractions (int accountId, McContact contact)
         {
             if (String.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress ())) {
@@ -980,6 +988,12 @@ namespace NachoCore.Model
                     }
                 }
             }
+        }
+
+        public void UpdateThreadCount(string threadId)
+        {
+            var threadAdapter = Source.GetAdapterForThread(threadId);
+            MessageCount = threadAdapter.Count ();
         }
     }
 

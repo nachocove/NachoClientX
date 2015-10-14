@@ -99,7 +99,7 @@ namespace NachoClient.iOS
 
         private void OnKeyboardNotification (NSNotification notification)
         {
-            if (IsViewLoaded) {
+            if (IsViewLoaded && View.Window != null) {
                 //Check if the keyboard is becoming visible
                 bool visible = notification.Name == UIKeyboard.WillShowNotification;
                 //Start an animation, using values from the keyboard
@@ -108,11 +108,12 @@ namespace NachoClient.iOS
                 UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
                 UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
                 //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
                 var oldHeight = keyboardHeight;
                 if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    keyboardHeight = landscape ? keyboardFrame.Width : keyboardFrame.Height;
+                    var keyboardFrameInScreen = UIKeyboard.FrameEndFromNotification (notification);
+                    var keyboardFrameInWindow = View.Window.ConvertRectFromWindow (keyboardFrameInScreen, null);
+                    var keyboardFrameInView = View.ConvertRectFromView (keyboardFrameInWindow, View.Window);
+                    keyboardHeight = View.Frame.Height - keyboardFrameInView.Top;
                 } else {
                     keyboardHeight = 0;
                 }

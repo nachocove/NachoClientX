@@ -176,7 +176,8 @@ namespace NachoClient.iOS
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             // Main view
-            scrollView.Frame = View.Frame;
+            scrollView.Frame = new CGRect(0, 0, View.Frame.Width, View.Frame.Height);
+            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
             scrollView.BackgroundColor = contentViewBGColor;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             scrollView.Scrolled += ScrollViewScrolled;
@@ -186,6 +187,7 @@ namespace NachoClient.iOS
             scrollView.ViewForZoomingInScrollView = ViewForZooming;
 
             contentView.BackgroundColor = contentViewBGColor;
+            contentView.AutoresizingMask = UIViewAutoresizing.None;
 
             nfloat yOffset = 20;
 
@@ -591,7 +593,7 @@ namespace NachoClient.iOS
                     userLabelView.Layer.CornerRadius = (40 / 2);
                     userLabelView.Layer.MasksToBounds = true;
                     var nameString = (null != detail.SeriesItem.OrganizerName ? detail.SeriesItem.OrganizerName : detail.SeriesItem.OrganizerEmail);
-                    userLabelView.Text = Util.NameToLetters (nameString);
+                    userLabelView.Text = ContactsHelper.NameToLetters (nameString);
                     eventOrganizerView.AddSubview (userLabelView);
                 }
                 eventOrganizerView.Hidden = false;
@@ -823,17 +825,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("EventToCal")) {
-                // TODO I don't this this segue is possible.
-                var dc = (ChooseCalendarViewController)segue.DestinationViewController;
-                dc.SetCalendars (new NachoFolders (detail.Account.Id, NachoFolders.FilterForCalendars));
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    // TODO Do something with the calendar index that is returned.
-                    // dc.GetCalIndex ();
-                };
-                return;
-            }
-
             if (segue.Identifier.Equals ("EventToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetOwner (this, detail.SpecificItem.GetSubject (), insertDate: false);
@@ -851,14 +842,6 @@ namespace NachoClient.iOS
                 var c = (McContact)h.value;
                 ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
                 destinationController.contact = c;
-                return;
-            }
-
-            if (segue.Identifier == "SegueToMailTo") {
-                var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var url = (string)holder.value;
-                dc.SetMailToUrl (url);
                 return;
             }
 
@@ -1486,7 +1469,7 @@ namespace NachoClient.iOS
         public void LinkSelected (NSUrl url)
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
-                PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
+                ComposeMessage (url);
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);
             }
@@ -1495,6 +1478,15 @@ namespace NachoClient.iOS
         void IBodyViewOwner.DismissView ()
         {
             NavigationController.PopViewController (true);
+        }
+
+        private void ComposeMessage (NSUrl url)
+        {
+            string body;
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (NcApplication.Instance.Account, url.AbsoluteString, out body);
+            composeViewController.Composer.InitialText = body;
+            composeViewController.Present ();
         }
 
         #endregion

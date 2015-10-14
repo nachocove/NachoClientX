@@ -9,6 +9,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Linq;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -49,7 +50,11 @@ namespace NachoClient.iOS
                 Service = Account.AccountService;
                 emailField.Text = Account.EmailAddr;
                 var creds = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
-                passwordField.Text = creds.GetPassword ();
+                try {
+                    passwordField.Text = creds.GetPassword ();
+                } catch (KeychainItemNotFoundException ex) {
+                    Log.Error (Log.LOG_UI, "KeychainItemNotFoundException {0}", ex.Message);
+                }
             }
             passwordField.WeakDelegate = this;
             accountIconView.Layer.CornerRadius = accountIconView.Frame.Size.Width / 2.0f;
@@ -169,6 +174,7 @@ namespace NachoClient.iOS
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
                 } else {
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController updating account ID{0}", Account.Id);
+                    BackEnd.Instance.Stop (Account.Id);
                     Account.EmailAddr = email;
                     Account.Update ();
                     var cred = McCred.QueryByAccountId<McCred> (Account.Id).Single ();

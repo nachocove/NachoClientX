@@ -8,7 +8,6 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
-using Android.Util;
 using Android.Views;
 using Android.Support.V4.View;
 using Android.Support.V4.Widget;
@@ -45,8 +44,6 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
 
             // Highlight the tab bar icon of this activity
@@ -68,7 +65,7 @@ namespace NachoClient.AndroidClient
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
-            Console.WriteLine ("MessageListAdapter_onMessageClick: {0}", thread);
+            Log.Info (Log.LOG_UI, "MessageListAdapter_onMessageClick: {0}", thread);
             if (null != onMessageClick) {
                 var thread = McEmailMessage.QueryById<McEmailMessage> (e.Position);
                 onMessageClick (this, thread);

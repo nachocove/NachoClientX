@@ -48,7 +48,8 @@
             <Button
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:padding="3dp"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
                 android:text="@string/account_settings"
                 android:textSize="17dp"
                 android:textStyle="bold"
@@ -153,4 +154,8 @@
             android:text="@string/to_deferred"
             android:paddingLeft="10dp" />
     </LinearLayout>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="2dp"
+        android:background="@color/NachoLightGray" />
 </LinearLayout>

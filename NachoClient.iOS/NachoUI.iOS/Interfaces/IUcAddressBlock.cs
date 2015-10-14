@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 using Foundation;
 using UIKit;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -22,6 +23,8 @@ namespace NachoClient.iOS
         void AddressBlockAutoCompleteContactClicked(UcAddressBlock view, string prefix);
 
         void AddressBlockSearchContactClicked(UcAddressBlock view, string prefix);
+
+        void AddressBlockRemovedAddress (UcAddressBlock view, NcEmailAddress address);
     }
 }
 

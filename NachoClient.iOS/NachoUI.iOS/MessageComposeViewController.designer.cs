@@ -12,23 +12,8 @@ namespace NachoClient.iOS
 	[Register ("MessageComposeViewController")]
 	partial class MessageComposeViewController
 	{
-		[Outlet]
-		UIKit.UIView contentView { get; set; }
-
-		[Outlet]
-		UIKit.UIScrollView scrollView { get; set; }
-		
 		void ReleaseDesignerOutlets ()
 		{
-			if (contentView != null) {
-				contentView.Dispose ();
-				contentView = null;
-			}
-
-			if (scrollView != null) {
-				scrollView.Dispose ();
-				scrollView = null;
-			}
 		}
 	}
 }

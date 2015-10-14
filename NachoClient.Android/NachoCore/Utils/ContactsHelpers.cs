@@ -442,6 +442,53 @@ namespace NachoCore.Utils
         {
             return MiscNames.Except (takenNames).ToList ();
         }
+
+        public class PhoneAttributeComparer: IComparer<McContactStringAttribute>
+        {
+            public int Compare (McContactStringAttribute x, McContactStringAttribute y)
+            {
+                ContactsHelper contactHelper = new ContactsHelper ();
+                int xPriority = contactHelper.PhoneNames.IndexOf (x.Name);
+                int yPriority = contactHelper.PhoneNames.IndexOf (y.Name);
+
+                return xPriority.CompareTo (yPriority);
+            }
+        }
+
+        public static string NameToLetters (string name)
+        {
+            if (null == name) {
+                return "";
+            }
+            var Initials = "";
+            string[] names = name.Split (new char [] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (1 == names.Length) {
+                Initials = (names [0].Substring (0, 1)).ToCapitalized ();
+            }
+            if (2 == names.Length) {
+                if (0 < name.IndexOf (',')) {
+                    // Last name, First name
+                    Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
+                } else {
+                    // First name, Last name
+                    Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
+                }
+            }
+            if (2 < names.Length) {
+                if (0 < name.IndexOf (',')) {
+                    // Last name, First name
+                    Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
+                } else if (-1 == name.IndexOf (',')) {
+                    if ((names [1].Substring (0, 1)).ToLower () != (names [1].Substring (0, 1))) {
+                        Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
+                    } else {
+                        Initials = (names [0].Substring (0, 1)).ToCapitalized ();
+                    }
+                }
+            }
+
+            return Initials;
+        }
     }
 }
 

@@ -228,36 +228,12 @@ namespace NachoClient.iOS
 
         private static void CallSwipeHandler (IContactsTableViewSourceDelegate owner, McContact contact)
         {
-            if (0 == contact.PhoneNumbers.Count) {
-                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
-            } else if (1 == contact.PhoneNumbers.Count) {
-                Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ());
-            } else {
-                foreach (var p in contact.PhoneNumbers) {
-                    if (p.IsDefault) {
-                        Util.PerformAction ("tel", p.Value);
-                        return;
-                    }
-                }
-                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
-            }
+            owner.CallSwipeHandler (contact);
         }
 
         private static void EmailSwipeHandler (IContactsTableViewSourceDelegate owner, McContact contact)
         {
-            if (0 == contact.EmailAddresses.Count) {
-                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
-            } else if (1 == contact.EmailAddresses.Count) {
-                owner.PerformSegueForDelegate ("SegueToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
-            } else {
-                foreach (var e in contact.EmailAddresses) {
-                    if (e.IsDefault) {
-                        owner.PerformSegueForDelegate ("SegueToMessageCompose", new SegueHolder (e.Value));
-                        return;
-                    }
-                }
-                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
-            }
+            owner.EmailSwipeHandler (contact);
         }
     }
 }

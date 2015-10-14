@@ -21,6 +21,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using Android.Graphics.Drawables;
+using NachoCore.Brain;
 
 namespace NachoClient.AndroidClient
 {
@@ -130,10 +131,10 @@ namespace NachoClient.AndroidClient
                 var messageThread = messages.GetEmailThread (position);
                 switch (index) {
                 case SAVE_TAG:
-//                    ShowFileChooser (messageThread);
+                    ShowFolderChooser (messageThread);
                     break;
                 case DEFER_TAG:
-//                    ShowPriorityChooser (messageThread);
+                    ShowPriorityChooser (messageThread);
                     break;
                 case ARCHIVE_TAG:
                     ArchiveThisMessage (messageThread);
@@ -145,9 +146,7 @@ namespace NachoClient.AndroidClient
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
                 }
                 return false;
-            }
-            );
-
+            });
 
             return view;
         }
@@ -222,6 +221,45 @@ namespace NachoClient.AndroidClient
             NcAssert.NotNull (messageThread);
             NcEmailArchiver.Archive (messageThread);
         }
+
+        public void ShowPriorityChooser (McEmailMessageThread messageThread)
+        {
+            Log.Info (Log.LOG_UI, "ShowPriorityChooser: {0}", messageThread);
+            var deferralFragment = ChooseDeferralFragment.newInstance (messageThread);
+            deferralFragment.setOnDeferralSelected (OnDeferralSelected);
+            var ft = FragmentManager.BeginTransaction ();
+            ft.AddToBackStack (null);
+            deferralFragment.Show (ft, "dialog");
+        }
+
+        public void ShowFolderChooser (McEmailMessageThread messageThread)
+        {
+            Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
+            var folderFragment = ChooseFolderFragment.newInstance (messageThread);
+            folderFragment.setOnFolderSelected (OnFolderSelected);
+            var ft = FragmentManager.BeginTransaction ();
+            ft.AddToBackStack (null);
+            folderFragment.Show (ft, "dialog");
+        }
+
+        public void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            NcMessageDeferral.DateSelected (NcMessageDeferral.MessageDateType.Defer, thread, request, selectedDate);
+        }
+
+        public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)
+        {
+            Log.Info (Log.LOG_UI, "OnFolderSelected: {0}", thread);
+            NcEmailArchiver.Move (thread, folder);
+        }
+
+        public void SwitchAccount (INachoEmailMessages newMessages)
+        {
+            messages = newMessages;
+            messageListAdapter = new MessageListAdapter (messages);
+            listView.Adapter = messageListAdapter;
+        }
+
     }
 
     public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
@@ -254,11 +292,32 @@ namespace NachoClient.AndroidClient
             View view = convertView; // re-use an existing view, if one is available
             if (view == null) {
                 view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCell, parent, false);
+                var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+                chiliView.Click += ChiliView_Click;
             }
             var thread = messages.GetEmailThread (position);
             var message = thread.FirstMessageSpecialCase ();
             Bind.BindMessageHeader (thread, message, view);
+
+            // Preview label view
+            var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
+            var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
+            previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+
+            var chiliTagView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+            chiliTagView.Tag = position;
+
             return view;
+        }
+
+        void ChiliView_Click (object sender, EventArgs e)
+        {
+            var chiliView = (Android.Widget.ImageView)sender;
+            var position = (int)chiliView.Tag;
+            var thread = messages.GetEmailThread (position);
+            var message = thread.FirstMessageSpecialCase ();
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            Bind.BindMessageChili (thread, message, chiliView);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

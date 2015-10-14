@@ -12,20 +12,22 @@ using Android.Widget;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "InboxActivity")]            
     public class InboxActivity : NcActivity
     {
+        McAccount account;
         MessageViewFragment messageViewFragment;
         MessageListFragment messageListFragment;
-        MessageThreadFragment threadListFragment;
 
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.InboxActivity);
 
+            account = NcApplication.Instance.Account;
             var messages = NcEmailManager.Inbox (NcApplication.Instance.Account.Id);
 
             List<int> adds;
@@ -33,31 +35,30 @@ namespace NachoClient.AndroidClient
             messages.Refresh (out adds, out deletes);
 
             messageListFragment = MessageListFragment.newInstance (messages);
-            messageListFragment.onMessageClick += MessageListFragment_onThreadClick;
+            messageListFragment.onMessageClick += onMessageClick;
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
         }
 
-        void MessageListFragment_onThreadClick (object sender, McEmailMessageThread thread)
+        protected override void OnResume ()
         {
-            Console.WriteLine ("MessageListFragment_onMessageClick: {0}", thread);
+            base.OnResume ();
+            MaybeSwitchAccount ();
+        }
+
+        void onMessageClick (object sender, McEmailMessageThread thread)
+        {
+            Log.Info (Log.LOG_UI, "InboxActivity onMessageClick: {0}", thread);
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
-                MessageThreadFragment_onMessageClick (sender, message);
-                return;
+                messageViewFragment = MessageViewFragment.newInstance (message);
+                this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("Message").Commit ();
+            } else {
+                var threadMessage = new NachoThreadedEmailMessages (McFolder.GetDefaultInboxFolder (NcApplication.Instance.Account.Id), thread.GetThreadId ());
+                messageListFragment = MessageListFragment.newInstance (threadMessage);
+                messageListFragment.onMessageClick += onMessageClick;
+                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Thread").Commit ();
             }
-
-            threadListFragment = MessageThreadFragment.newInstance (thread);
-            threadListFragment.onMessageClick += MessageThreadFragment_onMessageClick;
-
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, threadListFragment).AddToBackStack ("Inbox").Commit ();
-        }
-
-        void MessageThreadFragment_onMessageClick (object sender, McEmailMessage message)
-        {
-            Console.WriteLine ("MessageThreadFragment_onMessageClick: {0}", message);
-            messageViewFragment = MessageViewFragment.newInstance (message);
-            this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
         }
 
         public void DoneWithMessage ()
@@ -70,18 +71,42 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
+            base.OnBackPressed ();
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is MessageViewFragment) {
                 this.FragmentManager.PopBackStack ();
             }
-            if (f is MessageThreadFragment) {
-                this.FragmentManager.PopBackStack ();
+            if (f is MessageListFragment) {
+                // Don't pop if we are the top, e.g. Inbox
+                if (1 < this.FragmentManager.BackStackEntryCount) {
+                    this.FragmentManager.PopBackStack ();
+                }
             }
         }
 
         protected override void OnSaveInstanceState (Bundle outState)
         {
             base.OnSaveInstanceState (outState);
+        }
+
+        public override void SwitchAccount (McAccount account)
+        {
+            base.SwitchAccount (account);
+            MaybeSwitchAccount ();
+        }
+
+        void MaybeSwitchAccount ()
+        {
+            if ((null != account) && (NcApplication.Instance.Account.Id == account.Id)) {
+                return;
+            }
+            FragmentManager.PopBackStackImmediate ("Inbox", PopBackStackFlags.None);
+            account = NcApplication.Instance.Account;
+            var messages = NcEmailManager.Inbox (account.Id);
+            List<int> adds;
+            List<int> deletes;
+            messages.Refresh (out adds, out deletes);
+            messageListFragment.SwitchAccount (messages);
         }
     }
 }

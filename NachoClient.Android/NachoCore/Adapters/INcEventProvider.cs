@@ -33,5 +33,11 @@ namespace NachoCore
         bool FindEventNearestTo (DateTime date, out int item, out int section);
 
         void StopTrackingEventChanges ();
+
+        void IndexToDayItem (int index, out int day, out int item);
+
+        int IndexFromDayItem (int day, int item);
+
+        int NumberOfEvents();
     }
 }

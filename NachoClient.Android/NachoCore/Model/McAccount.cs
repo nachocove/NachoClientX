@@ -80,7 +80,7 @@ namespace NachoCore.Model
             Done = 0,
             InProgress,
             GoogleCallback,
-            // Obsolete
+            CredentialsValidated,
         };
 
         // Flags an account that's being configured
@@ -429,14 +429,55 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        public static string GetLoggablePassword (McAccount account, string password)
+        public void LogHashedPassword(ulong service, string logComment, string password)
         {
-            NcAssert.False (string.IsNullOrEmpty (account.GetLogSalt ()));
-            if (account == null) {
-                return null;
+            string salt = null;
+            try {
+                salt = GetLogSalt ();
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_SYS, "LoggablePasswordSaltedHash: Could not retrieve LogSalt for account {0}: KeychainItemNotFoundException {1}", Id, ex.Message);
+                return;
             }
-            string hash = HashHelper.Sha256 (account.GetLogSalt () + password);
-            return hash.Substring (hash.Length - 3); // e.g. "f47"
+            if (string.IsNullOrEmpty (salt)) {
+                Log.Error (Log.LOG_SYS, "LoggablePasswordSaltedHash: Could not retrieve LogSalt for account {0}", Id);
+                return;
+            }
+            string hash = HashHelper.Sha256 (salt + password);
+            var hashed = hash.Substring (hash.Length - 3); // e.g. "f47"
+            if (string.IsNullOrEmpty (hashed)) {
+                Log.Error (Log.LOG_SYS, "LoggablePasswordSaltedHash: Could not hash password for account {0}", Id);
+                return;
+            }
+            Log.Info (service, "LoggablePasswordSaltedHash({0}): {1} passwordHash={2}", Id, logComment, hashed);
+        }
+
+        public void LogHashedPassword (ulong service, string logComment, McCred cred)
+        {
+            string credstring = null;
+            try {
+                switch (cred.CredType) {
+                case McCred.CredTypeEnum.Password:
+                    credstring = cred.GetPassword ();
+                    break;
+
+                case McCred.CredTypeEnum.OAuth2:
+                    credstring = cred.GetAccessToken ();
+                    break;
+
+                default:
+                    Log.Warn (Log.LOG_PUSH, "LogHashedPassword: Unhandled credential type {0}", cred.CredType);
+                    break;
+                }
+            } catch (KeychainItemNotFoundException ex) {
+                Log.Error (Log.LOG_UI, "LogHashedPassword({0}: {1}", logComment, ex.Message);
+            }
+            if (null != credstring) {
+                try {
+                    LogHashedPassword (service, logComment, credstring);
+                } catch (KeychainItemNotFoundException ex) {
+                    Log.Error (Log.LOG_UI, "LogHashedPassword({0}: {1}", logComment, ex.Message);
+                }
+            }
         }
 
         public async void PopulateProfilePhotoFromURL (Uri imageUrl)

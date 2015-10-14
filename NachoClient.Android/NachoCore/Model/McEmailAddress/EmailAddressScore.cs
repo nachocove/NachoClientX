@@ -295,7 +295,11 @@ namespace NachoCore.Model
                 int rc = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     rc = base.Insert ();
-                    InsertScoreStates ();
+                    if (1 == rc) {
+                        InsertScoreStates ();
+                    } else {
+                        Log.Error (Log.LOG_BRAIN, "McEmailAddress.Insert returned {0}", rc);
+                    }
                 });
                 return rc;
             }

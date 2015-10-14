@@ -2,33 +2,42 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:background="@color/NachoBackgroundGray"
     android:orientation="vertical"
-    android:padding="15dp"
+    android:paddingTop="15dp"
+    android:paddingLeft="15dp"
+    android:paddingRight="15dp"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content">
-    <LinearLayout
+    <RelativeLayout
         android:background="@android:color/white"
         android:orientation="horizontal"
+        android:padding="15dp"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
         <TextView
             android:text="@string/add_account"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
             android:padding="3dp"
             android:textSize="14dp"
             android:textStyle="normal"
             android:textColor="@android:color/black"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
             android:background="@android:color/white" />
         <ImageView
             android:src="@drawable/email_add"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="4dp"
             android:scaleType="fitXY"
-            android:layout_gravity="right|center_vertical"
             android:padding="3dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
             android:background="@android:color/white" />
-    </LinearLayout>
+    </RelativeLayout>
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="2dp"
+        android:background="@color/NachoLightGray" />
 </LinearLayout>

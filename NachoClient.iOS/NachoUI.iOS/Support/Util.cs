@@ -74,19 +74,6 @@ namespace NachoClient
             }
         }
 
-     
-        public class PhoneAttributeComparer: IComparer<McContactStringAttribute>
-        {
-            public int Compare (McContactStringAttribute x, McContactStringAttribute y)
-            {
-                ContactsHelper contactHelper = new ContactsHelper ();
-                int xPriority = contactHelper.PhoneNames.IndexOf (x.Name);
-                int yPriority = contactHelper.PhoneNames.IndexOf (y.Name);
-
-                return xPriority.CompareTo (yPriority);
-            }
-        }
-
         public static DateTime LastUpdate (string key)
         {
             var s = Defaults.StringForKey (key);
@@ -546,9 +533,10 @@ namespace NachoClient
             }
         }
 
-        public static void PerformAction (string action, string number)
+        public static bool PerformAction (string action, string number)
         {
-            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+            var uristr = String.Format ("{0}:{1}", action, Uri.EscapeDataString(number));
+            return UIApplication.SharedApplication.OpenUrl (new Uri (uristr));
         }
 
 
@@ -556,41 +544,6 @@ namespace NachoClient
         {
             UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
             alert.Show ();
-        }
-
-        public static string NameToLetters (string name)
-        {
-            if (null == name) {
-                return "";
-            }
-            var Initials = "";
-            string[] names = name.Split (new char [] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (1 == names.Length) {
-                Initials = (names [0].Substring (0, 1)).ToCapitalized ();
-            }
-            if (2 == names.Length) {
-                if (0 < name.IndexOf (',')) {
-                    // Last name, First name
-                    Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
-                } else {
-                    // First name, Last name
-                    Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
-                }
-            }
-            if (2 < names.Length) {
-                if (0 < name.IndexOf (',')) {
-                    // Last name, First name
-                    Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
-                } else if (-1 == name.IndexOf (',')) {
-                    if ((names [1].Substring (0, 1)).ToLower () != (names [1].Substring (0, 1))) {
-                        Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
-                    } else {
-                        Initials = (names [0].Substring (0, 1)).ToCapitalized ();
-                    }
-                }
-            }
-
-            return Initials;
         }
 
         public static string GetFirstName (string displayName)
@@ -941,7 +894,7 @@ namespace NachoClient
                 attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
                 attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
                 attendeeButton.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_TAG + attendeeNum;
-                attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
+                attendeeButton.SetTitle (ContactsHelper.NameToLetters (attendee.DisplayName), UIControlState.Normal);
                 attendeeButton.AccessibilityLabel = "Attendee";
                 attendeeButton.Layer.BackgroundColor = Util.GetCircleColorForEmail (attendee.Email, LoginHelpers.GetCurrentAccountId ()).CGColor;
             }
@@ -1021,11 +974,15 @@ namespace NachoClient
                     ComplainAbout ("No Phone Number", "This contact does not have a phone number, and we are unable to modify the contact.");
                 }
             } else if (1 == contact.PhoneNumbers.Count) {
-                Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ());
+                if (!Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ())) {
+                    ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
+                }
             } else {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
-                        Util.PerformAction ("tel", p.Value);
+                        if (!Util.PerformAction ("tel", p.Value)) {
+                            ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
+                        }
                         return; 
                     }
                 }
@@ -1033,29 +990,17 @@ namespace NachoClient
             }
         }
 
-        public static void EmailContact (string segueIdentifier, McContact contact, NcUIViewController owner)
+        public static string GetContactDefaultEmail (McContact contact)
         {
-            if (null == contact) {
-                ComplainAbout ("No Email Address", "This contact does not have an email address.");
-                return;
+            if (1 == contact.EmailAddresses.Count) {
+                return contact.GetEmailAddress ();
             }
-            if (0 == contact.EmailAddresses.Count) {
-                if (contact.CanUserEdit ()) {
-                    owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
-                } else {
-                    ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+            foreach (var e in contact.EmailAddresses) {
+                if (e.IsDefault) {
+                    return e.Value;
                 }
-            } else if (1 == contact.EmailAddresses.Count) {
-                owner.PerformSegue ("SegueToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
-            } else {
-                foreach (var e in contact.EmailAddresses) {
-                    if (e.IsDefault) {
-                        owner.PerformSegue ("SegueToMessageCompose", new SegueHolder (e.Value));
-                        return;
-                    }
-                }
-                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
             }
+            return null;
         }
 
         public static UIColor GetCircleColorForEmail (string displayEmailAddress, int accountId)

@@ -29,12 +29,17 @@ namespace NachoClient.AndroidClient
 
         BodyDownloader bodyDownloader;
 
+        // Display first message of a thread in a cardview
         public static HotMessageFragment newInstance (McEmailMessageThread thread)
         {
             var fragment = new HotMessageFragment ();
 
             fragment.thread = thread;
             fragment.message = thread.FirstMessageSpecialCase ();
+
+            // Hot query returns single messages for threads so
+            // fix up the number of messages in the thread here
+            fragment.thread.UpdateThreadCount (fragment.message.ConversationId);
 
             return fragment;
         }
@@ -46,11 +51,6 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
-
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.HotMessageFragment, container, false);
 
             view.Click += View_Click;
@@ -123,7 +123,7 @@ namespace NachoClient.AndroidClient
             message = (McEmailMessage)McAbstrItem.RefreshItem (message);
 
             if (null == View) {
-                Console.WriteLine ("HotMessageFragment: BodyDownloader_Finished: View is null");
+                Log.Info (Log.LOG_UI, "HotMessageFragment: BodyDownloader_Finished: View is null");
                 return;
             }
             var webview = View.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
@@ -154,38 +154,40 @@ namespace NachoClient.AndroidClient
 
         void ChiliButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ChiliButton_Click");
+            Log.Info (Log.LOG_UI, "ChiliButton_Click");
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            Bind.BindMessageChili (thread, message, (Android.Widget.ImageView)sender);
         }
 
         void ArchiveButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ArchiveButton_Click");
+            Log.Info (Log.LOG_UI, "ArchiveButton_Click");
             NcEmailArchiver.Archive (message);
             DoneWithMessage ();
         }
 
         void DeleteButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("DeleteButton_Click");
+            Log.Info (Log.LOG_UI, "DeleteButton_Click");
             NcEmailArchiver.Delete (message);
             DoneWithMessage ();
         }
 
         void ForwardButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ForwardButton_Click");
+            Log.Info (Log.LOG_UI, "ForwardButton_Click");
             StartComposeActivity (EmailHelper.Action.Forward);
         }
 
         void ReplyButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ReplyButton_Click");
+            Log.Info (Log.LOG_UI, "ReplyButton_Click");
             StartComposeActivity (EmailHelper.Action.Reply);
         }
 
         void ReplyAllButton_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("ReplyAllButton_Click");
+            Log.Info (Log.LOG_UI, "ReplyAllButton_Click");
             StartComposeActivity (EmailHelper.Action.ReplyAll);
         }
 
@@ -198,7 +200,7 @@ namespace NachoClient.AndroidClient
 
         void View_Click (object sender, EventArgs e)
         {
-            Console.WriteLine ("View_Click");
+            Log.Info (Log.LOG_UI, "View_Click");
             if (null != onMessageClick) {
                 onMessageClick (this, thread);
             }

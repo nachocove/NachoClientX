@@ -1,37 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
+    android:gravity="center"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
-    <TextView
-        android:id="@+id/textview"
-        android:textColor="@android:color/white"
+    <ImageView
+        android:src="@drawable/Bootscreen_1"
+        android:gravity="center"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="0"
-        android:paddingBottom="4dip" />
-    <Button
-        android:layout_width="wrap_content"
+        android:background="@color/NachoGreen" />
+    <TextView
+        android:text="@string/welcometo"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:keepScreenOn="true"
-        android:padding="3dp"
-        android:text="@string/demo"
-        android:textSize="17dp"
-        android:textStyle="normal"
-        android:minWidth="130dp"
-        android:id="@+id/btnDemo"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true" />
-    <Button
-        android:layout_width="wrap_content"
+        android:paddingTop="18dp"
+        android:gravity="center"
+        android:textSize="36dp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white" />
+    <TextView
+        android:text="@string/nachomail"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:keepScreenOn="true"
-        android:padding="3dp"
-        android:text="@string/skip"
-        android:textSize="17dp"
-        android:textStyle="normal"
-        android:minWidth="130dp"
-        android:id="@+id/btnSkip"
-        android:layout_alignParentBottom="true"
-        android:layout_toLeftOf="@id/btnDemo" />
-</RelativeLayout>
+        android:gravity="center"
+        android:textSize="58dp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white" />
+</LinearLayout>

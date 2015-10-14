@@ -25,4 +25,5 @@ NachoClient.*/BuildInfo.cs
 NachoClient.*/LogSettings.cs
 NachoClient.iOS/.skip_hockeyapp_upload
 *.pyc
-packages/
+NachoClient.Android/Resources/Resource.designer.cs
+Test.Android/Resources/Resource.designer.cs

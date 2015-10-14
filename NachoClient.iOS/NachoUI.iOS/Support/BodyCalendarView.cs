@@ -244,7 +244,7 @@ namespace NachoClient.iOS
                         organizerPhotoFallbackView.Hidden = false;
                         organizerPhotoFallbackView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, accountId);
                         var nameString = (null != organizerName ? organizerName : organizerEmail);
-                        organizerPhotoFallbackView.Text = Util.NameToLetters (nameString);
+                        organizerPhotoFallbackView.Text = ContactsHelper.NameToLetters (nameString);
                     }
 
                 }
@@ -343,7 +343,7 @@ namespace NachoClient.iOS
             }
             var layoutHeight = subview.Frame.Height;
             if (maxHeight.HasValue) {
-                layoutHeight = subview.SizeThatFits (new CGSize (durationLabel.Frame.Width, maxHeight.Value)).Height;
+                layoutHeight = subview.SizeThatFits (new CGSize (subview.Frame.Width, maxHeight.Value)).Height;
             }
             if (layoutHeight < minHeight) {
                 layoutHeight = minHeight;

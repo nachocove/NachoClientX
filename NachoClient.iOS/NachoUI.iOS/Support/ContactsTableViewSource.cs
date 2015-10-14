@@ -47,14 +47,11 @@ namespace NachoClient.iOS
                         NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
                     });
                 } else {
-                    int curVersion = searcher.Version;
                     var results = McContact.SearchIndexAllContacts (searchString);
-                    if (curVersion == searcher.Version) {
-                        InvokeOnUIThread.Instance.Invoke (() => {
-                            SetSearchResults (results);
-                            NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
-                        });
-                    }
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        SetSearchResults (results);
+                        NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
+                    });
                 }
             });
         }
@@ -225,28 +222,6 @@ namespace NachoClient.iOS
             owner.ContactSelectedCallback (contact);
         }
 
-        protected void SwipedQuickMessage (string address)
-        {
-            Log.Info (Log.LOG_UI, "Swiped Quick Message");
-
-            if (string.IsNullOrEmpty (address)) {
-                Util.ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
-                return;
-            }
-            owner.PerformSegueForDelegate ("ContactsToQuickMessageCompose", new SegueHolder (address));
-        }
-
-        protected void SwipedEmail (string address)
-        {
-            Log.Info (Log.LOG_UI, "Swiped Email Compose");
-
-            if (string.IsNullOrEmpty (address)) {
-                Util.ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
-                return;
-            }
-            owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (address));
-        }
-
         protected void SwipedCall (string number)
         {
             Log.Info (Log.LOG_UI, "Swiped Call");
@@ -255,7 +230,9 @@ namespace NachoClient.iOS
                 Util.ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
-            Util.PerformAction ("tel", number);
+            if (!Util.PerformAction ("tel", number)) {
+                Util.ComplainAbout ("Cannot Dial", "We are unable to dial this phone number");
+            }
         }
 
         protected void SwipedSMS (string number)

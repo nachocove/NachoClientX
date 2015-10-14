@@ -16,7 +16,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class FoldersViewController : NcUIViewController, INachoFolderChooser, INachoMessageEditorParent
+    public partial class FoldersViewController : NcUIViewController, INachoFolderChooser
     {
         public FoldersViewController (IntPtr handle) : base (handle)
         {
@@ -148,12 +148,6 @@ namespace NachoClient.iOS
             if ("SegueToLikelyToRead" == segue.Identifier) {
                 return;
             }
-            if (segue.Identifier == "SegueToCompose") {
-                var vc = (MessageComposeViewController)segue.DestinationViewController;
-                vc.SetAction (null, null);
-                vc.SetOwner (this);
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -204,7 +198,7 @@ namespace NachoClient.iOS
                 Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
                 composeButton.AccessibilityLabel = "New message";
                 composeButton.Clicked += (object sender, EventArgs e) => {
-                    PerformSegue ("SegueToCompose", new SegueHolder (null));
+                    ComposeMessage ();
                 };
                 NavigationItem.RightBarButtonItem = composeButton;
 
@@ -959,23 +953,10 @@ namespace NachoClient.iOS
             owner.FolderSelected (this, folder, cookie);
         }
 
-        // INachoMessageEditorParent
-        public void DismissChildMessageEditor (INachoMessageEditor vc)
+        private void ComposeMessage ()
         {
-            NcAssert.CaseError ();
-        }
-
-        // INachoMessageEditorParent
-        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            NcAssert.CaseError ();
-        }
-
-        // INachoMessageEditorParent
-        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
-        {
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, null);
+            var composeViewController = new MessageComposeViewController ();
+            composeViewController.Present ();
         }
 
     }

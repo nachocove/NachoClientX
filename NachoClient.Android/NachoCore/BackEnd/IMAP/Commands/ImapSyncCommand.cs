@@ -708,8 +708,9 @@ namespace NachoCore.IMAP
 
         public static void InsertAttachments (McEmailMessage msg, MessageSummary imapSummary)
         {
-            if (imapSummary.Attachments.Any ()) {
-                foreach (var att in imapSummary.Attachments) {
+            var attachments = imapSummary.BodyParts.Where (part => part.ContentDisposition != null);
+            if (attachments.Any ()) {
+                foreach (var att in attachments) {
                     // Create & save the attachment record.
                     var attachment = new McAttachment {
                         AccountId = msg.AccountId,
@@ -724,7 +725,23 @@ namespace NachoCore.IMAP
                     if (null != att.ContentLocation) {
                         attachment.ContentLocation = att.ContentLocation.ToString ();
                     }
-                    attachment.ContentId = att.ContentId;
+                    if (null != att.ContentType) {
+                        attachment.ContentType = att.ContentType.MimeType.ToLower ();
+                    }
+                    if (!String.IsNullOrEmpty (att.ContentId)) {
+                        var contentId = att.ContentId.Trim ();
+                        if (contentId.Length > 0) {
+                            if (contentId [0] == '<') {
+                                contentId = contentId.Substring (1);
+                            }
+                        }
+                        if (contentId.Length > 0) {
+                            if (contentId [contentId.Length - 1] == '>') {
+                                contentId = contentId.Substring (0, contentId.Length - 1);
+                            }
+                        }
+                        attachment.ContentId = contentId;
+                    }
                     attachment.IsInline = !att.IsAttachment;
                     //attachment.VoiceSeconds = uint.Parse (xmlUmAttDuration.Value);
                     //attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);

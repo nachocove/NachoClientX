@@ -37,13 +37,20 @@ namespace NachoClient.iOS
 {
     public class CidImageProtocol : NSUrlProtocol
     {
+
         [Export ("canInitWithRequest:")]
         public static bool canInitWithRequest (NSUrlRequest request)
         {
-            if ((null == request) || (null == request.Url)) {
-                return false;
+            bool retval = false;
+            try {
+                if ((null == request) || (null == request.Url)) {
+                    return false;
+                }
+                retval = (request.Url.Scheme == "cid");
+            } catch (NullReferenceException) {
+                Log.Error (Log.LOG_UI, "XAMMIT: CidImageProtocol.canInitWithRequest NullReferenceException");
             }
-            return request.Url.Scheme == "cid";
+            return retval;
         }
 
         [Export ("canonicalRequestForRequest:")]
@@ -71,6 +78,16 @@ namespace NachoClient.iOS
                 Log.Error (Log.LOG_UI, "CidImageProtocol: ResourceSpecifier is null for {0}", Request);
                 Client.FinishedLoading (this);
                 return;
+            }
+            var lastPathComponent = url.LastPathComponent;
+            if (lastPathComponent != null){
+                if (lastPathComponent.Equals ("__nacho__css__")) {
+                    var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+                    var nachoCssPath = Path.Combine (documentsPath, "nacho.css");
+                    var data = NSData.FromFile (nachoCssPath);
+                    FinishLoading (data, "text/css");
+                    return;
+                }
             }
             using (var image = PlatformHelpers.RenderContentId (resourceSpecifier)) {
                 if (null == image) {

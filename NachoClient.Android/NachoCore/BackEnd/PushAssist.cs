@@ -27,6 +27,7 @@ using NachoClient.Build;
  * JEFF_TODO - really want to enable/disable based on narrow-ping. how to do that?
  * JEFF_TODO - exactly how to we "cancel" rather than hold-off the pinger? (let it die).
  */
+using NachoPlatform;
 
 namespace NachoCore
 {
@@ -744,6 +745,7 @@ namespace NachoCore
                 RequestData = SafeToBase64 (parameters.RequestData),
                 ExpectedReply = SafeToBase64 (parameters.ExpectedResponseData),
                 NoChangeReply = SafeToBase64 (parameters.NoChangeResponseData),
+                ASIsSyncRequest = parameters.IsSyncRequest,
 
                 // IMAP elements
                 IMAPAuthenticationBlob = SafeToBase64 (parameters.IMAPAuthenticationBlob),
@@ -754,8 +756,7 @@ namespace NachoCore
                 IMAPUIDNEXT = parameters.IMAPUIDNEXT,
             };
             McAccount account = McAccount.QueryById<McAccount> (AccountId);
-            string password = cred.GetPassword ();
-            Log.Info (Log.LOG_PUSH, "PushAssist->DoStartSession: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));              
+            account.LogHashedPassword (Log.LOG_PUSH, "PushAssist->DoStartSession", cred);
             FillOutIdentInfo (jsonRequest);
 
             NcTask.Run (() => {
@@ -844,6 +845,7 @@ namespace NachoCore
                 PostHardFail ("DEFER_PARAM_ERROR");
             }
             var jsonRequest = new DeferSessionRequest () {
+                RequestData = SafeToBase64 (parameters.RequestData),
                 Token = SessionToken,
                 ResponseTimeout = parameters.ResponseTimeoutMsec
             };

@@ -617,7 +617,7 @@ namespace NachoCore.Utils
             }
         }
 
-        private static void FixTnefMessage (MimeMessage tnefMessage)
+        public static void FixTnefMessage (MimeMessage tnefMessage)
         {
             // If the TNEF part contains text in multiple formats, MimeKit will create a multipart/mixed
             // instead of a multipart/alternative.  Fix that.
@@ -780,6 +780,62 @@ namespace NachoCore.Utils
                 }
             }
         }
+
+        public static void PossiblyExtractAttachmentsFromBody (McBody body, McAbstrItem item)
+        {
+            // Now that we have a body, see if it is possible to fill in the contents of any attachments.
+            if (McBody.BodyTypeEnum.MIME_4 == body.BodyType && McBody.FilePresenceEnum.Complete == body.FilePresence && !body.Truncated) {
+                var bodyAttachments = MimeHelpers.AllAttachmentsIncludingInline (MimeHelpers.LoadMessage (body));
+                if (0 < bodyAttachments.Count) {
+
+                    foreach (var itemAttachment in McAttachment.QueryByItemId(item)) {
+                        if (McAttachment.FilePresenceEnum.Complete == itemAttachment.FilePresence) {
+                            // Attachment already downloaded.
+                            continue;
+                        }
+
+                        // There isn't a field that is guaranteed to be in both places and is guaranteed to be
+                        // unique.  Match on content ID or display name, but make sure the match is unique.
+                        // Any attachment that isn't matched will just be downloaded later, which is just a
+                        // performance issue, not a correctness issue.
+                        bool duplicateContentId = false;
+                        bool duplicateDisplayName = false;
+                        MimeEntity contentIdMatch = null;
+                        MimeEntity displayNameMatch = null;
+                        foreach (var bodyAttachment in bodyAttachments) {
+                            if (null != bodyAttachment.ContentId && null != itemAttachment.ContentId &&
+                                bodyAttachment.ContentId == itemAttachment.ContentId)
+                            {
+                                if (null == contentIdMatch) {
+                                    contentIdMatch = bodyAttachment;
+                                } else {
+                                    duplicateContentId = true;
+                                }
+                            }
+                            if (null != itemAttachment.DisplayName && null != bodyAttachment.ContentDisposition.FileName &&
+                                itemAttachment.DisplayName == bodyAttachment.ContentDisposition.FileName)
+                            {
+                                if (null == displayNameMatch) {
+                                    displayNameMatch = bodyAttachment;
+                                } else {
+                                    duplicateDisplayName = true;
+                                }
+                            }
+                        }
+                        MimeEntity match = duplicateContentId ? null : (contentIdMatch ?? (duplicateDisplayName ? null : displayNameMatch));
+                        if (null != match) {
+                            itemAttachment.UpdateData ((stream) => {
+                                ((MimeKit.MimePart)match).ContentObject.DecodeTo (stream);
+                            });
+                            itemAttachment.SetFilePresence (McAttachment.FilePresenceEnum.Complete);
+                            itemAttachment.Truncated = false;
+                            itemAttachment.Update ();
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     // This class is copied from MimeKit.AttachmentCollection.  Changes were made to reduce memory consumption.

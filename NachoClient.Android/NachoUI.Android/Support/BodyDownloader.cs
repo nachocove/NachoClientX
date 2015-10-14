@@ -68,7 +68,7 @@ namespace NachoClient.AndroidClient
 
         void ReturnSuccess ()
         {
-            Console.WriteLine ("BodyDownloaded: ReturnSuccess");
+            Log.Info (Log.LOG_UI, "BodyDownloaded: ReturnSuccess");
 
             if (null != Finished) {
                 Finished (this, null);
@@ -77,7 +77,7 @@ namespace NachoClient.AndroidClient
 
         void ReturnErrorMessage (NcResult nr)
         {
-            Console.WriteLine ("BodyDownloaded: ReturnErrorMessage");
+            Log.Info (Log.LOG_UI, "BodyDownloaded: ReturnErrorMessage");
             string message;
             if (!ErrorHelper.ExtractErrorString (nr, out message)) {
                 message = "Download failed.";
@@ -96,7 +96,7 @@ namespace NachoClient.AndroidClient
                 return false;
             }
 
-            Console.WriteLine ("BodyDownloader HandleStatusEvent {0} {1}", item.Id, statusEvent.Status.SubKind);
+            Log.Info (Log.LOG_UI, "BodyDownloader HandleStatusEvent {0} {1}", item.Id, statusEvent.Status.SubKind);
 
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded:

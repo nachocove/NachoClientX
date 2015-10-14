@@ -672,12 +672,12 @@ namespace NachoClient.AndroidClient
             mTouchState = TOUCH_STATE_NONE;
         }
 
-        public override void SetAdapter (IListAdapter adapter)
-        {
-            var a = new SwipeMenuAdapter (this.Context, adapter);
-            a.setOnMenuItemClickListener (MenuItemClickListener);
-            base.Adapter = a;
-        }
+//        public override void SetAdapter (IListAdapter adapter)
+//        {
+//            var a = new SwipeMenuAdapter (this.Context, adapter);
+//            a.setOnMenuItemClickListener (MenuItemClickListener);
+//            base.Adapter = a;
+//        }
 
         public override IListAdapter Adapter {
             set {
@@ -992,11 +992,24 @@ namespace NachoClient.AndroidClient
             return mAdapter.GetItemId (position);
         }
 
+        // FIXME: Do not re-use the view if the view type changes
         public View GetView (int position, View convertView, ViewGroup parent)
         {
-            SwipeMenuLayout layout = null;
-            if (convertView == null) {
-                View contentView = mAdapter.GetView (position, convertView, parent);
+            var layout = convertView as SwipeMenuLayout;
+            View contentView;
+            if (null == layout) {
+                contentView = mAdapter.GetView (position, null, parent);
+            } else {
+                contentView = mAdapter.GetView (position, layout.getContentView (), parent);
+            }
+
+            if (null == layout || contentView != layout.getContentView ()) {
+
+                // The view that was passed in can't be reused because
+                //   (1) no view was passed in, or
+                //   (2) the view wasn't a SwipeMenuLayout object, or
+                //   (3) the adapter chose to not reusing the SwipeMenuLayout's content view.
+                // Create a whole new SwipeMenuLayout object.
                 SwipeMenu menu = new SwipeMenu (mContext);
                 menu.setViewType (mAdapter.GetItemViewType (position));
                 if (null != mMenuCreator) {
@@ -1012,11 +1025,13 @@ namespace NachoClient.AndroidClient
                     listView.getCloseInterpolator (),
                     listView.getOpenInterpolator ());
                 layout.setPosition (position);
+
             } else {
-                layout = (SwipeMenuLayout)convertView;
+
+                // Reuse the existing view for the cell.  The underlying content view has already
+                // been adjusted.  The SwipeMenuLayout object still needs to be adjusted.
                 layout.closeMenu ();
                 layout.setPosition (position);
-                View view = mAdapter.GetView (position, layout.getContentView (), parent);
             }
             return layout;
         }

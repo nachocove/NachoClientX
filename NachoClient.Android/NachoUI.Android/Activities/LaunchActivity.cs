@@ -15,89 +15,74 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "LaunchActivity")]            
-    public class LaunchActivity : AppCompatActivity
+    [Activity (Label = "LaunchActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
+    public class LaunchActivity : AppCompatActivity, GettingStartedDelegate, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
     {
-        bool ReadyToStart ()
-        {
-            if (null == NcApplication.Instance.Account) {
-                return false;
-            }
-            if (McAccount.AccountTypeEnum.Device == NcApplication.Instance.Account.AccountType) {
-                return false;
-            }
-            return true;
-        }
-
+        McAccount account;
 
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
 
-            // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.LaunchActivity);
 
-//            var welcomeFragment = new WelcomeFragment ();
-//            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, welcomeFragment).Commit ();
+            account = McAccount.GetAccountBeingConfigured ();
 
-            if (ReadyToStart ()) {
-                Skip ();
-            } else {
-                var account = McAccount.GetAccountBeingConfigured ();
-                if (null == account) {
-                    WelcomeFinished ();
-                } else {
-                    var waitingFragment = WaitingFragment.newInstance (account);
-                    FragmentManager.BeginTransaction ().Replace (Resource.Id.content, waitingFragment).Commit ();
-                }
-            }
-
+            var gettingStartedFragment = GettingStartedFragment.newInstance (account);
+            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, gettingStartedFragment).Commit ();
         }
 
-        public void WelcomeFinished ()
+        protected override void OnResume ()
         {
-            var chooseProviderFragment = new ChooseProviderFragment ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, chooseProviderFragment).Commit ();
+            base.OnResume ();
+        }
+
+        public void GettingStartedFinished ()
+        {
+            if ((account != null) && (McAccount.AccountServiceEnum.None != account.AccountService)) {
+                ChooseProviderFinished (account.AccountService);
+            } else {
+                var chooseProviderFragment = ChooseProviderFragment.newInstance ();
+                var ft = FragmentManager.BeginTransaction ();
+                ft.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
+                ft.Add (Resource.Id.content, chooseProviderFragment).AddToBackStack ("ChooseProvider").Commit ();
+            }
         }
 
         public void ChooseProviderFinished (McAccount.AccountServiceEnum service)
         {
-            var credentialsFragment = new CredentialsFragment ();
-            credentialsFragment.service = service;
-
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, credentialsFragment).Commit ();
+            switch (service) {
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                var googleSignInFragment = GoogleSignInFragment.newInstance (service, account);
+                var ft1 = FragmentManager.BeginTransaction ();
+                ft1.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
+                ft1.Add (Resource.Id.content, googleSignInFragment).AddToBackStack ("GoogleSignIn").Commit ();
+                break;
+            default:
+                var credentialsFragment = CredentialsFragment.newInstance (service, account);
+                var ft2 = FragmentManager.BeginTransaction ();
+                ft2.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
+                ft2.Add (Resource.Id.content, credentialsFragment).AddToBackStack ("Credentials").Commit ();
+                break;
+            }
         }
 
-        public void GoogleSignInFinished ()
+        // Credentials have been verified
+        public void CredentialsValidated (McAccount account)
         {
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(NowActivity));
-            StartActivity (intent);
-        }
-
-        public void CredentialsFinished (McAccount.AccountServiceEnum service, string emailAddress, string password)
-        {
-            var account = NcAccountHandler.Instance.CreateAccount (service, emailAddress, password);
-            NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
-
-            // FIXME
-            NcApplication.Instance.Account = account;
-
-            BackEnd.Instance.Start (account.Id);
-
             var waitingFragment = WaitingFragment.newInstance (account);
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, waitingFragment).Commit ();
+            var ft = FragmentManager.BeginTransaction ();
+            ft.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
+            ft.Add (Resource.Id.content, waitingFragment).AddToBackStack ("Waiting").Commit ();
         }
 
-        public void WaitingFinished ()
+        public void WaitingFinished (McAccount account)
         {
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(NowActivity));
-            StartActivity (intent);
-        }
-
-        public void Skip ()
-        {
+            Log.Info (Log.LOG_UI, "LaunchActivity syncing complete");
+            if (null != account) {
+                NcApplication.Instance.Account = account;
+                LoginHelpers.SetSwitchToTime (account);
+            }
             var intent = new Intent ();
             intent.SetClass (this, typeof(NowActivity));
             StartActivity (intent);
@@ -110,7 +95,20 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-            //            base.OnBackPressed ();
+            var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is GettingStartedFragment) {
+                this.FragmentManager.PopBackStack (); // Let me go!
+            }
+            if (f is ChooseProviderFragment) {
+                this.FragmentManager.PopBackStack (); // Let me go!
+            }
+            if (f is CredentialsFragment) {
+                ((CredentialsFragment)f).OnBackPressed ();
+                this.FragmentManager.PopBackStack (); // Let me go!
+            }
+            if (f is GoogleSignInFragment) {
+                this.FragmentManager.PopBackStack (); // Let me go!
+            }
         }
 
         protected override void OnSaveInstanceState (Bundle outState)

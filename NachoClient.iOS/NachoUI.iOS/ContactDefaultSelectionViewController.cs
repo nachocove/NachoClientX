@@ -556,7 +556,7 @@ namespace NachoClient.iOS
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
                 contact = McContact.QueryById<McContact> (contact.Id); // Re-read to get fields set by BE
                 DismissViewController (true, null);
-                owner.PerformSegueForContactDefaultSelector ("SegueToMessageCompose", new SegueHolder (emailTextField.Text));
+                owner.ContactDefaultSelectorComposeMessage (emailTextField.Text);
             } else {
                 emailTextField.TextColor = A.Color_NachoRed;
             }
@@ -618,7 +618,7 @@ namespace NachoClient.iOS
 
             foreach (var em in contact.EmailAddresses) {
                 if (em.Name == selectedEmailName) {
-                    owner.PerformSegueForContactDefaultSelector ("SegueToMessageCompose", new SegueHolder (em.Value));
+                    owner.ContactDefaultSelectorComposeMessage (em.Value);
                     DismissViewController (true, null);
                     return;
                 }
