@@ -100,15 +100,26 @@ namespace NachoCore.Model
         public bool IsDistinguished { get; set; }
 
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
+
         // Client-owned distinguised folders.
-        public const string ClientOwned_Outbox = "Outbox2";
-        public const string ClientOwned_EmailDrafts = "EmailDrafts2";
-        public const string ClientOwned_CalDrafts = "CalDrafts2";
-        public const string ClientOwned_GalCache = "GAL";
-        public const string ClientOwned_Gleaned = "GLEANED";
-        public const string ClientOwned_LostAndFound = "LAF";
-        public const string ClientOwned_DeviceContacts = "DEVCONTACTS";
-        public const string ClientOwned_DeviceCalendars = "DEVCALENDARS";
+        public const string ClientOwned_Outbox = "f6a01521-a763-4522-8a13-3df0545f4bdb";
+        public const string ClientOwned_EmailDrafts = "568e8b03-3e40-468a-ab65-7a5c20e360c1";
+        public const string ClientOwned_CalDrafts = "910bfa36-c005-4091-8053-39811ca43b03";
+        public const string ClientOwned_GalCache = "246568ef-9747-4248-829f-577a03d27585";
+        public const string ClientOwned_Gleaned = "ff34dbdb-07d2-4410-81e3-982af89ada6d";
+        public const string ClientOwned_LostAndFound = "02b061f1-c074-425b-aa7e-d9b491d52a35";
+        public const string ClientOwned_DeviceContacts = "161b18ba-c9fe-4421-930d-6f90655c21c6";
+        public const string ClientOwned_DeviceCalendars = "a40af78a-583e-4b25-9e49-a341df6b3b4d";
+
+        // Old names for the folders
+        public const string ClientOwned_Outbox_Deprecated = "Outbox2";
+        public const string ClientOwned_EmailDrafts_Deprecated = "EmailDrafts2";
+        public const string ClientOwned_CalDrafts_Deprecated = "CalDrafts2";
+        public const string ClientOwned_GalCache_Deprecated = "GAL";
+        public const string ClientOwned_Gleaned_Deprecated = "GLEANED";
+        public const string ClientOwned_LostAndFound_Deprecated = "LAF";
+        public const string ClientOwned_DeviceContacts_Deprecated = "DEVCONTACTS";
+        public const string ClientOwned_DeviceCalendars_Deprecated = "DEVCALENDARS";
 
         public const string GMail_All_ServerId = "Mail:^all";
 
