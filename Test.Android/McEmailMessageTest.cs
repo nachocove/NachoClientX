@@ -32,6 +32,12 @@ namespace Test.Common
             NcAssert.True (0 < Folder.Id);
         }
 
+        [TearDown]
+        public new void TearDown ()
+        {
+            NcModel.Instance.Db.DeleteAll<McEmailMessage> ();
+        }
+
         private McEmailAddress SetupAddress (string canonicalAddress, int received, int read, bool isVip)
         {
             McEmailAddress address = new McEmailAddress ();
@@ -1149,6 +1155,28 @@ namespace Test.Common
                 Assert.IsTrue (McEmailMessage.TryImportanceFromString (s, out i));
                 Assert.AreEqual (NcImportance.High_2, i);
             }
+        }
+
+        [Test]
+        public void TestQueryByServerIdList ()
+        {
+            List<McEmailMessage> messages = new List<McEmailMessage> ();
+            List<string> idList = new List<string> ();
+            for (uint i = 1; i <= 10; i++) { 
+                var message = new McEmailMessage () {
+                    AccountId = Folder.AccountId,
+                    ServerId = string.Format("EmailServerId{0}", i),
+                    Subject = string.Format ("Subject {0}", i),
+                    From = "bob@company.net",
+                };
+                Assert.AreEqual (1, message.Insert ());
+                Assert.AreEqual (i, message.Id);
+                messages.Add (message);
+                idList.Add (message.ServerId);
+            }
+
+            var mailList = McEmailMessage.QueryByServerIdList (Folder.AccountId, idList);
+            Assert.AreEqual (messages.Count, mailList.Count);
         }
     }
 }
