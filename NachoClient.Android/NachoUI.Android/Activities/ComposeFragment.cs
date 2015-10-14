@@ -108,7 +108,7 @@ namespace NachoClient.AndroidClient
             });
 
             // Send the mesage
-            EmailHelper.SendTheMessage (action, messageToSend, false, referencedMessage, false, null);
+            EmailHelper.SendTheMessage (messageToSend, null);
 
             return true;
         }

@@ -618,7 +618,7 @@ namespace NachoCore.Utils
             }
         }
 
-        private static void FixTnefMessage (MimeMessage tnefMessage)
+        public static void FixTnefMessage (MimeMessage tnefMessage)
         {
             // If the TNEF part contains text in multiple formats, MimeKit will create a multipart/mixed
             // instead of a multipart/alternative.  Fix that.

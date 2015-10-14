@@ -6,6 +6,7 @@ using UIKit;
 using Foundation;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -54,6 +55,8 @@ namespace NachoClient.iOS
         void MultiSelectToggle (IMessageTableViewSource source, bool enabled);
 
         void MultiSelectChange (IMessageTableViewSource source, int count);
+
+        void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action);
     }
 }
 

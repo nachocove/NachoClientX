@@ -49,6 +49,9 @@ namespace NachoClient
                 return "no value for cid";
             }
             value = cid.Substring (index + 3);
+            // MimeKit removes trailing dots from CIDs.  Pretty sure that's a MimeKit bug, and to
+            // workaround it, we'll trim trailing dots from our CID, too.
+            value = value.TrimEnd (new char[] { '.' });
             try {
                 bodyId = Convert.ToInt32 (cid.Substring (2, index));
             } catch (System.FormatException) {

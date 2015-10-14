@@ -3,22 +3,18 @@
     android:background="@android:color/white"
     android:orientation="horizontal"
     android:layout_width="fill_parent"
-    android:padding="3dp"
     android:layout_height="wrap_content">
     <LinearLayout
         android:background="@android:color/white"
         android:orientation="horizontal"
-        android:layout_width="wrap_content"
+        android:layout_width="60dp"
         android:layout_height="wrap_content"
-        android:padding="3dp"
         android:layout_gravity="center">
         <View
             android:id="@+id/calendar_color"
-            android:layout_width="4dp"
-            android:layout_height="4dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            android:layout_marginLeft="4dp"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginLeft="25dp"
             android:layout_gravity="center"
             android:gravity="center"
             android:background="@drawable/UserColor0" />
@@ -28,6 +24,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
         android:background="@android:color/white">
         <TextView
             android:id="@+id/event_title"

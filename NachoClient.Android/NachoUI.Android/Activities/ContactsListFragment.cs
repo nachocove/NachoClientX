@@ -22,6 +22,8 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using Android.Graphics.Drawables;
 using NachoCore.Brain;
+using Android.Views.InputMethods;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -30,12 +32,12 @@ namespace NachoClient.AndroidClient
         private const int CALL_TAG = 1;
         private const int EMAIL_TAG = 2;
 
+        bool searching;
+        Android.Widget.EditText searchEditText;
         SwipeMenuListView listView;
         ContactsListAdapter contactsListAdapter;
 
         SwipeRefreshLayout mSwipeRefreshLayout;
-
-        Android.Widget.ImageView addButton;
 
         public event EventHandler<McContact> onContactClick;
 
@@ -64,10 +66,21 @@ namespace NachoClient.AndroidClient
                 rearmRefreshTimer (3);
             };
 
-            addButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
+            var addButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
             addButton.SetImageResource (Android.Resource.Drawable.IcMenuAdd);
             addButton.Visibility = Android.Views.ViewStates.Visible;
             addButton.Click += AddButton_Click;
+
+            var searchButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
+            searchButton.SetImageResource (Android.Resource.Drawable.IcMenuSearch);
+            searchButton.Visibility = Android.Views.ViewStates.Visible;
+            searchButton.Click += SearchButton_Click;
+
+            searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
+            searchEditText.TextChanged += SearchString_TextChanged;
+
+            var cancelButton = view.FindViewById (Resource.Id.cancel);
+            cancelButton.Click += CancelButton_Click;
 
             // Highlight the tab bar icon of this activity
             var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.contacts_image);
@@ -99,7 +112,8 @@ namespace NachoClient.AndroidClient
                 emailItem.setIcon (A.Id_NachoSwipeContactEmail);
                 emailItem.setId (EMAIL_TAG);
                 menu.addMenuItem (emailItem, SwipeMenu.SwipeSide.RIGHT);
-            });
+            }
+            );
 
             listView.setOnMenuItemClickListener (( position, menu, index) => {
                 switch (index) {
@@ -119,15 +133,74 @@ namespace NachoClient.AndroidClient
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
             if (null != onContactClick) {
+                InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+                imm.HideSoftInputFromWindow (searchEditText.WindowToken, HideSoftInputFlags.NotAlways);
                 onContactClick (this, contactsListAdapter [e.Position]);
             }
         }
 
         void AddButton_Click (object sender, EventArgs e)
         {
-            var intent = new Intent ();
-//            intent.SetClass (this.Activity, typeof(ContactEditActivity));
-            StartActivity (intent);
+        }
+
+        void SearchButton_Click (object sender, EventArgs e)
+        {
+            StartSearching ();
+        }
+
+
+        void CancelButton_Click (object sender, EventArgs e)
+        {
+            if (searching) {
+                CancelSearch ();
+            }
+        }
+
+        void StartSearching ()
+        {
+            searching = true;
+            contactsListAdapter.StartSearch ();
+
+            var search = View.FindViewById (Resource.Id.search);
+            search.Visibility = ViewStates.Visible;
+            var navbar = View.FindViewById (Resource.Id.navigation_bar);
+            navbar.Visibility = ViewStates.Gone;
+            var navtoolbar = View.FindViewById (Resource.Id.navigation_toolbar);
+            navtoolbar.Visibility = ViewStates.Gone;
+
+            searchEditText.RequestFocus ();
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+            imm.ShowSoftInput (searchEditText, ShowFlags.Implicit);
+        }
+
+        void CancelSearch ()
+        {
+            searching = false;
+            contactsListAdapter.CancelSearch ();
+
+            searchEditText.ClearFocus ();
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+            imm.HideSoftInputFromWindow (searchEditText.WindowToken, HideSoftInputFlags.NotAlways);
+            searchEditText.Text = "";
+
+            var navbar = View.FindViewById (Resource.Id.navigation_bar);
+            navbar.Visibility = ViewStates.Visible;
+            var navtoolbar = View.FindViewById (Resource.Id.navigation_toolbar);
+            navtoolbar.Visibility = ViewStates.Visible;
+            var search = View.FindViewById (Resource.Id.search);
+            search.Visibility = ViewStates.Gone;
+        }
+
+        void SearchString_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
+        {
+            contactsListAdapter.Search (searchEditText.Text);
+        }
+
+        public void OnBackPressed ()
+        {
+            if (searching) {
+                CancelSearch ();
+            }
         }
 
         protected void EndRefreshingOnUIThread (object sender)
@@ -166,7 +239,6 @@ namespace NachoClient.AndroidClient
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
         }
 
-      
     }
 
     public class ContactsListAdapter : Android.Widget.BaseAdapter<McContact>
@@ -176,12 +248,52 @@ namespace NachoClient.AndroidClient
         ContactBin[] sections;
         bool multipleSections;
 
+        bool searching;
+        SearchHelper searcher;
+        List<McContactEmailAddressAttribute> searchResults = null;
+
         Dictionary<int,int> viewTypeMap;
 
         public ContactsListAdapter ()
         {
             RefreshContactsIfVisible ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            searcher = new SearchHelper ("ContactsTableViewSourceUpdateSearchResults", (searchString) => {
+                if (String.IsNullOrEmpty (searchString)) {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        searchResults = new List<McContactEmailAddressAttribute> ();
+                        RefreshContactsIfVisible ();
+                    });
+                } else {
+                    var results = McContact.SearchIndexAllContacts (searchString);
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        searchResults = results;
+                        RefreshContactsIfVisible ();
+                    });
+                }
+            });
+        }
+
+        public void StartSearch ()
+        {
+            searching = true;
+        }
+
+        public void CancelSearch ()
+        {
+            if (searching) {
+                searching = false;
+                searchResults = null;
+                RefreshContactsIfVisible ();
+            }
+        }
+
+        public void Search (string searchString)
+        {
+            if (searching) {
+                searcher.Search (searchString);
+            }
         }
 
         int recentsCount {
@@ -196,36 +308,64 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        int searchResultsCount {
+            get {
+                return (null == searchResults ? 0 : searchResults.Count);
+            }
+        }
+
         protected void RefreshContactsIfVisible ()
         {
             viewTypeMap = new Dictionary<int, int> ();
-            recents = McContact.RicContactsSortedByRank (NcApplication.Instance.Account.Id, 5);
-            contacts = McContact.AllContactsSortedByName (true);
-            sections = ContactsBinningHelper.BinningContacts (ref contacts);
+            if (searching) {
+                recents = null;
+                contacts = null;
+            } else {
+                recents = McContact.RicContactsSortedByRank (NcApplication.Instance.Account.Id, 5);
+                contacts = McContact.AllContactsSortedByName (true);
+                sections = ContactsBinningHelper.BinningContacts (ref contacts);
+            }
+            NotifyDataSetChanged ();
         }
 
         public override long GetItemId (int position)
         {
-            if (recentsCount > position) {
-                return recents [position].Id;
-            } else if (contactsCount > 0) {
-                return contacts [position - recentsCount].Id;
+            if (searching) {
+                return searchResults [position].Id;
             } else {
-                NcAssert.CaseError ();
-                return 0;
+                if (recentsCount > position) {
+                    return recents [position].Id;
+                } else if (contactsCount > 0) {
+                    return contacts [position - recentsCount].Id;
+                } else {
+                    NcAssert.CaseError ();
+                    return 0;
+                }
             }
         }
 
         public override int Count {
             get {
-                return recentsCount + contactsCount;
+                if (searching) {
+                    return searchResultsCount;
+                } else {
+                    return recentsCount + contactsCount;
+                }
             }
         }
 
         public override McContact this [int position] {  
             get {
-                var id = GetItemId (position);
-                return McContact.QueryById<McContact> ((int)id);
+                if (searching) {
+                    var contactEmailAttribute = searchResults [position];
+                    var contact = contactEmailAttribute.GetContact ();
+                    // alternateEmailAddress = contactEmailAttribute.Value;
+                    return contact;
+                } else {
+                    var id = GetItemId (position);
+
+                    return McContact.QueryById<McContact> ((int)id);
+                }
             }
         }
 
@@ -245,6 +385,7 @@ namespace NachoClient.AndroidClient
             if (view == null) {
                 view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.ContactCell, parent, false);
             }
+
             var contact = this [position];
             var viewType = Bind.BindContactCell (contact, view);
             viewTypeMap [position] = viewType;

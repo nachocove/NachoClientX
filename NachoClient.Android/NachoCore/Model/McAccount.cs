@@ -80,7 +80,7 @@ namespace NachoCore.Model
             Done = 0,
             InProgress,
             GoogleCallback,
-            // Obsolete
+            CredentialsValidated,
         };
 
         // Flags an account that's being configured

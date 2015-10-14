@@ -12,10 +12,11 @@ using Android.Widget;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "ContactsActivity")]            
+    [Activity (Label = "ContactsActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
     public class ContactsActivity : NcActivity
     {
         ContactViewFragment contactViewFragment;
@@ -32,7 +33,7 @@ namespace NachoClient.AndroidClient
 
         void ContactsListFragment_onContactClick (object sender, McContact contact)
         {
-            Console.WriteLine ("ContactsListFragment_onContactClick: {0}", contact);
+            Log.Info (Log.LOG_UI, "ContactsListFragment_onContactClick: {0}", contact);
             contactViewFragment = ContactViewFragment.newInstance (contact);
             this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, contactViewFragment).AddToBackStack ("View").Commit ();
         }
@@ -41,6 +42,9 @@ namespace NachoClient.AndroidClient
         {
             base.OnBackPressed ();
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is ContactsListFragment) {
+                ((ContactsListFragment)f).OnBackPressed ();
+            }
             if (f is ContactViewFragment) {
                 this.FragmentManager.PopBackStack ();
             }

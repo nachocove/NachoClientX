@@ -29,6 +29,12 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer viewTapped;
         protected UITapGestureRecognizer.Token viewTappedToken;
 
+        UIButton removeButton;
+        UIImageView cellIconImageView;
+        UILabel textLabel;
+        UILabel detailTextlabel;
+        UIView separatorLine;
+
         public McAttachment attachment;
 
         public UcAttachmentCell (McAttachment attachment, nfloat parentWidth, bool editable, UcAttachmentCellAction tapAction, UcAttachmentCellAction removeAction)
@@ -37,15 +43,16 @@ namespace NachoClient.iOS
             this.attachment = attachment;
             this.tapAction = tapAction;
             this.removeAction = editable ? removeAction : null;
-            CreateView (parentWidth, editable);
+            this.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            CreateView (editable);
         }
 
-        public void CreateView (nfloat parentWidth, bool editable)
+        public void CreateView (bool editable)
         {
             nfloat xOffset = 0;
             if (editable) {
                 //Remove icon
-                var removeButton = new UIButton ();
+                removeButton = new UIButton ();
                 removeButton.AccessibilityLabel = "Remove";
                 removeButton.Tag = REMOVE_BUTTON_TAG;
                 removeButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
@@ -58,39 +65,42 @@ namespace NachoClient.iOS
             }
 
             //Cell icon
-            var cellIconImageView = new UIImageView (); 
+            cellIconImageView = new UIImageView (); 
             cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             cellIconImageView.Frame = new CGRect (xOffset + 18, 18, 24, 24);
             this.AddSubview (cellIconImageView);
 
             //Text label
-            var textLabel = new UILabel (); 
+            textLabel = new UILabel (); 
             textLabel.Font = A.Font_AvenirNextDemiBold14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            textLabel.Frame = new CGRect (xOffset + 60, 11, parentWidth - 60 - 52, 19.5f);
+            textLabel.Frame = new CGRect (xOffset + 60, 11, Bounds.Width - 60 - 52, 19.5f);
+            textLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             this.AddSubview (textLabel);
 
             //Detail text label
-            var detailTextlabel = new UILabel (); 
+            detailTextlabel = new UILabel (); 
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             detailTextlabel.Font = A.Font_AvenirNextRegular14;
             detailTextlabel.TextColor = A.Color_NachoTextGray;
-            detailTextlabel.Frame = new CGRect (xOffset + 60, 11 + 19.5f, parentWidth - 60 - 52, 19.5f);
+            detailTextlabel.Frame = new CGRect (xOffset + 60, 11 + 19.5f, Bounds.Width - 60 - 52, 19.5f);
+            detailTextlabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             this.AddSubview (detailTextlabel);
 
             //Separator line
-            var separatorLine = Util.AddHorizontalLine (xOffset + 60, 60, parentWidth - 60, A.Color_NachoBorderGray);
+            separatorLine = Util.AddHorizontalLine (xOffset + 60, 60, Bounds.Width - 60, A.Color_NachoBorderGray);
+            separatorLine.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             this.AddSubview (separatorLine);
 
             viewTapped = new UITapGestureRecognizer ();
             viewTappedToken = viewTapped.AddTarget (ViewTapped);
             this.AddGestureRecognizer (viewTapped);
 
-            ConfigureView (attachment, cellIconImageView, textLabel, detailTextlabel);
+            ConfigureView ();
         }
 
-        protected void ConfigureView (McAttachment attachment, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel)
+        public void ConfigureView ()
         {
             if (null != attachment) {
 
@@ -106,15 +116,15 @@ namespace NachoClient.iOS
                 if (0 != attachment.FileSize) {
                     detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
                 } 
-                detailTextLabel.Text = detailText;
+                detailTextlabel.Text = detailText;
 
                 if (Pretty.TreatLikeAPhoto(attachment.DisplayName)) {
-                    iconView.Image = UIImage.FromBundle ("email-att-photos");
+                    cellIconImageView.Image = UIImage.FromBundle ("email-att-photos");
                 } else {
-                    iconView.Image = UIImage.FromBundle ("email-att-files");
+                    cellIconImageView.Image = UIImage.FromBundle ("email-att-files");
                 }
             } else {
-                textLabel.Text = "File no longer exists"; 
+                textLabel.Text = "File no longer exists";
             }
         }
 
@@ -144,7 +154,6 @@ namespace NachoClient.iOS
     public class UcAttachmentBlock : UIView
     {
         protected IUcAttachmentBlockDelegate owner;
-        protected nfloat parentWidth;
         protected List<UcAttachmentCell> list = new List<UcAttachmentCell> ();
 
         protected int CELL_HEIGHT;
@@ -163,15 +172,13 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer toggleCompactTapped;
         protected UITapGestureRecognizer.Token toggleCompactTappedToken;
 
-        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, nfloat parentWidth, int cellHeight, bool editable)
+        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int cellHeight, bool editable)
         {
             this.owner = owner;
-            this.parentWidth = parentWidth;
             this.BackgroundColor = UIColor.White;
             this.CELL_HEIGHT = cellHeight;
             this.editable = editable;
 
-            this.AutoresizingMask = UIViewAutoresizing.None;
             this.AutosizesSubviews = false;
 
             CreateView ();
@@ -180,6 +187,13 @@ namespace NachoClient.iOS
         public void SetCompact (bool isCompact)
         {
             this.isCompact = isCompact;
+        }
+
+        public void ToggleCompact ()
+        {
+            isCompact = !isCompact;
+            ConfigureView ();
+            SetNeedsLayout ();
         }
 
         public int AttachmentCount {
@@ -208,6 +222,16 @@ namespace NachoClient.iOS
             }
         }
 
+        public void UpdateAttachment (McAttachment attachment)
+        {
+            foreach (var a in list) {
+                if (a.attachment.Id == attachment.Id) {
+                    a.attachment = attachment;
+                    a.ConfigureView ();
+                }
+            }
+        }
+
         public void CreateView ()
         {
             contentView = new UIView ();
@@ -225,7 +249,8 @@ namespace NachoClient.iOS
                 chooserButton.AccessibilityLabel = "Add attachment";
                 Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
                 chooserButton.SizeToFit ();
-                chooserButton.Frame = new CGRect (parentWidth - 43, 0, 40, CELL_HEIGHT);
+                chooserButton.Frame = new CGRect (Bounds.Width - 43, 0, 40, CELL_HEIGHT);
+                chooserButton.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
                 chooserButton.TouchUpInside += ChooserButtonClicked;
                 contentView.AddSubview (chooserButton);
             }
@@ -238,7 +263,7 @@ namespace NachoClient.iOS
 
         public void Append (McAttachment attachment)
         {
-            var c = new UcAttachmentCell (attachment, parentWidth, editable, (UcAttachmentCell cell) => {
+            var c = new UcAttachmentCell (attachment, Bounds.Width, editable, (UcAttachmentCell cell) => {
                 if (null != owner) {
                     owner.DisplayAttachmentForAttachmentBlock (cell.attachment);
                 }
@@ -254,11 +279,26 @@ namespace NachoClient.iOS
 
         public void Remove (UcAttachmentCell c)
         {
+            var attachment = c.attachment;
             list.Remove (c);
             c.RemoveFromSuperview ();
             c.Dispose ();
 
-            Layout ();
+            SetNeedsLayout ();
+            ConfigureView ();
+            if (null != owner) {
+                owner.RemoveAttachmentForAttachmentBlock (attachment);
+            }
+        }
+
+        public void Clear ()
+        {
+            foreach (var cell in list) {
+                cell.RemoveFromSuperview ();
+                cell.Dispose ();
+            }
+            list.Clear ();
+            SetNeedsLayout ();
             ConfigureView ();
         }
 
@@ -285,6 +325,11 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void LayoutSubviews ()
+        {
+            Layout ();
+        }
+
         public void Layout ()
         {
             nfloat yOffset = 0;
@@ -302,7 +347,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            contentView.Frame = new CGRect (0, 0, parentWidth, yOffset);
+            contentView.Frame = new CGRect (0, 0, Bounds.Width, yOffset);
             this.Frame = new CGRect (this.Frame.Location, contentView.Frame.Size);
         }
 
@@ -325,7 +370,7 @@ namespace NachoClient.iOS
         private void ShowChooser()
         {
             if (null != owner) {
-                owner.PerformSegueForAttachmentBlock ("SegueToAddAttachment", new SegueHolder (null));
+                owner.ShowChooserForAttachmentBlock ();
             }
         }
 
@@ -340,8 +385,9 @@ namespace NachoClient.iOS
 
         private void ToggleCompactness ()
         {
-            isCompact = !isCompact;
-            ConfigureView ();
+            if (null != owner) {
+                owner.ToggleCompactForAttachmentBlock ();
+            }
         }
     }
 }

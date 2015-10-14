@@ -20,6 +20,10 @@ namespace NachoClient.iOS
         {
         }
 
+        public NcAdjustableLayoutTextField (CGRect frame) : base (frame)
+        {
+        }
+
         public override CGRect LeftViewRect (CGRect forBounds)
         {
             if (AdjustedLeftViewRect.HasValue) {

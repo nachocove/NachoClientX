@@ -15,9 +15,11 @@ namespace NachoClient.iOS
 
         void DisplayAttachmentForAttachmentBlock (McAttachment attachment);
 
-        void PerformSegueForAttachmentBlock (string identifier, SegueHolder segueHolder);
+        void RemoveAttachmentForAttachmentBlock (McAttachment attachment);
 
-        void PresentViewControllerForAttachmentBlock (UIViewController viewControllerToPresent, bool animated, Action completionHandler);
+        void ShowChooserForAttachmentBlock ();
+
+        void ToggleCompactForAttachmentBlock ();
     }
 }
 
