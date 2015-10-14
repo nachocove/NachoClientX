@@ -674,6 +674,10 @@ namespace NachoCore.Model
                         }
                         this.DisplayColor = nextColor;
                     }
+                    // Make sure there's no other folder with the same ServerId in this account.
+                    if (McFolder.QueryByServerIdMult<McFolder> (AccountId, ServerId).Any ()) {
+                        throw new ArgumentException ("Trying to insert duplicate serverid");
+                    }
                     result = base.Insert ();
                     if (MaybeJunkFolder (DisplayName)) {
                         JunkFolderIds.TryAdd (Id, DisplayName);

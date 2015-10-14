@@ -369,9 +369,9 @@ namespace Test.iOS
             {
                 int accountId = 1;
 
-                McFolder folder1 = FolderOps.CreateFolder (accountId);
-                McFolder folder2 = FolderOps.CreateFolder (accountId);
-                McFolder folder3 = FolderOps.CreateFolder (accountId);
+                McFolder folder1 = FolderOps.CreateFolder (accountId, serverId: "1");
+                McFolder folder2 = FolderOps.CreateFolder (accountId, serverId: "2");
+                McFolder folder3 = FolderOps.CreateFolder (accountId, serverId: "3");
                 DateTime now1 = DateTime.UtcNow;
                 DateTime now2 = DateTime.UtcNow.AddHours (-2);
                 DateTime now3 = DateTime.UtcNow.AddDays (-3);

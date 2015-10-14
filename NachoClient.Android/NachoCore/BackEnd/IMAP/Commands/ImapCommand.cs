@@ -339,7 +339,13 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Adding folder {0} UidValidity {1}", folder.ImapFolderNameRedacted (), mailKitFolder.UidValidity.ToString ());
                 folder.ImapUidValidity = mailKitFolder.UidValidity;
                 folder.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
-                folder.Insert ();
+                try {
+                    folder.Insert ();
+                } catch (ArgumentException ex) {
+                    Log.Error (Log.LOG_IMAP, "CreateOrUpdateFolder: Failed to add folder {0}:{1}: {2}", folder.AccountId, folder.ImapFolderNameRedacted (), ex.Message);
+                    folder = null;
+                    return false;
+                }
                 added_or_changed = true;
             } else if (folder.ServerId != mailKitFolder.FullName ||
                 folder.DisplayName != folderDisplayName ||
