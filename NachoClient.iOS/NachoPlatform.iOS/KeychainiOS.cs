@@ -30,6 +30,7 @@ namespace NachoPlatform
         private const string KAccessToken = "AccessToken";
         private const string KRefreshToken = "RefreshToken";
         private const string KUserId = "UserId";
+        private const string KDeviceId = "DeviceId";
         private const string KLogSalt = "LogSalt";
 
         /*
@@ -126,6 +127,17 @@ namespace NachoPlatform
         public bool SetUserId (string userId)
         {
             return SetStringForKey (KUserId, userId);
+        }
+
+        public string GetDeviceId ()
+        {
+            return GetStringForKey (KDeviceId);
+
+        }
+
+        public bool SetDeviceId (string deviceId)
+        {
+            return SetStringForKey (KDeviceId, deviceId);
         }
 
         public bool SetAccessToken (int handle, string token)

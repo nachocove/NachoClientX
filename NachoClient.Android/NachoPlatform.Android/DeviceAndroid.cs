@@ -55,17 +55,39 @@ namespace NachoPlatform
             return "Android";
         }
 
+        private string _Identity;
         public string Identity() {
             // NOTE: The native email client uses "android1325419235512".
             // The NitroDesk client uses "49515649525250545154575557495751".
+            if (null == _Identity) {
+                if (Keychain.Instance.HasKeychain ()) {
+                    _Identity = Keychain.Instance.GetDeviceId ();
+                    if (null == _Identity) {
+                        _Identity = GetOrCreateDeviceId ();
+                        Keychain.Instance.SetDeviceId (_Identity);
+                    }
+                } else {
+                    _Identity = GetOrCreateDeviceId ();
+                }
+            }
+            return _Identity;
+        }
+
+        private string GetOrCreateDeviceId ()
+        {
             var androidId = Settings.Secure.AndroidId;
             if (androidId.Contains ("_") || 16 != androidId.Length) {
-                // FIXME need to save a GUID.
-                return "android1325419235511";
+                // FIXME: This exists purely so that each dev/install gets a separate deviceID, so
+                // that we can each see our own telemetry (rather than one hard-coded number that
+                // would lump all telemetry into one device!
+                // Replace this function with a real-device-id getter (which in some cases probably
+                // will be a GUID, but opefully not).
+                return string.Format ("Ncho{0}", Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ());
             } else {
-                return "android" + androidId;
+                return "Ncho" + androidId;
             }
         }
+
         public string Os () {
             return "Android " + Build.VERSION.Release;
         }
