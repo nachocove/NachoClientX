@@ -28,7 +28,7 @@ namespace NachoClient.AndroidClient
 
         #region Properties
 
-        MessageComposer Composer;
+        public readonly MessageComposer Composer;
         MessageComposeHeaderView HeaderView;
         Android.Webkit.WebView WebView;
         Android.Widget.ImageView SendButton;
@@ -84,6 +84,7 @@ namespace NachoClient.AndroidClient
 
             Composer.StartPreparingMessage ();
 
+            UpdateHeader ();
             UpdateSendEnabled ();
 
             return view;
@@ -179,6 +180,12 @@ namespace NachoClient.AndroidClient
         public void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to)
         {
             Composer.Message.To = to;
+            UpdateSendEnabled ();
+        }
+
+        public void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc)
+        {
+            Composer.Message.Cc = cc;
             UpdateSendEnabled ();
         }
 
@@ -284,6 +291,13 @@ namespace NachoClient.AndroidClient
         private void UpdateSendEnabled ()
         {
             SendButton.Enabled = Composer.HasRecipient;
+        }
+
+        private void UpdateHeader ()
+        {
+            HeaderView.ToField.Text = Composer.Message.To;
+            HeaderView.CcField.Text = Composer.Message.Cc;
+            HeaderView.SubjectField.Text = Composer.Message.Subject;
         }
 
         #endregion

@@ -15,6 +15,7 @@ namespace NachoClient.AndroidClient
 //        void MessageComposeHeaderViewDidChangeHeight (MessageComposeHeaderView view);
         void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject);
         void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to);
+        void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc);
 //        void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
 //        void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
 //        void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
@@ -30,10 +31,13 @@ namespace NachoClient.AndroidClient
         public MessageComposeHeaderViewDelegate Delegate;
         LinearLayout SubjectGroup;
         TextView SubjectLabel;
-        EditText SubjectField;
+        public EditText SubjectField;
         LinearLayout ToGroup;
         TextView ToLabel;
-        EditText ToField;
+        public EditText ToField;
+        LinearLayout CcGroup;
+        TextView CcLabel;
+        public EditText CcField;
         
         public MessageComposeHeaderView (Context context) : base(context)
         {
@@ -71,6 +75,24 @@ namespace NachoClient.AndroidClient
             ToGroup.AddView (ToField);
             AddView (ToGroup);
 
+            CcGroup = new LinearLayout (Context);
+            CcGroup.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent);
+            CcGroup.Orientation = Orientation.Horizontal;
+            CcLabel = new TextView (Context);
+            CcLabel.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent);
+            CcLabel.SetTextColor (Android.Graphics.Color.Black);
+            CcLabel.SetBackgroundColor (Android.Graphics.Color.White);
+            CcLabel.Text = "CC:";
+            CcField = new EditText (Context);
+            CcField.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent);
+            CcField.TextChanged += CcChanged;
+            CcField.SetTextColor (Android.Graphics.Color.Black);
+            CcField.SetBackgroundColor (Android.Graphics.Color.White);
+            CcField.InputType = InputTypes.TextVariationEmailAddress;
+            CcGroup.AddView (CcLabel);
+            CcGroup.AddView (CcField);
+            AddView (CcGroup);
+
             SubjectGroup = new LinearLayout (Context);
             SubjectGroup.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent);
             SubjectGroup.Orientation = Orientation.Horizontal;
@@ -101,6 +123,13 @@ namespace NachoClient.AndroidClient
         {
             if (Delegate != null) {
                 Delegate.MessageComposeHeaderViewDidChangeTo (this, ToField.Text);
+            }
+        }
+
+        void CcChanged (object sender, TextChangedEventArgs e)
+        {
+            if (Delegate != null) {
+                Delegate.MessageComposeHeaderViewDidChangeCc (this, CcField.Text);
             }
         }
 
