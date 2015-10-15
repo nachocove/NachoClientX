@@ -30,28 +30,26 @@ namespace NachoClient.AndroidClient
             SetContentView (Resource.Layout.MessageComposeActivity);
 
             var composeFragment = new ComposeFragment ();
-            if (Intent != null && Intent.Extras != null) {
-                if (Intent.Extras.ContainsKey (EXTRA_ACTION)) {
-                    composeFragment.Composer.Kind = (NachoCore.Utils.EmailHelper.Action)Intent.Extras.GetInt (EXTRA_ACTION);
-                }
-                if (Intent.Extras.ContainsKey (EXTRA_RELATED_MESSAGE_ID)) {
-                    var relatedThread = new McEmailMessageThread ();
-                    relatedThread.FirstMessageId = Intent.Extras.GetInt (EXTRA_RELATED_MESSAGE_ID);
-                    relatedThread.MessageCount = 1;
-                    composeFragment.Composer.RelatedThread = relatedThread;
-                }
-                if (Intent.Extras.ContainsKey (EXTRA_RELATED_CALENDAR_ID)) {
-                    var relatedCalendarItem = McCalendar.QueryById<McCalendar> (Intent.Extras.GetInt (EXTRA_RELATED_CALENDAR_ID));
-                    composeFragment.Composer.RelatedCalendarItem = relatedCalendarItem;
-                }
-                if (Intent.Extras.ContainsKey (EXTRA_RELATED_MESSAGE_ID)) {
-                    var message = McEmailMessage.QueryById<McEmailMessage> (Intent.Extras.GetInt (EXTRA_MESSAGE_ID));
-                    composeFragment.Composer.Message = message;
-                }
-                if (Intent.Extras.ContainsKey (EXTRA_INITIAL_TEXT)) {
-                    var text = Intent.Extras.GetString (EXTRA_INITIAL_TEXT);
-                    composeFragment.Composer.InitialText = text;
-                }
+            if (Intent.HasExtra (EXTRA_ACTION)) {
+                composeFragment.Composer.Kind = (NachoCore.Utils.EmailHelper.Action)Intent.GetIntExtra (EXTRA_ACTION, 0);
+            }
+            if (Intent.HasExtra (EXTRA_RELATED_MESSAGE_ID)) {
+                var relatedThread = new McEmailMessageThread ();
+                relatedThread.FirstMessageId = Intent.GetIntExtra (EXTRA_RELATED_MESSAGE_ID, 0);
+                relatedThread.MessageCount = 1;
+                composeFragment.Composer.RelatedThread = relatedThread;
+            }
+            if (Intent.HasExtra (EXTRA_RELATED_CALENDAR_ID)) {
+                var relatedCalendarItem = McCalendar.QueryById<McCalendar> (Intent.GetIntExtra (EXTRA_RELATED_CALENDAR_ID, 0));
+                composeFragment.Composer.RelatedCalendarItem = relatedCalendarItem;
+            }
+            if (Intent.HasExtra (EXTRA_RELATED_MESSAGE_ID)) {
+                var message = McEmailMessage.QueryById<McEmailMessage> (Intent.GetIntExtra (EXTRA_MESSAGE_ID, 0));
+                composeFragment.Composer.Message = message;
+            }
+            if (Intent.HasExtra (EXTRA_INITIAL_TEXT)) {
+                var text = Intent.GetStringExtra (EXTRA_INITIAL_TEXT);
+                composeFragment.Composer.InitialText = text;
             }
 
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, composeFragment).AddToBackStack("Now").Commit ();
