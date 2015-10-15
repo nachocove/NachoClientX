@@ -232,10 +232,6 @@ namespace NachoPlatform
         {
             NcAssert.True (null != value);
             var enc = EncryptString (value);
-            // Make sure we encrypted properly
-            var dec = DecryptString (enc);
-            NcAssert.True (value == dec);
-
             var editor = Prefs.Edit ();
             editor.PutString(query, enc);
             editor.Commit();
@@ -267,25 +263,29 @@ namespace NachoPlatform
             if (null == PrefsKey) {
                 var r = Prefs.GetString (KPrefsKeyKey, null);
                 if (null == r) {
+                    PrefsKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
-                    editor.PutString (KPrefsKeyKey, RSAEncryptKey (MakeAES256Key ()));
+                    editor.PutString (KPrefsKeyKey, RSAEncryptKey (PrefsKey));
                     editor.Commit ();
                     r = Prefs.GetString (KPrefsKeyKey, null);
-                    NcAssert.True (null != r);
+                    NcAssert.True (null != r); // make darn tootin' sure it's saved.
+                } else {
+                    PrefsKey = (ISecretKey)RSADecryptKey (r);
                 }
-                PrefsKey = (ISecretKey)RSADecryptKey (r);
                 NcAssert.True (PrefsKey.GetEncoded ().Length == AES_KEY_LEN);
             }
             if (null == PrefsMacKey) {
                 var r = Prefs.GetString (KPrefsMACKey, null);
                 if (null == r) {
+                    PrefsMacKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
-                    editor.PutString (KPrefsMACKey, RSAEncryptKey (MakeAES256Key ()));
+                    editor.PutString (KPrefsMACKey, RSAEncryptKey (PrefsMacKey));
                     editor.Commit ();
                     r = Prefs.GetString (KPrefsMACKey, null);
-                    NcAssert.True (null != r);
+                    NcAssert.True (null != r); // make darn tootin' sure it's saved.
+                } else {
+                    PrefsMacKey = (ISecretKey)RSADecryptKey (r);
                 }
-                PrefsMacKey = (ISecretKey)RSADecryptKey (r);
                 NcAssert.True (PrefsMacKey.GetEncoded ().Length == AES_KEY_LEN);
             }
             AesCipher = Cipher.GetInstance ("AES/CBC/PKCS5Padding", "BC");
