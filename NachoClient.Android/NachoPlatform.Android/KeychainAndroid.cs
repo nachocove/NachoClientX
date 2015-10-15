@@ -201,20 +201,25 @@ namespace NachoPlatform
         {
             var r = Prefs.GetString(query, null);
             if (null != r) {
-                return DecryptString (r);
-            } else {
-                if (errorIfMissing) {
-                    throw new Exception (string.Format ("Missing entry for {0}", query));
+                try {
+                    return DecryptString (r);
+                } catch (KeychainDecryptionException ex) {
+                    Log.Error (Log.LOG_SYS, "Could not decrypt keychain item: {0}", ex.Message);
+                    // FIXME Should we delete the entry here? It'll be useless anyway,
+                    // and at least then we can create a new one for this key. But is this
+                    // the right thing to do?
+                    Deleter (query);
                 }
-                return null;
             }
+            if (errorIfMissing) {
+                throw new KeychainItemNotFoundException (string.Format ("Missing entry for {0}", query));
+            }
+            return null;
         }
 
         public bool Setter (string query, string value)
         {
-            if (null == value) {
-                throw new Exception ("Null string passed");
-            }
+            NcAssert.True (null != value);
             var enc = EncryptString (value);
             // Make sure we encrypted properly
             var dec = DecryptString (enc);
@@ -287,7 +292,7 @@ namespace NachoPlatform
         {
             byte[] encryptedPackage = Convert.FromBase64String (encryptedTextB64);
             if (encryptedPackage[0] != (byte)0) {
-                throw new Exception (string.Format ("WRONG version {0}", encryptedPackage [0]));
+                throw new KeychainDecryptionException (string.Format ("WRONG version {0}", encryptedPackage [0]));
             }
 
             byte[] iv = new byte[AES_IV_LEN];
@@ -307,7 +312,7 @@ namespace NachoPlatform
             PrefsMac.Reset ();
             byte[] computedHmac = PrefsMac.DoFinal (encData);
             if (!FixedTimeCompare(computedHmac, hmac)) {
-                throw new Exception ("HMAC FAILED");
+                throw new KeychainDecryptionException ("HMAC FAILED");
             }
 
             var ips = new IvParameterSpec (iv);

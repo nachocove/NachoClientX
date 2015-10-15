@@ -254,6 +254,14 @@ namespace NachoPlatform
         }
     }
 
+    public class KeychainDecryptionException : Exception
+    {
+        public KeychainDecryptionException (string Message) : base (Message)
+        {
+
+        }
+    }
+
     public interface IPlatformKeychain
     {
         bool HasKeychain ();
