@@ -6,6 +6,8 @@
     android:layout_height="fill_parent">
     <include
         layout="@layout/NavigationBar" />
+    <include
+        layout="@layout/HotEvent" />
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"

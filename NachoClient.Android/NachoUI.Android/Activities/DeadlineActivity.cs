@@ -16,12 +16,12 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "InboxActivity")]            
-    public class InboxActivity : NcMessageListActivity
+    [Activity (Label = "DeadlineActivity")]            
+    public class DeadlineActivity : NcMessageListActivity
     {
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
-            var messages = NcEmailManager.Inbox (NcApplication.Instance.Account.Id);
+            var messages = new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id);
             messages.Refresh (out adds, out deletes);
             return messages;
         }

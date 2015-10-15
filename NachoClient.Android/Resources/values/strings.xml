@@ -111,4 +111,6 @@
     <string name="mission_2">In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time and reduce clutter that gets in your way.
 </string>
     <string name="message_support">Message Support</string>
+    <string name="deferred">Deferred</string>
+    <string name="deadline">Deadline</string>
 </resources>
