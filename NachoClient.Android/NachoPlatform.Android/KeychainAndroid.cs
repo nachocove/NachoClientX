@@ -419,7 +419,7 @@ namespace NachoPlatform
                 .SetSerialNumber (Java.Math.BigInteger.One)
                 .SetStartDate(start.Time)
                 .SetEndDate(end.Time)
-                .SetEncryptionRequired () // TODO We probably need to see if we can still use the key in the background if the device is locked.
+                //.SetEncryptionRequired () // TODO We probably need to see if we can still use the key in the background if the device is locked.
                 .Build ();
             generator.Initialize(spec);
             generator.GenerateKeyPair();
