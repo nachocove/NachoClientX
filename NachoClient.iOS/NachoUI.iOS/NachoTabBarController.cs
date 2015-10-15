@@ -33,6 +33,7 @@ namespace NachoClient.iOS
         protected UITabBarItem foldersItem;
         protected UITabBarItem deadlinesItem;
         protected UITabBarItem deferredItem;
+        protected UITabBarItem likelyItem;
         protected UITabBarItem inboxItem;
 
         protected const int TABLEVIEW_TAG = 1999;
@@ -68,6 +69,7 @@ namespace NachoClient.iOS
             SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "more-support", "more-support-active"); // Done
             // SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot List", "nav-mail", "nav-mail-active"); // Done
             deferredItem = SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
+            likelyItem = SetTabBarItem ("NachoClient.iOS.LikelyToReadViewController", "Likely To Read", "nav-mail", "nav-mail-active"); // Done
             deadlinesItem = SetTabBarItem ("NachoClient.iOS.DeadlinesViewController", "Deadlines", "nav-mail", "nav-mail-active"); // Done
             foldersItem = SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-mail", "nav-mail-active"); // Done
             SetTabBarItem ("NachoClient.iOS.FileListViewController", "Files", "more-files", "more-files-active"); // Done
@@ -198,6 +200,11 @@ namespace NachoClient.iOS
         public void SwitchToDeferred ()
         {
             SwitchTo (deferredItem);
+        }
+
+        public void SwitchToLikely ()
+        {
+            SwitchTo (likelyItem);
         }
 
         public void SwitchToDeadlines ()

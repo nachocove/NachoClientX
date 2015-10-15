@@ -32,6 +32,12 @@ namespace Test.Common
             NcAssert.True (0 < Folder.Id);
         }
 
+        [TearDown]
+        public new void TearDown ()
+        {
+            NcModel.Instance.Db.DeleteAll<McEmailMessage> ();
+        }
+
         private McEmailAddress SetupAddress (string canonicalAddress, int received, int read, bool isVip)
         {
             McEmailAddress address = new McEmailAddress ();
@@ -196,16 +202,16 @@ namespace Test.Common
             // emails have scores below 0.5. 1 email is delete pending. 1 email
             // has a start date in the future.
             McEmailAddress[] addresses = new McEmailAddress[10];
-            addresses [0] = SetupAddress ("aaron@company.net", 4, 2, false);
-            addresses [1] = SetupAddress ("bob@company.net", 5, 1, false);
-            addresses [2] = SetupAddress ("charles@compnay.net", 3, 3, false);
-            addresses [3] = SetupAddress ("david@company.net", 2, 0, false);
-            addresses [4] = SetupAddress ("ellen@company.net", 5, 3, true);
-            addresses [5] = SetupAddress ("fred@company.net", 3, 1, true);
-            addresses [6] = SetupAddress ("gary@company.net", 6, 6, false);
-            addresses [7] = SetupAddress ("harry@company.net", 7, 7, false);
-            addresses [8] = SetupAddress ("ivan@company.net", 3, 1, false);
-            addresses [9] = SetupAddress ("jolene@company.net", 5, 5, false);
+            addresses [0] = SetupAddress ("aaron@company.net", 4, 2, false); // 0.5
+            addresses [1] = SetupAddress ("bob@company.net", 5, 1, false); // 0.2
+            addresses [2] = SetupAddress ("charles@compnay.net", 3, 3, false); // 1.0
+            addresses [3] = SetupAddress ("david@company.net", 2, 0, false); // 0.0
+            addresses [4] = SetupAddress ("ellen@company.net", 5, 3, true); // 0.8
+            addresses [5] = SetupAddress ("fred@company.net", 3, 1, true); // 0.33...
+            addresses [6] = SetupAddress ("gary@company.net", 6, 6, false); // 1.0
+            addresses [7] = SetupAddress ("harry@company.net", 7, 7, false); // 1.0
+            addresses [8] = SetupAddress ("ivan@company.net", 3, 1, false); // 0.33...
+            addresses [9] = SetupAddress ("jolene@company.net", 5, 5, false); // 1.0...
 
             McEmailMessage[] messages = new McEmailMessage[10];
             messages [0] = SetupMessage (addresses [0], new DateTime (2014, 8, 15, 1, 23, 0));
@@ -251,6 +257,9 @@ namespace Test.Common
 
             messageList = McEmailMessage.QueryActiveMessageItemsByScore (defaultAccountId, Folder.Id, 0.4);
             CheckMessages (messages, messageList, 8, 5, 4, 0, 2);
+
+            messageList = McEmailMessage.QueryActiveMessageItemsByScore2 (defaultAccountId, Folder.Id, 0.4, 0.1);
+            CheckMessages (messages, messageList, 5, 1);
         }
 
         [Test]
@@ -469,16 +478,16 @@ namespace Test.Common
             Assert.AreEqual (0, message.NeedUpdate);
 
             message.Score = 1.0;
-            message.UpdateScoreAndNeedUpdate ();
+            message.UpdateScoresAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 1.0, 0);
 
             message.NeedUpdate = 1;
-            message.UpdateScoreAndNeedUpdate ();
+            message.UpdateScoresAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 1.0, 1);
 
             message.Score = 0.5;
             message.NeedUpdate = 0;
-            message.UpdateScoreAndNeedUpdate ();
+            message.UpdateScoresAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 0.5, 0);
         }
 
@@ -1149,6 +1158,28 @@ namespace Test.Common
                 Assert.IsTrue (McEmailMessage.TryImportanceFromString (s, out i));
                 Assert.AreEqual (NcImportance.High_2, i);
             }
+        }
+
+        [Test]
+        public void TestQueryByServerIdList ()
+        {
+            List<McEmailMessage> messages = new List<McEmailMessage> ();
+            List<string> idList = new List<string> ();
+            for (uint i = 1; i <= 10; i++) { 
+                var message = new McEmailMessage () {
+                    AccountId = Folder.AccountId,
+                    ServerId = string.Format("EmailServerId{0}", i),
+                    Subject = string.Format ("Subject {0}", i),
+                    From = "bob@company.net",
+                };
+                Assert.AreEqual (1, message.Insert ());
+                Assert.AreEqual (i, message.Id);
+                messages.Add (message);
+                idList.Add (message.ServerId);
+            }
+
+            var mailList = McEmailMessage.QueryByServerIdList (Folder.AccountId, idList);
+            Assert.AreEqual (messages.Count, mailList.Count);
         }
     }
 }

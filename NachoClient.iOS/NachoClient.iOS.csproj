@@ -200,7 +200,7 @@
     </Reference>
     <Reference Include="System.Json" />
     <Reference Include="HockeyApp.iOS">
-      <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
+      <HintPath>HockeyApp\hockeyappios-3.8.2.1\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.iOS" />
     <Reference Include="System.Web.Services" />
@@ -1148,7 +1148,6 @@
     <Compile Include="NachoUI.iOS\DeadlinesViewController.designer.cs">
       <DependentUpon>DeadlinesViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
     <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
       <Link>NachoCore\Utils\HashHelper.cs</Link>
@@ -1671,6 +1670,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ScoringHelpers.cs">
       <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\LikelyToReadViewController.cs" />
+    <Compile Include="NachoUI.iOS\LikelyToReadViewController.designer.cs">
+      <DependentUpon>LikelyToReadViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\Support\CompoundScrollView.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageComposeHeaderView.cs" />
     <Compile Include="NachoPlatform.iOS\RtfConverteriOS.cs" />
@@ -1695,8 +1698,17 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEventDetail.cs">
       <Link>NachoCore\Utils\NcEventDetail.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoLikelyToReadEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoLikelyToReadEmailMessages.cs</Link>
+    </Compile>
     <Compile Include="NachoPlatform.iOS\ImageiOS.cs" />
     <Compile Include="NachoUI.iOS\Support\NcWebViewMessageProtocol.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration47.cs">
+      <Link>NachoCore\Model\Migration\NcMigration47.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDeadlineEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoDeadlineEmailMessages.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

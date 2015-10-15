@@ -42,7 +42,7 @@ namespace Test.Common
             CheckAddressFromStatistics (address, 1, 1, 0);
 
             // Verify the score and version
-            Assert.AreEqual (1.0, message1.Classify ());
+            Assert.AreEqual (1.0, message1.Classify ().Item1);
             Assert.AreEqual (1, message1.ScoreVersion);
 
             ///// Email from Alan that is not read /////
@@ -65,7 +65,7 @@ namespace Test.Common
             CheckAddressFromStatistics (address, 2, 1, 0);
 
             // Verify the score and version
-            Assert.AreEqual (1.0 / 2.0, message1.Classify ());
+            Assert.AreEqual (1.0 / 2.0, message1.Classify ().Item1);
             Assert.AreEqual (1, message1.ScoreVersion);
         }
 

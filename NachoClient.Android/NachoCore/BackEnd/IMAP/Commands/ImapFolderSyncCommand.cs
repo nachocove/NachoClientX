@@ -49,9 +49,9 @@ namespace NachoCore.IMAP
                             // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
                             // Strategy will notice that modseq and/or noselect etc has changed, and resync.
                         }
+                        foldernames.Add (mailKitFolder.FullName);
+                        toRemoveIndexList.Add (i);
                     }
-                    foldernames.Add (mailKitFolder.FullName);
-                    toRemoveIndexList.Add (i);
                 }
             }
             // remove from the end of the list, otherwise the index changes
