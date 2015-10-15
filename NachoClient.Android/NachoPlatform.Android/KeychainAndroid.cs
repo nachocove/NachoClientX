@@ -249,7 +249,6 @@ namespace NachoPlatform
         private void GetPrefsKey ()
         {
             if (null == PrefsKey) {
-                Deleter (KPrefsKeyKey); // DEBUG
                 var r = Prefs.GetString (KPrefsKeyKey, null);
                 if (null == r) {
                     var editor = Prefs.Edit ();
@@ -262,7 +261,6 @@ namespace NachoPlatform
                 NcAssert.True (PrefsKey.GetEncoded ().Length == AES_KEY_LEN);
             }
             if (null == PrefsMacKey) {
-                Deleter (KPrefsMACKey); // DEBUG
                 var r = Prefs.GetString (KPrefsMACKey, null);
                 if (null == r) {
                     var editor = Prefs.Edit ();
