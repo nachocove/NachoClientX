@@ -293,6 +293,11 @@ namespace NachoPlatform
         bool SetLogSalt (int handle, string logSalt);
 
         bool DeleteLogSalt (int handle);
+
+        string GetDeviceId ();
+
+        bool SetDeviceId (string deviceId);
+
     }
 
     public interface IPlatformUIRedirector
