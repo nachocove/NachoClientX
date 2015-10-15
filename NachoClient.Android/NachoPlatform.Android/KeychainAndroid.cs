@@ -33,14 +33,8 @@ namespace NachoPlatform
 
         private Keychain ()
         {
-            try {
-                GetKeyPair ();
-                GetPrefsKey ();
-
-            } catch (Exception ex) {
-                var str = ex.ToString ();
-                Log.Error (Log.LOG_SYS, "Keypair generation error: {0}", str);
-            }
+            GetKeyPair ();
+            GetPrefsKey ();
         }
 
         private const string KIdentifierForVendor = "IdentifierForVendor";
