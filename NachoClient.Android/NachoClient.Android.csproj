@@ -545,6 +545,7 @@
     <Compile Include="NachoUI.Android\Activities\SupportFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\SupportMessageFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\AboutFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\MessageComposeHeaderView.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

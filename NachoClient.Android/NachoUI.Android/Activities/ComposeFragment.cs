@@ -23,12 +23,13 @@ using System.IO;
 
 namespace NachoClient.AndroidClient
 {
-    public class ComposeFragment : Fragment, NachoJavascriptMessageHandler, MessageComposerDelegate, NachoWebClientDelegate
+    public class ComposeFragment : Fragment, NachoJavascriptMessageHandler, MessageComposerDelegate, NachoWebClientDelegate, MessageComposeHeaderViewDelegate
     {
 
         #region Properties
 
         MessageComposer Composer;
+        MessageComposeHeaderView HeaderView;
         Android.Webkit.WebView WebView;
         Android.Widget.ImageView SendButton;
         bool IsWebViewLoaded;
@@ -72,6 +73,9 @@ namespace NachoClient.AndroidClient
             SendButton.Visibility = Android.Views.ViewStates.Visible;
             SendButton.Click += SendButton_Click;
 
+            HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
+            HeaderView.Delegate = this;
+
             WebView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.message);
             WebView.Settings.JavaScriptEnabled = true;
             WebView.AddJavascriptInterface (new NachoJavascriptMessenger(this, "nacho"), "_android_messageHandlers_nacho");
@@ -80,31 +84,35 @@ namespace NachoClient.AndroidClient
 
             Composer.StartPreparingMessage ();
 
+            UpdateSendEnabled ();
+
             return view;
         }
 
         #endregion
 
-        #region User Actions
+        #region User Actions - Navbar
 
         void SendButton_Click (object sender, EventArgs e)
         {
             if (String.IsNullOrWhiteSpace (Composer.Message.Subject)) {
-                // TODO: alert with empty subject warning; don't send
-                SendWithoutSubject ();
+                var alert = new AlertDialog.Builder (Activity).SetTitle ("Empty Subject").SetMessage ("This message does not have a subject.  How would you like to proceed?");
+                alert.SetNeutralButton ("Send Anyway", SendWithoutSubject);
+                alert.SetPositiveButton ("Add Subject", AddSubject);
+                alert.Show ();
             } else {
                 CheckSizeBeforeSending ();
             }
         }
 
-        void SendWithoutSubject ()
+        void SendWithoutSubject (object sender, EventArgs args)
         {
             CheckSizeBeforeSending ();
         }
 
-        void AddSubject ()
+        void AddSubject (object sender, EventArgs args)
         {
-            // TODO: focus subject field
+            HeaderView.FocusSubject ();
         }
 
         void CheckSizeBeforeSending ()
@@ -115,11 +123,16 @@ namespace NachoClient.AndroidClient
                 Composer.Save (html);
                 if (Composer.IsOversize) {
                     if (Composer.CanResize) {
-                        // TODO: show alert with resize options; don't send
-                        Send ();
+                        var alert = new AlertDialog.Builder (Activity).SetTitle ("Large Message").SetMessage (String.Format ("This message is {0}.  You can make it smaller by sizing down the attached images.", Pretty.PrettyFileSize(Composer.MessageSize)));
+                        alert.SetNeutralButton (String.Format ("Small Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedSmallSize)), ResizeImagesSmall);
+                        alert.SetNeutralButton (String.Format ("Medium Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedMediumSize)), ResizeImagesMedium);
+                        alert.SetNeutralButton (String.Format ("Large Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedLargeSize)), ResizeImagesLarge);
+                        alert.SetNeutralButton (String.Format ("Actual Size ({0})", Pretty.PrettyFileSize(Composer.MessageSize)), AcknowlegeSizeWarning);
+                        alert.Show ();
                     } else {
-                        // TODO: show alert with size warning; don't send
-                        Send ();
+                        var alert = new AlertDialog.Builder (Activity).SetTitle ("Large Message").SetMessage (String.Format ("This message is {0}", Pretty.PrettyFileSize(Composer.MessageSize)));
+                        alert.SetNeutralButton ("Send Anyway", AcknowlegeSizeWarning);
+                        alert.Show ();
                     }
                 } else {
                     Send ();
@@ -127,22 +140,22 @@ namespace NachoClient.AndroidClient
             });
         }
 
-        void AcknowlegeSizeWarning ()
+        void AcknowlegeSizeWarning (object sender, EventArgs args)
         {
             Send ();
         }
 
-        void ResizeImagesLarge ()
+        void ResizeImagesLarge (object sender, EventArgs args)
         {
             ResizeImagesAndSend (Composer.LargeImageLengths);
         }
 
-        void ResizeImagesMedium ()
+        void ResizeImagesMedium (object sender, EventArgs args)
         {
             ResizeImagesAndSend (Composer.MediumImageLengths);
         }
 
-        void ResizeImagesSmall ()
+        void ResizeImagesSmall (object sender, EventArgs args)
         {
             ResizeImagesAndSend (Composer.SmallImageLengths);
         }
@@ -157,6 +170,21 @@ namespace NachoClient.AndroidClient
         {
             Composer.Send ();
             Activity.Finish ();
+        }
+
+        #endregion
+
+        #region User Action - Header
+
+        public void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to)
+        {
+            Composer.Message.To = to;
+            UpdateSendEnabled ();
+        }
+
+        public void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject)
+        {
+            Composer.Message.Subject = subject;
         }
 
         #endregion
@@ -214,12 +242,7 @@ namespace NachoClient.AndroidClient
 
         public void MessageComposerDidFailToLoadMessage (MessageComposer composer)
         {
-            // TODO: show alert
-//            var alertController = UIAlertController.Create ("Could not load message", "Sorry, we could not load your message.  Please try again.", UIAlertControllerStyle.Alert);
-//            alertController.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Default, (UIAlertAction obj) => { 
-//                DismissViewController (true, null);
-//            }));
-//            PresentViewController (alertController, true, null);
+            NcAlertView.ShowMessage(Activity, "Could not load message", "Sorry, we could not load your message.  Please try again.");
         }
 
         public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
@@ -251,8 +274,16 @@ namespace NachoClient.AndroidClient
         {
             EvaluateJavascript ("document.documentElement.outerHTML", (Java.Lang.Object result) => {
                 var stringResult = result as Java.Lang.String;
-                callback ("<!DOCTYPE html>\n" + stringResult.ToString ());
+                // I don't know why the result is coming in as a JSON-encoded string value, but it is
+                var json = stringResult.ToString ();
+                var str = System.Json.JsonValue.Parse(json);
+                callback ("<!DOCTYPE html>\n" + str);
             });
+        }
+
+        private void UpdateSendEnabled ()
+        {
+            SendButton.Enabled = Composer.HasRecipient;
         }
 
         #endregion
