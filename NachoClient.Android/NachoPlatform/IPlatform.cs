@@ -254,6 +254,14 @@ namespace NachoPlatform
         }
     }
 
+    public class KeychainDecryptionException : Exception
+    {
+        public KeychainDecryptionException (string Message) : base (Message)
+        {
+
+        }
+    }
+
     public interface IPlatformKeychain
     {
         bool HasKeychain ();
@@ -285,6 +293,11 @@ namespace NachoPlatform
         bool SetLogSalt (int handle, string logSalt);
 
         bool DeleteLogSalt (int handle);
+
+        string GetDeviceId ();
+
+        bool SetDeviceId (string deviceId);
+
     }
 
     public interface IPlatformUIRedirector

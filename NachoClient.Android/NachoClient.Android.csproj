@@ -82,25 +82,25 @@
       <HintPath>HockeyApp\hockeyappandroid-3.5.0\lib\android\HockeyApp.Android.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.Android.Support.v4">
-      <HintPath>..\packages\Xamarin.Android.Support.v4.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.Design">
-      <HintPath>..\packages\Xamarin.Android.Support.Design.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.Design.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v13">
-      <HintPath>..\packages\Xamarin.Android.Support.v13.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v13.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.MediaRouter">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.MediaRouter.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v7.MediaRouter.dll</HintPath>
+      <HintPath>..\packages\Xamarin.Android.Support.v4.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.Android.Support.v7.RecyclerView">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.RecyclerView.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v7.RecyclerView.dll</HintPath>
+      <HintPath>..\packages\Xamarin.Android.Support.v7.RecyclerView.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v7.RecyclerView.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.MediaRouter">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.MediaRouter.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v7.MediaRouter.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.Android.Support.v7.CardView">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.CardView.23.0.1.1\lib\MonoAndroid403\Xamarin.Android.Support.v7.CardView.dll</HintPath>
+      <HintPath>..\packages\Xamarin.Android.Support.v7.CardView.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v7.CardView.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v13">
+      <HintPath>..\packages\Xamarin.Android.Support.v13.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v13.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.Design">
+      <HintPath>..\packages\Xamarin.Android.Support.Design.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.Design.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Android.Export" />
   </ItemGroup>
@@ -525,6 +525,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration46.cs" />
     <Compile Include="NachoUI.Android\Support\A.cs" />
     <Compile Include="NachoCore\Utils\NcEventDetail.cs" />
+    <Compile Include="NachoCore\Adapters\NachoLikelyToReadEmailMessages.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooseDeferralFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactsActivity.cs" />
@@ -546,6 +547,11 @@
     <Compile Include="NachoUI.Android\Activities\SupportMessageFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\AboutFragment.cs" />
     <Compile Include="NachoUI.Android\Support\MessageComposeHeaderView.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration47.cs" />
+    <Compile Include="NachoUI.Android\Activities\NcMessageListActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\DeferredActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\DeadlineActivity.cs" />
+    <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -974,7 +980,6 @@
     <AndroidResource Include="Resources\layout\EventViewFragment.axml" />
     <AndroidResource Include="Resources\layout\GoogleSignInFragment.axml" />
     <AndroidResource Include="Resources\layout\HotMessageFragment.axml" />
-    <AndroidResource Include="Resources\layout\InboxActivity.axml" />
     <AndroidResource Include="Resources\layout\IntentFragment.axml" />
     <AndroidResource Include="Resources\layout\LaunchActivity.axml" />
     <AndroidResource Include="Resources\layout\Main.axml" />
@@ -1292,5 +1297,7 @@
     <AndroidResource Include="Resources\layout\SupportMessageFragment.axml" />
     <AndroidResource Include="Resources\layout\scratch.axml" />
     <AndroidResource Include="Resources\layout\AboutFragment.axml" />
+    <AndroidResource Include="Resources\layout\HotEvent.axml" />
+    <AndroidResource Include="Resources\layout\NcMessageListActivity.axml" />
   </ItemGroup>
 </Project>

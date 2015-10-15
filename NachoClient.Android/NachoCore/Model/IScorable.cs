@@ -21,6 +21,7 @@ namespace NachoCore.Utils
         /// Note that this value can change due to either a new score version
         /// (from a new version of the app) or statistics being updated.
         double Score { get; set; }
+        double Score2 { get; set; }
 
         /// A table of analysis function indexed by score version.
         AnalysisFunctionsTable AnalysisFunctions { get; set; }
@@ -39,7 +40,7 @@ namespace NachoCore.Utils
         int TimeVarianceState { get; set; }
 
         /// Compute the score of an object using the current model.
-        double Classify ();
+        Tuple<double,double> Classify ();
 
         // Analyze this object and update the model. Each version involes analyzing
         // different statistics / features.

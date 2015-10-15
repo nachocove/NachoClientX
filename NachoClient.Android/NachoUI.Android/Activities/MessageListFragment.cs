@@ -148,6 +148,15 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
+            var parent = (NcMessageListActivity)Activity;
+            var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
+
+            if(parent.ShowHotEvent()) {
+                hotEvent.Visibility = ViewStates.Visible;
+            } else {
+                hotEvent.Visibility = ViewStates.Gone;
+            }
+
             return view;
         }
 

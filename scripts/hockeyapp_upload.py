@@ -134,9 +134,11 @@ def main():
             release = 'dev'
         if release not in projects:
             raise ValueError('unknown release type %s' % release)
+
+        architecture =  'ios' if options.ios else 'android'
         hockeyapp_params = projects[release]['hockeyapp']
         api_token = hockeyapp_params['api_token']
-        app_id = hockeyapp_params['app_id']
+        app_id = hockeyapp_params['app_id'][architecture]
         print 'Uploading to HockeyApp %s' % app_id
         hockey_app = HockeyappUploadIos(api_token=api_token, app_id=app_id)
     else:

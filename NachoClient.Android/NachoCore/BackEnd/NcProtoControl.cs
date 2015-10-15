@@ -1103,6 +1103,21 @@ namespace NachoCore
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             var serverId = DateTime.UtcNow.Ticks.ToString ();
+
+            // It seems exceedingly unlikely that this would fail, but we need to check anyway.
+            bool AOk = false;
+            for (var i = 0; i<3; i++) {
+                if (McFolder.QueryByServerId<McFolder> (AccountId, serverId) != null) {
+                    serverId = DateTime.UtcNow.Ticks.ToString ();
+                } else {
+                    AOk = true;
+                    break;
+                }
+            }
+            if (!AOk) {
+                return NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed, NcResult.WhyEnum.AlreadyExistsOnServer);
+            }
+
             string destFldServerId;
             NcModel.Instance.RunInTransaction (() => {
                 if (0 > destFolderId) {

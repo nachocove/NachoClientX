@@ -673,8 +673,10 @@ namespace Test.iOS
 
         private void Fetch_InjectEmails (int accountId, int count)
         {
-            Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
-            Fetch_Folder.Insert ();
+            if (null == Fetch_Folder) {
+                Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+                Fetch_Folder.Insert ();
+            }
             Fetch_Emails = new List<McEmailMessage> ();
             for (int i = 0; i < count; i++) {
                 var body = new McBody () {

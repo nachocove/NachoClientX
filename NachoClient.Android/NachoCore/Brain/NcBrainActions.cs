@@ -60,7 +60,7 @@ namespace NachoCore.Brain
             return AnalyzeEmailMessage ((McEmailMessage)obj);
         }
 
-        protected bool UpdateEmailAddressScore (McEmailAddress emailAddress, bool updateDependencies)
+        protected bool UpdateEmailAddressScores (McEmailAddress emailAddress, bool updateDependencies)
         {
             if (null == emailAddress) {
                 return false;
@@ -69,12 +69,14 @@ namespace NachoCore.Brain
                 NcAssert.True (Scoring.Version > emailAddress.ScoreVersion);
                 return true;
             }
-            var newScore = emailAddress.Classify ();
-            bool scoreUpdated = newScore != emailAddress.Score;
+            var newScores = emailAddress.Classify ();
+            bool scoreUpdated = newScores.Item1 != emailAddress.Score ||
+                                newScores.Item2 != emailAddress.Score2;
             if (emailAddress.ShouldUpdate () || scoreUpdated) {
-                Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
-                    emailAddress.Id, emailAddress.Score);
-                emailAddress.Score = newScore;
+                emailAddress.Score = newScores.Item1;
+                emailAddress.Score2 = newScores.Item2;
+                Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6},{2:F6}",
+                    emailAddress.Id, emailAddress.Score, emailAddress.Score2);
                 emailAddress.NeedUpdate = 0;
                 emailAddress.UpdateByBrain ();
             }
@@ -84,7 +86,7 @@ namespace NachoCore.Brain
             return true;
         }
 
-        protected bool UpdateEmailMessageScore (McEmailMessage emailMessage)
+        protected bool UpdateEmailMessageScores (McEmailMessage emailMessage)
         {
             if (null == emailMessage) {
                 return false;
@@ -93,20 +95,23 @@ namespace NachoCore.Brain
                 NcAssert.True (Scoring.Version > emailMessage.ScoreVersion);
                 return true;
             }
-            var newScore = emailMessage.Classify ();
-            if (emailMessage.ShouldUpdate () || (newScore != emailMessage.Score)) {
-                Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
-                    emailMessage.Id, emailMessage.Score);
-                emailMessage.Score = newScore;
+            var newScores = emailMessage.Classify ();
+            if (emailMessage.ShouldUpdate () || 
+                newScores.Item1 != emailMessage.Score ||
+                newScores.Item2 != emailMessage.Score2) {
+                emailMessage.Score = newScores.Item1;
+                emailMessage.Score2 = newScores.Item2;
+                Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6},{2:F6}",
+                    emailMessage.Id, emailMessage.Score, emailMessage.Score2);
                 emailMessage.NeedUpdate = 0;
-                emailMessage.UpdateScoreAndNeedUpdate ();
+                emailMessage.UpdateScoresAndNeedUpdate ();
             }
             return true;
         }
 
-        protected bool UpdateEmailMessageScore (object obj)
+        protected bool UpdateEmailMessageScores (object obj)
         {
-            return UpdateEmailMessageScore ((McEmailMessage)obj);
+            return UpdateEmailMessageScores ((McEmailMessage)obj);
         }
 
         // Try to get the file path of the body of an McAbstrItem (or its derived classes)
