@@ -54,5 +54,14 @@ namespace NachoClient.AndroidClient
         }
 
     }
+
+    /// <summary>
+    /// Use JavaObjectWrapper to store an object with a C# type in a place that
+    /// only accepts Java objects derived from Java.Lang.Object.  For example,
+    /// this class can be used with View.SetTag() and View.GetTag().
+    /// </summary>
+    public class JavaObjectWrapper<T> : Java.Lang.Object {
+        public T Item { get; set; }
+    }
 }
 
