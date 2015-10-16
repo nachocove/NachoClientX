@@ -65,9 +65,9 @@ namespace NachoClient.AndroidClient
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
-            Log.Info (Log.LOG_UI, "MessageListAdapter_onMessageClick: {0}", thread);
             if (null != onMessageClick) {
                 var thread = McEmailMessage.QueryById<McEmailMessage> (e.Position);
+                Log.Info (Log.LOG_UI, "MessageListAdapter_onMessageClick: {0}", thread);
                 onMessageClick (this, thread);
             }
         }
