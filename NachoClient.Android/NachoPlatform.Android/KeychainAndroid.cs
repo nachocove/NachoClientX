@@ -22,20 +22,13 @@ namespace NachoPlatform
         public static Keychain Instance {
             get {
                 if (instance == null) {
-                    throw new ArgumentException ("Not initiailized");
-                }
-                return instance;
-            }
-        }
-
-        public static void CreateInstance ()
-        {
-            if (instance == null) {
-                lock (syncRoot) {
-                    if (instance == null) {
-                        instance = new Keychain ();
+                    lock (syncRoot) {
+                        if (instance == null) {
+                            instance = new Keychain ();
+                        }
                     }
                 }
+                return instance;
             }
         }
 

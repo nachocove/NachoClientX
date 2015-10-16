@@ -30,7 +30,6 @@ namespace NachoClient.AndroidClient
         public override void OnCreate ()
         {
             base.OnCreate ();
-            Keychain.CreateInstance ();
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
         }
             
