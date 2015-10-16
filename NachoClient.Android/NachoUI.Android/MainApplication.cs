@@ -7,6 +7,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 
 using System.Security.Cryptography.X509Certificates;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -29,6 +30,7 @@ namespace NachoClient.AndroidClient
         public override void OnCreate ()
         {
             base.OnCreate ();
+            Keychain.CreateInstance ();
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
         }
             

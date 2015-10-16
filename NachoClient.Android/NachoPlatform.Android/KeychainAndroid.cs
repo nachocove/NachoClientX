@@ -22,12 +22,20 @@ namespace NachoPlatform
         public static Keychain Instance {
             get {
                 if (instance == null) {
-                    lock (syncRoot) {
-                        if (instance == null)
-                            instance = new Keychain ();
-                    }
+                    throw new ArgumentException ("Not initiailized");
                 }
                 return instance;
+            }
+        }
+
+        public static void CreateInstance ()
+        {
+            if (instance == null) {
+                lock (syncRoot) {
+                    if (instance == null) {
+                        instance = new Keychain ();
+                    }
+                }
             }
         }
 
@@ -215,7 +223,7 @@ namespace NachoPlatform
                 try {
                     return DecryptString (r);
                 } catch (KeychainDecryptionException ex) {
-                    Log.Error (Log.LOG_SYS, "Could not decrypt keychain item: {0}", ex.Message);
+                    Log.Error (Log.LOG_SYS, "KeychainAndroid: Could not decrypt keychain item: {0}", ex.Message);
                     // FIXME Should we delete the entry here? It'll be useless anyway,
                     // and at least then we can create a new one for this key. But is this
                     // the right thing to do?
@@ -247,6 +255,17 @@ namespace NachoPlatform
         }
         #endregion
 
+        #region RandomNumberGenerator
+        private static System.Security.Cryptography.RandomNumberGenerator _Random;
+        private void RandomBytes (byte[] bytes)
+        {
+            if (_Random == null) {
+                _Random = new System.Security.Cryptography.RNGCryptoServiceProvider ();
+            }
+            _Random.GetBytes (bytes);
+        }
+        #endregion
+
         #region PrefsKey
         private ISecretKey PrefsKey;
         private ISecretKey PrefsMacKey;
@@ -263,6 +282,7 @@ namespace NachoPlatform
             if (null == PrefsKey) {
                 var r = Prefs.GetString (KPrefsKeyKey, null);
                 if (null == r) {
+                    Log.Info (Log.LOG_SYS, "KeychainAndroid: Creating new PrefsKey");
                     PrefsKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
                     editor.PutString (KPrefsKeyKey, RSAEncryptKey (PrefsKey));
@@ -277,6 +297,7 @@ namespace NachoPlatform
             if (null == PrefsMacKey) {
                 var r = Prefs.GetString (KPrefsMACKey, null);
                 if (null == r) {
+                    Log.Info (Log.LOG_SYS, "KeychainAndroid: Creating new PrefsMacKey");
                     PrefsMacKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
                     editor.PutString (KPrefsMACKey, RSAEncryptKey (PrefsMacKey));
@@ -295,7 +316,7 @@ namespace NachoPlatform
         private IKey MakeAES256Key ()
         {
             byte[] raw = new byte[32];
-            new SecureRandom ().NextBytes (raw);
+            RandomBytes (raw);
             return new SecretKeySpec (raw, "AES");
         }
 
@@ -336,7 +357,7 @@ namespace NachoPlatform
         private string EncryptString (string data)
         {
             byte[] iv = new byte[AES_IV_LEN];
-            new SecureRandom ().NextBytes (iv);
+            RandomBytes (iv);
             var ips = new IvParameterSpec (iv);
 
             AesCipher.Init (CipherMode.EncryptMode, PrefsKey, ips);
@@ -407,6 +428,8 @@ namespace NachoPlatform
 
         private void GenerateKeyPair ()
         {
+            var st = new PlatformStopwatch ();
+            st.Start ();
             Java.Util.Calendar start = Java.Util.Calendar.GetInstance (Java.Util.TimeZone.Default);
             Java.Util.Calendar end = Java.Util.Calendar.GetInstance (Java.Util.TimeZone.Default);
             end.Add (Java.Util.CalendarField.Year, 20);
@@ -423,24 +446,36 @@ namespace NachoPlatform
                 .Build ();
             generator.Initialize(spec);
             generator.GenerateKeyPair();
+            st.Stop ();
+            Log.Info (Log.LOG_SYS, "KeychainAndroid: Created new KeyPair in {0}ms", st.ElapsedMilliseconds);
             NcAssert.True (ks.ContainsAlias (KDefaultKeyPair)); // make sure it got saved to the keystore
         }
 
         private string RSAEncryptKey (IKey key)
         {
+            var st = new PlatformStopwatch ();
+            st.Start ();
             byte[] encryptedData;
             var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
             rsaCipher.Init (CipherMode.WrapMode, publicKey);
             encryptedData = rsaCipher.Wrap (key);
-            return Convert.ToBase64String (encryptedData);
+            var enc = Convert.ToBase64String (encryptedData);
+            st.Stop ();
+            Log.Info (Log.LOG_SYS, "KeychainAndroid: RSA-Encrypted key data in {0}ms", st.ElapsedMilliseconds);
+            return enc;
         }
 
         private IKey RSADecryptKey (string encryptedTextB64)
         {
+            var st = new PlatformStopwatch ();
+            st.Start ();
             var bytesToDecrypt = Convert.FromBase64String(encryptedTextB64);
             var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
             rsaCipher.Init (CipherMode.UnwrapMode, privateKey);
-            return rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
+            var dec = rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
+            st.Stop ();
+            Log.Info (Log.LOG_SYS, "KeychainAndroid: RSA-Decrypted key data in {0}ms", st.ElapsedMilliseconds);
+            return dec;
         }
         #endregion
     }
