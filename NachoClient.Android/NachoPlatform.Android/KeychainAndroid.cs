@@ -275,7 +275,7 @@ namespace NachoPlatform
             if (null == PrefsKey) {
                 var r = Prefs.GetString (KPrefsKeyKey, null);
                 if (null == r) {
-                    Log.Info (Log.LOG_SYS, "KeychainAndroid: Creating new PrefsKey");
+//                    Log.Info (Log.LOG_SYS, "KeychainAndroid: Creating new PrefsKey");
                     PrefsKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
                     editor.PutString (KPrefsKeyKey, RSAEncryptKey (PrefsKey));
@@ -290,7 +290,7 @@ namespace NachoPlatform
             if (null == PrefsMacKey) {
                 var r = Prefs.GetString (KPrefsMACKey, null);
                 if (null == r) {
-                    Log.Info (Log.LOG_SYS, "KeychainAndroid: Creating new PrefsMacKey");
+//                    Log.Info (Log.LOG_SYS, "KeychainAndroid: Creating new PrefsMacKey");
                     PrefsMacKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
                     editor.PutString (KPrefsMACKey, RSAEncryptKey (PrefsMacKey));
@@ -440,7 +440,7 @@ namespace NachoPlatform
             generator.Initialize(spec);
             generator.GenerateKeyPair();
             st.Stop ();
-            Log.Info (Log.LOG_SYS, "KeychainAndroid: Created new KeyPair in {0}ms", st.ElapsedMilliseconds);
+//            Log.Info (Log.LOG_SYS, "KeychainAndroid: Created new KeyPair in {0}ms", st.ElapsedMilliseconds);
             NcAssert.True (ks.ContainsAlias (KDefaultKeyPair)); // make sure it got saved to the keystore
         }
 
@@ -454,7 +454,7 @@ namespace NachoPlatform
             encryptedData = rsaCipher.Wrap (key);
             var enc = Convert.ToBase64String (encryptedData);
             st.Stop ();
-            Log.Info (Log.LOG_SYS, "KeychainAndroid: RSA-Encrypted key data in {0}ms", st.ElapsedMilliseconds);
+//            Log.Info (Log.LOG_SYS, "KeychainAndroid: RSA-Encrypted key data in {0}ms", st.ElapsedMilliseconds);
             return enc;
         }
 
