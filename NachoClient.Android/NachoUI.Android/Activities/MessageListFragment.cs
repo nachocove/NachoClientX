@@ -77,10 +77,6 @@ namespace NachoClient.AndroidClient
             composeButton.Visibility = Android.Views.ViewStates.Visible;
             composeButton.Click += ComposeButton_Click;
 
-            // Highlight the tab bar icon of this activity
-            var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.inbox_image);
-            inboxImage.SetImageResource (Resource.Drawable.nav_mail_active);
-
             messageListAdapter = new MessageListAdapter (messages);
 
             listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
@@ -156,6 +152,8 @@ namespace NachoClient.AndroidClient
             } else {
                 hotEvent.Visibility = ViewStates.Gone;
             }
+
+            parent.SetActiveImage (view);
 
             return view;
         }

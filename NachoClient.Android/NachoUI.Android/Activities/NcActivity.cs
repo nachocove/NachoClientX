@@ -121,11 +121,11 @@ namespace NachoClient.AndroidClient
         {
             MaybePopMoreFragment ();
 
-            if (this is NowActivity) {
+            if (this is NowListActivity) {
                 return;
             } 
             var intent = new Intent ();
-            intent.SetClass (this, typeof(NowActivity));
+            intent.SetClass (this, typeof(NowListActivity));
             StartActivity (intent);
         }
 

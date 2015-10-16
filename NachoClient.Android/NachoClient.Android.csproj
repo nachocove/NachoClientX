@@ -550,6 +550,7 @@
     <Compile Include="NachoUI.Android\Activities\DeferredActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\DeadlineActivity.cs" />
     <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
+    <Compile Include="NachoUI.Android\Activities\NowListActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

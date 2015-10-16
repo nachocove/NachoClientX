@@ -84,7 +84,7 @@ namespace NachoClient.AndroidClient
                 LoginHelpers.SetSwitchToTime (account);
             }
             var intent = new Intent ();
-            intent.SetClass (this, typeof(NowActivity));
+            intent.SetClass (this, typeof(NowListActivity));
             StartActivity (intent);
         }
 
