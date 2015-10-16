@@ -213,6 +213,9 @@ namespace NachoClient.AndroidClient
 
             var monthDayView = view.FindViewById<TextView> (Resource.Id.event_date_month_day);
             monthDayView.Text = date.ToString ("MMMM d, yyyy");
+
+            var addButton = view.FindViewById<ImageView> (Resource.Id.event_date_add);
+            addButton.SetTag (Resource.Id.event_date_add, new JavaObjectWrapper<DateTime> () { Item = date });
         }
 
         public static int ColorForUser (int index)

@@ -37,7 +37,6 @@
             android:textStyle="normal"
             android:textColor="@android:color/black" />
     </LinearLayout>
-<!-- Add button is invisible until it is hooked up and working -->
     <ImageView
         android:id="@+id/event_date_add"
         android:layout_width="wrap_content"
@@ -45,6 +44,5 @@
         android:layout_marginRight="10dp"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
-        android:src="@android:drawable/ic_menu_add"
-        android:visibility="gone" />
+        android:src="@android:drawable/ic_menu_add" />
 </RelativeLayout>
