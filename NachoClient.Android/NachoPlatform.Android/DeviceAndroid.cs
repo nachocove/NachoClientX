@@ -88,7 +88,7 @@ namespace NachoPlatform
             if (string.IsNullOrEmpty (deviceId)) {
                 deviceId = string.Format ("Ncho{0}", Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ());
             }
-            return deviceId;
+            return deviceId.Substring (0, 32);
         }
 
         public string Os () {
