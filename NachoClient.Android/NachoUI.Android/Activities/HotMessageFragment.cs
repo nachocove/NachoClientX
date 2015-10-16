@@ -148,7 +148,7 @@ namespace NachoClient.AndroidClient
 
         void DoneWithMessage ()
         {
-            var parent = (NowActivity)this.Activity;
+            var parent = (NowListActivity)this.Activity;
             parent.DoneWithMessage ();
         }
 
