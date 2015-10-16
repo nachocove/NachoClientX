@@ -18,7 +18,11 @@ namespace NachoClient.AndroidClient
 {
     public class EventViewFragment : Fragment
     {
-        McEvent ev;
+        private const int EDIT_REQUEST_CODE = 1;
+
+        private McEvent ev;
+
+        private View mainView;
 
         public static EventViewFragment newInstance (McEvent ev)
         {
@@ -30,18 +34,29 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
-            var view = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
+            mainView = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
 
-            BindEventView (ev, view);
-            return view;
+            BindEventView (ev, mainView, hasBeenEdited: false);
+            return mainView;
+        }
+
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult (requestCode, resultCode, data);
+
+            switch (requestCode) {
+
+            case EDIT_REQUEST_CODE:
+                if (Result.Ok == resultCode) {
+                    // The event was edited. Refresh the UI.
+                    BindEventView (ev, mainView, hasBeenEdited: true);
+                }
+                break;
+            }
         }
 
         ViewStates VisibleIfTrue (bool b)
@@ -58,13 +73,21 @@ namespace NachoClient.AndroidClient
         // TODO: Attachments
         // TODO: Edit notes view
         // TODO: Change reminder arrow
-        void BindEventView (McEvent ev, View view)
+        void BindEventView (McEvent ev, View view, bool hasBeenEdited)
         {
             var detail = new NcEventDetail (ev);
+            detail.HasBeenEdited = hasBeenEdited;
 
             var buttonBarTitleView = view.FindViewById<TextView> (Resource.Id.title);
             buttonBarTitleView.Text = ev.GetStartTimeLocal ().ToString ("MMMMM yyyy");
             buttonBarTitleView.Visibility = ViewStates.Visible;
+
+            if (detail.CanEdit) {
+                var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
+                editButton.Visibility = ViewStates.Visible;
+                editButton.SetImageResource (Resource.Drawable.gen_edit);
+                editButton.Click += EditButton_Click;
+            }
 
             ConfigureRsvpBar (detail, view);
 
@@ -168,7 +191,6 @@ namespace NachoClient.AndroidClient
 
         }
 
-
         public void ConfigureRsvpBar (NcEventDetail detail, View view)
         {
             var rsvpView = view.FindViewById<View> (Resource.Id.event_rsvp_view);
@@ -266,6 +288,11 @@ namespace NachoClient.AndroidClient
                 return char.ToUpper (names [0] [0]) + names [0].Substring (1);
             }
             return names [0].ToUpper ();
+        }
+
+        private void EditButton_Click (object sender, EventArgs e)
+        {
+            StartActivityForResult (EventEditActivity.EditEventIntent (this.Activity, ev), EDIT_REQUEST_CODE);
         }
     }
 }

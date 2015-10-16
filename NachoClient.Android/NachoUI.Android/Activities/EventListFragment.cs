@@ -75,7 +75,7 @@ namespace NachoClient.AndroidClient
             };
 
             addButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
-            addButton.SetImageResource (Android.Resource.Drawable.IcMenuAdd);
+            addButton.SetImageResource (Resource.Drawable.cal_add);
             addButton.Visibility = ViewStates.Visible;
             addButton.Click += AddButton_Click;
 
@@ -153,9 +153,7 @@ namespace NachoClient.AndroidClient
 
         void AddButton_Click (object sender, EventArgs e)
         {
-            var intent = new Intent ();
-//            intent.SetClass (this.Activity, typeof(EventEditActivity));
-            StartActivity (intent);
+            StartActivity (EventEditActivity.NewEventIntent (this.Activity));
         }
 
         protected void EndRefreshingOnUIThread (object sender)
