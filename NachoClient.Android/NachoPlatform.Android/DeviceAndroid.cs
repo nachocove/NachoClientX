@@ -1,13 +1,13 @@
 using System;
 using SQLite;
-using Android.App;
-using Android.Nfc;
 using Android.Content;
 using Android.Provider;
-using Android.Runtime;
 using Android.OS;
-using Android.Text.Format;
-using Android.Views;
+using NachoClient.AndroidClient;
+using Android.Telephony;
+using System.Security.Cryptography;
+using Portable.Text;
+using System.Linq;
 
 namespace NachoPlatform
 {
@@ -75,17 +75,20 @@ namespace NachoPlatform
 
         private string GetOrCreateDeviceId ()
         {
-            var androidId = Settings.Secure.AndroidId;
-            if (androidId.Contains ("_") || 16 != androidId.Length) {
-                // FIXME: This exists purely so that each dev/install gets a separate deviceID, so
-                // that we can each see our own telemetry (rather than one hard-coded number that
-                // would lump all telemetry into one device!
-                // Replace this function with a real-device-id getter (which in some cases probably
-                // will be a GUID, but opefully not).
-                return string.Format ("Ncho{0}", Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ());
-            } else {
-                return "Ncho" + androidId;
+            string deviceId = null;
+            var telephony = (TelephonyManager)MainApplication.Instance.ApplicationContext.GetSystemService (Context.TelephonyService);
+            if (null != telephony) {
+                if (!string.IsNullOrEmpty (telephony.DeviceId)) {
+                    using (SHA1Managed sha1 = new SHA1Managed()) {
+                        var hash = (new SHA1Managed ()).ComputeHash (Encoding.UTF8.GetBytes (telephony.DeviceId));
+                        deviceId = "Ncho" + string.Join("", hash.Select(b => b.ToString("X2")).ToArray());
+                    }
+                }
             }
+            if (string.IsNullOrEmpty (deviceId)) {
+                deviceId = string.Format ("Ncho{0}", Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ());
+            }
+            return deviceId.Substring (0, 32);
         }
 
         public string Os () {
