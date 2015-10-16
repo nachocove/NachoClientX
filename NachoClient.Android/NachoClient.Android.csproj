@@ -552,6 +552,8 @@
     <Compile Include="NachoUI.Android\Activities\DeferredActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\DeadlineActivity.cs" />
     <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
+    <Compile Include="NachoUI.Android\Activities\EventEditActivity.cs" />
+    <Compile Include="NachoUI.Android\Support\IntentHelper.cs" />
     <Compile Include="NachoUI.Android\Activities\NowListActivity.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -1300,5 +1302,10 @@
     <AndroidResource Include="Resources\layout\AboutFragment.axml" />
     <AndroidResource Include="Resources\layout\HotEvent.axml" />
     <AndroidResource Include="Resources\layout\NcMessageListActivity.axml" />
+    <AndroidResource Include="Resources\layout\EventEditActivity.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_edit.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_edit.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_edit.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_edit.png" />
   </ItemGroup>
 </Project>
