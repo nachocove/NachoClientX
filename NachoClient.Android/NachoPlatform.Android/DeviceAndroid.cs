@@ -81,7 +81,7 @@ namespace NachoPlatform
                 if (!string.IsNullOrEmpty (telephony.DeviceId)) {
                     using (SHA1Managed sha1 = new SHA1Managed()) {
                         var hash = (new SHA1Managed ()).ComputeHash (Encoding.UTF8.GetBytes (telephony.DeviceId));
-                        return "Ncho" + string.Join("", hash.Select(b => b.ToString("X2")).ToArray());
+                        deviceId = "Ncho" + string.Join("", hash.Select(b => b.ToString("X2")).ToArray());
                     }
                 }
             }
