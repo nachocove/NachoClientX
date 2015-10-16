@@ -467,7 +467,7 @@ namespace NachoPlatform
             rsaCipher.Init (CipherMode.UnwrapMode, privateKey);
             var dec = rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
             st.Stop ();
-            Log.Info (Log.LOG_SYS, "KeychainAndroid: RSA-Decrypted key data in {0}ms", st.ElapsedMilliseconds);
+//            Log.Info (Log.LOG_SYS, "KeychainAndroid: RSA-Decrypted key data in {0}ms", st.ElapsedMilliseconds);
             return dec;
         }
         #endregion
