@@ -23,14 +23,20 @@ namespace NachoClient.AndroidClient
         MessageViewFragment messageViewFragment;
         MessageListFragment messageListFragment;
 
-        protected virtual INachoEmailMessages GetMessages(out List<int> adds, out List<int> deletes)
+        protected virtual INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
             throw new NotImplementedException ();
         }
 
-        public virtual bool ShowHotEvent()
+        public virtual bool ShowHotEvent ()
         {
             return false;
+        }
+
+        public virtual void SetActiveImage (View view)
+        {
+            // Highlight the tab bar icon of this activity
+            // See inbox & nacho now activities
         }
 
         protected override void OnCreate (Bundle bundle)

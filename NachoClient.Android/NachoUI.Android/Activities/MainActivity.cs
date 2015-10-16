@@ -153,7 +153,7 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "MainActivity ShowApplication");
 
             var intent = new Intent ();
-            intent.SetClass (this, typeof(NowActivity));
+            intent.SetClass (this, typeof(NowListActivity));
             StartActivity (intent);
         }
 
