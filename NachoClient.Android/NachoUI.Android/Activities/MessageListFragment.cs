@@ -34,6 +34,9 @@ namespace NachoClient.AndroidClient
         private const int DELETE_TAG = 3;
         private const int DEFER_TAG = 4;
 
+        private const int LATE_TAG = 1;
+        private const int FORWARD_TAG = 2;
+
         SwipeMenuListView listView;
         MessageListAdapter messageListAdapter;
 
@@ -43,6 +46,7 @@ namespace NachoClient.AndroidClient
 
         Android.Widget.ImageView composeButton;
 
+        public event EventHandler<McEvent> onEventClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
         public static MessageListFragment newInstance (INachoEmailMessages messages)
@@ -151,10 +155,46 @@ namespace NachoClient.AndroidClient
 
             if (parent.ShowHotEvent ()) {
                 hotEvent.Visibility = ViewStates.Visible;
-                var hoteventListView = view.FindViewById<ListView> (Resource.Id.hotevent_listView);
+                var hoteventListView = view.FindViewById<SwipeMenuListView> (Resource.Id.hotevent_listView);
                 hoteventListView.Adapter = new HotEventAdapter ();
                 var hoteventEmptyView = view.FindViewById<View> (Resource.Id.hot_event_empty);
                 hoteventListView.EmptyView = hoteventEmptyView;
+
+                hoteventListView.ItemClick += HoteventListView_ItemClick;
+
+                hoteventListView.setMenuCreator ((menu) => {
+                        SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
+                        lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                        lateItem.setWidth (dp2px (90));
+                        lateItem.setTitle ("I'm Late");
+                        lateItem.setTitleSize (14);
+                        lateItem.setTitleColor (A.Color_White);
+                        lateItem.setIcon (A.Id_NachoSwipeCalendarLate);
+                        lateItem.setId (LATE_TAG);
+                        menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
+
+                        SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
+                        forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                        forwardItem.setWidth (dp2px (90));
+                        forwardItem.setTitle ("Forward");
+                        forwardItem.setTitleSize (14);
+                        forwardItem.setTitleColor (A.Color_White);
+                        forwardItem.setIcon (A.Id_NachoSwipeCalendarForward);
+                        forwardItem.setId (FORWARD_TAG);
+                        menu.addMenuItem (forwardItem, SwipeMenu.SwipeSide.RIGHT);
+                });
+
+                hoteventListView.setOnMenuItemClickListener (( position, menu, index) => {
+                    switch (index) {
+                    case LATE_TAG:
+                        break;
+                    case FORWARD_TAG:
+                        break;
+                    default:
+                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
+                    }
+                    return false;
+                });
             } else {
                 hotEvent.Visibility = ViewStates.Gone;
             }
@@ -162,6 +202,17 @@ namespace NachoClient.AndroidClient
             parent.SetActiveImage (view);
 
             return view;
+        }
+
+        void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+        {
+            if (null != onEventClick) {
+                DateTime timerFireTime;
+                var currentEvent = CalendarHelper.CurrentOrNextEvent (out timerFireTime);
+                if (null != currentEvent) {
+                    onEventClick (this, currentEvent);
+                }
+            }
         }
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
@@ -359,7 +410,6 @@ namespace NachoClient.AndroidClient
 
 
     }
-
 
     public class HotEventAdapter : Android.Widget.BaseAdapter<McEvent>
     {
