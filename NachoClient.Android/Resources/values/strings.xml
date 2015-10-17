@@ -113,4 +113,5 @@
     <string name="message_support">Message Support</string>
     <string name="deferred">Deferred</string>
     <string name="deadline">Deadline</string>
+    <string name="no_hot_event">No upcoming events</string>
 </resources>
