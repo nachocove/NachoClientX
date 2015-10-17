@@ -176,7 +176,7 @@ namespace NachoClient.AndroidClient
             }
             colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
 
-            titleView.Text = Pretty.SubjectString(detailView.SpecificItem.Subject);
+            titleView.Text = Pretty.SubjectString (detailView.SpecificItem.Subject);
 
             var startAndDuration = "";
             if (detailView.SpecificItem.AllDayEvent) {
@@ -216,6 +216,43 @@ namespace NachoClient.AndroidClient
 
             var addButton = view.FindViewById<ImageView> (Resource.Id.event_date_add);
             addButton.SetTag (Resource.Id.event_date_add, new JavaObjectWrapper<DateTime> () { Item = date });
+        }
+
+        public static void BindHotEvent (McEvent currentEvent, View view)
+        {
+            var calendarColor = view.FindViewById<View> (Resource.Id.calendar_color);
+            var eventIcon = view.FindViewById<View> (Resource.Id.event_location_image);
+            var eventTitle = view.FindViewById<TextView> (Resource.Id.event_title);
+            var eventSummary = view.FindViewById<TextView> (Resource.Id.event_summary);
+
+            var c = currentEvent.GetCalendarItemforEvent ();
+            var cRoot = CalendarHelper.GetMcCalendarRootForEvent (currentEvent.Id);
+
+            eventTitle.Text = Pretty.SubjectString (c.GetSubject ());
+
+            int colorIndex = 0;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (cRoot.AccountId, cRoot.Id).FirstOrDefault ();
+            if (null != folder) {
+                colorIndex = folder.DisplayColor;
+            }
+            calendarColor.SetBackgroundResource (ColorForUser (colorIndex));
+
+            var startString = "";
+            if (c.AllDayEvent) {
+                startString = "ALL DAY " + Pretty.FullDateSpelledOutString (currentEvent.GetStartTimeUtc ());
+            } else {
+                if ((currentEvent.GetStartTimeUtc () - DateTime.UtcNow).TotalHours < 12) {
+                    startString = Pretty.ShortTimeString (currentEvent.GetStartTimeUtc ());
+                } else {
+                    startString = Pretty.ShortDayTimeString (currentEvent.GetStartTimeUtc ());
+                }
+            }
+
+            var locationString = Pretty.SubjectString (c.GetLocation ());
+            var eventString = Pretty.Join (startString, locationString, " : ");
+
+            eventSummary.Text = eventString;
+            eventIcon.Visibility = (String.IsNullOrEmpty(eventString) ? ViewStates.Gone : ViewStates.Visible);
         }
 
         public static int ColorForUser (int index)
