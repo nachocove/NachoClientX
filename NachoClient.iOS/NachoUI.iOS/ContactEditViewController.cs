@@ -67,8 +67,6 @@ namespace NachoClient.iOS
         protected UIBarButtonItem cancelButton;
         protected UIBarButtonItem doneButton;
 
-        protected NachoCore.Utils.ContactsHelper contactHelper = new ContactsHelper ();
-
         public McContact contact;
         public McAccount account;
         protected McContact contactCopy;
@@ -429,8 +427,8 @@ namespace NachoClient.iOS
             addMiscButton = AddNewButton ("Other", AddMiscTouchUpInside, miscView);
 
             internalOffset = 0;
-            foreach (var taken in contactHelper.GetTakenMiscNames(contactCopy)) {
-                MiscCell mCell = new MiscCell (internalOffset, this, taken, contactHelper.MiscContactAttributeNameToValue (taken, contactCopy));
+            foreach (var taken in ContactsHelper.GetTakenMiscNames(contactCopy)) {
+                MiscCell mCell = new MiscCell (internalOffset, this, taken, ContactsHelper.MiscContactAttributeNameToValue (taken, contactCopy));
                 miscCellList.Add (mCell);
                 miscView.AddSubview (mCell);
                 internalOffset += CELL_HEIGHT;
@@ -784,32 +782,32 @@ namespace NachoClient.iOS
             switch (editingBlockType) {
             case BlockType.Phone:
                 editingPhoneCell.phoneAttribute.Name = selectedLabel;
-                editingPhoneCell.phoneAttribute.Label = contactHelper.ExchangeNameToLabel (selectedLabel);
+                editingPhoneCell.phoneAttribute.Label = ContactsHelper.ExchangeNameToLabel (selectedLabel);
                 editingPhoneCell.ConfigureView ();
                 break;
             case BlockType.Email:
                 editingEmailCell.emailAttribute.Name = selectedLabel;
-                editingEmailCell.emailAttribute.Label = contactHelper.ExchangeNameToLabel (selectedLabel);
+                editingEmailCell.emailAttribute.Label = ContactsHelper.ExchangeNameToLabel (selectedLabel);
                 editingEmailCell.ConfigureView ();
                 break;
             case BlockType.Date:
                 editingDateCell.dateAttribute.Name = selectedLabel;
-                editingDateCell.dateAttribute.Label = contactHelper.ExchangeNameToLabel (selectedLabel);
+                editingDateCell.dateAttribute.Label = ContactsHelper.ExchangeNameToLabel (selectedLabel);
                 editingDateCell.ConfigureView ();
                 break;
             case BlockType.Address:
                 editingAddressCell.addressAttribute.Name = selectedLabel;
-                editingAddressCell.addressAttribute.Label = contactHelper.ExchangeNameToLabel (selectedLabel);
+                editingAddressCell.addressAttribute.Label = ContactsHelper.ExchangeNameToLabel (selectedLabel);
                 editingAddressCell.ConfigureView ();
                 break;
             case BlockType.IMAddress:
                 editingIMAddressCell.imAddressAttribute.Name = selectedLabel;
-                editingIMAddressCell.imAddressAttribute.Label = contactHelper.ExchangeNameToLabel (selectedLabel);
+                editingIMAddressCell.imAddressAttribute.Label = ContactsHelper.ExchangeNameToLabel (selectedLabel);
                 editingIMAddressCell.ConfigureView ();
                 break;
             case BlockType.Relationship:
                 editingRelationshipCell.relationshipAttribute.Name = selectedLabel;
-                editingRelationshipCell.relationshipAttribute.Label = contactHelper.ExchangeNameToLabel (selectedLabel);
+                editingRelationshipCell.relationshipAttribute.Label = ContactsHelper.ExchangeNameToLabel (selectedLabel);
                 editingRelationshipCell.ConfigureView ();
                 break;
             case BlockType.Misc:
@@ -1117,14 +1115,14 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailablePhoneNames (contactCopy).Count) {
+            if (0 == ContactsHelper.GetAvailablePhoneNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Phones", "Phone");
                 return;
             }
 
             var phoneAttribute = contactCopy.AddOrUpdatePhoneNumberAttribute (contactCopy.AccountId, 
-                                     contactHelper.GetAvailablePhoneNames (contactCopy).First (),
-                                     contactHelper.ExchangeNameToLabel (contactHelper.GetAvailablePhoneNames (contactCopy).First ()),
+                                     ContactsHelper.GetAvailablePhoneNames (contactCopy).First (),
+                                     ContactsHelper.ExchangeNameToLabel (ContactsHelper.GetAvailablePhoneNames (contactCopy).First ()),
                                      ""
                                  );
             PhoneCell newPhoneCell = new PhoneCell (phoneCellList.Count * CELL_HEIGHT, this, phoneAttribute);
@@ -1138,14 +1136,14 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableEmailNames (contactCopy).Count) {
+            if (0 == ContactsHelper.GetAvailableEmailNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Emails", "Email");
                 return;
             }
 
             var emailAttribute = contactCopy.AddOrUpdateEmailAddressAttribute (contactCopy.AccountId, 
-                                     contactHelper.GetAvailableEmailNames (contactCopy).First (),
-                                     contactHelper.ExchangeNameToLabel (contactHelper.GetAvailableEmailNames (contactCopy).First ()),
+                                     ContactsHelper.GetAvailableEmailNames (contactCopy).First (),
+                                     ContactsHelper.ExchangeNameToLabel (ContactsHelper.GetAvailableEmailNames (contactCopy).First ()),
                                      ""
                                  );
             EmailCell newEmailCell = new EmailCell (emailCellList.Count * CELL_HEIGHT, this, emailAttribute);
@@ -1159,14 +1157,14 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableDateNames (contactCopy).Count) {
+            if (0 == ContactsHelper.GetAvailableDateNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Dates", "Dates");
                 return;
             }
 
             var dateAttribute = contactCopy.AddDateAttribute (contactCopy.AccountId,
-                                    contactHelper.GetAvailableDateNames (contactCopy).First (),
-                                    contactHelper.GetAvailableDateNames (contactCopy).First (),
+                                    ContactsHelper.GetAvailableDateNames (contactCopy).First (),
+                                    ContactsHelper.GetAvailableDateNames (contactCopy).First (),
                                     DateTime.Now);
             DateCell newDateCell = new DateCell (dateCellList.Count * CELL_HEIGHT, this, dateAttribute);
             dateCellList.Add (newDateCell);
@@ -1179,7 +1177,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableAddressNames (contactCopy).Count) {
+            if (0 == ContactsHelper.GetAvailableAddressNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Addresses", "Address");
                 return;
             }
@@ -1187,8 +1185,8 @@ namespace NachoClient.iOS
 
             var addressAttribute = new McContactAddressAttribute ();
             addressAttribute.AccountId = contactCopy.AccountId;
-            addressAttribute.Name = contactHelper.GetAvailableAddressNames (contactCopy).First ();
-            addressAttribute.Label = contactHelper.GetAvailableAddressNames (contactCopy).First ();
+            addressAttribute.Name = ContactsHelper.GetAvailableAddressNames (contactCopy).First ();
+            addressAttribute.Label = ContactsHelper.GetAvailableAddressNames (contactCopy).First ();
 
             addressAttribute = contactCopy.AddAddressAttribute (addressAttribute.AccountId,
                 addressAttribute.Name,
@@ -1208,14 +1206,14 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableIMAddressNames (contactCopy).Count) {
+            if (0 == ContactsHelper.GetAvailableIMAddressNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Addresses", "Address");
                 return;
             }
 
             var imAddressAttribute = contactCopy.AddIMAddressAttribute (contactCopy.AccountId,
-                                         contactHelper.GetAvailableIMAddressNames (contactCopy).First (),
-                                         contactHelper.ExchangeNameToLabel (contactHelper.GetAvailableIMAddressNames (contactCopy).First ()),
+                                         ContactsHelper.GetAvailableIMAddressNames (contactCopy).First (),
+                                         ContactsHelper.ExchangeNameToLabel (ContactsHelper.GetAvailableIMAddressNames (contactCopy).First ()),
                                          "");
             IMAddressCell imAddressCell = new IMAddressCell (imAddressCellList.Count * CELL_HEIGHT, this, imAddressAttribute);
             imAddressCellList.Add (imAddressCell);
@@ -1230,23 +1228,23 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableRelationshipNames (contactCopy).Count) {
+            if (0 == ContactsHelper.GetAvailableRelationshipNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Relationships", "Relationships");
                 return;
             }
 
-            string nextRelationshipName = contactHelper.GetAvailableRelationshipNames (contactCopy).First ();
+            string nextRelationshipName = ContactsHelper.GetAvailableRelationshipNames (contactCopy).First ();
             McContactStringAttribute relationshipAttribute; 
 
             if (Xml.Contacts.Child != nextRelationshipName) {
                 relationshipAttribute = contactCopy.AddRelationshipAttribute (contactCopy.AccountId,
                     nextRelationshipName,
-                    contactHelper.ExchangeNameToLabel (nextRelationshipName),
+                    ContactsHelper.ExchangeNameToLabel (nextRelationshipName),
                     "");
             } else {
                 relationshipAttribute = contactCopy.AddChildAttribute (contactCopy.AccountId,
                     nextRelationshipName,
-                    contactHelper.ExchangeNameToLabel (nextRelationshipName),
+                    ContactsHelper.ExchangeNameToLabel (nextRelationshipName),
                     "");
             }
             RelationshipCell relationshipCell = new RelationshipCell (relationshipCellList.Count * CELL_HEIGHT, this, relationshipAttribute);
@@ -1260,12 +1258,12 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableMiscNames (TakenMiscNames ()).Count) {
+            if (0 == ContactsHelper.GetAvailableMiscNames (TakenMiscNames ()).Count) {
                 DisplayNoMoreSlotsAlert ("Items", "Items");
                 return;
             }
 
-            string newMiscName = contactHelper.GetAvailableMiscNames (TakenMiscNames ()).First ();
+            string newMiscName = ContactsHelper.GetAvailableMiscNames (TakenMiscNames ()).First ();
 
             MiscCell newMiscCell = new MiscCell (miscCellList.Count * CELL_HEIGHT, this, newMiscName, "");
             miscCellList.Add (newMiscCell);
@@ -1730,7 +1728,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Phone;
                 owner.editingPhoneCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailablePhoneNames (owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailablePhoneNames (owner.contactCopy)));
             }
 
             protected void MoreButtonClicked (object sender, EventArgs e)
@@ -1753,10 +1751,10 @@ namespace NachoClient.iOS
             public int CompareTo (PhoneCell other)
             {
                 string name = phoneAttribute.Name;
-                int phonePriority = owner.contactHelper.PhoneNames.IndexOf (name);
+                int phonePriority = ContactsHelper.PhoneNames.IndexOf (name);
 
                 string otherName = other.phoneAttribute.Name;
-                int otherPriority = owner.contactHelper.PhoneNames.IndexOf (otherName);
+                int otherPriority = ContactsHelper.PhoneNames.IndexOf (otherName);
 
                 return phonePriority.CompareTo (otherPriority);
             }
@@ -1829,7 +1827,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Email;
                 owner.editingEmailCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableEmailNames (owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableEmailNames (owner.contactCopy)));
             }
 
             public void Cleanup ()
@@ -1996,7 +1994,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Date;
                 owner.editingDateCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableDateNames (owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableDateNames (owner.contactCopy)));
             }
 
             public void Cleanup ()
@@ -2161,7 +2159,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Address;
                 owner.editingAddressCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableAddressNames (owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableAddressNames (owner.contactCopy)));
             }
 
             protected void EditingEnded (object sender, EventArgs e)
@@ -2225,7 +2223,7 @@ namespace NachoClient.iOS
                 defaultImageView.Hidden = true;
 
                 UILabel labelButtonLabel = (UILabel)labelButton.ViewWithTag (BUTTON_TAG + 2000);
-                labelButtonLabel.Text = owner.contactHelper.ExchangeNameToLabel (imAddressAttribute.Name);
+                labelButtonLabel.Text = ContactsHelper.ExchangeNameToLabel (imAddressAttribute.Name);
 
                 editField.Text = imAddressAttribute.Value;
             }
@@ -2240,7 +2238,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.IMAddress;
                 owner.editingIMAddressCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableIMAddressNames (owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableIMAddressNames (owner.contactCopy)));
             }
 
             protected void TrashButtonClicked (object sender, EventArgs e)
@@ -2299,7 +2297,7 @@ namespace NachoClient.iOS
                 defaultImageView.Hidden = true;
 
                 UILabel labelButtonLabel = (UILabel)labelButton.ViewWithTag (BUTTON_TAG + 2000);
-                labelButtonLabel.Text = owner.contactHelper.ExchangeNameToLabel (relationshipAttribute.Name);
+                labelButtonLabel.Text = ContactsHelper.ExchangeNameToLabel (relationshipAttribute.Name);
 
                 editField.Text = relationshipAttribute.Value;
             }
@@ -2314,7 +2312,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Relationship;
                 owner.editingRelationshipCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableRelationshipNames (owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableRelationshipNames (owner.contactCopy)));
             }
 
             protected void TrashButtonClicked (object sender, EventArgs e)
@@ -2375,7 +2373,7 @@ namespace NachoClient.iOS
                 defaultImageView.Hidden = true;
 
                 UILabel labelButtonLabel = (UILabel)labelButton.ViewWithTag (BUTTON_TAG + 2000);
-                labelButtonLabel.Text = owner.contactHelper.ExchangeNameToLabel (Name);
+                labelButtonLabel.Text = ContactsHelper.ExchangeNameToLabel (Name);
 
                 editField.Text = Value;
             }
@@ -2390,7 +2388,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Misc;
                 owner.editingMiscCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableMiscNames (owner.TakenMiscNames ())));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (ContactsHelper.GetAvailableMiscNames (owner.TakenMiscNames ())));
             }
 
             protected void TrashButtonClicked (object sender, EventArgs e)
