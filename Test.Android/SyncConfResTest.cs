@@ -311,6 +311,7 @@ namespace Test.iOS
                 // If the pending's ServerId dominates the command's ServerId, then drop the command.
                 var inbox = new Inbox (() => FolderOps.CreateUniqueItem<McEmailMessage> ());
                 var att = FolderOps.CreateAttachment (item: inbox.Item, displayName: "My-Attachment");
+                att.Link (inbox.Item);
 
                 bool[] statusIndsPosted = {false};
                 MockOwner.StatusIndCallback += (result) => {

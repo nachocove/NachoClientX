@@ -206,8 +206,6 @@ namespace Test.iOS
         {
             var att = new McAttachment {
                 AccountId = accountId,
-                ItemId = item.Id,
-                ClassCode = item.GetClassCode (),
             };
             att.SetDisplayName (displayName);
             att.Insert ();

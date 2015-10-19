@@ -25,9 +25,8 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow.AddDays (-2),
             };
             keeper1.Insert ();
+
             var keeper1att = new McAttachment () {
-                ItemId = keeper1.Id,
-                ClassCode = keeper1.GetClassCode (),
                 AccountId = keeper1.AccountId,
                 FilePresenceFraction = 0,
                 FileSize = 50001,
@@ -35,6 +34,7 @@ namespace Test.iOS
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             keeper1att.Insert ();
+            keeper1att.Link (keeper1);
 
             var keeper2 = new McEmailMessage () {
                 AccountId = 1,
@@ -44,9 +44,8 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow.AddDays (-3),
             };
             keeper2.Insert ();
+
             var keeper2att = new McAttachment () {
-                ItemId = keeper2.Id,
-                ClassCode = keeper2.GetClassCode (),
                 AccountId = keeper2.AccountId,
                 FilePresenceFraction = 0,
                 FileSize = 50002,
@@ -54,6 +53,7 @@ namespace Test.iOS
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             keeper2att.Insert ();
+            keeper2att.Link (keeper2);
 
             var fallOff = new McEmailMessage () {
                 AccountId = 1,
@@ -63,9 +63,8 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow.AddDays (-1),
             };
             fallOff.Insert ();
+
             var fallOffatt = new McAttachment () {
-                ItemId = fallOff.Id,
-                ClassCode = fallOff.GetClassCode (),
                 AccountId = fallOff.AccountId,
                 FilePresenceFraction = 0,
                 FileSize = 50000,
@@ -73,6 +72,7 @@ namespace Test.iOS
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             fallOffatt.Insert ();
+            fallOffatt.Link (fallOff);
 
             var trash = new McEmailMessage () {
                 AccountId = 2,
@@ -82,9 +82,8 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
+
             var trashatt = new McAttachment () {
-                ItemId = trash.Id,
-                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FilePresenceFraction = 0,
                 FileSize = 50000,
@@ -92,6 +91,7 @@ namespace Test.iOS
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             trashatt.Insert ();
+            trashatt.Link (trash);
 
             trash = new McEmailMessage () {
                 AccountId = 1,
@@ -101,15 +101,15 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
+
             trashatt = new McAttachment () {
-                ItemId = trash.Id,
-                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
             trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.None);
             trashatt.Insert ();
+            trashatt.Link (trash);
 
             trash = new McEmailMessage () {
                 AccountId = 1,
@@ -119,15 +119,15 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
+
             trashatt = new McAttachment () {
-                ItemId = trash.Id,
-                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
             trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
             trashatt.Insert ();
+            trashatt.Link (trash);
 
             trash = new McEmailMessage () {
                 AccountId = 1,
@@ -137,15 +137,15 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
+
             trashatt = new McAttachment () {
-                ItemId = trash.Id,
-                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
             trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.None);
             trashatt.Insert ();
+            trashatt.Link (trash);
 
             trash = new McEmailMessage () {
                 AccountId = 1,
@@ -155,15 +155,15 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
+
             trashatt = new McAttachment () {
-                ItemId = trash.Id,
-                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 500000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
             trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.None);
             trashatt.Insert ();
+            trashatt.Link (trash);
 
             trash = new McEmailMessage () {
                 AccountId = 1,
@@ -173,15 +173,15 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
+
             trashatt = new McAttachment () {
-                ItemId = trash.Id,
-                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
             trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Complete);
             trashatt.Insert ();
+            trashatt.Link (trash);
 
             trash = new McEmailMessage () {
                 AccountId = 1,
@@ -191,15 +191,15 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
+
             trashatt = new McAttachment () {
-                ItemId = trash.Id,
-                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
             trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
             trashatt.Insert ();
+            trashatt.Link (trash);
 
             trash = new McEmailMessage () {
                 AccountId = 1,
@@ -209,15 +209,15 @@ namespace Test.iOS
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
+
             trashatt = new McAttachment () {
-                ItemId = trash.Id,
-                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
             trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
             trashatt.Insert ();
+            trashatt.Link (trash);
 
             var result = McAttachment.QueryNeedsFetch (1, 2, 0.9, 100000);
             Assert.AreEqual (2, result.Count ());

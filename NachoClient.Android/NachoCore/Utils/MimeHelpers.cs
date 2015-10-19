@@ -788,7 +788,7 @@ namespace NachoCore.Utils
                 var bodyAttachments = MimeHelpers.AllAttachmentsIncludingInline (MimeHelpers.LoadMessage (body));
                 if (0 < bodyAttachments.Count) {
 
-                    foreach (var itemAttachment in McAttachment.QueryByItemId(item)) {
+                    foreach (var itemAttachment in McAttachment.QueryByItem(item)) {
                         if (McAttachment.FilePresenceEnum.Complete == itemAttachment.FilePresence) {
                             // Attachment already downloaded.
                             continue;

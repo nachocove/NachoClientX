@@ -311,6 +311,7 @@ namespace NachoCore.Model
                 Db.CreateTable<McEmailMessageDependency> ();
                 Db.CreateTable<McMeetingRequest> ();
                 Db.CreateTable<McAttachment> ();
+                Db.CreateTable<McMapAttachmentItem> ();
                 Db.CreateTable<McContact> ();
                 Db.CreateTable<McContactDateAttribute> ();
                 Db.CreateTable<McContactStringAttribute> ();

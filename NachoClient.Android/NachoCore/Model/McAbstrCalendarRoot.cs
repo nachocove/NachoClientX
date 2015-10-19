@@ -353,12 +353,21 @@ namespace NachoCore.Model
 
         private List<McAttachment> ReadDbAttachments ()
         {
-            return McAttachment.QueryByItemId (this);
+            return McAttachment.QueryByItem (this);
+        }
+
+        private List<McAttachment> ReadAndUnlinkDbAttachments ()
+        {
+            var atts = McAttachment.QueryByItem (this);
+            foreach (var att in atts) {
+                att.Unlink (this);
+            }
+            return atts;
         }
 
         private void DeleteDbAttachments ()
         {
-            DeleteAncillaryCollection (ref dbAttachments, ReadDbAttachments);
+            DeleteAncillaryCollection (ref dbAttachments, ReadAndUnlinkDbAttachments);
         }
 
         private void SaveAttachments ()
@@ -380,26 +389,29 @@ namespace NachoCore.Model
             var cleanAttachments = new List<McAttachment> (appAttachments.Count);
             foreach (var attachment in appAttachments) {
                 McAttachment cleanAttachment;
-                if (0 == attachment.ItemId) {
+                // DAVID FIXME - why would attachment pre-exist in unclaimed state?
+                if (0 == McAttachment.QueryItems (attachment.Id).Count) {
                     // The attachment isn't owned by an item yet.  Claim it.
                     attachment.AccountId = this.AccountId;
-                    attachment.ItemId = this.Id;
-                    attachment.ClassCode = this.GetClassCode ();
-                    attachment.Update ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        attachment.Update ();
+                        attachment.Link (this);
+                    });
                     cleanAttachment = attachment;
-                } else if (attachment.AccountId != this.AccountId || attachment.ItemId != this.Id || attachment.ClassCode != this.GetClassCode ()) {
+                } else if (0 != McAttachment.QueryItems (attachment.Id).Count) {
                     // The attachment is already owned by another item.  Make a copy.
                     var copy = new McAttachment () {
                         AccountId = this.AccountId,
-                        ItemId = this.Id,
-                        ClassCode = this.GetClassCode (),
                         ContentId = attachment.ContentId,
                         ContentType = attachment.ContentType,
                     };
-                    copy.Insert ();
-                    copy.SetDisplayName (attachment.DisplayName);
-                    copy.UpdateFileCopy (attachment.GetFilePath ());
-                    copy.Update ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        copy.Insert ();
+                        copy.SetDisplayName (attachment.DisplayName);
+                        copy.UpdateFileCopy (attachment.GetFilePath ());
+                        copy.Update ();
+                        copy.Link (this);
+                    });
                     cleanAttachment = copy;
                 } else {
                     // Already owned by this item.  Nothing to do.
@@ -411,7 +423,8 @@ namespace NachoCore.Model
             SaveAncillaryCollection (ref appAttachments, ref dbAttachments, ReadDbAttachments, (McAttachment attachment) => {
                 NcAssert.True (false);
             }, (McAttachment attachment) => {
-                return attachment.ItemId == this.Id && attachment.ClassCode == this.GetClassCode ();
+                // FIXME DAVID - what (if anything) should we do here?
+                return true;
             });
         }
 
@@ -427,7 +440,6 @@ namespace NachoCore.Model
             foreach (var attachmentEntity in attachmentEntities) {
                 var serverAttachment = new McAttachment () {
                     AccountId = this.AccountId,
-                    ItemId = 0, // Will be set later
                     ContentId = attachmentEntity.ContentId ?? "fake@content.id",
                     ContentType = attachmentEntity.ContentType.ToString (),
                     IsInline = !attachmentEntity.ContentDisposition.IsAttachment,
