@@ -27,7 +27,6 @@ namespace NachoClient.iOS
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
-        protected ContactsHelper contactHelper = new ContactsHelper ();
         protected IMessageTableViewSource messageSource;
         protected HashSet<int> MultiSelect = null;
 
@@ -572,7 +571,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            foreach (var t in contactHelper.GetTakenMiscNames(contact)) {
+            foreach (var t in ContactsHelper.GetTakenMiscNames(contact)) {
                 contactInfoHeight += AddMiscInfo (t, contactInfoHeight, contactInfoScrollView);
             }
 
@@ -942,7 +941,7 @@ namespace NachoClient.iOS
 
         protected void SetViewProperties (string whatType, ref string label, ref string value, ref string icon)
         {
-            label = contactHelper.ExchangeNameToLabel (whatType).ToUpperInvariant ();
+            label = ContactsHelper.ExchangeNameToLabel (whatType).ToUpperInvariant ();
 
             switch (whatType) {
             //Address names
@@ -1008,7 +1007,7 @@ namespace NachoClient.iOS
                 icon = "contacts-icn-url";
                 break;
             default:
-                value = contactHelper.MiscContactAttributeNameToValue (whatType, contact);
+                value = ContactsHelper.MiscContactAttributeNameToValue (whatType, contact);
                 icon = "contacts-description";
                 break;
             }
