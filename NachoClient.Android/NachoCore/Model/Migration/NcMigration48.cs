@@ -5,13 +5,6 @@ using System.Linq;
 
 namespace NachoCore.Model
 {
-    /// <summary>
-    /// Support the proper synching of multiple device calendars.  This requires two changes to existing objects.
-    /// (1) The device account should have a name, because that name is displayed in the calendar field of the event
-    /// detail view.  (2) The folder where device events have been kept now needs to be hidden, so it doesn't show
-    /// up in the list of calendars that the user can select. (The folder will remain, and will be used as a backstop
-    /// if there are problems synching the real device calendars. But it should remain invisible and mostly unused.)
-    /// </summary>
     public class NcMigration48 : NcMigration
     {
         public override int GetNumberOfObjects ()
