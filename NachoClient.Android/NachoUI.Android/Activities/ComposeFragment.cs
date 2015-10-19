@@ -15,6 +15,7 @@ using Android.Widget;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Brain;
 
 using MimeKit;
 using Java.Interop;
@@ -193,6 +194,12 @@ namespace NachoClient.AndroidClient
         {
             Composer.Message.Subject = subject;
         }
+            
+        public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
+        {
+            var intentFragment = new IntentFragment ();
+//            intentFragment.Show (null, null);
+        }
 
         #endregion
 
@@ -298,6 +305,7 @@ namespace NachoClient.AndroidClient
             HeaderView.ToField.Text = Composer.Message.To;
             HeaderView.CcField.Text = Composer.Message.Cc;
             HeaderView.SubjectField.Text = Composer.Message.Subject;
+            HeaderView.IntentValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
         }
 
         #endregion

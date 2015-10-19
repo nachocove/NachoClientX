@@ -8,10 +8,10 @@
     <include
         layout="@layout/ButtonBar" />
     <NachoClient.AndroidClient.MessageComposeHeaderView
-    	android:id="@+id/header"
-    	android:orientation="vertical"
-    	android:layout_width="match_parent"
-    	android:layout_height="wrap_content" />
+        android:id="@+id/header"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 <!--    <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"
@@ -72,10 +72,6 @@
             android:inputType="textEmailSubject"
             android:id="@+id/subject" />
     </LinearLayout>-->
-    <View
-        android:layout_width="fill_parent"
-        android:layout_height="1dp"
-        android:background="@color/NachoLightGray" />
     <WebView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"

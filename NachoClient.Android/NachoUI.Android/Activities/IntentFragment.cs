@@ -14,28 +14,31 @@ using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
-    public class IntentFragment : Fragment
+
+    public interface IntentFragmentDelegate {
+        void IntentFragmentDidSelectIntent ();
+    }
+
+    public class IntentFragment : DialogFragment
     {
-        public static IntentFragment newInstance ()
+
+        IntentFragmentDelegate Delegate;
+
+        public override Dialog OnCreateDialog (Bundle savedInstanceState)
         {
-            var fragment = new IntentFragment ();
-            return fragment;
+            var builder = new AlertDialog.Builder (Activity);
+            var inflater = Activity.LayoutInflater;
+            var view = inflater.Inflate (Resource.Layout.IntentFragment, null);
+            builder.SetTitle ("Select Intent");
+            builder.SetView (view);
+            return builder.Create ();
         }
 
-        public override void OnCreate (Bundle savedInstanceState)
+        public override void OnAttach (Activity activity)
         {
-            base.OnCreate (savedInstanceState);
+            base.OnAttach (activity);
+            Delegate = activity as IntentFragmentDelegate;
         }
 
-        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
-        {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
-            var view = inflater.Inflate (Resource.Layout.IntentFragment, container, false);
-            var tv = view.FindViewById<TextView> (Resource.Id.textview);
-            tv.Text = "Intent fragment";
-            return view;
-        }
     }
 }
-

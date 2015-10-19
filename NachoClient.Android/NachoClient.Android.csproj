@@ -1308,5 +1308,6 @@
     <AndroidResource Include="Resources\drawable-xhdpi\gen_edit.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_edit.png" />
     <AndroidResource Include="Resources\layout\HotEventCell.axml" />
+    <AndroidResource Include="Resources\layout\MessageComposeHeaderView.axml" />
   </ItemGroup>
 </Project>
