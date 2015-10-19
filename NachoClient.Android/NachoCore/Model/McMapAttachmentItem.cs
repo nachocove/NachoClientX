@@ -19,6 +19,8 @@ namespace NachoCore.Model
         [Indexed]
         public McAbstrFolderEntry.ClassCodeEnum ClassCode { get; set; }
 
+        public bool IncludedInBody { get; set; }
+
         public McMapAttachmentItem ()
         {
         }

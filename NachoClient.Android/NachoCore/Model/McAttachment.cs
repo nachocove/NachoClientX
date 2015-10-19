@@ -73,7 +73,7 @@ namespace NachoCore.Model
 
         public string ContentType { get; set; }
 
-        public NcResult Link (McAbstrItem item)
+        public NcResult Link (McAbstrItem item, bool includedInBody = false)
         {
             NcAssert.False (0 == Id);
             NcAssert.False (0 == item.Id);
@@ -99,6 +99,7 @@ namespace NachoCore.Model
                 AttachmentId = Id,
                 ItemId = item.Id,
                 ClassCode = classCode,
+                IncludedInBody = includedInBody,
             };
 
             NcModel.Instance.RunInLock (() => {   
