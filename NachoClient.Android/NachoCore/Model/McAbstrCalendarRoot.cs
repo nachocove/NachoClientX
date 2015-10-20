@@ -385,14 +385,11 @@ namespace NachoCore.Model
                 cachedServerAttachments = null;
             }
             // Take ownership of any attachments that are unowned or owned by a different item.
-            var cleanAttachments = new List<McAttachment> (appAttachments.Count);
             foreach (var attachment in appAttachments) {
                 // Why would attachment pre-exist in unclaimed state?
                 // Edit the event and add a photo as an attachment to the event. The UI saves the new McAttachment to the database, but it doesn't hook it up to the McCalendar. (If this is a new event, then the UI can't hook up the McAttachment to the McCalendar, because the McCalendar hasn't been saved yet.) Linking the McAttachment and the McCalendar has to happen here in SaveAttachments ().
                 attachment.Link (this);
-                cleanAttachments.Add (attachment);
             }
-            appAttachments = cleanAttachments;
             SaveAncillaryCollection (ref appAttachments, ref dbAttachments, ReadDbAttachments, (McAttachment attachment) => {
                 NcAssert.True (false);
             }, (McAttachment attachment) => {
