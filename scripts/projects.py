@@ -45,7 +45,7 @@ projects = {
         },
         'hockeyapp': {
             'app_id': {'ios': 'f0c98aa84e693061fbbf3d60bb6ab1fc',
-                       'android': ''},
+                       'android': '3f057536fb00405eb9e3542231831964'},
             'api_token': '4a472c5e774a4004a4eb1dd648b8af8a',
         },
         'aws': {
@@ -75,7 +75,7 @@ projects = {
         },
         'hockeyapp': {
             'app_id': {'ios': '44dae4a6ae9134930c64c623d5023ac4',
-                       'android': ''},
+                       'android': 'bf2582dd142f473dbfdc3bdb8349a3b5'},
             'api_token': '1c08642c07d244f7a0600ef5654e0dad'
         },
         'aws': {
@@ -105,7 +105,7 @@ projects = {
         },
         'hockeyapp': {
             'app_id': {'ios': 'df752a5c4c7bb503fac6e26b0f0dcafa',
-                       'android': ''},
+                       'android': 'a62575b6e71e118ecc44e775d6f5db88'},
             'api_token': '0344908b24aa498288268a726d028332'
         },
         'aws': {
