@@ -11,7 +11,7 @@ namespace NachoClient.AndroidClient
 
         public static string StoreValue<T> (T value) where T : class
         {
-            string key = new Guid ().ToString ();
+            string key = Guid.NewGuid ().ToString ();
             data [key] = value;
             return key;
         }
