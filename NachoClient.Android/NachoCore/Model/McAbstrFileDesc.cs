@@ -304,7 +304,6 @@ namespace NachoCore.Model
 
         public static List<NcFileIndex> GetAllFiles (int accountId)
         {
-            // TODO - some denorm could eliminate JOINs.
             return (NcModel.Instance.Db.Query<NcFileIndex> (
                 "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType, t1.Contact " +
                 "FROM(SELECT a.Id, a.DisplayName, e.DateReceived AS CreatedAt, 0 AS FileType, e.[From] AS Contact " +
@@ -317,12 +316,16 @@ namespace NachoCore.Model
                 "UNION " +
                 "SELECT Id, DisplayName, CreatedAt, 1 AS FileType, 'Me' AS Contact " +
                 "FROM McNote " +
+                "WHERE AccountId = ? " +
                 "UNION " +
                 "SELECT Id, DisplayName, CreatedAt, 2 AS FileType, 'Me' AS Contact " +
                 "FROM McDocument " +
                 "WHERE AccountId=?) " +
                 "t1 ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)",
-                accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email, (int)McAbstrFolderEntry.ClassCodeEnum.Calendar
+                accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email, 
+                accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Calendar,
+                accountId,
+                accountId
             ));
         }
 

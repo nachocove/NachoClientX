@@ -15,6 +15,93 @@ namespace Test.iOS
     public class McAttachmentTest : NcTestBase
     {
         [Test]
+        public void GetAllFiles ()
+        {
+            // inclides McNote and McDocument too.
+            var keeper1 = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "keeper1",
+            };
+            keeper1.Insert ();
+
+            var keeper1att = new McAttachment () {
+                AccountId = keeper1.AccountId,
+                FilePresenceFraction = 0,
+                FileSize = 50001,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+                DisplayName = "keeper1",
+            };
+            keeper1att.Insert ();
+            keeper1att.Link (keeper1);
+
+            var keeper2 = new McCalendar () {
+                AccountId = 1,
+                ServerId = "keeper2",
+            };
+            keeper2.Insert ();
+
+            var keeper2att = new McAttachment () {
+                AccountId = keeper2.AccountId,
+                FilePresenceFraction = 0,
+                FileSize = 50002,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+                DisplayName = "keeper2",
+            };
+            keeper2att.Insert ();
+            keeper2att.Link (keeper2);
+
+            var doc1 = new McDocument () {
+                AccountId = 1,
+                DisplayName = "doc1",
+            };
+            doc1.Insert ();
+
+            var doc2 = new McDocument () {
+                AccountId = 2,
+                DisplayName = "doc2",
+            };
+            doc2.Insert ();
+
+            var note1 = new McNote () {
+                AccountId = 1,
+                DisplayName = "note1",
+            };
+            note1.Insert ();
+
+            var note2 = new McNote () {
+                AccountId = 2,
+                DisplayName = "note2",
+            };
+            note2.Insert ();
+
+            var fallOff = new McEmailMessage () {
+                AccountId = 2,
+                ServerId = "falloff",
+            };
+            fallOff.Insert ();
+
+            var fallOffatt = new McAttachment () {
+                AccountId = fallOff.AccountId,
+                FilePresenceFraction = 0,
+                FileSize = 50000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+            };
+            fallOffatt.Insert ();
+            fallOffatt.Link (fallOff);
+
+            var list = McAbstrFileDesc.GetAllFiles (keeper1.AccountId);
+            Assert.NotNull (list);
+            Assert.AreEqual (4, list.Count);
+            Assert.AreEqual (1, list.Where (x => x.Id == keeper1att.Id && x.FileType == 0).Count ());
+            Assert.AreEqual (1, list.Where (x => x.Id == keeper2att.Id && x.FileType == 0).Count ());
+            Assert.AreEqual (1, list.Where (x => x.Id == note1.Id && x.FileType == 1).Count ());
+            Assert.AreEqual (1, list.Where (x => x.Id == doc1.Id && x.FileType == 2).Count ());
+        }
+
+        [Test]
         public void TestQueryItems ()
         {
             // simple case already covered by CaledarAttachments.
