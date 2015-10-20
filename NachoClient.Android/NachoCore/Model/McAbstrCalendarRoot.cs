@@ -389,7 +389,8 @@ namespace NachoCore.Model
             var cleanAttachments = new List<McAttachment> (appAttachments.Count);
             foreach (var attachment in appAttachments) {
                 McAttachment cleanAttachment;
-                // DAVID FIXME - why would attachment pre-exist in unclaimed state?
+                // Why would attachment pre-exist in unclaimed state?
+                // Edit the event and add a photo as an attachment to the event. The UI saves the new McAttachment to the database, but it doesn't hook it up to the McCalendar. (If this is a new event, then the UI can't hook up the McAttachment to the McCalendar, because the McCalendar hasn't been saved yet.) Linking the McAttachment and the McCalendar has to happen here in SaveAttachments ().
                 if (0 == McAttachment.QueryItems (attachment.Id).Count) {
                     // The attachment isn't owned by an item yet.  Claim it.
                     attachment.AccountId = this.AccountId;

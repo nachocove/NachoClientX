@@ -30,9 +30,11 @@ namespace NachoCore.Model
                 }
                 if (null != item) {
                     att.Link (item);
+                    att.ItemId = -1;
+                    att.Update ();
+                } else {
+                    att.Delete ();
                 }
-                att.ItemId = -1;
-                att.Update ();
                 UpdateProgress (1);
             }
         }

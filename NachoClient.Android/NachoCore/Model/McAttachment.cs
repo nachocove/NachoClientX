@@ -91,18 +91,17 @@ namespace NachoCore.Model
             }
             // NOTICE - currently we allow attaching to cross the account barrier!
             // The Map is in the item's account.
-            var existing = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (item.AccountId, Id, item.Id, classCode);
-            if (null != existing) {
-                return NcResult.Error (NcResult.SubKindEnum.Error_AlreadyAttached);
-            }
-            var map = new McMapAttachmentItem (item.AccountId) {
-                AttachmentId = Id,
-                ItemId = item.Id,
-                ClassCode = classCode,
-                IncludedInBody = includedInBody,
-            };
-
-            NcModel.Instance.RunInLock (() => {   
+            NcModel.Instance.RunInTransaction (() => {
+                var existing = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (item.AccountId, Id, item.Id, classCode);
+                if (null != existing) {
+                    return NcResult.Error (NcResult.SubKindEnum.Error_AlreadyAttached);
+                }
+                var map = new McMapAttachmentItem (item.AccountId) {
+                    AttachmentId = Id,
+                    ItemId = item.Id,
+                    ClassCode = classCode,
+                    IncludedInBody = includedInBody,
+                };
                 map.Insert ();
             });
             return NcResult.OK ();
