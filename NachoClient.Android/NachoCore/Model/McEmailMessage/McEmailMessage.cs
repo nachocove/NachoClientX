@@ -408,8 +408,12 @@ namespace NachoCore.Model
         {
             var atts = McAttachment.QueryByItem (this);
             foreach (var toNix in atts) {
-                toNix.Unlink (this);
-                toNix.Delete ();
+                NcModel.Instance.RunInTransaction (() => {
+                    toNix.Unlink (this);
+                    if (0 == McMapAttachmentItem.QueryItemCount (toNix.Id)) {
+                        toNix.Delete ();
+                    }
+                });
             }
         }
 
