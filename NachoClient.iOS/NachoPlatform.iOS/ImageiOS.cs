@@ -15,7 +15,11 @@ namespace NachoClient.iOS
 
         public static ImageiOS FromPath (string path)
         {
-            var image = new UIImage (path);
+            UIImage image = null;
+            try {
+                image = new UIImage (path);
+            } catch {
+            }
             if (image != null) {
                 return new ImageiOS (image);
             }
@@ -24,7 +28,11 @@ namespace NachoClient.iOS
 
         public static ImageiOS FromStream (Stream stream)
         {
-            var image = new UIImage (NSData.FromStream (stream));
+            UIImage image = null;
+            try {
+                image = new UIImage (NSData.FromStream (stream));
+            } catch {
+            }
             if (image != null) {
                 return new ImageiOS (image);
             }
