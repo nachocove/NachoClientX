@@ -535,7 +535,9 @@ namespace NachoCore.Utils
                         OpenReaders.Add (reader);
                         attachmentPart.ContentObject = new ContentObject (reader.BaseStream);
                         mixed.Add (attachmentPart);
-                        AdjustEstimatedSizesForAttachment (reader.BaseStream);
+                        if (attachmentPart.ContentType.Matches ("image", "*")) {
+                            AdjustEstimatedSizesForAttachment (reader.BaseStream);
+                        }
                     } else {
                         Log.Error (Log.LOG_EMAIL, "MessageComposer could not include attachment ID#{0} because its state is {1}", attachment.Id, attachment.FilePresence);
                     }
