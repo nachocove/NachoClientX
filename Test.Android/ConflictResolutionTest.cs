@@ -516,6 +516,7 @@ namespace Test.iOS
                 topFolder.Link (email);
                 PathOps.CreatePath (defaultAccountId, email.ServerId, topFolder.ServerId);
                 var att = FolderOps.CreateAttachment (item: email, displayName: "My-Attachment");
+                att.Link (email);
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {

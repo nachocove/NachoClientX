@@ -187,7 +187,7 @@ namespace NachoCore.Utils
             // could inlude a quick reply, or it could be quoting another message.
             if (RelatedThread != null) {
                 if (Kind == EmailHelper.Action.Forward) {
-                    CopyAttachments (McAttachment.QueryByItemId (RelatedMessage));
+                    CopyAttachments (McAttachment.QueryByItem (RelatedMessage));
                 }
                 DownloadRelatedMessage ();
             } else {
@@ -227,13 +227,12 @@ namespace NachoCore.Utils
             // And, by setting ItemId here (which AttachmentHelper doesn't do), we can save another Update() call
             var copy = new McAttachment () {
                 AccountId = Message.AccountId,
-                ItemId = Message.Id,
-                ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email,
                 ContentId = attachment.ContentId,
                 ContentType = attachment.ContentType,
                 IsInline = attachment.IsInline
             };
             copy.Insert ();
+            copy.Link (Message);
             // TODO: It would be nice to do any heavy work like large file copying in a background task.
             // I'm not familiar enough with the details to set that up quite yet.
             copy.SetDisplayName (attachment.DisplayName);
@@ -503,7 +502,7 @@ namespace NachoCore.Utils
             var toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, null, Message.To);
             var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, null, Message.Cc);
             var bccList = EmailHelper.AddressList (NcEmailAddress.Kind.Bcc, null, Message.Bcc);
-            var attachments = McAttachment.QueryByItemId (Message);
+            var attachments = McAttachment.QueryByItem (Message);
             foreach (var attachment in attachments) {
                 if (!String.IsNullOrEmpty (attachment.ContentId)) {
                     AttachmentsBySrc ["cid:" + attachment.ContentId] = attachment;

@@ -531,8 +531,7 @@ namespace NachoClient.iOS
             }
 
             if (attachment != null) {
-                attachment.ItemId = Composer.Message.Id;
-                attachment.ClassCode = Composer.Message.GetClassCode ();
+                attachment.Link (Composer.Message);
                 attachment.Update ();
                 HeaderView.AttachmentsView.Append (attachment);
                 this.DismissViewController (true, null);
@@ -551,9 +550,8 @@ namespace NachoClient.iOS
         // User adding an attachment from media browser
         public void Append (McAttachment attachment)
         {
-            attachment.ItemId = Composer.Message.Id;
-            attachment.ClassCode = Composer.Message.GetClassCode ();
             attachment.Update ();
+            attachment.Link (Composer.Message);
             HeaderView.AttachmentsView.Append (attachment);
         }
 
@@ -614,12 +612,14 @@ namespace NachoClient.iOS
                     ext = ".jpg";
                     contentType = "image/jpeg";
                 }
-                var attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
-                attachment.SetDisplayName ("attachment" + ext);
-                attachment.ItemId = Composer.Message.Id;
-                attachment.ContentType = contentType;
-                attachment.ClassCode = Composer.Message.GetClassCode ();
-                attachment.Update ();
+                McAttachment attachment = null;
+                NcModel.Instance.RunInTransaction (() => {
+                    attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
+                    attachment.SetDisplayName ("attachment" + ext);
+                    attachment.ContentType = contentType;
+                    attachment.Update ();
+                    attachment.Link (Composer.Message);
+                });
                 if (png) {
                     using (var pngData = image.AsPNG ()) {
                         attachment.UpdateData (pngData.ToArray ());
@@ -910,7 +910,7 @@ namespace NachoClient.iOS
         private void UpdateHeaderAttachmentsView ()
         {
             HeaderView.AttachmentsView.Clear ();
-            var attachments = McAttachment.QueryByItemId (Composer.Message);
+            var attachments = McAttachment.QueryByItem (Composer.Message);
             foreach (var attachment in attachments) {
                 HeaderView.AttachmentsView.Append (attachment);
             }

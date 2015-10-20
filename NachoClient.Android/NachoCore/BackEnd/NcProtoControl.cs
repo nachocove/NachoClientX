@@ -805,7 +805,8 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceNotNone);
                     return;
                 }
-                var emailMessage = McEmailMessage.QueryById<McEmailMessage> (att.ItemId);
+                var emailMessage = McAttachment.QueryItems (att.AccountId, att.Id)
+                    .Where (x => x is McEmailMessage && !x.IsAwaitingCreate).FirstOrDefault ();
                 if (null == emailMessage) {
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
