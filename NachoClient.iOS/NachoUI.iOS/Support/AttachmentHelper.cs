@@ -18,7 +18,6 @@ namespace NachoClient.iOS
         {
             var copy = new McAttachment () {
                 AccountId = attachment.AccountId,
-                ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email,
                 ContentId = attachment.ContentId,
                 ContentType = attachment.ContentType,
             };

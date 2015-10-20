@@ -223,6 +223,9 @@ namespace NachoCore.Model
         /// Date and time when the action specified by the LastVerbExecuted element was performed on the msg (optional)
         public DateTime LastVerbExecutionTime { set; get; }
 
+        /// Must be set when Insert()ing a to-be-send message into the DB.
+        public bool ClientIsSender { set; get; }
+
         /// IMAP Stuff
         [Indexed]       
         public uint ImapUid { get; set; }
@@ -385,7 +388,7 @@ namespace NachoCore.Model
             }
             if (ReferencedIsForward && (!ReferencedBodyIsIncluded || WaitingForAttachmentsToDownload)) {
                 // Add all the attachments from the original message.
-                var originalAttachments = McAttachment.QueryByItemId (originalMessage);
+                var originalAttachments = McAttachment.QueryByItem (originalMessage);
                 MimeHelpers.AddAttachments (outgoingMime, originalAttachments);
             }
             body.UpdateData ((FileStream stream) => {
@@ -403,15 +406,22 @@ namespace NachoCore.Model
 
         public void DeleteAttachments ()
         {
-            var atts = McAttachment.QueryByItemId (this);
+            var atts = McAttachment.QueryByItem (this);
             foreach (var toNix in atts) {
-                toNix.Delete ();
+                NcModel.Instance.RunInTransaction (() => {
+                    toNix.Unlink (this);
+                    if (0 == McMapAttachmentItem.QueryItemCount (toNix.Id)) {
+                        toNix.Delete ();
+                    }
+                });
             }
         }
 
         public static McEmailMessage MessageWithSubject (McAccount account, string subject)
         {
-            var message = new McEmailMessage ();
+            var message = new McEmailMessage () {
+                ClientIsSender = true,
+            };
             message.AccountId = account.Id;
             message.Subject = subject;
             return message;

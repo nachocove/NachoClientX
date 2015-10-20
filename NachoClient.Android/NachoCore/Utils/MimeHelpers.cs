@@ -451,7 +451,9 @@ namespace NachoCore.Utils
             // Don't let 0 into the db
             NcAssert.True (AccountId > 0);
 
-            var msg = new McEmailMessage ();
+            var msg = new McEmailMessage () {
+                ClientIsSender = true,
+            };
             msg.AccountId = AccountId;
             msg.To = CommaSeparatedList (mimeMessage.To);
             msg.Cc = CommaSeparatedList (mimeMessage.Cc);
@@ -788,7 +790,7 @@ namespace NachoCore.Utils
                 var bodyAttachments = MimeHelpers.AllAttachmentsIncludingInline (MimeHelpers.LoadMessage (body));
                 if (0 < bodyAttachments.Count) {
 
-                    foreach (var itemAttachment in McAttachment.QueryByItemId(item)) {
+                    foreach (var itemAttachment in McAttachment.QueryByItem(item)) {
                         if (McAttachment.FilePresenceEnum.Complete == itemAttachment.FilePresence) {
                             // Attachment already downloaded.
                             continue;

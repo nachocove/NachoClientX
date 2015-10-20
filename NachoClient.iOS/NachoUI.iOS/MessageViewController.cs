@@ -430,7 +430,7 @@ namespace NachoClient.iOS
                 return;
             }
                 
-            attachments = McAttachment.QueryByItemId (message);
+            attachments = McAttachment.QueryByItem (message);
             attachmentListView.Hidden = !HasAttachments;
 
             NachoCore.Utils.NcAbate.RegularPriority ("MessageViewController");
