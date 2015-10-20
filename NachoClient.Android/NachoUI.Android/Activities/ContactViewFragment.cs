@@ -16,6 +16,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 
 using MimeKit;
+using NachoCore.ActiveSync;
 
 namespace NachoClient.AndroidClient
 {
@@ -114,18 +115,41 @@ namespace NachoClient.AndroidClient
     public class ContactViewAdapter : Android.Widget.BaseAdapter<object>
     {
         McContact contact;
-        List<object> stuff;
+
+        class DisplayInfo
+        {
+            public int imageId;
+            public string labelString;
+            public string valueString;
+
+            public DisplayInfo (int imageId, string labelString, string valueString)
+            {
+                this.imageId = imageId;
+                this.labelString = labelString;
+                this.valueString = valueString;
+            }
+        };
+
+        List<DisplayInfo> displayList;
+
+        void Add (int imageId, string labelString, string valueString)
+        {
+            displayList.Add (new DisplayInfo (imageId, labelString, valueString));
+        }
 
         public ContactViewAdapter (McContact contact)
         {
+            this.contact = contact;
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
-            stuff = new List<object> ();
+            displayList = new List<DisplayInfo> ();
 
             if (contact.EmailAddresses.Count > 0) {
                 foreach (var e in contact.EmailAddresses) {
                     if (e.IsDefault) {
-                        stuff.Add (e);
+                        var emailAddress = McEmailAddress.QueryById <McEmailAddress> (e.EmailAddress);
+                        var canonicalEmail = (null == emailAddress ? "" : emailAddress.CanonicalEmailAddress);
+                        Add (Resource.Drawable.contacts_icn_email, "EMAIL", canonicalEmail);
                         break;
                     }
                 }
@@ -136,27 +160,76 @@ namespace NachoClient.AndroidClient
             if (contact.PhoneNumbers.Count > 0) {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
-                        stuff.Add (p);
+                        var label = (String.IsNullOrEmpty (p.Label) ? "PHONE" : p.Label.ToUpper ());
+                        Add (Resource.Drawable.contacts_icn_phone, label, p.Value);
                         break;
                     }
                 }
             }
 
             if (contact.EmailAddresses.Count > 0) {
-                foreach (var emailAddressAttributes in contact.EmailAddresses) {
-                    if (!emailAddressAttributes.IsDefault) {
-                        stuff.Add (emailAddressAttributes);
+                foreach (var e in contact.EmailAddresses) {
+                    if (!e.IsDefault) {
+                        var emailAddress = McEmailAddress.QueryById <McEmailAddress> (e.EmailAddress);
+                        var canonicalEmail = (null == emailAddress ? "" : emailAddress.CanonicalEmailAddress);
+                        Add (Resource.Drawable.contacts_icn_email, "EMAIL", canonicalEmail);
+                        break;
                     }
                 }
             }
 
             if (contact.PhoneNumbers.Count > 0) {
-                foreach (var phoneNumberAttribute in contact.PhoneNumbers) {
-                    if (!phoneNumberAttribute.IsDefault) {
-                        stuff.Add (phoneNumberAttribute);
+                foreach (var p in contact.PhoneNumbers) {
+                    if (!p.IsDefault) {
+                        var label = (String.IsNullOrEmpty (p.Label) ? "PHONE" : p.Label.ToUpper ());
+                        Add (Resource.Drawable.contacts_icn_phone, label, p.Value);
+                        break;
                     }
                 }
             }
+
+
+            if (contact.IMAddresses.Count > 0) {
+                foreach (var imAddressAttribute in contact.IMAddresses) {
+                    Add (imAddressAttribute.Name);
+                }
+            }
+
+            if (contact.Addresses.Count > 0) {
+                foreach (var a in contact.Addresses) {
+                    Add (a.Name);
+                }
+            }
+
+            if (DateTime.MinValue != contact.GetDateAttribute (Xml.Contacts.Birthday)) {
+                Add (Xml.Contacts.Birthday);
+            }
+
+            if (DateTime.MinValue != contact.GetDateAttribute (Xml.Contacts.Anniversary)) {
+                Add (Xml.Contacts.Anniversary);
+            }
+
+            if (contact.Relationships.Count > 0) {
+                foreach (var c in contact.Relationships) {
+                    if (c.Name == Xml.Contacts.Child) {
+                        Add (Xml.Contacts.Children);
+                        break;
+                    }
+                }
+            }
+
+            if (contact.Relationships.Count > 0) {
+                foreach (var c in contact.Relationships) {
+                    if (c.Name != Xml.Contacts.Child) {
+                        Add (c.Name);
+                    }
+                }
+            }
+
+            foreach (var t in ContactsHelper.GetTakenMiscNames(contact)) {
+                Add (t);
+            }
+
         }
 
         public override long GetItemId (int position)
@@ -166,13 +239,13 @@ namespace NachoClient.AndroidClient
 
         public override int Count {
             get {
-                return stuff.Count;
+                return displayList.Count;
             }
         }
 
         public override object this [int position] {  
             get {
-                return stuff [position];
+                return displayList [position];
             }
         }
 
@@ -182,42 +255,14 @@ namespace NachoClient.AndroidClient
             if (view == null) {
                 view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.ContactViewCell, parent, false);
             }
-            var thing = this [position];
+            var info = displayList [position];
 
-            if (thing is McContactEmailAddressAttribute) {
-                var a = (McContactEmailAddressAttribute)thing;
-                var emailAddress = McEmailAddress.QueryById <McEmailAddress> (a.EmailAddress);
-                var canonicalEmail = (null == emailAddress ? "" : emailAddress.CanonicalEmailAddress);
-                Bind (view, Resource.Drawable.contacts_icn_email, "EMAIL", canonicalEmail, Resource.Drawable.contacts_email);
-                return view;
-            }
-
-            if (thing is McContactStringAttribute) {
-                var a = (McContactStringAttribute)thing;
-                switch (a.Type) {
-                case McContactStringType.Relationship:
-                    break;
-                case McContactStringType.PhoneNumber:
-                    var label = (String.IsNullOrEmpty (a.Label) ? "PHONE" : a.Label.ToUpper ());
-                    Bind (view, Resource.Drawable.contacts_icn_phone, label, a.Value, Resource.Drawable.contacts_call);
-                    break;
-                case McContactStringType.IMAddress:
-                    break;
-                case McContactStringType.Category:
-                    break;
-                case McContactStringType.Address:
-                    break;
-                case McContactStringType.Date:
-                    break;
-                }
-
-                return view;
-            }
+            Bind (view, info.imageId, info.labelString, info.valueString);
 
             return view;
         }
 
-        void Bind(View view, int resid, string label, string value, int button = 0)
+        void Bind (View view, int resid, string label, string value, int button = 0)
         {
             var imageView = view.FindViewById<ImageView> (Resource.Id.image);
             var labelView = view.FindViewById<TextView> (Resource.Id.label);
@@ -240,7 +285,68 @@ namespace NachoClient.AndroidClient
             var s = (StatusIndEventArgs)e;
 
             switch (s.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_ContactSetChanged:
+            case NcResult.SubKindEnum.Info_ContactChanged:
+                break;
+            }
+        }
+
+        protected void Add (string whatType)
+        {
+            string value;
+
+            var label = ContactsHelper.ExchangeNameToLabel (whatType).ToUpperInvariant ();
+
+            switch (whatType) {
+            case "Other":
+            case "Home":
+            case "Business":
+                var address = contact.GetAddressAttribute (whatType);
+                value = address.Street + " " + address.City + " " + address.State + " " + address.PostalCode + " " + address.Country;
+                Add (Resource.Drawable.contacts_icn_address, label, value);
+                break;
+            case Xml.Contacts.Birthday:
+            case Xml.Contacts.Anniversary:
+                value = Pretty.BirthdayOrAnniversary (contact.GetDateAttribute (whatType));
+                Add (Resource.Drawable.contacts_icn_bday, label, value);
+                break;
+            case Xml.Contacts.Spouse:
+                value = contact.GetRelationshipAttribute (whatType);
+                Add (Resource.Drawable.contacts_attendees, label, value);
+                break;
+            case Xml.Contacts.AssistantName:
+                value = contact.GetRelationshipAttribute (whatType);
+                Add (Resource.Drawable.contacts_attendees, label, value);
+                break;
+            case Xml.Contacts2.ManagerName:
+                value = contact.GetRelationshipAttribute (whatType);
+                Add (Resource.Drawable.contacts_attendees, label, value);
+                break;
+            case Xml.Contacts.WebPage:
+                value = contact.WebPage;
+                Add (Resource.Drawable.contacts_icn_url, label, value);
+                break;
+            case Xml.Contacts.OfficeLocation:
+                value = contact.OfficeLocation;
+                Add (Resource.Drawable.contacts_icn_address, label, value);
+                break;
+            case Xml.Contacts.Children:
+                var children = new List<string> ();
+                foreach (var c in contact.Relationships) {
+                    if (c.Name == Xml.Contacts.Child) {
+                        children.Add (c.Value);
+                    }
+                }
+                Add (Resource.Drawable.contacts_attendees, label, String.Join (",", children));
+                break;
+            case Xml.Contacts2.IMAddress:
+            case Xml.Contacts2.IMAddress2:
+            case Xml.Contacts2.IMAddress3:
+                value = contact.GetIMAddressAttribute (whatType);
+                Add (Resource.Drawable.contacts_icn_url, label, value);
+                break;
+            default:
+                value = ContactsHelper.MiscContactAttributeNameToValue (whatType, contact);
+                Add (Resource.Drawable.contacts_description, label, value);
                 break;
             }
         }

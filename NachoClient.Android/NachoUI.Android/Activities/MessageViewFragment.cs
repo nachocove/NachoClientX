@@ -195,6 +195,8 @@ namespace NachoClient.AndroidClient
         {
             var intent = new Intent ();
             intent.SetClass (this.Activity, typeof(MessageComposeActivity));
+            intent.PutExtra (MessageComposeActivity.EXTRA_ACTION, (int)action);
+            intent.PutExtra (MessageComposeActivity.EXTRA_RELATED_MESSAGE_ID, message.Id);
             StartActivity (intent);
         }
 

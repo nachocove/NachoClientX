@@ -23,14 +23,20 @@ namespace NachoClient.AndroidClient
         MessageViewFragment messageViewFragment;
         MessageListFragment messageListFragment;
 
-        protected virtual INachoEmailMessages GetMessages(out List<int> adds, out List<int> deletes)
+        protected virtual INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
             throw new NotImplementedException ();
         }
 
-        public virtual bool ShowHotEvent()
+        public virtual bool ShowHotEvent ()
         {
             return false;
+        }
+
+        public virtual void SetActiveImage (View view)
+        {
+            // Highlight the tab bar icon of this activity
+            // See inbox & nacho now activities
         }
 
         protected override void OnCreate (Bundle bundle)
@@ -45,6 +51,7 @@ namespace NachoClient.AndroidClient
 
             messageListFragment = MessageListFragment.newInstance (messages);
             messageListFragment.onMessageClick += onMessageClick;
+            messageListFragment.onEventClick += MessageListFragment_onEventClick;
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
         }
 
@@ -52,6 +59,16 @@ namespace NachoClient.AndroidClient
         {
             base.OnResume ();
             MaybeSwitchAccount ();
+        }
+
+        void MessageListFragment_onEventClick (object sender, McEvent ev)
+        {
+            Log.Info (Log.LOG_UI, "MessageListFragment_onEventClick: {0}", ev);
+            var eventViewFragment = EventViewFragment.newInstance (ev);
+            this.FragmentManager.BeginTransaction ()
+                .Add (Resource.Id.content, eventViewFragment)
+                .AddToBackStack ("View")
+                .Commit ();
         }
 
         void onMessageClick (object sender, McEmailMessageThread thread)
@@ -90,6 +107,9 @@ namespace NachoClient.AndroidClient
                 if (1 < this.FragmentManager.BackStackEntryCount) {
                     this.FragmentManager.PopBackStack ();
                 }
+            }
+            if (f is EventViewFragment) {
+                this.FragmentManager.PopBackStack ();
             }
         }
 

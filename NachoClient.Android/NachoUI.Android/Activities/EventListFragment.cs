@@ -57,7 +57,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (savedInstanceState);
 
-            eventListAdapter = new EventListAdapter ();
+            eventListAdapter = new EventListAdapter (CreateEventOnDate);
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -75,7 +75,7 @@ namespace NachoClient.AndroidClient
             };
 
             addButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
-            addButton.SetImageResource (Android.Resource.Drawable.IcMenuAdd);
+            addButton.SetImageResource (Resource.Drawable.cal_add);
             addButton.Visibility = ViewStates.Visible;
             addButton.Click += AddButton_Click;
 
@@ -153,9 +153,12 @@ namespace NachoClient.AndroidClient
 
         void AddButton_Click (object sender, EventArgs e)
         {
-            var intent = new Intent ();
-//            intent.SetClass (this.Activity, typeof(EventEditActivity));
-            StartActivity (intent);
+            StartActivity (EventEditActivity.NewEventIntent (this.Activity));
+        }
+
+        void CreateEventOnDate (DateTime date)
+        {
+            StartActivity (EventEditActivity.NewEventOnDayIntent (this.Activity, date));
         }
 
         protected void EndRefreshingOnUIThread (object sender)
@@ -199,15 +202,19 @@ namespace NachoClient.AndroidClient
 
     public class EventListAdapter : Android.Widget.BaseAdapter<McEvent>
     {
-        protected INcEventProvider eventCalendarMap;
+        public delegate void CreateEventOnDateDelegate (DateTime date);
 
-        public EventListAdapter ()
+        protected INcEventProvider eventCalendarMap;
+        protected CreateEventOnDateDelegate createEventOnDateCallback;
+
+        public EventListAdapter (CreateEventOnDateDelegate callback)
         {
             eventCalendarMap = new NcAllEventsCalendarMap ();
             eventCalendarMap.Refresh (() => {
                 NotifyDataSetChanged ();
             });
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            createEventOnDateCallback = callback;
         }
 
         public void Refresh (Action completionAction = null)
@@ -281,7 +288,13 @@ namespace NachoClient.AndroidClient
             int day, item;
             eventCalendarMap.IndexToDayItem (position, out day, out item);
             if (-1 == item) {
-                var cellView = convertView ?? LayoutInflater.From (parent.Context).Inflate (Resource.Layout.EventDateCell, parent, false);
+                View cellView;
+                if (null == convertView) {
+                    cellView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.EventDateCell, parent, false);
+                    cellView.FindViewById<ImageView> (Resource.Id.event_date_add).Click += AddButton_Click;
+                } else {
+                    cellView = convertView;
+                }
                 Bind.BindEventDateCell (eventCalendarMap.GetDateUsingDayIndex (day), cellView);
                 return cellView;
             } else {
@@ -302,6 +315,11 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        private void AddButton_Click (object sender, EventArgs e)
+        {
+            DateTime date = ((JavaObjectWrapper<DateTime>)(((ImageView)sender).GetTag (Resource.Id.event_date_add))).Item;
+            createEventOnDateCallback (date);
+        }
     }
 }
 

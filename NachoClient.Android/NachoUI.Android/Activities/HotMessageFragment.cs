@@ -148,7 +148,7 @@ namespace NachoClient.AndroidClient
 
         void DoneWithMessage ()
         {
-            var parent = (NowActivity)this.Activity;
+            var parent = (NowListActivity)this.Activity;
             parent.DoneWithMessage ();
         }
 
@@ -195,6 +195,8 @@ namespace NachoClient.AndroidClient
         {
             var intent = new Intent ();
             intent.SetClass (this.Activity, typeof(MessageComposeActivity));
+            intent.PutExtra (MessageComposeActivity.EXTRA_ACTION, (int)action);
+            intent.PutExtra (MessageComposeActivity.EXTRA_RELATED_MESSAGE_ID, thread.FirstMessageId);
             StartActivity (intent);
         }
 
