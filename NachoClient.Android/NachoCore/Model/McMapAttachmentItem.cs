@@ -41,6 +41,11 @@ namespace NachoCore.Model
                 accountId, attachmentId, itemId, classCode);
             return maps.SingleOrDefault ();
         }
+
+        public static int QueryItemCount (int attachmentId)
+        {
+            return NcModel.Instance.Db.Table<McMapAttachmentItem> ().Where (x => x.AttachmentId == attachmentId).Count ();
+        }
     }
 }
 

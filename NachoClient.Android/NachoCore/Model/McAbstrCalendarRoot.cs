@@ -356,18 +356,17 @@ namespace NachoCore.Model
             return McAttachment.QueryByItem (this);
         }
 
-        private List<McAttachment> ReadAndUnlinkDbAttachments ()
-        {
-            var atts = McAttachment.QueryByItem (this);
-            foreach (var att in atts) {
-                att.Unlink (this);
-            }
-            return atts;
-        }
-
         private void DeleteDbAttachments ()
         {
-            DeleteAncillaryCollection (ref dbAttachments, ReadAndUnlinkDbAttachments);
+            ReadAncillaryCollection (ref dbAttachments, ReadDbAttachments);
+            foreach (var att in dbAttachments) {
+                NcModel.Instance.RunInTransaction (() => {
+                    att.Unlink (this);
+                    if (0 == McMapAttachmentItem.QueryItemCount (att.Id)) {
+                        att.Delete ();
+                    }
+                });
+            }
         }
 
         private void SaveAttachments ()
@@ -388,44 +387,16 @@ namespace NachoCore.Model
             // Take ownership of any attachments that are unowned or owned by a different item.
             var cleanAttachments = new List<McAttachment> (appAttachments.Count);
             foreach (var attachment in appAttachments) {
-                McAttachment cleanAttachment;
                 // Why would attachment pre-exist in unclaimed state?
                 // Edit the event and add a photo as an attachment to the event. The UI saves the new McAttachment to the database, but it doesn't hook it up to the McCalendar. (If this is a new event, then the UI can't hook up the McAttachment to the McCalendar, because the McCalendar hasn't been saved yet.) Linking the McAttachment and the McCalendar has to happen here in SaveAttachments ().
-                if (0 == McAttachment.QueryItems (attachment.Id).Count) {
-                    // The attachment isn't owned by an item yet.  Claim it.
-                    attachment.AccountId = this.AccountId;
-                    NcModel.Instance.RunInTransaction (() => {
-                        attachment.Update ();
-                        attachment.Link (this);
-                    });
-                    cleanAttachment = attachment;
-                } else if (0 != McAttachment.QueryItems (attachment.Id).Count) {
-                    // The attachment is already owned by another item.  Make a copy.
-                    var copy = new McAttachment () {
-                        AccountId = this.AccountId,
-                        ContentId = attachment.ContentId,
-                        ContentType = attachment.ContentType,
-                    };
-                    NcModel.Instance.RunInTransaction (() => {
-                        copy.Insert ();
-                        copy.SetDisplayName (attachment.DisplayName);
-                        copy.UpdateFileCopy (attachment.GetFilePath ());
-                        copy.Update ();
-                        copy.Link (this);
-                    });
-                    cleanAttachment = copy;
-                } else {
-                    // Already owned by this item.  Nothing to do.
-                    cleanAttachment = attachment;
-                }
-                cleanAttachments.Add (cleanAttachment);
+                attachment.Link (this);
+                cleanAttachments.Add (attachment);
             }
             appAttachments = cleanAttachments;
             SaveAncillaryCollection (ref appAttachments, ref dbAttachments, ReadDbAttachments, (McAttachment attachment) => {
                 NcAssert.True (false);
             }, (McAttachment attachment) => {
-                // FIXME DAVID - what (if anything) should we do here?
-                return true;
+                return null != McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (AccountId, attachment.Id, Id, McAbstrFolderEntry.ClassCodeEnum.Calendar);
             });
         }
 
