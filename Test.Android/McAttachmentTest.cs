@@ -15,6 +15,40 @@ namespace Test.iOS
     public class McAttachmentTest : NcTestBase
     {
         [Test]
+        public void TestQueryItems ()
+        {
+            // simple case already covered by CaledarAttachments.
+            var keeper1 = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "keeper1",
+            };
+            keeper1.Insert ();
+
+            var keeper1att = new McAttachment () {
+                AccountId = keeper1.AccountId,
+                FilePresenceFraction = 0,
+                FileSize = 50001,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+            };
+            keeper1att.Insert ();
+            keeper1att.Link (keeper1);
+
+            var keeper2 = new McCalendar () {
+                AccountId = 2,
+                ServerId = "keeper2",
+            };
+            keeper2.Insert ();
+            keeper1att.Link (keeper2);
+
+            var items = McAttachment.QueryItems (keeper1att.Id);
+            Assert.NotNull (items);
+            Assert.AreEqual (2, items.Count);
+            Assert.AreEqual (1, items.Where (x => x is McEmailMessage && x.Id == keeper1.Id).Count ());
+            Assert.AreEqual (1, items.Where (x => x is McCalendar && x.Id == keeper2.Id).Count ());
+        }
+
+        [Test]
         public void TestQueryByItemId ()
         {
             var keeper1 = new McEmailMessage () {
