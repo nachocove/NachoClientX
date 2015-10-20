@@ -726,13 +726,29 @@ namespace NachoCore.Utils
             }
         }
 
-        public static string MessageCount(string label, int count)
+        public static string MessageCount (string label, int count)
         {
             if (0 == count) {
                 return String.Format ("No {0}s", label);
             } else {
-                return String.Format("{0} {1}{2}", count, label, (1 == count) ? "" : "s");
+                return String.Format ("{0} {1}{2}", count, label, (1 == count) ? "" : "s");
             }
+        }
+
+        // TODO: Refactor to share in iOS code
+        public static string AttachmentDescription (McAttachment attachment)
+        {
+            var detailText = "";
+            if (attachment.IsInline) {
+                detailText += "Inline ";
+            }
+            string extension = Pretty.GetExtension (attachment.DisplayName);
+            detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+            detailText += "file";
+            if (0 != attachment.FileSize) {
+                detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
+            } 
+            return detailText;
         }
     }
 }
