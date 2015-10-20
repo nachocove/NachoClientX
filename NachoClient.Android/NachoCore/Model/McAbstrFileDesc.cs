@@ -321,7 +321,7 @@ namespace NachoCore.Model
                 "SELECT Id, DisplayName, CreatedAt, 2 AS FileType, 'Me' AS Contact " +
                 "FROM McDocument " +
                 "WHERE AccountId=?) " +
-                "t1 ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)",
+                "t1 WHERE t1.DisplayName NOT LIKE 'ATT00%' ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)",
                 accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email, 
                 accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Calendar,
                 accountId,
