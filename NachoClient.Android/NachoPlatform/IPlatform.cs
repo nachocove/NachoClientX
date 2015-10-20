@@ -57,8 +57,6 @@ namespace NachoPlatform
 
         bool IsSimulator ();
 
-        bool Wipe (string username, string password, string url, string protoVersion);
-
         SQLite3.ErrorLogCallback GetSQLite3ErrorCallback (Action<int, string> action);
     }
 

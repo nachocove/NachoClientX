@@ -125,12 +125,6 @@ namespace NachoPlatform
             // Fingerprint is something like this: Verizon/d2vzw/d2vzw:4.4.2/KOT49H/I535VRUDNE1:user/release-keys
             return Build.Fingerprint.StartsWith ("generic");
         }
-        public bool Wipe (string username, string password, string url, string protoVersion)
-        {
-            // FIXME.
-            return false;
-        }
-
         public static void SQLite3ErrorCallback (IntPtr pArg, int iErrCode, string zMsg)
         {
             ReverseSQLite3ErrorCallback (iErrCode, zMsg);
