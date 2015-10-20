@@ -6,6 +6,7 @@ using NachoPlatform;
 using UIKit;
 using Foundation;
 using CoreGraphics;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -19,6 +20,7 @@ namespace NachoClient.iOS
             try {
                 image = new UIImage (path);
             } catch {
+                Log.Warn (Log.LOG_UTILS, "Unable to create UIImage from path");
             }
             if (image != null) {
                 return new ImageiOS (image);
@@ -32,6 +34,7 @@ namespace NachoClient.iOS
             try {
                 image = new UIImage (NSData.FromStream (stream));
             } catch {
+                Log.Warn (Log.LOG_UTILS, "Unable to create UIImage from stream");
             }
             if (image != null) {
                 return new ImageiOS (image);
