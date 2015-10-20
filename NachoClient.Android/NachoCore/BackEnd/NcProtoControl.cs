@@ -601,7 +601,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
             if (originalEmailIsEmbedded) {
-                var attachments = McAttachment.QueryByItem (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
+                var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
                 Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd: attachments = {0}", attachments.Count);
                 foreach (var attach in attachments) {
                     if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {

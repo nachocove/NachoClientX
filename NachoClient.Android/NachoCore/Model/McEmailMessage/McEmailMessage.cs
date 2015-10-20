@@ -347,7 +347,7 @@ namespace NachoCore.Model
                 // Attachments, if any, are already taken care of.
                 return;
             }
-            var originalAttachments = McAttachment.QueryByItem (AccountId, ReferencedEmailId, this.GetClassCode ());
+            var originalAttachments = McAttachment.QueryByItemId (AccountId, ReferencedEmailId, this.GetClassCode ());
             var body = McBody.QueryById<McBody> (BodyId);
             MimeMessage mime = MimeHelpers.LoadMessage (body);
             MimeHelpers.AddAttachments (mime, originalAttachments);

@@ -118,7 +118,14 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public static List<McAttachment> QueryByItem (int accountId, int itemId, McAbstrFolderEntry.ClassCodeEnum classCode)
+        /// <summary>
+        /// Queries the by item id.
+        /// </summary>
+        /// <returns>The by item.</returns>
+        /// <param name="accountId">Account identifier. MUST match that of the item for a useful result.</param>
+        /// <param name="itemId">Item identifier.</param>
+        /// <param name="classCode">Class code.</param>
+        public static List<McAttachment> QueryByItemId (int accountId, int itemId, McAbstrFolderEntry.ClassCodeEnum classCode)
         {
             if (McAbstrFolderEntry.ClassCodeEnum.Email == classCode || McAbstrFolderEntry.ClassCodeEnum.Calendar == classCode) {
                 // Only e-mail messages and calendar items can own attachments.
@@ -139,7 +146,7 @@ namespace NachoCore.Model
 
         public static List<McAttachment> QueryByItem (McAbstrFolderEntry item)
         {
-            return QueryByItem (item.AccountId, item.Id, item.GetClassCode ());
+            return QueryByItemId (item.AccountId, item.Id, item.GetClassCode ());
         }
 
         // accountId must match that of the McAttachment.
