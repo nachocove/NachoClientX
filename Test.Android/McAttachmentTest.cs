@@ -17,7 +17,25 @@ namespace Test.iOS
         [Test]
         public void GetAllFiles ()
         {
-            // inclides McNote and McDocument too.
+            // includes McNote and McDocument too.
+            var att00 = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "att00",
+            };
+            att00.Insert ();
+
+            var att0att = new McAttachment () {
+                AccountId = att00.AccountId,
+                FilePresenceFraction = 0,
+                FileSize = 50001,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+                DisplayName = "ATT0045",
+            };
+            att0att.Insert ();
+            att0att.Link (att00);
+
+
             var keeper1 = new McEmailMessage () {
                 AccountId = 1,
                 ServerId = "keeper1",
