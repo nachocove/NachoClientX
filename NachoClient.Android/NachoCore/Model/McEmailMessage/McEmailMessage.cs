@@ -223,6 +223,9 @@ namespace NachoCore.Model
         /// Date and time when the action specified by the LastVerbExecuted element was performed on the msg (optional)
         public DateTime LastVerbExecutionTime { set; get; }
 
+        /// Must be set when Insert()ing a to-be-send message into the DB.
+        public bool ClientIsSender { set; get; }
+
         /// IMAP Stuff
         [Indexed]       
         public uint ImapUid { get; set; }
@@ -412,7 +415,9 @@ namespace NachoCore.Model
 
         public static McEmailMessage MessageWithSubject (McAccount account, string subject)
         {
-            var message = new McEmailMessage ();
+            var message = new McEmailMessage () {
+                ClientIsSender = true,
+            };
             message.AccountId = account.Id;
             message.Subject = subject;
             return message;

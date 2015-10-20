@@ -451,7 +451,9 @@ namespace NachoCore.Utils
             // Don't let 0 into the db
             NcAssert.True (AccountId > 0);
 
-            var msg = new McEmailMessage ();
+            var msg = new McEmailMessage () {
+                ClientIsSender = true,
+            };
             msg.AccountId = AccountId;
             msg.To = CommaSeparatedList (mimeMessage.To);
             msg.Cc = CommaSeparatedList (mimeMessage.Cc);

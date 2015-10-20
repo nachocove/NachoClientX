@@ -18,8 +18,10 @@ namespace NachoCore.IMAP
         {
             NcResult result = null;
             foreach (var attachment in fetchkit.FetchAttachments) {
-                var email = McAttachment.QueryItems (attachment.AccountId, attachment.Id)
-                    .Where (x => x is McEmailMessage && !x.IsAwaitingCreate).First () as McEmailMessage;
+                var emails = from item in McAttachment.QueryItems (attachment.AccountId, attachment.Id)
+                                         where item is McEmailMessage
+                                         select (McEmailMessage)item;
+                var email = emails.Where (x => !x.ClientIsSender).First ();
                 McFolder folder = FolderFromEmail (email);
                 if (null == folder) {
                     return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
