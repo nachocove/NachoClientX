@@ -1,7 +1,6 @@
 using System;
 using SQLite;
 using Android.Content;
-using Android.Provider;
 using Android.OS;
 using NachoClient.AndroidClient;
 using Android.Telephony;
