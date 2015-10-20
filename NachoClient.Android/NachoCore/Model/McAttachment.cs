@@ -95,7 +95,7 @@ namespace NachoCore.Model
             if (null != existing) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_AlreadyAttached);
             }
-            var map = new McMapAttachmentItem (AccountId) {
+            var map = new McMapAttachmentItem (item.AccountId) {
                 AttachmentId = Id,
                 ItemId = item.Id,
                 ClassCode = classCode,

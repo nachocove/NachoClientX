@@ -15,6 +15,84 @@ namespace Test.iOS
     public class McAttachmentTest : NcTestBase
     {
         [Test]
+        public void TestQueryByAttachmentIdItemIdClassCode ()
+        {
+            var keeper1 = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "keeper1",
+            };
+            keeper1.Insert ();
+
+            var keeper1att = new McAttachment () {
+                AccountId = keeper1.AccountId,
+                FilePresenceFraction = 0,
+                FileSize = 50001,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+            };
+            keeper1att.Insert ();
+            keeper1att.Link (keeper1);
+
+            var keeper2 = new McCalendar () {
+                AccountId = 2,
+                ServerId = "keeper2",
+            };
+            keeper2.Insert ();
+
+            var keeper2att = new McAttachment () {
+                AccountId = keeper2.AccountId,
+                FilePresenceFraction = 0,
+                FileSize = 50002,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+            };
+            keeper2att.Insert ();
+            keeper2att.Link (keeper2, true);
+
+            var keeper3 = new McCalendar () {
+                AccountId = 1,
+                ServerId = "keeper3",
+            };
+            keeper3.Insert ();
+
+            var keeper3att = new McAttachment () {
+                AccountId = keeper2.AccountId, //Note!
+                FilePresenceFraction = 0,
+                FileSize = 50003,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+            };
+            // The AccountId of the map will match the AccountId of the item.
+            keeper3att.Insert ();
+            keeper3att.Link (keeper3);
+
+            var map = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (keeper1.AccountId, keeper1att.Id, keeper1.Id,
+                McAbstrFolderEntry.ClassCodeEnum.Email);
+            Assert.IsNotNull (map);
+            Assert.IsFalse (map.IncludedInBody);
+            Assert.AreEqual (map.AccountId, keeper1.AccountId);
+            Assert.AreEqual (map.AttachmentId, keeper1att.Id);
+            Assert.AreEqual (map.ItemId, keeper1.Id);
+
+            map = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (keeper2.AccountId, keeper2att.Id, keeper2.Id,
+                McAbstrFolderEntry.ClassCodeEnum.Calendar);
+            Assert.IsNotNull (map);
+            Assert.IsTrue (map.IncludedInBody);
+            Assert.AreEqual (map.AccountId, keeper2.AccountId);
+            Assert.AreEqual (map.AttachmentId, keeper2att.Id);
+            Assert.AreEqual (map.ItemId, keeper2.Id);
+
+            map = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (keeper3.AccountId, keeper3att.Id, keeper3.Id,
+                McAbstrFolderEntry.ClassCodeEnum.Calendar);
+            Assert.IsNotNull (map);
+            Assert.IsFalse (map.IncludedInBody);
+            Assert.AreEqual (map.AccountId, keeper3.AccountId);
+            Assert.AreNotEqual (map.AccountId, keeper3att.AccountId);
+            Assert.AreEqual (map.AttachmentId, keeper3att.Id);
+            Assert.AreEqual (map.ItemId, keeper3.Id);
+        }
+
+        [Test]
         public void TestQueryNeedsFetch ()
         {
             var keeper1 = new McEmailMessage () {
