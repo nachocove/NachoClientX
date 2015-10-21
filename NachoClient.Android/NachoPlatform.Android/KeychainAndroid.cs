@@ -25,18 +25,22 @@ namespace NachoPlatform
         public static Keychain Instance {
             get {
                 if (instance == null) {
+                    bool firsttime = false;
                     lock (syncRoot) {
                         if (instance == null) {
                             instance = new Keychain ();
-                            if (instance.RSAKeyGenerated) {
-                                Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new RSA Keypair in {0}ms", instance.RSAKeyGenerationTimeMilliseconds);
-                            }
-                            if (instance.PrefsKeyGenerated) {
-                                Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new PrefsKey");
-                            }
-                            if (instance.PrefsMacKeyGenerated) {
-                                Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new PrefsMacKey");
-                            }
+                            firsttime = true;
+                        }
+                    }
+                    if (firsttime) {
+                        if (instance.RSAKeyGenerated) {
+                            Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new RSA Keypair in {0}ms", instance.RSAKeyGenerationTimeMilliseconds);
+                        }
+                        if (instance.PrefsKeyGenerated) {
+                            Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new PrefsKey");
+                        }
+                        if (instance.PrefsMacKeyGenerated) {
+                            Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new PrefsMacKey");
                         }
                     }
                 }
