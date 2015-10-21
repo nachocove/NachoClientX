@@ -64,11 +64,7 @@ namespace NachoClient.iOS
 
             var imageY = (VIEW_HEIGHT / 2) - (ICON_SIZE / 2);
             imageView = new UIImageView (new CGRect (0, imageY, ICON_SIZE, ICON_SIZE));
-            if (Pretty.TreatLikeAPhoto (attachment.DisplayName)) {
-                imageView.Image = UIImage.FromBundle ("email-att-photos");
-            } else {
-                imageView.Image = UIImage.FromBundle ("email-att-files");
-            }
+            imageView.Image = FilesTableViewSource.FileIconFromExtension (Pretty.GetExtension (attachment.DisplayName));
             imageView.Tag = (int)TagType.ATTACHMENT_IMAGE_TAG;
             imageView.UserInteractionEnabled = false;
             AddSubview (imageView);

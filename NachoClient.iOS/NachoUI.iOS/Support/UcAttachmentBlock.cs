@@ -117,12 +117,7 @@ namespace NachoClient.iOS
                     detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
                 } 
                 detailTextlabel.Text = detailText;
-
-                if (Pretty.TreatLikeAPhoto(attachment.DisplayName)) {
-                    cellIconImageView.Image = UIImage.FromBundle ("email-att-photos");
-                } else {
-                    cellIconImageView.Image = UIImage.FromBundle ("email-att-files");
-                }
+                cellIconImageView.Image = FilesTableViewSource.FileIconFromExtension (Pretty.GetExtension (attachment.DisplayName));
             } else {
                 textLabel.Text = "File no longer exists";
             }
