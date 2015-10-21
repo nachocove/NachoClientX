@@ -67,7 +67,7 @@
                     android:padding="4dp"
                     android:text="Starts" />
                 <TextView
-                    android:id="@+id/event_edit_start_date"
+                    android:id="@+id/event_edit_start"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -75,13 +75,6 @@
                     android:padding="4dp"
                     android:hint="Start Date"
                     android:gravity="right" />
-                <TextView
-                    android:id="@+id/event_edit_start_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:padding="4dp"
-                    android:hint="Time" />
             </LinearLayout>
             <View
                 android:layout_width="match_parent"
@@ -98,7 +91,7 @@
                     android:padding="4dp"
                     android:text="Until" />
                 <TextView
-                    android:id="@+id/event_edit_end_date"
+                    android:id="@+id/event_edit_end"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -106,13 +99,6 @@
                     android:padding="4dp"
                     android:hint="Start Date"
                     android:gravity="right" />
-                <TextView
-                    android:id="@+id/event_edit_end_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:padding="4dp"
-                    android:hint="Time" />
             </LinearLayout>
             <View
                 android:layout_width="match_parent"
