@@ -482,10 +482,39 @@ namespace NachoClient.iOS
 
                 dateTextLabel.Text = DateToString (item.CreatedAt);
 
-                if (Pretty.TreatLikeAPhoto (item.DisplayName)) {
-                    iconView.Image = UIImage.FromBundle ("email-att-photos");
-                } else {
-                    iconView.Image = UIImage.FromBundle ("email-att-files");
+                switch (extension) {
+                case ".DOC":
+                case ".DOCX":
+                    iconView.Image = UIImage.FromBundle ("icn-files-wrd");
+                    break;
+                case ".PPT":
+                case ".PPTX":
+                    iconView.Image = UIImage.FromBundle ("icn-files-ppt");
+                    break;
+                case ".XLS":
+                case ".XLSX":
+                    iconView.Image = UIImage.FromBundle ("icn-files-xls");
+                    break;
+                case ".PDF":
+                    iconView.Image = UIImage.FromBundle ("icn-files-pdf");
+                    break;
+                case ".TXT":
+                case ".TEXT":
+                    iconView.Image = UIImage.FromBundle ("icn-files-txt");
+                    break;
+                case ".ZIP":
+                    iconView.Image = UIImage.FromBundle ("icn-files-zip");
+                    break;
+                case ".PNG":
+                    iconView.Image = UIImage.FromBundle ("icn-files-png");
+                    break;
+                default:
+                    if (Pretty.TreatLikeAPhoto (item.DisplayName)) {
+                        iconView.Image = UIImage.FromBundle ("icn-files-img");
+                    } else {
+                        iconView.Image = UIImage.FromBundle ("email-att-files");
+                    }
+                    break;
                 }
             } else {
                 textLabel.Text = "File no longer exists"; 

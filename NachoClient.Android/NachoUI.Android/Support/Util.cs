@@ -71,24 +71,6 @@ namespace NachoClient.AndroidClient
             return new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) + TimeSpan.FromMilliseconds (javaDate.Time);
         }
 
-        public static void ConstrainDatePicker (DatePicker datePicker, DateTime referenceDate)
-        {
-            DateTime pickerMin = DateTime.UtcNow.AddYears (-5);
-            DateTime pickerMax = DateTime.UtcNow.AddYears (50);
-            if (default(DateTime) != referenceDate) {
-                DateTime referenceMin = referenceDate.AddYears (-1);
-                if (referenceMin < pickerMin) {
-                    pickerMin = referenceMin;
-                }
-                DateTime referenceMax = referenceDate.AddYears (1);
-                if (referenceMax > pickerMax) {
-                    pickerMax = referenceMax;
-                }
-            }
-            datePicker.MinDate = pickerMin.MillisecondsSinceEpoch ();
-            datePicker.MaxDate = pickerMax.MillisecondsSinceEpoch ();
-        }
-
         #endregion
     }
 

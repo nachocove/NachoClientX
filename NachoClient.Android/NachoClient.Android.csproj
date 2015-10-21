@@ -557,6 +557,8 @@
     <Compile Include="NachoUI.Android\Activities\EventEditActivity.cs" />
     <Compile Include="NachoUI.Android\Support\IntentHelper.cs" />
     <Compile Include="NachoUI.Android\Activities\NowListActivity.cs" />
+    <Compile Include="NachoUI.Android\Support\NcAttachmentView.cs" />
+    <Compile Include="NachoUI.Android\Support\DateTimePicker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1310,5 +1312,40 @@
     <AndroidResource Include="Resources\drawable-xhdpi\gen_edit.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_edit.png" />
     <AndroidResource Include="Resources\layout\HotEventCell.axml" />
+    <AndroidResource Include="Resources\layout\AttachmentListViewCell.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_att_download_arrow.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_att_download_circle.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_att_download_vline.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_att_download.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_att_files.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_att_photos.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_readmore_active.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_readmore.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_att_download_arrow.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_att_download_circle.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_att_download_vline.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_att_download.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_att_files.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_att_photos.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_readmore_active.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_readmore.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_att_download_arrow.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_att_download_circle.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_att_download_vline.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_att_download.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_att_files.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_att_photos.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_readmore_active.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_readmore.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_att_download_arrow.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_att_download_circle.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_att_download_vline.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_att_download.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_att_files.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_att_photos.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_readmore_active.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_readmore.png" />
+    <AndroidResource Include="Resources\layout\AttachmentListView.axml" />
+    <AndroidResource Include="Resources\drawable\RoundedCorners.xml" />
   </ItemGroup>
 </Project>
