@@ -116,8 +116,9 @@ namespace NachoCore
 
         public void IndexToDayItem (int index, out int day, out int item)
         {
+            index += days [0];
             for (int i = 0; i < days.Length - 1; ++i) {
-                if (index <= i + days[i + 1]) {
+                if (index <= i + days [i + 1]) {
                     day = i;
                     item = index - (i + days [i] + 1);
                     return;
@@ -129,12 +130,13 @@ namespace NachoCore
 
         public int IndexFromDayItem (int day, int item)
         {
-            return day + days [day] + item + 1;
+            return day + days [day] + item + 1 - days [0];
         }
 
         public int NumberOfEvents()
         {
-            return events.Count;
+            // Events before the starting date are not counted.
+            return events.Count - days [0];
         }
 
         public DateTime GetDateUsingDayIndex (int day)
