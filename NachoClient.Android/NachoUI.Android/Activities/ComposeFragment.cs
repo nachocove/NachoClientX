@@ -15,6 +15,7 @@ using Android.Widget;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Brain;
 
 using MimeKit;
 using Java.Interop;
@@ -23,7 +24,13 @@ using System.IO;
 
 namespace NachoClient.AndroidClient
 {
-    public class ComposeFragment : Fragment, NachoJavascriptMessageHandler, MessageComposerDelegate, NachoWebClientDelegate, MessageComposeHeaderViewDelegate
+    public class ComposeFragment : 
+        Fragment,
+        NachoJavascriptMessageHandler,
+        MessageComposerDelegate,
+        NachoWebClientDelegate,
+        MessageComposeHeaderViewDelegate,
+        IntentFragmentDelegate
     {
 
         #region Properties
@@ -193,6 +200,34 @@ namespace NachoClient.AndroidClient
         {
             Composer.Message.Subject = subject;
         }
+            
+        public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
+        {
+            var intentFragment = new IntentFragment ();
+            intentFragment.Delegate = this;
+            intentFragment.Show (FragmentManager, "com.nachocove.nachomail.composeIntent");
+        }
+
+        public void IntentFragmentDidSelectIntent (NcMessageIntent.MessageIntent intent)
+        {
+            Composer.Message.Intent = intent.type;
+            Composer.Message.IntentDateType = MessageDeferralType.None;
+            Composer.Message.IntentDate = DateTime.MinValue;
+            UpdateHeaderIntentView ();
+            if (intent.dueDateAllowed) {
+                var deferralFragment = new ChooseDeferralFragment ();
+                deferralFragment.Show (FragmentManager, "com.nachocove.nachomail.deferral");
+                deferralFragment.type = NcMessageDeferral.MessageDateType.Intent;
+                deferralFragment.setOnDeferralSelected (IntentDateSelected);
+            }
+        }
+
+        public void IntentDateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            Composer.Message.IntentDateType = request;
+            Composer.Message.IntentDate = selectedDate;
+            UpdateHeaderIntentView ();
+        }
 
         #endregion
 
@@ -297,7 +332,18 @@ namespace NachoClient.AndroidClient
         {
             HeaderView.ToField.Text = Composer.Message.To;
             HeaderView.CcField.Text = Composer.Message.Cc;
+            UpdateHeaderSubjectView ();
+            UpdateHeaderIntentView ();
+        }
+
+        void UpdateHeaderSubjectView ()
+        {
             HeaderView.SubjectField.Text = Composer.Message.Subject;
+        }
+
+        void UpdateHeaderIntentView ()
+        {
+            HeaderView.IntentValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
         }
 
         #endregion

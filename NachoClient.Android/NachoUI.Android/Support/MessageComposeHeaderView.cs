@@ -16,7 +16,7 @@ namespace NachoClient.AndroidClient
         void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject);
         void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to);
         void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc);
-//        void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
 //        void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
 //        void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
 //        void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
@@ -29,15 +29,18 @@ namespace NachoClient.AndroidClient
     {
 
         public MessageComposeHeaderViewDelegate Delegate;
-        LinearLayout SubjectGroup;
-        TextView SubjectLabel;
         public EditText SubjectField;
-        LinearLayout ToGroup;
-        TextView ToLabel;
         public EditText ToField;
-        LinearLayout CcGroup;
-        TextView CcLabel;
         public EditText CcField;
+        public TextView IntentValueLabel;
+        LinearLayout IntentContainer;
+        bool HasOpenedSubject;
+
+        bool ShouldHideIntent {
+            get {
+                return !HasOpenedSubject && String.IsNullOrEmpty(SubjectField.Text);
+            }
+        }
         
         public MessageComposeHeaderView (Context context) : base(context)
         {
@@ -57,59 +60,35 @@ namespace NachoClient.AndroidClient
 
         void CreateSubviews ()
         {
-            ToGroup = new LinearLayout (Context);
-            ToGroup.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent);
-            ToGroup.Orientation = Orientation.Horizontal;
-            ToLabel = new TextView (Context);
-            ToLabel.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent);
-            ToLabel.SetTextColor (Android.Graphics.Color.Black);
-            ToLabel.SetBackgroundColor (Android.Graphics.Color.White);
-            ToLabel.Text = "To:";
-            ToField = new EditText (Context);
-            ToField.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent);
+
+            var inflater = Context.GetSystemService (Context.LayoutInflaterService) as LayoutInflater;
+            var view = inflater.Inflate (Resource.Layout.MessageComposeHeaderView, this);
+
+            ToField = view.FindViewById<EditText> (Resource.Id.compose_to);
+            CcField = view.FindViewById<EditText> (Resource.Id.compose_cc);
+            SubjectField = view.FindViewById<EditText> (Resource.Id.compose_subject);
+            SubjectField.FocusChange += SubjectFieldFocused;
+            IntentContainer = view.FindViewById<LinearLayout> (Resource.Id.compose_intent_container);
+            IntentValueLabel = view.FindViewById<TextView> (Resource.Id.compose_intent);
             ToField.TextChanged += ToChanged;
-            ToField.SetTextColor (Android.Graphics.Color.Black);
-            ToField.SetBackgroundColor (Android.Graphics.Color.White);
-            ToField.InputType = InputTypes.TextVariationEmailAddress;
-            ToGroup.AddView (ToLabel);
-            ToGroup.AddView (ToField);
-            AddView (ToGroup);
-
-            CcGroup = new LinearLayout (Context);
-            CcGroup.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent);
-            CcGroup.Orientation = Orientation.Horizontal;
-            CcLabel = new TextView (Context);
-            CcLabel.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent);
-            CcLabel.SetTextColor (Android.Graphics.Color.Black);
-            CcLabel.SetBackgroundColor (Android.Graphics.Color.White);
-            CcLabel.Text = "CC:";
-            CcField = new EditText (Context);
-            CcField.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent);
             CcField.TextChanged += CcChanged;
-            CcField.SetTextColor (Android.Graphics.Color.Black);
-            CcField.SetBackgroundColor (Android.Graphics.Color.White);
-            CcField.InputType = InputTypes.TextVariationEmailAddress;
-            CcGroup.AddView (CcLabel);
-            CcGroup.AddView (CcField);
-            AddView (CcGroup);
-
-            SubjectGroup = new LinearLayout (Context);
-            SubjectGroup.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent);
-            SubjectGroup.Orientation = Orientation.Horizontal;
-            SubjectLabel = new TextView (Context);
-            SubjectLabel.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent);
-            SubjectLabel.SetTextColor (Android.Graphics.Color.Black);
-            SubjectLabel.SetBackgroundColor (Android.Graphics.Color.White);
-            SubjectLabel.Text = "Subject:";
-            SubjectField = new EditText (Context);
-            SubjectField.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent);
             SubjectField.TextChanged += SubjectChanged;
-            SubjectField.SetTextColor (Android.Graphics.Color.Black);
-            SubjectField.SetBackgroundColor (Android.Graphics.Color.White);
-            SubjectField.InputType = InputTypes.TextVariationEmailSubject;
-            SubjectGroup.AddView (SubjectLabel);
-            SubjectGroup.AddView (SubjectField);
-            AddView (SubjectGroup);
+            IntentContainer.Click += SelectIntent;
+        }
+
+        void SubjectFieldFocused (object sender, FocusChangeEventArgs e)
+        {
+            if (SubjectField.HasFocus) {
+                HasOpenedSubject = true;
+                RequestLayout ();
+            }
+        }
+
+        void SelectIntent (object sender, EventArgs e)
+        {
+            if (Delegate != null) {
+                Delegate.MessageComposeHeaderViewDidSelectIntentField (this);
+            }
         }
 
         void SubjectChanged (object sender, TextChangedEventArgs e)
@@ -136,6 +115,12 @@ namespace NachoClient.AndroidClient
         public void FocusSubject ()
         {
             SubjectField.RequestFocus ();
+        }
+
+        protected override void OnLayout (bool changed, int l, int t, int r, int b)
+        {
+            IntentContainer.Visibility = ShouldHideIntent ? ViewStates.Gone : ViewStates.Visible;
+            base.OnLayout (changed, l, t, r, b);
         }
 
     }

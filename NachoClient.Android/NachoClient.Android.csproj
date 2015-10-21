@@ -1308,6 +1308,7 @@
     <AndroidResource Include="Resources\drawable-xhdpi\gen_edit.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_edit.png" />
     <AndroidResource Include="Resources\layout\HotEventCell.axml" />
+    <AndroidResource Include="Resources\layout\MessageComposeHeaderView.axml" />
     <AndroidResource Include="Resources\layout\AttachmentListViewCell.axml" />
     <AndroidResource Include="Resources\drawable-hdpi\email_att_download_arrow.png" />
     <AndroidResource Include="Resources\drawable-hdpi\email_att_download_circle.png" />
@@ -1343,5 +1344,7 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_readmore.png" />
     <AndroidResource Include="Resources\layout\AttachmentListView.axml" />
     <AndroidResource Include="Resources\drawable\RoundedCorners.xml" />
+    <AndroidResource Include="Resources\layout\IntentDialogItem.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\icn_defer.png" />
   </ItemGroup>
 </Project>
