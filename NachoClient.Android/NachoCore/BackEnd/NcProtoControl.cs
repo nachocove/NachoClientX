@@ -600,19 +600,6 @@ namespace NachoCore
             int folderId, bool originalEmailIsEmbedded)
         {
             Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
-            if (originalEmailIsEmbedded) {
-                var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
-                Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd: attachments = {0}", attachments.Count);
-                foreach (var attach in attachments) {
-                    if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
-                        var token = DnldAttCmd (attach.Id);
-                        if (null == token) {
-                            // FIXME - is this correct behavior in this case?
-                            return NcResult.Error (NcResult.SubKindEnum.Error_TaskBodyDownloadFailed);
-                        }
-                    }
-                }
-            }
             return SmartEmailCmd (McPending.Operations.EmailForward,
                 newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
         }

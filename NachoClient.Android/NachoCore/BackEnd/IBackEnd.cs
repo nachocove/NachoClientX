@@ -43,6 +43,7 @@ namespace NachoCore
         void Stop (int accountId);
         // remove service for an account.
         void Remove (int accountId);
+        NcProtoControl GetService (int accountId, McAccount.AccountCapabilityEnum capability);
         // let the BE know that the asked-about server cert is/not okay to trust.
         void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay);
         // let the BE know that the server info has been updated for this account.

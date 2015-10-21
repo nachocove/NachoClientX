@@ -155,18 +155,23 @@ namespace NachoCore
 
         private NcResult ApplyToService (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> func)
         {
-            NcAssert.True (0 != accountId, "0 != accountId");
-            ConcurrentQueue<NcProtoControl> services;
-            if (!Services.TryGetValue (accountId, out services)) {
-                Log.Error (Log.LOG_BACKEND, "ServiceFromAccountId called with bad accountId {0} @ {1}", accountId, new StackTrace ());
-                return NcResult.Error (NcResult.SubKindEnum.Error_AccountDoesNotExist);
-            }
-            var protoControl = services.FirstOrDefault (x => capability == (x.Capabilities & capability));
+            var protoControl = GetService (accountId, capability);
             if (null == protoControl) {
                 Log.Error (Log.LOG_BACKEND, "ServiceFromAccountId: can't find controller with desired capability {0}", capability);
                 return NcResult.Error (NcResult.SubKindEnum.Error_NoCapableService);
             }
             return func (protoControl);
+        }
+
+        public NcProtoControl GetService (int accountId, McAccount.AccountCapabilityEnum capability)
+        {
+            NcAssert.True (0 != accountId, "0 != accountId");
+            ConcurrentQueue<NcProtoControl> services;
+            if (!Services.TryGetValue (accountId, out services)) {
+                Log.Error (Log.LOG_BACKEND, "GetService called with bad accountId {0} @ {1}", accountId, new StackTrace ());
+                return null;
+            }
+            return services.FirstOrDefault (x => capability == (x.Capabilities & capability));
         }
 
         private NcResult ApplyAcrossServices (int accountId, string name, Func<NcProtoControl, NcResult> func)
