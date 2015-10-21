@@ -1348,5 +1348,7 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_readmore.png" />
     <AndroidResource Include="Resources\layout\AttachmentListView.axml" />
     <AndroidResource Include="Resources\drawable\RoundedCorners.xml" />
+    <AndroidResource Include="Resources\layout\IntentDialogItem.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\icn_defer.png" />
   </ItemGroup>
 </Project>

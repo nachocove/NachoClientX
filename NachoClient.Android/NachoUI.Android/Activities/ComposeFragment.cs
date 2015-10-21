@@ -24,7 +24,13 @@ using System.IO;
 
 namespace NachoClient.AndroidClient
 {
-    public class ComposeFragment : Fragment, NachoJavascriptMessageHandler, MessageComposerDelegate, NachoWebClientDelegate, MessageComposeHeaderViewDelegate
+    public class ComposeFragment : 
+        Fragment,
+        NachoJavascriptMessageHandler,
+        MessageComposerDelegate,
+        NachoWebClientDelegate,
+        MessageComposeHeaderViewDelegate,
+        IntentFragmentDelegate
     {
 
         #region Properties
@@ -198,7 +204,14 @@ namespace NachoClient.AndroidClient
         public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
         {
             var intentFragment = new IntentFragment ();
-//            intentFragment.Show (null, null);
+            intentFragment.Delegate = this;
+            intentFragment.Show (FragmentManager, "com.nachocove.nachomail.composeIntent");
+        }
+
+        public void IntentFragmentDidSelectIntent (NcMessageIntent.MessageIntent intent)
+        {
+            Composer.Message.Intent = intent.type;
+            UpdateHeaderIntentView ();
         }
 
         #endregion
@@ -304,7 +317,17 @@ namespace NachoClient.AndroidClient
         {
             HeaderView.ToField.Text = Composer.Message.To;
             HeaderView.CcField.Text = Composer.Message.Cc;
+            UpdateHeaderSubjectView ();
+            UpdateHeaderIntentView ();
+        }
+
+        void UpdateHeaderSubjectView ()
+        {
             HeaderView.SubjectField.Text = Composer.Message.Subject;
+        }
+
+        void UpdateHeaderIntentView ()
+        {
             HeaderView.IntentValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
         }
 
