@@ -11,6 +11,16 @@ namespace NachoCore.Model
 {
     public class McPending : McAbstrObjectPerAcc
     {
+        // TEST USE ONLY.
+        private static IBackEnd _backEnd;
+        public static IBackEnd _BackEnd {
+            get {
+                return _backEnd ?? BackEnd.Instance;
+            }
+            set {
+                _backEnd = value;
+            }
+        }
         // Incremented on every table write.
         private static int _Version = 0;
 
@@ -447,6 +457,8 @@ namespace NachoCore.Model
             case Operations.FolderDelete:
             case Operations.FolderUpdate:
             case Operations.EmailForward:
+            case Operations.EmailReply:
+            case Operations.EmailSend:
             case Operations.CalRespond:
             case Operations.CalMove:
             case Operations.ContactMove:
@@ -831,7 +843,7 @@ namespace NachoCore.Model
         // PUBLIC FOR TEST USE ONLY. OTHERWISE CONSIDER IT PRIVATE.
         public bool UnblockSuccessors (NcProtoControl control, StateEnum toState)
         {
-            var successors = QuerySuccessors (AccountId, Id);
+            var successors = QuerySuccessors (Id);
             McPendDep.DeleteAllSucc (Id);
             foreach (var iter in successors) {
                 var succ = iter;
@@ -852,7 +864,16 @@ namespace NachoCore.Model
                     foreach (var dep in remaining) {
                         dep.Delete ();
                     }
-                    succ.ResolveAsHardFail (control, NcResult.WhyEnum.PredecessorFailed);
+                    if (succ.AccountId != AccountId) {
+                        // This is tricky, because succ may not have the same AccountId as this.
+                        // Scenario: an attachment download in account A unblocking an email send in account B.
+                        // TODO have a general way to get from pending -> appropriate controller.
+                        // right now, we know there is only one such case.
+                        var otherControl = _BackEnd.GetService (succ.AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                        succ.ResolveAsHardFail (otherControl, NcResult.WhyEnum.PredecessorFailed);
+                    } else {
+                        succ.ResolveAsHardFail (control, NcResult.WhyEnum.PredecessorFailed);
+                    }
                     break;
                 default:
                     NcAssert.CaseError (string.Format ("UnblockSuccessors: {0}", toState));
@@ -886,7 +907,7 @@ namespace NachoCore.Model
             }
             if (0 != makeEligible.Count) {
                 foreach (var accountId in eligibleInds.Keys) {
-                    BackEnd.Instance.PendQHotInd (accountId, eligibleInds [accountId]);
+                    _BackEnd.PendQHotInd (accountId, eligibleInds [accountId]);
                 }
                 return true;
             }
@@ -1056,6 +1077,28 @@ namespace NachoCore.Model
 
                 NcModel.Instance.RunInTransaction (() => {
                     if (CanDepend ()) {
+                        // Email sends with attachments are a special case.
+                        // We need to inject any missing download operations ahead of the send and make the send dependent.
+                        if (Operations.EmailSend == Operation || 
+                            Operations.EmailForward == Operation || 
+                            Operations.EmailReply == Operation) {
+                            var atts = McAttachment.QueryByItem (Item);
+                            foreach (var att in atts) {
+                                if (McAbstrFileDesc.FilePresenceEnum.None == att.FilePresence) {
+                                    var protoControl = _BackEnd.GetService (att.AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                                    var result = protoControl.DnldAttCmd (att.Id);
+                                    if (result.isError ()) {
+                                        // strip attachment if we can't initate download.
+                                        // TODO let recipient/user know.
+                                        Log.Error (Log.LOG_SYNC, "Unable to initiate attachment.");
+                                        att.Unlink (Item);
+                                    } else {
+                                        var pend = McPending.QueryByToken (att.AccountId, (string)result.Value).First ();
+                                        predIds.Add (pend.Id);
+                                    }
+                                }
+                            }
+                        }
                         // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
                         // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
                         var pendq = QueryNonFailedNonDeleted (AccountId).OrderByDescending (x => x.Priority);
@@ -1205,7 +1248,7 @@ namespace NachoCore.Model
                             item.Delete ();
                         }
                         // Deal with any dependent McPending (if there are any, it is an error).
-                        var successors = QuerySuccessors (AccountId, Id);
+                        var successors = QuerySuccessors (Id);
                         if (0 != successors.Count) {
                             Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
                             foreach (var succ in successors) {
@@ -1281,15 +1324,14 @@ namespace NachoCore.Model
                 accountId, succId).ToList ();
         }
 
-        public static List<McPending> QuerySuccessors (int accountId, int predId)
+        public static List<McPending> QuerySuccessors (int predId)
         {
             return NcModel.Instance.Db.Query<McPending> (
                 "SELECT p.* FROM McPending AS p JOIN McPendDep AS m ON p.Id = m.SuccId WHERE " +
-                "p.AccountId = ? AND " +
                 "p.State = ? AND " +
                 "m.PredId = ? " +
                 "ORDER BY Priority ASC",
-                accountId, (uint)StateEnum.PredBlocked, predId).ToList ();
+                (uint)StateEnum.PredBlocked, predId).ToList ();
         }
 
         public static List<McPending> QueryDeferredFSync (int accountId)

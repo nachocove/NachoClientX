@@ -844,8 +844,7 @@ namespace Test.iOS
                 var first = CreatePending ();
                 CreatePending (); // second
                 CreatePending (); // third
-                CreatePending (accountId: 5); // pending object in another account
-                var retrieved = McPending.QuerySuccessors (defaultAccountId, first.Id);
+                var retrieved = McPending.QuerySuccessors (first.Id);
                 Assert.AreEqual (2, retrieved.Count);
             }
 
@@ -1024,10 +1023,9 @@ namespace Test.iOS
                 var email1 = FolderOps.CreateUniqueItem<McEmailMessage> (serverId: "e1");
                 var cal = FolderOps.CreateUniqueItem<McCalendar> (serverId: "c1");
                 var email2 = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: 3, serverId: "e2");
-                var pend1 = CreatePending (operation: Operations.EmailSend, capability: McAccount.AccountCapabilityEnum.EmailSender, item: email1);
+                var pend1 = CreatePending (operation: Operations.EmailSend, capability: McAccount.AccountCapabilityEnum.EmailSender, item: email1, serverId: "e1");
                 CreatePending (operation: Operations.EmailBodyDownload, item: email1);
-                CreatePending (accountId:5, operation: Operations.EmailSend, capability: McAccount.AccountCapabilityEnum.EmailSender, item: email1);
-                CreatePending (operation: Operations.EmailSend, item: email2);
+                CreatePending (operation: Operations.EmailSend, item: email2, serverId: "e2", accountId: 3);
                 CreatePending (operation: Operations.CalDelete, capability: McAccount.AccountCapabilityEnum.CalWriter, item: cal);
 
                 var found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
