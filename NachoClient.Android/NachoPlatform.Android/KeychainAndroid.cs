@@ -18,6 +18,9 @@ namespace NachoPlatform
     {
         private static volatile Keychain instance;
         private static object syncRoot = new Object ();
+        private bool RSAKeyGenerated = false;
+        private bool PrefsKeyGenerated = false;
+        private bool PrefsMacKeyGenerated = false;
 
         public static Keychain Instance {
             get {
@@ -25,6 +28,15 @@ namespace NachoPlatform
                     lock (syncRoot) {
                         if (instance == null) {
                             instance = new Keychain ();
+                            if (instance.RSAKeyGenerated) {
+                                Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new RSA Keypair in {0}ms", instance.RSAKeyGenerationTimeMilliseconds);
+                            }
+                            if (instance.PrefsKeyGenerated) {
+                                Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new PrefsKey");
+                            }
+                            if (instance.PrefsMacKeyGenerated) {
+                                Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new PrefsMacKey");
+                            }
                         }
                     }
                 }
@@ -275,7 +287,7 @@ namespace NachoPlatform
             if (null == PrefsKey) {
                 var r = Prefs.GetString (KPrefsKeyKey, null);
                 if (null == r) {
-//                    Log.Info (Log.LOG_SYS, "KeychainAndroid: Creating new PrefsKey");
+                    PrefsKeyGenerated = true;
                     PrefsKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
                     editor.PutString (KPrefsKeyKey, RSAEncryptKey (PrefsKey));
@@ -290,7 +302,7 @@ namespace NachoPlatform
             if (null == PrefsMacKey) {
                 var r = Prefs.GetString (KPrefsMACKey, null);
                 if (null == r) {
-//                    Log.Info (Log.LOG_SYS, "KeychainAndroid: Creating new PrefsMacKey");
+                    PrefsMacKeyGenerated = true;
                     PrefsMacKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
                     editor.PutString (KPrefsMACKey, RSAEncryptKey (PrefsMacKey));
@@ -419,6 +431,7 @@ namespace NachoPlatform
             privateKey = privateKeyEntry.PrivateKey;
         }
 
+        private long RSAKeyGenerationTimeMilliseconds;
         private void GenerateKeyPair ()
         {
             var st = new PlatformStopwatch ();
@@ -440,35 +453,26 @@ namespace NachoPlatform
             generator.Initialize(spec);
             generator.GenerateKeyPair();
             st.Stop ();
-//            Log.Info (Log.LOG_SYS, "KeychainAndroid: Created new KeyPair in {0}ms", st.ElapsedMilliseconds);
+            RSAKeyGenerated = true;
+            RSAKeyGenerationTimeMilliseconds = st.ElapsedMilliseconds;
             NcAssert.True (ks.ContainsAlias (KDefaultKeyPair)); // make sure it got saved to the keystore
         }
 
         private string RSAEncryptKey (IKey key)
         {
-            var st = new PlatformStopwatch ();
-            st.Start ();
             byte[] encryptedData;
             var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
             rsaCipher.Init (CipherMode.WrapMode, publicKey);
             encryptedData = rsaCipher.Wrap (key);
-            var enc = Convert.ToBase64String (encryptedData);
-            st.Stop ();
-//            Log.Info (Log.LOG_SYS, "KeychainAndroid: RSA-Encrypted key data in {0}ms", st.ElapsedMilliseconds);
-            return enc;
+            return Convert.ToBase64String (encryptedData);
         }
 
         private IKey RSADecryptKey (string encryptedTextB64)
         {
-            var st = new PlatformStopwatch ();
-            st.Start ();
             var bytesToDecrypt = Convert.FromBase64String(encryptedTextB64);
             var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
             rsaCipher.Init (CipherMode.UnwrapMode, privateKey);
-            var dec = rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
-            st.Stop ();
-//            Log.Info (Log.LOG_SYS, "KeychainAndroid: RSA-Decrypted key data in {0}ms", st.ElapsedMilliseconds);
-            return dec;
+            return rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
         }
         #endregion
     }

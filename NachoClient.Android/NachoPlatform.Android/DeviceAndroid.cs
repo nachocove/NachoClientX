@@ -1,13 +1,14 @@
 using System;
 using SQLite;
 using Android.Content;
-using Android.Provider;
 using Android.OS;
 using NachoClient.AndroidClient;
 using Android.Telephony;
 using System.Security.Cryptography;
 using Portable.Text;
 using System.Linq;
+using Android.Bluetooth;
+using System.Globalization;
 
 namespace NachoPlatform
 {
@@ -75,20 +76,25 @@ namespace NachoPlatform
 
         private string GetOrCreateDeviceId ()
         {
-            string deviceId = null;
+            string DeviceIdHashInput = "";
             var telephony = (TelephonyManager)MainApplication.Instance.ApplicationContext.GetSystemService (Context.TelephonyService);
             if (null != telephony) {
                 if (!string.IsNullOrEmpty (telephony.DeviceId)) {
-                    using (SHA1Managed sha1 = new SHA1Managed()) {
-                        var hash = (new SHA1Managed ()).ComputeHash (Encoding.UTF8.GetBytes (telephony.DeviceId));
-                        deviceId = "Ncho" + string.Join("", hash.Select(b => b.ToString("X2")).ToArray());
-                    }
+                    DeviceIdHashInput += telephony.DeviceId;
                 }
             }
-            if (string.IsNullOrEmpty (deviceId)) {
-                deviceId = string.Format ("Ncho{0}", Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ());
+            // TODO If needed/wanted, add more data to the DeviceIdHashInput.
+
+            if (string.IsNullOrEmpty (DeviceIdHashInput)) {
+                DeviceIdHashInput = Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ();
             }
-            return deviceId.Substring (0, 32);
+            string hashStr;
+            using (SHA256Managed sha256 = new SHA256Managed()) {
+                var hash = sha256.ComputeHash (Encoding.UTF8.GetBytes (MainApplication.Instance.ApplicationInfo.PackageName+DeviceIdHashInput));
+                hashStr = string.Format("Ncho{0}", string.Join("", hash.Select(b => b.ToString("X2")).ToArray()));
+            }
+            // We current truncate the string to 28 bytes, but we could by spec go for 32 bytes.
+            return hashStr.Substring (0, 28);
         }
 
         public string Os () {
@@ -98,12 +104,15 @@ namespace NachoPlatform
             return OsCode.Android;
         }
         public string OsLanguage () {
-            // FIXME - we will need to update (a) to handle locale, (b) to take into account our bundle (possibly).
-            return "en-us";
+            return CultureInfo.CurrentCulture.Name; // e.g. 'en-US', 'de-DE', etc
         }
         public string FriendlyName () {
-            // FIXME. Need to get user-settable device name.
-            return Identity ();
+            // get user-settable device name.
+            BluetoothAdapter myDevice = BluetoothAdapter.DefaultAdapter;
+            if (null != myDevice && !string.IsNullOrEmpty (myDevice.Name)) {
+                return myDevice.Name;
+            }
+            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(string.Format ("{0} {1}", Build.Brand, Build.Model));
         }
         public string UserAgent () {
             // NOTE: The native client uses "Android/4.3-EAS-1.3".
@@ -112,14 +121,10 @@ namespace NachoPlatform
         }
         public bool IsSimulator ()
         {
-            return false;
+            // http://stackoverflow.com/questions/2799097/how-can-i-detect-when-an-android-application-is-running-in-the-emulator
+            // Fingerprint is something like this: Verizon/d2vzw/d2vzw:4.4.2/KOT49H/I535VRUDNE1:user/release-keys
+            return Build.Fingerprint.StartsWith ("generic");
         }
-        public bool Wipe (string username, string password, string url, string protoVersion)
-        {
-            // FIXME.
-            return false;
-        }
-
         public static void SQLite3ErrorCallback (IntPtr pArg, int iErrCode, string zMsg)
         {
             ReverseSQLite3ErrorCallback (iErrCode, zMsg);
