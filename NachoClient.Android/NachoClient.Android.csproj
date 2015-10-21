@@ -557,6 +557,7 @@
     <Compile Include="NachoUI.Android\Activities\EventEditActivity.cs" />
     <Compile Include="NachoUI.Android\Support\IntentHelper.cs" />
     <Compile Include="NachoUI.Android\Activities\NowListActivity.cs" />
+    <Compile Include="NachoUI.Android\Support\DateTimePicker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
