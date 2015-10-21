@@ -479,47 +479,42 @@ namespace NachoClient.iOS
                     detailTextLabel.Frame = new CGRect (detailTextLabel.Frame.X, detailTextLabel.Frame.Y, detailTextLabel.Superview.Frame.Width - 78 - xOffset, detailTextLabel.Frame.Height);
                 }
                 detailTextLabel.Text = detailText;
-
                 dateTextLabel.Text = DateToString (item.CreatedAt);
-
-                switch (extension) {
-                case ".DOC":
-                case ".DOCX":
-                    iconView.Image = UIImage.FromBundle ("icn-files-wrd");
-                    break;
-                case ".PPT":
-                case ".PPTX":
-                    iconView.Image = UIImage.FromBundle ("icn-files-ppt");
-                    break;
-                case ".XLS":
-                case ".XLSX":
-                    iconView.Image = UIImage.FromBundle ("icn-files-xls");
-                    break;
-                case ".PDF":
-                    iconView.Image = UIImage.FromBundle ("icn-files-pdf");
-                    break;
-                case ".TXT":
-                case ".TEXT":
-                    iconView.Image = UIImage.FromBundle ("icn-files-txt");
-                    break;
-                case ".ZIP":
-                    iconView.Image = UIImage.FromBundle ("icn-files-zip");
-                    break;
-                case ".PNG":
-                    iconView.Image = UIImage.FromBundle ("icn-files-png");
-                    break;
-                default:
-                    if (Pretty.TreatLikeAPhoto (item.DisplayName)) {
-                        iconView.Image = UIImage.FromBundle ("icn-files-img");
-                    } else {
-                        iconView.Image = UIImage.FromBundle ("email-att-files");
-                    }
-                    break;
-                }
+                iconView.Image = FileIconFromExtension (extension);
             } else {
                 textLabel.Text = "File no longer exists"; 
             }
 
+        }
+
+        static public UIImage FileIconFromExtension (string extension)
+        {
+            switch (extension) {
+            case ".DOC":
+            case ".DOCX":
+                return UIImage.FromBundle ("icn-files-wrd");
+            case ".PPT":
+            case ".PPTX":
+                return UIImage.FromBundle ("icn-files-ppt");
+            case ".XLS":
+            case ".XLSX":
+                return UIImage.FromBundle ("icn-files-xls");
+            case ".PDF":
+                return UIImage.FromBundle ("icn-files-pdf");
+            case ".TXT":
+            case ".TEXT":
+                return UIImage.FromBundle ("icn-files-txt");
+            case ".ZIP":
+                return UIImage.FromBundle ("icn-files-zip");
+            case ".PNG":
+                return UIImage.FromBundle ("icn-files-png");
+            default:
+                if (Pretty.TreatLikeAPhoto (extension)) {
+                    return UIImage.FromBundle ("icn-files-img");
+                } else {
+                    return UIImage.FromBundle ("email-att-files");
+                }
+            }
         }
 
         protected void ConfigureNoteView (NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView)
