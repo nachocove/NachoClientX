@@ -75,7 +75,36 @@ namespace NachoClient.AndroidClient
             var webclient = new NachoWebViewClient ();
             webview.SetWebViewClient (webclient);
 
+            var attachments = McAttachment.QueryByItem (message);
+            var attachmentsView = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_view);
+            Bind.BindAttachmentListView (attachments, attachmentsView, inflater, AttachmentToggle_Click, AttachmentSelectedCallback, AttachmentErrorCallback);
+
             return view;
+        }
+
+        public  void AttachmentSelectedCallback (McAttachment attachment)
+        {
+            try {
+                var myIntent = new Intent (Intent.ActionView);
+                var file = new Java.IO.File (attachment.GetFilePath ()); 
+                var extension = Android.Webkit.MimeTypeMap.GetFileExtensionFromUrl (Android.Net.Uri.FromFile (file).ToString ());
+                var mimetype = Android.Webkit.MimeTypeMap.Singleton.GetMimeTypeFromExtension (extension);
+                myIntent.SetDataAndType (Android.Net.Uri.FromFile (file), mimetype);
+                StartActivity (myIntent);
+            } catch (Exception e) {
+                // TODO: handle exception
+                String data = e.Message;
+            }
+        }
+
+        public  void AttachmentErrorCallback (McAttachment attachment, NcResult nr)
+        {
+        }
+
+        void AttachmentToggle_Click (object sender, EventArgs e)
+        {
+            var attachmentsView = View.FindViewById<View> (Resource.Id.attachment_list_view);
+            Bind.ToggleAttachmentList (attachmentsView);
         }
 
         public override void OnStart ()
@@ -225,18 +254,57 @@ namespace NachoClient.AndroidClient
     }
 
 
+    public class AttachmentListViewAdapter : Android.Widget.BaseAdapter<object>
+    {
+        List<McAttachment> attachmentList;
+
+        public AttachmentListViewAdapter (List<McAttachment> attachmentList)
+        {
+            this.attachmentList = attachmentList;
+        }
+
+        public override long GetItemId (int position)
+        {
+            return position;
+        }
+
+        public override int Count {
+            get {
+                return attachmentList.Count;
+            }
+        }
+
+        public override object this [int position] {  
+            get {
+                return attachmentList [position];
+            }
+        }
+
+        public override View GetView (int position, View convertView, ViewGroup parent)
+        {
+            View view = convertView; // re-use an existing view, if one is available
+            if (view == null) {
+                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.AttachmentListViewCell, parent, false);
+            }
+            var info = attachmentList [position];
+
+            return view;
+        }
+
+    }
+
     public class NachoWebViewClient : Android.Webkit.WebViewClient
     {
-//        public override void OnReceivedError (Android.Webkit.WebView view, Android.Webkit.ClientError errorCode, string description, string failingUrl)
-//        {
-//            base.OnReceivedError (view, errorCode, description, failingUrl);
-//            Log.Info (Log.LOG_UI, "OnReceivedError: {0}: {1} {2}", failingUrl, errorCode, description);
-//        }
-//
-//        public override Android.Webkit.WebResourceResponse ShouldInterceptRequest (Android.Webkit.WebView view, Android.Webkit.IWebResourceRequest request)
-//        {
-//            Log.Info (Log.LOG_UI, "ShouldInterceptRequest: {1} {0}", request.Url, request.Method);
-//            return base.ShouldInterceptRequest (view, request);
-//        }
+        //        public override void OnReceivedError (Android.Webkit.WebView view, Android.Webkit.ClientError errorCode, string description, string failingUrl)
+        //        {
+        //            base.OnReceivedError (view, errorCode, description, failingUrl);
+        //            Log.Info (Log.LOG_UI, "OnReceivedError: {0}: {1} {2}", failingUrl, errorCode, description);
+        //        }
+        //
+        //        public override Android.Webkit.WebResourceResponse ShouldInterceptRequest (Android.Webkit.WebView view, Android.Webkit.IWebResourceRequest request)
+        //        {
+        //            Log.Info (Log.LOG_UI, "ShouldInterceptRequest: {1} {0}", request.Url, request.Method);
+        //            return base.ShouldInterceptRequest (view, request);
+        //        }
     }
 }

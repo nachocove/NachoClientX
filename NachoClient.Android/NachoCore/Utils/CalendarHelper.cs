@@ -1076,6 +1076,12 @@ namespace NachoCore.Utils
                 DateTime eventStartUtc = ConvertTimeToUtc (eventStart, timeZone);
                 if (eventStartUtc > startingTime) {
                     DateTime eventEndUtc = ConvertTimeToUtc (eventStart + duration, timeZone);
+                    if (eventStartUtc > eventEndUtc) {
+                        // This can happen when the start falls within the missing hour at the transition from
+                        // standard time to daylight time, but the end time is outside that window.  The start
+                        // time gets pushed forward an hour in that case, possibly beyond the end time.
+                        eventEndUtc = eventStartUtc + duration;
+                    }
                     if (c.AllDayEvent) {
                         ExpandAllDayEvent (c, eventStartUtc, eventEndUtc);
                     } else {
@@ -1609,20 +1615,32 @@ namespace NachoCore.Utils
         /// </summary>
         public static DateTime ConvertTimeToUtc (DateTime local, TimeZoneInfo timeZone)
         {
-            if (daylightSavingIsCorrect || !timeZone.SupportsDaylightSavingTime) {
-                return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
+            try {
+                if (daylightSavingIsCorrect || !timeZone.SupportsDaylightSavingTime) {
+                    return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
+                }
+                TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
+                if (null == adjustment ||
+                    (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
+                        !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd)))
+                {
+                    return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
+                }
+                DateTime utc = new DateTime (local.Ticks - timeZone.BaseUtcOffset.Ticks, DateTimeKind.Utc);
+                if (IsDaylightTime (local, adjustment)) {
+                    utc = utc.Subtract (adjustment.DaylightDelta);
+                }
+                return utc;
+            } catch (ArgumentException e) {
+                if (timeZone.IsInvalidTime (local)) {
+                    // The time is within the missing hour at the transition from standard time to daylight time.
+                    // Try with a time that is an hour later.
+                    return ConvertTimeToUtc (local.AddHours (1), timeZone);
+                } else {
+                    // Something else is wrong, which can't be handled here.
+                    throw;
+                }
             }
-            TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
-            if (null == adjustment ||
-                (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
-                !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
-                return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
-            }
-            DateTime utc = new DateTime (local.Ticks - timeZone.BaseUtcOffset.Ticks, DateTimeKind.Utc);
-            if (IsDaylightTime (local, adjustment)) {
-                utc = utc.Subtract (adjustment.DaylightDelta);
-            }
-            return utc;
         }
 
         /// <summary>
