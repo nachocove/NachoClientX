@@ -961,7 +961,7 @@ namespace NachoCore.ActiveSync
                 return Xml.AirSync.TypeCode.Mime_4;
             }
             long totalAttachmentSize = 0;
-            foreach (var attachment in McAttachment.QueryByItemId (message)) {
+            foreach (var attachment in McAttachment.QueryByItem (message)) {
                 if (attachment.IsInline) {
                     // If there are any inline attachments, then the attachments need to be downloaded with the body.
                     return Xml.AirSync.TypeCode.Mime_4;

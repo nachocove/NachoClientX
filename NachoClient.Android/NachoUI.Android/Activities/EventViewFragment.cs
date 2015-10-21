@@ -21,13 +21,15 @@ namespace NachoClient.AndroidClient
         private const int EDIT_REQUEST_CODE = 1;
 
         private McEvent ev;
+        private NcEventDetail detail;
 
-        private View mainView;
+        private View view;
 
         public static EventViewFragment newInstance (McEvent ev)
         {
             var fragment = new EventViewFragment ();
             fragment.ev = ev;
+            fragment.detail = new NcEventDetail (ev);
             return fragment;
         }
 
@@ -38,10 +40,10 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            mainView = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
-
-            BindEventView (ev, mainView, hasBeenEdited: false);
-            return mainView;
+            view = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
+            BindListeners ();
+            BindEventView ();
+            return view;
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
@@ -53,7 +55,8 @@ namespace NachoClient.AndroidClient
             case EDIT_REQUEST_CODE:
                 if (Result.Ok == resultCode) {
                     // The event was edited. Refresh the UI.
-                    BindEventView (ev, mainView, hasBeenEdited: true);
+                    detail.HasBeenEdited = true;
+                    BindEventView ();
                 }
                 break;
             }
@@ -69,25 +72,36 @@ namespace NachoClient.AndroidClient
             return VisibleIfTrue (!String.IsNullOrEmpty (s));
         }
 
-        // TODO: Attendees
-        // TODO: Attachments
-        // TODO: Edit notes view
-        // TODO: Change reminder arrow
-        void BindEventView (McEvent ev, View view, bool hasBeenEdited)
+        /// <summary>
+        /// UI configuration that should happen only once, when the view hierarchy is first created,
+        /// and that is independent of the data being displayed. This will consist mostly of adding
+        /// event listeners.
+        /// </summary>
+        private void BindListeners ()
         {
-            var detail = new NcEventDetail (ev);
-            detail.HasBeenEdited = hasBeenEdited;
+            var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
+            editButton.SetImageResource (Resource.Drawable.gen_edit);
+            editButton.Click += EditButton_Click;
+        }
+
+        /// <summary>
+        /// Configure the view based on the data being displayed.
+        /// </summary>
+        void BindEventView ()
+        {
+            // TODO: Attendees
+            // TODO: Attachments
+            // TODO: Edit notes view
+            // TODO: Change reminder arrow
+
+            detail.Refresh ();
 
             var buttonBarTitleView = view.FindViewById<TextView> (Resource.Id.title);
-            buttonBarTitleView.Text = ev.GetStartTimeLocal ().ToString ("MMMMM yyyy");
+            buttonBarTitleView.Text = detail.StartTime.ToLocalTime ().ToString ("MMMMM yyyy");
             buttonBarTitleView.Visibility = ViewStates.Visible;
 
-            if (detail.CanEdit) {
-                var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
-                editButton.Visibility = ViewStates.Visible;
-                editButton.SetImageResource (Resource.Drawable.gen_edit);
-                editButton.Click += EditButton_Click;
-            }
+            var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
+            editButton.Visibility = VisibleIfTrue (detail.CanEdit);
 
             ConfigureRsvpBar (detail, view);
 

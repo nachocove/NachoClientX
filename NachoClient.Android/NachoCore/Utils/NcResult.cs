@@ -185,6 +185,8 @@ namespace NachoCore.Utils
             Info_DaysToSyncChanged,
             Error_CredWait,
             Info_DoesNotSync,
+            Error_AlreadyAttached,
+            Error_NotAttached,
         };
 
         public enum WhyEnum

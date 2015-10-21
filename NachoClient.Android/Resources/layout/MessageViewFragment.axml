@@ -22,6 +22,12 @@
                 android:background="@color/NachoLightGray" />
             <include
                 layout="@layout/MessageHeader" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/NachoBackgroundGray" />
+            <include
+                layout="@layout/AttachmentListView" />
             <TextView
                 android:id="@+id/body"
                 android:text="@string/demo_preview"

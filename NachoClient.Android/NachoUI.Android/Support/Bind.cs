@@ -252,7 +252,83 @@ namespace NachoClient.AndroidClient
             var eventString = Pretty.Join (startString, locationString, " : ");
 
             eventSummary.Text = eventString;
-            eventIcon.Visibility = (String.IsNullOrEmpty(eventString) ? ViewStates.Gone : ViewStates.Visible);
+            eventIcon.Visibility = (String.IsNullOrEmpty (eventString) ? ViewStates.Gone : ViewStates.Visible);
+        }
+
+        public static void BindAttachmentListView (List<McAttachment> attachments, LinearLayout view, LayoutInflater inflater, EventHandler onToggleAttachmentList, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected, NcAttachmentView.AttachmentErrorCallback onAttachmentError)
+        {
+            if (0 == attachments.Count) {
+                view.Visibility = ViewStates.Gone;
+                return;
+            }
+            var attachmentListCount = view.FindViewById<TextView> (Resource.Id.attachment_list_count);
+            attachmentListCount.Text = attachments.Count.ToString ();
+
+            var listview = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_views);
+            listview.Visibility = ViewStates.Gone;
+
+            foreach (var a in attachments) {
+                var cell = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
+                var attachmentView = new NcAttachmentView (a, cell, onAttachmentSelected, onAttachmentError);
+                listview.AddView (cell);
+            }
+
+            var clickView = view.FindViewById<View> (Resource.Id.attachment_list_header);
+            if (null != onToggleAttachmentList) {
+                clickView.Click += onToggleAttachmentList;
+            }
+        }
+
+        public static void BindAttachmentView (McAttachment attachment, View view)
+        {
+            var attachmentImage = view.FindViewById<ImageView> (Resource.Id.attachment_icon);
+            if (Pretty.TreatLikeAPhoto (attachment.DisplayName)) {
+                attachmentImage.SetImageResource (Resource.Drawable.email_att_photos);
+            } else {
+                attachmentImage.SetImageResource (Resource.Drawable.email_att_files);
+            }
+            var filenameView = view.FindViewById<TextView> (Resource.Id.attachment_name);
+            filenameView.Text = System.IO.Path.GetFileNameWithoutExtension (attachment.DisplayName);
+            var descriptionView = view.FindViewById<TextView> (Resource.Id.attachment_description);
+            descriptionView.Text = Pretty.AttachmentDescription (attachment);
+
+            var downloadImageView = view.FindViewById<ImageView> (Resource.Id.attachment_download);
+            var spinnerView = view.FindViewById<ProgressBar> (Resource.Id.attachment_spinner);
+
+            switch (attachment.FilePresence) {
+            case McAbstrFileDesc.FilePresenceEnum.None:
+                downloadImageView.Visibility = ViewStates.Visible;
+                spinnerView.Visibility = ViewStates.Gone;
+                break;
+            case McAbstrFileDesc.FilePresenceEnum.Error:
+                downloadImageView.Visibility = ViewStates.Visible;
+                spinnerView.Visibility = ViewStates.Gone;
+                break;
+            case McAbstrFileDesc.FilePresenceEnum.Partial:
+                downloadImageView.Visibility = ViewStates.Gone;
+                spinnerView.Visibility = ViewStates.Visible;
+                break;
+            case McAbstrFileDesc.FilePresenceEnum.Complete:
+                downloadImageView.Visibility = ViewStates.Gone;
+                spinnerView.Visibility = ViewStates.Gone;
+                break;
+            default:
+                NachoCore.Utils.NcAssert.CaseError ();
+                break;
+            }
+        }
+
+        public static void ToggleAttachmentList (View view)
+        {
+            var listview = view.FindViewById<View> (Resource.Id.attachment_list_views);
+            var toggleView = view.FindViewById<ImageView> (Resource.Id.attachment_list_toggle);
+            if (ViewStates.Gone == listview.Visibility) {
+                listview.Visibility = ViewStates.Visible;
+                toggleView.SetImageResource (Resource.Drawable.gen_readmore_active);
+            } else {
+                listview.Visibility = ViewStates.Gone;
+                toggleView.SetImageResource (Resource.Drawable.gen_readmore);
+            }
         }
 
         public static int ColorForUser (int index)

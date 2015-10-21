@@ -1709,6 +1709,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDeadlineEmailMessages.cs">
       <Link>NachoCore\Adapters\NachoDeadlineEmailMessages.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapAttachmentItem.cs">
+      <Link>NachoCore\Model\McMapAttachmentItem.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration48.cs">
+      <Link>NachoCore\Model\Migration\NcMigration48.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1861,7 +1867,6 @@
     <BundleResource Include="Resources\nav-more%402x.png" />
     <BundleResource Include="Resources\nav-nachonow-active%402x.png" />
     <BundleResource Include="Resources\email-att-files%402x.png" />
-    <BundleResource Include="Resources\email-att-photos%402x.png" />
     <BundleResource Include="Resources\gen-more%402x.png" />
     <BundleResource Include="Resources\gen-more-active%402x.png" />
     <BundleResource Include="Resources\now-addcalevent%402x.png" />
@@ -2050,7 +2055,6 @@
     <BundleResource Include="Resources\email-att-download-vline%403x.png" />
     <BundleResource Include="Resources\email-att-download%403x.png" />
     <BundleResource Include="Resources\email-att-files%403x.png" />
-    <BundleResource Include="Resources\email-att-photos%403x.png" />
     <BundleResource Include="Resources\email-delete%403x.png" />
     <BundleResource Include="Resources\email-hot%403x.png" />
     <BundleResource Include="Resources\email-icn-attachment%403x.png" />
@@ -2139,7 +2143,6 @@
     <BundleResource Include="Resources\email-att-download-vline%404x.png" />
     <BundleResource Include="Resources\email-att-download%404x.png" />
     <BundleResource Include="Resources\email-att-files%404x.png" />
-    <BundleResource Include="Resources\email-att-photos%404x.png" />
     <BundleResource Include="Resources\email-delete%404x.png" />
     <BundleResource Include="Resources\email-hot%404x.png" />
     <BundleResource Include="Resources\email-icn-attachment%404x.png" />
@@ -2228,7 +2231,6 @@
     <BundleResource Include="Resources\email-att-download-vline%406x.png" />
     <BundleResource Include="Resources\email-att-download%406x.png" />
     <BundleResource Include="Resources\email-att-files%406x.png" />
-    <BundleResource Include="Resources\email-att-photos%406x.png" />
     <BundleResource Include="Resources\email-delete%406x.png" />
     <BundleResource Include="Resources\email-hot%406x.png" />
     <BundleResource Include="Resources\email-icn-attachment%406x.png" />
@@ -2609,6 +2611,38 @@
     <BundleResource Include="Resources\nacho.html" />
     <BundleResource Include="Resources\nacho.css" />
     <BundleResource Include="Resources\nacho.js" />
+    <BundleResource Include="Resources\icn-files-img%403x.png" />
+    <BundleResource Include="Resources\icn-files-pdf%403x.png" />
+    <BundleResource Include="Resources\icn-files-png%403x.png" />
+    <BundleResource Include="Resources\icn-files-ppt%403x.png" />
+    <BundleResource Include="Resources\icn-files-txt%403x.png" />
+    <BundleResource Include="Resources\icn-files-wrd%403x.png" />
+    <BundleResource Include="Resources\icn-files-xls%403x.png" />
+    <BundleResource Include="Resources\icn-files-zip%403x.png" />
+    <BundleResource Include="Resources\icn-files-img%404x.png" />
+    <BundleResource Include="Resources\icn-files-pdf%404x.png" />
+    <BundleResource Include="Resources\icn-files-png%404x.png" />
+    <BundleResource Include="Resources\icn-files-ppt%404x.png" />
+    <BundleResource Include="Resources\icn-files-txt%404x.png" />
+    <BundleResource Include="Resources\icn-files-wrd%404x.png" />
+    <BundleResource Include="Resources\icn-files-xls%404x.png" />
+    <BundleResource Include="Resources\icn-files-zip%404x.png" />
+    <BundleResource Include="Resources\icn-files-img%406x.png" />
+    <BundleResource Include="Resources\icn-files-pdf%406x.png" />
+    <BundleResource Include="Resources\icn-files-png%406x.png" />
+    <BundleResource Include="Resources\icn-files-ppt%406x.png" />
+    <BundleResource Include="Resources\icn-files-txt%406x.png" />
+    <BundleResource Include="Resources\icn-files-wrd%406x.png" />
+    <BundleResource Include="Resources\icn-files-xls%406x.png" />
+    <BundleResource Include="Resources\icn-files-zip%406x.png" />
+    <BundleResource Include="Resources\icn-files-img%402x.png" />
+    <BundleResource Include="Resources\icn-files-pdf%402x.png" />
+    <BundleResource Include="Resources\icn-files-png%402x.png" />
+    <BundleResource Include="Resources\icn-files-ppt%402x.png" />
+    <BundleResource Include="Resources\icn-files-txt%402x.png" />
+    <BundleResource Include="Resources\icn-files-wrd%402x.png" />
+    <BundleResource Include="Resources\icn-files-xls%402x.png" />
+    <BundleResource Include="Resources\icn-files-zip%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
