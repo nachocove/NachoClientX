@@ -211,6 +211,21 @@ namespace NachoClient.AndroidClient
         public void IntentFragmentDidSelectIntent (NcMessageIntent.MessageIntent intent)
         {
             Composer.Message.Intent = intent.type;
+            Composer.Message.IntentDateType = MessageDeferralType.None;
+            Composer.Message.IntentDate = DateTime.MinValue;
+            UpdateHeaderIntentView ();
+            if (intent.dueDateAllowed) {
+                var deferralFragment = new ChooseDeferralFragment ();
+                deferralFragment.Show (FragmentManager, "com.nachocove.nachomail.deferral");
+                deferralFragment.type = NcMessageDeferral.MessageDateType.Intent;
+                deferralFragment.setOnDeferralSelected (IntentDateSelected);
+            }
+        }
+
+        public void IntentDateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            Composer.Message.IntentDateType = request;
+            Composer.Message.IntentDate = selectedDate;
             UpdateHeaderIntentView ();
         }
 
