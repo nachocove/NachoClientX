@@ -31,8 +31,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lucene.Net", "..\lucene.net
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lucene.Net.iOS", "..\lucene.net-3.0.3\Lucene.Net.iOS\Lucene.Net.iOS.csproj", "{35BDE52C-1FAD-42BB-841B-9298F354AFE8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernHttpClient.Android", "..\ModernHttpClient\src\ModernHttpClient\ModernHttpClient.Android.csproj", "{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DnDns.iOS", "..\DnDns\SourceCode\DnDns\DnDns.iOS\DnDns.iOS.csproj", "{6F68E3AD-B80E-4980-8476-7ADDFFFF6672}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DnDns.Android", "..\DnDns\SourceCode\DnDns\DnDns.Android\DnDns.Android.csproj", "{F930802F-193C-4388-820B-05AE90A1FB6A}"
@@ -76,6 +74,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JetBlack.Caching.iOS", "..\JetBlack.Caching\JetBlack.Caching.iOS\JetBlack.Caching.iOS.csproj", "{63F04FFB-A98F-4DAA-9870-80527037DD61}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JetBlack.Caching.Android", "..\JetBlack.Caching\JetBlack.Caching.Android\JetBlack.Caching.Android.csproj", "{628CA4C5-0D38-416C-8E46-D8E4BD3CE0FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernHttpClient.Android", "..\ModernHttpClient-demo\src\ModernHttpClient\ModernHttpClient.Android.csproj", "{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -645,8 +645,8 @@ Global
 		{EEE48C75-11BE-4B50-B759-F85B5052D473}.Release|iPhone.Build.0 = Release|Any CPU
 		{EEE48C75-11BE-4B50-B759-F85B5052D473}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{EEE48C75-11BE-4B50-B759-F85B5052D473}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}.Ad-Hoc|iPhone.ActiveCfg = Debug|Any CPU
-		{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}.Ad-Hoc|iPhone.Build.0 = Debug|Any CPU
+		{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
+		{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
 		{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}.AppStore|iPhone.ActiveCfg = Release|Any CPU
 		{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}.AppStore|iPhone.Build.0 = Release|Any CPU
 		{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

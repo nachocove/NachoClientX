@@ -18,6 +18,7 @@ repos = (
     'Telemetry',
     'aws-sdk-xamarin',
     'ModernHttpClient',
+    'ModernHttpClient-demo',
     'lucene.net-3.0.3',
     'MobileHtmlAgilityPack',
     'Google.iOS',
@@ -32,6 +33,9 @@ branch_exceptions = {
     'bc-csharp': {
         # bc-csharp is fixed to this branch no matter what
         'fixed-branch': 'visual-studio-2010'
+    },
+    'ModernHttpClient-demo': {
+        'fixed-branch': 'demo'
     }
 }
 
