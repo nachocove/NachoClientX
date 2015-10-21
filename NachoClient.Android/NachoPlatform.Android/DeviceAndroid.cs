@@ -77,15 +77,14 @@ namespace NachoPlatform
         private string GetOrCreateDeviceId ()
         {
             string DeviceIdHashInput = "";
-            if (!IsSimulator()) {
-                var telephony = (TelephonyManager)MainApplication.Instance.ApplicationContext.GetSystemService (Context.TelephonyService);
-                if (null != telephony) {
-                    if (!string.IsNullOrEmpty (telephony.DeviceId)) {
-                        DeviceIdHashInput += telephony.DeviceId;
-                    }
+            var telephony = (TelephonyManager)MainApplication.Instance.ApplicationContext.GetSystemService (Context.TelephonyService);
+            if (null != telephony) {
+                if (!string.IsNullOrEmpty (telephony.DeviceId)) {
+                    DeviceIdHashInput += telephony.DeviceId;
                 }
-                // TODO If needed/wanted, add more data to the DeviceIdHashInput.
             }
+            // TODO If needed/wanted, add more data to the DeviceIdHashInput.
+
             if (string.IsNullOrEmpty (DeviceIdHashInput)) {
                 DeviceIdHashInput = Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ();
             }
@@ -94,7 +93,8 @@ namespace NachoPlatform
                 var hash = sha256.ComputeHash (Encoding.UTF8.GetBytes (MainApplication.Instance.ApplicationInfo.PackageName+DeviceIdHashInput));
                 hashStr = string.Format("Ncho{0}", string.Join("", hash.Select(b => b.ToString("X2")).ToArray()));
             }
-            return hashStr.Substring (0, 32);
+            // We current truncate the string to 28 bytes, but we could by spec go for 32 bytes.
+            return hashStr.Substring (0, 28);
         }
 
         public string Os () {
