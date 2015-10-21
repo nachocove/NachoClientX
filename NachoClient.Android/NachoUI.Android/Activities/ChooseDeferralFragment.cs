@@ -88,9 +88,6 @@ namespace NachoClient.AndroidClient
         Context context;
         LayoutInflater inflater;
 
-        AlertDialog alertDialog;
-        View dialogView;
-
         ChooseDeferralFragment.OnDeferralSelectedListener mOnDeferralSelected;
 
         public DeferralAdapter (Context c)
@@ -154,32 +151,19 @@ namespace NachoClient.AndroidClient
 
         void ShowDateTimePicker ()
         {
-            dialogView = inflater.Inflate (Resource.Layout.DateTimePicker, null);
-            alertDialog = new AlertDialog.Builder (context).Create ();
-
-            var setButton = dialogView.FindViewById<Button> (Resource.Id.date_time_set);
-            setButton.Click += SetButton_Click;
-
-            alertDialog.SetView (dialogView);
-            alertDialog.Show ();
-        }
-
-        void SetButton_Click (object sender, EventArgs e)
-        {
-            var datePicker = alertDialog.FindViewById<DatePicker> (Resource.Id.date_picker);
-            var timePicker = alertDialog.FindViewById<TimePicker> (Resource.Id.time_picker);
-
-            var customTime = new DateTime (datePicker.Year, datePicker.Month, datePicker.DayOfMonth, (int)timePicker.CurrentHour, (int)timePicker.CurrentMinute, 0);
-
-            if (DateTime.UtcNow > customTime) {
-                new AlertDialog.Builder (context).SetTitle ("Defer Message").SetMessage ("The chosen date is in the past. You must select a date in the future.").Show ();
-                return;
-            }
-
-            alertDialog.Dismiss ();
-            if (null != mOnDeferralSelected) {
-                mOnDeferralSelected (MessageDeferralType.Custom, null, customTime);
-            }
+            DateTimePicker.Show (context, DateTime.Now.AddHours (1), true, DateTime.Now, DateTime.Now.AddYears (10),
+                (DateTime date) => {
+                    if (DateTime.UtcNow > date) {
+                        NcAlertView.ShowMessage (context, "Defer Message", "The chosen date is in the past. You must select a date in the future.");
+                        return false;
+                    }
+                    return true;
+                },
+                (DateTime date) => {
+                    if (null != mOnDeferralSelected) {
+                        mOnDeferralSelected (MessageDeferralType.Custom, null, date);
+                    }
+                });
         }
 
         struct Data

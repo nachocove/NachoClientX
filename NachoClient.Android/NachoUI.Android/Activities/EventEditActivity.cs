@@ -35,10 +35,8 @@ namespace NachoClient.AndroidClient
         private EditText titleField;
         private EditText descriptionField;
         private Switch allDayField;
-        private TextView startDateField;
-        private TextView startTimeField;
-        private TextView endDateField;
-        private TextView endTimeField;
+        private TextView startField;
+        private TextView endField;
         private EditText locationField;
 
         private DateTime startTime;
@@ -60,10 +58,8 @@ namespace NachoClient.AndroidClient
             titleField = FindViewById<EditText> (Resource.Id.event_edit_title);
             descriptionField = FindViewById<EditText> (Resource.Id.event_edit_description);
             allDayField = FindViewById<Switch> (Resource.Id.event_edit_allday_toggle);
-            startDateField = FindViewById<TextView> (Resource.Id.event_edit_start_date);
-            startTimeField = FindViewById<TextView> (Resource.Id.event_edit_start_time);
-            endDateField = FindViewById<TextView> (Resource.Id.event_edit_end_date);
-            endTimeField = FindViewById<TextView> (Resource.Id.event_edit_end_time);
+            startField = FindViewById<TextView> (Resource.Id.event_edit_start);
+            endField = FindViewById<TextView> (Resource.Id.event_edit_end);
             locationField = FindViewById<EditText> (Resource.Id.event_edit_location);
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
@@ -171,22 +167,16 @@ namespace NachoClient.AndroidClient
             }
 
             allDayField.CheckedChange += AllDayField_CheckedChange;
-            startDateField.Click += StartDateField_Click;
-            startTimeField.Click += StartTimeField_Click;
-            endDateField.Click += EndDateField_Click;
-            endTimeField.Click += EndTimeField_Click;
+            startField.Click += StartField_Click;
+            endField.Click += EndField_Click;
 
             // The text in the date/time fields should look like the default text
             // for an EditText field, not a TextView field.  Copy the necessary
             // information from one of the EditText fields to make that happen.
-            startDateField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
-            startTimeField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
-            endDateField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
-            endTimeField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
-            startDateField.SetTextColor (titleField.TextColors);
-            startTimeField.SetTextColor (titleField.TextColors);
-            endDateField.SetTextColor (titleField.TextColors);
-            endTimeField.SetTextColor (titleField.TextColors);
+            startField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            endField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            startField.SetTextColor (titleField.TextColors);
+            endField.SetTextColor (titleField.TextColors);
 
             allDayField.Checked = cal.AllDayEvent;
             ConfigureStartEndFields ();
@@ -258,25 +248,29 @@ namespace NachoClient.AndroidClient
 
         private void ConfigureStartEndFields ()
         {
-            if (allDayField.Checked) {
-                startTimeField.Visibility = ViewStates.Gone;
-                endTimeField.Visibility = ViewStates.Gone;
-            } else {
-                startTimeField.Visibility = ViewStates.Visible;
-                endTimeField.Visibility = ViewStates.Visible;
-            }
             DateTime now = DateTime.Now;
-            startDateField.Text = startTime.ToString (now.Year == startTime.Year ? "ddd, MMM d" : "ddd, MMM d, yyyy");
-            startTimeField.Text = startTime.ToString ("t");
-            endDateField.Text = endTime.ToString (now.Year == endTime.Year ? "ddd, MMM d" : "ddd, MMM d, yyyy");
-            endTimeField.Text = endTime.ToString ("t");
+            bool differentYear = now.Year != startTime.Year || now.Year != endTime.Year;
+            string format;
+            if (allDayField.Checked) {
+                if (differentYear) {
+                    format = "ddd, MMM d, yyyy";
+                } else {
+                    format = "ddd, MMM d";
+                }
+            } else {
+                if (differentYear) {
+                    format = "ddd, MMM d, yyyy - h:mm tt";
+                } else {
+                    format = "ddd, MMM d - h:mm tt";
+                }
+            }
+            startField.Text = startTime.ToString (format);
+            endField.Text = endTime.ToString (format);
 
             if (ValidStartEndTimes ()) {
-                endDateField.SetTextColor (titleField.TextColors);
-                endTimeField.SetTextColor (titleField.TextColors);
+                endField.SetTextColor (titleField.TextColors);
             } else {
-                endDateField.SetTextColor (Android.Graphics.Color.Red);
-                endTimeField.SetTextColor (Android.Graphics.Color.Red);
+                endField.SetTextColor (Android.Graphics.Color.Red);
             }
         }
 
@@ -286,6 +280,18 @@ namespace NachoClient.AndroidClient
                 return startTime.Date <= endTime.Date;
             }
             return startTime <= endTime;
+        }
+
+        private void DatePickerRangeForEvent (DateTime startTime, DateTime endTime, out DateTime minDate, out DateTime maxDate)
+        {
+            minDate = DateTime.Now.AddYears (-5);
+            if (minDate > startTime.AddYears (-1)) {
+                minDate = startTime.AddYears (-1);
+            }
+            maxDate = DateTime.Now.AddYears (50);
+            if (maxDate < endTime.AddYears (1)) {
+                maxDate = endTime.AddYears (1);
+            }
         }
 
         private void SaveButton_Click (object sender, EventArgs e)
@@ -338,86 +344,29 @@ namespace NachoClient.AndroidClient
             descriptionChanged = true;
         }
 
-        private void EndTimeField_Click (object sender, EventArgs e)
-        {
-            new TimePickerFragment (this, endTime, (DateTime time) => {
-                EndTimeMaybeChanged (endTime.Date + time.TimeOfDay);
-            }).Show (FragmentManager, "endTimePicker");
-        }
-
-        private void EndDateField_Click (object sender, EventArgs e)
-        {
-            new DatePickerFragment (this, endTime, (DateTime date) => {
-                EndTimeMaybeChanged (date.Date + endTime.TimeOfDay);
-            }).Show (FragmentManager, "startDatePicker");
-        }
-
-        private void StartTimeField_Click (object sender, EventArgs e)
-        {
-            new TimePickerFragment (this, startTime, (DateTime time) => {
-                StartTimeMaybeChanged (startTime.Date + time.TimeOfDay);
-            }).Show (FragmentManager, "startTimePicker");
-        }
-
-        private void StartDateField_Click (object sender, EventArgs e)
-        {
-            new DatePickerFragment (this, startTime, (DateTime date) => {
-                StartTimeMaybeChanged (date.Date + startTime.TimeOfDay);
-            }).Show (FragmentManager, "endDatePicker");
-        }
-
         private void AllDayField_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
         {
             ConfigureStartEndFields ();
         }
 
-        private delegate void SetDateOrTimeCallback (DateTime dateTime);
-
-        private class DatePickerFragment : DialogFragment
+        private void StartField_Click (object sender, EventArgs e)
         {
-            private Context context;
-            private DateTime date;
-            private SetDateOrTimeCallback callback;
-
-            public DatePickerFragment (Context context, DateTime date, SetDateOrTimeCallback callback)
-            {
-                this.context = context;
-                this.date = date;
-                this.callback = callback;
-            }
-
-            public override Dialog OnCreateDialog (Bundle savedInstanceState)
-            {
-                // DatePicker expects the month to be zero-based (Jan=0, Dec=11).
-                // But DateTime uses one-based months (Jan=1, Dec=12).
-                // Hence the adjustment to the month value.
-                var result = new DatePickerDialog (context, (object sender, DatePickerDialog.DateSetEventArgs e) => {
-                    callback (e.Date);
-                }, date.Year, date.Month - 1, date.Day);
-                Util.ConstrainDatePicker (result.DatePicker, date.ToUniversalTime ());
-                return result;
-            }
+            DateTime minDate, maxDate;
+            DatePickerRangeForEvent (startTime, endTime, out minDate, out maxDate);
+            DateTimePicker.Show (this, startTime, !allDayField.Checked, minDate, maxDate, null,
+                (DateTime newDateTime) => {
+                    StartTimeMaybeChanged (newDateTime.ToLocalTime ());
+                });
         }
 
-        private class TimePickerFragment : DialogFragment
+        private void EndField_Click (object sender, EventArgs e)
         {
-            private Context context;
-            private DateTime time;
-            private SetDateOrTimeCallback callback;
-
-            public TimePickerFragment (Context context, DateTime time, SetDateOrTimeCallback callback)
-            {
-                this.context = context;
-                this.time = time;
-                this.callback = callback;
-            }
-
-            public override Dialog OnCreateDialog (Bundle savedInstanceState)
-            {
-                return new TimePickerDialog (context, (object sender, TimePickerDialog.TimeSetEventArgs e) => {
-                    callback (new DateTime (time.Year, time.Month, time.Day, e.HourOfDay, e.Minute, 0, DateTimeKind.Local));
-                }, time.Hour, time.Minute, string.IsNullOrEmpty (System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.AMDesignator));
-            }
+            DateTime minDate, maxDate;
+            DatePickerRangeForEvent (startTime, endTime, out minDate, out maxDate);
+            DateTimePicker.Show (this, endTime, !allDayField.Checked, minDate, maxDate, null,
+                (DateTime newDateTime) => {
+                    EndTimeMaybeChanged (newDateTime.ToLocalTime ());
+                });
         }
     }
 }
