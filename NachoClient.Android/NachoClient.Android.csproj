@@ -56,13 +56,11 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_android.py ${ProjectDir}/Properties/AndroidManifest.xml" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
     <DebugSymbols>true</DebugSymbols>
     <AndroidSupportedAbis>armeabi-v7a;x86</AndroidSupportedAbis>
     <MandroidI18n>cjk;mideast;other;west</MandroidI18n>
-    <AndroidKeyStore>True</AndroidKeyStore>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -560,6 +558,7 @@
     <Compile Include="NachoUI.Android\Activities\NowListActivity.cs" />
     <Compile Include="NachoUI.Android\Support\NcAttachmentView.cs" />
     <Compile Include="NachoUI.Android\Support\DateTimePicker.cs" />
+    <Compile Include="NachoUI.Android\Support\ReminderChooser.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1347,5 +1346,14 @@
     <AndroidResource Include="Resources\drawable\RoundedCorners.xml" />
     <AndroidResource Include="Resources\layout\IntentDialogItem.axml" />
     <AndroidResource Include="Resources\drawable-hdpi\icn_defer.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_checkbox_checked.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_checkbox.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_checkbox_checked.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_checkbox.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_checkbox_checked.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_checkbox.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_checkbox_checked.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_checkbox.png" />
+    <AndroidResource Include="Resources\layout\ReminderChooserCell.axml" />
   </ItemGroup>
 </Project>

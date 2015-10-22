@@ -38,6 +38,8 @@ namespace NachoClient.AndroidClient
         private TextView startField;
         private TextView endField;
         private EditText locationField;
+        private TextView reminderField;
+        private ImageView reminderArrow;
 
         private DateTime startTime;
         private DateTime endTime;
@@ -61,6 +63,8 @@ namespace NachoClient.AndroidClient
             startField = FindViewById<TextView> (Resource.Id.event_edit_start);
             endField = FindViewById<TextView> (Resource.Id.event_edit_end);
             locationField = FindViewById<EditText> (Resource.Id.event_edit_location);
+            reminderField = FindViewById<TextView> (Resource.Id.event_edit_reminder);
+            reminderArrow = FindViewById<ImageView> (Resource.Id.event_edit_reminder_arrow);
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
 
@@ -170,16 +174,22 @@ namespace NachoClient.AndroidClient
             startField.Click += StartField_Click;
             endField.Click += EndField_Click;
 
-            // The text in the date/time fields should look like the default text
-            // for an EditText field, not a TextView field.  Copy the necessary
-            // information from one of the EditText fields to make that happen.
+            // The text in the date/time fields, the reminder field, and the calendar field
+            // should look like the default text for an EditText field, not a TextView field.
+            // Copy the necessary information from one of the EditText fields to make that happen.
             startField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             endField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            reminderField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             startField.SetTextColor (titleField.TextColors);
             endField.SetTextColor (titleField.TextColors);
+            reminderField.SetTextColor (titleField.TextColors);
 
             allDayField.Checked = cal.AllDayEvent;
             ConfigureStartEndFields ();
+
+            reminderField.Text = Pretty.ReminderString (cal.HasReminder (), cal.GetReminder ());
+            reminderField.Click += Reminder_Click;
+            reminderArrow.Click += Reminder_Click;
         }
 
         public override void OnBackPressed ()
@@ -367,6 +377,17 @@ namespace NachoClient.AndroidClient
                 (DateTime newDateTime) => {
                     EndTimeMaybeChanged (newDateTime.ToLocalTime ());
                 });
+        }
+
+        private void Reminder_Click (object sender, EventArgs e)
+        {
+            ReminderChooser.Show (this, cal.HasReminder (), (int)cal.GetReminder (), (bool hasReminder, int reminder) => {
+                cal.ReminderIsSet = hasReminder;
+                if (hasReminder) {
+                    cal.Reminder = (uint)reminder;
+                }
+                reminderField.Text = Pretty.ReminderString (hasReminder, (uint)reminder);
+            });
         }
     }
 }
