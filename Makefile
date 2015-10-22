@@ -37,6 +37,7 @@ clean:
 endif
 
 release:
+	./scripts/configure_android.py ./NachoClient.Android/Properties/AndroidManifest.xml
 	./scripts/configure_ios.py ./NachoClient.iOS/Info.plist
 	$(MDTOOL) build --target:Build --configuration:"Ad-Hoc|iPhone" NachoClient.sln
 
