@@ -500,7 +500,7 @@ namespace NachoClient.iOS
 
             ConfigureRsvpBar ();
 
-            NavigationItem.Title = detail.StartTime.ToLocalTime ().ToString ("Y");
+            NavigationItem.Title = Pretty.LongMonthForceYear (detail.StartTime);
 
             var titleLabel = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;
             titleLabel.Text = detail.SpecificItem.GetSubject ();
@@ -1264,7 +1264,7 @@ namespace NachoClient.iOS
             if (null == Note) {
                 Note = new McNote ();
                 Note.AccountId = detail.Account.Id;
-                Note.DisplayName = (detail.SpecificItem.GetSubject () + " - " + Pretty.ShortDateString (DateTime.UtcNow));
+                Note.DisplayName = (detail.SpecificItem.GetSubject () + " - " + Pretty.ShortDate (DateTime.UtcNow));
                 Note.TypeId = detail.SeriesItem.Id;
                 Note.noteType = McNote.NoteType.Event;
                 Note.noteContent = noteText;

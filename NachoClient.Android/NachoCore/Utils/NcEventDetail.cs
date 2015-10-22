@@ -180,7 +180,7 @@ namespace NachoCore.Utils
 
         public string DateString {
             get {
-                return Pretty.ExtendedDateString (StartTime);
+                return Pretty.LongFullDate (StartTime);
             }
         }
 
@@ -189,25 +189,20 @@ namespace NachoCore.Utils
                 if (specific.AllDayEvent) {
                     if ((specific.EndTime - specific.StartTime) > TimeSpan.FromDays(1)) {
                         return string.Format ("All day from {0} through {1}",
-                            Pretty.FullDateYearString (specific.StartTime),
-                            Pretty.FullDateYearString (CalendarHelper.ReturnAllDayEventEndTime (specific.EndTime)));
+                            Pretty.MediumFullDate (specific.StartTime),
+                            Pretty.MediumFullDate (CalendarHelper.ReturnAllDayEventEndTime (specific.EndTime)));
                     } else {
                         return "All day event";
                     }
                 } else {
                     DateTime start = StartTime.ToLocalTime ();
                     DateTime end = EndTime.ToLocalTime ();
-                    if (start.Year == end.Year) {
-                        if (start.DayOfYear == end.DayOfYear) {
-                            return string.Format ("from {0} until {1}",
-                                Pretty.FullTimeString (StartTime), Pretty.FullTimeString (EndTime));
-                        } else {
-                            return string.Format ("from {0} until {1}",
-                                Pretty.FullTimeString (StartTime), Pretty.FullDateTimeString (EndTime));
-                        }
+                    if (start.DayOfYear == end.DayOfYear) {
+                        return string.Format ("from {0} until {1}",
+                            Pretty.Time (StartTime), Pretty.Time (EndTime));
                     } else {
-                        return string.Format ("from {1} until {1}",
-                            Pretty.FullTimeString (StartTime), Pretty.FullDateYearTimeString (EndTime));
+                        return string.Format ("from {0} until {1}",
+                            Pretty.Time (StartTime), Pretty.MediumFullDateTime (EndTime));
                     }
                 }
             }

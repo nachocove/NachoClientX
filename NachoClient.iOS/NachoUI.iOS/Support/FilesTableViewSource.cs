@@ -550,7 +550,7 @@ namespace NachoClient.iOS
         {
             string dateText = "Date unknown";
             if (date != DateTime.MinValue) {
-                dateText = Pretty.FullDateTimeString (date);
+                dateText = Pretty.MediumFullDateTime (date);
             }
             return dateText;
         }

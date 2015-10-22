@@ -230,12 +230,9 @@ namespace NachoClient.iOS
     /// </summary>
     public class BodyPlainWebView : BodyHtmlWebView
     {
-        private string text;
-
         public BodyPlainWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string text, NSUrl baseUrl, BodyWebView.LinkSelectedCallback onLinkSelected)
             : base (Y, preferredWidth, initialHeight, sizeChangedCallback, baseUrl, onLinkSelected)
         {
-            this.text = text;
             var serializer = new HtmlTextDeserializer ();
             var doc = serializer.Deserialize (text);
             string html = "";

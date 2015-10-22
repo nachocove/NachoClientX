@@ -81,7 +81,7 @@ namespace NachoClient.AndroidClient
             subjectView.Text = Pretty.SubjectString (message.Subject);
             subjectView.Visibility = ViewStates.Visible;
 
-            dateView.Text = Pretty.FullDateTimeString (message.DateReceived);
+            dateView.Text = Pretty.MediumFullDateTime (message.DateReceived);
             dateView.Visibility = ViewStates.Visible;
 
             if (message.cachedHasAttachments) {
@@ -187,7 +187,7 @@ namespace NachoClient.AndroidClient
             if (detailView.SpecificItem.AllDayEvent) {
                 startAndDuration = "ALL DAY";
             } else {
-                var start = Pretty.ShortTimeString (detailView.SpecificItem.StartTime);
+                var start = Pretty.Time (detailView.SpecificItem.StartTime);
                 if (detailView.SpecificItem.EndTime > detailView.SpecificItem.StartTime) {
                     var duration = Pretty.CompactDuration (detailView.SpecificItem.StartTime, detailView.SpecificItem.EndTime);
                     startAndDuration = String.Join (" - ", new string[] { start, duration });
@@ -217,7 +217,7 @@ namespace NachoClient.AndroidClient
             dayOfWeekView.Text = date.ToString ("dddd");
 
             var monthDayView = view.FindViewById<TextView> (Resource.Id.event_date_month_day);
-            monthDayView.Text = date.ToString ("MMMM d, yyyy");
+            monthDayView.Text = Pretty.LongMonthDayYear (date);
 
             var addButton = view.FindViewById<ImageView> (Resource.Id.event_date_add);
             addButton.SetTag (Resource.Id.event_date_add, new JavaObjectWrapper<DateTime> () { Item = date });
@@ -244,12 +244,12 @@ namespace NachoClient.AndroidClient
 
             var startString = "";
             if (c.AllDayEvent) {
-                startString = "ALL DAY " + Pretty.FullDateSpelledOutString (currentEvent.GetStartTimeUtc ());
+                startString = "ALL DAY " + Pretty.LongFullDate (currentEvent.GetStartTimeUtc ());
             } else {
                 if ((currentEvent.GetStartTimeUtc () - DateTime.UtcNow).TotalHours < 12) {
-                    startString = Pretty.ShortTimeString (currentEvent.GetStartTimeUtc ());
+                    startString = Pretty.Time (currentEvent.GetStartTimeUtc ());
                 } else {
-                    startString = Pretty.ShortDayTimeString (currentEvent.GetStartTimeUtc ());
+                    startString = Pretty.LongDayTime (currentEvent.GetStartTimeUtc ());
                 }
             }
 

@@ -6,6 +6,7 @@ using Android.Content;
 using Android.Views;
 using Android.Widget;
 using NachoCore.Utils;
+using System.Globalization;
 
 namespace NachoClient.AndroidClient
 {
@@ -46,6 +47,7 @@ namespace NachoClient.AndroidClient
             var timePicker = view.FindViewById<TimePicker> (Resource.Id.time_picker);
             timePicker.CurrentHour = (Java.Lang.Integer)startDate.Hour;
             timePicker.CurrentMinute = (Java.Lang.Integer)startDate.Minute;
+            timePicker.SetIs24HourView (new Java.Lang.Boolean (!CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern.Contains ("tt")));
             timePicker.Visibility = showTimePicker ? ViewStates.Visible : ViewStates.Gone;
 
             var setButton = view.FindViewById<Button> (Resource.Id.date_time_set);

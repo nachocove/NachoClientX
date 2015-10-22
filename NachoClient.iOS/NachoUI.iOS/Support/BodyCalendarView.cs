@@ -187,20 +187,20 @@ namespace NachoClient.iOS
             DateTime end = meetingInfo.EndTime;
             string location = meetingInfo.Location;
             // When label, image, and detail
-            whenLabel.Text = Pretty.ExtendedDateString (start);
+            whenLabel.Text = Pretty.LongFullDate (start);
             if (meetingInfo.AllDayEvent) {
                 durationLabel.Text = "all day event";
                 if ((start.LocalT ().DayOfYear) + 1 != end.LocalT ().DayOfYear) {
                     durationLabel.Text = string.Format ("All day from {0} \nuntil {1}",
-                        Pretty.FullDateYearString (start), Pretty.FullDateYearString (end));
+                        Pretty.MediumFullDate (start), Pretty.MediumFullDate (end));
                 }
             } else {
                 if (start.LocalT ().DayOfYear == end.LocalT ().DayOfYear) {
                     durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (start), Pretty.FullTimeString (end));
+                        Pretty.Time (start), Pretty.Time (end));
                 } else {
                     durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (start), Pretty.FullDateTimeString (end));
+                        Pretty.Time (start), Pretty.MediumFullDateTime (end));
                 }
             }
 
