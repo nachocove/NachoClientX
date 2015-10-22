@@ -12,15 +12,12 @@ projects = {
             'bundle_id': 'com.nachocove.nachomail',
             'display_name': '[dev] Nacho Mail',
             'file_sharing': True,
+            'hockeyapp': {'app_id': 'b22a505d784d64901ab1abde0728df67', 'api_token': 'dbccf0190d5b410e8f43ef2b5e7d6b43'},
         },
         'android': {
             'package_name': 'com.nachocove.nachomail',
             'label': '[dev] Nacho Mail',
-        },
-        'hockeyapp': {
-            'app_id': {'ios': 'b22a505d784d64901ab1abde0728df67',
-                       'android': '6308748f44bb7da155f7c44c076e8201'},
-            'api_token': 'dbccf0190d5b410e8f43ef2b5e7d6b43'
+            'hockeyapp': {'app_id': '6308748f44bb7da155f7c44c076e8201', 'api_token': 'd7565337373147299f4b75adfacd6efa'},
         },
         'aws': {
             'prefix': 'dev',
@@ -46,16 +43,13 @@ projects = {
             'display_name': 'Nacho Mail',
             'icon_script': 'alpha/copy.sh',
             'file_sharing': True,
+            'hockeyapp': {'app_id': 'f0c98aa84e693061fbbf3d60bb6ab1fc', 'api_token': '4a472c5e774a4004a4eb1dd648b8af8a'},
         },
         'android': {
             'package_name': 'com.nachocove.nachomail.alpha',
             'label': 'Nacho Mail',
             'icon_script': 'alpha/copy.sh',
-        },
-        'hockeyapp': {
-            'app_id': {'ios': 'f0c98aa84e693061fbbf3d60bb6ab1fc',
-                       'android': '3f057536fb00405eb9e3542231831964'},
-            'api_token': '4a472c5e774a4004a4eb1dd648b8af8a',
+            'hockeyapp': {'app_id': '3f057536fb00405eb9e3542231831964', 'api_token': '4c8a0529cb7241cf8bcc49b2e8387db8'},
         },
         'aws': {
             'prefix': 'alpha',
@@ -81,16 +75,13 @@ projects = {
             'display_name': 'Nacho Mail',
             'icon_script': 'beta/copy.sh',
             'file_sharing': False,
+            'hockeyapp': {'app_id': '44dae4a6ae9134930c64c623d5023ac4', 'api_token': '1c08642c07d244f7a0600ef5654e0dad'},
         },
         'android': {
             'package_name': 'com.nachocove.nachomail.beta',
             'label': 'Nacho Mail',
             'icon_script': 'beta/copy.sh',
-        },
-        'hockeyapp': {
-            'app_id': {'ios': '44dae4a6ae9134930c64c623d5023ac4',
-                       'android': 'bf2582dd142f473dbfdc3bdb8349a3b5'},
-            'api_token': '1c08642c07d244f7a0600ef5654e0dad'
+            'hockeyapp': {'app_id': 'bf2582dd142f473dbfdc3bdb8349a3b5', 'api_token': '059371f4a7db486fbbb1bebcb3965aaa'},
         },
         'aws': {
             'prefix': 'beta',
@@ -116,16 +107,13 @@ projects = {
             'display_name': 'Nacho Mail',
             'icon_script': 'appstore/copy.sh',
             'file_sharing': False,
+            'hockeyapp': {'app_id': 'df752a5c4c7bb503fac6e26b0f0dcafa', 'api_token': '0344908b24aa498288268a726d028332'},
         },
         'android': {
             'package_name': 'com.nachocove.mail',
             'label': 'Nacho Mail',
             'icon_script': 'appstore/copy.sh',
-        },
-        'hockeyapp': {
-            'app_id': {'ios': 'df752a5c4c7bb503fac6e26b0f0dcafa',
-                       'android': 'a62575b6e71e118ecc44e775d6f5db88'},
-            'api_token': '0344908b24aa498288268a726d028332'
+            'hockeyapp': {'app_id': 'a62575b6e71e118ecc44e775d6f5db88', 'api_token': 'c1c7e717a6da4ba7b4a3408c9ec60418'},
         },
         'aws': {
             'prefix': 'prod',
