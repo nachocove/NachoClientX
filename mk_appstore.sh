@@ -47,6 +47,8 @@ VERSION="$version" BUILD="$build" RELEASE="appstore" /Applications/Xamarin\ Stud
 if [ ${PIPESTATUS[0]} -eq 0 ]
 then
     echo "appstore build $tag is made."
+    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="appstore" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/AppStore)
+    (cd NachoClient.Android; VERSION="$version" BUILD="$build" RELEASE="appstore" ../scripts/hockeyapp_upload.py --no-skip --android ./bin/Release)
 else
     echo "appstore build fails!"
 fi

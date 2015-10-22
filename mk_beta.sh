@@ -45,6 +45,8 @@ VERSION="$version" BUILD="$build" RELEASE="beta" make release 2>&1 | tee -a $log
 if [ ${PIPESTATUS[0]} -eq 0 ]
 then
     echo "Beta build $tag is made."
+    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="beta" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/Release)
+    (cd NachoClient.Android; VERSION="$version" BUILD="$build" RELEASE="beta" ../scripts/hockeyapp_upload.py --no-skip --android ./bin/Release)
 else
     echo "Beta build fails!"
 fi
