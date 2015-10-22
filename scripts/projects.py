@@ -13,6 +13,10 @@ projects = {
             'display_name': '[dev] Nacho Mail',
             'file_sharing': True,
         },
+        'android': {
+            'package_name': 'com.nachocove.nachomail',
+            'label': '[dev] Nacho Mail',
+        },
         'hockeyapp': {
             'app_id': {'ios': 'b22a505d784d64901ab1abde0728df67',
                        'android': '6308748f44bb7da155f7c44c076e8201'},
@@ -42,6 +46,11 @@ projects = {
             'display_name': 'Nacho Mail',
             'icon_script': 'alpha/copy.sh',
             'file_sharing': True,
+        },
+        'android': {
+            'package_name': 'com.nachocove.nachomail.alpha',
+            'label': 'Nacho Mail',
+            'icon_script': 'alpha/copy.sh',
         },
         'hockeyapp': {
             'app_id': {'ios': 'f0c98aa84e693061fbbf3d60bb6ab1fc',
@@ -73,6 +82,11 @@ projects = {
             'icon_script': 'beta/copy.sh',
             'file_sharing': False,
         },
+        'android': {
+            'package_name': 'com.nachocove.nachomail.beta',
+            'label': 'Nacho Mail',
+            'icon_script': 'beta/copy.sh',
+        },
         'hockeyapp': {
             'app_id': {'ios': '44dae4a6ae9134930c64c623d5023ac4',
                        'android': 'bf2582dd142f473dbfdc3bdb8349a3b5'},
@@ -102,6 +116,11 @@ projects = {
             'display_name': 'Nacho Mail',
             'icon_script': 'appstore/copy.sh',
             'file_sharing': False,
+        },
+        'android': {
+            'package_name': 'com.nachocove.mail',
+            'label': 'Nacho Mail',
+            'icon_script': 'appstore/copy.sh',
         },
         'hockeyapp': {
             'app_id': {'ios': 'df752a5c4c7bb503fac6e26b0f0dcafa',

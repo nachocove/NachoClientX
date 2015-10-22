@@ -56,6 +56,7 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_android.py ${ProjectDir}/Properties/AndroidManifest.xml" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
     <DebugSymbols>true</DebugSymbols>

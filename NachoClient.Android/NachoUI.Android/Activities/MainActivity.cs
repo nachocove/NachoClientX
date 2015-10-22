@@ -19,7 +19,7 @@ using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "Nacho Mail", MainLauncher = true, Icon = "@drawable/icon")]
+    [Activity (MainLauncher = true, Icon = "@drawable/icon")]
     public class MainActivity : AppCompatActivity
     {
         bool StatusIndCallbackIsSet = false;
