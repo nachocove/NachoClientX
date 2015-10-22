@@ -13,6 +13,7 @@ using Android.Views;
 using Android.Widget;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
@@ -82,6 +83,11 @@ namespace NachoClient.AndroidClient
             var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
             editButton.SetImageResource (Resource.Drawable.gen_edit);
             editButton.Click += EditButton_Click;
+
+            var reminderView = view.FindViewById<View> (Resource.Id.event_reminder_label);
+            reminderView.Click += ReminderView_Click;
+            var reminderArrow = view.FindViewById<View> (Resource.Id.event_reminder_arrow);
+            reminderArrow.Click += ReminderView_Click;
         }
 
         /// <summary>
@@ -141,6 +147,8 @@ namespace NachoClient.AndroidClient
 
             var reminderView = view.FindViewById<TextView> (Resource.Id.event_reminder_label);
             reminderView.Text = detail.ReminderString;
+            var reminderArrow = view.FindViewById<ImageView> (Resource.Id.event_reminder_arrow);
+            reminderArrow.Visibility = VisibleIfTrue (detail.CanChangeReminder);
 
             if (0 == detail.SpecificItem.attachments.Count) {
                 view.FindViewById<View> (Resource.Id.event_attachments_view).Visibility = ViewStates.Gone;
@@ -308,6 +316,22 @@ namespace NachoClient.AndroidClient
         {
             StartActivityForResult (EventEditActivity.EditEventIntent (this.Activity, ev), EDIT_REQUEST_CODE);
         }
+
+        private void ReminderView_Click (object sender, EventArgs e)
+        {
+            if (detail.CanChangeReminder) {
+                ReminderChooser.Show (this.Activity, detail.SpecificItem.HasReminder (), (int)detail.SpecificItem.GetReminder (), (bool hasReminder, int reminder) => {
+                    detail.SpecificItem.ReminderIsSet = hasReminder;
+                    if (hasReminder) {
+                        detail.SpecificItem.Reminder = (uint)reminder;
+                    }
+                    detail.SpecificItem.Update();
+                    BackEnd.Instance.UpdateCalCmd(detail.Account.Id, detail.SpecificItem.Id, false);
+                    BindEventView ();
+                });
+            }
+        }
+
     }
 }
 
