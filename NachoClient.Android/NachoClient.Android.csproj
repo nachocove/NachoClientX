@@ -468,7 +468,6 @@
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="NachoUI.Android\MainApplication.cs" />
     <Compile Include="NachoUI.Android\Support\Bind.cs" />
-    <Compile Include="NachoUI.Android\Activities\MessageThreadFragment.cs" />
     <Compile Include="NachoUI.Android\Support\BodyRenderer.cs" />
     <Compile Include="NachoUI.Android\Support\BodyDownloader.cs" />
     <Compile Include="NachoUI.Android\Support\WebViewNoScroll.cs" />

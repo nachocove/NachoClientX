@@ -28,6 +28,7 @@ namespace NachoClient.AndroidClient
 
         OnFolderSelectedListener mOnFolderSelected;
 
+        // Null is ok; messageThread is just a cookie
         public static ChooseFolderFragment newInstance (McEmailMessageThread messageThread)
         {
             var fragment = new ChooseFolderFragment ();
