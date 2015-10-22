@@ -56,7 +56,8 @@ namespace NachoClient.AndroidClient
             var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
             chiliView.Visibility = ViewStates.Invisible;
 
-            // FIXME: Attachment icon
+            var paperclipView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.paperclip);
+            paperclipView.Visibility = ViewStates.Invisible;
 
             if (null == message) {
                 SetVisibility (ViewStates.Invisible, isUnreadView, userImageView, senderView, subjectView, dateView, chiliView);
@@ -83,8 +84,12 @@ namespace NachoClient.AndroidClient
             dateView.Text = Pretty.FullDateTimeString (message.DateReceived);
             dateView.Visibility = ViewStates.Visible;
 
-            // FIXME attachment icon
-
+            if (message.cachedHasAttachments) {
+                paperclipView.Visibility = ViewStates.Visible;
+            } else {
+                paperclipView.Visibility = ViewStates.Invisible;
+            }
+                
         }
 
         public static void BindMessageChili (McEmailMessage message, Android.Widget.ImageView chiliView)
