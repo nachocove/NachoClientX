@@ -60,7 +60,7 @@
     </CustomCommands>
     <DebugSymbols>true</DebugSymbols>
     <AndroidSupportedAbis>armeabi-v7a;x86</AndroidSupportedAbis>
-    <MandroidI18n>cjk;mideast;other;west</MandroidI18n>
+    <MandroidI18n>cjk;mideast;other;rare;west</MandroidI18n>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
