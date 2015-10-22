@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public class DateTimePicker
+    public static class DateTimePicker
     {
         public delegate bool DateValidationDelegate (DateTime date);
         public delegate void DateSelectedDelegate (DateTime date);
