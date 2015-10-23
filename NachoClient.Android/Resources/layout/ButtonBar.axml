@@ -31,7 +31,7 @@
             android:layout_marginBottom="4dp"
             android:scaleType="fitXY"
             android:layout_alignParentRight="true"
-            android:layout_gravity="center_vertical"
+            android:layout_centerVertical="true"
             android:visibility="invisible" />
         <ImageView
             android:id="@+id/right_button2"
@@ -43,7 +43,7 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="4dp"
             android:layout_toLeftOf="@+id/right_button1"
-            android:layout_gravity="center_vertical"
+            android:layout_centerVertical="true"
             android:visibility="invisible" />
         <ImageView
             android:id="@+id/right_button3"
@@ -54,7 +54,7 @@
             android:layout_marginBottom="4dp"
             android:scaleType="fitXY"
             android:layout_marginRight="15dp"
-            android:layout_gravity="center_vertical"
+            android:layout_centerVertical="true"
             android:layout_toLeftOf="@+id/right_button2"
             android:visibility="invisible" />
         <ImageView
@@ -66,7 +66,7 @@
             android:layout_marginBottom="4dp"
             android:scaleType="fitXY"
             android:layout_alignParentLeft="true"
-            android:layout_gravity="center_vertical"
+            android:layout_centerVertical="true"
             android:visibility="invisible" />
         <ImageView
             android:id="@+id/left_button2"
@@ -78,7 +78,7 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="4dp"
             android:layout_toRightOf="@+id/left_button1"
-            android:layout_gravity="center_vertical"
+            android:layout_centerVertical="true"
             android:visibility="invisible" />
         <ImageView
             android:id="@+id/left_button3"
@@ -90,7 +90,17 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="4dp"
             android:layout_toRightOf="@+id/left_button2"
-            android:layout_gravity="center_vertical"
+            android:layout_centerVertical="true"
+            android:visibility="invisible" />
+        <TextView
+            android:id="@+id/right_text_button1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:text="Save"
+            android:textSize="17dp"
+            android:textColor="@color/NachoBlue"
             android:visibility="invisible" />
     </RelativeLayout>
 </merge>
