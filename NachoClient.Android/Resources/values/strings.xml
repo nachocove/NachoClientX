@@ -36,6 +36,7 @@
     <string name="demo_contact_name">Joe Smith</string>
     <string name="demo_contact_email">joe@smith.com</string>
     <string name="demo_contact_phone">505 555 5678</string>
+    <string name="demo_contact_section_header">A</string>
     <string name="demo_event_subject">Today\'s event</string>
     <string name="demo_event_when">Friday, October 2</string>
     <string name="demo_event_duration">from 8am until noon</string>

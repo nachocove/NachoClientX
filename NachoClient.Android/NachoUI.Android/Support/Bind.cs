@@ -108,7 +108,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static int BindContactCell (McContact contact, View view, string alternateEmailAddress = null)
+        public static int BindContactCell (McContact contact, View view, string sectionLabel, string alternateEmailAddress)
         {
             var titleLabel = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_title);
             var subtitle1Label = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_subtitle1);
@@ -160,6 +160,14 @@ namespace NachoClient.AndroidClient
             var userInitials = view.FindViewById<Android.Widget.TextView> (Resource.Id.user_initials);
             userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
             userInitials.SetBackgroundResource (Bind.ColorForUser (contact.CircleColor));
+
+            var sectionHeader = view.FindViewById<TextView> (Resource.Id.contact_section_header);
+            if (null == sectionLabel) {
+                sectionHeader.Visibility = ViewStates.Gone;
+            } else {
+                sectionHeader.Visibility = ViewStates.Visible;
+                sectionHeader.Text = sectionLabel;
+            }
 
             return viewType;
         }
