@@ -34,6 +34,7 @@ namespace NachoClient.AndroidClient
 
         bool searching;
         Android.Widget.EditText searchEditText;
+        View letterBar;
         SwipeMenuListView listView;
         ContactsListAdapter contactsListAdapter;
 
@@ -86,6 +87,24 @@ namespace NachoClient.AndroidClient
             var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.contacts_image);
             inboxImage.SetImageResource (Resource.Drawable.nav_contacts_active);
 
+            letterBar = view.FindViewById<View> (Resource.Id.letter_bar);
+            var letterList = view.FindViewById<Android.Widget.LinearLayout> (Resource.Id.letter_list);
+
+            var recentView = inflater.Inflate (Resource.Layout.Recent, null);
+            letterList.AddView (recentView);
+            recentView.Tag = 0;
+            recentView.Click += Letterbox_Click;
+
+            const string letters = "!ABCDEFGHIJKLMNOPQRSTUVWXYZ#";
+            for (int i = 1; i < 28; i++) {
+                var letterbox = inflater.Inflate (Resource.Layout.Letter, null);
+                var letter = letterbox.FindViewById<Android.Widget.TextView> (Resource.Id.letter);
+                letter.Text = letters [i].ToString ();
+                letterList.AddView (letterbox);
+                letterbox.Tag = i;
+                letterbox.Click += Letterbox_Click;
+            }
+
             contactsListAdapter = new ContactsListAdapter ();
 
             listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
@@ -130,6 +149,15 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        void Letterbox_Click (object sender, EventArgs e)
+        {
+            var letterbox = (View)sender;
+            if (null != contactsListAdapter) {
+                var position = contactsListAdapter.PositionForSection ((int)letterbox.Tag);
+                listView.SmoothScrollToPositionFromTop (position, dp2px (10), 125);
+            }
+        }
+
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
             if (null != onContactClick) {
@@ -167,6 +195,7 @@ namespace NachoClient.AndroidClient
             navbar.Visibility = ViewStates.Gone;
             var navtoolbar = View.FindViewById (Resource.Id.navigation_toolbar);
             navtoolbar.Visibility = ViewStates.Gone;
+            letterBar.Visibility = ViewStates.Gone;
 
             searchEditText.RequestFocus ();
             InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
@@ -183,6 +212,7 @@ namespace NachoClient.AndroidClient
             imm.HideSoftInputFromWindow (searchEditText.WindowToken, HideSoftInputFlags.NotAlways);
             searchEditText.Text = "";
 
+            letterBar.Visibility = ViewStates.Visible;
             var navbar = View.FindViewById (Resource.Id.navigation_bar);
             navbar.Visibility = ViewStates.Visible;
             var navtoolbar = View.FindViewById (Resource.Id.navigation_toolbar);
@@ -275,6 +305,15 @@ namespace NachoClient.AndroidClient
             });
         }
 
+        public int PositionForSection (int section)
+        {
+            if (0 == section) {
+                return 0;
+            }
+            section -= 1;
+            return sections [section].Start + recentsCount;
+        }
+
         public void StartSearch ()
         {
             searching = true;
@@ -344,6 +383,26 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        string GetBinLabel (int position)
+        {
+            if (searching) {
+                return null;
+            }
+            if (recentsCount > position) {
+                return (0 == position ? "Recent" : null);
+            }
+            var index = position - recentsCount;
+            foreach (var s in sections) {
+                if (index == s.Start) {
+                    return s.FirstLetter.ToString ();
+                }
+                if (index < s.Start) {
+                    return null;
+                }
+            }
+            return null;
+        }
+
         public override int Count {
             get {
                 if (searching) {
@@ -363,7 +422,6 @@ namespace NachoClient.AndroidClient
                     return contact;
                 } else {
                     var id = GetItemId (position);
-
                     return McContact.QueryById<McContact> ((int)id);
                 }
             }
@@ -387,7 +445,7 @@ namespace NachoClient.AndroidClient
             }
 
             var contact = this [position];
-            var viewType = Bind.BindContactCell (contact, view);
+            var viewType = Bind.BindContactCell (contact, view, GetBinLabel (position), null);
             viewTypeMap [position] = viewType;
 
             return view;

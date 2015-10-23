@@ -1354,5 +1354,8 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_checkbox_checked.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_checkbox.png" />
     <AndroidResource Include="Resources\layout\ReminderChooserCell.axml" />
+    <AndroidResource Include="Resources\drawable\LetterBarCircle.xml" />
+    <AndroidResource Include="Resources\layout\Letter.axml" />
+    <AndroidResource Include="Resources\layout\Recent.axml" />
   </ItemGroup>
 </Project>

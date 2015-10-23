@@ -7,6 +7,18 @@
     android:animateLayoutChanges="true">
     <include
         layout="@layout/NavigationBar" />
+    <HorizontalScrollView
+        android:id="@+id/letter_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:background="@android:color/white">
+        <LinearLayout
+            android:id="@+id/letter_list"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </HorizontalScrollView>
     <RelativeLayout
         android:id="@+id/search"
         android:layout_width="wrap_content"
@@ -34,12 +46,12 @@
             android:textColor="@android:color/white"
             android:background="@color/NachoGreen"
             android:layout_marginTop="1dp" />
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/NachoLightGray"
-            android:layout_below="@id/cancel" />
     </RelativeLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/NachoLightGray"
+        android:layout_below="@id/cancel" />
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
