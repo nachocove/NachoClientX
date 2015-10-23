@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "FoldersActivity")]            
-    public class FoldersActivity : NcActivity
+    public class FoldersActivity : NcTabBarActivity
     {
         INachoEmailMessages messages;
 

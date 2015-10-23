@@ -15,8 +15,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NcActivity")]            
-    public class NcActivity : AppCompatActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate, AccountListDelegate
+    public class NcTabBarActivity : AppCompatActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate, AccountListDelegate
     {
         private string ClassName;
 

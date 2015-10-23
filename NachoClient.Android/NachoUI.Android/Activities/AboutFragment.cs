@@ -26,7 +26,7 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.AboutFragment, container, false);
 
-            var activity = (NcActivity)this.Activity;
+            var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
             // FIXME: Un-highlight any highlighted tab bar items.

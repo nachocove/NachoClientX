@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "AboutActivity")]            
-    public class AboutActivity : NcActivity
+    public class AboutActivity : NcTabBarActivity
     {
 
         protected override void OnCreate (Bundle bundle)

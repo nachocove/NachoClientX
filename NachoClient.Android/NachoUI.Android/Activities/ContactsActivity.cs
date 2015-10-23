@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "ContactsActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
-    public class ContactsActivity : NcActivity
+    public class ContactsActivity : NcTabBarActivity
     {
         ContactViewFragment contactViewFragment;
         ContactsListFragment contactsListFragment;

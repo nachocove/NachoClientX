@@ -455,7 +455,6 @@
     <Compile Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MigrationFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MoreFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\NcActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NowActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NowFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\PriorityFragment.cs" />
@@ -559,6 +558,7 @@
     <Compile Include="NachoUI.Android\Support\DateTimePicker.cs" />
     <Compile Include="NachoUI.Android\Support\ReminderChooser.cs" />
     <Compile Include="NachoUI.Android\Activities\NoteActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\NcTabBarActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
