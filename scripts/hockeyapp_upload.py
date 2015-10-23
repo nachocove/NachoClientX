@@ -40,10 +40,9 @@ class HockeyappUploadAndroid(HockeyappUpload):
     def __init__(self, api_token, app_id):
         super(HockeyappUploadAndroid, self).__init__(api_token, app_id)
 
-
     def upload(self, target_dir, filename, note=None, debug=False):
         assert filename
-        android_home = os.environ.get('XAM_ANDROID_HOME', "%s/Library/Developer/Xamarin/android-sdk-macosx" % os.environ['HOME'])
+        android_home = os.environ.get('XAM_ANDROID_HOME', "%s/Library/Developer/Xamarin/android-sdk-mac_x86" % os.environ['HOME'])
         android_tool_version = os.environ.get('XAM_ANDROID_TOOL_VERSION', '19.1.0')
         aapt = os.path.join(android_home, 'build-tools', android_tool_version, 'aapt')
         if not os.path.exists(aapt):

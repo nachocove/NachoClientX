@@ -38,7 +38,7 @@ def sign_apk(options):
 
     temp_apk = tempfile.NamedTemporaryFile(suffix=".apk", delete=True)
     android_home = os.environ.get('XAM_ANDROID_HOME',
-                                  "%s/Library/Developer/Xamarin/android-sdk-macosx" % os.environ['HOME'])
+                                  "%s/Library/Developer/Xamarin/android-sdk-mac_x86" % os.environ['HOME'])
     android_tool_version = os.environ.get('XAM_ANDROID_TOOL_VERSION', '23.0.1')
     zipalign = os.path.join(android_home, 'build-tools', android_tool_version, 'zipalign')
     jarsigner = "/usr/bin/jarsigner"
