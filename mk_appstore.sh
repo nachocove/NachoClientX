@@ -17,6 +17,7 @@ branch=$1
 version=$2
 build=$3
 tag="v$version""_$build"
+release=appstore
 
 die () {
   echo "ERROR: $1"
@@ -25,16 +26,16 @@ die () {
 
 # Fetch all git repos and check out the tag
 ./scripts/fetch.py
-./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
+./scripts/repos.py checkout-tag --tag "$tag" || die "failed to switch to tag $tag"
 
 # Need to fetch and change branch again because the branch may add new repos that is not
 # in master's repos_cfg.py.
 ./scripts/fetch.py
-./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
+./scripts/repos.py checkout-tag --tag "$tag" || die "failed to switch to tag $tag"
 
 # Build everything else
 timestamp=`date "+%Y%m%d_%H%M%S"`
-logfile="appstore_build.$tag.$timestamp.log"
+logfile=$release"_build.$tag.$timestamp.log"
 make -f build.mk 2>&1 | tee $logfile
 if [ ${PIPESTATUS[0]} -ne 0 ]
 then
@@ -42,11 +43,23 @@ then
     exit 1
 fi
 
+ANDROID_PACKAGE=`./scripts/projects.py $release android package_name`
+if [ -z "$ANDROID_PACKAGE" ] ; then
+    echo "No package name found in projects"
+    exit 1
+fi
+EXPECTED_APK="$ANDROID_PACKAGE-Signed.apk"
+RESIGNED_APK="$ANDROID_PACKAGE-ReSigned.apk"
+
 # Build NachoClient
-VERSION="$version" BUILD="$build" RELEASE="appstore" /Applications/Xamarin\ Studio.app/Contents/MacOS/XamarinStudio ./NachoClient.sln
+VERSION="$version" BUILD="$build" RELEASE="$release" /Applications/Xamarin\ Studio.app/Contents/MacOS/XamarinStudio ./NachoClient.sln
 if [ ${PIPESTATUS[0]} -eq 0 ]
 then
-    echo "appstore build $tag is made."
+    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/AppStore) || die "Failed to upload ipa"
+
+    ./scripts/android_sign.py sign --release $release --keystore-path=$HOME/.ssh ./bin/Release/$EXPECTED_APK ./bin/Release/$RESIGNED_APK || die "Failed to re-sign apk"
+    mv ./bin/Release/$RESIGNED_APK ./bin/Release/$EXPECTED_APK || die "Failed to move apk"
+    (cd NachoClient.Android; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --android ./bin/Release) || die "Failed to upload apk"
 else
-    echo "appstore build fails!"
+    echo "appstore build failed!"
 fi

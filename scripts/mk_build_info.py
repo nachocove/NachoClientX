@@ -80,6 +80,7 @@ def create_buildinfo(options):
     aws = project['aws']
     pinger = project['pinger']
     google = project['google']
+    hockeyapp = project[options.architecture]['hockeyapp']
 
     # Get the pinger pinned root cert
     with open(os.path.join('..', 'Resources', pinger['root_cert'])) as f:
@@ -93,7 +94,7 @@ def create_buildinfo(options):
         build_info.add('Source', '')
     else:
         build_info.add('Source', source)
-    build_info.add('HockeyAppAppId', project['hockeyapp']['app_id'][options.architecture])
+    build_info.add('HockeyAppAppId', hockeyapp['app_id'])
     build_info.add('AwsPrefix', aws['prefix'])
     build_info.add('AwsAccountId', aws['account_id'])
     build_info.add('AwsIdentityPoolId', aws['identity_pool_id'])
