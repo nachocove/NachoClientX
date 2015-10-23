@@ -558,6 +558,7 @@
     <Compile Include="NachoUI.Android\Support\NcAttachmentView.cs" />
     <Compile Include="NachoUI.Android\Support\DateTimePicker.cs" />
     <Compile Include="NachoUI.Android\Support\ReminderChooser.cs" />
+    <Compile Include="NachoUI.Android\Activities\NoteActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1357,5 +1358,6 @@
     <AndroidResource Include="Resources\drawable\LetterBarCircle.xml" />
     <AndroidResource Include="Resources\layout\Letter.axml" />
     <AndroidResource Include="Resources\layout\Recent.axml" />
+    <AndroidResource Include="Resources\layout\NoteActivity.axml" />
   </ItemGroup>
 </Project>

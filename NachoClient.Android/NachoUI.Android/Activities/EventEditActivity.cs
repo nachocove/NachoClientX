@@ -52,9 +52,9 @@ namespace NachoClient.AndroidClient
 
             SetContentView (Resource.Layout.EventEditActivity);
 
-            var saveButton = FindViewById<ImageView> (Resource.Id.right_button1);
+            var saveButton = FindViewById<TextView> (Resource.Id.right_text_button1);
+            saveButton.Text = "Save";
             saveButton.Visibility = ViewStates.Visible;
-            saveButton.SetImageResource (Resource.Drawable.icn_send);
             saveButton.Click += SaveButton_Click;
 
             titleField = FindViewById<EditText> (Resource.Id.event_edit_title);

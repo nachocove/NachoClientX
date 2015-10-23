@@ -20,6 +20,7 @@ namespace NachoClient.AndroidClient
     public class EventViewFragment : Fragment
     {
         private const int EDIT_REQUEST_CODE = 1;
+        private const int NOTE_REQUEST_CODE = 2;
 
         private McEvent ev;
         private NcEventDetail detail;
@@ -60,6 +61,29 @@ namespace NachoClient.AndroidClient
                     BindEventView ();
                 }
                 break;
+
+            case NOTE_REQUEST_CODE:
+                if (Result.Ok == resultCode) {
+                    string newNoteText = NoteActivity.ModifiedNoteText (data);
+                    if (null != newNoteText) {
+                        var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
+                        if (null == note) {
+                            note = new McNote () {
+                                AccountId = detail.Account.Id,
+                                DisplayName = string.Format ("{0} - {1}", detail.SpecificItem.GetSubject (), Pretty.ShortDate (DateTime.UtcNow)),
+                                TypeId = detail.SeriesItem.Id,
+                                noteType = McNote.NoteType.Event,
+                                noteContent = newNoteText,
+                            };
+                            note.Insert ();
+                        } else {
+                            note.noteContent = newNoteText;
+                            note.Update ();
+                        }
+                        BindEventView ();
+                    }
+                }
+                break;
             }
         }
 
@@ -88,6 +112,11 @@ namespace NachoClient.AndroidClient
             reminderView.Click += ReminderView_Click;
             var reminderArrow = view.FindViewById<View> (Resource.Id.event_reminder_arrow);
             reminderArrow.Click += ReminderView_Click;
+
+            var notesView = view.FindViewById<View> (Resource.Id.event_notes_label);
+            notesView.Click += NotesView_Click;
+            var notesArrow = view.FindViewById<View> (Resource.Id.event_notes_arrow);
+            notesArrow.Click += NotesView_Click;
         }
 
         /// <summary>
@@ -332,6 +361,18 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        private void NotesView_Click (object sender, EventArgs e)
+        {
+            string noteText = "";
+            var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
+            if (null != note) {
+                noteText = note.noteContent;
+            }
+
+            StartActivityForResult (
+                NoteActivity.EditNoteIntent (this.Activity, detail.SpecificItem.GetSubject (), noteText, insertDate: false),
+                NOTE_REQUEST_CODE);
+        }
     }
 }
 
