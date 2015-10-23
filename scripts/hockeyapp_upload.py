@@ -17,7 +17,7 @@ class HockeyappUpload(object):
         self.app_obj = hockeyapp.App(hockeyapp_obj=self.hockeyapp_obj,
                                      app_id=app_id)
 
-    def upload(self, target_dir, filename, note=None):
+    def upload(self, target_dir, filename, note=None, debug=False):
         raise NotImplementedError()
 
     def upload_version(self, filename, zipped_dsym_file, version, short_version, note):
@@ -82,7 +82,7 @@ class HockeyappUploadIos(HockeyappUpload):
         # CFBundleVersion -> HockeyApp "build"
         self.version = None
 
-    def upload(self, target_dir, filename, note=None):
+    def upload(self, target_dir, filename, note=None, debug=False):
         assert target_dir
         self.app_folder = os.path.join(target_dir, 'NachoClientiOS.app')
         self.dsym_folder = os.path.join(target_dir, 'NachoClientiOS.app.dSYM')
