@@ -29,19 +29,15 @@ class FetchThread(threading.Thread):
         if not os.path.exists(repo_dir):
             # git clone
             print 'Fetching %s...' % self.repo
-            os.mkdir(repo_dir)
+            # os.mkdir(repo_dir)
             os.chdir(self.parent_dir)
             try:
                 rc = subprocess.check_call(['git', 'clone', '-q', 'git@github.com:nachocove/%s.git' % self.repo])
             except subprocess.CalledProcessError as e:
-                rc = e.returncode
-
-            if 0 == rc:
-                etime = time.time() - start
-                print 'Done fetching %s (%.2f sec)!' % (self.repo, etime)
-            else:
                 print 'ERROR: failed to fetch %s!' % self.repo
                 return 1
+            etime = time.time() - start
+            print 'Done fetching %s (%.2f sec)!' % (self.repo, etime)
         else:
             # git pull
             print 'Updating %s...' % self.repo
@@ -49,21 +45,15 @@ class FetchThread(threading.Thread):
             try:
                 rc = subprocess.check_call(['git', 'pull'])
             except subprocess.CalledProcessError as e:
-                rc = e.returncode
-
-            if 0 == rc:
-                etime = time.time() - start
-                print 'Done pulling %s (%.2f sec)!' % (self.repo, etime)
-            else:
                 print 'ERROR: failed to pull %s!' % self.repo
                 return 1
+            etime = time.time() - start
+            print 'Done pulling %s (%.2f sec)!' % (self.repo, etime)
         try:
+            print 'Start submodule fetching %s' % (self.repo)
             os.chdir(repo_dir)
             rc = subprocess.check_call(['git', 'submodule', 'update', '--init', '--recursive'])
         except subprocess.CalledProcessError as e:
-            rc = e.returncode
-
-        if 0 != rc:
             print 'ERROR: failed to update submodule  %s!' % self.repo
             return 1
 
