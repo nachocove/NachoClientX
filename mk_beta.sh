@@ -53,7 +53,7 @@ RESIGNED_APK="$ANDROID_PACKAGE-ReSigned.apk"
 VERSION="$version" BUILD="$build" RELEASE="$release" make release 2>&1 | tee -a $logfile
 if [ ${PIPESTATUS[0]} -eq 0 ]
 then
-    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/Release) || die "Failed to upload ipa"
+    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/Ad-Hoc) || die "Failed to upload ipa"
 
     ./scripts/android_sign.py sign --release $release --keystore-path=$HOME/.ssh ./bin/Release/$EXPECTED_APK ./bin/Release/$RESIGNED_APK || die "Failed to re-sign apk"
     mv ./bin/Release/$RESIGNED_APK ./bin/Release/$EXPECTED_APK || die "Failed to move apk"

@@ -59,7 +59,7 @@ then
     # Tag & push tags for all repos
     ./scripts/repos.py create-tag --version "$version" --build "$build" || die "failed to tag all repos!"
     echo "Build $tag is made."
-    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --ios ./bin/iPhone/Release) || die "Failed to upload ipa"
+    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --ios ./bin/iPhone/Ad-Hoc) || die "Failed to upload ipa"
 
     ./scripts/android_sign.py sign --release $release --keystore-path=$HOME/.ssh ./bin/Release/$EXPECTED_APK ./bin/Release/$RESIGNED_APK || die "Failed to re-sign apk"
     mv ./bin/Release/$RESIGNED_APK ./bin/Release/$EXPECTED_APK || die "Failed to move apk"
