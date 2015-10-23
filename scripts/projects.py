@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # This file lists all build-configurable parameters of Nacho Mail.
 # Most of the parameters go into BuildInfo.cs
 #
@@ -5,6 +6,7 @@
 # 1. Build target - dev, alpha, beta, appstore
 # 2. Component - Often a particular endpoints - hockeyapp, aws, pinger. But it can be anything that groups a set of
 #                parameters.
+import sys
 
 projects = {
     'dev': {
@@ -18,6 +20,9 @@ projects = {
             'package_name': 'com.nachocove.nachomail',
             'label': '[dev] Nacho Mail',
             'hockeyapp': {'app_id': '6308748f44bb7da155f7c44c076e8201', 'api_token': 'd7565337373147299f4b75adfacd6efa'},
+            'keystore': {'filename': '',
+                         'alias': '',
+                         },
         },
         'aws': {
             'prefix': 'dev',
@@ -50,6 +55,9 @@ projects = {
             'label': 'Nacho Mail',
             'icon_script': 'alpha/copy.sh',
             'hockeyapp': {'app_id': '3f057536fb00405eb9e3542231831964', 'api_token': '4c8a0529cb7241cf8bcc49b2e8387db8'},
+            'keystore': {'filename': 'com.nachocove.mail.alpha.keystore',
+                         'alias': 'com.nachocove.mail.alpha',
+                         },
         },
         'aws': {
             'prefix': 'alpha',
@@ -82,6 +90,9 @@ projects = {
             'label': 'Nacho Mail',
             'icon_script': 'beta/copy.sh',
             'hockeyapp': {'app_id': 'bf2582dd142f473dbfdc3bdb8349a3b5', 'api_token': '059371f4a7db486fbbb1bebcb3965aaa'},
+            'keystore': {'filename': 'com.nachocove.mail.beta.keystore',
+                         'alias': 'com.nachocove.mail.beta',
+                         },
         },
         'aws': {
             'prefix': 'beta',
@@ -114,6 +125,9 @@ projects = {
             'label': 'Nacho Mail',
             'icon_script': 'appstore/copy.sh',
             'hockeyapp': {'app_id': 'a62575b6e71e118ecc44e775d6f5db88', 'api_token': 'c1c7e717a6da4ba7b4a3408c9ec60418'},
+            'keystore': {'filename': 'com.nachocove.mail.keystore',
+                         'alias': 'com.nachocove.mail',
+                         },
         },
         'aws': {
             'prefix': 'prod',
@@ -134,3 +148,14 @@ projects = {
         }
     },
 }
+
+def main():
+    el = projects
+    for arg in sys.argv[1:]:
+        el = el.get(arg, None)
+        if el is None:
+            sys.exit(1)
+    print el
+
+if __name__ == '__main__':
+    main()

@@ -18,6 +18,7 @@ branch=$1
 version=$2
 build=$3
 tag="v$version""_$build"
+release=beta
 
 die () {
   echo "ERROR: $1"
@@ -25,14 +26,14 @@ die () {
 }
 
 # Fetch all git repos and check out the tag.
-./scripts/fetch.py || die "fail to fetch all repos!"
-./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
+./scripts/fetch.py || die "failed to fetch all repos!"
+./scripts/repos.py checkout-tag --tag "$tag" || die "failed to switch to tag $tag"
 
 # Check if the branch matches the given one
 
 # Build everything else
 timestamp=`date "+%Y%m%d_%H%M%S"`
-logfile="beta_build.$tag.$timestamp.log"
+logfile=$release"_build.$tag.$timestamp.log"
 make -f build.mk 2>&1 | tee $logfile
 if [ ${PIPESTATUS[0]} -ne 0 ]
 then
@@ -40,13 +41,23 @@ then
     exit 1
 fi
 
+ANDROID_PACKAGE=`./scripts/projects.py $release android package_name`
+if [ -z "$ANDROID_PACKAGE" ] ; then
+    echo "No package name found in projects"
+    exit 1
+fi
+EXPECTED_APK="$ANDROID_PACKAGE-Signed.apk"
+RESIGNED_APK="$ANDROID_PACKAGE-ReSigned.apk"
+
 # Build NachoClient
-VERSION="$version" BUILD="$build" RELEASE="beta" make release 2>&1 | tee -a $logfile
+VERSION="$version" BUILD="$build" RELEASE="$release" make release 2>&1 | tee -a $logfile
 if [ ${PIPESTATUS[0]} -eq 0 ]
 then
-    echo "Beta build $tag is made."
-    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="beta" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/Release)
-    (cd NachoClient.Android; VERSION="$version" BUILD="$build" RELEASE="beta" ../scripts/hockeyapp_upload.py --no-skip --android ./bin/Release)
+    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/Release) || die "Failed to upload ipa"
+
+    ./scripts/android_sign.py sign --release $release --keystore-path=$HOME/.ssh ./bin/Release/$EXPECTED_APK ./bin/Release/$RESIGNED_APK || die "Failed to re-sign apk"
+    mv ./bin/Release/$RESIGNED_APK ./bin/Release/$EXPECTED_APK || die "Failed to move apk"
+    (cd NachoClient.Android; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --android ./bin/Release) || die "Failed to upload apk"
 else
-    echo "Beta build fails!"
+    echo "Beta build failed!"
 fi
