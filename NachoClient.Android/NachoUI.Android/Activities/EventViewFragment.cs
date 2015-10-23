@@ -103,7 +103,7 @@ namespace NachoClient.AndroidClient
             detail.Refresh ();
 
             var buttonBarTitleView = view.FindViewById<TextView> (Resource.Id.title);
-            buttonBarTitleView.Text = detail.StartTime.ToLocalTime ().ToString ("MMMMM yyyy");
+            buttonBarTitleView.Text = Pretty.LongMonthForceYear (detail.StartTime);
             buttonBarTitleView.Visibility = ViewStates.Visible;
 
             var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);

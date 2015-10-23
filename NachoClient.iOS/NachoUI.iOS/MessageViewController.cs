@@ -467,7 +467,7 @@ namespace NachoClient.iOS
             cursor.LayoutView (subjectLabelView);
 
             var receivedLabelView = View.ViewWithTag ((int)TagType.RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
+            receivedLabelView.Text = Pretty.MediumFullDateTime (message.DateReceived);
             cursor.LayoutView (receivedLabelView);
 
             // Reminder image view and label

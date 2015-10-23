@@ -258,24 +258,13 @@ namespace NachoClient.AndroidClient
 
         private void ConfigureStartEndFields ()
         {
-            DateTime now = DateTime.Now;
-            bool differentYear = now.Year != startTime.Year || now.Year != endTime.Year;
-            string format;
             if (allDayField.Checked) {
-                if (differentYear) {
-                    format = "ddd, MMM d, yyyy";
-                } else {
-                    format = "ddd, MMM d";
-                }
+                startField.Text = Pretty.MediumFullDate (startTime);
+                endField.Text = Pretty.MediumFullDate (endTime);
             } else {
-                if (differentYear) {
-                    format = "ddd, MMM d, yyyy - h:mm tt";
-                } else {
-                    format = "ddd, MMM d - h:mm tt";
-                }
+                startField.Text = Pretty.MediumFullDateTime (startTime);
+                endField.Text = Pretty.MediumFullDateTime (endTime);
             }
-            startField.Text = startTime.ToString (format);
-            endField.Text = endTime.ToString (format);
 
             if (ValidStartEndTimes ()) {
                 endField.SetTextColor (titleField.TextColors);

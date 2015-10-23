@@ -1631,7 +1631,7 @@ namespace NachoCore.Utils
                     utc = utc.Subtract (adjustment.DaylightDelta);
                 }
                 return utc;
-            } catch (ArgumentException e) {
+            } catch (ArgumentException) {
                 if (timeZone.IsInvalidTime (local)) {
                     // The time is within the missing hour at the transition from standard time to daylight time.
                     // Try with a time that is an hour later.

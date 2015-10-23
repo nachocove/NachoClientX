@@ -191,7 +191,7 @@ namespace NachoClient.iOS
 
         public void UpdateMonthLabel ()
         {
-            monthLabelView.Text = Pretty.PrettyMonthLabel (this.ViewDate);
+            monthLabelView.Text = Pretty.LongMonthYear (this.ViewDate);
         }
 
         public DateTime GetFirstDay (DateTime date)
