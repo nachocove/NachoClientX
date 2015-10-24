@@ -11,6 +11,7 @@ namespace NachoCore
     public class NcStrategy
     {
         protected IBEContext BEContext;
+
         protected int AccountId { get; set; }
 
         public NcStrategy (IBEContext beContext)
@@ -22,7 +23,7 @@ namespace NachoCore
         public bool PowerPermitsSpeculation ()
         {
             return (Power.Instance.PowerState != PowerStateEnum.Unknown && Power.Instance.BatteryLevel > 0.7) ||
-                (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2);
+            (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2);
         }
 
         public virtual bool ANarrowFolderHasToClientExpected ()
@@ -71,6 +72,31 @@ namespace NachoCore
                 break;
             }
             return maxAttachmentSize;
+        }
+
+        protected static bool IAmActiveAccount (int accountId)
+        {
+            return null != NcApplication.Instance.Account && accountId == NcApplication.Instance.Account.Id;
+        }
+
+        protected bool IsAccountBackground (NcApplication.ExecutionContextEnum exeCtxt)
+        {
+            return IsAccountBackground (exeCtxt, AccountId);
+        }
+
+        protected static bool IsAccountBackground (NcApplication.ExecutionContextEnum exeCtxt, int accountId)
+        {
+            return NcApplication.ExecutionContextEnum.Background == exeCtxt || (NcApplication.ExecutionContextEnum.Foreground == exeCtxt && !IAmActiveAccount (accountId));
+        }
+
+        protected bool IsAccountForeground (NcApplication.ExecutionContextEnum exeCtxt)
+        {
+            return IsAccountForeground (exeCtxt, AccountId);
+        }
+
+        protected static bool IsAccountForeground (NcApplication.ExecutionContextEnum exeCtxt, int accountId)
+        {
+            return (NcApplication.ExecutionContextEnum.Foreground == exeCtxt && IAmActiveAccount (accountId));
         }
     }
 }

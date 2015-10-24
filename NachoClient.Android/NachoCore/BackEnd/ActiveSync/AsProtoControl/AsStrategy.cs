@@ -1100,8 +1100,7 @@ namespace NachoCore.ActiveSync
             }
             // TODO move user-directed Sync up to this priority level in FG.
             // (FG, BG) If there is a SendMail, SmartForward or SmartReply in the pending queue, send it.
-            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
-                NcApplication.ExecutionContextEnum.Background == exeCtxt) {
+            if (IsAccountForeground (exeCtxt) || IsAccountBackground (exeCtxt)) {
                 var send = McPending.QueryEligible (AccountId, McAccount.ActiveSyncCapabilities).
                     Where (x => 
                         McPending.Operations.EmailSend == x.Operation ||
@@ -1151,8 +1150,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
             }
-            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
-                NcApplication.ExecutionContextEnum.Background == exeCtxt) {
+            if (IsAccountForeground (exeCtxt) || IsAccountBackground (exeCtxt)) {
                 // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
                 // The goal here is to ensure a narrow Sync periodically so that new Inbox/default cal aren't crowded out.
                 var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
@@ -1291,7 +1289,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 // (FG) See if there's bodies to download
-                if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                if (IsAccountForeground (exeCtxt)) {
                     var fetchKit = GenFetchKitHints ();
                     if (null != fetchKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);
@@ -1302,7 +1300,7 @@ namespace NachoCore.ActiveSync
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.IgnorePower) ||
                     PowerPermitsSpeculation () ||
-                    NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                    IsAccountForeground (exeCtxt)) {
                     FetchKit fetchKit = null;
                     SyncKit syncKit = null;
                     if (NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed && PowerPermitsSpeculation ()) {

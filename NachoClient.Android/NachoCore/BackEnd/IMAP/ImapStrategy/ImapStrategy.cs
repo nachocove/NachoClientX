@@ -41,7 +41,6 @@ namespace NachoCore.IMAP
 
 
         #region Pick
-
         public Tuple<PickActionEnum, ImapCommand> PickUserDemand (NcImapClient Client)
         {
             var protocolState = BEContext.ProtocolState;
@@ -109,8 +108,7 @@ namespace NachoCore.IMAP
                 }
             }
 
-            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
-                NcApplication.ExecutionContextEnum.Background == exeCtxt) {
+            if (IsAccountForeground (exeCtxt) || IsAccountBackground (exeCtxt)) {
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities).FirstOrDefault ();
                 if (null != next) {
@@ -193,7 +191,7 @@ namespace NachoCore.IMAP
 
                 FetchKit fetchKit;
                 // (FG) See if there's bodies to download
-                if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                if (IsAccountForeground (exeCtxt)) {
                     fetchKit = GenFetchKitHints ();
                     if (null != fetchKit) {
                         Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);

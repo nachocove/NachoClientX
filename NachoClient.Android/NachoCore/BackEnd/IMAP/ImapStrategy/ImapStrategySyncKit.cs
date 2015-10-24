@@ -69,7 +69,7 @@ namespace NachoCore.IMAP
 
         private int FolderExamineInterval { 
             get {
-                return NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.Foreground ? KFolderExamineQSInterval : KFolderExamineInterval;
+                return IsAccountForeground (NcApplication.Instance.ExecutionContext) ? KFolderExamineQSInterval : KFolderExamineInterval;
             }
         }
 
@@ -109,17 +109,8 @@ namespace NachoCore.IMAP
 
         private static bool needFullSync (McFolder folder)
         {
-            bool needSync = false;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
-            switch (exeCtxt) {
-            case NcApplication.ExecutionContextEnum.Foreground:
-                needSync = folder.ImapNeedFullSync;
-                break;
-
-            default:
-                break;
-            }
-            return needSync;
+            return IsAccountForeground (exeCtxt, folder.AccountId) ? folder.ImapNeedFullSync : false;
         }
 
         private static bool HasNewMail (McFolder folder)
