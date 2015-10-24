@@ -32,7 +32,7 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.MoreFragment, container, false);
 
-            var activity = (NcActivity)this.Activity;
+            var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
             var folderView = view.FindViewById<View> (Resource.Id.mail);

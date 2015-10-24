@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "NowActivity")]            
-    public class NowActivity : NcActivity
+    public class NowActivity : NcTabBarActivity
     {
 
         NowFragment nowFragment;

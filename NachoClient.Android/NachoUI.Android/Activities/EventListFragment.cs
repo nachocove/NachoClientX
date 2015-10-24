@@ -64,7 +64,7 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.EventListFragment, container, false);
 
-            var activity = (NcActivity)this.Activity;
+            var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
             mSwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);

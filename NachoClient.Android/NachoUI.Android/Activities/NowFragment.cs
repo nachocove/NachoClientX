@@ -48,7 +48,7 @@ namespace NachoClient.AndroidClient
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             var view = inflater.Inflate (Resource.Layout.NowFragment, container, false);
-            var activity = (NcActivity)this.Activity;
+            var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
             composeButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
             composeButton.SetImageResource (Resource.Drawable.contact_newemail);
