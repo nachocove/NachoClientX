@@ -1,8 +1,11 @@
 #!/bin/sh
 
+IGNORE_DIE=0
 die () {
   echo "ERROR: $1"
-  exit 1
+  if [ $IGNORE_DIE -eq 0 ] ; then
+      exit 1
+  fi
 }
 
 TOP=$PWD
@@ -82,7 +85,7 @@ create_tag() {
         DO_DRY_RUN=
     fi
 
-    $SCRIPTS/repos.py create-tag --version "$VERSION" --build "$BUILD" || die "failed to tag all repos!"
+    $SCRIPTS/repos.py create-tag $DO_DRY_RUN --version "$VERSION" --build "$BUILD" || die "failed to tag all repos!"
     echo "Build $TAG is made."
 }
 
@@ -163,7 +166,7 @@ sign_and_upload_android() {
         NO_SKIP="--no-skip"
     fi
 
-    set +x
+    set -x
     echo $PWD
     ANDROID_PACKAGE=`$SCRIPTS/projects.py $release android package_name`
     if [ -z "$ANDROID_PACKAGE" ] ; then
@@ -182,5 +185,5 @@ sign_and_upload_android() {
     $SCRIPTS/android_sign.py sign --release $release --keystore-path=$HOME/.ssh $BUILD_PATH/$EXPECTED_APK $BUILD_PATH/$RESIGNED_APK || die "Failed to re-sign apk"
     mv $BUILD_PATH/$RESIGNED_APK $BUILD_PATH/$EXPECTED_APK || die "Failed to move apk"
     VERSION="$VERSION" BUILD="$BUILD" RELEASE="$RELEASE" $SCRIPTS/hockeyapp_upload.py $DO_DRY_RUN $NO_SKIP --android $BUILD_PATH || die "Failed to upload apk"
-    set -x
+    set +x
 }
