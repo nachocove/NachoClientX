@@ -34,8 +34,6 @@ def sign_apk(options):
         print "ERROR: keystore does not exist: %s" % keystore_fullpath
         sys.exit(1)
 
-    password_io = StringIO.StringIO(password)
-
     temp_apk = tempfile.NamedTemporaryFile(suffix=".apk", delete=True)
     android_home = os.environ.get('XAM_ANDROID_HOME',
                                   "%s/Library/Developer/Xamarin/android-sdk-mac_x86" % os.environ['HOME'])
@@ -53,6 +51,7 @@ def sign_apk(options):
                       }
 
     jarsigner_cmd = "%(jarsigner)s -sigalg %(sigalg)s -digestalg %(digestalg)s -keystore %(keystore)s -signedjar %(signedjar)s %(inputapk)s %(keystore_alias)s" % jarsigner_args
+    print jarsigner_cmd
     jarsigner_process = subprocess.Popen(jarsigner_cmd.split(' '), stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     (error, output) = jarsigner_process.communicate(password)
     if jarsigner_process.returncode != 0:
@@ -67,7 +66,7 @@ def sign_apk(options):
                      'finalapk': options.outputapk,
                      }
     zipalign_cmd = "%(zipalign)s -f 4 %(signedapk)s %(finalapk)s" % zipalign_args
-
+    print zipalign_cmd
     zipalign_process = subprocess.Popen(zipalign_cmd.split(' '))
     (error, output) = zipalign_process.communicate()
     if zipalign_process.returncode != 0:

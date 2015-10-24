@@ -1,5 +1,7 @@
 #!/bin/sh
 
+source ./scripts/build_lib.sh
+
 # USAGE: mk_alpha.sh [BRANCH] [VERSION] [BUILD]
 #
 # For example, mk_alpha.sh master 0.8 123 or mk_alpha.sh throttle_v1.0 1.0.alpha 321
@@ -19,53 +21,25 @@ version=$2
 build=$3
 tag="v$version""_$build"
 release=alpha
-
-die () {
-  echo "ERROR: $1"
-  exit 1
-}
+make_target=release
+timestamp=`date "+%Y%m%d_%H%M%S"`
+logfile=$release"_build.$tag.$timestamp.log"
 
 # Fetch all git repos and switch to the specific branch
-./scripts/fetch.py || die "failed to fetch all repos!"
-./scripts/repos.py checkout-branch --branch $branch || die "failed to switch to branch $branch"
+fetch_branch $branch
 
 # Need to fetch and change branch again because the branch may add new repos that is not
 # in master's repos_cfg.py.
-./scripts/fetch.py || die "failed to fetch all repos!"
-./scripts/repos.py checkout-branch --branch $branch || die "failed to switch to branch $branch"
+fetch_branch $branch
 
 # Build everything else
-timestamp=`date "+%Y%m%d_%H%M%S"`
-logfile=$release"_build.$tag.$timestamp.log"
-make -f build.mk 2>&1 | tee $logfile
-if [ ${PIPESTATUS[0]} -ne 0 ]
-then
-    echo "Failed to build auxillary packages"
-    exit 1
-fi
-
-ANDROID_PACKAGE=`./scripts/projects.py $release android package_name`
-if [ -z "$ANDROID_PACKAGE" ] ; then
-    echo "No package name found in projects"
-    exit 1
-fi
-EXPECTED_APK="$ANDROID_PACKAGE-Signed.apk"
-RESIGNED_APK="$ANDROID_PACKAGE-ReSigned.apk"
+build_everything $logfile
 
 # Build NachoClient
-VERSION="$version" BUILD="$build" RELEASE="$release" make release 2>&1 | tee -a $logfile
-if [ ${PIPESTATUS[0]} -eq 0 ]
-then
-    # Tag & push tags for all repos
-    ./scripts/repos.py create-tag --version "$version" --build "$build" || die "failed to tag all repos!"
-    echo "Build $tag is made."
-    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --ios ./bin/iPhone/Ad-Hoc) || die "Failed to upload ipa"
+build_nachoclient $make_target $version $build $release $logfile || die "Build Failed!"
 
-    (cd NachoClient.Android; \
-         ../scripts/android_sign.py sign --release $release --keystore-path=$HOME/.ssh ./bin/Release/$EXPECTED_APK ./bin/Release/$RESIGNED_APK || die "Failed to re-sign apk" \
-         mv ./bin/Release/$RESIGNED_APK ./bin/Release/$EXPECTED_APK || die "Failed to move apk" \
-         VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --android ./bin/Release || die "Failed to upload apk" \
-         )
-else
-    echo "Build failed!"
-fi
+# Tag & push tags for all repos
+create_tag $tag $version $build
+
+(cd NachoClient.iOS; upload_ios ./bin/iPhone/Ad-Hoc $version $build $release)
+(cd NachoClient.Android; sign_and_upload_android ./bin/Release $version $build $release)

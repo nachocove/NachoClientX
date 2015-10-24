@@ -1,5 +1,7 @@
 #!/bin/sh
 
+source ./scripts/build_lib.sh
+
 # USAGE: mk_beta.sh [BRANCH] [VERSION] [BUILD]
 #
 # For example, mk_beta.sh 0.9 123 or mk_beta.sh 1.0.beta 321
@@ -19,45 +21,19 @@ version=$2
 build=$3
 tag="v$version""_$build"
 release=beta
-
-die () {
-  echo "ERROR: $1"
-  exit 1
-}
-
-# Fetch all git repos and check out the tag.
-./scripts/fetch.py || die "failed to fetch all repos!"
-./scripts/repos.py checkout-tag --tag "$tag" || die "failed to switch to tag $tag"
-
-# Check if the branch matches the given one
-
-# Build everything else
+make_target=release
 timestamp=`date "+%Y%m%d_%H%M%S"`
 logfile=$release"_build.$tag.$timestamp.log"
-make -f build.mk 2>&1 | tee $logfile
-if [ ${PIPESTATUS[0]} -ne 0 ]
-then
-    echo "Fail to build auxillary packages"
-    exit 1
-fi
+no_skip=1
 
-ANDROID_PACKAGE=`./scripts/projects.py $release android package_name`
-if [ -z "$ANDROID_PACKAGE" ] ; then
-    echo "No package name found in projects"
-    exit 1
-fi
-EXPECTED_APK="$ANDROID_PACKAGE-Signed.apk"
-RESIGNED_APK="$ANDROID_PACKAGE-ReSigned.apk"
+# Fetch all git repos and check out the tag.
+fetch_tag $tag
+
+# Build everything else
+build_everything $logfile
 
 # Build NachoClient
-VERSION="$version" BUILD="$build" RELEASE="$release" make release 2>&1 | tee -a $logfile
-if [ ${PIPESTATUS[0]} -eq 0 ]
-then
-    (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/Ad-Hoc) || die "Failed to upload ipa"
+build_nachoclient $make_target $version $build $release $logfile || die "Build Failed!"
 
-    ./scripts/android_sign.py sign --release $release --keystore-path=$HOME/.ssh ./bin/Release/$EXPECTED_APK ./bin/Release/$RESIGNED_APK || die "Failed to re-sign apk"
-    mv ./bin/Release/$RESIGNED_APK ./bin/Release/$EXPECTED_APK || die "Failed to move apk"
-    (cd NachoClient.Android; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --android ./bin/Release) || die "Failed to upload apk"
-else
-    echo "Beta build failed!"
-fi
+(cd NachoClient.iOS; upload_ios ./bin/iPhone/Ad-Hoc $version $build $release $no_skip)
+(cd NachoClient.Android; sign_and_upload_android ./bin/Release $version $build $release $no_skip)

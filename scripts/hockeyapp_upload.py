@@ -8,6 +8,7 @@ import subprocess
 import hockeyapp
 from projects import projects
 
+DRY_RUN=False
 
 class HockeyappUpload(object):
     def __init__(self, api_token, app_id):
@@ -20,20 +21,23 @@ class HockeyappUpload(object):
     def upload(self, target_dir, filename, note=None, debug=False):
         raise NotImplementedError()
 
-    def upload_version(self, filename, zipped_dsym_file, version, short_version, note):
-        assert version is not None and short_version is not None
-        version_obj = self.app_obj.find_version(version=version, short_version=short_version)
+    def upload_version(self, filename, zipped_dsym_file, buildNumber, versionName, note):
+        assert buildNumber is not None and versionName is not None
+        version_obj = self.app_obj.find_version(version=buildNumber, short_version=versionName)
         if version_obj is None:
-            print 'Creating version %s %s' % (short_version, version)
+            print 'Creating version %s %s' % (versionName, buildNumber)
             version_obj = hockeyapp.Version(self.app_obj,
-                                                 version=version,
-                                                 short_version=short_version)
+                                            version=buildNumber,
+                                            short_version=versionName)
             version_obj.create()
         else:
-            print 'Updating version %s %s' % (short_version, version)
+            print 'Updating version %s %s' % (versionName, buildNumber)
 
         assert version_obj.version_id is not None
-        version_obj.update(zipped_dsym_file=zipped_dsym_file, ipa_file=filename, note=note)
+        if DRY_RUN == False:
+            version_obj.update(zipped_dsym_file=zipped_dsym_file, ipa_file=filename, note=note)
+        else:
+            print "WARNING: Skipped actual upload. DRY_RUN=True"
 
 
 class HockeyappUploadAndroid(HockeyappUpload):
@@ -55,20 +59,20 @@ class HockeyappUploadAndroid(HockeyappUpload):
         if debug:
             print output
 
-        version = None
-        short_version = None
+        versionName = None
+        versionCode = None
         for line in output.split('\n'):
             if line.startswith('package: name='):
                 match = re.match("^package: name='(?P<name>.+)' versionCode='(?P<versionCode>\d+)' versionName='(?P<versionName>.+)'", line)
                 if not match:
                     raise Exception("No pattern matched for versionCode finding")
-                version = match.group('versionName')
-                short_version = match.group('versionCode')
+                versionName = match.group('versionName')
+                versionCode = match.group('versionCode')
                 break
         if debug:
-            print "Android versionCode=%s versionName=%s" % (short_version, version)
-        assert version and short_version
-        self.upload_version(filename, None, version, short_version, note)
+            print "Android versionCode=%s versionName=%s" % (versionCode, versionName)
+        assert versionCode and versionName
+        self.upload_version(filename, None, buildNumber=versionCode, versionName=versionName, note=note)
 
 
 class HockeyappUploadIos(HockeyappUpload):
@@ -107,7 +111,8 @@ class HockeyappUploadIos(HockeyappUpload):
             print '\nUploading zipped dSYM and ipa files...'
             filename = os.path.join(target_dir, filename)
 
-        self.upload_version(filename, zip_file, self.version, self.short_version, note)
+        # In iOS, short_version is apparently the long string ex. 2.1.1, and the version is the build number, i.e. 259
+        self.upload_version(filename, zip_file, buildNumber=self.version, versionName=self.short_version, note=note)
 
     def copy_attributes(self):
         # Read Info.plist
@@ -145,8 +150,11 @@ def main():
     parser.add_argument('--file', '-f', nargs='?', help='filename', default=None)
     parser.add_argument('--release', nargs='?', choices=('dev', 'alpha', 'beta', 'appstore'), help="Release", default=None)
     parser.add_argument('--debug', '-d', action='store_true', help="Debug", default=False)
+    parser.add_argument('--dry-run', action='store_true', help="Dry run", default=False)
 
     options = parser.parse_args()
+    global DRY_RUN
+    DRY_RUN = options.dry_run
 
     if options.target_dir is None:
         parser.print_help()

@@ -6,6 +6,12 @@ from argparse import ArgumentParser
 import git
 import repos_cfg
 
+DRY_RUN=False
+
+
+def set_dry_run_true():
+    global DRY_RUN
+    DRY_RUN=True
 
 class Build:
     def __init__(self, version, build):
@@ -95,29 +101,45 @@ class RepoGroup:
 
     def create_tag(self, tag, message=None):
         def action(repo):
-            tag_cmd = git.CreateTag(tag, message)
-            return RepoGroup.may_push(tag_cmd, repo, tag, '%s -> create tag failed!')
+            if not DRY_RUN:
+                tag_cmd = git.CreateTag(tag, message)
+                return RepoGroup.may_push(tag_cmd, repo, tag, '%s -> create tag failed!')
+            else:
+                print "WARNING: tag not created. DRY_RUN=True"
+                return True
 
         return self.for_all_repos(action=action, exception_handler=None)
 
     def create_branch(self, branch):
         def action(repo):
-            branch_cmd = git.CreateBranch(branch)
-            return RepoGroup.may_push(branch_cmd, repo, branch, '%s -> create branch failed!')
+            if not DRY_RUN:
+                branch_cmd = git.CreateBranch(branch)
+                return RepoGroup.may_push(branch_cmd, repo, branch, '%s -> create branch failed!')
+            else:
+                print "WARNING: branch not created. DRY_RUN=True"
+                return True
 
         return self.for_all_repos(action=action, exception_handler=None)
 
     def delete_branch(self, branch):
         def action(repo):
-            branch_cmd = git.DeleteBranch(branch)
-            return RepoGroup.may_push(branch_cmd, repo, ':' + branch, '%s -> delete branch failed!')
+            if not DRY_RUN:
+                branch_cmd = git.DeleteBranch(branch)
+                return RepoGroup.may_push(branch_cmd, repo, ':' + branch, '%s -> delete branch failed!')
+            else:
+                print "WARNING: branch not deleted. DRY_RUN=True"
+                return True
 
         return self.for_all_repos(action=action, exception_handler=None)
 
     def delete_tag(self, tag):
         def action(repo):
-            tag_cmd = git.DeleteTag(tag)
-            return RepoGroup.may_push(tag_cmd, repo, ':refs/tags/' + tag, '%s -> delete tag failed!')
+            if not DRY_RUN:
+                tag_cmd = git.DeleteTag(tag)
+                return RepoGroup.may_push(tag_cmd, repo, ':refs/tags/' + tag, '%s -> delete tag failed!')
+            else:
+                print "WARNING: tag not deleted. DRY_RUN=True"
+                return True
 
         return self.for_all_repos(action=action, exception_handler=None)
 
@@ -220,6 +242,7 @@ def main():
                                                             'The branch name is "branch_v<VERSION>_<BUILD>".')
     add_label_or_build(create_branch_parser, '--branch', 'Branch name')
     create_branch_parser.add_argument('--tag', type=str, default=None, help='Tag name')
+    create_branch_parser.add_argument('--dry-run', action=set_dry_run_true, default=False, help='Dry Run')
 
     create_tag_parser = subparser.add_parser('create-tag',
                                              help='Create a tag from a given name, or build',
@@ -228,6 +251,7 @@ def main():
                                                          'a tag from a build, use --version and --build. The tag '
                                                          'name is "v<VERSION>_<BUILD>".')
     add_label_or_build(create_tag_parser, '--tag', 'Tag name')
+    create_tag_parser.add_argument('--dry-run', action=set_dry_run_true, default=False, help='Dry Run')
 
     delete_branch_parser = subparser.add_parser('delete-branch',
                                                 help='Delete an existing branch from a given name, tag, or build',
@@ -235,6 +259,7 @@ def main():
                                                             'To delete a branch with an arbitrary name, use --branch. '
                                                             'To delete a branch from a tag, use --')
     add_label_or_build(delete_branch_parser, '--branch', 'Branch name')
+    delete_branch_parser.add_argument('--dry-run', action=set_dry_run_true, default=False, help='Dry Run')
 
     delete_tag_parser = subparser.add_parser('delete-tag',
                                              help='Delete a tag from a given name, or build. To delete '
@@ -242,6 +267,7 @@ def main():
                                                   'a tag from a build, use --version and --build. The tag '
                                                   'name is "v<VERSION>_<BUILD>".')
     add_label_or_build(delete_tag_parser, '--tag', 'Tag name')
+    delete_tag_parser.add_argument('--dry-run', action=set_dry_run_true, default=False, help='Dry Run')
 
     status_parser = subparser.add_parser('status',
                                          help='Return git status for all repositories',
