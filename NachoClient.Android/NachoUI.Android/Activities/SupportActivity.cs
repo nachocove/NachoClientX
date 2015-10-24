@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "SupportActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
-    public class SupportActivity : NcActivity
+    public class SupportActivity : NcTabBarActivity
     {
 
         protected override void OnCreate (Bundle bundle)

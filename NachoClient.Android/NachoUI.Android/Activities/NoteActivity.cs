@@ -16,7 +16,7 @@ using Android.Widget;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "NoteActivity")]            
-    public class NoteActivity : Activity
+    public class NoteActivity : NcActivity
     {
         private const string EXTRA_NOTE_TITLE = "com.nachocove.nachomail.EXTRA_NOTE_TITLE";
         private const string EXTRA_NOTE_TEXT = "com.nachocove.nachomail.EXTRA_NOTE_TEXT";

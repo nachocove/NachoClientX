@@ -21,7 +21,7 @@ using NachoCore.ActiveSync;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "EventEditActivity")]            
-    public class EventEditActivity : AppCompatActivity
+    public class EventEditActivity : NcActivity
     {
         private const string EXTRA_EVENT_TO_EDIT = "com.nachocove.nachomail.EXTRA_EVENT_TO_EDIT";
         private const string EXTRA_MESSAGE_FOR_MEETING = "com.nachocove.nachomail.EXTRA_MESSAGE_FOR_MEETING";

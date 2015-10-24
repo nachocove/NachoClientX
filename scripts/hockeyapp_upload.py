@@ -71,8 +71,11 @@ class HockeyappUploadAndroid(HockeyappUpload):
                 break
         if debug:
             print "Android versionCode=%s versionName=%s" % (versionCode, versionName)
-        assert versionCode and versionName
-        self.upload_version(filename, None, buildNumber=versionCode, versionName=versionName, note=note)
+        assert versionName and versionCode
+        # see http://support.hockeyapp.net/kb/api/api-versions#create-version
+        # bundle_version - mandatory, set to CFBundleVersion (iOS and OS X) or to versionCode (Android)
+        # bundle_short_version - optional, set to CFBundleShortVersionString (iOS and OS X) or to versionName (Android)
+        self.upload_version(filename, None, version=versionCode, short_version=versionName, note=note)
 
 
 class HockeyappUploadIos(HockeyappUpload):

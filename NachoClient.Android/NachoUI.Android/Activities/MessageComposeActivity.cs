@@ -14,7 +14,7 @@ using NachoCore.Model;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "MessageComposeActivity")]            
-    public class MessageComposeActivity : AppCompatActivity
+    public class MessageComposeActivity : NcActivity
     {
 
         public static readonly string EXTRA_ACTION = "com.nachocove.nachomail.action";
