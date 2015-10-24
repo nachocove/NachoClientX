@@ -2,16 +2,21 @@
 
 import os
 import sys
-from argparse import ArgumentParser
+import argparse
 import git
 import repos_cfg
 
 DRY_RUN=False
 
+class DryRunAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        if nargs is not None:
+            raise ValueError("nargs not allowed")
+        super(DryRunAction, self).__init__(option_strings, dest, '?', **kwargs)
 
-def set_dry_run_true():
-    global DRY_RUN
-    DRY_RUN=True
+    def __call__(self, parser, namespace, values, option_string=None):
+        global DRY_RUN
+        DRY_RUN=True
 
 class Build:
     def __init__(self, version, build):
@@ -162,6 +167,9 @@ class RepoGroup:
         return self.for_all_repos(action=action, exception_handler=exception_handler)
 
     def get_status(self, is_brief=False):
+        if DRY_RUN:
+            print "INFO: DRY_RUN is set"
+            
         repo_status = dict()
 
         def action(repo):
@@ -209,7 +217,7 @@ class RepoGroup:
 
 
 def main():
-    parser = ArgumentParser()
+    parser = argparse.ArgumentParser()
     subparser = parser.add_subparsers(dest='command', help='commands')
 
     subparser.add_parser('branch',
@@ -242,7 +250,7 @@ def main():
                                                             'The branch name is "branch_v<VERSION>_<BUILD>".')
     add_label_or_build(create_branch_parser, '--branch', 'Branch name')
     create_branch_parser.add_argument('--tag', type=str, default=None, help='Tag name')
-    create_branch_parser.add_argument('--dry-run', action=set_dry_run_true, default=False, help='Dry Run')
+    create_branch_parser.add_argument('--dry-run', action=DryRunAction, default=False, help='Dry Run')
 
     create_tag_parser = subparser.add_parser('create-tag',
                                              help='Create a tag from a given name, or build',
@@ -251,7 +259,7 @@ def main():
                                                          'a tag from a build, use --version and --build. The tag '
                                                          'name is "v<VERSION>_<BUILD>".')
     add_label_or_build(create_tag_parser, '--tag', 'Tag name')
-    create_tag_parser.add_argument('--dry-run', action=set_dry_run_true, default=False, help='Dry Run')
+    create_tag_parser.add_argument('--dry-run', action=DryRunAction, default=False, help='Dry Run')
 
     delete_branch_parser = subparser.add_parser('delete-branch',
                                                 help='Delete an existing branch from a given name, tag, or build',
@@ -259,7 +267,7 @@ def main():
                                                             'To delete a branch with an arbitrary name, use --branch. '
                                                             'To delete a branch from a tag, use --')
     add_label_or_build(delete_branch_parser, '--branch', 'Branch name')
-    delete_branch_parser.add_argument('--dry-run', action=set_dry_run_true, default=False, help='Dry Run')
+    delete_branch_parser.add_argument('--dry-run', action=DryRunAction, default=False, help='Dry Run')
 
     delete_tag_parser = subparser.add_parser('delete-tag',
                                              help='Delete a tag from a given name, or build. To delete '
@@ -267,7 +275,7 @@ def main():
                                                   'a tag from a build, use --version and --build. The tag '
                                                   'name is "v<VERSION>_<BUILD>".')
     add_label_or_build(delete_tag_parser, '--tag', 'Tag name')
-    delete_tag_parser.add_argument('--dry-run', action=set_dry_run_true, default=False, help='Dry Run')
+    delete_tag_parser.add_argument('--dry-run', action=DryRunAction, default=False, help='Dry Run')
 
     status_parser = subparser.add_parser('status',
                                          help='Return git status for all repositories',
@@ -275,6 +283,7 @@ def main():
                                                      'a summary table. Without it, it returns the git status '
                                                      'output for all repositories.')
     status_parser.add_argument('--brief', action='store_true', help='One line per repo format')
+    status_parser.add_argument('--dry-run', action=DryRunAction, default=False, help='Dry Run')
 
     # Determine the top directory
     def is_top(d):
