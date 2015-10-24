@@ -16,7 +16,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "LaunchActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
-    public class LaunchActivity : AppCompatActivity, GettingStartedDelegate, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
+    public class LaunchActivity : NcActivity, GettingStartedDelegate, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
     {
         McAccount account;
 
@@ -84,7 +84,7 @@ namespace NachoClient.AndroidClient
                 LoginHelpers.SetSwitchToTime (account);
             }
             var intent = new Intent ();
-            intent.SetClass (this, typeof(NowActivity));
+            intent.SetClass (this, typeof(NowListActivity));
             StartActivity (intent);
         }
 

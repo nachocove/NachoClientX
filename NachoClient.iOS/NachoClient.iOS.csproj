@@ -91,7 +91,6 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
@@ -119,7 +118,6 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
@@ -147,7 +145,6 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --no-skip --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
@@ -176,7 +173,6 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --no-skip --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/remove_itunesmetadata.sh" />
       </CustomCommands>
@@ -200,7 +196,7 @@
     </Reference>
     <Reference Include="System.Json" />
     <Reference Include="HockeyApp.iOS">
-      <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
+      <HintPath>HockeyApp\hockeyappios-3.8.2.1\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.iOS" />
     <Reference Include="System.Web.Services" />
@@ -1148,7 +1144,6 @@
     <Compile Include="NachoUI.iOS\DeadlinesViewController.designer.cs">
       <DependentUpon>DeadlinesViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
     <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
       <Link>NachoCore\Utils\HashHelper.cs</Link>
@@ -1671,6 +1666,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ScoringHelpers.cs">
       <Link>NachoCore\Utils\ScoringHelpers.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\LikelyToReadViewController.cs" />
+    <Compile Include="NachoUI.iOS\LikelyToReadViewController.designer.cs">
+      <DependentUpon>LikelyToReadViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\Support\CompoundScrollView.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageComposeHeaderView.cs" />
     <Compile Include="NachoPlatform.iOS\RtfConverteriOS.cs" />
@@ -1695,8 +1694,23 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEventDetail.cs">
       <Link>NachoCore\Utils\NcEventDetail.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoLikelyToReadEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoLikelyToReadEmailMessages.cs</Link>
+    </Compile>
     <Compile Include="NachoPlatform.iOS\ImageiOS.cs" />
     <Compile Include="NachoUI.iOS\Support\NcWebViewMessageProtocol.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration47.cs">
+      <Link>NachoCore\Model\Migration\NcMigration47.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDeadlineEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoDeadlineEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapAttachmentItem.cs">
+      <Link>NachoCore\Model\McMapAttachmentItem.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration48.cs">
+      <Link>NachoCore\Model\Migration\NcMigration48.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1849,7 +1863,6 @@
     <BundleResource Include="Resources\nav-more%402x.png" />
     <BundleResource Include="Resources\nav-nachonow-active%402x.png" />
     <BundleResource Include="Resources\email-att-files%402x.png" />
-    <BundleResource Include="Resources\email-att-photos%402x.png" />
     <BundleResource Include="Resources\gen-more%402x.png" />
     <BundleResource Include="Resources\gen-more-active%402x.png" />
     <BundleResource Include="Resources\now-addcalevent%402x.png" />
@@ -2038,7 +2051,6 @@
     <BundleResource Include="Resources\email-att-download-vline%403x.png" />
     <BundleResource Include="Resources\email-att-download%403x.png" />
     <BundleResource Include="Resources\email-att-files%403x.png" />
-    <BundleResource Include="Resources\email-att-photos%403x.png" />
     <BundleResource Include="Resources\email-delete%403x.png" />
     <BundleResource Include="Resources\email-hot%403x.png" />
     <BundleResource Include="Resources\email-icn-attachment%403x.png" />
@@ -2127,7 +2139,6 @@
     <BundleResource Include="Resources\email-att-download-vline%404x.png" />
     <BundleResource Include="Resources\email-att-download%404x.png" />
     <BundleResource Include="Resources\email-att-files%404x.png" />
-    <BundleResource Include="Resources\email-att-photos%404x.png" />
     <BundleResource Include="Resources\email-delete%404x.png" />
     <BundleResource Include="Resources\email-hot%404x.png" />
     <BundleResource Include="Resources\email-icn-attachment%404x.png" />
@@ -2216,7 +2227,6 @@
     <BundleResource Include="Resources\email-att-download-vline%406x.png" />
     <BundleResource Include="Resources\email-att-download%406x.png" />
     <BundleResource Include="Resources\email-att-files%406x.png" />
-    <BundleResource Include="Resources\email-att-photos%406x.png" />
     <BundleResource Include="Resources\email-delete%406x.png" />
     <BundleResource Include="Resources\email-hot%406x.png" />
     <BundleResource Include="Resources\email-icn-attachment%406x.png" />
@@ -2597,6 +2607,38 @@
     <BundleResource Include="Resources\nacho.html" />
     <BundleResource Include="Resources\nacho.css" />
     <BundleResource Include="Resources\nacho.js" />
+    <BundleResource Include="Resources\icn-files-img%403x.png" />
+    <BundleResource Include="Resources\icn-files-pdf%403x.png" />
+    <BundleResource Include="Resources\icn-files-png%403x.png" />
+    <BundleResource Include="Resources\icn-files-ppt%403x.png" />
+    <BundleResource Include="Resources\icn-files-txt%403x.png" />
+    <BundleResource Include="Resources\icn-files-wrd%403x.png" />
+    <BundleResource Include="Resources\icn-files-xls%403x.png" />
+    <BundleResource Include="Resources\icn-files-zip%403x.png" />
+    <BundleResource Include="Resources\icn-files-img%404x.png" />
+    <BundleResource Include="Resources\icn-files-pdf%404x.png" />
+    <BundleResource Include="Resources\icn-files-png%404x.png" />
+    <BundleResource Include="Resources\icn-files-ppt%404x.png" />
+    <BundleResource Include="Resources\icn-files-txt%404x.png" />
+    <BundleResource Include="Resources\icn-files-wrd%404x.png" />
+    <BundleResource Include="Resources\icn-files-xls%404x.png" />
+    <BundleResource Include="Resources\icn-files-zip%404x.png" />
+    <BundleResource Include="Resources\icn-files-img%406x.png" />
+    <BundleResource Include="Resources\icn-files-pdf%406x.png" />
+    <BundleResource Include="Resources\icn-files-png%406x.png" />
+    <BundleResource Include="Resources\icn-files-ppt%406x.png" />
+    <BundleResource Include="Resources\icn-files-txt%406x.png" />
+    <BundleResource Include="Resources\icn-files-wrd%406x.png" />
+    <BundleResource Include="Resources\icn-files-xls%406x.png" />
+    <BundleResource Include="Resources\icn-files-zip%406x.png" />
+    <BundleResource Include="Resources\icn-files-img%402x.png" />
+    <BundleResource Include="Resources\icn-files-pdf%402x.png" />
+    <BundleResource Include="Resources\icn-files-png%402x.png" />
+    <BundleResource Include="Resources\icn-files-ppt%402x.png" />
+    <BundleResource Include="Resources\icn-files-txt%402x.png" />
+    <BundleResource Include="Resources\icn-files-wrd%402x.png" />
+    <BundleResource Include="Resources\icn-files-xls%402x.png" />
+    <BundleResource Include="Resources\icn-files-zip%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

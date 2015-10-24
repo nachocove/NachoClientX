@@ -261,7 +261,7 @@ namespace NachoCore.Utils
         public static string AttributionLineForMessage (McEmailMessage message)
         {
             var attribution = "";
-            attribution += message.DateReceived.ToLocalTime().ToString ("'On' MMM d, yyyy 'at' h:mm tt");
+            attribution += string.Format ("On {0} at {1}", Pretty.MediumMonthDayYear (message.DateReceived), Pretty.Time (message.DateReceived));
             if (!String.IsNullOrWhiteSpace (message.From)) {
                 if (attribution.Length > 0) {
                     attribution += ", ";
@@ -684,7 +684,7 @@ namespace NachoCore.Utils
                 result.Append ("Cc: ").Append (message.Cc).Append ("\n");
             }
             result.Append ("Subject: ").Append (message.Subject ?? "").Append ("\n");
-            result.Append ("Date: ").Append (Pretty.UniversalFullDateTimeString (message.DateReceived));
+            result.Append ("Date: ").Append (Pretty.UniversalFullDateTime (message.DateReceived));
             result.Append ("\n\n");
             return result.ToString ();
         }
@@ -697,7 +697,7 @@ namespace NachoCore.Utils
             result.Append ("Organizer: ").Append (calendar.OrganizerName ?? calendar.OrganizerEmail ?? "").Append ("\n");
             result.Append ("To: ").Append (recipient).Append ("\n");
             result.Append ("Subject: ").Append (calendar.Subject ?? "").Append ("\n");
-            result.Append ("When: ").Append (Pretty.FullDateYearString (calendar.StartTime)).Append ("\n");
+            result.Append ("When: ").Append (Pretty.UniversalFullDateTime (calendar.StartTime)).Append ("\n");
             result.Append ("Where: ").Append (calendar.Location ?? "").Append ("\n");
             result.Append ("\n\n");
             return result.ToString ();
@@ -808,7 +808,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount)
+        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount)
         {
             var inboxFolder = NcEmailManager.InboxFolder (account.Id);
             unreadMessageCount = 0;
@@ -822,6 +822,11 @@ namespace NachoCore.Utils
             deferredMessageCount = 0;
             if (null != inboxFolder) {
                 deferredMessageCount = new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
+            }
+            likelyMessageCount = 0;
+            if (null != inboxFolder) {
+                // FIXME
+                likelyMessageCount = new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
             }
         }
 

@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "CalendarActivity")]            
-    public class CalendarActivity : NcActivity
+    public class CalendarActivity : NcTabBarActivity
     {
         EventViewFragment eventViewFragment;
         EventListFragment eventListFragment;

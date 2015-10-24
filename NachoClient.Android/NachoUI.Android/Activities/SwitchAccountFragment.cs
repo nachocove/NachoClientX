@@ -51,7 +51,7 @@ namespace NachoClient.AndroidClient
             // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.SwitchAccountFragment, container, false);
 
-            var activity = (NcActivity)this.Activity;
+            var activity = (NcTabBarActivity)this.Activity;
             activity.HookSwitchAccountView (view);
 
             var accountButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.account);

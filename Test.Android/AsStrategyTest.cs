@@ -673,8 +673,10 @@ namespace Test.iOS
 
         private void Fetch_InjectEmails (int accountId, int count)
         {
-            Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
-            Fetch_Folder.Insert ();
+            if (null == Fetch_Folder) {
+                Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+                Fetch_Folder.Insert ();
+            }
             Fetch_Emails = new List<McEmailMessage> ();
             for (int i = 0; i < count; i++) {
                 var body = new McBody () {
@@ -729,8 +731,6 @@ namespace Test.iOS
                 };
                 email.Insert ();
                 var att = new McAttachment () {
-                    ItemId = email.Id,
-                    ClassCode = email.GetClassCode (),
                     AccountId = email.AccountId,
                     FilePresenceFraction = 0,
                     FileSize = 50000,
@@ -738,6 +738,7 @@ namespace Test.iOS
                     FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
                 };
                 att.Insert ();
+                att.Link (email);
                 Fetch_Atts.Add (att);
                 Fetch_Folder.Link (email);
                 Fetch_Emails.Add (email);
@@ -748,7 +749,11 @@ namespace Test.iOS
         {
             foreach (var att in Fetch_Atts) {
                 if (null != Fetch_Emails) {
-                    var email = Fetch_Emails.SingleOrDefault (x => x.Id == att.ItemId);
+                    var attemails = McAttachment.QueryItems (accountId, att.Id).Where (x => x is McEmailMessage);
+                    var email = (from fetch_e in Fetch_Emails
+                        join att_e in attemails
+                        on fetch_e.Id equals att_e.Id
+                        select fetch_e).SingleOrDefault ();
                     if (null != email) {
                         Fetch_Folder.Unlink (email);
                         email.Delete ();

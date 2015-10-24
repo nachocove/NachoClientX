@@ -26,7 +26,7 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.SupportFragment, container, false);
 
-            var activity = (NcActivity)this.Activity;
+            var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
             var account = view.FindViewById (Resource.Id.account);

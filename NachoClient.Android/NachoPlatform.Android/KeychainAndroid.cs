@@ -1,16 +1,16 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using Android.Content;
-using Android.Runtime;
-using Java.IO;
-using Java.Security;
-using Javax.Crypto;
-using Javax.Security.Auth.Callback;
 using NachoCore.Utils;
+using Android.Content;
+using Android.Preferences;
 using NachoClient.AndroidClient;
+using Java.Security;
+using Android.Security;
+using Javax.Crypto;
+using Javax.Crypto.Spec;
+using Portable.Text;
+using System.IO;
 
 namespace NachoPlatform
 {
@@ -18,35 +18,53 @@ namespace NachoPlatform
     {
         private static volatile Keychain instance;
         private static object syncRoot = new Object ();
-        private static KeyChainHelper helper;
+        private bool RSAKeyGenerated = false;
+        private bool PrefsKeyGenerated = false;
+        private bool PrefsMacKeyGenerated = false;
 
         public static Keychain Instance {
             get {
                 if (instance == null) {
+                    bool firsttime = false;
                     lock (syncRoot) {
                         if (instance == null) {
                             instance = new Keychain ();
+                            firsttime = true;
                         }
-                        helper = new KeyChainHelper (() => MainApplication.Instance.ApplicationContext, "myKeyProtectionPassword");
-
+                    }
+                    if (firsttime) {
+                        if (instance.RSAKeyGenerated) {
+                            Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new RSA Keypair in {0}ms", instance.RSAKeyGenerationTimeMilliseconds);
+                        }
+                        if (instance.PrefsKeyGenerated) {
+                            Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new PrefsKey");
+                        }
+                        if (instance.PrefsMacKeyGenerated) {
+                            Log.Info (Log.LOG_SYS, "KeychainAndroid: Generated new PrefsMacKey");
+                        }
                     }
                 }
                 return instance;
             }
         }
 
-        private const string KDefaultAccount = "device";
+        private Keychain ()
+        {
+            GetKeyPair ();
+            GetPrefsKey ();
+        }
+
         private const string KIdentifierForVendor = "IdentifierForVendor";
         private const string KAccessToken = "AccessToken";
         private const string KRefreshToken = "RefreshToken";
         private const string KUserId = "UserId";
+        private const string KDeviceId = "DeviceId";
         private const string KLogSalt = "LogSalt";
 
         public bool HasKeychain ()
         {
             return true;
         }
-
 
         private string CreateQuery (int handle, string subKey)
         {
@@ -63,321 +81,403 @@ namespace NachoPlatform
             return CreateQuery (handle.ToString ());
         }
 
+        #region Password
+        public string PasswordKey (int handle)
+        {
+            return CreateQuery (handle);
+        }
+
         public string GetPassword (int handle)
         {
-            var data = Getter (CreateQuery (handle), errorIfMissing: true);
-            return  data;
+            return Getter (PasswordKey (handle));
         }
 
         public bool SetPassword (int handle, string password)
         {
-            return Setter (CreateQuery (handle), password);
+            return Setter (PasswordKey (handle), password);
         }
 
         public bool DeletePassword (int handle)
         {
-            return Deleter (CreateQuery (handle));
+            return Deleter (PasswordKey (handle));
         }
+        #endregion
 
-        private string GetStringForKey (string key)
+        #region AccessToken
+        public string AccessTokenKey (int handle)
         {
-            var data = Getter (CreateQuery (key));
-            return  data;
-        }
-
-        private bool SetStringForKey (string key, string value)
-        {
-            return Setter (CreateQuery (key),value);
-        }
-
-        public string GetLogSalt (int handle)
-        {
-            var data = Getter (CreateQuery (handle, KLogSalt), errorIfMissing: true);
-            return data;
-        }
-
-        public bool SetLogSalt (int handle, string logSalt)
-        {
-            return Setter (CreateQuery (handle, KLogSalt), logSalt);
-        }
-
-        public bool DeleteLogSalt (int handle)
-        {
-            return Deleter (CreateQuery (handle, KLogSalt));     
-        }
-
-        public string GetIdentifierForVendor ()
-        {
-            return GetStringForKey (KIdentifierForVendor);
-        }
-
-        public bool SetIdentifierForVendor (string ident)
-        {
-            return SetStringForKey (KIdentifierForVendor, ident);
-        }
-
-        public string GetUserId ()
-        {
-            return GetStringForKey (KUserId);
-        }
-
-        public bool SetUserId (string userId)
-        {
-            return SetStringForKey (KUserId, userId);
-        }
-
-        public bool SetAccessToken (int handle, string token)
-        {
-            return Setter (CreateQuery (handle, KAccessToken), token);
+            return CreateQuery (handle, KAccessToken);
         }
 
         public string GetAccessToken (int handle)
         {
-            var data = Getter (CreateQuery (handle, KAccessToken), errorIfMissing: true);
-            return data;
+            return Getter (AccessTokenKey (handle));
+        }
+
+        public bool SetAccessToken (int handle, string token)
+        {
+            return Setter (AccessTokenKey (handle), token);
         }
 
         public bool DeleteAccessToken (int handle)
         {
-            return Deleter (CreateQuery (handle, KAccessToken));
+            return Deleter (AccessTokenKey (handle));
         }
+        #endregion
 
-        public bool SetRefreshToken (int handle, string token)
+        #region RefreshToken
+        public string RefreshTokenKey (int handle)
         {
-            return Setter (CreateQuery (handle, KRefreshToken), token);
+            return CreateQuery (handle, KRefreshToken);
         }
 
         public string GetRefreshToken (int handle)
         {
-            var data = Getter (CreateQuery (handle, KRefreshToken), errorIfMissing: true);
-            return  data;
+            return Getter (RefreshTokenKey (handle));
+        }
+
+        public bool SetRefreshToken (int handle, string token)
+        {
+            return Setter (RefreshTokenKey (handle), token);
         }
 
         public bool DeleteRefreshToken (int handle)
         {
-            return Deleter (CreateQuery (handle, KRefreshToken));
+            return Deleter (RefreshTokenKey (handle));
         }
+        #endregion
 
-
-        private string Getter (string query, bool errorIfMissing = false)
+        #region LogSalt
+        public string LogSaltKey (int handle)
         {
-            return helper.GetKey (query);
-
+            return CreateQuery (handle, KLogSalt);
         }
-            
 
-        private bool Setter (string query, string value)
+        public string GetLogSalt (int handle)
         {
-            helper.SetKey (query, value);
-            return true;
+            return Getter (RefreshTokenKey (handle));
         }
 
-        private bool Deleter (string query, bool errorIfMissing = false)
+        public bool SetLogSalt(int handle, string logSalt)
         {
-            return helper.DeleteKey (query) || !errorIfMissing;
-        }
-    }
-
-    /// <summary>
-    /// Built using Xamarin.Auth.AndroidKeyStore
-    /// https://raw.githubusercontent.com/xamarin/Xamarin.Auth/master/src/Xamarin.Auth.Android/AndroidAccountStore.cs
-    /// github has-taiar/KeyChain.Net
-    /// </summary>
-
-    public interface IKeyChainHelper
-    {
-        bool SetKey (string name, string value);
-
-        bool SaveKey (string name, string value);
-
-        string GetKey (string name);
-
-        bool DeleteKey (string name);
-    }
-
-    public class KeyChainHelper : IKeyChainHelper
-    {
-        KeyStore _androidKeyStore;
-        KeyStore.PasswordProtection _passwordProtection;
-        static readonly object _fileLock = new object ();
-        static string _fileName = "KeyChain.Net.XamarinAndroid";
-        static string _serviceId = "keyChainServiceId";
-        static string _keyStoreFileProtectionPassword = "lJjxvEPtbm5x1mjDWqga4QQwUuuR5Gw8qfEMHiqL5XW4IC83uhai1uhFKqGtShq7QjfVOS1xkEcIWI3T";
-        static char[] _fileProtectionPasswordArray = null;
-        readonly Func<Context> getContext;
-
-        public KeyChainHelper (Func<Context> context) : this (context, _keyStoreFileProtectionPassword)
-        {           
+            return Setter (LogSaltKey (handle), logSalt);
         }
 
-        public KeyChainHelper (Func<Context> context, string keyStoreFileProtectionPassword)
-            : this (context, keyStoreFileProtectionPassword, _fileName, _serviceId)
-        {           
-        }
-
-        public KeyChainHelper (Func<Context> context, string keyStoreFileProtectionPassword, string fileName, string serviceId)
+        public bool DeleteLogSalt (int handle)
         {
-            if (string.IsNullOrEmpty (keyStoreFileProtectionPassword))
-                throw new ArgumentNullException ("Filename cannot be null or empty string");
+            return Deleter (LogSaltKey (handle));
+        }
+        #endregion
 
-            if (string.IsNullOrEmpty (fileName))
-                throw new ArgumentNullException ("Filename cannot be null or empty string");
+        #region UserId
+        public string UserIdKey ()
+        {
+            return CreateQuery (KUserId);
+        }
 
-            if (string.IsNullOrEmpty (serviceId))
-                throw new ArgumentNullException ("ServiceId cannot be null or empty string");
+        public string GetUserId ()
+        {
+            return Getter (UserIdKey ());
+        }
 
-            _keyStoreFileProtectionPassword = keyStoreFileProtectionPassword;
-            _fileName = fileName;            
-            _serviceId = serviceId;
-            _fileProtectionPasswordArray = _keyStoreFileProtectionPassword.ToCharArray ();
+        public bool SetUserId (string userId)
+        {
+            return Setter (UserIdKey (), userId);
+        }
+        #endregion
 
-            this.getContext = context;
-            _androidKeyStore = KeyStore.GetInstance (KeyStore.DefaultType);
-            _passwordProtection = new KeyStore.PasswordProtection (_fileProtectionPasswordArray);
+        #region DeviceId
+        public string DeviceId ()
+        {
+            return CreateQuery (KDeviceId);
+        }
+        public string GetDeviceId ()
+        {
+            return Getter (DeviceId ());
+        }
 
-            try {
-                lock (_fileLock) {
-                    using (var s = getContext ().OpenFileInput (_fileName)) {
-                        _androidKeyStore.Load (s, _fileProtectionPasswordArray);
-                    }
+        public bool SetDeviceId (string deviceId)
+        {
+            return Setter (DeviceId (), deviceId);
+        }
+        #endregion
+
+        public string GetIdentifierForVendor ()
+        {
+            return Getter (CreateQuery (KIdentifierForVendor));
+        }
+
+        public bool SetIdentifierForVendor (string ident)
+        {
+            return Setter (CreateQuery (KIdentifierForVendor), ident);
+        }
+
+        #region ISharedPreferences
+        ISharedPreferences _Prefs;
+        ISharedPreferences Prefs
+        {
+            get
+            {
+                if (_Prefs == null) {
+                    _Prefs = PreferenceManager.GetDefaultSharedPreferences (MainApplication.Instance.ApplicationContext);
                 }
-            } catch (FileNotFoundException) {
-                //ks.Load (null, Password);
-                LoadEmptyKeyStore (_fileProtectionPasswordArray);
+                return _Prefs;
             }
         }
 
-        /// <summary>
-        /// Gets the key/password value from the keyChain.
-        /// </summary>
-        /// <returns>The key/password (or null if the password was not found in the KeyChain).</returns>
-        /// <param name="keyName">Keyname/username.</param>
-        public string GetKey (string keyName)
+        private string Getter (string query, bool errorIfMissing = false)
         {
-            var wantedAlias = MakeAlias (keyName, _serviceId).ToLower ();
-
-            var aliases = _androidKeyStore.Aliases ();
-            while (aliases.HasMoreElements) {
-                var alias = aliases.NextElement ().ToString ();
-                if (alias.ToLower ().Contains (wantedAlias)) {
-                    var e = _androidKeyStore.GetEntry (alias, _passwordProtection) as KeyStore.SecretKeyEntry;
-                    if (e != null) {
-                        var bytes = e.SecretKey.GetEncoded ();
-                        var password = System.Text.Encoding.UTF8.GetString (bytes);
-                        return password;
-                    }
+            var r = Prefs.GetString(query, null);
+            if (null != r) {
+                try {
+                    return DecryptString (r);
+                } catch (KeychainDecryptionException ex) {
+                    Log.Error (Log.LOG_SYS, "KeychainAndroid: Could not decrypt keychain item: {0}", ex.Message);
+                    // FIXME Should we delete the entry here? It'll be useless anyway,
+                    // and at least then we can create a new one for this key. But is this
+                    // the right thing to do?
+                    Deleter (query);
                 }
+            }
+            if (errorIfMissing) {
+                throw new KeychainItemNotFoundException (string.Format ("Missing entry for {0}", query));
             }
             return null;
         }
 
-        /// <summary>
-        /// Same as SetKey(name, value), but it deletes any old key before attempting to save
-        /// </summary>
-        /// <returns><c>true</c>, if key was saved, <c>false</c> otherwise.</returns>
-        /// <param name="keyName">Key name.</param>
-        /// <param name="keyValue">Key value.</param>
-        public bool SaveKey (string keyName, string keyValue)
+        public bool Setter (string query, string value)
         {
-            DeleteKey (keyName);
-
-            return SetKey (keyName, keyValue);
-        }
-
-        /// <summary>
-        /// Save a Key (or a Password) to the KeyChain
-        /// </summary>
-        /// <returns><c>true</c>, if key was saved, <c>false</c> otherwise.</returns>
-        /// <param name="keyName">Key name or username.</param>
-        /// <param name="keyValue">Key value or password.</param>
-        public bool SetKey (string keyName, string keyValue)
-        {
-            var alias = MakeAlias (keyName, _serviceId);
-            var secretKey = new SecretAccount (keyValue);
-            var entry = new KeyStore.SecretKeyEntry (secretKey);
-            _androidKeyStore.SetEntry (alias, entry, _passwordProtection);
-
-            Save ();
+            NcAssert.True (null != value);
+            var enc = EncryptString (value);
+            var editor = Prefs.Edit ();
+            editor.PutString(query, enc);
+            editor.Commit();
             return true;
         }
 
-        /// <summary>
-        /// Deletes a key (or a password) from the KeyChain.
-        /// </summary>
-        /// <returns><c>true</c>, if key was deleted, <c>false</c> otherwise.</returns>
-        /// <param name="keyName">Key name (or username).</param>
-        public bool DeleteKey (string keyName)
+        public bool Deleter (string query)
         {
-            var alias = MakeAlias (keyName, _serviceId);
-
-            _androidKeyStore.DeleteEntry (alias);
-            Save ();
+            var editor = Prefs.Edit ();
+            editor.Remove (query);
+            editor.Commit ();
             return true;
         }
+        #endregion
 
-        private void Save ()
+        #region RandomNumberGenerator
+        private static System.Security.Cryptography.RandomNumberGenerator _Random;
+        private void RandomBytes (byte[] bytes)
         {
-            lock (_fileLock) {
-                using (var s = getContext ().OpenFileOutput (_fileName, FileCreationMode.Private)) {
-                    _androidKeyStore.Store (s, _fileProtectionPasswordArray);
+            if (_Random == null) {
+                _Random = new System.Security.Cryptography.RNGCryptoServiceProvider ();
+            }
+            _Random.GetBytes (bytes);
+        }
+        #endregion
+
+        #region PrefsKey
+        private ISecretKey PrefsKey;
+        private ISecretKey PrefsMacKey;
+        private Mac PrefsMac;
+        private Cipher AesCipher;
+        const string KPrefsKeyKey = "PreferencesKey";
+        const string KPrefsMACKey = "PreferencesHMAC";
+        const int AES_IV_LEN = 16; // 128 bits, i.e. AES block len
+        const int SHA256_LEN = 32;
+        const int AES_KEY_LEN = 32; // 256 bits
+
+        private void GetPrefsKey ()
+        {
+            if (null == PrefsKey) {
+                var r = Prefs.GetString (KPrefsKeyKey, null);
+                if (null == r) {
+                    PrefsKeyGenerated = true;
+                    PrefsKey = (ISecretKey)MakeAES256Key ();
+                    var editor = Prefs.Edit ();
+                    editor.PutString (KPrefsKeyKey, RSAEncryptKey (PrefsKey));
+                    editor.Commit ();
+                    r = Prefs.GetString (KPrefsKeyKey, null);
+                    NcAssert.True (null != r); // make darn tootin' sure it's saved.
+                } else {
+                    PrefsKey = (ISecretKey)RSADecryptKey (r);
                 }
+                NcAssert.True (PrefsKey.GetEncoded ().Length == AES_KEY_LEN);
             }
-        }
-
-        private static string MakeAlias (string username, string serviceId)
-        {
-            return username + "-" + serviceId;
-        }
-
-        class SecretAccount : Java.Lang.Object, ISecretKey
-        {
-            byte[] bytes;
-
-            public SecretAccount (string password)
-            {
-                bytes = System.Text.Encoding.UTF8.GetBytes (password);
-            }
-
-            public byte[] GetEncoded ()
-            {
-                return bytes;
-            }
-
-            public string Algorithm {
-                get {
-                    return "RAW";
+            if (null == PrefsMacKey) {
+                var r = Prefs.GetString (KPrefsMACKey, null);
+                if (null == r) {
+                    PrefsMacKeyGenerated = true;
+                    PrefsMacKey = (ISecretKey)MakeAES256Key ();
+                    var editor = Prefs.Edit ();
+                    editor.PutString (KPrefsMACKey, RSAEncryptKey (PrefsMacKey));
+                    editor.Commit ();
+                    r = Prefs.GetString (KPrefsMACKey, null);
+                    NcAssert.True (null != r); // make darn tootin' sure it's saved.
+                } else {
+                    PrefsMacKey = (ISecretKey)RSADecryptKey (r);
                 }
+                NcAssert.True (PrefsMacKey.GetEncoded ().Length == AES_KEY_LEN);
             }
-
-            public string Format {
-                get {
-                    return "RAW";
-                }
-            }
+            AesCipher = Cipher.GetInstance ("AES/CBC/PKCS5Padding", "BC");
+            PrefsMac = Mac.GetInstance("HmacSHA256");
         }
 
-        static IntPtr id_load_Ljava_io_InputStream_arrayC;
-
-        /// <summary>
-        /// Work around Bug https://bugzilla.xamarin.com/show_bug.cgi?id=6766
-        /// </summary>
-        void LoadEmptyKeyStore (char[] password)
+        private IKey MakeAES256Key ()
         {
-            if (id_load_Ljava_io_InputStream_arrayC == IntPtr.Zero) {
-                id_load_Ljava_io_InputStream_arrayC = JNIEnv.GetMethodID (_androidKeyStore.Class.Handle, "load", "(Ljava/io/InputStream;[C)V");
+            byte[] raw = new byte[32];
+            RandomBytes (raw);
+            return new SecretKeySpec (raw, "AES");
+        }
+
+        private string DecryptString (string encryptedTextB64)
+        {
+            byte[] encryptedPackage = Convert.FromBase64String (encryptedTextB64);
+            if (encryptedPackage[0] != (byte)0) {
+                throw new KeychainDecryptionException (string.Format ("WRONG version {0}", encryptedPackage [0]));
             }
-            IntPtr intPtr = IntPtr.Zero;
-            IntPtr intPtr2 = JNIEnv.NewArray (password);
-            JNIEnv.CallVoidMethod (_androidKeyStore.Handle, id_load_Ljava_io_InputStream_arrayC, new JValue[] {
-                new JValue (intPtr),
-                new JValue (intPtr2)
-            });
-            JNIEnv.DeleteLocalRef (intPtr);
-            if (password != null) {
-                JNIEnv.CopyArray (intPtr2, password);
-                JNIEnv.DeleteLocalRef (intPtr2);
+
+            byte[] iv = new byte[AES_IV_LEN];
+            byte[] hmac = new byte[SHA256_LEN];
+            int enc_len = encryptedPackage.Length - (1 + AES_IV_LEN + SHA256_LEN); // +1 for version
+            byte[] encData = new byte[enc_len];
+
+            int offset = 1; // skip version
+            Array.Copy (encryptedPackage, offset, iv, 0, AES_IV_LEN);
+            offset += AES_IV_LEN;
+            Array.Copy (encryptedPackage, offset, hmac, 0, SHA256_LEN);
+            offset += SHA256_LEN;
+            Array.Copy (encryptedPackage, offset, encData, 0, enc_len);
+            offset += enc_len;
+
+            PrefsMac.Init (PrefsMacKey);
+            PrefsMac.Reset ();
+            byte[] computedHmac = PrefsMac.DoFinal (encData);
+            if (!FixedTimeCompare(computedHmac, hmac)) {
+                throw new KeychainDecryptionException ("HMAC FAILED");
+            }
+
+            var ips = new IvParameterSpec (iv);
+            AesCipher.Init (CipherMode.DecryptMode, PrefsKey, ips);
+            byte[] decryptedData = AesCipher.DoFinal (encData);
+
+            return Encoding.UTF8.GetString (decryptedData);
+        }
+
+        private string EncryptString (string data)
+        {
+            byte[] iv = new byte[AES_IV_LEN];
+            RandomBytes (iv);
+            var ips = new IvParameterSpec (iv);
+
+            AesCipher.Init (CipherMode.EncryptMode, PrefsKey, ips);
+            byte[] encrypted = AesCipher.DoFinal (Encoding.UTF8.GetBytes (data));
+
+            PrefsMac.Init (PrefsMacKey);
+            PrefsMac.Reset ();
+            byte[] hmac = PrefsMac.DoFinal (encrypted);
+            NcAssert.True (hmac.Length == SHA256_LEN);
+
+            var encPackage = new MemoryStream();
+            encPackage.WriteByte ((byte)0); // version number 0
+            encPackage.Write (iv, 0, AES_IV_LEN);
+            encPackage.Write (hmac, 0, SHA256_LEN);
+            encPackage.Write (encrypted, 0, encrypted.Length);
+            int encLen = (int)encPackage.Length;
+            encPackage.Close ();
+            byte[] encryptedData = new byte[encLen];
+            Array.Copy (encPackage.GetBuffer (), encryptedData, encLen);
+            return Convert.ToBase64String (encryptedData);
+        }
+
+        private bool FixedTimeCompare (byte[] a, byte[] b)
+        {
+            int result = a.Length ^ b.Length;
+            for (var i=0; i<a.Length && i<b.Length; i++) {
+                result |= a[i] ^ b[i];
+            }
+            return result == 0;
+        }
+
+        public static string ByteArrayToString(byte[] ba)
+        {
+            string hex = BitConverter.ToString(ba);
+            return string.Format ("({0}):{1}", ba.Length, hex.Replace ("-", ""));
+        }
+
+        #endregion
+
+        #region Keystore
+        const int KeyPairSize = 2048;
+        const string KDefaultKeyPair = "NachoMailDefaultKeyPair";
+        const string KDefaultKeyStore = "AndroidKeyStore";
+        string KeyStoreProvider;
+        KeyStore _ks;
+        KeyStore ks {
+            get {
+                if (_ks == null) {
+                    KeyStoreProvider = KDefaultKeyStore;
+                    _ks = KeyStore.GetInstance (KeyStoreProvider);
+                    _ks.Load (null);
+                }
+                return _ks;
             }
         }
+
+        IPrivateKey privateKey;
+        IPublicKey publicKey;
+        private void GetKeyPair ()
+        {
+            if (!ks.ContainsAlias (KDefaultKeyPair)) {
+                GenerateKeyPair ();
+            }
+            KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry)ks.GetEntry (KDefaultKeyPair, null);
+            publicKey = privateKeyEntry.Certificate.PublicKey;
+            privateKey = privateKeyEntry.PrivateKey;
+        }
+
+        private long RSAKeyGenerationTimeMilliseconds;
+        private void GenerateKeyPair ()
+        {
+            var st = new PlatformStopwatch ();
+            st.Start ();
+            Java.Util.Calendar start = Java.Util.Calendar.GetInstance (Java.Util.TimeZone.Default);
+            Java.Util.Calendar end = Java.Util.Calendar.GetInstance (Java.Util.TimeZone.Default);
+            end.Add (Java.Util.CalendarField.Year, 20);
+            KeyPairGenerator generator = KeyPairGenerator.GetInstance("RSA", KeyStoreProvider);
+            KeyPairGeneratorSpec spec = new KeyPairGeneratorSpec.Builder(MainApplication.Instance.ApplicationContext)
+                .SetKeyType ("RSA")
+                .SetKeySize (KeyPairSize)
+                .SetAlias (KDefaultKeyPair)
+                .SetSubject(new Javax.Security.Auth.X500.X500Principal("CN=NachoMail"))
+                .SetSerialNumber (Java.Math.BigInteger.One)
+                .SetStartDate(start.Time)
+                .SetEndDate(end.Time)
+                //.SetEncryptionRequired () // TODO We probably need to see if we can still use the key in the background if the device is locked.
+                .Build ();
+            generator.Initialize(spec);
+            generator.GenerateKeyPair();
+            st.Stop ();
+            RSAKeyGenerated = true;
+            RSAKeyGenerationTimeMilliseconds = st.ElapsedMilliseconds;
+            NcAssert.True (ks.ContainsAlias (KDefaultKeyPair)); // make sure it got saved to the keystore
+        }
+
+        private string RSAEncryptKey (IKey key)
+        {
+            byte[] encryptedData;
+            var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
+            rsaCipher.Init (CipherMode.WrapMode, publicKey);
+            encryptedData = rsaCipher.Wrap (key);
+            return Convert.ToBase64String (encryptedData);
+        }
+
+        private IKey RSADecryptKey (string encryptedTextB64)
+        {
+            var bytesToDecrypt = Convert.FromBase64String(encryptedTextB64);
+            var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
+            rsaCipher.Init (CipherMode.UnwrapMode, privateKey);
+            return rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
+        }
+        #endregion
     }
-
 }

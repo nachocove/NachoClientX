@@ -414,6 +414,9 @@ namespace NachoClient.AndroidClient
         public void PostAutoDPostInboxSync (int accountId)
         {
             // We never get here for this view because we stop once we see PostAutoDPreInboxSync
+            // Correction:  On android, we got here without PostAutoDPreIboxSync!
+            StopRecevingLoginEvents ();
+            HandleAccountVerified ();
         }
 
         public void ServerIndTooManyDevices (int acccountId)

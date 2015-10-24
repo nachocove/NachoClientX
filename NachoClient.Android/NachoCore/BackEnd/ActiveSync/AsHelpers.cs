@@ -1173,8 +1173,6 @@ namespace NachoCore.ActiveSync
                     // Create & save the attachment record.
                     var attachment = new McAttachment {
                         AccountId = msg.AccountId,
-                        ItemId = msg.Id,
-                        ClassCode = msg.GetClassCode (),
                         FileSize = long.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
                         FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
                         FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
@@ -1210,7 +1208,10 @@ namespace NachoCore.ActiveSync
                     if (null != xmlUmAttOrder) {
                         attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);
                     }
-                    attachment.Insert ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        attachment.Insert ();
+                        attachment.Link (msg);
+                    });
                 }
             }
         }

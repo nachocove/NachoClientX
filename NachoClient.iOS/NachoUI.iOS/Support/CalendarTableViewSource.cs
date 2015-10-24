@@ -284,7 +284,7 @@ namespace NachoClient.iOS
             if (c.AllDayEvent) {
                 startAndDuration = "ALL DAY";
             } else {
-                var start = Pretty.ShortTimeString (e.GetStartTimeUtc ());
+                var start = Pretty.Time (e.GetStartTimeUtc ());
                 if (e.EndTime > e.StartTime) {
                     var duration = Pretty.CompactDuration (e.GetStartTimeUtc (), e.GetEndTimeUtc ());
                     startAndDuration = String.Join (" - ", new string[] { start, duration });
@@ -428,7 +428,7 @@ namespace NachoClient.iOS
             view.AddSubview (addButton);
 
             dayLabelView.Text = date.ToString ("dddd");
-            dateLabelView.Text = date.ToString ("MMMMM d, yyyy");
+            dateLabelView.Text = Pretty.LongMonthDayYear (date);
             bigNumberView.Text = date.Day.ToString ();
 
             return view;

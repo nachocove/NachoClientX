@@ -489,6 +489,10 @@ namespace Test.iOS
         public void Remove (int accountId)
         {
         }
+        public NcProtoControl GetService (int accountId, McAccount.AccountCapabilityEnum capability)
+        {
+            return null;
+        }
         public void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay)
         {
         }

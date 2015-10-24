@@ -231,12 +231,12 @@ namespace NachoClient.iOS
 
             var startString = "";
             if (c.AllDayEvent) {
-                startString = "ALL DAY " + Pretty.FullDateSpelledOutString (currentEvent.GetStartTimeUtc ());
+                startString = "ALL DAY " + Pretty.LongFullDate (currentEvent.GetStartTimeUtc ());
             } else {
                 if ((currentEvent.GetStartTimeUtc () - DateTime.UtcNow).TotalHours < 12) {
-                    startString = Pretty.ShortTimeString (currentEvent.GetStartTimeUtc ());
+                    startString = Pretty.Time (currentEvent.GetStartTimeUtc ());
                 } else {
-                    startString = Pretty.ShortDayTimeString (currentEvent.GetStartTimeUtc ());
+                    startString = Pretty.LongDayTime (currentEvent.GetStartTimeUtc ());
                 }
             }
 

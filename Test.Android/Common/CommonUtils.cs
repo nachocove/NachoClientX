@@ -206,8 +206,6 @@ namespace Test.iOS
         {
             var att = new McAttachment {
                 AccountId = accountId,
-                ItemId = item.Id,
-                ClassCode = item.GetClassCode (),
             };
             att.SetDisplayName (displayName);
             att.Insert ();
@@ -222,10 +220,13 @@ namespace Test.iOS
         }
 
         public static McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, bool isDistinguished = false, string parentId = "0", 
-            string serverId = defaultServerId, string name = "Default name", NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode typeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
+            string serverId = null, string name = "Default name", NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode typeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
             bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "-1", 
             bool syncMetaToClient = false)
         {
+            if (null == serverId) {
+                serverId = Guid.NewGuid ().ToString ();
+            }
             McFolder folder = McFolder.Create (accountId, isClientOwned, isHidden, isDistinguished, parentId, serverId, name, typeCode);
 
             folder.IsAwaitingDelete = isAwaitingDelete;

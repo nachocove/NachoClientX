@@ -22,6 +22,7 @@ namespace NachoClient.AndroidClient
     {
         DeferralAdapter deferralAdapter;
         McEmailMessageThread messageThread;
+        public NcMessageDeferral.MessageDateType type = NcMessageDeferral.MessageDateType.Defer;
 
         public delegate void OnDeferralSelectedListener (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate);
 
@@ -51,15 +52,30 @@ namespace NachoClient.AndroidClient
             var view = inflater.Inflate (Resource.Layout.ChooseDeferralFragment, container, false);
 
             var tv = view.FindViewById<TextView> (Resource.Id.textview);
-            var subject = messageThread.GetSubject ();
-            if (null != subject) {
-                tv.Text = Pretty.SubjectString (subject);
-            } else {
-                tv.Text = "";
+            if (messageThread != null) {
+                var subject = messageThread.GetSubject ();
+                if (null != subject) {
+                    tv.Text = Pretty.SubjectString (subject);
+                } else {
+                    tv.Text = "";
+                }
             }
 
             var gridview = view.FindViewById<GridView> (Resource.Id.gridview);
-            deferralAdapter = new DeferralAdapter (view.Context);
+            DeferralAdapter.Data[] data = null;
+            switch (type) {
+            case NcMessageDeferral.MessageDateType.Defer:
+                data = DeferralAdapter.DeferralData;
+                break;
+            case NcMessageDeferral.MessageDateType.Deadline:
+            case NcMessageDeferral.MessageDateType.Intent:
+                data = DeferralAdapter.DeadlineData;
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+            deferralAdapter = new DeferralAdapter (view.Context, data);
             deferralAdapter.setOnDeferralSelected (OnDeferralSelected);
 
             gridview.Adapter = deferralAdapter;
@@ -88,13 +104,11 @@ namespace NachoClient.AndroidClient
         Context context;
         LayoutInflater inflater;
 
-        AlertDialog alertDialog;
-        View dialogView;
-
         ChooseDeferralFragment.OnDeferralSelectedListener mOnDeferralSelected;
 
-        public DeferralAdapter (Context c)
+        public DeferralAdapter (Context c, Data[] data)
         {
+            this.data = data;
             context = c;
             inflater = (LayoutInflater)context.GetSystemService (Context.LayoutInflaterService);
         }
@@ -154,48 +168,47 @@ namespace NachoClient.AndroidClient
 
         void ShowDateTimePicker ()
         {
-            dialogView = inflater.Inflate (Resource.Layout.DateTimePicker, null);
-            alertDialog = new AlertDialog.Builder (context).Create ();
-
-            var setButton = dialogView.FindViewById<Button> (Resource.Id.date_time_set);
-            setButton.Click += SetButton_Click;
-
-            alertDialog.SetView (dialogView);
-            alertDialog.Show ();
+            DateTimePicker.Show (context, DateTime.Now.AddHours (1), true, DateTime.Now, DateTime.Now.AddYears (10),
+                (DateTime date) => {
+                    if (DateTime.UtcNow > date) {
+                        NcAlertView.ShowMessage (context, "Defer Message", "The chosen date is in the past. You must select a date in the future.");
+                        return false;
+                    }
+                    return true;
+                },
+                (DateTime date) => {
+                    if (null != mOnDeferralSelected) {
+                        mOnDeferralSelected (MessageDeferralType.Custom, null, date);
+                    }
+                });
         }
 
-        void SetButton_Click (object sender, EventArgs e)
-        {
-            var datePicker = alertDialog.FindViewById<DatePicker> (Resource.Id.date_picker);
-            var timePicker = alertDialog.FindViewById<TimePicker> (Resource.Id.time_picker);
-
-            var customTime = new DateTime (datePicker.Year, datePicker.Month, datePicker.DayOfMonth, (int)timePicker.CurrentHour, (int)timePicker.CurrentMinute, 0);
-
-            if (DateTime.UtcNow > customTime) {
-                new AlertDialog.Builder (context).SetTitle ("Defer Message").SetMessage ("The chosen date is in the past. You must select a date in the future.").Show ();
-                return;
-            }
-
-            alertDialog.Dismiss ();
-            if (null != mOnDeferralSelected) {
-                mOnDeferralSelected (MessageDeferralType.Custom, null, customTime);
-            }
-        }
-
-        struct Data
+        public struct Data
         {
             public string l;
             public int i;
             public MessageDeferralType t;
         }
 
-        Data[] data = new Data[] {
+        Data[] data = null;
+
+        public static Data[] DeferralData = new Data[] {
             new Data { l = "Later Today", i = Resource.Drawable.modal_later_today, t = MessageDeferralType.Later },
             new Data { l = "Tonight", i = Resource.Drawable.modal_tonight, t = MessageDeferralType.Tonight },
             new Data { l = "Tomorrow", i = Resource.Drawable.modal_tomorrow, t = MessageDeferralType.Tomorrow },
             new Data { l = "Weekend", i = Resource.Drawable.modal_weekend, t = MessageDeferralType.Weekend },
             new Data { l = "Next Week", i = Resource.Drawable.modal_next_week, t = MessageDeferralType.NextWeek },
             new Data { l = "Forever", i = Resource.Drawable.modal_forever, t = MessageDeferralType.Forever },
+            new Data { l = "Pick Date", i = Resource.Drawable.modal_pick_date, t = MessageDeferralType.Custom },
+        };
+
+        public static Data[] DeadlineData = new Data[] {
+            new Data { l = "None", i = Resource.Drawable.modal_none, t = MessageDeferralType.None },
+            new Data { l = "One Hour", i = Resource.Drawable.modal_later_today, t = MessageDeferralType.OneHour },
+            new Data { l = "Today", i = Resource.Drawable.modal_later_today, t = MessageDeferralType.EndOfDay },
+            new Data { l = "Tomorrow", i = Resource.Drawable.modal_tomorrow, t = MessageDeferralType.Tomorrow },
+            new Data { l = "Next Week", i = Resource.Drawable.modal_next_week, t = MessageDeferralType.NextWeek },
+            new Data { l = "Next Month", i = Resource.Drawable.modal_nextmonth, t = MessageDeferralType.NextMonth },
             new Data { l = "Pick Date", i = Resource.Drawable.modal_pick_date, t = MessageDeferralType.Custom },
         };
     }

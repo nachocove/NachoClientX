@@ -13,35 +13,78 @@ using Android.Views;
 using Android.Widget;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
     public class EventViewFragment : Fragment
     {
-        McEvent ev;
+        private const int EDIT_REQUEST_CODE = 1;
+        private const int NOTE_REQUEST_CODE = 2;
+
+        private McEvent ev;
+        private NcEventDetail detail;
+
+        private View view;
 
         public static EventViewFragment newInstance (McEvent ev)
         {
             var fragment = new EventViewFragment ();
             fragment.ev = ev;
+            fragment.detail = new NcEventDetail (ev);
             return fragment;
         }
 
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
-            var view = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
-
-            BindEventView (ev, view);
+            view = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
+            BindListeners ();
+            BindEventView ();
             return view;
+        }
+
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult (requestCode, resultCode, data);
+
+            switch (requestCode) {
+
+            case EDIT_REQUEST_CODE:
+                if (Result.Ok == resultCode) {
+                    // The event was edited. Refresh the UI.
+                    detail.HasBeenEdited = true;
+                    BindEventView ();
+                }
+                break;
+
+            case NOTE_REQUEST_CODE:
+                if (Result.Ok == resultCode) {
+                    string newNoteText = NoteActivity.ModifiedNoteText (data);
+                    if (null != newNoteText) {
+                        var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
+                        if (null == note) {
+                            note = new McNote () {
+                                AccountId = detail.Account.Id,
+                                DisplayName = string.Format ("{0} - {1}", detail.SpecificItem.GetSubject (), Pretty.ShortDate (DateTime.UtcNow)),
+                                TypeId = detail.SeriesItem.Id,
+                                noteType = McNote.NoteType.Event,
+                                noteContent = newNoteText,
+                            };
+                            note.Insert ();
+                        } else {
+                            note.noteContent = newNoteText;
+                            note.Update ();
+                        }
+                        BindEventView ();
+                    }
+                }
+                break;
+            }
         }
 
         ViewStates VisibleIfTrue (bool b)
@@ -54,17 +97,46 @@ namespace NachoClient.AndroidClient
             return VisibleIfTrue (!String.IsNullOrEmpty (s));
         }
 
-        // TODO: Attendees
-        // TODO: Attachments
-        // TODO: Edit notes view
-        // TODO: Change reminder arrow
-        void BindEventView (McEvent ev, View view)
+        /// <summary>
+        /// UI configuration that should happen only once, when the view hierarchy is first created,
+        /// and that is independent of the data being displayed. This will consist mostly of adding
+        /// event listeners.
+        /// </summary>
+        private void BindListeners ()
         {
-            var detail = new NcEventDetail (ev);
+            var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
+            editButton.SetImageResource (Resource.Drawable.gen_edit);
+            editButton.Click += EditButton_Click;
+
+            var reminderView = view.FindViewById<View> (Resource.Id.event_reminder_label);
+            reminderView.Click += ReminderView_Click;
+            var reminderArrow = view.FindViewById<View> (Resource.Id.event_reminder_arrow);
+            reminderArrow.Click += ReminderView_Click;
+
+            var notesView = view.FindViewById<View> (Resource.Id.event_notes_label);
+            notesView.Click += NotesView_Click;
+            var notesArrow = view.FindViewById<View> (Resource.Id.event_notes_arrow);
+            notesArrow.Click += NotesView_Click;
+        }
+
+        /// <summary>
+        /// Configure the view based on the data being displayed.
+        /// </summary>
+        void BindEventView ()
+        {
+            // TODO: Attendees
+            // TODO: Attachments
+            // TODO: Edit notes view
+            // TODO: Change reminder arrow
+
+            detail.Refresh ();
 
             var buttonBarTitleView = view.FindViewById<TextView> (Resource.Id.title);
-            buttonBarTitleView.Text = ev.GetStartTimeLocal ().ToString ("MMMMM yyyy");
+            buttonBarTitleView.Text = Pretty.LongMonthForceYear (detail.StartTime);
             buttonBarTitleView.Visibility = ViewStates.Visible;
+
+            var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
+            editButton.Visibility = VisibleIfTrue (detail.CanEdit);
 
             ConfigureRsvpBar (detail, view);
 
@@ -104,6 +176,8 @@ namespace NachoClient.AndroidClient
 
             var reminderView = view.FindViewById<TextView> (Resource.Id.event_reminder_label);
             reminderView.Text = detail.ReminderString;
+            var reminderArrow = view.FindViewById<ImageView> (Resource.Id.event_reminder_arrow);
+            reminderArrow.Visibility = VisibleIfTrue (detail.CanChangeReminder);
 
             if (0 == detail.SpecificItem.attachments.Count) {
                 view.FindViewById<View> (Resource.Id.event_attachments_view).Visibility = ViewStates.Gone;
@@ -167,7 +241,6 @@ namespace NachoClient.AndroidClient
             cancelSeparator.Visibility = VisibleIfTrue (detail.ShowCancelMeetingButton);
 
         }
-
 
         public void ConfigureRsvpBar (NcEventDetail detail, View view)
         {
@@ -266,6 +339,39 @@ namespace NachoClient.AndroidClient
                 return char.ToUpper (names [0] [0]) + names [0].Substring (1);
             }
             return names [0].ToUpper ();
+        }
+
+        private void EditButton_Click (object sender, EventArgs e)
+        {
+            StartActivityForResult (EventEditActivity.EditEventIntent (this.Activity, ev), EDIT_REQUEST_CODE);
+        }
+
+        private void ReminderView_Click (object sender, EventArgs e)
+        {
+            if (detail.CanChangeReminder) {
+                ReminderChooser.Show (this.Activity, detail.SpecificItem.HasReminder (), (int)detail.SpecificItem.GetReminder (), (bool hasReminder, int reminder) => {
+                    detail.SpecificItem.ReminderIsSet = hasReminder;
+                    if (hasReminder) {
+                        detail.SpecificItem.Reminder = (uint)reminder;
+                    }
+                    detail.SpecificItem.Update();
+                    BackEnd.Instance.UpdateCalCmd(detail.Account.Id, detail.SpecificItem.Id, false);
+                    BindEventView ();
+                });
+            }
+        }
+
+        private void NotesView_Click (object sender, EventArgs e)
+        {
+            string noteText = "";
+            var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
+            if (null != note) {
+                noteText = note.noteContent;
+            }
+
+            StartActivityForResult (
+                NoteActivity.EditNoteIntent (this.Activity, detail.SpecificItem.GetSubject (), noteText, insertDate: false),
+                NOTE_REQUEST_CODE);
         }
     }
 }

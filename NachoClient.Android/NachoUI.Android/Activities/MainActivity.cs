@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 using Android.App;
 using Android.Content;
@@ -18,7 +19,7 @@ using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "Nacho Mail", MainLauncher = true, Icon = "@drawable/icon")]
+    [Activity (MainLauncher = true, Icon = "@drawable/icon")]
     public class MainActivity : AppCompatActivity
     {
         bool StatusIndCallbackIsSet = false;
@@ -41,6 +42,7 @@ namespace NachoClient.AndroidClient
             base.OnCreate (bundle);
 
             SetupHockeyAppUpdateManager ();
+            CopyAssetsToDocuments ();
 
             MainApplication.Startup ();
 
@@ -153,7 +155,7 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "MainActivity ShowApplication");
 
             var intent = new Intent ();
-            intent.SetClass (this, typeof(NowActivity));
+            intent.SetClass (this, typeof(NowListActivity));
             StartActivity (intent);
         }
 
@@ -341,6 +343,21 @@ namespace NachoClient.AndroidClient
             HockeyApp.UpdateManager.Unregister ();
         }
         #endregion
+
+        void CopyAssetsToDocuments ()
+        {
+            var documentsPath = System.Environment.GetFolderPath (System.Environment.SpecialFolder.MyDocuments);
+            string[] assets = { "nacho.html", "nacho.css", "nacho.js" };
+            foreach (var assetName in assets) {
+                var destinationPath = Path.Combine (documentsPath, assetName);
+                // TODO: only copy if newer...how to check the modified time of an asset (don't think it's possible)
+                using (var assetStream = Assets.Open (assetName)) {
+                    using (var destinationStream = new FileStream (destinationPath, FileMode.Create)) {
+                        assetStream.CopyTo (destinationStream);
+                    }
+                }
+            }
+        }
     }
 }
 

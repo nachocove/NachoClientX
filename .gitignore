@@ -23,7 +23,8 @@ NachoClient.*/.build_number*
 Test.*/.build_number
 NachoClient.*/BuildInfo.cs
 NachoClient.*/LogSettings.cs
-NachoClient.iOS/.skip_hockeyapp_upload
+NachoClient.*/.skip_hockeyapp_upload
 *.pyc
 NachoClient.Android/Resources/Resource.designer.cs
 Test.Android/Resources/Resource.designer.cs
+.idea/*

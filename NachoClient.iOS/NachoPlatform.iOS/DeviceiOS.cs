@@ -191,14 +191,6 @@ namespace NachoPlatform
             return "Apple-" + UserAgentType () + "/" + lhs + "." + sides [1];
         }
 
-        public bool Wipe (string username, string password, string url, string protoVersion)
-        {
-            var home = ((NSString)Runtime.GetNSObject (NSHomeDirectory ())).ToString ();
-            string[] lines = { username, password, url, UserAgent (), protoVersion };
-            File.WriteAllLines (home + "/tmp/PARMS", lines);
-            return nacho_set_handlers_and_boom (home);
-        }
-
         [MonoPInvokeCallback (typeof (SQLite3.ErrorLogCallback))]
         public static void SQLite3ErrorCallback (IntPtr pArg, int iErrCode, string zMsg)
         {

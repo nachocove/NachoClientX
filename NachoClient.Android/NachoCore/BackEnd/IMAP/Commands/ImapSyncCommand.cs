@@ -415,7 +415,7 @@ namespace NachoCore.IMAP
             McEmailMessage EmailMessage = McEmailMessage.QueryById<McEmailMessage> (EmailMessageId);
             McBody body = McBody.QueryById<McBody> (EmailMessage.BodyId);
             MimeMessage mimeMessage = MimeHelpers.LoadMessage (body);
-            var attachments = McAttachment.QueryByItemId (EmailMessage);
+            var attachments = McAttachment.QueryByItem (EmailMessage);
             if (attachments.Count > 0) {
                 MimeHelpers.AddAttachments (mimeMessage, attachments);
             }
@@ -718,8 +718,6 @@ namespace NachoCore.IMAP
                     // Create & save the attachment record.
                     var attachment = new McAttachment {
                         AccountId = msg.AccountId,
-                        ItemId = msg.Id,
-                        ClassCode = msg.GetClassCode (),
                         FileSize = att.Octets,
                         FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Actual,
                         FileReference = att.PartSpecifier, // not sure what to put here
@@ -749,7 +747,10 @@ namespace NachoCore.IMAP
                     attachment.IsInline = !att.IsAttachment;
                     //attachment.VoiceSeconds = uint.Parse (xmlUmAttDuration.Value);
                     //attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);
-                    attachment.Insert ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        attachment.Insert ();
+                        attachment.Link (msg);
+                    });
                 }
             }
         }

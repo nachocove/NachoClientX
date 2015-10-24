@@ -223,6 +223,9 @@ namespace NachoCore.Model
         /// Date and time when the action specified by the LastVerbExecuted element was performed on the msg (optional)
         public DateTime LastVerbExecutionTime { set; get; }
 
+        /// Must be set when Insert()ing a to-be-send message into the DB.
+        public bool ClientIsSender { set; get; }
+
         /// IMAP Stuff
         [Indexed]       
         public uint ImapUid { get; set; }
@@ -391,7 +394,7 @@ namespace NachoCore.Model
             }
             if (ReferencedIsForward && (!ReferencedBodyIsIncluded || WaitingForAttachmentsToDownload)) {
                 // Add all the attachments from the original message.
-                var originalAttachments = McAttachment.QueryByItemId (originalMessage);
+                var originalAttachments = McAttachment.QueryByItem (originalMessage);
                 MimeHelpers.AddAttachments (outgoingMime, originalAttachments);
             }
             body.UpdateData ((FileStream stream) => {
@@ -409,15 +412,22 @@ namespace NachoCore.Model
 
         public void DeleteAttachments ()
         {
-            var atts = McAttachment.QueryByItemId (this);
+            var atts = McAttachment.QueryByItem (this);
             foreach (var toNix in atts) {
-                toNix.Delete ();
+                NcModel.Instance.RunInTransaction (() => {
+                    toNix.Unlink (this);
+                    if (0 == McMapAttachmentItem.QueryItemCount (toNix.Id)) {
+                        toNix.Delete ();
+                    }
+                });
             }
         }
 
         public static McEmailMessage MessageWithSubject (McAccount account, string subject)
         {
-            var message = new McEmailMessage ();
+            var message = new McEmailMessage () {
+                ClientIsSender = true,
+            };
             message.AccountId = account.Id;
             message.Subject = subject;
             return message;
@@ -577,6 +587,29 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
         }
 
+        public static List<McEmailMessageThread> QueryActiveMessageItemsByScore2 (int accountId, int folderId, double hotScore, double ltrScore)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT FirstMessageId, Count(FirstMessageId) as MessageCount, DateReceived, ConversationId FROM " +
+                " ( " +
+                " SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                //" JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
+                " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) AND " +
+                " likelihood (e.FlagUtcStartDate < ?, 0.99) AND " +
+                " likelihood (e.Score < ? AND e.Score >= ?, 0.1) AND " +
+                " likelihood (e.UserAction <= 0, 0.99) " +
+                " ) " +
+                " GROUP BY ConversationId " +
+                " ORDER BY DateReceived DESC",
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow, hotScore, ltrScore);
+        }
+
         /// TODO: Delete needs to clean up deferred
         public static List<McEmailMessageThread> QueryDeferredMessageItems (int accountId)
         {
@@ -708,7 +741,7 @@ namespace NachoCore.Model
             string sql = string.Format ("SELECT f.Id FROM McEmailMessage AS f WHERE " +
                          " likelihood (f.AccountId = ?, 1.0) AND " +
                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                         " likelihood (f.ServerId IN ({0}), 0.001) ", String.Join (",", serverIds));
+                         " likelihood (f.ServerId IN ('{0}'), 0.001) ", String.Join ("','", serverIds));
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (sql, accountId);
         }
 
@@ -776,6 +809,7 @@ namespace NachoCore.Model
         }
 
         public const double minHotScore = 0.5;
+        public const double minLikelyToReadScore = 0.3;
 
         /// <summary>
         /// Returns true if this message is hot or if the user has said it is hot.

@@ -124,12 +124,11 @@ namespace NachoClient.iOS
                 var manager = BITHockeyManager.SharedHockeyManager;
 
                 //Configure it to use our APP_ID
-                manager.Configure (BuildInfo.HockeyAppAppId);
+                manager.Configure (BuildInfo.HockeyAppAppId, new HockeyAppCrashDelegate ());
 
                 // Enable automatic reporting
                 manager.CrashManager.CrashManagerStatus = BITCrashManagerStatus.AutoSend;
                 manager.CrashManager.EnableOnDeviceSymbolication = false;
-                manager.CrashManager.Delegate = new HockeyAppCrashDelegate ();
                 if (BuildInfo.Version.StartsWith ("DEV")) {
                     manager.DebugLogEnabled = true;
                 }
@@ -860,7 +859,7 @@ namespace NachoClient.iOS
                                 } else {
                                     subject = "Event at ";
                                 }
-                                var msg = subject + Pretty.FullDateTimeString (eventItem.GetStartTimeUtc ());
+                                var msg = subject + Pretty.MediumFullDateTime (eventItem.GetStartTimeUtc ());
                                 UIAlertView alert = new UIAlertView ("Reminder", msg, null, "OK", null);
 
                                 alert.Show ();

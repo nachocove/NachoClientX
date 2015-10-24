@@ -284,13 +284,16 @@ class Version:
     def __str__(self):
         return str(self.desc())
 
-    def update(self, zipped_dsym_file, ipa_file=None, note=None):
+    def update(self, zipped_dsym_file=None, ipa_file=None, note=None):
         form_data = dict()
-        form_data['dsym'] = '@' + zipped_dsym_file
+        if zipped_dsym_file is not None:
+            form_data['dsym'] = '@' + zipped_dsym_file
         if ipa_file is not None:
             form_data['ipa'] = '@' + ipa_file
         if note is not None:
             form_data['note'] = note
+        if not form_data.keys():
+            raise ValueError("form_data can not be empty.")
         response = self.app_obj.hockeyapp_obj.command(self.base_url, form_data).put().run()
         return response
 

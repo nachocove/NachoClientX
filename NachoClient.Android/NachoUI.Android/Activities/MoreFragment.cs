@@ -32,11 +32,17 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.MoreFragment, container, false);
 
-            var activity = (NcActivity)this.Activity;
+            var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
             var folderView = view.FindViewById<View> (Resource.Id.mail);
             folderView.Click += FolderView_Click;
+
+            var deferredView = view.FindViewById<View> (Resource.Id.deferred);
+            deferredView.Click += DeferredView_Click;
+
+            var deadlineView = view.FindViewById<View> (Resource.Id.deadline);
+            deadlineView.Click += DeadlineView_Click;
 
             var supportView = view.FindViewById<View> (Resource.Id.support);
             supportView.Click += SupportView_Click;
@@ -52,6 +58,20 @@ namespace NachoClient.AndroidClient
             var intent = new Intent ();
             intent.SetClass (this.Activity, typeof(AboutActivity));
             StartActivity (intent);    
+        }
+
+        void DeadlineView_Click (object sender, EventArgs e)
+        {
+            var intent = new Intent ();
+            intent.SetClass (this.Activity, typeof(DeadlineActivity));
+            StartActivity (intent);  
+        }
+
+        void DeferredView_Click (object sender, EventArgs e)
+        {
+            var intent = new Intent ();
+            intent.SetClass (this.Activity, typeof(DeferredActivity));
+            StartActivity (intent); 
         }
 
         void FolderView_Click (object sender, EventArgs e)

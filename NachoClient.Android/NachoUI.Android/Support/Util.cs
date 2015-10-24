@@ -2,10 +2,11 @@
 //
 using System;
 using NachoCore.Model;
+using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
-    public class Util
+    public static class Util
     {
 
         public static int GetAccountServiceImageId (McAccount.AccountServiceEnum service)
@@ -53,6 +54,33 @@ namespace NachoClient.AndroidClient
             return imageId;
         }
 
+        #region Date/time conversions and other methods
+
+        public static long MillisecondsSinceEpoch (this DateTime dateTime)
+        {
+            return (dateTime.ToUniversalTime () - new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Ticks / TimeSpan.TicksPerMillisecond;
+        }
+
+        public static Java.Util.Date ToJavaDate (this DateTime dateTime)
+        {
+            return new Java.Util.Date (dateTime.MillisecondsSinceEpoch ());
+        }
+
+        public static DateTime ToDateTime (this Java.Util.Date javaDate)
+        {
+            return new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) + TimeSpan.FromMilliseconds (javaDate.Time);
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Use JavaObjectWrapper to store an object with a C# type in a place that
+    /// only accepts Java objects derived from Java.Lang.Object.  For example,
+    /// this class can be used with View.SetTag() and View.GetTag().
+    /// </summary>
+    public class JavaObjectWrapper<T> : Java.Lang.Object {
+        public T Item { get; set; }
     }
 }
 

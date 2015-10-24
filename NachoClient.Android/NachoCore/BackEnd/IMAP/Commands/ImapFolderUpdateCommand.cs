@@ -39,7 +39,8 @@ namespace NachoCore.IMAP
             mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
             NcAssert.NotNull (mailKitFolder);
             mailKitFolder.Open (FolderAccess.ReadWrite, Cts.Token);
-            mailKitFolder.Rename (encapsulatingFolder, PendingSingle.DisplayName);
+            var oldName = mailKitFolder.FullName;
+            mailKitFolder.Rename (encapsulatingFolder, PendingSingle.DisplayName, Cts.Token);
 
             if (CreateOrUpdateFolder (mailKitFolder, PendingSingle.Folder_Type, PendingSingle.DisplayName, folder.IsDistinguished, false, out folder)) {
                 UpdateImapSetting (mailKitFolder, ref folder);
@@ -50,7 +51,8 @@ namespace NachoCore.IMAP
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPFUPSUC");
             } else {
-                Log.Error (Log.LOG_IMAP, "Folder {0} should have been changed but wasn't", mailKitFolder.FullName);
+                mailKitFolder.Rename (encapsulatingFolder, oldName, Cts.Token);
+                Log.Error (Log.LOG_IMAP, "Folder should have been changed but wasn't");
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFUPHRD");
             }
         }

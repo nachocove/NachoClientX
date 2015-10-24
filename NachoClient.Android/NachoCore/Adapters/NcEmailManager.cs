@@ -40,6 +40,16 @@ namespace NachoCore
             }
         }
 
+        public static INachoEmailMessages LikelyToReadInbox (int accountId)
+        {
+            var inboxFolder = InboxFolder (accountId);
+            if (null == inboxFolder) {
+                return new MissingFolder ("Likely To Read");
+            } else {
+                return new NachoLikelyToReadEmailMessages (inboxFolder);
+            }
+        }
+
         protected class MissingFolder : INachoEmailMessages
         {
             protected string displayName;

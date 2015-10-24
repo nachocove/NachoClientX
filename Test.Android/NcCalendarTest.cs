@@ -1,5 +1,6 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 using System;
+using System.Linq;
 using System.Xml.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -319,7 +320,8 @@ namespace Test.Common
                 var dbAttachment = McAttachment.QueryById<McAttachment> (id);
                 Assert.IsNotNull (dbAttachment, "The attachment could not be looked up in the database.");
                 Assert.AreEqual (dbAttachment.Id, id, "The wrong attachment was retrieved from the database.");
-                Assert.AreEqual (0, dbAttachment.ItemId, "Attachment is already owned by something.");
+                var count = McAttachment.QueryItems (dbAttachment.Id).Count;
+                Assert.AreEqual (0, count, "Attachment is already owned by something.");
             }
 
             // Assign two of the attachments to the calendar event.
@@ -330,17 +332,17 @@ namespace Test.Common
 
             // Since the event hasn't been saved, the attachments should still be unowned,
             // but they should be findable though the event.
-            attachments = McAttachment.QueryByItemId (cal);
+            attachments = McAttachment.QueryByItem (cal);
             Assert.AreEqual (0, attachments.Count, "attachments are assigned to the event before they should be");
             Assert.AreEqual (2, cal.attachments.Count, "The event is not reporting the correct number of attachments.");
 
             // Update the event, which should update the attachments to be owned by event.
             cal.Update ();
-            attachments = McAttachment.QueryByItemId (cal);
+            attachments = McAttachment.QueryByItem (cal);
             Assert.AreEqual (2, attachments.Count, "The attachments were not changed to be owned by the event.");
             foreach (var attachment in attachments) {
-                Assert.AreEqual (attachment.ItemId, cal.Id, "Attachment is owned by the wrong item.");
-                Assert.AreEqual (attachment.ClassCode, cal.GetClassCode (), "Attachment is owned by the wrong type of item.");
+                var attcal = McAttachment.QueryItems (attachment.AccountId, attachment.Id).Where (x => x is McCalendar).FirstOrDefault ();
+                Assert.AreEqual (attcal.Id, cal.Id, "Attachment is owned by the wrong item.");
             }
 
             // Deleting the event should also delete its attachments.

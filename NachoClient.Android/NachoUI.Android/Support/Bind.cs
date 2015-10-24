@@ -56,7 +56,8 @@ namespace NachoClient.AndroidClient
             var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
             chiliView.Visibility = ViewStates.Invisible;
 
-            // FIXME: Attachment icon
+            var paperclipView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.paperclip);
+            paperclipView.Visibility = ViewStates.Invisible;
 
             if (null == message) {
                 SetVisibility (ViewStates.Invisible, isUnreadView, userImageView, senderView, subjectView, dateView, chiliView);
@@ -80,11 +81,15 @@ namespace NachoClient.AndroidClient
             subjectView.Text = Pretty.SubjectString (message.Subject);
             subjectView.Visibility = ViewStates.Visible;
 
-            dateView.Text = Pretty.FullDateTimeString (message.DateReceived);
+            dateView.Text = Pretty.MediumFullDateTime (message.DateReceived);
             dateView.Visibility = ViewStates.Visible;
 
-            // FIXME attachment icon
-
+            if (message.cachedHasAttachments) {
+                paperclipView.Visibility = ViewStates.Visible;
+            } else {
+                paperclipView.Visibility = ViewStates.Invisible;
+            }
+                
         }
 
         public static void BindMessageChili (McEmailMessage message, Android.Widget.ImageView chiliView)
@@ -103,7 +108,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static int BindContactCell (McContact contact, View view, string alternateEmailAddress = null)
+        public static int BindContactCell (McContact contact, View view, string sectionLabel, string alternateEmailAddress)
         {
             var titleLabel = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_title);
             var subtitle1Label = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_subtitle1);
@@ -156,6 +161,14 @@ namespace NachoClient.AndroidClient
             userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
             userInitials.SetBackgroundResource (Bind.ColorForUser (contact.CircleColor));
 
+            var sectionHeader = view.FindViewById<TextView> (Resource.Id.contact_section_header);
+            if (null == sectionLabel) {
+                sectionHeader.Visibility = ViewStates.Gone;
+            } else {
+                sectionHeader.Visibility = ViewStates.Visible;
+                sectionHeader.Text = sectionLabel;
+            }
+
             return viewType;
         }
 
@@ -176,13 +189,13 @@ namespace NachoClient.AndroidClient
             }
             colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
 
-            titleView.Text = Pretty.SubjectString(detailView.SpecificItem.Subject);
+            titleView.Text = Pretty.SubjectString (detailView.SpecificItem.Subject);
 
             var startAndDuration = "";
             if (detailView.SpecificItem.AllDayEvent) {
                 startAndDuration = "ALL DAY";
             } else {
-                var start = Pretty.ShortTimeString (detailView.SpecificItem.StartTime);
+                var start = Pretty.Time (detailView.SpecificItem.StartTime);
                 if (detailView.SpecificItem.EndTime > detailView.SpecificItem.StartTime) {
                     var duration = Pretty.CompactDuration (detailView.SpecificItem.StartTime, detailView.SpecificItem.EndTime);
                     startAndDuration = String.Join (" - ", new string[] { start, duration });
@@ -212,7 +225,123 @@ namespace NachoClient.AndroidClient
             dayOfWeekView.Text = date.ToString ("dddd");
 
             var monthDayView = view.FindViewById<TextView> (Resource.Id.event_date_month_day);
-            monthDayView.Text = date.ToString ("MMMM d, yyyy");
+            monthDayView.Text = Pretty.LongMonthDayYear (date);
+
+            var addButton = view.FindViewById<ImageView> (Resource.Id.event_date_add);
+            addButton.SetTag (Resource.Id.event_date_add, new JavaObjectWrapper<DateTime> () { Item = date });
+        }
+
+        public static void BindHotEvent (McEvent currentEvent, View view)
+        {
+            var calendarColor = view.FindViewById<View> (Resource.Id.calendar_color);
+            var eventIcon = view.FindViewById<View> (Resource.Id.event_location_image);
+            var eventTitle = view.FindViewById<TextView> (Resource.Id.event_title);
+            var eventSummary = view.FindViewById<TextView> (Resource.Id.event_summary);
+
+            var c = currentEvent.GetCalendarItemforEvent ();
+            var cRoot = CalendarHelper.GetMcCalendarRootForEvent (currentEvent.Id);
+
+            eventTitle.Text = Pretty.SubjectString (c.GetSubject ());
+
+            int colorIndex = 0;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (cRoot.AccountId, cRoot.Id).FirstOrDefault ();
+            if (null != folder) {
+                colorIndex = folder.DisplayColor;
+            }
+            calendarColor.SetBackgroundResource (ColorForUser (colorIndex));
+
+            var startString = "";
+            if (c.AllDayEvent) {
+                startString = "ALL DAY " + Pretty.LongFullDate (currentEvent.GetStartTimeUtc ());
+            } else {
+                if ((currentEvent.GetStartTimeUtc () - DateTime.UtcNow).TotalHours < 12) {
+                    startString = Pretty.Time (currentEvent.GetStartTimeUtc ());
+                } else {
+                    startString = Pretty.LongDayTime (currentEvent.GetStartTimeUtc ());
+                }
+            }
+
+            var locationString = Pretty.SubjectString (c.GetLocation ());
+            var eventString = Pretty.Join (startString, locationString, " : ");
+
+            eventSummary.Text = eventString;
+            eventIcon.Visibility = (String.IsNullOrEmpty (eventString) ? ViewStates.Gone : ViewStates.Visible);
+        }
+
+        public static void BindAttachmentListView (List<McAttachment> attachments, LinearLayout view, LayoutInflater inflater, EventHandler onToggleAttachmentList, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected, NcAttachmentView.AttachmentErrorCallback onAttachmentError)
+        {
+            if (0 == attachments.Count) {
+                view.Visibility = ViewStates.Gone;
+                return;
+            }
+            var attachmentListCount = view.FindViewById<TextView> (Resource.Id.attachment_list_count);
+            attachmentListCount.Text = attachments.Count.ToString ();
+
+            var listview = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_views);
+            listview.Visibility = ViewStates.Gone;
+
+            foreach (var a in attachments) {
+                var cell = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
+                var attachmentView = new NcAttachmentView (a, cell, onAttachmentSelected, onAttachmentError);
+                listview.AddView (cell);
+            }
+
+            var clickView = view.FindViewById<View> (Resource.Id.attachment_list_header);
+            if (null != onToggleAttachmentList) {
+                clickView.Click += onToggleAttachmentList;
+            }
+        }
+
+        public static void BindAttachmentView (McAttachment attachment, View view)
+        {
+            var attachmentImage = view.FindViewById<ImageView> (Resource.Id.attachment_icon);
+            if (Pretty.TreatLikeAPhoto (attachment.DisplayName)) {
+                attachmentImage.SetImageResource (Resource.Drawable.email_att_photos);
+            } else {
+                attachmentImage.SetImageResource (Resource.Drawable.email_att_files);
+            }
+            var filenameView = view.FindViewById<TextView> (Resource.Id.attachment_name);
+            filenameView.Text = System.IO.Path.GetFileNameWithoutExtension (attachment.DisplayName);
+            var descriptionView = view.FindViewById<TextView> (Resource.Id.attachment_description);
+            descriptionView.Text = Pretty.AttachmentDescription (attachment);
+
+            var downloadImageView = view.FindViewById<ImageView> (Resource.Id.attachment_download);
+            var spinnerView = view.FindViewById<ProgressBar> (Resource.Id.attachment_spinner);
+
+            switch (attachment.FilePresence) {
+            case McAbstrFileDesc.FilePresenceEnum.None:
+                downloadImageView.Visibility = ViewStates.Visible;
+                spinnerView.Visibility = ViewStates.Gone;
+                break;
+            case McAbstrFileDesc.FilePresenceEnum.Error:
+                downloadImageView.Visibility = ViewStates.Visible;
+                spinnerView.Visibility = ViewStates.Gone;
+                break;
+            case McAbstrFileDesc.FilePresenceEnum.Partial:
+                downloadImageView.Visibility = ViewStates.Gone;
+                spinnerView.Visibility = ViewStates.Visible;
+                break;
+            case McAbstrFileDesc.FilePresenceEnum.Complete:
+                downloadImageView.Visibility = ViewStates.Gone;
+                spinnerView.Visibility = ViewStates.Gone;
+                break;
+            default:
+                NachoCore.Utils.NcAssert.CaseError ();
+                break;
+            }
+        }
+
+        public static void ToggleAttachmentList (View view)
+        {
+            var listview = view.FindViewById<View> (Resource.Id.attachment_list_views);
+            var toggleView = view.FindViewById<ImageView> (Resource.Id.attachment_list_toggle);
+            if (ViewStates.Gone == listview.Visibility) {
+                listview.Visibility = ViewStates.Visible;
+                toggleView.SetImageResource (Resource.Drawable.gen_readmore_active);
+            } else {
+                listview.Visibility = ViewStates.Gone;
+                toggleView.SetImageResource (Resource.Drawable.gen_readmore);
+            }
         }
 
         public static int ColorForUser (int index)

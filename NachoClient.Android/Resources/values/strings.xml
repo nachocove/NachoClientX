@@ -36,6 +36,7 @@
     <string name="demo_contact_name">Joe Smith</string>
     <string name="demo_contact_email">joe@smith.com</string>
     <string name="demo_contact_phone">505 555 5678</string>
+    <string name="demo_contact_section_header">A</string>
     <string name="demo_event_subject">Today\'s event</string>
     <string name="demo_event_when">Friday, October 2</string>
     <string name="demo_event_duration">from 8am until noon</string>
@@ -48,6 +49,9 @@
     <string name="demo_event_organizer">Bob Smith</string>
     <string name="demo_event_organizer_initials">BS</string>
     <string name="demo_event_organizer_email">bob@smith.com</string>
+    <string name="demo_attachment_name">photo.jpg</string>
+    <string name="demo_attachment_size">JPG file - 23.4KB</string>
+    <string name="demo_attachment_count">3</string>
     <string name="to_inbox">Go to Inbox</string>
     <string name="to_deadline">Go to Deadlines</string>
     <string name="to_deferred">Go to Deferred Messages</string>
@@ -111,4 +115,10 @@
     <string name="mission_2">In addition to being a great email client, your PIM software should actively help you achieve your goals, help you manage your time and reduce clutter that gets in your way.
 </string>
     <string name="message_support">Message Support</string>
+    <string name="deferred">Deferred</string>
+    <string name="deadline">Deadline</string>
+    <string name="no_hot_event">No upcoming events</string>
+    <string name="contact_email">EMAIL</string>
+    <string name="contact_phone">PHONE</string>
+    <string name="attachments">Attachments</string>
 </resources>

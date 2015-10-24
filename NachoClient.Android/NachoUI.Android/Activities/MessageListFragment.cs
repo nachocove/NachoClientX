@@ -22,6 +22,8 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using Android.Graphics.Drawables;
 using NachoCore.Brain;
+using NachoPlatform;
+using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
@@ -32,15 +34,25 @@ namespace NachoClient.AndroidClient
         private const int DELETE_TAG = 3;
         private const int DEFER_TAG = 4;
 
+        private const int LATE_TAG = 1;
+        private const int FORWARD_TAG = 2;
+
         SwipeMenuListView listView;
         MessageListAdapter messageListAdapter;
 
         SwipeRefreshLayout mSwipeRefreshLayout;
 
-        INachoEmailMessages messages;
+        public INachoEmailMessages messages;
 
-        Android.Widget.ImageView composeButton;
+        public bool multiSelectActive = false;
+        public HashSet<long> MultiSelectSet = null;
 
+        Android.Widget.ImageView leftButton1;
+        Android.Widget.ImageView rightButton1;
+        Android.Widget.ImageView rightButton2;
+        Android.Widget.ImageView rightButton3;
+
+        public event EventHandler<McEvent> onEventClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
         public static MessageListFragment newInstance (INachoEmailMessages messages)
@@ -61,7 +73,7 @@ namespace NachoClient.AndroidClient
             // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
 
-            var activity = (NcActivity)this.Activity;
+            var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
             mSwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
@@ -72,16 +84,19 @@ namespace NachoClient.AndroidClient
                 rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
             };
 
-            composeButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            composeButton.SetImageResource (Resource.Drawable.contact_newemail);
-            composeButton.Visibility = Android.Views.ViewStates.Visible;
-            composeButton.Click += ComposeButton_Click;
+            leftButton1 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
+            leftButton1.Click += LeftButton1_Click;
 
-            // Highlight the tab bar icon of this activity
-            var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.inbox_image);
-            inboxImage.SetImageResource (Resource.Drawable.nav_mail_active);
+            rightButton1 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
+            rightButton1.Click += RightButton1_Click;
 
-            messageListAdapter = new MessageListAdapter (messages);
+            rightButton2 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button2);
+            rightButton2.Click += RightButton2_Click;
+
+            rightButton3 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button3);
+            rightButton3.Click += RightButton3_Click;
+
+            messageListAdapter = new MessageListAdapter (this);
 
             listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = messageListAdapter;
@@ -125,7 +140,8 @@ namespace NachoClient.AndroidClient
                 deleteItem.setIcon (A.Id_NachoSwipeEmailDelete);
                 deleteItem.setId (DELETE_TAG);
                 menu.addMenuItem (deleteItem, SwipeMenu.SwipeSide.RIGHT);
-            });
+            }
+            );
 
             listView.setOnMenuItemClickListener (( position, menu, index) => {
                 var messageThread = messages.GetEmailThread (position);
@@ -148,21 +164,160 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
+            var parent = (NcMessageListActivity)Activity;
+            var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
+
+            if (parent.ShowHotEvent ()) {
+                hotEvent.Visibility = ViewStates.Visible;
+                var hoteventListView = view.FindViewById<SwipeMenuListView> (Resource.Id.hotevent_listView);
+                hoteventListView.Adapter = new HotEventAdapter ();
+                var hoteventEmptyView = view.FindViewById<View> (Resource.Id.hot_event_empty);
+                hoteventListView.EmptyView = hoteventEmptyView;
+
+                hoteventListView.ItemClick += HoteventListView_ItemClick;
+
+                hoteventListView.setMenuCreator ((menu) => {
+                    SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                    lateItem.setWidth (dp2px (90));
+                    lateItem.setTitle ("I'm Late");
+                    lateItem.setTitleSize (14);
+                    lateItem.setTitleColor (A.Color_White);
+                    lateItem.setIcon (A.Id_NachoSwipeCalendarLate);
+                    lateItem.setId (LATE_TAG);
+                    menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
+
+                    SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                    forwardItem.setWidth (dp2px (90));
+                    forwardItem.setTitle ("Forward");
+                    forwardItem.setTitleSize (14);
+                    forwardItem.setTitleColor (A.Color_White);
+                    forwardItem.setIcon (A.Id_NachoSwipeCalendarForward);
+                    forwardItem.setId (FORWARD_TAG);
+                    menu.addMenuItem (forwardItem, SwipeMenu.SwipeSide.RIGHT);
+                });
+
+                hoteventListView.setOnMenuItemClickListener (( position, menu, index) => {
+                    switch (index) {
+                    case LATE_TAG:
+                        break;
+                    case FORWARD_TAG:
+                        break;
+                    default:
+                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
+                    }
+                    return false;
+                });
+            } else {
+                hotEvent.Visibility = ViewStates.Gone;
+            }
+
+            ConfigureButtons ();
+            parent.SetActiveImage (view);
+
             return view;
+        }
+
+
+        void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+        {
+            if (null != onEventClick) {
+                DateTime timerFireTime;
+                var currentEvent = CalendarHelper.CurrentOrNextEvent (out timerFireTime);
+                if (null != currentEvent) {
+                    onEventClick (this, currentEvent);
+                }
+            }
         }
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
-            if (null != onMessageClick) {
-                onMessageClick (this, messageListAdapter [e.Position]);
+            if (multiSelectActive) {
+                if (MultiSelectSet.Contains (e.Position)) {
+                    MultiSelectSet.Remove (e.Position);
+                } else {
+                    MultiSelectSet.Add (e.Position);
+                }
+                RefreshVisibleMessageCells ();
+            } else {
+                if (null != onMessageClick) {
+                    onMessageClick (this, messageListAdapter [e.Position]);
+                }
             }
         }
 
-        void ComposeButton_Click (object sender, EventArgs e)
+
+        // Search or disable multi-select (multi-select)
+        void LeftButton1_Click (object sender, EventArgs e)
         {
-            var intent = new Intent ();
-            intent.SetClass (this.Activity, typeof(MessageComposeActivity));
-            StartActivity (intent);
+            if (multiSelectActive) {
+                MultiSelectCancel ();
+            } else {
+                // TODO: Search
+            }
+        }
+
+        // Compose or delete (multi-select)
+        void RightButton1_Click (object sender, EventArgs e)
+        {
+            if (multiSelectActive) {
+                MultiSelectDelete ();
+            } else {
+                var intent = new Intent ();
+                intent.SetClass (this.Activity, typeof(MessageComposeActivity));
+                StartActivity (intent);
+            }
+        }
+
+        // Enable multi-select or save to folder (multi-select)
+        void RightButton2_Click (object sender, EventArgs e)
+        {
+            if (multiSelectActive) {
+                ShowFolderChooser (null);
+            } else {
+                MultiSelectSet = new HashSet<long> ();
+                multiSelectActive = true;
+                ConfigureButtons ();
+            }
+        }
+
+        // Blank or archive (multi-select)
+        void RightButton3_Click (object sender, EventArgs e)
+        {
+            if (multiSelectActive) {
+                MultiSelectArchive ();
+            }
+        }
+
+        void ConfigureButtons ()
+        {
+            if (multiSelectActive) {
+                leftButton1.SetImageResource (Resource.Drawable.gen_close);
+                leftButton1.Visibility = ViewStates.Visible;
+                rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
+                rightButton1.Visibility = ViewStates.Visible;
+                rightButton2.SetImageResource (Resource.Drawable.folder_move);
+                rightButton2.Visibility = ViewStates.Visible;
+                rightButton3.SetImageResource (Resource.Drawable.gen_archive);
+                rightButton3.Visibility = ViewStates.Visible;
+            } else {
+                leftButton1.SetImageResource (Android.Resource.Drawable.IcMenuSearch);
+                leftButton1.Visibility = ViewStates.Visible;
+                rightButton1.SetImageResource (Resource.Drawable.contact_newemail);
+                rightButton1.Visibility = ViewStates.Visible;
+                rightButton2.SetImageResource (Resource.Drawable.folder_edit);
+                rightButton2.Visibility = ViewStates.Visible;
+                rightButton3.Visibility = ViewStates.Invisible;
+            }
+            RefreshVisibleMessageCells ();
+        }
+
+        void MultiSelectCancel ()
+        {
+            multiSelectActive = false;
+            MultiSelectSet = null;
+            ConfigureButtons ();
         }
 
         protected void EndRefreshingOnUIThread (object sender)
@@ -222,6 +377,27 @@ namespace NachoClient.AndroidClient
             NcEmailArchiver.Archive (messageThread);
         }
 
+        public void MultiSelectDelete ()
+        {
+            var messageList = GetSelectedMessages ();
+            NcEmailArchiver.Delete (messageList);
+            MultiSelectCancel ();
+        }
+
+        public void MultiSelectMove (McFolder folder)
+        {
+            var messageList = GetSelectedMessages ();
+            NcEmailArchiver.Move (messageList, folder);
+            MultiSelectCancel ();
+        }
+
+        public void MultiSelectArchive ()
+        {
+            var messageList = GetSelectedMessages ();
+            NcEmailArchiver.Archive (messageList);
+            MultiSelectCancel ();
+        }
+
         public void ShowPriorityChooser (McEmailMessageThread messageThread)
         {
             Log.Info (Log.LOG_UI, "ShowPriorityChooser: {0}", messageThread);
@@ -250,41 +426,68 @@ namespace NachoClient.AndroidClient
         public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)
         {
             Log.Info (Log.LOG_UI, "OnFolderSelected: {0}", thread);
-            NcEmailArchiver.Move (thread, folder);
+            if (multiSelectActive) {
+                MultiSelectMove (folder);
+            } else {
+                NcEmailArchiver.Move (thread, folder);
+            }
         }
 
         public void SwitchAccount (INachoEmailMessages newMessages)
         {
             messages = newMessages;
-            messageListAdapter = new MessageListAdapter (messages);
+            messageListAdapter = new MessageListAdapter (this);
             listView.Adapter = messageListAdapter;
+        }
+
+        void RefreshVisibleMessageCells ()
+        {
+            for (var i = listView.FirstVisiblePosition; i <= listView.LastVisiblePosition; i++) {
+                var cell = listView.GetChildAt (i - listView.FirstVisiblePosition);
+                if (null != cell) {
+                    messageListAdapter.GetView (i, cell, listView);
+                }
+            }
+        }
+
+        public List<McEmailMessage> GetSelectedMessages ()
+        {
+            var messageList = new List<McEmailMessage> ();
+
+            foreach (var messageThreadIndex in MultiSelectSet) {
+                var messageThread = messages.GetEmailThread ((int)messageThreadIndex);
+                foreach (var message in messageThread) {
+                    messageList.Add (message);
+                }
+            }
+            return messageList;
         }
 
     }
 
     public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
     {
-        INachoEmailMessages messages;
+        MessageListFragment owner;
 
-        public MessageListAdapter (INachoEmailMessages messages)
+        public MessageListAdapter (MessageListFragment owner)
         {
-            this.messages = messages;
+            this.owner = owner;
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         public override long GetItemId (int position)
         {
-            return messages.GetEmailThread (position).FirstMessageId;
+            return owner.messages.GetEmailThread (position).FirstMessageId;
         }
 
         public override int Count {
             get {
-                return messages.Count ();
+                return owner.messages.Count ();
             }
         }
 
         public override McEmailMessageThread this [int position] {  
-            get { return messages.GetEmailThread (position); }
+            get { return owner.messages.GetEmailThread (position); }
         }
 
         public override View GetView (int position, View convertView, ViewGroup parent)
@@ -295,7 +498,7 @@ namespace NachoClient.AndroidClient
                 var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
                 chiliView.Click += ChiliView_Click;
             }
-            var thread = messages.GetEmailThread (position);
+            var thread = owner.messages.GetEmailThread (position);
             var message = thread.FirstMessageSpecialCase ();
             Bind.BindMessageHeader (thread, message, view);
 
@@ -303,6 +506,18 @@ namespace NachoClient.AndroidClient
             var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
             var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
             previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+
+            var multiSelectView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.selected);
+            if (owner.multiSelectActive) {
+                multiSelectView.Visibility = ViewStates.Visible;
+                if (owner.MultiSelectSet.Contains (position)) {
+                    multiSelectView.SetImageResource (Resource.Drawable.gen_checkbox_checked);
+                } else {
+                    multiSelectView.SetImageResource (Resource.Drawable.gen_checkbox);
+                }
+            } else {
+                multiSelectView.Visibility = ViewStates.Invisible;
+            }
 
             var chiliTagView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
             chiliTagView.Tag = position;
@@ -314,7 +529,7 @@ namespace NachoClient.AndroidClient
         {
             var chiliView = (Android.Widget.ImageView)sender;
             var position = (int)chiliView.Tag;
-            var thread = messages.GetEmailThread (position);
+            var thread = owner.messages.GetEmailThread (position);
             var message = thread.FirstMessageSpecialCase ();
             NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
             Bind.BindMessageChili (thread, message, chiliView);
@@ -339,11 +554,101 @@ namespace NachoClient.AndroidClient
         {
             List<int> adds;
             List<int> deletes;
-            if (messages.Refresh (out adds, out deletes)) {
+            if (owner.messages.Refresh (out adds, out deletes)) {
                 this.NotifyDataSetChanged ();
             }
         }
 
+    }
+
+    public class HotEventAdapter : Android.Widget.BaseAdapter<McEvent>
+    {
+        protected McEvent currentEvent;
+        protected NcTimer eventEndTimer = null;
+
+        public HotEventAdapter ()
+        {
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            Configure ();
+        }
+
+        public void Configure ()
+        {
+            DateTime timerFireTime;
+            currentEvent = CalendarHelper.CurrentOrNextEvent (out timerFireTime);
+
+            if (null != eventEndTimer) {
+                eventEndTimer.Dispose ();
+                eventEndTimer = null;
+            }
+
+            // Set a timer to fire at the end of the currently displayed event, so the view can
+            // be reconfigured to show the next event.
+            if (null != currentEvent) {
+                TimeSpan timerDuration = timerFireTime - DateTime.UtcNow;
+                if (timerDuration < TimeSpan.Zero) {
+                    // The time to reevaluate the current event was in the very near future, and that time was reached in between
+                    // CurrentOrNextEvent() and now.  Configure the timer to fire immediately.
+                    timerDuration = TimeSpan.Zero;
+                }
+                eventEndTimer = new NcTimer ("HotEventView", (state) => {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        Configure ();
+                    });
+                }, null, timerDuration, TimeSpan.Zero);
+            }
+        }
+
+        public override long GetItemId (int position)
+        {
+            return 1;
+        }
+
+        public override int Count {
+            get {
+                return (null == currentEvent ? 0 : 1);
+            }
+        }
+
+        public override McEvent this [int position] {  
+            get { return currentEvent; }
+        }
+
+        public override View GetView (int position, View convertView, ViewGroup parent)
+        {
+            View view = convertView; // re-use an existing view, if one is available
+            if (view == null) {
+                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.HotEventCell, parent, false);
+            }
+            Bind.BindHotEvent (currentEvent, view);
+
+            return view;
+        }
+
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var statusEvent = (StatusIndEventArgs)e;
+
+            switch (statusEvent.Status.SubKind) {
+
+            case NcResult.SubKindEnum.Info_EventSetChanged:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                Configure ();
+                NotifyDataSetChanged ();
+                break;
+
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                // When the app goes into the background, eventEndTimer might get cancelled, but ViewWillAppear
+                // won't get called when the app returns to the foreground.  That might leave the view displaying
+                // an old event.  Watch for foreground events and refresh the view.
+                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                    Configure ();
+                    NotifyDataSetChanged ();
+                }
+                break;
+            }
+        }
 
     }
 }

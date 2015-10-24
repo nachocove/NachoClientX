@@ -4,9 +4,9 @@ using System;
 using NachoCore.Model;
 using System.Collections.Generic;
 
-namespace NachoClient.AndroidClient
+namespace NachoCore.Model
 {
-    public class NcMigration45 : NcMigration
+    public class NcMigration46 : NcMigration
     {
         public override int GetNumberOfObjects ()
         {

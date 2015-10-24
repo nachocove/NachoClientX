@@ -600,19 +600,6 @@ namespace NachoCore
             int folderId, bool originalEmailIsEmbedded)
         {
             Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
-            if (originalEmailIsEmbedded) {
-                var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
-                Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd: attachments = {0}", attachments.Count);
-                foreach (var attach in attachments) {
-                    if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
-                        var token = DnldAttCmd (attach.Id);
-                        if (null == token) {
-                            // FIXME - is this correct behavior in this case?
-                            return NcResult.Error (NcResult.SubKindEnum.Error_TaskBodyDownloadFailed);
-                        }
-                    }
-                }
-            }
             return SmartEmailCmd (McPending.Operations.EmailForward,
                 newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
         }
@@ -805,7 +792,8 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceNotNone);
                     return;
                 }
-                var emailMessage = McEmailMessage.QueryById<McEmailMessage> (att.ItemId);
+                var emailMessage = McAttachment.QueryItems (att.AccountId, att.Id)
+                    .Where (x => x is McEmailMessage && !x.IsAwaitingCreate).FirstOrDefault ();
                 if (null == emailMessage) {
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
@@ -1103,6 +1091,21 @@ namespace NachoCore
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             var serverId = DateTime.UtcNow.Ticks.ToString ();
+
+            // It seems exceedingly unlikely that this would fail, but we need to check anyway.
+            bool AOk = false;
+            for (var i = 0; i<3; i++) {
+                if (McFolder.QueryByServerId<McFolder> (AccountId, serverId) != null) {
+                    serverId = DateTime.UtcNow.Ticks.ToString ();
+                } else {
+                    AOk = true;
+                    break;
+                }
+            }
+            if (!AOk) {
+                return NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed, NcResult.WhyEnum.AlreadyExistsOnServer);
+            }
+
             string destFldServerId;
             NcModel.Instance.RunInTransaction (() => {
                 if (0 > destFolderId) {
