@@ -42,23 +42,27 @@ namespace NachoPlatform
                 var connectivityManager = (ConnectivityManager)context.GetSystemService (Context.ConnectivityService);
                 var netInfo = connectivityManager.ActiveNetworkInfo;
                 status = (null != netInfo && netInfo.IsConnectedOrConnecting) ? NetStatusStatusEnum.Up : NetStatusStatusEnum.Down;
-                switch (netInfo.Type) {
-                case ConnectivityType.Ethernet:
-                case ConnectivityType.Wifi:
-                    speed = NetStatusSpeedEnum.WiFi_0;
-                    break;
-                case ConnectivityType.Wimax:
-                    speed = NetStatusSpeedEnum.CellFast_1;
-                    break;
-                default:
-                    var telephonyManager = (TelephonyManager)
-                        MainApplication.Context.GetSystemService (Context.TelephonyService);
-                    if (NetworkType.Lte == telephonyManager.NetworkType) {
+                if (null != netInfo) {
+                    switch (netInfo.Type) {
+                    case ConnectivityType.Ethernet:
+                    case ConnectivityType.Wifi:
+                        speed = NetStatusSpeedEnum.WiFi_0;
+                        break;
+                    case ConnectivityType.Wimax:
                         speed = NetStatusSpeedEnum.CellFast_1;
-                    } else {
-                        speed = NetStatusSpeedEnum.CellSlow_2;
+                        break;
+                    default:
+                        var telephonyManager = (TelephonyManager)
+                            MainApplication.Context.GetSystemService (Context.TelephonyService);
+                        if (NetworkType.Lte == telephonyManager.NetworkType) {
+                            speed = NetStatusSpeedEnum.CellFast_1;
+                        } else {
+                            speed = NetStatusSpeedEnum.CellSlow_2;
+                        }
+                        break;
                     }
-                    break;
+                } else {
+                    speed = NetStatusSpeedEnum.CellSlow_2;
                 }
             }
         }
