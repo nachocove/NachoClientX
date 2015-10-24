@@ -173,8 +173,8 @@ sign_and_upload_android() {
         echo "No package name found in projects"
         exit 1
     fi
-    EXPECTED_APK="$ANDROID_PACKAGE-Signed.apk"
-    RESIGNED_APK=$EXPECTED_APK-temp-resign
+    EXPECTED_APK="$ANDROID_PACKAGE.apk"
+    RESIGNED_APK=$EXPECTED_APK-temp-sign
 
     if [ ! -z "$DRY_RUN" ] ; then
         DO_DRY_RUN="--dry-run"
