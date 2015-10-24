@@ -168,7 +168,7 @@ sign_and_upload_android() {
 
     set -x
     echo $PWD
-    ANDROID_PACKAGE=`$SCRIPTS/projects.py $release android package_name`
+    ANDROID_PACKAGE=`$SCRIPTS/projects.py $RELEASE android package_name`
     if [ -z "$ANDROID_PACKAGE" ] ; then
         echo "No package name found in projects"
         exit 1
@@ -182,7 +182,7 @@ sign_and_upload_android() {
         DO_DRY_RUN=
     fi
 
-    $SCRIPTS/android_sign.py sign --release $release --keystore-path=$HOME/.ssh $BUILD_PATH/$EXPECTED_APK $BUILD_PATH/$RESIGNED_APK || die "Failed to re-sign apk"
+    $SCRIPTS/android_sign.py sign --release $RELEASE --keystore-path=$HOME/.ssh $BUILD_PATH/$EXPECTED_APK $BUILD_PATH/$RESIGNED_APK || die "Failed to re-sign apk"
     mv $BUILD_PATH/$RESIGNED_APK $BUILD_PATH/$EXPECTED_APK || die "Failed to move apk"
     VERSION="$VERSION" BUILD="$BUILD" RELEASE="$RELEASE" $SCRIPTS/hockeyapp_upload.py $DO_DRY_RUN $NO_SKIP --android $BUILD_PATH || die "Failed to upload apk"
     set +x
