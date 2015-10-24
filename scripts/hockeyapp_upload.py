@@ -210,7 +210,7 @@ def main():
         hockey_app_klass = HockeyappUploadIos
     else:
         if not filename:
-            filename = '%s-Signed.apk' % project[architecture]['package_name']
+            filename = '%s.apk' % project[architecture]['package_name']
         if not filename.startswith("/"):
             filename = os.path.join(options.target_dir, filename)
         if not os.path.exists(filename):

@@ -48,8 +48,8 @@ if [ -z "$ANDROID_PACKAGE" ] ; then
     echo "No package name found in projects"
     exit 1
 fi
-EXPECTED_APK="$ANDROID_PACKAGE-Signed.apk"
-RESIGNED_APK="$ANDROID_PACKAGE-ReSigned.apk"
+EXPECTED_APK="$ANDROID_PACKAGE.apk"
+RESIGNED_APK="$ANDROID_PACKAGE-tmp.apk"
 
 # Build NachoClient
 VERSION="$version" BUILD="$build" RELEASE="$release" /Applications/Xamarin\ Studio.app/Contents/MacOS/XamarinStudio ./NachoClient.sln
