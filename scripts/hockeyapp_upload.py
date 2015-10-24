@@ -24,17 +24,17 @@ class HockeyappUpload(object):
     def upload_version(self, filename, zipped_dsym_file, buildNumber, versionName, note):
         assert buildNumber is not None and versionName is not None
         version_obj = self.app_obj.find_version(version=buildNumber, short_version=versionName)
-        if version_obj is None:
-            print 'Creating version %s %s' % (versionName, buildNumber)
-            version_obj = hockeyapp.Version(self.app_obj,
-                                            version=buildNumber,
-                                            short_version=versionName)
-            version_obj.create()
-        else:
-            print 'Updating version %s %s' % (versionName, buildNumber)
+        if not DRY_RUN:
+            if version_obj is None:
+                print 'Creating version %s %s' % (versionName, buildNumber)
+                version_obj = hockeyapp.Version(self.app_obj,
+                                                version=buildNumber,
+                                                short_version=versionName)
+                version_obj.create()
+            else:
+                print 'Updating version %s %s' % (versionName, buildNumber)
 
-        assert version_obj.version_id is not None
-        if DRY_RUN == False:
+            assert version_obj.version_id is not None
             version_obj.update(zipped_dsym_file=zipped_dsym_file, ipa_file=filename, note=note)
         else:
             print "WARNING: Skipped actual upload. DRY_RUN=True"
