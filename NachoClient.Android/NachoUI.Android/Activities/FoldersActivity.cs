@@ -56,7 +56,7 @@ namespace NachoClient.AndroidClient
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
-                messageViewFragment = MessageViewFragment.newInstance (message);
+                messageViewFragment = MessageViewFragment.newInstance (thread, message);
                 this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("Message").Commit ();
             } else {
                 var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());

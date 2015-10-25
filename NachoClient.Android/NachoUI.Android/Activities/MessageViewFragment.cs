@@ -22,13 +22,15 @@ namespace NachoClient.AndroidClient
     public class MessageViewFragment : Fragment
     {
         McEmailMessage message;
+        McEmailMessageThread thread;
 
         BodyDownloader bodyDownloader;
 
-        public static MessageViewFragment newInstance (McEmailMessage message)
+        public static MessageViewFragment newInstance (McEmailMessageThread thread, McEmailMessage message)
         {
             var fragment = new MessageViewFragment ();
             fragment.message = message;
+            fragment.thread = thread;
             return fragment;
         }
 
@@ -78,6 +80,12 @@ namespace NachoClient.AndroidClient
             var attachments = McAttachment.QueryByItem (message);
             var attachmentsView = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_view);
             Bind.BindAttachmentListView (attachments, attachmentsView, inflater, AttachmentToggle_Click, AttachmentSelectedCallback, AttachmentErrorCallback);
+
+            // MarkAsRead() will change the message from unread to read only if the body has been
+            // completely downloaded, so it is safe to call it unconditionally.  We put the call
+            // here, rather than in ConfigureAndLayout(), to handle the case where the body is
+            // downloaded long after the message view has been opened.
+            EmailHelper.MarkAsRead (thread);
 
             return view;
         }
