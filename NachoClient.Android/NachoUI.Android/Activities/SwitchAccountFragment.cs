@@ -70,6 +70,18 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override void OnPause ()
+        {
+            base.OnPause ();
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
         void AccountAdapter_AccountSelected (object sender, McAccount account)
         {
             NcApplication.Instance.Account = account;
@@ -81,6 +93,17 @@ namespace NachoClient.AndroidClient
         {
             var parent = (AccountListDelegate)Activity;
             parent.AddAccount ();
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_AccountSetChanged:
+                accountAdapter.Refresh ();
+                break;
+            }
         }
 
     }
@@ -131,6 +154,8 @@ namespace NachoClient.AndroidClient
             if (DisplayMode.AccountSwitcher == displayMode) {
                 accounts.RemoveAll ((McAccount account) => (account.Id == NcApplication.Instance.Account.Id));
             }
+
+            NotifyDataSetChanged ();
         }
 
         class AccountHolder : RecyclerView.ViewHolder
@@ -196,7 +221,8 @@ namespace NachoClient.AndroidClient
                 account = NcApplication.Instance.Account;
                 break;
             case ROW_TYPE:
-                account = accounts [position - 1];
+                int accountIndex = (DisplayMode.AccountSwitcher == displayMode ? position - 1 : position);
+                account = accounts [accountIndex];
                 break;
             }
 

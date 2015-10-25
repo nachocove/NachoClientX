@@ -560,6 +560,8 @@
     <Compile Include="NachoUI.Android\Activities\NcTabBarActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NcActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\SettingsActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\SettingsFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1360,5 +1362,7 @@
     <AndroidResource Include="Resources\layout\Letter.axml" />
     <AndroidResource Include="Resources\layout\Recent.axml" />
     <AndroidResource Include="Resources\layout\NoteActivity.axml" />
+    <AndroidResource Include="Resources\layout\SettingsActivity.axml" />
+    <AndroidResource Include="Resources\layout\SettingsFragment.axml" />
   </ItemGroup>
 </Project>
