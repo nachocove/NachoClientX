@@ -27,6 +27,12 @@ using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
+    public interface MessageListDelegate
+    {
+        bool ShowHotEvent();
+        void SetActiveImage(View view);
+    }
+
     public class MessageListFragment : Fragment
     {
         private const int ARCHIVE_TAG = 1;
@@ -164,7 +170,7 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
-            var parent = (NcMessageListActivity)Activity;
+            var parent = (MessageListDelegate)Activity;
             var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
 
             if (parent.ShowHotEvent ()) {

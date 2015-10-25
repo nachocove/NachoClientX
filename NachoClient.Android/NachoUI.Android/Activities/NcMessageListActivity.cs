@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "NcMessageListActivity")]            
-    public class NcMessageListActivity : NcTabBarActivity
+    public class NcMessageListActivity : NcTabBarActivity, MessageListDelegate
     {
         protected McAccount account;
         MessageViewFragment messageViewFragment;

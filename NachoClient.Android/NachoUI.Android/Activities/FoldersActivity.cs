@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "FoldersActivity")]            
-    public class FoldersActivity : NcTabBarActivity
+    public class FoldersActivity : NcTabBarActivity, MessageListDelegate
     {
         INachoEmailMessages messages;
 
@@ -92,6 +92,19 @@ namespace NachoClient.AndroidClient
             if (null != folderListFragment) {
                 folderListFragment.SwitchAccount ();
             }
+        }
+
+        // MessageListDelegate
+        public bool ShowHotEvent()
+        {
+            return false;
+        }
+
+        // MessageListDelegate
+        public void SetActiveImage (View view)
+        {
+            // Highlight the tab bar icon of this activity
+            // See inbox & nacho now activities
         }
     }
 }
