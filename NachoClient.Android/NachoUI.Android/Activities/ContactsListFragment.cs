@@ -149,6 +149,18 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override void OnPause ()
+        {
+            base.OnPause ();
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
         void Letterbox_Click (object sender, EventArgs e)
         {
             var letterbox = (View)sender;
@@ -261,6 +273,27 @@ namespace NachoClient.AndroidClient
             if (null != refreshTimer) {
                 refreshTimer.Dispose ();
                 refreshTimer = null;
+            }
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_ContactChanged:
+                RefreshVisibleContactCells ();
+                break;
+            }
+        }
+
+        void RefreshVisibleContactCells ()
+        {
+            for (var i = listView.FirstVisiblePosition; i <= listView.LastVisiblePosition; i++) {
+                var cell = listView.GetChildAt (i - listView.FirstVisiblePosition);
+                if (null != cell) {
+                    contactsListAdapter.GetView (i, cell, listView);
+                }
             }
         }
 
@@ -413,17 +446,24 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        McContact GetContact (int position, out string alternateEmailAddress)
+        {
+            if (searching) {
+                var contactEmailAttribute = searchResults [position];
+                var contact = contactEmailAttribute.GetContact ();
+                alternateEmailAddress = contactEmailAttribute.Value;
+                return contact;
+            } else {
+                var id = GetItemId (position);
+                alternateEmailAddress = null;
+                return McContact.QueryById<McContact> ((int)id);
+            }
+        }
+
         public override McContact this [int position] {  
             get {
-                if (searching) {
-                    var contactEmailAttribute = searchResults [position];
-                    var contact = contactEmailAttribute.GetContact ();
-                    // alternateEmailAddress = contactEmailAttribute.Value;
-                    return contact;
-                } else {
-                    var id = GetItemId (position);
-                    return McContact.QueryById<McContact> ((int)id);
-                }
+                string alternateEmailAddress;
+                return GetContact (position, out alternateEmailAddress);
             }
         }
 
@@ -442,13 +482,25 @@ namespace NachoClient.AndroidClient
             View view = convertView; // re-use an existing view, if one is available
             if (view == null) {
                 view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.ContactCell, parent, false);
+                var vip = view.FindViewById<Android.Widget.ImageView> (Resource.Id.vip);
+                vip.Click += Vip_Click;
             }
-
-            var contact = this [position];
-            var viewType = Bind.BindContactCell (contact, view, GetBinLabel (position), null);
+                
+            string alternateEmailAddress;
+            var contact = GetContact (position, out alternateEmailAddress);
+            var viewType = Bind.BindContactCell (contact, view, GetBinLabel (position), alternateEmailAddress);
             viewTypeMap [position] = viewType;
 
             return view;
+        }
+
+        void Vip_Click (object sender, EventArgs e)
+        {
+            var vipView = (Android.Widget.ImageView)sender;
+            var contactId = (int)vipView.Tag;
+            var contact = McContact.QueryById<McContact> (contactId);
+            contact.SetVIP (!contact.IsVip);
+            Bind.BindContactVip (contact, vipView);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
