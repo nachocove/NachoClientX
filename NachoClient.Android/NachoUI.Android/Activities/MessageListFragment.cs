@@ -219,6 +219,17 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override void OnPause ()
+        {
+            base.OnPause ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
 
         void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
@@ -461,6 +472,22 @@ namespace NachoClient.AndroidClient
                 }
             }
             return messageList;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_EmailMessageChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                RefreshVisibleMessageCells ();
+                break;
+            }
         }
 
     }
