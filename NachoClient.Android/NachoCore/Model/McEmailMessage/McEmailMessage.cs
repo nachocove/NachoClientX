@@ -350,10 +350,19 @@ namespace NachoCore.Model
                 // Attachments, if any, are already taken care of.
                 return;
             }
-            var originalAttachments = McAttachment.QueryByItemId (AccountId, ReferencedEmailId, this.GetClassCode ());
+            var pendingAttachments = new List<McAttachment> ();
+            var attachments = McAttachment.QueryByItem (this);
+            foreach (var attachment in attachments) {
+                var mapItem = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (AccountId, attachment.Id, Id, GetClassCode ());
+                if (!mapItem.IncludedInBody) {
+                    mapItem.IncludedInBody = true;
+                    mapItem.Update ();
+                    pendingAttachments.Add (attachment);
+                }
+            }
             var body = McBody.QueryById<McBody> (BodyId);
             MimeMessage mime = MimeHelpers.LoadMessage (body);
-            MimeHelpers.AddAttachments (mime, originalAttachments);
+            MimeHelpers.AddAttachments (mime, pendingAttachments);
             body.UpdateData ((FileStream stream) => {
                 mime.WriteTo (stream);
             });

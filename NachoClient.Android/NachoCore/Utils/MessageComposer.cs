@@ -152,6 +152,7 @@ namespace NachoCore.Utils
             if (Message == null) {
                 Message = McEmailMessage.MessageWithSubject (Account, "");
             }
+            Message.ClientIsSender = true;
             if (Message.Id == 0) {
                 // If the message we were handed (or we created) has not been saved to the database yet,
                 // then we're in a "New Message" scenario.
@@ -222,26 +223,7 @@ namespace NachoCore.Utils
 
         private void CopyAttachment (McAttachment attachment)
         {
-            // AttachmentHelper has a similar method to this one, but that file is iOS-only.
-            // Plus, I'd like to eventually split some work out into tasks (see below)
-            // And, by setting ItemId here (which AttachmentHelper doesn't do), we can save another Update() call
-            var copy = new McAttachment () {
-                AccountId = Message.AccountId,
-                ContentId = attachment.ContentId,
-                ContentType = attachment.ContentType,
-                IsInline = attachment.IsInline
-            };
-            copy.Insert ();
-            copy.Link (Message);
-            // TODO: It would be nice to do any heavy work like large file copying in a background task.
-            // I'm not familiar enough with the details to set that up quite yet.
-            copy.SetDisplayName (attachment.DisplayName);
-            copy.Update ();
-            if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                copy.UpdateFileCopy (attachment.GetFilePath ());
-            } else {
-                // Download attachment?
-            }
+            attachment.Link (Message);
         }
 
         private void DownloadRelatedMessage ()
@@ -521,7 +503,7 @@ namespace NachoCore.Utils
             alternative.Add (htmlPart);
             Multipart mixed = null;
             foreach (var attachment in attachments) {
-                if (!AttachmentsInHtml.ContainsKey(attachment.Id)) {
+                if (!AttachmentsInHtml.ContainsKey (attachment.Id)) {
                     if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
                         if (mixed == null) {
                             mixed = new Multipart ();
@@ -538,9 +520,22 @@ namespace NachoCore.Utils
                         if (attachmentPart.ContentType.Matches ("image", "*")) {
                             AdjustEstimatedSizesForAttachment (reader.BaseStream);
                         }
+                        var mapItem = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (Message.AccountId, attachment.Id, Message.Id, Message.GetClassCode ());
+                        mapItem.IncludedInBody = true;
+                        mapItem.Update ();
                     } else {
-                        Log.Error (Log.LOG_EMAIL, "MessageComposer could not include attachment ID#{0} because its state is {1}", attachment.Id, attachment.FilePresence);
+                        if (!Message.WaitingForAttachmentsToDownload) {
+                            Message = Message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var message = record as McEmailMessage;
+                                message.WaitingForAttachmentsToDownload = true;
+                                return true;
+                            });
+                        }
                     }
+                } else {
+                    var mapItem = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (Message.AccountId, attachment.Id, Message.Id, Message.GetClassCode ());
+                    mapItem.IncludedInBody = true;
+                    mapItem.Update ();
                 }
             }
             if (mixed != null) {
