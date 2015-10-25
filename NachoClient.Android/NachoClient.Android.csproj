@@ -526,7 +526,6 @@
     <Compile Include="NachoUI.Android\Activities\ChooseDeferralFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactsActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\EventListFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\CalendarActivity.cs" />
@@ -560,6 +559,7 @@
     <Compile Include="NachoUI.Android\Activities\NoteActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NcTabBarActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NcActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
