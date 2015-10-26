@@ -562,6 +562,7 @@
     <Compile Include="NachoUI.Android\Activities\ContactsListFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\SettingsActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\SettingsFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\EventViewActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1364,5 +1365,6 @@
     <AndroidResource Include="Resources\layout\NoteActivity.axml" />
     <AndroidResource Include="Resources\layout\SettingsActivity.axml" />
     <AndroidResource Include="Resources\layout\SettingsFragment.axml" />
+    <AndroidResource Include="Resources\layout\EventViewActivity.axml" />
   </ItemGroup>
 </Project>

@@ -4,11 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-<!-- Real content goes here -->
-    <FrameLayout
-        android:id="@+id/content"
+    <fragment
+        android:name="NachoClient.AndroidClient.EventListFragment"
+        android:id="@+id/event_list_fragment"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-<!-- your content layout -->
+        android:layout_height="match_parent" />
 </LinearLayout>

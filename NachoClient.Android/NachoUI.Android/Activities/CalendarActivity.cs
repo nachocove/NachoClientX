@@ -19,42 +19,11 @@ namespace NachoClient.AndroidClient
     [Activity (Label = "CalendarActivity")]            
     public class CalendarActivity : NcTabBarActivity
     {
-        EventViewFragment eventViewFragment;
-        EventListFragment eventListFragment;
-
+        // All of the work happens in NcTabBarActivity and in EventListFragment.  The only thing that
+        // happens in this class is to specify the layout to use.
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.CalendarActivity);
-
-            eventListFragment = EventListFragment.newInstance ();
-            eventListFragment.onEventClick += EventListFragment_onEventClick;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, eventListFragment).AddToBackStack ("Events").Commit ();
-        }
-
-        void EventListFragment_onEventClick (object sender, McEvent ev)
-        {
-            Log.Info (Log.LOG_UI, "EventListFragment_onEventClick: {0}", ev);
-            eventViewFragment = EventViewFragment.newInstance (ev);
-            // Switch the view from the event list to the event detail.
-            this.FragmentManager.BeginTransaction ()
-                .Add (Resource.Id.content, eventViewFragment)
-                .Remove (eventListFragment)
-                .AddToBackStack ("View")
-                .Commit ();
-        }
-
-        public override void OnBackPressed ()
-        {
-            base.OnBackPressed ();
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is EventViewFragment) {
-                this.FragmentManager.PopBackStack ();
-            }
-        }
-
-        protected override void OnSaveInstanceState (Bundle outState)
-        {
-            base.OnSaveInstanceState (outState);
         }
     }
 }

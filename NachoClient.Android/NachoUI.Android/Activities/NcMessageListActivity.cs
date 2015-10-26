@@ -63,12 +63,7 @@ namespace NachoClient.AndroidClient
 
         void MessageListFragment_onEventClick (object sender, McEvent ev)
         {
-            Log.Info (Log.LOG_UI, "MessageListFragment_onEventClick: {0}", ev);
-            var eventViewFragment = EventViewFragment.newInstance (ev);
-            this.FragmentManager.BeginTransaction ()
-                .Add (Resource.Id.content, eventViewFragment)
-                .AddToBackStack ("View")
-                .Commit ();
+            StartActivity (EventViewActivity.ShowEventIntent (this, ev));
         }
 
         void onMessageClick (object sender, McEmailMessageThread thread)
@@ -107,9 +102,6 @@ namespace NachoClient.AndroidClient
                 if (1 < this.FragmentManager.BackStackEntryCount) {
                     this.FragmentManager.PopBackStack ();
                 }
-            }
-            if (f is EventViewFragment) {
-                this.FragmentManager.PopBackStack ();
             }
         }
 
