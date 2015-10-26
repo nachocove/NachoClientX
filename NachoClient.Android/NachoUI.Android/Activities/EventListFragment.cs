@@ -43,16 +43,6 @@ namespace NachoClient.AndroidClient
         ImageView addButton;
         ImageView todayButton;
 
-        private bool firstTime = true;
-
-        public event EventHandler<McEvent> onEventClick;
-
-        public static EventListFragment newInstance ()
-        {
-            var fragment = new EventListFragment ();
-            return fragment;
-        }
-
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
@@ -129,12 +119,9 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
-            if (firstTime) {
-                firstTime = false;
-                eventListAdapter.Refresh (() => {
-                    listView.SetSelection (eventListAdapter.PositionForToday);
-                });
-            }
+            eventListAdapter.Refresh (() => {
+                listView.SetSelection (eventListAdapter.PositionForToday);
+            });
 
             return view;
         }
@@ -146,9 +133,7 @@ namespace NachoClient.AndroidClient
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
-            if (null != onEventClick) {
-                onEventClick (this, eventListAdapter [e.Position]);
-            }
+            StartActivity (EventViewActivity.ShowEventIntent (Activity, eventListAdapter [e.Position]));
         }
 
         void AddButton_Click (object sender, EventArgs e)

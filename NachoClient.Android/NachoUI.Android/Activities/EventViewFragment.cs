@@ -17,6 +17,11 @@ using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
+    public interface IEventViewFragmentOwner
+    {
+        McEvent EventToView { get; }
+    }
+
     public class EventViewFragment : Fragment
     {
         private const int EDIT_REQUEST_CODE = 1;
@@ -27,25 +32,19 @@ namespace NachoClient.AndroidClient
 
         private View view;
 
-        public static EventViewFragment newInstance (McEvent ev)
-        {
-            var fragment = new EventViewFragment ();
-            fragment.ev = ev;
-            fragment.detail = new NcEventDetail (ev);
-            return fragment;
-        }
-
-        public override void OnCreate (Bundle savedInstanceState)
-        {
-            base.OnCreate (savedInstanceState);
-        }
-
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             view = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
             BindListeners ();
-            BindEventView ();
             return view;
+        }
+
+        public override void OnActivityCreated (Bundle savedInstanceState)
+        {
+            base.OnActivityCreated (savedInstanceState);
+            this.ev = ((IEventViewFragmentOwner)Activity).EventToView;
+            this.detail = new NcEventDetail (ev);
+            BindEventView ();
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
