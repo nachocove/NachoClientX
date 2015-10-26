@@ -494,8 +494,7 @@ namespace NachoCore.IMAP
             var uid = new UniqueId (email.ImapUid);
             UidList.Add (uid);
             MessageSummaryItems flags = MessageSummaryItems.BodyStructure | MessageSummaryItems.UniqueId;
-            HashSet<HeaderId> fetchHeaders = new HashSet<HeaderId> ();
-            var isummary = mailKitFolder.Fetch (UidList, flags, fetchHeaders, Token);
+            var isummary = mailKitFolder.Fetch (UidList, flags, Token);
             if (null == isummary || isummary.Count < 1) {
                 Log.Info (Log.LOG_IMAP, "Could not get summary for uid {0}", uid);
                 return null;
