@@ -57,21 +57,23 @@ namespace NachoCore.IMAP
                 action = new Tuple<ResolveAction, string> (ResolveAction.DeferAll, ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOLOKTIME");
             } catch (OperationCanceledException ex) {
-                evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
                 action = new Tuple<ResolveAction, string> (ResolveAction.DeferAll, ex.Message);
             } catch (UriFormatException ex) {
                 // this can't (shouldn't?) really happen except if Initial=true
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
                 if (Initial) {
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPURICONF", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
+                    evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotFindServer;
                 } else {
-                    evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPURLHARD");
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPURLTEMP1");
                 }
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (SocketException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: SocketException: {0}", ex.Message);
                 if (Initial) {
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
+                    evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMP");
                 }
@@ -107,8 +109,9 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
                 if (Initial) {
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
+                    evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
                 } else {
-                    evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPUNKHARD");
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPUNKTEMP");
                 }
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
@@ -118,7 +121,7 @@ namespace NachoCore.IMAP
 
             if (Cts.Token.IsCancellationRequested) {
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
-                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL1"); // will be ignored by the caller
+                return Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOCANCEL1"); // will be ignored by the caller
             }
             ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
             switch (action.Item1) {
