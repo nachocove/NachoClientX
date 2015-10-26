@@ -52,6 +52,9 @@
     <string name="demo_attachment_name">photo.jpg</string>
     <string name="demo_attachment_size">JPG file - 23.4KB</string>
     <string name="demo_attachment_count">3</string>
+    <string name="demo_signature">Sent by Nacho Mail</string>
+    <string name="demo_days_to_sync">One month</string>
+    <string name="demo_notifications">Hot, VIPs, Inbox</string>
     <string name="to_inbox">Go to Inbox</string>
     <string name="to_deadline">Go to Deadlines</string>
     <string name="to_deferred">Go to Deferred Messages</string>
@@ -121,4 +124,15 @@
     <string name="contact_email">EMAIL</string>
     <string name="contact_phone">PHONE</string>
     <string name="attachments">Attachments</string>
+    <string name="description">Description</string>
+    <string name="update_password">Update Password</string>
+    <string name="signature">Signature</string>
+    <string name="days_to_sync">Days to sync</string>
+    <string name="notifications">Notifications</string>
+    <string name="fast_notification">Fast Notification</string>
+    <string name="delete_account">Delete This Account</string>
+    <string name="advanced_settings">Advanced Settings</string>
+    <string name="server_error">Server Error</string>
+    <string name="certificate_issue">Certificate Issue"</string>
+    <string name="password_expires">Password expires {0}</string>
 </resources>

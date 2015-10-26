@@ -1366,5 +1366,10 @@
     <AndroidResource Include="Resources\layout\SettingsActivity.axml" />
     <AndroidResource Include="Resources\layout\SettingsFragment.axml" />
     <AndroidResource Include="Resources\layout\EventViewActivity.axml" />
+    <AndroidResource Include="Resources\layout\AccountSettingsFragment.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_avatar_alert.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_avatar_alert.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_avatar_alert.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_avatar_alert.png" />
   </ItemGroup>
 </Project>
