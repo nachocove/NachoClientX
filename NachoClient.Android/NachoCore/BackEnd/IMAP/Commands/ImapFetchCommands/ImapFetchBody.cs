@@ -181,7 +181,7 @@ namespace NachoCore.IMAP
         /// </summary>
         /// <param name="stream">Stream.</param>
         /// <param name="body">Body.</param>
-        /// <param name="depth">Depth.</param>
+        /// <param name="depth">Depth (used to limit recursion).</param>
         private void DumpToStream (Stream stream, BodyPart body, int depth = 0)
         {
             if (depth > 10) {
@@ -365,7 +365,7 @@ namespace NachoCore.IMAP
         /// <param name="stream">Stream.</param>
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="uid">Uid.</param>
-        /// <param name="dp">Dp.</param>
+        /// <param name="dp">DownloadPart.</param>
         private void GetBodyPart (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
@@ -387,7 +387,7 @@ namespace NachoCore.IMAP
         /// <param name="stream">Stream.</param>
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="uid">Uid.</param>
-        /// <param name="dp">Dp.</param>
+        /// <param name="dp">DownloadPart.</param>
         private void GetBodyPartHeader (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
@@ -410,7 +410,7 @@ namespace NachoCore.IMAP
         /// <param name="stream">Stream.</param>
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="uid">Uid.</param>
-        /// <param name="dp">Dp.</param>
+        /// <param name="dp">DownloadPart.</param>
         private void GetBodyPartData (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
