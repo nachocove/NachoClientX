@@ -39,7 +39,6 @@ namespace NachoClient.AndroidClient
         private TextView endField;
         private EditText locationField;
         private TextView reminderField;
-        private ImageView reminderArrow;
 
         private DateTime startTime;
         private DateTime endTime;
@@ -64,7 +63,6 @@ namespace NachoClient.AndroidClient
             endField = FindViewById<TextView> (Resource.Id.event_edit_end);
             locationField = FindViewById<EditText> (Resource.Id.event_edit_location);
             reminderField = FindViewById<TextView> (Resource.Id.event_edit_reminder);
-            reminderArrow = FindViewById<ImageView> (Resource.Id.event_edit_reminder_arrow);
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
 
@@ -173,6 +171,10 @@ namespace NachoClient.AndroidClient
             allDayField.CheckedChange += AllDayField_CheckedChange;
             startField.Click += StartField_Click;
             endField.Click += EndField_Click;
+            var startFieldArrow = FindViewById<ImageView> (Resource.Id.event_edit_start_arrow);
+            startFieldArrow.Click += StartField_Click;
+            var endFieldArrow = FindViewById<ImageView> (Resource.Id.event_edit_end_arrow);
+            endFieldArrow.Click += EndField_Click;
 
             // The text in the date/time fields, the reminder field, and the calendar field
             // should look like the default text for an EditText field, not a TextView field.
@@ -189,6 +191,7 @@ namespace NachoClient.AndroidClient
 
             reminderField.Text = Pretty.ReminderString (cal.HasReminder (), cal.GetReminder ());
             reminderField.Click += Reminder_Click;
+            var reminderArrow = FindViewById<ImageView> (Resource.Id.event_edit_reminder_arrow);
             reminderArrow.Click += Reminder_Click;
         }
 

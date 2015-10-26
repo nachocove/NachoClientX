@@ -193,11 +193,7 @@ namespace NachoClient.AndroidClient
 
         void StartComposeActivity (EmailHelper.Action action)
         {
-            var intent = new Intent ();
-            intent.SetClass (this.Activity, typeof(MessageComposeActivity));
-            intent.PutExtra (MessageComposeActivity.EXTRA_ACTION, (int)action);
-            intent.PutExtra (MessageComposeActivity.EXTRA_RELATED_MESSAGE_ID, thread.FirstMessageId);
-            StartActivity (intent);
+            StartActivity (MessageComposeActivity.RespondIntent (this.Activity, action, thread.FirstMessageId));
         }
 
         void View_Click (object sender, EventArgs e)

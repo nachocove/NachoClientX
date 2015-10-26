@@ -20,10 +20,13 @@ namespace NachoClient.AndroidClient
     public class CalendarActivity : NcTabBarActivity
     {
         // All of the work happens in NcTabBarActivity and in EventListFragment.  The only thing that
-        // happens in this class is to specify the layout to use.
+        // happens in this class is hooking up the correct base fragment
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.CalendarActivity);
+
+            var eventListFragment = new EventListFragment ();
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, eventListFragment).Commit ();
         }
     }
 }
