@@ -75,6 +75,12 @@
                     android:padding="4dp"
                     android:hint="Start Date"
                     android:gravity="right" />
+                <ImageView
+                    android:id="@+id/event_edit_start_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@drawable/gen_more_arrow" />
             </LinearLayout>
             <View
                 android:layout_width="match_parent"
@@ -99,6 +105,12 @@
                     android:padding="4dp"
                     android:hint="Start Date"
                     android:gravity="right" />
+                <ImageView
+                    android:id="@+id/event_edit_end_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@drawable/gen_more_arrow" />
             </LinearLayout>
             <View
                 android:layout_width="match_parent"
