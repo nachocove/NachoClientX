@@ -45,6 +45,7 @@ namespace NachoClient.AndroidClient
 
         SwipeMenuListView listView;
         MessageListAdapter messageListAdapter;
+        HotEventAdapter hotEventAdapter;
 
         SwipeRefreshLayout mSwipeRefreshLayout;
 
@@ -176,7 +177,8 @@ namespace NachoClient.AndroidClient
             if (parent.ShowHotEvent ()) {
                 hotEvent.Visibility = ViewStates.Visible;
                 var hoteventListView = view.FindViewById<SwipeMenuListView> (Resource.Id.hotevent_listView);
-                hoteventListView.Adapter = new HotEventAdapter ();
+                hotEventAdapter = new HotEventAdapter ();
+                hoteventListView.Adapter = hotEventAdapter;
                 var hoteventEmptyView = view.FindViewById<View> (Resource.Id.hot_event_empty);
                 hoteventListView.EmptyView = hoteventEmptyView;
 
@@ -205,10 +207,20 @@ namespace NachoClient.AndroidClient
                 });
 
                 hoteventListView.setOnMenuItemClickListener (( position, menu, index) => {
+                    var cal = CalendarHelper.GetMcCalendarRootForEvent (hotEventAdapter [position].Id);
                     switch (index) {
                     case LATE_TAG:
+                        if (null != cal) {
+                            var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Re: " + cal.GetSubject ());
+                            outgoingMessage.To = cal.OrganizerEmail;
+                            StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, outgoingMessage, "Running late."));
+                        }
                         break;
                     case FORWARD_TAG:
+                        if (null != cal) {
+                            StartActivity (MessageComposeActivity.ForwardCalendarIntent (
+                                this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + cal.GetSubject ())));
+                        }
                         break;
                     default:
                         throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
@@ -240,8 +252,7 @@ namespace NachoClient.AndroidClient
         void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
             if (null != onEventClick) {
-                DateTime timerFireTime;
-                var currentEvent = CalendarHelper.CurrentOrNextEvent (out timerFireTime);
+                var currentEvent = hotEventAdapter [0];
                 if (null != currentEvent) {
                     onEventClick (this, currentEvent);
                 }
@@ -281,9 +292,7 @@ namespace NachoClient.AndroidClient
             if (multiSelectActive) {
                 MultiSelectDelete ();
             } else {
-                var intent = new Intent ();
-                intent.SetClass (this.Activity, typeof(MessageComposeActivity));
-                StartActivity (intent);
+                StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity));
             }
         }
 
