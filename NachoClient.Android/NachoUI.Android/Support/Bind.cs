@@ -161,6 +161,9 @@ namespace NachoClient.AndroidClient
             userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
             userInitials.SetBackgroundResource (Bind.ColorForUser (contact.CircleColor));
 
+            var vipView = view.FindViewById<ImageView> (Resource.Id.vip);
+            BindContactVip (contact, vipView);
+
             var sectionHeader = view.FindViewById<TextView> (Resource.Id.contact_section_header);
             if (null == sectionLabel) {
                 sectionHeader.Visibility = ViewStates.Gone;
@@ -170,6 +173,12 @@ namespace NachoClient.AndroidClient
             }
 
             return viewType;
+        }
+
+        public static void BindContactVip(McContact contact, ImageView vipView)
+        {
+            vipView.SetImageResource (contact.IsVip ? Resource.Drawable.contacts_vip_checked : Resource.Drawable.contacts_vip);
+            vipView.Tag = contact.Id;
         }
 
         public static void BindEventCell (McEvent ev, View view)

@@ -83,7 +83,7 @@ namespace NachoCore.Utils
             }
         }
 
-        private static bool MustSaveMessageToSent(int accountId)
+        private static bool MustSaveMessageToSent (int accountId)
         {
             var account = McAccount.QueryById<McAccount> (accountId);
             return McAccount.AccountTypeEnum.IMAP_SMTP == account.AccountType &&
@@ -269,7 +269,7 @@ namespace NachoCore.Utils
                 var address = new NcEmailAddress (NcEmailAddress.Kind.From, message.From);
                 var mailbox = address.ToMailboxAddress (true);
                 if (mailbox != null) {
-                    if (!String.IsNullOrWhiteSpace(mailbox.Name)) {
+                    if (!String.IsNullOrWhiteSpace (mailbox.Name)) {
                         attribution += String.Format ("{0} <{1}>", mailbox.Name, mailbox.Address);
                     } else {
                         attribution += mailbox.Address;
@@ -300,8 +300,9 @@ namespace NachoCore.Utils
             FailBadPort,
             FailBadHost,
             FailBadScheme,
-            FailHadUsername
-        };
+            FailHadUsername}
+
+        ;
 
         public static ParseServerWhyEnum IsValidServer (string serverName)
         {
@@ -349,7 +350,7 @@ namespace NachoCore.Utils
                     return ParseServerWhyEnum.FailUnknown;
                 }
             }
-            if (!String.IsNullOrEmpty(serverURI.UserInfo)) {
+            if (!String.IsNullOrEmpty (serverURI.UserInfo)) {
                 return ParseServerWhyEnum.FailHadUsername;
             }
             // We were able to create a Url object.
@@ -533,7 +534,7 @@ namespace NachoCore.Utils
         {
             List<NcEmailAddress> addresses;
             string subject;
-            if (!ParseMailTo(urlString, out addresses, out subject, out body)) {
+            if (!ParseMailTo (urlString, out addresses, out subject, out body)) {
                 subject = "";
                 body = null;
                 addresses = new List<NcEmailAddress> ();
@@ -597,13 +598,13 @@ namespace NachoCore.Utils
                 // Reply-To trumps From
                 if (null != referencedMessage.ReplyTo) {
                     toString = referencedMessage.ReplyTo;
-                }else if (null != referencedMessage.From) {
+                } else if (null != referencedMessage.From) {
                     toString = referencedMessage.From;
                 }
                 // Some validation
                 if (toString != null) {
                     InternetAddress toAddress;
-                    if (MailboxAddress.TryParse (toString, out toAddress)){
+                    if (MailboxAddress.TryParse (toString, out toAddress)) {
                         if (String.Equals ((toAddress as MailboxAddress).Address, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
                             // If it looks like we're replying to ourself, we should instead reply to the entire To list from the
                             // referenced message.  This behavior is consistent with other clients, and is typically seen when
@@ -612,7 +613,7 @@ namespace NachoCore.Utils
                             // they'll get picked up in the reply-all scenario in the next block.
                             toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, recipientExclusions, referencedMessage.To);
                         } else {
-                            toList.Add(new NcEmailAddress (NcEmailAddress.Kind.To, toString));
+                            toList.Add (new NcEmailAddress (NcEmailAddress.Kind.To, toString));
                         }
                     }
                 }
@@ -656,8 +657,8 @@ namespace NachoCore.Utils
                 if (!String.IsNullOrEmpty (addressString) && InternetAddressList.TryParse (addressString, out addresses)) {
                     foreach (var address in addresses.Mailboxes) {
                         excluded = false;
-                        foreach (var exclusionAddress_ in exclusionAddresses){
-                            if (IsAccountAlias (exclusionAddress_, address.Address)){
+                        foreach (var exclusionAddress_ in exclusionAddresses) {
+                            if (IsAccountAlias (exclusionAddress_, address.Address)) {
                                 excluded = true;
                                 break;
                             }
@@ -885,6 +886,17 @@ namespace NachoCore.Utils
                 }
             }
             return false;
+        }
+
+        public static void MarkAsRead (McEmailMessageThread thread)
+        {
+            var message = thread.SingleMessageSpecialCase ();
+            if ((null != message) && !message.IsRead) {
+                var body = McBody.QueryById<McBody> (message.BodyId);
+                if (McBody.IsComplete (body)) {
+                    BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
+                }
+            }
         }
     }
 }

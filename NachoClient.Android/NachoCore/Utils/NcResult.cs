@@ -187,6 +187,7 @@ namespace NachoCore.Utils
             Info_DoesNotSync,
             Error_AlreadyAttached,
             Error_NotAttached,
+            Info_AccountSetChanged,
         };
 
         public enum WhyEnum

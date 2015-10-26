@@ -1507,7 +1507,7 @@ namespace NachoCore.Model
         /// </summary>
         private static int ContactSourceScore (McContact contact)
         {
-            if (contact.IsRic()) {
+            if (contact.IsRic ()) {
                 return 3;
             }
             switch (contact.Source) {
@@ -1536,10 +1536,10 @@ namespace NachoCore.Model
         private static bool SameName (McContact x, McContact y)
         {
             return string.Equals (x.FirstName, y.FirstName, StringComparison.InvariantCultureIgnoreCase) &&
-                string.Equals (x.MiddleName, y.MiddleName, StringComparison.InvariantCultureIgnoreCase) &&
-                string.Equals (x.LastName, y.LastName, StringComparison.InvariantCultureIgnoreCase) &&
-                string.Equals (x.Suffix, y.Suffix, StringComparison.InvariantCultureIgnoreCase) &&
-                string.Equals (x.CompanyName, y.CompanyName, StringComparison.InvariantCultureIgnoreCase);
+            string.Equals (x.MiddleName, y.MiddleName, StringComparison.InvariantCultureIgnoreCase) &&
+            string.Equals (x.LastName, y.LastName, StringComparison.InvariantCultureIgnoreCase) &&
+            string.Equals (x.Suffix, y.Suffix, StringComparison.InvariantCultureIgnoreCase) &&
+            string.Equals (x.CompanyName, y.CompanyName, StringComparison.InvariantCultureIgnoreCase);
         }
 
         /// <summary>
@@ -1607,9 +1607,9 @@ namespace NachoCore.Model
                 if (1 < searchWords.Length) {
                     if (Contains (match.contact.LastName, searchFor)) {
                         score += 8 * searchFor.Length;
-                    } else if (Contains(match.contact.FirstName, searchFor)) {
+                    } else if (Contains (match.contact.FirstName, searchFor)) {
                         score += 6 * searchFor.Length;
-                    } else if (Contains(match.contact.CompanyName, searchFor)) {
+                    } else if (Contains (match.contact.CompanyName, searchFor)) {
                         score += 4 * searchFor.Length;
                     }
                 }
@@ -1811,8 +1811,8 @@ namespace NachoCore.Model
                 if (0 != emailCompare) {
                     return emailCompare;
                 }
-                bool xHasName = HasName(x.contact);
-                bool yHasName = HasName(y.contact);
+                bool xHasName = HasName (x.contact);
+                bool yHasName = HasName (y.contact);
                 if (xHasName && !yHasName) {
                     return -1;
                 }
@@ -2041,6 +2041,11 @@ namespace NachoCore.Model
         {
             this.IsVip = IsVip;
             this.Update ();
+
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ContactChanged),
+                Account = McAccount.QueryById<McAccount> (this.AccountId),
+            });
 
             foreach (var emailAddressAttribute in this.EmailAddresses) {
                 var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);

@@ -512,9 +512,7 @@ namespace NachoClient.iOS
         public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
         {
             var attachment = obj as McAttachment;
-            if (attachment != null) {
-                attachment = AttachmentHelper.CopyAttachment (attachment);
-            }else{
+            if (attachment == null){
                 var file = obj as McDocument;
                 if (file != null) {
                     attachment = McAttachment.InsertSaveStart (Composer.Account.Id);

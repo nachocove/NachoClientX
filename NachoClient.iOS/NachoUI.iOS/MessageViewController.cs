@@ -617,7 +617,7 @@ namespace NachoClient.iOS
             // completely downloaded, so it is safe to call it unconditionally.  We put the call
             // here, rather than in ConfigureAndLayout(), to handle the case where the body is
             // downloaded long after the message view has been opened.
-            MarkAsRead ();
+            EmailHelper.MarkAsRead (thread);
 
             #if (DEBUG_UI)
             ViewHelper.DumpViews<TagType> (scrollView);
@@ -717,17 +717,6 @@ namespace NachoClient.iOS
                 }
                 firstAttachment = false;
                 attachmentListView.AddAttachment (attachment);
-            }
-        }
-
-        protected void MarkAsRead ()
-        {
-            var message = thread.SingleMessageSpecialCase ();
-            if ((null != message) && !message.IsRead) {
-                var body = McBody.QueryById<McBody> (message.BodyId);
-                if (McBody.IsComplete (body)) {
-                    BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
-                }
             }
         }
 

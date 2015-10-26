@@ -123,6 +123,7 @@ namespace NachoClient.AndroidClient
             if (account != null) {
                 account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
                 account.Update ();
+                NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountSetChanged);
                 LoginHelpers.SetHasViewedTutorial (true);
             }
         }

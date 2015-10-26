@@ -55,20 +55,23 @@ class HockeyappUploadAndroid(HockeyappUpload):
         if debug:
             print output
 
-        version = None
-        short_version = None
+        versionName = None
+        versionCode = None
         for line in output.split('\n'):
             if line.startswith('package: name='):
                 match = re.match("^package: name='(?P<name>.+)' versionCode='(?P<versionCode>\d+)' versionName='(?P<versionName>.+)'", line)
                 if not match:
                     raise Exception("No pattern matched for versionCode finding")
-                version = match.group('versionName')
-                short_version = match.group('versionCode')
+                versionName = match.group('versionName')
+                versionCode = match.group('versionCode')
                 break
         if debug:
-            print "Android versionCode=%s versionName=%s" % (short_version, version)
-        assert version and short_version
-        self.upload_version(filename, None, version, short_version, note)
+            print "Android versionCode=%s versionName=%s" % (versionCode, versionName)
+        assert versionName and versionCode
+        # see http://support.hockeyapp.net/kb/api/api-versions#create-version
+        # bundle_version - mandatory, set to CFBundleVersion (iOS and OS X) or to versionCode (Android)
+        # bundle_short_version - optional, set to CFBundleShortVersionString (iOS and OS X) or to versionName (Android)
+        self.upload_version(filename, None, version=versionCode, short_version=versionName, note=note)
 
 
 class HockeyappUploadIos(HockeyappUpload):
@@ -207,7 +210,7 @@ def main():
         hockey_app_klass = HockeyappUploadIos
     else:
         if not filename:
-            filename = '%s-Signed.apk' % project[architecture]['package_name']
+            filename = '%s.apk' % project[architecture]['package_name']
         if not filename.startswith("/"):
             filename = os.path.join(options.target_dir, filename)
         if not os.path.exists(filename):

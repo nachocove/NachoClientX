@@ -88,6 +88,26 @@ namespace NachoClient.AndroidClient
             var userInitials = view.FindViewById<Android.Widget.TextView> (Resource.Id.user_initials);
             userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
             userInitials.SetBackgroundResource (Bind.ColorForUser (contact.CircleColor));
+
+            var vipView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.vip);
+            BindContactVip (contact, vipView);
+            vipView.Click += VipView_Click;
+            vipView.Tag = contact.Id;
+        }
+
+        void BindContactVip (McContact contact, ImageView vipView)
+        {
+            vipView.SetImageResource (contact.IsVip ? Resource.Drawable.contacts_vip_checked : Resource.Drawable.contacts_vip);
+            vipView.Tag = contact.Id;
+        }
+
+        void VipView_Click (object sender, EventArgs e)
+        {
+            var vipView = (Android.Widget.ImageView)sender;
+            var contactId = (int)vipView.Tag;
+            var contact = McContact.QueryById<McContact> (contactId);
+            contact.SetVIP (!contact.IsVip);
+            BindContactVip (contact, vipView);
         }
 
         protected string GetTitleFromContact ()

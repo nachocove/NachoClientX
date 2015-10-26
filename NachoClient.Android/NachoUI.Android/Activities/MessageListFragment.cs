@@ -27,6 +27,12 @@ using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
+    public interface MessageListDelegate
+    {
+        bool ShowHotEvent();
+        void SetActiveImage(View view);
+    }
+
     public class MessageListFragment : Fragment
     {
         private const int ARCHIVE_TAG = 1;
@@ -164,7 +170,7 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
-            var parent = (NcMessageListActivity)Activity;
+            var parent = (MessageListDelegate)Activity;
             var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
 
             if (parent.ShowHotEvent ()) {
@@ -219,6 +225,17 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override void OnPause ()
+        {
+            base.OnPause ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
 
         void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
@@ -461,6 +478,22 @@ namespace NachoClient.AndroidClient
                 }
             }
             return messageList;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_EmailMessageChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                RefreshVisibleMessageCells ();
+                break;
+            }
         }
 
     }

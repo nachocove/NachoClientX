@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "NcMessageListActivity")]            
-    public class NcMessageListActivity : NcTabBarActivity
+    public class NcMessageListActivity : NcTabBarActivity, MessageListDelegate
     {
         protected McAccount account;
         MessageViewFragment messageViewFragment;
@@ -63,12 +63,7 @@ namespace NachoClient.AndroidClient
 
         void MessageListFragment_onEventClick (object sender, McEvent ev)
         {
-            Log.Info (Log.LOG_UI, "MessageListFragment_onEventClick: {0}", ev);
-            var eventViewFragment = EventViewFragment.newInstance (ev);
-            this.FragmentManager.BeginTransaction ()
-                .Add (Resource.Id.content, eventViewFragment)
-                .AddToBackStack ("View")
-                .Commit ();
+            StartActivity (EventViewActivity.ShowEventIntent (this, ev));
         }
 
         void onMessageClick (object sender, McEmailMessageThread thread)
@@ -77,7 +72,7 @@ namespace NachoClient.AndroidClient
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
-                messageViewFragment = MessageViewFragment.newInstance (message);
+                messageViewFragment = MessageViewFragment.newInstance (thread, message);
                 this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("Message").Commit ();
             } else {
                 var threadMessage = new NachoThreadedEmailMessages (McFolder.GetDefaultInboxFolder (NcApplication.Instance.Account.Id), thread.GetThreadId ());
@@ -107,9 +102,6 @@ namespace NachoClient.AndroidClient
                 if (1 < this.FragmentManager.BackStackEntryCount) {
                     this.FragmentManager.PopBackStack ();
                 }
-            }
-            if (f is EventViewFragment) {
-                this.FragmentManager.PopBackStack ();
             }
         }
 
