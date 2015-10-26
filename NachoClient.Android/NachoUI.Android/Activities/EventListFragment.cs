@@ -108,10 +108,20 @@ namespace NachoClient.AndroidClient
             });
 
             listView.setOnMenuItemClickListener (( position, menu, index) => {
+                var cal = CalendarHelper.GetMcCalendarRootForEvent (eventListAdapter [position].Id);
                 switch (index) {
                 case LATE_TAG:
+                    if (null != cal) {
+                        var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Re: " + cal.GetSubject ());
+                        outgoingMessage.To = cal.OrganizerEmail;
+                        StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, outgoingMessage, "Running late."));
+                    }
                     break;
                 case FORWARD_TAG:
+                    if (null != cal) {
+                        StartActivity (MessageComposeActivity.ForwardCalendarIntent (
+                            this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + cal.GetSubject ())));
+                    }
                     break;
                 default:
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));

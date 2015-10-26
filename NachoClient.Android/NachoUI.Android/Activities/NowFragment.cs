@@ -92,9 +92,7 @@ namespace NachoClient.AndroidClient
 
         void ComposeButton_Click (object sender, EventArgs e)
         {
-            var intent = new Intent ();
-            intent.SetClass (this.Activity, typeof(MessageComposeActivity));
-            StartActivity (intent);
+            StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity));
         }
 
         public override void SwitchAccount ()
