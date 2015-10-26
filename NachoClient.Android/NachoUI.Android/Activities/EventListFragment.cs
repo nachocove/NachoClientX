@@ -43,6 +43,8 @@ namespace NachoClient.AndroidClient
         ImageView addButton;
         ImageView todayButton;
 
+        private bool firstTime = true;
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
@@ -129,9 +131,12 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
-            eventListAdapter.Refresh (() => {
-                listView.SetSelection (eventListAdapter.PositionForToday);
-            });
+            if (firstTime) {
+                firstTime = false;
+                eventListAdapter.Refresh (() => {
+                    listView.SetSelection (eventListAdapter.PositionForToday);
+                });
+            }
 
             return view;
         }
