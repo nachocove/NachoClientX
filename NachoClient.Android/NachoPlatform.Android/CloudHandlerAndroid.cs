@@ -29,11 +29,18 @@ namespace NachoPlatform
 
         public string GetUserId ()
         {
-            return null;
+            if (Keychain.Instance.HasKeychain ()) {
+                return Keychain.Instance.GetUserId ();
+            } else {
+                return null;
+            }
         }
 
         public void SetUserId (string UserId)
         {
+            if (Keychain.Instance.HasKeychain ()) {
+                Keychain.Instance.SetUserId (UserId);
+            }
         }
 
         public bool IsAlreadyPurchased ()

@@ -155,7 +155,7 @@ namespace NachoPlatform
 
         public string GetLogSalt (int handle)
         {
-            return Getter (RefreshTokenKey (handle));
+            return Getter (LogSaltKey (handle));
         }
 
         public bool SetLogSalt(int handle, string logSalt)
