@@ -332,7 +332,7 @@ namespace NachoCore.IMAP
         /// <param name="mailKitFolder">MailKit folder.</param>
         /// <param name="uid">Uid.</param>
         /// <param name="dp">DownloadPart</param>
-        /// <param name="depth">Recursion Depth.</param>
+        /// <param name="depth">Depth (used to limit recursion).</param>
         private void DownloadIndividualPart (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp, int depth = 0)
         {
             if (depth > 10) {
