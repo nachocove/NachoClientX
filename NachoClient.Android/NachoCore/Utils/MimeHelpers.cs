@@ -9,6 +9,7 @@ using MimeKit;
 using NachoCore;
 using NachoCore.Model;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.Utils
 {
