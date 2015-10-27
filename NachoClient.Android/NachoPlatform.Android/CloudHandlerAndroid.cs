@@ -6,6 +6,7 @@ using System.Text;
 using Java.IO;
 using Android.Content;
 using NachoClient.AndroidClient;
+using System.IO;
 
 namespace NachoPlatform
 {
@@ -86,15 +87,10 @@ namespace NachoPlatform
     public class NcBackupAgent : BackupAgent
     {
         const string NachoBackupUserId = "NachoUserId";
-
         public override void OnCreate ()
         {
-            // create the backup manager prefs instance
-            var backupPrefs = NcBackupPrefs.Instance;
-            NcAssert.NotNull (backupPrefs);
             base.OnCreate ();
         }
-
         public override void OnBackup (Android.OS.ParcelFileDescriptor oldState, BackupDataOutput data, Android.OS.ParcelFileDescriptor newState)
         {
             if (!NeedNewBackup (oldState)) {
@@ -145,22 +141,23 @@ namespace NachoPlatform
         #region EpochHandling
         private bool NeedNewBackup (Android.OS.ParcelFileDescriptor oldState)
         {
-            DataInputStream old = new DataInputStream(new FileInputStream(oldState.FileDescriptor));
-            try {
-                long stateModified = old.ReadLong();
-                if (CurrentStateEpoch.HasValue && CurrentStateEpoch.Value == stateModified) {
-                    return false;
-                }
-                return true;
-            } catch (IOException e) {
-                return true;
-            }
+//            DataInputStream old = new DataInputStream(new FileInputStream (oldState.FileDescriptor));
+//            try {
+//                long stateModified = old.ReadLong();
+//                if (CurrentStateEpoch.HasValue && CurrentStateEpoch.Value == stateModified) {
+//                    return false;
+//                }
+//                return true;
+//            } catch (Java.IO.IOException e) {
+//                return true;
+//            }
+            return true;
         }
 
         private void writeNewState (Android.OS.ParcelFileDescriptor newState)
         {
-            DataOutputStream outstream = new DataOutputStream(new FileOutputStream(newState.FileDescriptor));
-            outstream.WriteLong (NextEpoch ());
+//            DataOutputStream outstream = new DataOutputStream(new FileOutputStream(newState.FileDescriptor));
+//            outstream.WriteLong (NextEpoch ());
         }
 
         private long NextEpoch ()
@@ -207,8 +204,6 @@ namespace NachoPlatform
                     lock (syncRoot) {
                         if (instance == null) {
                             instance = new NcBackupPrefs ();
-                            // make sure we can and do create the file.
-                            instance.BackupPrefs;
                         }
                     }
                 }
