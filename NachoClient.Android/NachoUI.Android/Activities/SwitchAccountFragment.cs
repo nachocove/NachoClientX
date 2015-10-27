@@ -237,11 +237,14 @@ namespace NachoClient.AndroidClient
 
         void OnClick (int position)
         {
-            if (0 == position) {
-                // Header
-                return;
-            } else if ((ItemCount - 1) == position) {
-                // Footer
+            // Switcher has a header
+            if (DisplayMode.AccountSwitcher == displayMode) {
+                if (0 == position) {
+                    return;
+                }
+            }
+            // Everyone has a footer
+            if ((ItemCount - 1) == position) {
                 if (AddAccount != null) {
                     AddAccount (this, null);
                 }
@@ -252,8 +255,8 @@ namespace NachoClient.AndroidClient
                     AccountSelected (this, accounts [accountIndex]);
                 }
             }
-        }
 
+        }
     }
 }
 

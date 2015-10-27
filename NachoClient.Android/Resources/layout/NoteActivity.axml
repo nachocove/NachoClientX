@@ -5,6 +5,15 @@
     android:layout_height="fill_parent">
     <include
         layout="@layout/ButtonBar" />
+    <TextView
+        android:id="@+id/note_instructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="6dp"
+        android:textSize="14dp"
+        android:textStyle="normal"
+        android:textColor="@android:color/black"
+        android:background="@color/NachoLightGrayBackground" />
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
