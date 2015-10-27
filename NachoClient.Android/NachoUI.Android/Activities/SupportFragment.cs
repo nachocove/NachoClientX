@@ -11,6 +11,7 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
@@ -31,6 +32,10 @@ namespace NachoClient.AndroidClient
 
             var account = view.FindViewById (Resource.Id.account);
             account.Visibility = ViewStates.Invisible;
+
+            var fmt = GetString (Resource.String.version_string);
+            var versionView = view.FindViewById<TextView> (Resource.Id.version);
+            versionView.Text = String.Format (fmt, NcApplication.GetVersionString ());
 
             var emailSupport = view.FindViewById<View> (Resource.Id.email_support);
             emailSupport.Click += EmailSupport_Click;

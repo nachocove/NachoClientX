@@ -109,7 +109,7 @@
     <string name="happy">We\'re always more than happy to hear from you.</string>
     <string name="phone_support">Call us at +1 (971) 803-6226</string>
     <string name="email_support">Send us a message at support@nachocove.com</string>
-    <string name="version_string">Nacho Mail version 0.0.1 (001)</string>
+    <string name="version_string">Nacho Mail version {0}</string>
     <string name="reach">How can we reach you?</string>
     <string name="reach_prompt">yourname@email.com</string>
     <string name="assist">What can we help you with?</string>

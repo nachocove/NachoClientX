@@ -11,6 +11,7 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
@@ -28,6 +29,10 @@ namespace NachoClient.AndroidClient
 
             var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
+
+            var fmt = GetString (Resource.String.version_string);
+            var versionView = view.FindViewById<TextView> (Resource.Id.version);
+            versionView.Text = String.Format (fmt, NcApplication.GetVersionString ());
 
             // FIXME: Un-highlight any highlighted tab bar items.
 

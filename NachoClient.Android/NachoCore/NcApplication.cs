@@ -1101,6 +1101,11 @@ namespace NachoCore
             return dataDirPath;
         }
 
+        public static string GetVersionString()
+        {
+            return String.Format("{0} ({1})", BuildInfo.Version, BuildInfo.BuildNumber);
+        }
+
         // Fast track to UI
         static public bool ReadyToStartUI ()
         {
