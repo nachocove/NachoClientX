@@ -79,14 +79,9 @@ namespace NachoCore.Model
             NcAssert.AreEqual ((int)CredTypeEnum.Password, (int)CredType, string.Format ("UpdatePassword:CredType:{0}", CredType));
             Expiry = DateTime.MaxValue;
             RectificationUrl = null;
-            if (Keychain.Instance.HasKeychain ()) {
-                NcAssert.True (Keychain.Instance.SetPassword (Id, password));
-                Password = null;
-                UpdateCredential ();
-            } else {
-                Password = password;
-                UpdateCredential ();
-            }
+            NcAssert.True (Keychain.Instance.SetPassword (Id, password));
+            Password = null;
+            UpdateCredential ();
             var account = McAccount.QueryById<McAccount> (AccountId);
             NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_McCredPasswordChanged);
         }
@@ -97,17 +92,11 @@ namespace NachoCore.Model
             NcAssert.AreEqual ((int)CredTypeEnum.OAuth2, (int)CredType, string.Format ("UpdateOauth2:CredType:{0}", CredType));
             Expiry = DateTime.UtcNow.AddSeconds (expirySecs);
             ExpirySecs = expirySecs;
-            if (Keychain.Instance.HasKeychain ()) {
-                NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
-                AccessToken = null;
-                NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
-                RefreshToken = null;
-                UpdateCredential ();
-            } else {
-                AccessToken = accessToken;
-                RefreshToken = refreshToken;
-                UpdateCredential ();
-            }
+            NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
+            AccessToken = null;
+            NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
+            RefreshToken = null;
+            UpdateCredential ();
         }
 
         public void ClearExpiry ()
@@ -163,7 +152,7 @@ namespace NachoCore.Model
 
         public string GetPassword ()
         {
-            if (Keychain.Instance.HasKeychain () && null == Password) {
+            if (null == Password) {
                 return Keychain.Instance.GetPassword (Id);
             } else {
                 return Password;
@@ -172,7 +161,7 @@ namespace NachoCore.Model
 
         public string GetAccessToken ()
         {
-            if (Keychain.Instance.HasKeychain () && null == AccessToken) {
+            if (null == AccessToken) {
                 return Keychain.Instance.GetAccessToken (Id);
             } else {
                 return AccessToken;
@@ -181,7 +170,7 @@ namespace NachoCore.Model
 
         public string GetRefreshToken ()
         {
-            if (Keychain.Instance.HasKeychain () && null == RefreshToken) {
+            if (null == RefreshToken) {
                 return Keychain.Instance.GetRefreshToken (Id);
             } else {
                 return RefreshToken;
@@ -190,11 +179,9 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            if (Keychain.Instance.HasKeychain ()) {
-                Keychain.Instance.DeletePassword (Id);
-                Password = null;
-                Update ();
-            } 
+            Keychain.Instance.DeletePassword (Id);
+            Password = null;
+            Update ();
             return base.Delete ();
         }
 

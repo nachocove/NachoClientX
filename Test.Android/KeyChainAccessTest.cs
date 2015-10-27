@@ -23,8 +23,6 @@ namespace Test.iOS
         [Test]
         public void TestKeyChainLogSalt ()
         {
-            Assert.IsTrue (Keychain.Instance.HasKeychain ());
-
             var logSalt = "Foo1234";
             Assert.IsTrue (Keychain.Instance.SetLogSalt (KKeyChainId, logSalt));
             Assert.AreEqual (logSalt, Keychain.Instance.GetLogSalt (KKeyChainId));
@@ -41,8 +39,6 @@ namespace Test.iOS
         [Ignore("Ignoring long running unit test.")]
         public void TestKeyChainLogSaltMulti ()
         {
-            Assert.IsTrue (Keychain.Instance.HasKeychain ());
-
             var logSalt = "Foo1234";
             var retryCount = 200000;
             var loopSalt = logSalt + "-0000";

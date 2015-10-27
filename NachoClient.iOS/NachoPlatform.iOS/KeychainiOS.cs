@@ -41,11 +41,6 @@ namespace NachoPlatform
          * Global (non-account specific) values use unformatted strings that don't start with a number, 
          * eg "IdentifierForVendor".
          */
-        public bool HasKeychain ()
-        {
-            return true;
-        }
-
         private SecRecord CreateQuery (string service)
         {
             // http://stackoverflow.com/questions/4891562/ios-keychain-services-only-specific-values-allowed-for-ksecattrgeneric-key/5008417#5008417
