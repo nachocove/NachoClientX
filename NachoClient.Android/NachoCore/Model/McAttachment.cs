@@ -49,13 +49,11 @@ namespace NachoCore.Model
         /// <summary>
         /// DEPRECATED - DO NOT USE.
         /// </summary>
-        [Obsolete]
         public int ItemId { get; set; }
 
         /// <summary>
         /// DEPRECATED - DO NOT USE.
         /// </summary>
-        [Obsolete]
         public McAbstrFolderEntry.ClassCodeEnum ClassCode { get; set; }
 
         [Indexed]
