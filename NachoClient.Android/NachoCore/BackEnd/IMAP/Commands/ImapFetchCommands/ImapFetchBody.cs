@@ -296,7 +296,7 @@ namespace NachoCore.IMAP
             var tmp = NcModel.Instance.TmpPath (AccountId);
             try {
                 using (FileStream stream = new FileStream (tmp, FileMode.CreateNew)) {
-                    WriteASCIIString (stream, email.Headers);
+                    WriteUTF8String (stream, email.Headers);
                     foreach (var part in Parts) {
                         WriteBoundary (stream, boundary, false);
                         DownloadIndividualPart (stream, mailKitFolder, uid, part);
@@ -439,6 +439,12 @@ namespace NachoCore.IMAP
         private void WriteASCIIString (Stream stream, string s)
         {
             byte[] x = Encoding.ASCII.GetBytes (s);
+            stream.Write (x, 0, x.Length);
+        }
+
+        private void WriteUTF8String (Stream stream, string s)
+        {
+            byte[] x = Encoding.UTF8.GetBytes (s);
             stream.Write (x, 0, x.Length);
         }
 
