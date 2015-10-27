@@ -271,10 +271,7 @@ namespace NachoCore.IMAP
         private static bool isExchangeATTAttachment (BodyPartBasic basic)
         {
             if (basic.IsAttachment && basic.ContentType.Matches ("text", "*")) {
-                var regex = new Regex (@"^ATT\d{5,}\.(txt|html?)$");
-                if (regex.IsMatch (basic.ContentDisposition.FileName)) {
-                    return true;
-                }
+                return MimeHelpers.isExchangeATTFilename (basic.ContentDisposition.FileName);
             }
             return false;      
         }

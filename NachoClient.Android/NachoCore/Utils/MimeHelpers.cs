@@ -844,6 +844,14 @@ namespace NachoCore.Utils
             }
         }
 
+        public static bool isExchangeATTFilename (string filename)
+        {
+            var regex = new Regex (@"^ATT\d{5,}\.(txt|html?)$");
+            if (regex.IsMatch (filename)) {
+                return true;
+            }
+            return false;
+        }
     }
 
     // This class is copied from MimeKit.AttachmentCollection.  Changes were made to reduce memory consumption.
