@@ -38,6 +38,7 @@ namespace NachoClient.AndroidClient
         private TextView startField;
         private TextView endField;
         private EditText locationField;
+        private TextView attendeeCountField;
         private TextView reminderField;
 
         private DateTime startTime;
@@ -62,6 +63,7 @@ namespace NachoClient.AndroidClient
             startField = FindViewById<TextView> (Resource.Id.event_edit_start);
             endField = FindViewById<TextView> (Resource.Id.event_edit_end);
             locationField = FindViewById<EditText> (Resource.Id.event_edit_location);
+            attendeeCountField = FindViewById<TextView> (Resource.Id.event_edit_attendee_count);
             reminderField = FindViewById<TextView> (Resource.Id.event_edit_reminder);
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
@@ -176,18 +178,26 @@ namespace NachoClient.AndroidClient
             var endFieldArrow = FindViewById<ImageView> (Resource.Id.event_edit_end_arrow);
             endFieldArrow.Click += EndField_Click;
 
-            // The text in the date/time fields, the reminder field, and the calendar field
-            // should look like the default text for an EditText field, not a TextView field.
-            // Copy the necessary information from one of the EditText fields to make that happen.
+            // The text in the date/time fields, the reminder field, the attende count field,
+            // and the calendar field should look like the default text for an EditText field,
+            // not a TextView field.  Copy the necessary information from one of the EditText
+            // fields to make that happen.
             startField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             endField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            attendeeCountField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             reminderField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             startField.SetTextColor (titleField.TextColors);
             endField.SetTextColor (titleField.TextColors);
+            attendeeCountField.SetTextColor (titleField.TextColors);
             reminderField.SetTextColor (titleField.TextColors);
 
             allDayField.Checked = cal.AllDayEvent;
             ConfigureStartEndFields ();
+
+            attendeeCountField.Text = string.Format ("( {0} )", cal.attendees.Count);
+            attendeeCountField.Click += Attendee_Click;
+            var attendeeArrow = FindViewById<ImageView> (Resource.Id.event_edit_attendee_arrow);
+            attendeeArrow.Click += Attendee_Click;
 
             reminderField.Text = Pretty.ReminderString (cal.HasReminder (), cal.GetReminder ());
             reminderField.Click += Reminder_Click;
@@ -380,6 +390,11 @@ namespace NachoClient.AndroidClient
                 }
                 reminderField.Text = Pretty.ReminderString (hasReminder, (uint)reminder);
             });
+        }
+
+        private void Attendee_Click (object sender, EventArgs e)
+        {
+            StartActivity (AttendeeEditActivity.AttendeeEditIntent (this, cal.attendees));
         }
     }
 }

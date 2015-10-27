@@ -107,6 +107,9 @@ namespace NachoClient.AndroidClient
             editButton.SetImageResource (Resource.Drawable.gen_edit);
             editButton.Click += EditButton_Click;
 
+            var attendeesView = view.FindViewById<View> (Resource.Id.event_attendee_view);
+            attendeesView.Click += AttendeesView_Click;
+
             var reminderView = view.FindViewById<View> (Resource.Id.event_reminder_label);
             reminderView.Click += ReminderView_Click;
             var reminderArrow = view.FindViewById<View> (Resource.Id.event_reminder_arrow);
@@ -123,10 +126,7 @@ namespace NachoClient.AndroidClient
         /// </summary>
         void BindEventView ()
         {
-            // TODO: Attendees
             // TODO: Attachments
-            // TODO: Edit notes view
-            // TODO: Change reminder arrow
 
             detail.Refresh ();
 
@@ -343,6 +343,11 @@ namespace NachoClient.AndroidClient
         private void EditButton_Click (object sender, EventArgs e)
         {
             StartActivityForResult (EventEditActivity.EditEventIntent (this.Activity, ev), EDIT_REQUEST_CODE);
+        }
+
+        private void AttendeesView_Click (object sender, EventArgs e)
+        {
+            StartActivity (AttendeeViewActivity.AttendeeViewIntent (this.Activity, detail.SpecificItem.attendees));
         }
 
         private void ReminderView_Click (object sender, EventArgs e)
