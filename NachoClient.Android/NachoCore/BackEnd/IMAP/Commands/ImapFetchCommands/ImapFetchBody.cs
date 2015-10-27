@@ -303,9 +303,9 @@ namespace NachoCore.IMAP
                     }
                     WriteBoundary (stream, boundary, true);
                 }
+                body.Truncated = false;
                 body.UpdateFileMove (tmp);
                 tmp = null;
-                body.Truncated = false;
             } catch (ImapCommandException ex) {
                 Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand ImapCommandException: {0}", ex.Message);
                 // TODO Probably want to narrow this down. Pull in latest MailKit and make it compile.
