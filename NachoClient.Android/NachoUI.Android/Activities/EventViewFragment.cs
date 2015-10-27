@@ -353,8 +353,8 @@ namespace NachoClient.AndroidClient
                     if (hasReminder) {
                         detail.SpecificItem.Reminder = (uint)reminder;
                     }
-                    detail.SpecificItem.Update();
-                    BackEnd.Instance.UpdateCalCmd(detail.Account.Id, detail.SpecificItem.Id, false);
+                    detail.SpecificItem.Update ();
+                    BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
                     BindEventView ();
                 });
             }
@@ -368,8 +368,9 @@ namespace NachoClient.AndroidClient
                 noteText = note.noteContent;
             }
 
+            var title = Pretty.NoteTitle (detail.SpecificItem.GetSubject ());
             StartActivityForResult (
-                NoteActivity.EditNoteIntent (this.Activity, detail.SpecificItem.GetSubject (), noteText, insertDate: false),
+                NoteActivity.EditNoteIntent (this.Activity, title, null, noteText, insertDate: false),
                 NOTE_REQUEST_CODE);
         }
     }

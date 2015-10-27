@@ -64,7 +64,8 @@ namespace NachoClient.AndroidClient
 
         void AccountAdapter_AccountSelected (object sender, McAccount account)
         {
-
+            var parent = (SettingsActivity)Activity;
+            parent.AccountSettingsSelected (account);
         }
 
         void AccountAdapter_AddAccount (object sender, EventArgs e)
@@ -72,7 +73,6 @@ namespace NachoClient.AndroidClient
             var parent = (AccountListDelegate)Activity;
             parent.AddAccount ();
         }
-
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
