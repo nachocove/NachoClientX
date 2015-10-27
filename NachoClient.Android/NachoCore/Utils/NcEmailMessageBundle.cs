@@ -644,11 +644,8 @@ namespace NachoCore.Utils
         protected override void VisitTextPart (TextPart entity)
         {
             bool isAttachment = entity.ContentDisposition != null && entity.ContentDisposition.IsAttachment;
-            if (isAttachment) {
-                var regex = new Regex (@"^ATT\d{5,}\.(txt|html?)$");
-                if (regex.IsMatch (entity.FileName)) {
-                    isAttachment = false;
-                }
+            if (isAttachment && MimeHelpers.isExchangeATTFilename (entity.FileName)) {
+                isAttachment = false;
             }
             if (!isAttachment) {
                 HtmlDocument htmlDocument = null;

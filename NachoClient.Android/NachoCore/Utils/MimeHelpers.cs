@@ -8,6 +8,7 @@ using System.Linq;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
+using System.Threading;
 
 namespace NachoCore.Utils
 {
@@ -783,7 +784,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void PossiblyExtractAttachmentsFromBody (McBody body, McAbstrItem item)
+        public static void PossiblyExtractAttachmentsFromBody (McBody body, McAbstrItem item, CancellationToken Token = default(CancellationToken))
         {
             // Now that we have a body, see if it is possible to fill in the contents of any attachments.
             if (McBody.BodyTypeEnum.MIME_4 == body.BodyType && McBody.FilePresenceEnum.Complete == body.FilePresence && !body.Truncated) {
@@ -791,6 +792,7 @@ namespace NachoCore.Utils
                 if (0 < bodyAttachments.Count) {
 
                     foreach (var itemAttachment in McAttachment.QueryByItem(item)) {
+                        Token.ThrowIfCancellationRequested ();
                         if (McAttachment.FilePresenceEnum.Complete == itemAttachment.FilePresence) {
                             // Attachment already downloaded.
                             continue;
@@ -805,6 +807,7 @@ namespace NachoCore.Utils
                         MimeEntity contentIdMatch = null;
                         MimeEntity displayNameMatch = null;
                         foreach (var bodyAttachment in bodyAttachments) {
+                            Token.ThrowIfCancellationRequested ();
                             if (null != bodyAttachment.ContentId && null != itemAttachment.ContentId &&
                                 bodyAttachment.ContentId == itemAttachment.ContentId)
                             {
@@ -826,18 +829,29 @@ namespace NachoCore.Utils
                         }
                         MimeEntity match = duplicateContentId ? null : (contentIdMatch ?? (duplicateDisplayName ? null : displayNameMatch));
                         if (null != match) {
-                            itemAttachment.UpdateData ((stream) => {
-                                ((MimeKit.MimePart)match).ContentObject.DecodeTo (stream);
-                            });
-                            itemAttachment.SetFilePresence (McAttachment.FilePresenceEnum.Complete);
-                            itemAttachment.Truncated = false;
-                            itemAttachment.Update ();
+                            Token.ThrowIfCancellationRequested ();
+                            if (match.ContentDisposition.Size > 0) {
+                                itemAttachment.UpdateData ((stream) => {
+                                    ((MimeKit.MimePart)match).ContentObject.DecodeTo (stream);
+                                });
+                                itemAttachment.SetFilePresence (McAttachment.FilePresenceEnum.Complete);
+                                itemAttachment.Truncated = false;
+                                itemAttachment.Update ();
+                            }
                         }
                     }
                 }
             }
         }
 
+        public static bool isExchangeATTFilename (string filename)
+        {
+            var regex = new Regex (@"^ATT\d{5,}\.(txt|html?)$");
+            if (regex.IsMatch (filename)) {
+                return true;
+            }
+            return false;
+        }
     }
 
     // This class is copied from MimeKit.AttachmentCollection.  Changes were made to reduce memory consumption.

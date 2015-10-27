@@ -710,7 +710,7 @@ namespace Test.iOS
         private void DoReportCommResultWithDateTime ()
         {
             var mockCommStatus = MockNcCommStatus.Instance;
-            Assert.True (mockCommStatus.DelayUntil > DateTime.Now, "Should delay until a time later than the present");
+            Assert.True (mockCommStatus.DelayUntil > DateTime.UtcNow, "Should delay until a time later than the present");
         }
 
         // Test that comm status' are reported correctly by each status code method

@@ -10,6 +10,7 @@ using NachoPlatform;
 using System.Collections.Generic;
 using MimeKit;
 using MailKit.Net.Imap;
+using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -42,7 +43,7 @@ namespace NachoCore.IMAP
 
         #region Pick
 
-        public Tuple<PickActionEnum, ImapCommand> PickUserDemand (NcImapClient Client)
+        public Tuple<PickActionEnum, ImapCommand> PickUserDemand (NcImapClient Client, CancellationToken Token)
         {
             var protocolState = BEContext.ProtocolState;
 
@@ -87,7 +88,7 @@ namespace NachoCore.IMAP
             return null;
         }
 
-        public Tuple<PickActionEnum, ImapCommand> Pick (NcImapClient Client)
+        public Tuple<PickActionEnum, ImapCommand> Pick (NcImapClient Client, CancellationToken Token)
         {
             var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
@@ -95,7 +96,7 @@ namespace NachoCore.IMAP
                 // ExecutionContext is not set until after BE is started.
                 exeCtxt = NcApplication.Instance.PlatformIndication;
             }
-            var userDemand = PickUserDemand (Client);
+            var userDemand = PickUserDemand (Client, Token);
             if (null != userDemand) {
                 return userDemand;
             }
