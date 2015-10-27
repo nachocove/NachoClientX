@@ -379,7 +379,7 @@ namespace NachoCore.Model
 
         public string GetLogSalt ()
         {
-            if (Keychain.Instance.HasKeychain () && null == LogSalt) {
+            if (null == LogSalt) {
                 return Keychain.Instance.GetLogSalt (Id);
             } else {
                 return LogSalt;
@@ -404,10 +404,8 @@ namespace NachoCore.Model
         public void UpdateLogSalt ()
         {
             NcAssert.True (0 != Id);
-            if (Keychain.Instance.HasKeychain ()) {
-                Keychain.Instance.SetLogSalt (Id, LogSalt);
-                LogSalt = null;
-            } 
+            Keychain.Instance.SetLogSalt (Id, LogSalt);
+            LogSalt = null;
             Update ();
         }
 
@@ -421,11 +419,9 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            if (Keychain.Instance.HasKeychain ()) {
-                Keychain.Instance.DeleteLogSalt (Id);
-                LogSalt = null;
-                Update ();
-            } 
+            Keychain.Instance.DeleteLogSalt (Id);
+            LogSalt = null;
+            Update ();
             return base.Delete ();
         }
 

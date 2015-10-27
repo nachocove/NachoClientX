@@ -61,14 +61,10 @@ namespace NachoPlatform
             // NOTE: The native email client uses "android1325419235512".
             // The NitroDesk client uses "49515649525250545154575557495751".
             if (null == _Identity) {
-                if (Keychain.Instance.HasKeychain ()) {
-                    _Identity = Keychain.Instance.GetDeviceId ();
-                    if (null == _Identity) {
-                        _Identity = GetOrCreateDeviceId ();
-                        Keychain.Instance.SetDeviceId (_Identity);
-                    }
-                } else {
+                _Identity = Keychain.Instance.GetDeviceId ();
+                if (null == _Identity) {
                     _Identity = GetOrCreateDeviceId ();
+                    Keychain.Instance.SetDeviceId (_Identity);
                 }
             }
             return _Identity;

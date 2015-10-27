@@ -262,8 +262,6 @@ namespace NachoPlatform
 
     public interface IPlatformKeychain
     {
-        bool HasKeychain ();
-
         string GetPassword (int handle);
 
         bool SetPassword (int handle, string password);
