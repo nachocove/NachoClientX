@@ -13,6 +13,7 @@
         android:icon="@drawable/icon"
 	android:backupAgent="NcBackupAgent">
         <activity android:name="net.hockeyapp.android.UpdateActivity" />
+        <meta-data android:name="com.google.android.backup.api_key" android:value="AEdPqrEAAAAIHhu7nvviRVUbM-wMP0XfbO1OAPy579Irm97hJw" />
     </application>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
