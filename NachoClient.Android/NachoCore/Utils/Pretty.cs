@@ -805,6 +805,15 @@ namespace NachoCore.Utils
             } 
             return detailText;
         }
+
+        public static string NoteTitle(string title)
+        {
+            if (null == title) {
+                return "Note";
+            } else {
+                return string.Format ("Note: {0}", title);
+            }
+        }
     }
 }
 

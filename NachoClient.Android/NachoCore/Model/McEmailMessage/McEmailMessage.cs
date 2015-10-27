@@ -244,6 +244,12 @@ namespace NachoCore.Model
         /// classified as junk and will be disqualified by brain.
         public bool IsJunk { get; set; }
 
+        /// <summary>
+        /// The Imap BODYSTRUCTURE.
+        /// </summary>
+        /// <value>The imap body structure.</value>
+        public string ImapBodyStructure { get; set; }
+
         ///
         /// <Flag> STUFF.
         ///

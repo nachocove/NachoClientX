@@ -107,6 +107,9 @@ namespace NachoClient.AndroidClient
             editButton.SetImageResource (Resource.Drawable.gen_edit);
             editButton.Click += EditButton_Click;
 
+            var attendeesView = view.FindViewById<View> (Resource.Id.event_attendee_view);
+            attendeesView.Click += AttendeesView_Click;
+
             var reminderView = view.FindViewById<View> (Resource.Id.event_reminder_label);
             reminderView.Click += ReminderView_Click;
             var reminderArrow = view.FindViewById<View> (Resource.Id.event_reminder_arrow);
@@ -123,10 +126,7 @@ namespace NachoClient.AndroidClient
         /// </summary>
         void BindEventView ()
         {
-            // TODO: Attendees
             // TODO: Attachments
-            // TODO: Edit notes view
-            // TODO: Change reminder arrow
 
             detail.Refresh ();
 
@@ -345,6 +345,11 @@ namespace NachoClient.AndroidClient
             StartActivityForResult (EventEditActivity.EditEventIntent (this.Activity, ev), EDIT_REQUEST_CODE);
         }
 
+        private void AttendeesView_Click (object sender, EventArgs e)
+        {
+            StartActivity (AttendeeViewActivity.AttendeeViewIntent (this.Activity, detail.SpecificItem.attendees));
+        }
+
         private void ReminderView_Click (object sender, EventArgs e)
         {
             if (detail.CanChangeReminder) {
@@ -353,8 +358,8 @@ namespace NachoClient.AndroidClient
                     if (hasReminder) {
                         detail.SpecificItem.Reminder = (uint)reminder;
                     }
-                    detail.SpecificItem.Update();
-                    BackEnd.Instance.UpdateCalCmd(detail.Account.Id, detail.SpecificItem.Id, false);
+                    detail.SpecificItem.Update ();
+                    BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
                     BindEventView ();
                 });
             }
@@ -368,8 +373,9 @@ namespace NachoClient.AndroidClient
                 noteText = note.noteContent;
             }
 
+            var title = Pretty.NoteTitle (detail.SpecificItem.GetSubject ());
             StartActivityForResult (
-                NoteActivity.EditNoteIntent (this.Activity, detail.SpecificItem.GetSubject (), noteText, insertDate: false),
+                NoteActivity.EditNoteIntent (this.Activity, title, null, noteText, insertDate: false),
                 NOTE_REQUEST_CODE);
         }
     }

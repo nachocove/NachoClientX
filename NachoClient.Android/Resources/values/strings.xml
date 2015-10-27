@@ -109,7 +109,7 @@
     <string name="happy">We\'re always more than happy to hear from you.</string>
     <string name="phone_support">Call us at +1 (971) 803-6226</string>
     <string name="email_support">Send us a message at support@nachocove.com</string>
-    <string name="version_string">Nacho Mail version 0.0.1 (001)</string>
+    <string name="version_string">Nacho Mail version {0}</string>
     <string name="reach">How can we reach you?</string>
     <string name="reach_prompt">yourname@email.com</string>
     <string name="assist">What can we help you with?</string>
@@ -127,7 +127,7 @@
     <string name="description">Description</string>
     <string name="update_password">Update Password</string>
     <string name="signature">Signature</string>
-    <string name="days_to_sync">Days to sync</string>
+    <string name="days_to_sync">Days To Sync</string>
     <string name="notifications">Notifications</string>
     <string name="fast_notification">Fast Notification</string>
     <string name="delete_account">Delete This Account</string>
@@ -135,4 +135,7 @@
     <string name="server_error">Server Error</string>
     <string name="certificate_issue">Certificate Issue"</string>
     <string name="password_expires">Password expires {0}</string>
+    <string name="description_instructions">Create a descriptive label for this account.</string>
+    <string name="signature_instructions">Create a signature that will appear at the end of every email that you send.</string>
+    <string name="save">Save</string>
 </resources>
