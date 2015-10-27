@@ -10,7 +10,8 @@
     <application
         android:label="Nacho Mail"
         android:theme="@style/Theme.NachoMail"
-        android:icon="@drawable/icon">
+        android:icon="@drawable/icon"
+	android:backupAgent="NcBackupAgent">
         <activity android:name="net.hockeyapp.android.UpdateActivity" />
     </application>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
