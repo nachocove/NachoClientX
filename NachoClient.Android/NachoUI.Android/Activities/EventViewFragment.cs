@@ -31,10 +31,12 @@ namespace NachoClient.AndroidClient
         private NcEventDetail detail;
 
         private View view;
+        private ButtonBar buttonBar;
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             view = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
+            buttonBar = new ButtonBar (view);
             BindListeners ();
             return view;
         }
@@ -103,10 +105,6 @@ namespace NachoClient.AndroidClient
         /// </summary>
         private void BindListeners ()
         {
-            var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
-            editButton.SetImageResource (Resource.Drawable.gen_edit);
-            editButton.Click += EditButton_Click;
-
             var attendeesView = view.FindViewById<View> (Resource.Id.event_attendee_view);
             attendeesView.Click += AttendeesView_Click;
 
@@ -130,12 +128,13 @@ namespace NachoClient.AndroidClient
 
             detail.Refresh ();
 
-            var buttonBarTitleView = view.FindViewById<TextView> (Resource.Id.title);
-            buttonBarTitleView.Text = Pretty.LongMonthForceYear (detail.StartTime);
-            buttonBarTitleView.Visibility = ViewStates.Visible;
+            buttonBar.SetTitle (Pretty.LongMonthForceYear (detail.StartTime));
 
-            var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
-            editButton.Visibility = VisibleIfTrue (detail.CanEdit);
+            if (detail.CanEdit) {
+                buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.gen_edit, EditButton_Click);
+            } else {
+                buttonBar.ClearButton (ButtonBar.Button.Right1);
+            }
 
             ConfigureRsvpBar (detail, view);
 

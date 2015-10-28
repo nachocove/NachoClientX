@@ -23,9 +23,7 @@ namespace NachoClient.AndroidClient
         private const string EXTRA_NOTE_ADD_DATE = "com.nachocove.nachomail.EXTRA_NOTE_ADD_DATE";
         private const string EXTRA_NOTE_INSTRUCTIONS = "com.nachocove.nachomail.EXTRA_NOTE_INSTRUCTIONS";
 
-
-        private TextView title;
-        private TextView doneButton;
+        private ButtonBar buttonBar;
         private TextView instructions;
         private EditText textField;
         private string unmodifiedText;
@@ -36,27 +34,17 @@ namespace NachoClient.AndroidClient
 
             SetContentView (Resource.Layout.NoteActivity);
 
-            title = FindViewById<TextView> (Resource.Id.title);
-            title.SetSingleLine ();
-            title.Visibility = ViewStates.Visible;
+            buttonBar = new ButtonBar (FindViewById<View> (Resource.Id.button_bar));
 
-            doneButton = FindViewById<TextView> (Resource.Id.right_text_button1);
-            doneButton.Visibility = ViewStates.Visible;
-            doneButton.Text = "Done";
-            doneButton.Click += DoneButton_Click;
+            buttonBar.SetTextButton (ButtonBar.Button.Right1, "Done", DoneButton_Click);
 
             instructions = FindViewById<TextView> (Resource.Id.note_instructions);
 
             textField = FindViewById<EditText> (Resource.Id.note_text);
 
-            string titleText = "";
             if (Intent.HasExtra (EXTRA_NOTE_TITLE)) {
-                titleText = Intent.GetStringExtra (EXTRA_NOTE_TITLE);
+                buttonBar.SetTitle (Intent.GetStringExtra (EXTRA_NOTE_TITLE));
             }
-            if (28 < titleText.Length) {
-                titleText = titleText.Substring (0, 27) + "...";
-            }
-            title.Text = titleText;
 
             if (Intent.HasExtra (EXTRA_NOTE_INSTRUCTIONS)) {
                 instructions.Text = Intent.GetStringExtra (EXTRA_NOTE_INSTRUCTIONS);

@@ -575,6 +575,7 @@
     <Compile Include="NachoUI.Android\Activities\ValidationFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ValidationActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\RemoveAccountActivity.cs" />
+    <Compile Include="NachoUI.Android\Support\ButtonBar.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
