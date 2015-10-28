@@ -29,8 +29,9 @@ namespace NachoClient.AndroidClient
 {
     public interface MessageListDelegate
     {
-        bool ShowHotEvent();
-        void SetActiveImage(View view);
+        bool ShowHotEvent ();
+
+        void SetActiveImage (View view);
     }
 
     public class MessageListFragment : Fragment
@@ -169,6 +170,14 @@ namespace NachoClient.AndroidClient
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
                 }
                 return false;
+            });
+
+            listView.setOnSwipeStartListener ((position) => {
+                mSwipeRefreshLayout.Enabled = false;
+            });
+
+            listView.setOnSwipeEndListener ((position) => {
+                mSwipeRefreshLayout.Enabled = true;
             });
 
             var parent = (MessageListDelegate)Activity;
