@@ -1395,4 +1395,7 @@
     <AndroidResource Include="Resources\layout\ValidationActivity.axml" />
     <AndroidResource Include="Resources\layout\RemoveAccountActivity.axml" />
   </ItemGroup>
+  <ItemGroup>
+    <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
+  </ItemGroup>
 </Project>
