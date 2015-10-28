@@ -273,8 +273,6 @@ namespace NachoPlatform
         #region PrefsKey
         private ISecretKey PrefsKey;
         private ISecretKey PrefsMacKey;
-        private Mac PrefsMac;
-        private Cipher AesCipher;
         const string KPrefsKeyKey = "PreferencesKey";
         const string KPrefsMACKey = "PreferencesHMAC";
         const int AES_IV_LEN = 16; // 128 bits, i.e. AES block len
@@ -313,8 +311,6 @@ namespace NachoPlatform
                 }
                 NcAssert.True (PrefsMacKey.GetEncoded ().Length == AES_KEY_LEN);
             }
-            AesCipher = Cipher.GetInstance ("AES/CBC/PKCS5Padding", "BC");
-            PrefsMac = Mac.GetInstance("HmacSHA256");
         }
 
         private IKey MakeAES256Key ()
@@ -326,6 +322,15 @@ namespace NachoPlatform
 
         private string DecryptString (string encryptedTextB64)
         {
+            return DecryptString (encryptedTextB64, PrefsKey, PrefsMacKey);
+        }
+
+        private string DecryptString (string encryptedTextB64, ISecretKey encKey, ISecretKey macKey)
+        {
+            if (null == macKey) {
+                macKey = encKey; // should only be used for testing. This isn't recommended crypto-practice.
+            }
+
             byte[] encryptedPackage = Convert.FromBase64String (encryptedTextB64);
             if (encryptedPackage[0] != (byte)0) {
                 throw new KeychainDecryptionException (string.Format ("WRONG version {0}", encryptedPackage [0]));
@@ -344,32 +349,45 @@ namespace NachoPlatform
             Array.Copy (encryptedPackage, offset, encData, 0, enc_len);
             offset += enc_len;
 
-            PrefsMac.Init (PrefsMacKey);
-            PrefsMac.Reset ();
-            byte[] computedHmac = PrefsMac.DoFinal (encData);
+            var prefsMac = Mac.GetInstance("HmacSHA256");
+            prefsMac.Init (macKey);
+            prefsMac.Reset ();
+            byte[] computedHmac = prefsMac.DoFinal (encData);
             if (!FixedTimeCompare(computedHmac, hmac)) {
                 throw new KeychainDecryptionException ("HMAC FAILED");
             }
 
             var ips = new IvParameterSpec (iv);
-            AesCipher.Init (CipherMode.DecryptMode, PrefsKey, ips);
-            byte[] decryptedData = AesCipher.DoFinal (encData);
+            var aesCipher = Cipher.GetInstance ("AES/CBC/PKCS5Padding", "BC");
+            aesCipher.Init (CipherMode.DecryptMode, encKey, ips);
+            byte[] decryptedData = aesCipher.DoFinal (encData);
 
             return Encoding.UTF8.GetString (decryptedData);
         }
 
         private string EncryptString (string data)
         {
+            return EncryptString (data, PrefsKey, PrefsMacKey);
+        }
+
+        private string EncryptString (string data, ISecretKey encKey, ISecretKey macKey)
+        {
+            if (null == macKey) {
+                macKey = encKey; // should only be used for testing. This isn't recommended crypto-practice.
+            }
+
             byte[] iv = new byte[AES_IV_LEN];
             RandomBytes (iv);
             var ips = new IvParameterSpec (iv);
 
-            AesCipher.Init (CipherMode.EncryptMode, PrefsKey, ips);
-            byte[] encrypted = AesCipher.DoFinal (Encoding.UTF8.GetBytes (data));
+            var aesCipher = Cipher.GetInstance ("AES/CBC/PKCS5Padding", "BC");
+            aesCipher.Init (CipherMode.EncryptMode, encKey, ips);
+            byte[] encrypted = aesCipher.DoFinal (Encoding.UTF8.GetBytes (data));
 
-            PrefsMac.Init (PrefsMacKey);
-            PrefsMac.Reset ();
-            byte[] hmac = PrefsMac.DoFinal (encrypted);
+            var prefsMac = Mac.GetInstance("HmacSHA256");
+            prefsMac.Init (macKey);
+            prefsMac.Reset ();
+            byte[] hmac = prefsMac.DoFinal (encrypted);
             NcAssert.True (hmac.Length == SHA256_LEN);
 
             var encPackage = new MemoryStream();
@@ -418,8 +436,38 @@ namespace NachoPlatform
             }
         }
 
-        IPrivateKey privateKey;
-        IPublicKey publicKey;
+        IPrivateKey _privateKey;
+        IPrivateKey privateKey {
+            get {
+                if (null == _privateKey) {
+                    throw new Exception ("Can not find private key");
+                }
+                return _privateKey;
+            }
+            set {
+                if (null == value) {
+                    throw new Exception ("Trying to set null private key");
+                }
+                _privateKey = value;
+            }
+        }
+
+        IPublicKey _publicKey;
+        IPublicKey publicKey {
+            get {
+                if (null == _publicKey) {
+                    throw new Exception ("Can not find public key");
+                }
+                return _publicKey;
+            }
+            set {
+                if (null == value) {
+                    throw new Exception ("Trying to set null public key");
+                }
+                _publicKey = value;
+            }
+        }
+
         private void GetKeyPair ()
         {
             if (!ks.ContainsAlias (KDefaultKeyPair)) {
@@ -428,6 +476,18 @@ namespace NachoPlatform
             KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry)ks.GetEntry (KDefaultKeyPair, null);
             publicKey = privateKeyEntry.Certificate.PublicKey;
             privateKey = privateKeyEntry.PrivateKey;
+            TestKeys ();
+        }
+
+        private void TestKeys ()
+        {
+            // test the keypair
+            var someKey = (ISecretKey)MakeAES256Key ();
+            var samekey = (ISecretKey)RSADecryptKey (RSAEncryptKey (someKey));
+            var testString = "1234567889012345678890123456788901234567889012345678890";
+            var encString = EncryptString (testString, someKey, null);
+            var decString = DecryptString (encString, samekey, null);
+            NcAssert.True (decString == testString);
         }
 
         private long RSAKeyGenerationTimeMilliseconds;
@@ -463,7 +523,9 @@ namespace NachoPlatform
             var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
             rsaCipher.Init (CipherMode.WrapMode, publicKey);
             encryptedData = rsaCipher.Wrap (key);
-            return Convert.ToBase64String (encryptedData);
+            var ret = Convert.ToBase64String (encryptedData);
+            Log.Info (Log.LOG_SYS, "successfully used publicKey");
+            return ret;
         }
 
         private IKey RSADecryptKey (string encryptedTextB64)
@@ -471,7 +533,9 @@ namespace NachoPlatform
             var bytesToDecrypt = Convert.FromBase64String(encryptedTextB64);
             var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
             rsaCipher.Init (CipherMode.UnwrapMode, privateKey);
-            return rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
+            var ret = rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
+            Log.Info (Log.LOG_SYS, "successfully used privateKey");
+            return ret;
         }
         #endregion
     }
