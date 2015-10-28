@@ -250,6 +250,17 @@ namespace NachoClient.AndroidClient
             var c = currentEvent.GetCalendarItemforEvent ();
             var cRoot = CalendarHelper.GetMcCalendarRootForEvent (currentEvent.Id);
 
+            if (null == c || null == cRoot) {
+                eventTitle.Text = "This event has been deleted.";
+                calendarColor.Visibility = ViewStates.Invisible;
+                eventSummary.Visibility = ViewStates.Invisible;
+                eventIcon.Visibility = ViewStates.Invisible;
+                return;
+            }
+
+            calendarColor.Visibility = ViewStates.Visible;
+            eventSummary.Visibility = ViewStates.Visible;
+
             eventTitle.Text = Pretty.SubjectString (c.GetSubject ());
 
             int colorIndex = 0;
