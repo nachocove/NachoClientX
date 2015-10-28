@@ -279,7 +279,7 @@ namespace NachoClient.AndroidClient
             public override string Description {
                 get {
                     Log.Info (Log.LOG_SYS, "HA: Fetching Description");
-                    return string.Format ("JANV TEST\nUserID: {0}\nDeviceId: {1}", UserIdFile.SharedInstance.Read (), Device.Instance.Identity());
+                    return NcApplication.ApplicationLogForCrashManager ();
                 }
             }
             public override bool IncludeDeviceData ()

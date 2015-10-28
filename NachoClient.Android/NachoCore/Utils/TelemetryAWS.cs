@@ -100,11 +100,11 @@ namespace NachoCore.Utils
 
             // We get a different Cognito id each time it runs because unauthenticated
             // identities (that we use) are anonymous. But doing so would mean it is
-            // really hard to track a client's activity. So, we look for Documents/client_id.
-            // If it does not exist, we save the current Cognito id into the file. After
+            // really hard to track a client's activity. So, we look for a client-id in the keychain.
+            // If it does not exist, we save the current Cognito id into the keychain. After
             // the 1st time, we use the id in the file as the client id. Note that we 
             // still need to talk to Cognito in order to get the session token.
-            if (UserIdFile.SharedInstance.Read () != null) {
+            if (NcApplication.Instance.UserId != null) {
                 FreshInstall = false;
             } else {
                 // Save the current Cognito id as client id

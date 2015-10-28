@@ -20,84 +20,6 @@ using System.Runtime.CompilerServices;
 
 namespace NachoCore
 {
-
-    public class UserIdFile
-    {
-        private const string FileName = "user_id";
-        private const string OldFileName = "client_id";
-
-        public string FilePath { get; protected set; }
-
-        private static UserIdFile _Instance;
-
-        public static UserIdFile SharedInstance {
-            get {
-                if (null == _Instance) {
-                    // Check if there is a file with the old file name (client_id). Rename it
-                    var dirPath = NcApplication.GetDataDirPath ();
-                    var oldFilePath = Path.Combine (dirPath, OldFileName);
-                    var newFilePath = Path.Combine (dirPath, FileName);
-                    if (File.Exists (oldFilePath)) {
-                        File.Move (oldFilePath, newFilePath);
-                    }
-
-                    _Instance = new UserIdFile ();
-
-                    // Check if the there is a new file (user_id). If yes, migrate
-                    // the user ID to keychain
-                    if (_Instance.Exists ()) {
-                        _Instance.Write (_Instance.ReadFile ());
-                        File.Delete (_Instance.FilePath);
-                    }
-                }
-                return _Instance;
-            }
-        }
-
-        public UserIdFile ()
-        {
-            FilePath = Path.Combine (NcApplication.GetDataDirPath (), FileName);
-        }
-
-        public bool Exists ()
-        {
-            return File.Exists (FilePath);
-        }
-
-        protected string ReadFile ()
-        {
-            try {
-                using (var stream = new FileStream (FilePath, FileMode.Open, FileAccess.Read)) {
-                    using (var reader = new StreamReader (stream)) {
-                        return reader.ReadLine ();
-                    }
-                }
-            } catch (IOException) {
-                return null;
-            }
-        }
-
-        public string Read ()
-        {
-            if (Keychain.Instance.HasKeychain ()) {
-                return Keychain.Instance.GetUserId ();
-            } else {
-                return UserId;
-            }
-        }
-
-        string UserId = null;
-        public void Write (string userId)
-        {
-            Console.WriteLine ("Writing UserId {0}", userId);
-            if (Keychain.Instance.HasKeychain ()) {
-                Keychain.Instance.SetUserId (userId);
-            } else {
-                UserId = userId;
-            }
-        }
-    }
-
     // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
     // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
     // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD.
@@ -204,7 +126,7 @@ namespace NachoCore
             set {
                 if (value != _UserId) {
                     _UserId = value;
-                    UserIdFile.SharedInstance.Write (_UserId);
+                    Keychain.Instance.SetUserId (_UserId);
                     InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_UserIdChanged, _UserId);
                 }
             }
@@ -214,6 +136,28 @@ namespace NachoCore
             get {
                 return Device.Instance.Identity ();
             }
+        }
+
+        public static bool IsDevelopmentBuild {
+            get {
+                return BuildInfo.Version.StartsWith ("DEV");
+            }
+        }
+
+        public static string ApplicationLogForCrashManager ()
+        {
+            // TODO: UtcNow isn't really the launch-time, nor is it really what we want.
+            // For convenience what we REALLY want here is the time of the crash for 
+            // easy-cut-n-pasting from HA to TeleViewer. What this really is is the
+            // upload-time, i.e. when we upload this sucker to HA.
+            string launchTime = String.Format ("{0:O}", DateTime.UtcNow);
+            string log = String.Format ("Version: {0}\nBuild Number: {1}\nLaunch Time: {2}\nDevice ID: {3}\n",
+                             BuildInfo.Version, BuildInfo.BuildNumber, launchTime, Device.Instance.Identity ());
+            if (IsDevelopmentBuild) {
+                log += String.Format ("Build Time: {0}\nBuild User: {1}\n" +
+                "Source: {2}\n", BuildInfo.Time, BuildInfo.User, BuildInfo.Source);
+            }
+            return log;
         }
 
         public bool IsUp ()
@@ -334,12 +278,13 @@ namespace NachoCore
             return false;
         }
 
-        private void UpdateUserIdFromFile (string clientIdFile)
+        private void PossiblyUpdateUserIdFromFile ()
         {
-            UserId = UserIdFile.SharedInstance.Read ();
+            UserIdFile.MigrateToKeychain ();
+            UserId = Keychain.Instance.GetUserId ();
             string cloudUserId = CloudHandler.Instance.GetUserId ();
             if ((cloudUserId != null) && (cloudUserId != UserId)) {
-                UserId = cloudUserId;
+                UserId = cloudUserId; // this will also set it in the keychain
             }
         }
 
@@ -390,9 +335,8 @@ namespace NachoCore
             };
             UiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
 
-            if (UserIdFile.SharedInstance.Exists ()) {
-                UpdateUserIdFromFile (UserIdFile.SharedInstance.FilePath);
-            }
+            PossiblyUpdateUserIdFromFile ();
+
             StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
                 if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
@@ -1101,9 +1045,9 @@ namespace NachoCore
             return dataDirPath;
         }
 
-        public static string GetVersionString()
+        public static string GetVersionString ()
         {
-            return String.Format("{0} ({1})", BuildInfo.Version, BuildInfo.BuildNumber);
+            return String.Format ("{0} ({1})", BuildInfo.Version, BuildInfo.BuildNumber);
         }
 
         // Fast track to UI
@@ -1156,6 +1100,42 @@ namespace NachoCore
             }
         }
 
+    }
+
+    public class UserIdFile
+    {
+        private const string FileName = "user_id";
+        private const string OldFileName = "client_id";
+
+        public static void MigrateToKeychain ()
+        {
+            // Check if there is a file with the old file name (client_id). Rename it
+            var dirPath = NcApplication.GetDataDirPath ();
+            var oldFilePath = Path.Combine (dirPath, OldFileName);
+            var newFilePath = Path.Combine (dirPath, FileName);
+            if (File.Exists (oldFilePath)) {
+                File.Move (oldFilePath, newFilePath);
+            }
+            string filename = Path.Combine (NcApplication.GetDataDirPath (), FileName);
+            if (File.Exists (filename)) {
+                string userid = ReadFile (filename);
+                Keychain.Instance.SetUserId (userid);
+                File.Delete (filename);
+            }
+        }
+
+        protected static string ReadFile (string filename)
+        {
+            try {
+                using (var stream = new FileStream (filename, FileMode.Open, FileAccess.Read)) {
+                    using (var reader = new StreamReader (stream)) {
+                        return reader.ReadLine ();
+                    }
+                }
+            } catch (IOException) {
+                return null;
+            }
+        }
     }
 }
 
