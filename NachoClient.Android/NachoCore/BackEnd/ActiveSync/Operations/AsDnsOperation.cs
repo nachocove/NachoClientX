@@ -17,13 +17,13 @@ namespace NachoCore.ActiveSync
         private TimeSpan timeout;
         private NcStateMachine stateMachine;
 
-        private static object resQueryLock = new object ();
         private object lockObject = new object ();
         private bool complete = false;
         private NcTimer timer;
 
         // Allow the unit tests to mock up the call to res_query().
-        public delegate byte[] CallResQueryDelegate (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength);
+        public delegate DnsQueryResponse CallResQueryDelegate (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType);
+
         static public CallResQueryDelegate CallResQuery = ResQuery;
 
         private const int kDefaultTimeoutSeconds = 10;
@@ -71,17 +71,17 @@ namespace NachoCore.ActiveSync
         }
 
         // TODO The declaration for nacho_res_query needs to be moved to platform-specific code.
-
+#if __IOS__
         // res_query() stores its error code in h_errno, not errno.  The usual technique
         // for getting the error code, SetLastError=true, won't work.  So we have created
         // a wrapper function around res_query that gets the error code from h_errno and
         // returns it through a ref parameter.
-#if __IOS__
+        private static object resQueryLock = new object ();
         [DllImport("__Internal")]
         private static extern int nacho_res_query (
             string host, int queryClass, int queryType, byte[] answer, int anslen, ref int errorCode);
 
-        private static byte[] ResQuery (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength)
+        private static DnsQueryResponse ResQuery (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType)
         {
             // See https://www.dns-oarc.net/oarc/services/replysizetest - 4k is enough to hold the response.
             byte[] answer = new byte[4096];
@@ -108,36 +108,42 @@ namespace NachoCore.ActiveSync
                 lock (op.lockObject) {
                     if (op.complete || (0 > rc && TRY_AGAIN_ERROR != errorCode)) {
                         // The operation timed out or was canceled, or res_query() failed.
-                        answerLength = 0;
                         return null;
                     }
                     if (0 <= rc) {
                         // res_query() succeeded.
-                        answerLength = rc;
-                        return answer;
+                        try {
+                            DnsQueryResponse response = new DnsQueryResponse ();
+                            response.ParseResponse (answer, rc);
+                            return response;
+                        } catch (Exception e) {
+                            Log.Error (Log.LOG_DNS, "DNS response parsing failed with an exception, likely because the response is malformed: {0}", e.ToString ());
+                            return null;
+                        }
                     }
                 }
             }
             // Too many retries. Give up.
-            answerLength = 0;
             return null;
         }
+
 #elif __ANDROID__
-        // FIXME need to try to get res_query to work or switch back to DnDns.
         // We'd prefer to move the low-level DNS query capability to IPlatform.
-        private static byte[] ResQuery (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength)
+        private static DnsQueryResponse ResQuery (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType)
         {
-            answerLength = 0;
-            return null;
+            var DnsQuery = new DnsQueryRequest ();
+            DnsQueryResponse response = DnsQuery.Resolve (host, dnsType, dnsClass, System.Net.Sockets.ProtocolType.Udp);
+            if (null == response || response.Answers.Length == 0) {
+                return null;
+            }
+            return response;
         }
 #else
 #error
 #endif
-
         private void DoExecuteWithRetries ()
         {
-            int answerLength;
-            byte[] answer = CallResQuery (this, owner.DnsHost (this), owner.DnsClass (this), owner.DnsType (this), out answerLength);
+            DnsQueryResponse response = CallResQuery (this, owner.DnsHost (this), owner.DnsClass (this), owner.DnsType (this));
 
             lock (lockObject) {
                 if (complete) {
@@ -146,15 +152,8 @@ namespace NachoCore.ActiveSync
                 }
                 complete = true;
                 StopTimer ();
-                if (null != answer) {
-                    try {
-                        DnsQueryResponse response = new DnsQueryResponse ();
-                        response.ParseResponse (answer, answerLength);
-                        stateMachine.PostEvent (owner.ProcessResponse (this, response));
-                    } catch (Exception e) {
-                        Log.Error (Log.LOG_DNS, "DNS response parsing failed with an exception, likely because the response is malformed: {0}", e.ToString ());
-                        stateMachine.PostEvent ((uint)SmEvt.E.HardFail, "DNSHARDFAILEX");
-                    }
+                if (null != response) {
+                    stateMachine.PostEvent (owner.ProcessResponse (this, response));
                 } else {
                     stateMachine.PostEvent ((uint)SmEvt.E.HardFail, "DNSHARDFAIL");
                 }
