@@ -61,11 +61,6 @@ namespace NachoPlatform
         private const string KDeviceId = "DeviceId";
         private const string KLogSalt = "LogSalt";
 
-        public bool HasKeychain ()
-        {
-            return true;
-        }
-
         private string CreateQuery (int handle, string subKey)
         {
             return CreateQuery (string.Format ("{0}:{1}", handle, subKey));
@@ -155,7 +150,7 @@ namespace NachoPlatform
 
         public string GetLogSalt (int handle)
         {
-            return Getter (RefreshTokenKey (handle));
+            return Getter (LogSaltKey (handle));
         }
 
         public bool SetLogSalt(int handle, string logSalt)

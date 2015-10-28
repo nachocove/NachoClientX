@@ -179,12 +179,12 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.ReFSync,
                             (uint)ImapEvt.E.Wait,
+                            (uint)SmEvt.E.HardFail,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoUiServConfReq, State = (uint)Lst.IdleW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -570,6 +570,10 @@ namespace NachoCore.IMAP
         {
             BackEndStatePreset = BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
+            if (null == Sm.Arg) {
+                Log.Error (Log.LOG_IMAP, "DoUiServConfReq: Sm.Arg is null");
+                throw new Exception ("Sm.Arg can not be null");
+            }
             AutoDFailureReason = (BackEnd.AutoDFailureReasonEnum)Sm.Arg;
             Owner.ServConfReq (this, AutoDFailureReason);
         }
@@ -682,7 +686,12 @@ namespace NachoCore.IMAP
                 MaxConcurrentExtraRequests > ConcurrentExtraRequests) {
                 NcImapClient Client = new NcImapClient ();  // Presumably this will get cleaned up by GC?
                 Interlocked.Increment (ref ConcurrentExtraRequests);
-                var pack = Strategy.PickUserDemand (Client);
+                Tuple<PickActionEnum, ImapCommand> pack;
+                try {
+                    pack = Strategy.PickUserDemand (Client, Cts.Token);
+                } catch (OperationCanceledException) {
+                    pack = null;
+                }
                 if (null == pack) {
                     // If strategy could not find something to do, we won't be using the side channel.
                     Interlocked.Decrement (ref ConcurrentExtraRequests);
@@ -772,8 +781,12 @@ namespace NachoCore.IMAP
             Sm.ClearEventQueue ();
             Tuple<PickActionEnum, ImapCommand> pack;
             using (var cap = NcCapture.CreateAndStart (KImapStrategyPick)) {
-                pack = Strategy.Pick (MainClient);
-                cap.Stop ();
+                try {
+                    pack = Strategy.Pick (MainClient, Cts.Token);
+                } catch (OperationCanceledException) {
+                    DoPark ();
+                    return Lst.Parked;
+                }
             }
             var transition = pack.Item1;
             var cmd = pack.Item2;

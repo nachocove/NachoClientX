@@ -32,14 +32,15 @@ namespace NachoClient.AndroidClient
         private McCalendar cal;
         private McFolder calendarFolder;
 
+        private ButtonBar buttonBar;
         private EditText titleField;
         private EditText descriptionField;
         private Switch allDayField;
         private TextView startField;
         private TextView endField;
         private EditText locationField;
+        private TextView attendeeCountField;
         private TextView reminderField;
-        private ImageView reminderArrow;
 
         private DateTime startTime;
         private DateTime endTime;
@@ -52,10 +53,9 @@ namespace NachoClient.AndroidClient
 
             SetContentView (Resource.Layout.EventEditActivity);
 
-            var saveButton = FindViewById<TextView> (Resource.Id.right_text_button1);
-            saveButton.Text = "Save";
-            saveButton.Visibility = ViewStates.Visible;
-            saveButton.Click += SaveButton_Click;
+            buttonBar = new ButtonBar (FindViewById<View> (Resource.Id.button_bar));
+
+            buttonBar.SetTextButton (ButtonBar.Button.Right1, Resource.String.save, SaveButton_Click);
 
             titleField = FindViewById<EditText> (Resource.Id.event_edit_title);
             descriptionField = FindViewById<EditText> (Resource.Id.event_edit_description);
@@ -63,16 +63,13 @@ namespace NachoClient.AndroidClient
             startField = FindViewById<TextView> (Resource.Id.event_edit_start);
             endField = FindViewById<TextView> (Resource.Id.event_edit_end);
             locationField = FindViewById<EditText> (Resource.Id.event_edit_location);
+            attendeeCountField = FindViewById<TextView> (Resource.Id.event_edit_attendee_count);
             reminderField = FindViewById<TextView> (Resource.Id.event_edit_reminder);
-            reminderArrow = FindViewById<ImageView> (Resource.Id.event_edit_reminder_arrow);
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
 
-            var navBarTitle = FindViewById<TextView> (Resource.Id.title);
-            navBarTitle.Visibility = ViewStates.Visible;
-
             if (Intent.ActionCreateDocument == Intent.Action) {
-                navBarTitle.Text = "New Event";
+                buttonBar.SetTitle ("New Event");
 
                 DateTime startDate = DateTime.MinValue;
                 if (Intent.HasExtra(EXTRA_START_DATE)) {
@@ -127,7 +124,7 @@ namespace NachoClient.AndroidClient
                 NcAssert.True (Intent.ActionEdit == Intent.Action, "The intent for EventEditActivity must have an action of Edit or CreateDocument.");
                 NcAssert.True (Intent.HasExtra (EXTRA_EVENT_TO_EDIT), "When EventEditActivity is called with an Edit action, the event to edit must be specified.");
 
-                navBarTitle.Text = "Edit Event";
+                buttonBar.SetTitle ("Edit Event");
 
                 ev = IntentHelper.RetreiveValue<McEvent> (Intent.GetStringExtra (EXTRA_EVENT_TO_EDIT));
                 cal = McCalendar.QueryById<McCalendar> (ev.CalendarId);
@@ -173,22 +170,35 @@ namespace NachoClient.AndroidClient
             allDayField.CheckedChange += AllDayField_CheckedChange;
             startField.Click += StartField_Click;
             endField.Click += EndField_Click;
+            var startFieldArrow = FindViewById<ImageView> (Resource.Id.event_edit_start_arrow);
+            startFieldArrow.Click += StartField_Click;
+            var endFieldArrow = FindViewById<ImageView> (Resource.Id.event_edit_end_arrow);
+            endFieldArrow.Click += EndField_Click;
 
-            // The text in the date/time fields, the reminder field, and the calendar field
-            // should look like the default text for an EditText field, not a TextView field.
-            // Copy the necessary information from one of the EditText fields to make that happen.
+            // The text in the date/time fields, the reminder field, the attende count field,
+            // and the calendar field should look like the default text for an EditText field,
+            // not a TextView field.  Copy the necessary information from one of the EditText
+            // fields to make that happen.
             startField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             endField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            attendeeCountField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             reminderField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             startField.SetTextColor (titleField.TextColors);
             endField.SetTextColor (titleField.TextColors);
+            attendeeCountField.SetTextColor (titleField.TextColors);
             reminderField.SetTextColor (titleField.TextColors);
 
             allDayField.Checked = cal.AllDayEvent;
             ConfigureStartEndFields ();
 
+            attendeeCountField.Text = string.Format ("( {0} )", cal.attendees.Count);
+            attendeeCountField.Click += Attendee_Click;
+            var attendeeArrow = FindViewById<ImageView> (Resource.Id.event_edit_attendee_arrow);
+            attendeeArrow.Click += Attendee_Click;
+
             reminderField.Text = Pretty.ReminderString (cal.HasReminder (), cal.GetReminder ());
             reminderField.Click += Reminder_Click;
+            var reminderArrow = FindViewById<ImageView> (Resource.Id.event_edit_reminder_arrow);
             reminderArrow.Click += Reminder_Click;
         }
 
@@ -377,6 +387,11 @@ namespace NachoClient.AndroidClient
                 }
                 reminderField.Text = Pretty.ReminderString (hasReminder, (uint)reminder);
             });
+        }
+
+        private void Attendee_Click (object sender, EventArgs e)
+        {
+            StartActivity (AttendeeEditActivity.AttendeeEditIntent (this, cal.attendees));
         }
     }
 }

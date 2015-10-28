@@ -31,10 +31,12 @@ namespace NachoClient.AndroidClient
         private NcEventDetail detail;
 
         private View view;
+        private ButtonBar buttonBar;
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             view = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
+            buttonBar = new ButtonBar (view);
             BindListeners ();
             return view;
         }
@@ -103,9 +105,8 @@ namespace NachoClient.AndroidClient
         /// </summary>
         private void BindListeners ()
         {
-            var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
-            editButton.SetImageResource (Resource.Drawable.gen_edit);
-            editButton.Click += EditButton_Click;
+            var attendeesView = view.FindViewById<View> (Resource.Id.event_attendee_view);
+            attendeesView.Click += AttendeesView_Click;
 
             var reminderView = view.FindViewById<View> (Resource.Id.event_reminder_label);
             reminderView.Click += ReminderView_Click;
@@ -123,19 +124,17 @@ namespace NachoClient.AndroidClient
         /// </summary>
         void BindEventView ()
         {
-            // TODO: Attendees
             // TODO: Attachments
-            // TODO: Edit notes view
-            // TODO: Change reminder arrow
 
             detail.Refresh ();
 
-            var buttonBarTitleView = view.FindViewById<TextView> (Resource.Id.title);
-            buttonBarTitleView.Text = Pretty.LongMonthForceYear (detail.StartTime);
-            buttonBarTitleView.Visibility = ViewStates.Visible;
+            buttonBar.SetTitle (Pretty.LongMonthForceYear (detail.StartTime));
 
-            var editButton = view.FindViewById<ImageView> (Resource.Id.right_button1);
-            editButton.Visibility = VisibleIfTrue (detail.CanEdit);
+            if (detail.CanEdit) {
+                buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.gen_edit, EditButton_Click);
+            } else {
+                buttonBar.ClearButton (ButtonBar.Button.Right1);
+            }
 
             ConfigureRsvpBar (detail, view);
 
@@ -345,6 +344,11 @@ namespace NachoClient.AndroidClient
             StartActivityForResult (EventEditActivity.EditEventIntent (this.Activity, ev), EDIT_REQUEST_CODE);
         }
 
+        private void AttendeesView_Click (object sender, EventArgs e)
+        {
+            StartActivity (AttendeeViewActivity.AttendeeViewIntent (this.Activity, detail.SpecificItem.attendees));
+        }
+
         private void ReminderView_Click (object sender, EventArgs e)
         {
             if (detail.CanChangeReminder) {
@@ -353,8 +357,8 @@ namespace NachoClient.AndroidClient
                     if (hasReminder) {
                         detail.SpecificItem.Reminder = (uint)reminder;
                     }
-                    detail.SpecificItem.Update();
-                    BackEnd.Instance.UpdateCalCmd(detail.Account.Id, detail.SpecificItem.Id, false);
+                    detail.SpecificItem.Update ();
+                    BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
                     BindEventView ();
                 });
             }
@@ -368,8 +372,9 @@ namespace NachoClient.AndroidClient
                 noteText = note.noteContent;
             }
 
+            var title = Pretty.NoteTitle (detail.SpecificItem.GetSubject ());
             StartActivityForResult (
-                NoteActivity.EditNoteIntent (this.Activity, detail.SpecificItem.GetSubject (), noteText, insertDate: false),
+                NoteActivity.EditNoteIntent (this.Activity, title, null, noteText, insertDate: false),
                 NOTE_REQUEST_CODE);
         }
     }

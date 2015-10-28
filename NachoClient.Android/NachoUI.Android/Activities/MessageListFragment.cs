@@ -29,8 +29,9 @@ namespace NachoClient.AndroidClient
 {
     public interface MessageListDelegate
     {
-        bool ShowHotEvent();
-        void SetActiveImage(View view);
+        bool ShowHotEvent ();
+
+        void SetActiveImage (View view);
     }
 
     public class MessageListFragment : Fragment
@@ -45,6 +46,7 @@ namespace NachoClient.AndroidClient
 
         SwipeMenuListView listView;
         MessageListAdapter messageListAdapter;
+        HotEventAdapter hotEventAdapter;
 
         SwipeRefreshLayout mSwipeRefreshLayout;
 
@@ -170,13 +172,22 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
+            listView.setOnSwipeStartListener ((position) => {
+                mSwipeRefreshLayout.Enabled = false;
+            });
+
+            listView.setOnSwipeEndListener ((position) => {
+                mSwipeRefreshLayout.Enabled = true;
+            });
+
             var parent = (MessageListDelegate)Activity;
             var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
 
             if (parent.ShowHotEvent ()) {
                 hotEvent.Visibility = ViewStates.Visible;
                 var hoteventListView = view.FindViewById<SwipeMenuListView> (Resource.Id.hotevent_listView);
-                hoteventListView.Adapter = new HotEventAdapter ();
+                hotEventAdapter = new HotEventAdapter ();
+                hoteventListView.Adapter = hotEventAdapter;
                 var hoteventEmptyView = view.FindViewById<View> (Resource.Id.hot_event_empty);
                 hoteventListView.EmptyView = hoteventEmptyView;
 
@@ -205,10 +216,20 @@ namespace NachoClient.AndroidClient
                 });
 
                 hoteventListView.setOnMenuItemClickListener (( position, menu, index) => {
+                    var cal = CalendarHelper.GetMcCalendarRootForEvent (hotEventAdapter [position].Id);
                     switch (index) {
                     case LATE_TAG:
+                        if (null != cal) {
+                            var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Re: " + cal.GetSubject ());
+                            outgoingMessage.To = cal.OrganizerEmail;
+                            StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, outgoingMessage, "Running late."));
+                        }
                         break;
                     case FORWARD_TAG:
+                        if (null != cal) {
+                            StartActivity (MessageComposeActivity.ForwardCalendarIntent (
+                                this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + cal.GetSubject ())));
+                        }
                         break;
                     default:
                         throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
@@ -240,8 +261,7 @@ namespace NachoClient.AndroidClient
         void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
             if (null != onEventClick) {
-                DateTime timerFireTime;
-                var currentEvent = CalendarHelper.CurrentOrNextEvent (out timerFireTime);
+                var currentEvent = hotEventAdapter [0];
                 if (null != currentEvent) {
                     onEventClick (this, currentEvent);
                 }
@@ -281,9 +301,7 @@ namespace NachoClient.AndroidClient
             if (multiSelectActive) {
                 MultiSelectDelete ();
             } else {
-                var intent = new Intent ();
-                intent.SetClass (this.Activity, typeof(MessageComposeActivity));
-                StartActivity (intent);
+                StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity));
             }
         }
 
@@ -486,12 +504,18 @@ namespace NachoClient.AndroidClient
 
             switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageChanged:
-            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
             case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshVisibleMessageCells ();
+                break;
+            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+                List<int> adds;
+                List<int> deletes;
+                if (messages.Refresh (out adds, out deletes)) {
+                    messageListAdapter.NotifyDataSetChanged ();
+                }
                 break;
             }
         }
@@ -505,7 +529,6 @@ namespace NachoClient.AndroidClient
         public MessageListAdapter (MessageListFragment owner)
         {
             this.owner = owner;
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         public override long GetItemId (int position)
@@ -566,30 +589,6 @@ namespace NachoClient.AndroidClient
             var message = thread.FirstMessageSpecialCase ();
             NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
             Bind.BindMessageChili (thread, message, chiliView);
-        }
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-
-            switch (s.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
-            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
-            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                RefreshMessageIfVisible ();
-                break;
-            }
-        }
-
-        void RefreshMessageIfVisible ()
-        {
-            List<int> adds;
-            List<int> deletes;
-            if (owner.messages.Refresh (out adds, out deletes)) {
-                this.NotifyDataSetChanged ();
-            }
         }
 
     }

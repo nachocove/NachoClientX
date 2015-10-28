@@ -267,13 +267,11 @@ namespace NachoCore.Model
         {
             // remove password from keychain
             var cred = McCred.QueryByAccountId<McCred> (AccountId).SingleOrDefault ();
-            if (Keychain.Instance.HasKeychain ()) {
-                // TODO - add a wipe API to keychain.
-                if (null != cred) {
-                    Keychain.Instance.DeletePassword (cred.Id);
-                    Keychain.Instance.DeleteAccessToken (cred.Id);
-                    Keychain.Instance.DeleteRefreshToken (cred.Id);
-                }
+            // TODO - add a wipe API to keychain.
+            if (null != cred) {
+                Keychain.Instance.DeletePassword (cred.Id);
+                Keychain.Instance.DeleteAccessToken (cred.Id);
+                Keychain.Instance.DeleteRefreshToken (cred.Id);
             }
 
             // delete all DB data for account id - is db running?

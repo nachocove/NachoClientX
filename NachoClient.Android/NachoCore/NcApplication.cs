@@ -79,22 +79,12 @@ namespace NachoCore
 
         public string Read ()
         {
-            if (Keychain.Instance.HasKeychain ()) {
-                return Keychain.Instance.GetUserId ();
-            } else {
-                return UserId;
-            }
+            return Keychain.Instance.GetUserId ();
         }
 
-        string UserId = null;
         public void Write (string userId)
         {
-            Console.WriteLine ("Writing UserId {0}", userId);
-            if (Keychain.Instance.HasKeychain ()) {
-                Keychain.Instance.SetUserId (userId);
-            } else {
-                UserId = userId;
-            }
+            Keychain.Instance.SetUserId (userId);
         }
     }
 
@@ -1099,6 +1089,11 @@ namespace NachoCore
                 Directory.CreateDirectory (dataDirPath);
             }
             return dataDirPath;
+        }
+
+        public static string GetVersionString()
+        {
+            return String.Format("{0} ({1})", BuildInfo.Version, BuildInfo.BuildNumber);
         }
 
         // Fast track to UI

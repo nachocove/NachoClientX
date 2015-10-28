@@ -91,13 +91,13 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
                     if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
                         step = MockSteps.S1;
-                        answerLength = dnsByteArray.Length;
-                        return dnsByteArray;
+                        DnsQueryResponse response = new DnsQueryResponse ();
+                        response.ParseResponse (dnsByteArray, dnsByteArray.Length);
+                        return response;
                     } else {
-                        answerLength = 0;
                         return null;
                     }
                 }, (httpRequest, httpResponse) => {
@@ -140,13 +140,13 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
                     if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
                         step = MockSteps.S1;
-                        answerLength = dnsByteArray.Length;
-                        return dnsByteArray;
+                        DnsQueryResponse response = new DnsQueryResponse ();
+                        response.ParseResponse (dnsByteArray, dnsByteArray.Length);
+                        return response;
                     } else {
-                        answerLength = 0;
                         return null;
                     }
                 }, (httpRequest, httpResponse) => {
@@ -211,8 +211,7 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    answerLength = 0;
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
                     return null;
                 }, (httpRequest, httpResponse) => {
                     // provide valid redirection headers if needed
@@ -266,8 +265,7 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    answerLength = 0;
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
                     return null;
                 }, (httpRequest, httpResponse) => {
                     MockSteps robotType = DetermineRobotType (httpRequest);
@@ -327,12 +325,12 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
                     if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
-                        answerLength = dnsByteArray.Length;
-                        return dnsByteArray;
+                        DnsQueryResponse response = new DnsQueryResponse ();
+                        response.ParseResponse (dnsByteArray, dnsByteArray.Length);
+                        return response;
                     } else {
-                        answerLength = 0;
                         return null;
                     }
                 }, (httpRequest, httpResponse) => {
@@ -393,8 +391,7 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
-                    answerLength = 0;
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
                     return null;
                 }, (httpRequest, httpResponse) => {
                     // provide valid redirection headers if needed
@@ -483,13 +480,13 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType) => {
                     if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
                         step = MockSteps.S1;
-                        answerLength = dnsByteArray.Length;
-                        return dnsByteArray;
+                        DnsQueryResponse response = new DnsQueryResponse ();
+                        response.ParseResponse (dnsByteArray, dnsByteArray.Length);
+                        return response;
                     } else {
-                        answerLength = 0;
                         return null;
                     }
                 }, (httpRequest, httpResponse) => {

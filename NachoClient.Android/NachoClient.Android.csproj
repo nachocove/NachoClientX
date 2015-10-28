@@ -564,6 +564,20 @@
     <Compile Include="NachoUI.Android\Activities\SettingsFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\EventViewActivity.cs" />
     <Compile Include="NachoUI.Android\Support\EmailAddressField.cs" />
+    <Compile Include="NachoUI.Android\Activities\AccountSettingsFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\NotificationChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\DaysToSyncChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AttendeeBaseActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AttendeeViewActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AttendeeEditActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AttendeeListBaseFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AttendeeListViewFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\AttendeeListEditFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\ValidationFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\ValidationActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\RemoveAccountActivity.cs" />
+    <Compile Include="NachoPlatform.Android\DnsAndroid.cs" />
+    <Compile Include="NachoUI.Android\Support\ButtonBar.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1371,12 +1385,26 @@
     <AndroidResource Include="Resources\layout\SettingsActivity.axml" />
     <AndroidResource Include="Resources\layout\SettingsFragment.axml" />
     <AndroidResource Include="Resources\layout\EventViewActivity.axml" />
-    <AndroidResource Include="Resources\layout\AccountSettingsFragment.axml" />
     <AndroidResource Include="Resources\drawable-hdpi\gen_avatar_alert.png" />
     <AndroidResource Include="Resources\drawable-mdpi\gen_avatar_alert.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\gen_avatar_alert.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_avatar_alert.png" />
     <AndroidResource Include="Resources\layout\EmailAddressToken.axml" />
     <AndroidResource Include="Resources\drawable\EmailAddressToken.xml" />
+    <AndroidResource Include="Resources\layout\AccountSettingsFragment.axml" />
+    <AndroidResource Include="Resources\layout\NotificationChooserFragment.axml" />
+    <AndroidResource Include="Resources\layout\NotificationChooserCell.axml" />
+    <AndroidResource Include="Resources\layout\DaysToSyncChooserCell.axml" />
+    <AndroidResource Include="Resources\layout\DaysToSyncChooserFragment.axml" />
+    <AndroidResource Include="Resources\layout\AttendeeListFragment.axml" />
+    <AndroidResource Include="Resources\drawable\BlackBorder.xml" />
+    <AndroidResource Include="Resources\layout\AttendeeListCell.axml" />
+    <AndroidResource Include="Resources\layout\AttendeeViewActivity.axml" />
+    <AndroidResource Include="Resources\layout\AttendeeEditActivity.axml" />
+    <AndroidResource Include="Resources\layout\ValidationActivity.axml" />
+    <AndroidResource Include="Resources\layout\RemoveAccountActivity.axml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
   </ItemGroup>
 </Project>

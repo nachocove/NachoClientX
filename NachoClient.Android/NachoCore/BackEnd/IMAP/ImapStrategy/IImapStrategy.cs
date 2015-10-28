@@ -144,29 +144,156 @@ namespace NachoCore.IMAP
         public class FetchBody
         {
             public string ParentId { get; set; }
-            public string ServerId { get; set; }
-            public Xml.AirSync.TypeCode BodyPref { get; set; }
-        }
 
-        public class FetchPending
-        {
-            public McPending Pending { get; set; }
-            public Xml.AirSync.TypeCode BodyPref { get; set; }
+            public string ServerId { get; set; }
+
+            public List<DownloadPart>Parts { get; set; }
         }
 
         public List<FetchBody> FetchBodies { get; set; }
+
         public List<McAttachment> FetchAttachments { get; set; }
-        public List<FetchPending> Pendings { get; set; }
+
+        public class DownloadPart
+        {
+            public string PartSpecifier { get; protected set; }
+
+            public string MimeType { get; protected set; }
+
+            public bool IsAttachment { get; protected set; }
+
+            public List<DownloadPart> Parts { get; set; }
+
+            public string Boundary { get; protected set; }
+
+            public bool HeadersOnly { get; protected set; }
+
+            /// <summary>
+            /// Gets or sets the length. A length of -1 means 'ALL'
+            /// </summary>
+            /// <value>The length.</value>
+            public int Length { get; protected set; }
+
+            const int All = -1;
+
+            public int Offset { get; protected set; }
+
+            public bool IsTruncated {
+                get {
+                    // TODO Using length > All is possibly prone to error, if the caller sets Length to the
+                    // actual length of the body part. In that case, IsTruncated will erroneously say true.
+                    return Offset != 0 || Length > All;
+                }
+            }
+
+            public bool DownloadAll {
+                get {
+                    return (!IsTruncated && HeadersOnly == false);
+                }
+                set {
+                    if (value) {
+                        HeadersOnly = false;
+                        Offset = 0;
+                        Length = All;
+                    } else {
+                        HeadersOnly = true;
+                        Offset = 0;
+                        Length = 0;
+                    }
+                }
+            }
+
+            public class ImapFetchDnldInvalidPartException: Exception
+            {
+                public ImapFetchDnldInvalidPartException (string message) : base (message)
+                {
+
+                }
+            }
+
+            public DownloadPart (BodyPart part, bool headersOnly)
+            {
+                if (string.IsNullOrEmpty (part.PartSpecifier)) {
+                    throw new ImapFetchDnldInvalidPartException ("PartSpecifier can not be empty");
+                }
+                PartSpecifier = part.PartSpecifier;
+                HeadersOnly = headersOnly;
+                MimeType = part.ContentType.MimeType;
+                Boundary = part.ContentType.Boundary;
+                var basic = part as BodyPartBasic;
+                if (null != basic) {
+                    IsAttachment = basic.IsAttachment;
+                } else {
+                    IsAttachment = false;
+                }
+                Offset = 0;
+                Length = All;
+                Parts = new List<DownloadPart>();
+            }
+
+            public override string ToString ()
+            {
+                string me = string.Format ("{0} {1}:{2}", this.GetType ().Name, PartSpecifier, MimeType);
+                if (!string.IsNullOrEmpty (Boundary)) {
+                    me += string.Format (" Boundary={0}", Boundary);
+                }
+                if (Parts.Any ()) {
+                    me += string.Format (" SubParts={0}", Parts.Count);
+                }
+                if (IsTruncated) {
+                    me += string.Format (" <{0}..{1}>", Offset, Length);
+                }
+                return me;
+            }
+
+            public void Truncate ()
+            {
+                HeadersOnly = true;
+                Length = 0;
+                Offset = 0;
+            }
+
+            public void Subset (int offset, int length)
+            {
+                NcAssert.True (length >= 0 && offset >= 0);
+                if (offset == 0 && length == 0) {
+                    Truncate ();
+                }
+                HeadersOnly = false;
+                Offset = offset;
+                Length = length;
+            }
+
+            public string ToQuery ()
+            {
+                string query = string.Format ("BODY[{0}.MIME]", PartSpecifier);
+                if (!HeadersOnly) {
+                    query += string.Format (" BODY[{0}]", PartSpecifier);
+                    if (IsTruncated) {
+                        query += string.Format ("<{0}..{1}>", Offset, Length);
+                    }
+                }
+                if (Parts.Any ()) {
+                    foreach (var dp in Parts) {
+                        query += " " + dp.ToQuery ();
+                    }
+                }
+                return query;
+            }
+        }
     }
 
 
     public interface IImapStrategy
     {
         SyncKit GenSyncKit (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt, McPending pending);
+
         SyncKit GenSyncKit (McProtocolState protocolState, McPending pending);
+
         SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync);
 
         FetchKit GenFetchKit ();
+
         FetchKit GenFetchKitHints ();
     }
 }
