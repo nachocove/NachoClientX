@@ -472,11 +472,10 @@ namespace NachoPlatform
         {
             if (!ks.ContainsAlias (KDefaultKeyPair)) {
                 GenerateKeyPair ();
-            } else {
-                KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry)ks.GetEntry (KDefaultKeyPair, null);
-                publicKey = privateKeyEntry.Certificate.PublicKey;
-                privateKey = privateKeyEntry.PrivateKey;
             }
+            KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry)ks.GetEntry (KDefaultKeyPair, null);
+            publicKey = privateKeyEntry.Certificate.PublicKey;
+            privateKey = privateKeyEntry.PrivateKey;
             TestKeys ();
         }
 
