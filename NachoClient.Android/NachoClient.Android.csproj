@@ -574,6 +574,7 @@
     <Compile Include="NachoUI.Android\Activities\AttendeeListEditFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ValidationFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ValidationActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\RemoveAccountActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1392,5 +1393,6 @@
     <AndroidResource Include="Resources\layout\AttendeeViewActivity.axml" />
     <AndroidResource Include="Resources\layout\AttendeeEditActivity.axml" />
     <AndroidResource Include="Resources\layout\ValidationActivity.axml" />
+    <AndroidResource Include="Resources\layout\RemoveAccountActivity.axml" />
   </ItemGroup>
 </Project>
