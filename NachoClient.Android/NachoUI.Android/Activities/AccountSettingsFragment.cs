@@ -24,6 +24,7 @@ namespace NachoClient.AndroidClient
 
         private const int SIGNATURE_REQUEST_CODE = 1;
         private const int DESCRIPTION_REQUEST_CODE = 2;
+        private const int PASSWORD_REQUEST_CODE = 4;
 
         ImageView accountIcon;
         TextView accountName;
@@ -230,13 +231,20 @@ namespace NachoClient.AndroidClient
                     BindAccount ();
                 }
                 break;
+            case PASSWORD_REQUEST_CODE:
+                if (Result.Ok == resultCode) {
+                    account = McAccount.QueryById<McAccount> (account.Id);
+                    BindAccount ();
+                }
+                break;
             }
         }
 
-
         void UpdatePasswordView_Click (object sender, EventArgs e)
         {
-
+            StartActivityForResult (
+                ValidationActivity.ValidationIntent(this.Activity, account),
+                PASSWORD_REQUEST_CODE);
         }
 
         void DeleteAccountView_Click (object sender, EventArgs e)
