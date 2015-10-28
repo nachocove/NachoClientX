@@ -26,6 +26,8 @@ namespace NachoClient.AndroidClient
         private const int DESCRIPTION_REQUEST_CODE = 2;
         private const int PASSWORD_REQUEST_CODE = 4;
 
+        ButtonBar buttonBar;
+
         ImageView accountIcon;
         TextView accountName;
 
@@ -73,10 +75,9 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.AccountSettingsFragment, container, false);
 
-            // Buttonbar title
-            var title = view.FindViewById<TextView> (Resource.Id.title);
-            title.SetText (Resource.String.account_settings);
-            title.Visibility = ViewStates.Visible;
+            buttonBar = new ButtonBar (view);
+
+            buttonBar.SetTitle (Resource.String.account_settings);
 
             accountIcon = view.FindViewById<ImageView> (Resource.Id.account_icon);
             accountName = view.FindViewById<TextView> (Resource.Id.account_name);

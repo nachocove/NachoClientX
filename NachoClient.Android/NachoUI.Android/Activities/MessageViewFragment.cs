@@ -25,6 +25,7 @@ namespace NachoClient.AndroidClient
         McEmailMessageThread thread;
 
         BodyDownloader bodyDownloader;
+        ButtonBar buttonBar;
 
         public static MessageViewFragment newInstance (McEmailMessageThread thread, McEmailMessage message)
         {
@@ -48,10 +49,9 @@ namespace NachoClient.AndroidClient
             // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MessageViewFragment, container, false);
 
-            var saveButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            saveButton.SetImageResource (Resource.Drawable.folder_move);
-            saveButton.Visibility = Android.Views.ViewStates.Visible;
-            saveButton.Click += SaveButton_Click;
+            buttonBar = new ButtonBar (view);
+
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.folder_move, SaveButton_Click);
 
             view.Click += View_Click;
 
