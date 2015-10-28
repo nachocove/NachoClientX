@@ -15,7 +15,7 @@
             android:textColor="@android:color/black"
             android:background="@android:color/white"
             android:padding="5dp" />
-        <EditText
+        <NachoClient.AndroidClient.EmailAddressField
             android:id="@+id/compose_to"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

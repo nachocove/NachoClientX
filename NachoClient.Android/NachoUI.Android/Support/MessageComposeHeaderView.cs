@@ -7,6 +7,8 @@ using Android.Content;
 using Android.Text;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoPlatform;
+using System.Collections.Generic;
 
 namespace NachoClient.AndroidClient
 {
@@ -30,7 +32,7 @@ namespace NachoClient.AndroidClient
 
         public MessageComposeHeaderViewDelegate Delegate;
         public EditText SubjectField;
-        public EditText ToField;
+        public EmailAddressField ToField;
         public EditText CcField;
         public TextView IntentValueLabel;
         LinearLayout IntentContainer;
@@ -64,16 +66,17 @@ namespace NachoClient.AndroidClient
             var inflater = Context.GetSystemService (Context.LayoutInflaterService) as LayoutInflater;
             var view = inflater.Inflate (Resource.Layout.MessageComposeHeaderView, this);
 
-            ToField = view.FindViewById<EditText> (Resource.Id.compose_to);
+            ToField = view.FindViewById<EmailAddressField> (Resource.Id.compose_to);
             CcField = view.FindViewById<EditText> (Resource.Id.compose_cc);
             SubjectField = view.FindViewById<EditText> (Resource.Id.compose_subject);
             SubjectField.FocusChange += SubjectFieldFocused;
             IntentContainer = view.FindViewById<LinearLayout> (Resource.Id.compose_intent_container);
             IntentValueLabel = view.FindViewById<TextView> (Resource.Id.compose_intent);
-            ToField.TextChanged += ToChanged;
+//            ToField.TextChanged += ToChanged;
             CcField.TextChanged += CcChanged;
             SubjectField.TextChanged += SubjectChanged;
             IntentContainer.Click += SelectIntent;
+            ToField.Adapter = new ContactAddressAdapter (Context);
         }
 
         void SubjectFieldFocused (object sender, FocusChangeEventArgs e)
@@ -121,6 +124,105 @@ namespace NachoClient.AndroidClient
         {
             IntentContainer.Visibility = ShouldHideIntent ? ViewStates.Gone : ViewStates.Visible;
             base.OnLayout (changed, l, t, r, b);
+        }
+
+    }
+
+    class ContactAddressAdapter : BaseAdapter<EmailAddressField.TokenObject>, IFilterable {
+
+        List<McContactEmailAddressAttribute> SearchResults;
+        public SearchHelper Searcher { get; }
+        Context Context;
+
+        private class ContactsFilter : Filter
+        {
+
+            public delegate void SearchResultsFound (List<McContactEmailAddressAttribute> searchResults);
+            public SearchResultsFound HandleSearch;
+
+            private class ResultsWrapper : Java.Lang.Object
+            {
+                public readonly List<McContactEmailAddressAttribute> ContactResults;
+
+                public ResultsWrapper (List<McContactEmailAddressAttribute> contactResults)
+                {
+                    ContactResults = contactResults;
+                }
+            }
+
+            protected override FilterResults PerformFiltering (Java.Lang.ICharSequence constraint)
+            {
+                var searchString = constraint == null ? "" : constraint.ToString ();
+                List<McContactEmailAddressAttribute> contacts;
+                if (!String.IsNullOrWhiteSpace (searchString)) {
+                    contacts = McContact.SearchIndexAllContacts (searchString);
+                } else {
+                    contacts = new List<McContactEmailAddressAttribute> ();
+                }
+                var filterResults = new FilterResults ();
+                filterResults.Values = new ResultsWrapper (contacts);
+                filterResults.Count = contacts.Count;
+                return filterResults;
+            }
+
+            protected override void PublishResults (Java.Lang.ICharSequence constraint, FilterResults results)
+            {
+                var wrapper = results.Values as ResultsWrapper;
+                var contacts = wrapper.ContactResults;
+                if (HandleSearch != null) {
+                    HandleSearch (contacts);
+                }
+            }
+        }
+
+        public ContactAddressAdapter (Context context) : base()
+        {
+            Context = context;
+            SearchResults = new List<McContactEmailAddressAttribute> ();
+            filter = new ContactsFilter ();
+            filter.HandleSearch = HandleSearch;
+        }
+
+        void HandleSearch (List<McContactEmailAddressAttribute> searchResults)
+        {
+            SearchResults = searchResults;
+            NotifyDataSetChanged ();
+        }
+
+        public override EmailAddressField.TokenObject this[int index] {
+            get {
+                var contact = SearchResults [index].GetContact ();
+                return new EmailAddressField.TokenObject (contact);
+            }
+        }
+
+        public override int Count {
+            get {
+                return SearchResults.Count;
+            }
+        }
+
+        public override long GetItemId (int position)
+        {
+            return SearchResults [position].GetContact ().Id;
+        }
+
+        public override View GetView (int position, View convertView, ViewGroup parent)
+        {
+            var view = convertView as TextView;
+            if (convertView == null) {
+                view = new TextView (Context);
+            }
+            var contact = SearchResults [position].GetContact ();
+            view.Text = contact.GetDisplayNameOrEmailAddress ();
+            return view;
+        }
+
+        ContactsFilter filter;
+        public Filter Filter {
+            get {
+                return filter;
+            }
         }
 
     }

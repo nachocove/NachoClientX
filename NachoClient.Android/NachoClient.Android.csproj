@@ -563,6 +563,7 @@
     <Compile Include="NachoUI.Android\Activities\SettingsActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\SettingsFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\EventViewActivity.cs" />
+    <Compile Include="NachoUI.Android\Support\EmailAddressField.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -722,6 +723,10 @@
     <ProjectReference Include="..\..\ModernHttpClient-demo\src\ModernHttpClient\ModernHttpClient.Android.csproj">
       <Project>{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}</Project>
       <Name>ModernHttpClient.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\TokenAutoCompleteBinding\TokenAutoCompleteBinding\TokenAutoCompleteBinding.csproj">
+      <Project>{17E3A80E-B371-4138-AB0F-7176BF026EAF}</Project>
+      <Name>TokenAutoCompleteBinding</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -1371,5 +1376,7 @@
     <AndroidResource Include="Resources\drawable-mdpi\gen_avatar_alert.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\gen_avatar_alert.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_avatar_alert.png" />
+    <AndroidResource Include="Resources\layout\EmailAddressToken.axml" />
+    <AndroidResource Include="Resources\drawable\EmailAddressToken.xml" />
   </ItemGroup>
 </Project>
