@@ -249,14 +249,9 @@ namespace NachoClient.AndroidClient
 
         void DeleteAccountView_Click (object sender, EventArgs e)
         {
-            Action action = () => {
-                NcAccountHandler.Instance.RemoveAccount (account.Id);
-                InvokeOnUIThread.Instance.Invoke (() => {
-                    // go back to main screen
-                    NcUIRedirector.Instance.GoBackToMainScreen ();  
-                });
-            };
-            NcTask.Run (action, "RemoveAccount");
+            // Deletes the account & returns to the main screen
+            var intent = RemoveAccountActivity.RemoveAccountIntent (this.Activity, account);
+            StartActivity (intent);
         }
 
         void PasswordExpiresView_Click (object sender, EventArgs e)
