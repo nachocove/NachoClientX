@@ -179,7 +179,7 @@ namespace NachoClient.AndroidClient
 
         void DoneWithMessage ()
         {
-            var parent = (InboxActivity)this.Activity;
+            var parent = (NcMessageListActivity)this.Activity;
             parent.DoneWithMessage ();
         }
 
