@@ -32,6 +32,7 @@ namespace NachoClient.AndroidClient
         private McCalendar cal;
         private McFolder calendarFolder;
 
+        private ButtonBar buttonBar;
         private EditText titleField;
         private EditText descriptionField;
         private Switch allDayField;
@@ -52,10 +53,9 @@ namespace NachoClient.AndroidClient
 
             SetContentView (Resource.Layout.EventEditActivity);
 
-            var saveButton = FindViewById<TextView> (Resource.Id.right_text_button1);
-            saveButton.Text = "Save";
-            saveButton.Visibility = ViewStates.Visible;
-            saveButton.Click += SaveButton_Click;
+            buttonBar = new ButtonBar (FindViewById<View> (Resource.Id.button_bar));
+
+            buttonBar.SetTextButton (ButtonBar.Button.Right1, Resource.String.save, SaveButton_Click);
 
             titleField = FindViewById<EditText> (Resource.Id.event_edit_title);
             descriptionField = FindViewById<EditText> (Resource.Id.event_edit_description);
@@ -68,11 +68,8 @@ namespace NachoClient.AndroidClient
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
 
-            var navBarTitle = FindViewById<TextView> (Resource.Id.title);
-            navBarTitle.Visibility = ViewStates.Visible;
-
             if (Intent.ActionCreateDocument == Intent.Action) {
-                navBarTitle.Text = "New Event";
+                buttonBar.SetTitle ("New Event");
 
                 DateTime startDate = DateTime.MinValue;
                 if (Intent.HasExtra(EXTRA_START_DATE)) {
@@ -127,7 +124,7 @@ namespace NachoClient.AndroidClient
                 NcAssert.True (Intent.ActionEdit == Intent.Action, "The intent for EventEditActivity must have an action of Edit or CreateDocument.");
                 NcAssert.True (Intent.HasExtra (EXTRA_EVENT_TO_EDIT), "When EventEditActivity is called with an Edit action, the event to edit must be specified.");
 
-                navBarTitle.Text = "Edit Event";
+                buttonBar.SetTitle ("Edit Event");
 
                 ev = IntentHelper.RetreiveValue<McEvent> (Intent.GetStringExtra (EXTRA_EVENT_TO_EDIT));
                 cal = McCalendar.QueryById<McCalendar> (ev.CalendarId);
