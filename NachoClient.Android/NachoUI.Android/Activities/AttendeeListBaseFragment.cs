@@ -20,6 +20,7 @@ namespace NachoClient.AndroidClient
     public class AttendeeListBaseFragment : Fragment
     {
         protected AttendeeListAdapter adapter;
+        protected ButtonBar buttonBar;
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -32,12 +33,12 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.AttendeeListFragment, container, false);
 
+            buttonBar = new ButtonBar (view);
+
+            buttonBar.SetTitle ("Attendees");
+
             var listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = adapter;
-
-            var navTitle = view.FindViewById<TextView> (Resource.Id.title);
-            navTitle.Visibility = ViewStates.Visible;
-            navTitle.Text = "Attendees";
 
             return view;
         }

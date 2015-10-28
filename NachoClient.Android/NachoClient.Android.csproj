@@ -576,6 +576,7 @@
     <Compile Include="NachoUI.Android\Activities\ValidationActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\RemoveAccountActivity.cs" />
     <Compile Include="NachoPlatform.Android\DnsAndroid.cs" />
+    <Compile Include="NachoUI.Android\Support\ButtonBar.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1395,5 +1396,8 @@
     <AndroidResource Include="Resources\layout\AttendeeEditActivity.axml" />
     <AndroidResource Include="Resources\layout\ValidationActivity.axml" />
     <AndroidResource Include="Resources\layout\RemoveAccountActivity.axml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
   </ItemGroup>
 </Project>
