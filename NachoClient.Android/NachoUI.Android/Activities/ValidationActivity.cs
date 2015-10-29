@@ -17,7 +17,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "ValidationActivity")]            
+    [Activity (Label = "ValidationActivity", ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]            
     public class ValidationActivity : NcActivity, CredentialsFragmentDelegate
     {
         private const string EXTRA_ACCOUNT_ID = "com.nachocove.nachomail.EXTRA_ACCOUNT_ID";
@@ -26,6 +26,8 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle);
             SetContentView (Resource.Layout.ValidationActivity);
+
+            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
 
             var accountId = Intent.GetIntExtra (EXTRA_ACCOUNT_ID, -1);
             var account = McAccount.QueryById<McAccount> (accountId);
