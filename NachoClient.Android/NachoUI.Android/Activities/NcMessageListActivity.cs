@@ -16,7 +16,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NcMessageListActivity")]            
+    [Activity (Label = "NcMessageListActivity", ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]            
     public class NcMessageListActivity : NcTabBarActivity, MessageListDelegate
     {
         protected McAccount account;
@@ -42,6 +42,8 @@ namespace NachoClient.AndroidClient
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.NcMessageListActivity);
+
+            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
 
             account = NcApplication.Instance.Account;
 
