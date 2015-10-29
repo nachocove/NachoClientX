@@ -92,17 +92,19 @@ namespace NachoClient.AndroidClient
 
         public  void AttachmentSelectedCallback (McAttachment attachment)
         {
-            try {
-                var myIntent = new Intent (Intent.ActionView);
-                var file = new Java.IO.File (attachment.GetFilePath ()); 
-                var extension = Android.Webkit.MimeTypeMap.GetFileExtensionFromUrl (Android.Net.Uri.FromFile (file).ToString ());
-                var mimetype = Android.Webkit.MimeTypeMap.Singleton.GetMimeTypeFromExtension (extension);
-                myIntent.SetDataAndType (Android.Net.Uri.FromFile (file), mimetype);
-                StartActivity (myIntent);
-            } catch (Exception e) {
-                // TODO: handle exception
-                String data = e.Message;
-            }
+            var viewerIntent = ImageViewActivity.ImageViewIntent (this.Activity, attachment.GetFileDirectory (), attachment.GetFileName ());
+            StartActivity (viewerIntent);
+//            try {
+//                var myIntent = new Intent (Intent.ActionView);
+//                var file = new Java.IO.File (attachment.GetFilePath ()); 
+//                var extension = Android.Webkit.MimeTypeMap.GetFileExtensionFromUrl (Android.Net.Uri.FromFile (file).ToString ());
+//                var mimetype = Android.Webkit.MimeTypeMap.Singleton.GetMimeTypeFromExtension (extension);
+//                myIntent.SetDataAndType (Android.Net.Uri.FromFile (file), mimetype);
+//                StartActivity (myIntent);
+//            } catch (Exception e) {
+//                // TODO: handle exception
+//                String data = e.Message;
+//            }
         }
 
         public  void AttachmentErrorCallback (McAttachment attachment, NcResult nr)
