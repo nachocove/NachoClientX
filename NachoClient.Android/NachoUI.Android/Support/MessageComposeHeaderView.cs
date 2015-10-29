@@ -18,6 +18,7 @@ namespace NachoClient.AndroidClient
         void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject);
         void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to);
         void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc);
+        void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc);
         void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
 //        void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
 //        void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
@@ -33,14 +34,24 @@ namespace NachoClient.AndroidClient
         public MessageComposeHeaderViewDelegate Delegate;
         public EditText SubjectField;
         public EmailAddressField ToField;
-        public EditText CcField;
+        public EmailAddressField CcField;
+        public EmailAddressField BccField;
         public TextView IntentValueLabel;
+        public TextView CcLabel;
         LinearLayout IntentContainer;
+        LinearLayout BccContainer;
         bool HasOpenedSubject;
+        bool HasOpenedCc;
 
         bool ShouldHideIntent {
             get {
                 return !HasOpenedSubject && String.IsNullOrEmpty(SubjectField.Text);
+            }
+        }
+
+        bool ShouldHideBcc {
+            get {
+                return (!HasOpenedCc) && CcField.Objects.Count == 0 && BccField.Objects.Count == 0;
             }
         }
         
@@ -67,16 +78,58 @@ namespace NachoClient.AndroidClient
             var view = inflater.Inflate (Resource.Layout.MessageComposeHeaderView, this);
 
             ToField = view.FindViewById<EmailAddressField> (Resource.Id.compose_to);
-            CcField = view.FindViewById<EditText> (Resource.Id.compose_cc);
+            ToField.AllowDuplicates (false);
+            ToField.Adapter = new ContactAddressAdapter (Context);
+            ToField.TokensChanged += ToFieldChanged;
+
+            CcField = view.FindViewById<EmailAddressField> (Resource.Id.compose_cc);
+            CcField.AllowDuplicates (false);
+            CcField.Adapter = new ContactAddressAdapter (Context);
+            CcField.FocusChange += CcFieldFocused;
+            CcField.TokensChanged += CcFieldChanged;
+
+            BccField = view.FindViewById<EmailAddressField> (Resource.Id.compose_bcc);
+            BccField.AllowDuplicates (false);
+            BccField.Adapter = new ContactAddressAdapter (Context);
+            BccField.TokensChanged += BccFieldChanged;
+
+            CcLabel = view.FindViewById<TextView> (Resource.Id.compose_cc_label);
+            BccContainer = view.FindViewById<LinearLayout> (Resource.Id.compose_bcc_container);
             SubjectField = view.FindViewById<EditText> (Resource.Id.compose_subject);
             SubjectField.FocusChange += SubjectFieldFocused;
             IntentContainer = view.FindViewById<LinearLayout> (Resource.Id.compose_intent_container);
             IntentValueLabel = view.FindViewById<TextView> (Resource.Id.compose_intent);
-//            ToField.TextChanged += ToChanged;
-            CcField.TextChanged += CcChanged;
             SubjectField.TextChanged += SubjectChanged;
             IntentContainer.Click += SelectIntent;
-            ToField.Adapter = new ContactAddressAdapter (Context);
+        }
+
+        void BccFieldChanged (object sender, EventArgs e)
+        {
+            if (Delegate != null) {
+                Delegate.MessageComposeHeaderViewDidChangeBcc (this, BccField.AddressString);
+            }
+        }
+
+        void CcFieldChanged (object sender, EventArgs e)
+        {
+            if (Delegate != null) {
+                Delegate.MessageComposeHeaderViewDidChangeCc (this, CcField.AddressString);
+            }
+        }
+
+        void ToFieldChanged (object sender, EventArgs e)
+        {
+            if (Delegate != null) {
+                Delegate.MessageComposeHeaderViewDidChangeTo (this, ToField.AddressString);
+            }
+        }
+
+        void CcFieldFocused (object sender, FocusChangeEventArgs e)
+        {
+            if (CcField.HasFocus) {
+                HasOpenedCc = true;
+                RequestLayout ();
+            }
         }
 
         void SubjectFieldFocused (object sender, FocusChangeEventArgs e)
@@ -101,20 +154,6 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void ToChanged (object sender, TextChangedEventArgs e)
-        {
-            if (Delegate != null) {
-                Delegate.MessageComposeHeaderViewDidChangeTo (this, ToField.Text);
-            }
-        }
-
-        void CcChanged (object sender, TextChangedEventArgs e)
-        {
-            if (Delegate != null) {
-                Delegate.MessageComposeHeaderViewDidChangeCc (this, CcField.Text);
-            }
-        }
-
         public void FocusSubject ()
         {
             SubjectField.RequestFocus ();
@@ -123,6 +162,8 @@ namespace NachoClient.AndroidClient
         protected override void OnLayout (bool changed, int l, int t, int r, int b)
         {
             IntentContainer.Visibility = ShouldHideIntent ? ViewStates.Gone : ViewStates.Visible;
+            BccContainer.Visibility = ShouldHideBcc ? ViewStates.Gone : ViewStates.Visible;
+            CcLabel.Text = ShouldHideBcc ? "Cc/Bcc:" : "Cc:";
             base.OnLayout (changed, l, t, r, b);
         }
 
@@ -191,8 +232,10 @@ namespace NachoClient.AndroidClient
 
         public override EmailAddressField.TokenObject this[int index] {
             get {
-                var contact = SearchResults [index].GetContact ();
-                return new EmailAddressField.TokenObject (contact);
+                var addressAttr = SearchResults [index];
+                var address = McEmailAddress.QueryById<McEmailAddress> (addressAttr.EmailAddress);
+                var contact = addressAttr.GetContact ();
+                return new EmailAddressField.TokenObject (contact, new NcEmailAddress(NcEmailAddress.Kind.Unknown, address.CanonicalEmailAddress));
             }
         }
 

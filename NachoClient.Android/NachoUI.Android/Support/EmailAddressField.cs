@@ -22,14 +22,37 @@ using Com.Tokenautocomplete;
 namespace NachoClient.AndroidClient
 {
 
-    public class EmailAddressField : TokenCompleteTextView
+    public class EmailAddressFieldChangeArgs : EventArgs
     {
+
+        EmailAddressField.TokenObject TokenObject;
+
+        public EmailAddressFieldChangeArgs (EmailAddressField.TokenObject tokenObject) : base()
+        {
+            TokenObject = tokenObject;
+        }
+    }
+
+    public class EmailAddressField : TokenCompleteTextView, TokenCompleteTextView.ITokenListener
+    {
+
+        public event EventHandler<EmailAddressFieldChangeArgs> TokenAdded;
+        public event EventHandler<EmailAddressFieldChangeArgs> TokenRemoved;
+        public event EventHandler<EventArgs> TokensChanged;
 
         public class TokenObject : Java.Lang.Object
         {
 
             public NcEmailAddress EmailAddress { get; set; }
             public McContact Contact { get; set; }
+            string AddressStringInvariant {
+                get {
+                    if (Contact != null) {
+                        return Contact.GetPrimaryCanonicalEmailAddress ().ToLowerInvariant ();
+                    }
+                    return EmailAddress.address.ToLowerInvariant ();
+                }    
+            }
 
             public TokenObject (NcEmailAddress address) : base()
             {
@@ -37,16 +60,26 @@ namespace NachoClient.AndroidClient
                 Contact = null;
             }
 
-            public TokenObject (McContact contact) : base()
+            public TokenObject (McContact contact, NcEmailAddress address) : base()
             {
                 Contact = contact;
-                EmailAddress = null;
+                EmailAddress = address;
+            }
+
+            public override bool Equals (Java.Lang.Object o)
+            {
+                var b = o as TokenObject;
+                if (b != null) {
+                    return AddressStringInvariant.Equals (b.AddressStringInvariant);
+                }
+                return false;
             }
         }
 
         public EmailAddressField (Context context, IAttributeSet attrs) : base(context, attrs)
         {
             Threshold = 1;
+            SetTokenListener (this);
         }
 
         protected override View GetViewForObject (Java.Lang.Object p0)
@@ -57,7 +90,12 @@ namespace NachoClient.AndroidClient
                 var view = inflater.Inflate (Resource.Layout.EmailAddressToken, null);
                 var textView = view.FindViewById<TextView> (Resource.Id.email_address_token_text);
                 if (wrapper.Contact != null) {
-                    textView.Text = wrapper.Contact.GetDisplayNameOrEmailAddress ();
+                    var displayName = wrapper.Contact.GetDisplayName ();
+                    if (!String.IsNullOrWhiteSpace (displayName)) {
+                        textView.Text = displayName;
+                    } else {
+                        textView.Text = wrapper.EmailAddress.address;
+                    }
                 } else {
                     textView.Text = wrapper.EmailAddress.address;
                 }
@@ -71,6 +109,46 @@ namespace NachoClient.AndroidClient
             var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown, p0);
             var wrapper = new TokenObject (address);
             return wrapper;
+        }
+
+        public void OnTokenAdded (Java.Lang.Object o)
+        {
+            var wrapper = o as TokenObject;
+            if (TokenAdded != null) {
+                TokenAdded (this, new EmailAddressFieldChangeArgs (wrapper));
+            }
+            if (TokensChanged != null) {
+                TokensChanged (this, new EventArgs ());
+            }
+        }
+
+        public void OnTokenRemoved (Java.Lang.Object o)
+        {
+            var wrapper = o as TokenObject;
+            if (TokenRemoved != null) {
+                TokenRemoved (this, new EmailAddressFieldChangeArgs (wrapper));
+            }
+            if (TokensChanged != null) {
+                TokensChanged (this, new EventArgs ());
+            }
+        }
+
+        public string AddressString {
+            get {
+                var addresses = new List<NcEmailAddress> (Objects.Count);
+                foreach (var obj in Objects) {
+                    var wrapper = obj as TokenObject;
+                    addresses.Add (wrapper.EmailAddress);
+                }
+                return EmailHelper.AddressStringFromList (addresses);
+            }
+            set {
+                Clear ();
+                var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, value);
+                foreach (var address in addresses) {
+                    AddObject (new TokenObject (address));
+                }
+            }
         }
 
     }
