@@ -25,6 +25,7 @@ repos = (
     'Xamarin.Auth',
     'Portable.Text.Encoding',
     'JetBlack.Caching',
+    'TokenAutoComplete',
     'TokenAutoCompleteBinding',
     # This is always the last one
     'NachoClientX'
