@@ -9,6 +9,7 @@ using Portable.Text;
 using System.Linq;
 using Android.Bluetooth;
 using System.Globalization;
+using Android.Provider;
 
 namespace NachoPlatform
 {
@@ -72,18 +73,7 @@ namespace NachoPlatform
 
         private string GetOrCreateDeviceId ()
         {
-            string DeviceIdHashInput = "";
-            var telephony = (TelephonyManager)MainApplication.Instance.ApplicationContext.GetSystemService (Context.TelephonyService);
-            if (null != telephony) {
-                if (!string.IsNullOrEmpty (telephony.DeviceId)) {
-                    DeviceIdHashInput += telephony.DeviceId;
-                }
-            }
-            // TODO If needed/wanted, add more data to the DeviceIdHashInput.
-
-            if (string.IsNullOrEmpty (DeviceIdHashInput)) {
-                DeviceIdHashInput = Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ();
-            }
+            var DeviceIdHashInput = Guid.NewGuid ().ToString ().Replace ("-", "").ToUpperInvariant ();
             string hashStr;
             using (SHA256Managed sha256 = new SHA256Managed()) {
                 var hash = sha256.ComputeHash (Encoding.UTF8.GetBytes (MainApplication.Instance.ApplicationInfo.PackageName+DeviceIdHashInput));
