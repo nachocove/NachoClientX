@@ -3,6 +3,7 @@
 using System;
 using NachoCore.Model;
 using Android.Widget;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
@@ -72,6 +73,16 @@ namespace NachoClient.AndroidClient
         }
 
         #endregion
+
+        public static int ColorResourceForEmail (string email)
+        {
+            McEmailAddress address;
+            if (McEmailAddress.Get (NcApplication.Instance.Account.Id, email, out address)) {
+                return Bind.ColorForUser (address.ColorIndex);
+            } else {
+                return Resource.Drawable.UserColor0;
+            }
+        }
     }
 
     /// <summary>

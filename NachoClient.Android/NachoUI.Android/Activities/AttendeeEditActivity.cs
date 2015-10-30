@@ -26,7 +26,7 @@ namespace NachoClient.AndroidClient
             SetContentView (Resource.Layout.AttendeeEditActivity);
 
             var fragment = FragmentManager.FindFragmentById<AttendeeListEditFragment> (Resource.Id.attendee_edit_fragment);
-            fragment.Attendees = base.AttendeesFromIntent (Intent);
+            fragment.Attendees = AttendeesFromIntent (Intent);
         }
 
         public static Intent AttendeeEditIntent (Context context, IList<McAttendee> attendees)

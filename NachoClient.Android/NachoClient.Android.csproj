@@ -1091,8 +1091,6 @@
     <AndroidResource Include="Resources\drawable-mdpi\files_open_app_swipe.png" />
     <AndroidResource Include="Resources\drawable-mdpi\gen_download_swipe.png" />
     <AndroidResource Include="Resources\drawable-mdpi\gen_preview_swipe.png" />
-    <AndroidResource Include="Resources\drawable-mdpi\calendar_calendar_attendee_optional_swipe.png" />
-    <AndroidResource Include="Resources\drawable-mdpi\calendar_calendar_attendee_required_swipe.png" />
     <AndroidResource Include="Resources\drawable-mdpi\calendar_forward_swipe.png" />
     <AndroidResource Include="Resources\drawable-mdpi\calendar_late_swipe.png" />
     <AndroidResource Include="Resources\drawable-mdpi\contacts_call_swipe.png" />
@@ -1407,6 +1405,12 @@
     <AndroidResource Include="Resources\layout\RemoveAccountActivity.axml" />
     <AndroidResource Include="Resources\layout\ImageViewActivity.axml" />
     <AndroidResource Include="Resources\layout\ImageViewFragment.axml" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_attendee_optional_swipe.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_attendee_required_swipe.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\calendar_add_attendee.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\calendar_add_attendee.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\calendar_add_attendee.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\calendar_add_attendee.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

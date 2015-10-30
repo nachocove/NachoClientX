@@ -201,6 +201,7 @@ namespace NachoClient.AndroidClient
                 } else {
                     initialsView.Text = ContactsHelper.NameToLetters (detail.SeriesItem.OrganizerEmail);
                 }
+                initialsView.SetBackgroundResource (Util.ColorResourceForEmail (detail.SeriesItem.OrganizerEmail));
             }
 
             var attendees = detail.SpecificItem.attendees;
@@ -214,6 +215,7 @@ namespace NachoClient.AndroidClient
                     } else if (a < attendees.Count) {
                         var attendee = attendees [a];
                         AttendeeInitialsView (view, a).Text = ContactsHelper.NameToLetters (attendee.DisplayName);
+                        AttendeeInitialsView (view, a).SetBackgroundResource (Util.ColorResourceForEmail (attendee.Email));
                         AttendeeNameView (view, a).Text = GetFirstName (attendee.DisplayName);
                     } else {
                         AttendeeInitialsView (view, a).Visibility = ViewStates.Gone;

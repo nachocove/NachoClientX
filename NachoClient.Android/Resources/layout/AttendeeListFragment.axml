@@ -49,4 +49,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/NachoLightGray" />
+    <TextView
+        android:id="@+id/attendee_list_empty_message"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_margin="20dp"
+        android:gravity="center"
+        android:visibility="gone" />
 </LinearLayout>

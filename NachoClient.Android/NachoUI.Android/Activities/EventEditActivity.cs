@@ -27,6 +27,8 @@ namespace NachoClient.AndroidClient
         private const string EXTRA_MESSAGE_FOR_MEETING = "com.nachocove.nachomail.EXTRA_MESSAGE_FOR_MEETING";
         private const string EXTRA_START_DATE = "com.nachocove.nachomail.EXTRA_START_DATE";
 
+        private const int ATTENDEE_ACTIVITY_REQUEST = 1;
+
         private McAccount account;
         private McEvent ev;
         private McCalendar cal;
@@ -200,6 +202,16 @@ namespace NachoClient.AndroidClient
             reminderField.Click += Reminder_Click;
             var reminderArrow = FindViewById<ImageView> (Resource.Id.event_edit_reminder_arrow);
             reminderArrow.Click += Reminder_Click;
+        }
+
+        protected override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult (requestCode, resultCode, data);
+
+            if (ATTENDEE_ACTIVITY_REQUEST == requestCode && Result.Ok == resultCode && null != data) {
+                cal.attendees = AttendeeEditActivity.AttendeesFromIntent (data);
+                attendeeCountField.Text = string.Format ("( {0} )", cal.attendees.Count);
+            }
         }
 
         public override void OnBackPressed ()
@@ -391,7 +403,7 @@ namespace NachoClient.AndroidClient
 
         private void Attendee_Click (object sender, EventArgs e)
         {
-            StartActivity (AttendeeEditActivity.AttendeeEditIntent (this, cal.attendees));
+            StartActivityForResult (AttendeeEditActivity.AttendeeEditIntent (this, cal.attendees), ATTENDEE_ACTIVITY_REQUEST);
         }
     }
 }

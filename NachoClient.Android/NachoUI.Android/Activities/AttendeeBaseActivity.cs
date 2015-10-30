@@ -33,14 +33,14 @@ namespace NachoClient.AndroidClient
             return intent;
         }
 
-        protected static Intent ResultIntent (IList<McAttendee> attendees)
+        public static Intent ResultIntent (IList<McAttendee> attendees)
         {
             var intent = new Intent ();
             intent.PutExtra (EXTRA_ATTENDEES, IntentHelper.StoreValue (attendees));
             return intent;
         }
 
-        public IList<McAttendee> AttendeesFromIntent (Intent intent)
+        public static IList<McAttendee> AttendeesFromIntent (Intent intent)
         {
             return IntentHelper.RetreiveValue<IList<McAttendee>> (intent.GetStringExtra (EXTRA_ATTENDEES));
         }
