@@ -12,7 +12,6 @@ using Javax.Crypto.Spec;
 using Portable.Text;
 using System.IO;
 using Android.App;
-using Android.Security.Keystore;
 
 namespace NachoPlatform
 {
@@ -321,19 +320,17 @@ namespace NachoPlatform
         {
             byte[] raw = new byte[32];
             RandomBytes (raw);
-            return new SecretKeySpec (raw, KeyProperties.KeyAlgorithmAes);
+            return new SecretKeySpec (raw, "AES");
         }
 
         private Cipher AesCipher ()
         {
-            return Cipher.GetInstance (
-                string.Format("{0}/{1}/{2}", KeyProperties.KeyAlgorithmAes, KeyProperties.BlockModeCbc, KeyProperties.EncryptionPaddingPkcs7)
-               );
+            return Cipher.GetInstance ("AES/CBC/PKCS7Padding");
         }
 
         private Mac AesMac()
         {
-            return Mac.GetInstance (KeyProperties.KeyAlgorithmHmacSha256);
+            return Mac.GetInstance ("HmacSHA256");
         }
 
         private string DecryptString (string encryptedTextB64)
