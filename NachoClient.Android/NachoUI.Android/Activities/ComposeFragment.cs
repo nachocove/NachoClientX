@@ -197,6 +197,12 @@ namespace NachoClient.AndroidClient
             UpdateSendEnabled ();
         }
 
+        public void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc)
+        {
+            Composer.Message.Bcc = bcc;
+            UpdateSendEnabled ();
+        }
+
         public void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject)
         {
             Composer.Message.Subject = subject;
@@ -331,8 +337,9 @@ namespace NachoClient.AndroidClient
 
         private void UpdateHeader ()
         {
-            HeaderView.ToField.Text = Composer.Message.To;
-            HeaderView.CcField.Text = Composer.Message.Cc;
+            HeaderView.ToField.AddressString = Composer.Message.To;
+            HeaderView.CcField.AddressString = Composer.Message.Cc;
+            HeaderView.BccField.AddressString = Composer.Message.Bcc;
             UpdateHeaderSubjectView ();
             UpdateHeaderIntentView ();
         }

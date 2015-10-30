@@ -166,8 +166,34 @@ namespace NachoClient.AndroidClient
                     emailField.Alpha = 0.6f;
                 }
             }
+                
+            emailField.KeyPress += EmailField_KeyPress; 
+
+            passwordField.KeyPress += PasswordField_KeyPress;
 
             return view;
+        }
+
+        void EmailField_KeyPress (object sender, View.KeyEventArgs e)
+        {
+            if ((KeyEventActions.Down == e.Event.Action) && (Keycode.Enter == e.KeyCode)) {
+                e.Handled = true;
+                emailField.ClearFocus ();
+                passwordField.RequestFocus ();
+            } else {
+                e.Handled = false;
+            }
+        }
+
+        void PasswordField_KeyPress (object sender, View.KeyEventArgs e)
+        {
+            if ((KeyEventActions.Down == e.Event.Action) && (Keycode.Enter == e.KeyCode)) {
+                e.Handled = true;
+                passwordField.ClearFocus ();
+                submitButton.RequestFocus ();
+            } else {
+                e.Handled = false;
+            }
         }
 
         public override void OnPause ()
@@ -189,7 +215,7 @@ namespace NachoClient.AndroidClient
                 NcAccountHandler.Instance.RemoveAccount (Account.Id);
             }
         }
-            
+
         void SubmitButton_Click (object sender, EventArgs e)
         {
             var email = emailField.Text.Trim ();
