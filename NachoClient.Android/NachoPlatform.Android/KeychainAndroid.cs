@@ -11,6 +11,8 @@ using Javax.Crypto;
 using Javax.Crypto.Spec;
 using Portable.Text;
 using System.IO;
+using Android.App;
+using Android.Security.Keystore;
 
 namespace NachoPlatform
 {
@@ -50,8 +52,7 @@ namespace NachoPlatform
 
         private Keychain ()
         {
-            GetKeyPair ();
-            GetPrefsKey ();
+            GetPrefsKeys ();
         }
 
         private const string KIdentifierForVendor = "IdentifierForVendor";
@@ -271,57 +272,68 @@ namespace NachoPlatform
         #endregion
 
         #region PrefsKey
-        private ISecretKey PrefsKey;
-        private ISecretKey PrefsMacKey;
-        private Mac PrefsMac;
-        private Cipher AesCipher;
+        private IKey PrefsKey;
+        private IKey PrefsMacKey;
         const string KPrefsKeyKey = "PreferencesKey";
         const string KPrefsMACKey = "PreferencesHMAC";
         const int AES_IV_LEN = 16; // 128 bits, i.e. AES block len
         const int SHA256_LEN = 32;
         const int AES_KEY_LEN = 32; // 256 bits
 
-        private void GetPrefsKey ()
+        private void GetPrefsKeys ()
+        {
+            var keyguardManager = (KeyguardManager)MainApplication.Instance.ApplicationContext.GetSystemService(Context.KeyguardService);
+            if (!keyguardManager.IsKeyguardSecure)
+            {
+                throw new Exception ("User has not set up a lock screen. Can not safely store keys");
+            }
+            GetKeyPair ();
+            GetPrefsAESKeys ();
+        }
+
+        private void GetPrefsAESKeys ()
         {
             if (null == PrefsKey) {
-                var r = Prefs.GetString (KPrefsKeyKey, null);
-                if (null == r) {
+                if (!Prefs.Contains (KPrefsKeyKey)) {
                     PrefsKeyGenerated = true;
-                    PrefsKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
-                    editor.PutString (KPrefsKeyKey, RSAEncryptKey (PrefsKey));
+                    editor.PutString (KPrefsKeyKey, RSAEncryptKey (MakeAES256Key ()));
                     editor.Commit ();
-                    r = Prefs.GetString (KPrefsKeyKey, null);
-                    NcAssert.True (null != r); // make darn tootin' sure it's saved.
-                } else {
-                    PrefsKey = (ISecretKey)RSADecryptKey (r);
+                    NcAssert.True (Prefs.Contains(KPrefsKeyKey)); // make darn tootin' sure it's saved.
                 }
-                NcAssert.True (PrefsKey.GetEncoded ().Length == AES_KEY_LEN);
+                var r = Prefs.GetString (KPrefsKeyKey, null);
+                PrefsKey = RSADecryptKey (r);
             }
             if (null == PrefsMacKey) {
-                var r = Prefs.GetString (KPrefsMACKey, null);
-                if (null == r) {
+                if (!Prefs.Contains (KPrefsMACKey)) {
                     PrefsMacKeyGenerated = true;
-                    PrefsMacKey = (ISecretKey)MakeAES256Key ();
                     var editor = Prefs.Edit ();
-                    editor.PutString (KPrefsMACKey, RSAEncryptKey (PrefsMacKey));
+                    editor.PutString (KPrefsMACKey, RSAEncryptKey (MakeAES256Key ()));
                     editor.Commit ();
-                    r = Prefs.GetString (KPrefsMACKey, null);
-                    NcAssert.True (null != r); // make darn tootin' sure it's saved.
-                } else {
-                    PrefsMacKey = (ISecretKey)RSADecryptKey (r);
+                    NcAssert.True (Prefs.Contains(KPrefsMACKey)); // make darn tootin' sure it's saved.
                 }
-                NcAssert.True (PrefsMacKey.GetEncoded ().Length == AES_KEY_LEN);
+                var r = Prefs.GetString (KPrefsMACKey, null);
+                PrefsMacKey = RSADecryptKey (r);
             }
-            AesCipher = Cipher.GetInstance ("AES/CBC/PKCS5Padding", "BC");
-            PrefsMac = Mac.GetInstance("HmacSHA256");
         }
 
         private IKey MakeAES256Key ()
         {
             byte[] raw = new byte[32];
             RandomBytes (raw);
-            return new SecretKeySpec (raw, "AES");
+            return new SecretKeySpec (raw, KeyProperties.KeyAlgorithmAes);
+        }
+
+        private Cipher AesCipher ()
+        {
+            return Cipher.GetInstance (
+                string.Format("{0}/{1}/{2}", KeyProperties.KeyAlgorithmAes, KeyProperties.BlockModeCbc, KeyProperties.EncryptionPaddingPkcs7)
+               );
+        }
+
+        private Mac AesMac()
+        {
+            return Mac.GetInstance (KeyProperties.KeyAlgorithmHmacSha256);
         }
 
         private string DecryptString (string encryptedTextB64)
@@ -344,38 +356,40 @@ namespace NachoPlatform
             Array.Copy (encryptedPackage, offset, encData, 0, enc_len);
             offset += enc_len;
 
-            PrefsMac.Init (PrefsMacKey);
-            PrefsMac.Reset ();
-            byte[] computedHmac = PrefsMac.DoFinal (encData);
+            var mac = AesMac ();
+            mac.Init (PrefsMacKey);
+            mac.Reset ();
+            byte[] computedHmac = mac.DoFinal (encData);
             if (!FixedTimeCompare(computedHmac, hmac)) {
                 throw new KeychainDecryptionException ("HMAC FAILED");
             }
 
             var ips = new IvParameterSpec (iv);
-            AesCipher.Init (CipherMode.DecryptMode, PrefsKey, ips);
-            byte[] decryptedData = AesCipher.DoFinal (encData);
+            var cipher = AesCipher ();
+            cipher.Init (CipherMode.DecryptMode, PrefsKey, ips);
+            byte[] decryptedData = cipher.DoFinal (encData);
 
             return Encoding.UTF8.GetString (decryptedData);
         }
 
         private string EncryptString (string data)
         {
-            byte[] iv = new byte[AES_IV_LEN];
-            RandomBytes (iv);
-            var ips = new IvParameterSpec (iv);
+            var cipher = AesCipher ();
+            cipher.Init (CipherMode.EncryptMode, PrefsKey);
+            byte[] encrypted = cipher.DoFinal (Encoding.UTF8.GetBytes (data));
+            var iv = cipher.GetIV ();
+            NcAssert.True (iv.Length == AES_IV_LEN);
 
-            AesCipher.Init (CipherMode.EncryptMode, PrefsKey, ips);
-            byte[] encrypted = AesCipher.DoFinal (Encoding.UTF8.GetBytes (data));
-
-            PrefsMac.Init (PrefsMacKey);
-            PrefsMac.Reset ();
-            byte[] hmac = PrefsMac.DoFinal (encrypted);
+            var mac = AesMac ();
+            mac.Init (PrefsMacKey);
+            mac.Reset ();
+            byte[] hmac = mac.DoFinal (encrypted);
             NcAssert.True (hmac.Length == SHA256_LEN);
 
             var encPackage = new MemoryStream();
             encPackage.WriteByte ((byte)0); // version number 0
-            encPackage.Write (iv, 0, AES_IV_LEN);
-            encPackage.Write (hmac, 0, SHA256_LEN);
+            encPackage.Write (iv, 0, iv.Length);
+            encPackage.Write (hmac, 0, hmac.Length);
             encPackage.Write (encrypted, 0, encrypted.Length);
             int encLen = (int)encPackage.Length;
             encPackage.Close ();
@@ -402,43 +416,43 @@ namespace NachoPlatform
         #endregion
 
         #region Keystore
+        const string KKeyStoreDefault = "AndroidKeyStore";
+        const string KKeyStoreBouncyCastle = "BC";
+        const string KKeyStoreOpenSSL = "AndroidOpenSSL";
+        const string DefaultKeyStore = KKeyStoreDefault;
+
+        private KeyStore getKeystore ()
+        {
+            var ks = KeyStore.GetInstance (DefaultKeyStore);
+            ks.Load (null);
+            return ks;
+        }
+        #endregion
+
+        #region RSAKeyPair
         const int KeyPairSize = 2048;
         const string KDefaultKeyPair = "NachoMailDefaultKeyPair";
-        const string KDefaultKeyStore = "AndroidKeyStore";
-        string KeyStoreProvider;
-        KeyStore _ks;
-        KeyStore ks {
-            get {
-                if (_ks == null) {
-                    KeyStoreProvider = KDefaultKeyStore;
-                    _ks = KeyStore.GetInstance (KeyStoreProvider);
-                    _ks.Load (null);
-                }
-                return _ks;
-            }
-        }
-
-        IPrivateKey privateKey;
-        IPublicKey publicKey;
         private void GetKeyPair ()
         {
-            if (!ks.ContainsAlias (KDefaultKeyPair)) {
-                GenerateKeyPair ();
+            using (var ks = getKeystore ()) {
+                if (!ks.ContainsAlias (KDefaultKeyPair)) {
+                    GenerateKeyPair ();
+                }
             }
-            KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry)ks.GetEntry (KDefaultKeyPair, null);
-            publicKey = privateKeyEntry.Certificate.PublicKey;
-            privateKey = privateKeyEntry.PrivateKey;
         }
 
         private long RSAKeyGenerationTimeMilliseconds;
         private void GenerateKeyPair ()
         {
+            using (var ks = getKeystore ()) {
+                NcAssert.False (ks.ContainsAlias (KDefaultKeyPair));
+            }
             var st = new PlatformStopwatch ();
             st.Start ();
             Java.Util.Calendar start = Java.Util.Calendar.GetInstance (Java.Util.TimeZone.Default);
             Java.Util.Calendar end = Java.Util.Calendar.GetInstance (Java.Util.TimeZone.Default);
             end.Add (Java.Util.CalendarField.Year, 20);
-            KeyPairGenerator generator = KeyPairGenerator.GetInstance("RSA", KeyStoreProvider);
+            KeyPairGenerator generator = KeyPairGenerator.GetInstance("RSA", DefaultKeyStore);
             KeyPairGeneratorSpec spec = new KeyPairGeneratorSpec.Builder(MainApplication.Instance.ApplicationContext)
                 .SetKeyType ("RSA")
                 .SetKeySize (KeyPairSize)
@@ -454,24 +468,41 @@ namespace NachoPlatform
             st.Stop ();
             RSAKeyGenerated = true;
             RSAKeyGenerationTimeMilliseconds = st.ElapsedMilliseconds;
-            NcAssert.True (ks.ContainsAlias (KDefaultKeyPair)); // make sure it got saved to the keystore
+            using (var ks = getKeystore ()) {
+                NcAssert.True (ks.ContainsAlias (KDefaultKeyPair)); // make sure it got saved to the keystore
+            }
+        }
+
+        private Cipher RsaCipher ()
+        {
+            return Cipher.GetInstance ("RSA/ECB/PKCS1Padding");
         }
 
         private string RSAEncryptKey (IKey key)
         {
             byte[] encryptedData;
-            var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
-            rsaCipher.Init (CipherMode.WrapMode, publicKey);
+            KeyStore.PrivateKeyEntry privateKeyEntry;
+            using (var ks = getKeystore ()) {
+                privateKeyEntry = (KeyStore.PrivateKeyEntry)ks.GetEntry (KDefaultKeyPair, null);
+            }
+            var rsaCipher = RsaCipher ();
+            rsaCipher.Init (CipherMode.WrapMode, privateKeyEntry.Certificate.PublicKey);
             encryptedData = rsaCipher.Wrap (key);
             return Convert.ToBase64String (encryptedData);
         }
 
         private IKey RSADecryptKey (string encryptedTextB64)
         {
-            var bytesToDecrypt = Convert.FromBase64String(encryptedTextB64);
-            var rsaCipher = Cipher.GetInstance("RSA/ECB/PKCS1Padding", "AndroidOpenSSL");
-            rsaCipher.Init (CipherMode.UnwrapMode, privateKey);
-            return rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
+            var bytesToDecrypt = Convert.FromBase64String (encryptedTextB64);
+            IKey key;
+            KeyStore.PrivateKeyEntry privateKeyEntry;
+            using (var ks = getKeystore ()) {
+                privateKeyEntry = (KeyStore.PrivateKeyEntry)ks.GetEntry (KDefaultKeyPair, null);
+            }
+            var rsaCipher = RsaCipher ();
+            rsaCipher.Init (CipherMode.UnwrapMode, privateKeyEntry.PrivateKey);
+            key = rsaCipher.Unwrap (bytesToDecrypt, "AES", KeyType.SecretKey);
+            return key;
         }
         #endregion
     }
