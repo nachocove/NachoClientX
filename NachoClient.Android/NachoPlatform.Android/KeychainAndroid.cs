@@ -11,7 +11,6 @@ using Javax.Crypto;
 using Javax.Crypto.Spec;
 using Portable.Text;
 using System.IO;
-using Android.App;
 
 namespace NachoPlatform
 {
@@ -281,11 +280,6 @@ namespace NachoPlatform
 
         private void GetPrefsKeys ()
         {
-            var keyguardManager = (KeyguardManager)MainApplication.Instance.ApplicationContext.GetSystemService(Context.KeyguardService);
-            if (!keyguardManager.IsKeyguardSecure)
-            {
-                throw new Exception ("User has not set up a lock screen. Can not safely store keys");
-            }
             GetKeyPair ();
             GetPrefsAESKeys ();
         }
