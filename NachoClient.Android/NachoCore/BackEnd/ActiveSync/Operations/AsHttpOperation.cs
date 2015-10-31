@@ -715,10 +715,15 @@ namespace NachoCore.ActiveSync
                         } catch (OperationCanceledException) {
                             Owner.ResolveAllDeferred ();
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
-                        } catch (WBXMLReadPastEndException) {
-                            // We are deferring because we think that an invalid WBXML string is likely transient.
-                            Owner.ResolveAllDeferred ();
-                            return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND");
+                        } catch (WBXMLReadPastEndException ex) {
+                            if (ex.BytesRead == 0) {
+                                // nothing was read, i.e. HasBody was wrong.
+                                return Final (Owner.ProcessResponse (this, response, cToken));
+                            } else {
+                                // We are deferring because we think that an invalid WBXML string is likely transient.
+                                Owner.ResolveAllDeferred ();
+                                return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND");
+                            }
                         } catch (InvalidDataException) {
                             Owner.ResolveAllDeferred ();
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND2");
