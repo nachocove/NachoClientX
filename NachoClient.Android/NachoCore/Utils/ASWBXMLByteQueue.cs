@@ -10,6 +10,11 @@ namespace NachoCore.Wbxml
 {
     class WBXMLReadPastEndException : Exception
     {
+        public long BytesRead;
+        public WBXMLReadPastEndException (long bytesRead)
+        {
+            BytesRead = bytesRead;
+        }
     }
 
     class ASWBXMLByteQueue
@@ -17,6 +22,7 @@ namespace NachoCore.Wbxml
         private Stream ByteStream;
         private int? PeekHolder;
         private GatedMemoryStream RedactedCopy;
+        private long BytesRead;
 
         public ASWBXMLByteQueue (Stream bytes, GatedMemoryStream redactedCopy = null)
         {
@@ -44,7 +50,9 @@ namespace NachoCore.Wbxml
                 PeekHolder = null;
             }
             if (-1 == value) {
-                throw new WBXMLReadPastEndException ();
+                throw new WBXMLReadPastEndException (BytesRead);
+            } else {
+                BytesRead++;
             }
             byte aByte = Convert.ToByte (value);
             if (null != RedactedCopy) {
