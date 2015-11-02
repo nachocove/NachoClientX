@@ -62,6 +62,7 @@ namespace NachoClient.AndroidClient
 
             var listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = adapter;
+            listView.ItemClick += ListView_ItemClick;
 
             HighlightTab (allTab);
             CheckEmptyList (view);
@@ -104,6 +105,14 @@ namespace NachoClient.AndroidClient
         {
             view.SetTextColor (Resources.GetColor (Resource.Color.NachoGreen));
             view.SetBackgroundResource (Resource.Drawable.BlackBorder);
+        }
+
+        private void ListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+        {
+            var contact = McContact.QueryByEmailAddress (NcApplication.Instance.Account.Id, adapter [e.Position].Email).FirstOrDefault ();
+            if (null != contact) {
+                StartActivity (ContactViewActivity.ShowContactIntent (this.Activity, contact));
+            }
         }
 
         private void AllTab_Click (object sender, EventArgs e)

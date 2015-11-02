@@ -580,6 +580,7 @@
     <Compile Include="NachoUI.Android\Support\ButtonBar.cs" />
     <Compile Include="NachoUI.Android\Activities\ImageViewActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ImageViewFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\ContactViewActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1423,6 +1424,7 @@
     <AndroidResource Include="Resources\drawable-hdpi\nav_add.png" />
     <AndroidResource Include="Resources\drawable-hdpi\nav_search_active.png" />
     <AndroidResource Include="Resources\drawable-hdpi\nav_search.png" />
+    <AndroidResource Include="Resources\layout\ContactViewActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
