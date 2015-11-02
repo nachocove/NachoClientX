@@ -1411,6 +1411,18 @@
     <AndroidResource Include="Resources\drawable-mdpi\calendar_add_attendee.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\calendar_add_attendee.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\calendar_add_attendee.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\nav_add.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\nav_search_active.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\nav_search.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\nav_add.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\nav_search_active.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\nav_search.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\nav_add.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\nav_search_active.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\nav_search.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\nav_add.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\nav_search_active.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\nav_search.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

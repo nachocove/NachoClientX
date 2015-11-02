@@ -33,8 +33,8 @@ namespace NachoClient.AndroidClient
             base.OnCreate ();
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
         }
-            
-        public static void Startup()
+
+        public static void Startup ()
         {
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
         }
@@ -45,11 +45,15 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
         }
 
-        public static bool CheckOnceForUpdates()
+        public static bool CheckOnceForUpdates ()
         {
-            var check = checkForUpdates;
-            checkForUpdates = false;
-            return check;
+            if (BuildInfoHelper.IsAlpha || BuildInfoHelper.IsBeta) {
+                var check = checkForUpdates;
+                checkForUpdates = false;
+                return check;
+            } else {
+                return false;
+            }
         }
 
     }

@@ -337,7 +337,7 @@ namespace NachoClient.AndroidClient
                 rightButton3.SetImageResource (Resource.Drawable.gen_archive);
                 rightButton3.Visibility = ViewStates.Visible;
             } else {
-                leftButton1.SetImageResource (Android.Resource.Drawable.IcMenuSearch);
+                leftButton1.SetImageResource (Resource.Drawable.nav_search);
                 leftButton1.Visibility = ViewStates.Visible;
                 rightButton1.SetImageResource (Resource.Drawable.contact_newemail);
                 rightButton1.Visibility = ViewStates.Visible;
