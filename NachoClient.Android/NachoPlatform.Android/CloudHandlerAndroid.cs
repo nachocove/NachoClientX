@@ -13,10 +13,10 @@ namespace NachoPlatform
 {
     public class CloudHandler : IPlatformCloudHandler
     {
-        public static string KUserId = "UserId";
-        public static string KFirstInstallDate = "FirstInstallDate";
-        public static string KPurchaseDate = "PurchaseDate";
-        public static string KIsAlreadyPurchased = "IsAlreadyPurchased";
+        public const string KUserId = "UserId";
+        public const string KFirstInstallDate = "FirstInstallDate";
+        public const string KPurchaseDate = "PurchaseDate";
+        public const string KIsAlreadyPurchased = "IsAlreadyPurchased";
 
         private static volatile CloudHandler instance;
         private static object syncRoot = new Object ();
@@ -125,27 +125,27 @@ namespace NachoPlatform
         }
         public bool CloudInstallDateEarlierThanLocal ()
         {
-            long cloudInstallDateLong = BackupPrefs.GetKeyLong (KFirstInstallDate);
-            if (cloudInstallDateLong == 0) {
-                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date is 0");
-                return false;
-            }
-            DateTime cloudInstallDate = DateTime.FromBinary (cloudInstallDateLong);
-
-            string localInstallDateStr = NSUserDefaults.StandardUserDefaults.StringForKey (KFirstInstallDate);
-            if (localInstallDateStr == null) {
-                Log.Info (Log.LOG_SYS, "CloudHandler: Local first install date is null");
-                return true;
-            }
-            DateTime localInstallDate = localInstallDateStr.ToDateTime (); 
-            if (DateTime.Compare (cloudInstallDate, localInstallDate) < 0) {
-                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date {0} is earlier than local {1}", cloudInstallDate, localInstallDate);
-                return true;
-            } else {
-                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date {0} is not earlier than local {1}", cloudInstallDate, localInstallDate);
-                return false;
-            }
-            Log.Info (Log.LOG_SYS, "CloudHandler: Cloud is not available");
+//            long cloudInstallDateLong = BackupPrefs.GetKeyLong (KFirstInstallDate);
+//            if (cloudInstallDateLong == 0) {
+//                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date is 0");
+//                return false;
+//            }
+//            DateTime cloudInstallDate = DateTime.FromBinary (cloudInstallDateLong);
+//
+//            string localInstallDateStr = NSUserDefaults.StandardUserDefaults.StringForKey (KFirstInstallDate);
+//            if (localInstallDateStr == null) {
+//                Log.Info (Log.LOG_SYS, "CloudHandler: Local first install date is null");
+//                return true;
+//            }
+//            DateTime localInstallDate = localInstallDateStr.ToDateTime (); 
+//            if (DateTime.Compare (cloudInstallDate, localInstallDate) < 0) {
+//                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date {0} is earlier than local {1}", cloudInstallDate, localInstallDate);
+//                return true;
+//            } else {
+//                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date {0} is not earlier than local {1}", cloudInstallDate, localInstallDate);
+//                return false;
+//            }
+//            Log.Info (Log.LOG_SYS, "CloudHandler: Cloud is not available");
             return false;
         }
     }
