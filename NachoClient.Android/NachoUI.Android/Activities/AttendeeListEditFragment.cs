@@ -115,13 +115,13 @@ namespace NachoClient.AndroidClient
         {
             switch (index) {
             case REMOVE_SWIPE_TAG:
-                NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "Removing an attendee is not yet implemented. Please try again later.");
+                adapter.RemoveItem (position);
                 break;
             case REQUIRED_SWIPE_TAG:
-                NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "Changing status is not yet implemented. Please try again later.");
+                adapter.MakeRequired (position);
                 break;
             case OPTIONAL_SWIPE_TAG:
-                NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "Changing status is not yet implemented. Please try again later.");
+                adapter.MakeOptional (position);
                 break;
             case SEND_INVITE_SWIPE_TAG:
                 NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "Resending the invite is not yet implemented. Please try again later.");
