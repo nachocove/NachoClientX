@@ -312,5 +312,24 @@ namespace NachoClient.AndroidClient
         //            Log.Info (Log.LOG_UI, "ShouldInterceptRequest: {1} {0}", request.Url, request.Method);
         //            return base.ShouldInterceptRequest (view, request);
         //        }
+
+        public override bool ShouldOverrideUrlLoading (Android.Webkit.WebView view, string url)
+        {
+            if (null == url) {
+                return false;
+            }
+            try {
+                var uri = Android.Net.Uri.Parse(url);
+                var norm = uri.NormalizeScheme();
+                var scheme = norm.Scheme;
+                if("http" == scheme || "https" == scheme) {
+                    view.Context.StartActivity (new Intent (Intent.ActionView, Android.Net.Uri.Parse (url)));
+                    return true;
+                }
+            } catch(Exception ex) {
+                Log.Info (Log.LOG_UI, "ShouldOverrideUrl: {0}", ex);
+            }
+            return false;
+        }
     }
 }
