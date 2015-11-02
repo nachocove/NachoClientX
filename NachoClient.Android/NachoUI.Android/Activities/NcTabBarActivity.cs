@@ -184,6 +184,7 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "NcActivity account selected {0}", account.DisplayName);
             SwitchAccount (account);
+            LoginHelpers.SetSwitchToTime (account);
 
             // Pop the switcher if the activity hasn't already done it.
             var f = FragmentManager.FindFragmentById (Resource.Id.content);

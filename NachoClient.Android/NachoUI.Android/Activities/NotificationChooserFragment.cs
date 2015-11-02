@@ -25,6 +25,7 @@ namespace NachoClient.AndroidClient
         public event EventHandler<McAccount.NotificationConfigurationEnum> OnNotificationsChanged;
 
         NotificationAdapter notificationAdapter;
+        ButtonBar buttonBar;
 
         public static NotificationChooserFragment newInstance (McAccount.NotificationConfigurationEnum value)
         {
@@ -44,14 +45,11 @@ namespace NachoClient.AndroidClient
 
             var view = inflater.Inflate (Resource.Layout.NotificationChooserFragment, container, false);
 
-            var title = view.FindViewById<TextView> (Resource.Id.title);
-            title.SetText (Resource.String.notifications);
-            title.Visibility = ViewStates.Visible;
+            buttonBar = new ButtonBar (view);
 
-            var saveButton = view.FindViewById<Android.Widget.TextView> (Resource.Id.right_text_button1);
-            saveButton.SetText (Resource.String.save);
-            saveButton.Visibility = Android.Views.ViewStates.Visible;
-            saveButton.Click += SaveButton_Click;
+            buttonBar.SetTitle (Resource.String.notifications);
+
+            buttonBar.SetTextButton (ButtonBar.Button.Right1, Resource.String.save, SaveButton_Click);
 
             var listview = view.FindViewById<ListView> (Resource.Id.listview);
             listview.ItemClick += Listview_ItemClick;

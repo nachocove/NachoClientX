@@ -138,4 +138,7 @@
     <string name="description_instructions">Create a descriptive label for this account.</string>
     <string name="signature_instructions">Create a signature that will appear at the end of every email that you send.</string>
     <string name="save">Save</string>
+    <string name="removing_account">Removing account...</string>
+    <string name="remove_account">Remove Account</string>
+    <string name="remove_account_warning">Remove the accounts and its data from this device</string>
 </resources>

@@ -146,6 +146,14 @@ namespace NachoClient.AndroidClient
                 return false;
             });
 
+            listView.setOnSwipeStartListener ((position) => {
+                mSwipeRefreshLayout.Enabled = false;
+            });
+
+            listView.setOnSwipeEndListener ((position) => {
+                mSwipeRefreshLayout.Enabled = true;
+            });
+
             return view;
         }
 

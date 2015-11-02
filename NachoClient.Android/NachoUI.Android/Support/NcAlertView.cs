@@ -28,6 +28,19 @@ namespace NachoClient.AndroidClient
             alert.Show ();
         }
 
+        public static void Show (Android.Content.Context context, string title, string message, Action ok_action, Action cancel_action)
+        {
+            Telemetry.RecordUiAlertView (title, message);
+            var alert = new AlertDialog.Builder (context).SetTitle (title).SetMessage (message);
+            alert.SetPositiveButton ("OK", (dialog, which) => {
+                ok_action ();
+            });
+            alert.SetNegativeButton ("Cancel", (dialog, which) => {
+                cancel_action ();
+            });
+            alert.Show ();
+        }
+
     }
 }
 

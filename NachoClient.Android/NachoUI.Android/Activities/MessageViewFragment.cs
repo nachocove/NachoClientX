@@ -25,6 +25,7 @@ namespace NachoClient.AndroidClient
         McEmailMessageThread thread;
 
         BodyDownloader bodyDownloader;
+        ButtonBar buttonBar;
 
         public static MessageViewFragment newInstance (McEmailMessageThread thread, McEmailMessage message)
         {
@@ -48,10 +49,9 @@ namespace NachoClient.AndroidClient
             // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MessageViewFragment, container, false);
 
-            var saveButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            saveButton.SetImageResource (Resource.Drawable.folder_move);
-            saveButton.Visibility = Android.Views.ViewStates.Visible;
-            saveButton.Click += SaveButton_Click;
+            buttonBar = new ButtonBar (view);
+
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.folder_move, SaveButton_Click);
 
             view.Click += View_Click;
 
@@ -92,17 +92,19 @@ namespace NachoClient.AndroidClient
 
         public  void AttachmentSelectedCallback (McAttachment attachment)
         {
-            try {
-                var myIntent = new Intent (Intent.ActionView);
-                var file = new Java.IO.File (attachment.GetFilePath ()); 
-                var extension = Android.Webkit.MimeTypeMap.GetFileExtensionFromUrl (Android.Net.Uri.FromFile (file).ToString ());
-                var mimetype = Android.Webkit.MimeTypeMap.Singleton.GetMimeTypeFromExtension (extension);
-                myIntent.SetDataAndType (Android.Net.Uri.FromFile (file), mimetype);
-                StartActivity (myIntent);
-            } catch (Exception e) {
-                // TODO: handle exception
-                String data = e.Message;
-            }
+            var viewerIntent = ImageViewActivity.ImageViewIntent (this.Activity, attachment.GetFileDirectory (), attachment.GetFileName ());
+            StartActivity (viewerIntent);
+//            try {
+//                var myIntent = new Intent (Intent.ActionView);
+//                var file = new Java.IO.File (attachment.GetFilePath ()); 
+//                var extension = Android.Webkit.MimeTypeMap.GetFileExtensionFromUrl (Android.Net.Uri.FromFile (file).ToString ());
+//                var mimetype = Android.Webkit.MimeTypeMap.Singleton.GetMimeTypeFromExtension (extension);
+//                myIntent.SetDataAndType (Android.Net.Uri.FromFile (file), mimetype);
+//                StartActivity (myIntent);
+//            } catch (Exception e) {
+//                // TODO: handle exception
+//                String data = e.Message;
+//            }
         }
 
         public  void AttachmentErrorCallback (McAttachment attachment, NcResult nr)
@@ -179,7 +181,7 @@ namespace NachoClient.AndroidClient
 
         void DoneWithMessage ()
         {
-            var parent = (InboxActivity)this.Activity;
+            var parent = (NcMessageListActivity)this.Activity;
             parent.DoneWithMessage ();
         }
 

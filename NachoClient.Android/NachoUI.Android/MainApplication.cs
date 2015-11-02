@@ -15,6 +15,7 @@ namespace NachoClient.AndroidClient
     public class MainApplication : Application
     {
         static MainApplication _instance;
+        static bool checkForUpdates = true;
 
         public MainApplication (IntPtr javaReference, JniHandleOwnership transfer) : base (javaReference, transfer)
         {
@@ -42,6 +43,13 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
+        }
+
+        public static bool CheckOnceForUpdates()
+        {
+            var check = checkForUpdates;
+            checkForUpdates = false;
+            return check;
         }
 
     }

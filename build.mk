@@ -1,6 +1,7 @@
 # Build / clean everything
 
 all:
+	make -C ../TokenAutoComplete -f ../NachoClientX/TokenAutoComplete.mk
 	make -C ../SwipeViewBinding
 	make -C ../UIImageEffects
 	make -C ../SWRevealViewControllerBinding

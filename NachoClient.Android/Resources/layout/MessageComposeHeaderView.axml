@@ -15,7 +15,7 @@
             android:textColor="@android:color/black"
             android:background="@android:color/white"
             android:padding="5dp" />
-        <EditText
+        <NachoClient.AndroidClient.EmailAddressField
             android:id="@+id/compose_to"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
@@ -32,13 +32,14 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
         <TextView
-            android:text="CC:"
+            android:id="@+id/compose_cc_label"
+            android:text="Cc/Bcc:"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@android:color/black"
             android:background="@android:color/white"
             android:padding="5dp" />
-        <EditText
+        <NachoClient.AndroidClient.EmailAddressField
             android:id="@+id/compose_cc"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
@@ -50,6 +51,36 @@
         android:layout_width="fill_parent"
         android:layout_height="1dp"
         android:background="@color/NachoLightGray" />
+    <LinearLayout
+        android:id="@+id/compose_bcc_container"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone">
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:text="Bcc:"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:background="@android:color/white"
+                android:padding="5dp" />
+            <NachoClient.AndroidClient.EmailAddressField
+                android:id="@+id/compose_bcc"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:background="@android:color/white"
+                android:padding="5dp" />
+        </LinearLayout>
+        <View
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:background="@color/NachoLightGray" />
+    </LinearLayout>
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"

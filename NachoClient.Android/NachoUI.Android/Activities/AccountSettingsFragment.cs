@@ -24,6 +24,9 @@ namespace NachoClient.AndroidClient
 
         private const int SIGNATURE_REQUEST_CODE = 1;
         private const int DESCRIPTION_REQUEST_CODE = 2;
+        private const int PASSWORD_REQUEST_CODE = 4;
+
+        ButtonBar buttonBar;
 
         ImageView accountIcon;
         TextView accountName;
@@ -72,10 +75,9 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.AccountSettingsFragment, container, false);
 
-            // Buttonbar title
-            var title = view.FindViewById<TextView> (Resource.Id.title);
-            title.SetText (Resource.String.account_settings);
-            title.Visibility = ViewStates.Visible;
+            buttonBar = new ButtonBar (view);
+
+            buttonBar.SetTitle (Resource.String.account_settings);
 
             accountIcon = view.FindViewById<ImageView> (Resource.Id.account_icon);
             accountName = view.FindViewById<TextView> (Resource.Id.account_name);
@@ -230,25 +232,27 @@ namespace NachoClient.AndroidClient
                     BindAccount ();
                 }
                 break;
+            case PASSWORD_REQUEST_CODE:
+                if (Result.Ok == resultCode) {
+                    account = McAccount.QueryById<McAccount> (account.Id);
+                    BindAccount ();
+                }
+                break;
             }
         }
 
-
         void UpdatePasswordView_Click (object sender, EventArgs e)
         {
-
+            StartActivityForResult (
+                ValidationActivity.ValidationIntent(this.Activity, account),
+                PASSWORD_REQUEST_CODE);
         }
 
         void DeleteAccountView_Click (object sender, EventArgs e)
         {
-            Action action = () => {
-                NcAccountHandler.Instance.RemoveAccount (account.Id);
-                InvokeOnUIThread.Instance.Invoke (() => {
-                    // go back to main screen
-                    NcUIRedirector.Instance.GoBackToMainScreen ();  
-                });
-            };
-            NcTask.Run (action, "RemoveAccount");
+            // Deletes the account & returns to the main screen
+            var intent = RemoveAccountActivity.RemoveAccountIntent (this.Activity, account);
+            StartActivity (intent);
         }
 
         void PasswordExpiresView_Click (object sender, EventArgs e)

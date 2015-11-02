@@ -68,14 +68,19 @@ namespace NachoCore.Model
         public string GetFilePath ()
         {
             NcAssert.True (0 != Id);
-            var dirPath = DirPath ();
+            var dirPath = GetFileDirectory ();
             if (!Directory.Exists (dirPath)) {
                 Directory.CreateDirectory (dirPath);
             }
+            return Path.Combine (dirPath, GetFileName ());
+        }
+
+        public string GetFileName ()
+        {
             if (null == LocalFileName) {
-                return Path.Combine (dirPath, Id.ToString ());
+                return Id.ToString ();
             } else {
-                return Path.Combine (dirPath, LocalFileName);
+                return LocalFileName;
             }
         }
 
@@ -104,7 +109,7 @@ namespace NachoCore.Model
             MIME_4 = 4,
         }
 
-        private string DirPath ()
+        public string GetFileDirectory ()
         {
             return Path.Combine (NcModel.Instance.GetFileDirPath (AccountId, GetFilePathSegment ()), Id.ToString ());
         }
@@ -112,7 +117,7 @@ namespace NachoCore.Model
         private void Prep ()
         {
             Insert ();
-            Directory.CreateDirectory (DirPath ());
+            Directory.CreateDirectory (GetFileDirectory ());
         }
 
         protected void CompleteInsertSaveStart ()
@@ -334,7 +339,7 @@ namespace NachoCore.Model
             // We Must delete the file first. Complete the delete even if something goes wrong with the file delete.
             DeleteFile ();
             try {
-                Directory.Delete (DirPath (), true);
+                Directory.Delete (GetFileDirectory (), true);
             } catch (Exception ex) {
                 Log.Error (Log.LOG_DB, "McAbstrFileDesc: Exception trying to delete DirPath: {0}", ex);
             }

@@ -26,6 +26,8 @@ namespace NachoClient.AndroidClient
 
         ContactViewAdapter contactViewAdapter;
 
+        ButtonBar buttonBar;
+
         public static ContactViewFragment newInstance (McContact contact)
         {
             var fragment = new ContactViewFragment ();
@@ -42,10 +44,9 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.ContactViewFragment, container, false);
 
-            var editButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            editButton.SetImageResource (Android.Resource.Drawable.IcMenuEdit);
-            editButton.Visibility = Android.Views.ViewStates.Visible;
-//            editButton.Click += EditButton_Click;
+            buttonBar = new ButtonBar (view);
+
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Android.Resource.Drawable.IcMenuEdit, /*EditButton_Click*/ null);
 
             view.Click += View_Click;
 

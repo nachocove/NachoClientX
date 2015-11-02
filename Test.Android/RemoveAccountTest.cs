@@ -60,10 +60,8 @@ namespace Test.iOS
             Assert.True (Directory.Exists (AccountDirPath));
 
             // check password in keychain
-            if (Keychain.Instance.HasKeychain ()) {
-                string retPassword = Keychain.Instance.GetPassword (cred.Id);
-                Assert.AreEqual (retPassword, Password);
-            }
+            string retPassword = Keychain.Instance.GetPassword (cred.Id);
+            Assert.AreEqual (retPassword, Password);
 
             // remove account
             NcAccountHandler.Instance.RemoveAccount (account.Id, stopStartServices: false);
@@ -78,16 +76,14 @@ namespace Test.iOS
             Assert.False (Directory.Exists (AccountDirPath));
 
             // confirm that the password is deleted from the keychain
-            if (Keychain.Instance.HasKeychain ()) {
-                var gotEx = false;
-                try {
-                    string retPassword = Keychain.Instance.GetPassword (cred.Id);
-                    Assert.Null (retPassword);
-                } catch (KeychainItemNotFoundException) {
-                    gotEx = true;
-                }
-                Assert.IsTrue (gotEx);
+            var gotEx = false;
+            try {
+                retPassword = Keychain.Instance.GetPassword (cred.Id);
+                Assert.Null (retPassword);
+            } catch (KeychainItemNotFoundException) {
+                gotEx = true;
             }
+            Assert.IsTrue (gotEx);
         }
 
         //Test that all tables have accountId

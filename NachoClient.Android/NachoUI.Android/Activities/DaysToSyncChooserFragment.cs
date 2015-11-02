@@ -26,6 +26,8 @@ namespace NachoClient.AndroidClient
 
         DaysToSyncAdapter daysToSyncAdapter;
 
+        ButtonBar buttonBar;
+
         public static DaysToSyncChooserFragment newInstance (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode value)
         {
             var fragment = new DaysToSyncChooserFragment ();
@@ -44,14 +46,11 @@ namespace NachoClient.AndroidClient
 
             var view = inflater.Inflate (Resource.Layout.DaysToSyncChooserFragment, container, false);
 
-            var title = view.FindViewById<TextView> (Resource.Id.title);
-            title.SetText (Resource.String.days_to_sync);
-            title.Visibility = ViewStates.Visible;
+            buttonBar = new ButtonBar (view);
 
-            var saveButton = view.FindViewById<Android.Widget.TextView> (Resource.Id.right_text_button1);
-            saveButton.SetText (Resource.String.save);
-            saveButton.Visibility = Android.Views.ViewStates.Visible;
-            saveButton.Click += SaveButton_Click;
+            buttonBar.SetTitle (Resource.String.days_to_sync);
+
+            buttonBar.SetTextButton (ButtonBar.Button.Right1, Resource.String.save, SaveButton_Click);
 
             var listview = view.FindViewById<ListView> (Resource.Id.listview);
             listview.ItemClick += Listview_ItemClick;

@@ -4,6 +4,8 @@ using System.IO;
 using SQLite;
 using NachoCore.Model;
 using NachoCore.Utils;
+using DnDns.Query;
+using DnDns.Enums;
 
 namespace NachoPlatform
 {
@@ -262,8 +264,6 @@ namespace NachoPlatform
 
     public interface IPlatformKeychain
     {
-        bool HasKeychain ();
-
         string GetPassword (int handle);
 
         bool SetPassword (int handle, string password);
@@ -367,4 +367,14 @@ namespace NachoPlatform
 
     }
 
+    public interface IDnsLockObject
+    {
+        object lockObject { get; }
+        bool complete { get; }
+    }
+
+    public interface IPlatformDns
+    {
+        DnsQueryResponse ResQuery (IDnsLockObject op, string host, NsClass dnsClass, NsType dnsType);
+    }
 }

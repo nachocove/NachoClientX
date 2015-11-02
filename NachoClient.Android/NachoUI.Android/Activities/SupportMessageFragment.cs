@@ -24,6 +24,7 @@ namespace NachoClient.AndroidClient
         protected NcTimer sendMessageTimer;
         protected bool hasDisplayedStatusMessage = false;
         ProgressBar activityIndicatorView;
+        ButtonBar buttonBar;
 
         public static SupportMessageFragment newInstance ()
         {
@@ -35,13 +36,11 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.SupportMessageFragment, container, false);
 
-            var sendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            sendButton.SetImageResource (Resource.Drawable.icn_send);
-            sendButton.Visibility = Android.Views.ViewStates.Visible;
-            sendButton.Click += SendButton_Click;
+            buttonBar = new ButtonBar (view);
 
-            var titleView = view.FindViewById<TextView> (Resource.Id.title);
-            titleView.SetText (Resource.String.message_support);
+            buttonBar.SetTitle (Resource.String.message_support);
+
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
 
             activityIndicatorView = view.FindViewById<ProgressBar> (Resource.Id.spinner);
             activityIndicatorView.Visibility = ViewStates.Invisible;

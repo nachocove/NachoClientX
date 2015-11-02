@@ -42,6 +42,7 @@ namespace NachoClient.AndroidClient
         bool IsWebViewLoaded;
         bool FocusWebViewOnLoad;
         List<Tuple<string, JavascriptCallback>> JavaScriptQueue;
+        ButtonBar buttonBar;
 
         #endregion
 
@@ -75,10 +76,10 @@ namespace NachoClient.AndroidClient
             // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.ComposeFragment, container, false);
 
+            buttonBar = new ButtonBar (view);
+
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
             SendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            SendButton.SetImageResource (Resource.Drawable.icn_send);
-            SendButton.Visibility = Android.Views.ViewStates.Visible;
-            SendButton.Click += SendButton_Click;
 
             HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
             HeaderView.Delegate = this;
@@ -193,6 +194,12 @@ namespace NachoClient.AndroidClient
         public void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc)
         {
             Composer.Message.Cc = cc;
+            UpdateSendEnabled ();
+        }
+
+        public void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc)
+        {
+            Composer.Message.Bcc = bcc;
             UpdateSendEnabled ();
         }
 
@@ -330,8 +337,9 @@ namespace NachoClient.AndroidClient
 
         private void UpdateHeader ()
         {
-            HeaderView.ToField.Text = Composer.Message.To;
-            HeaderView.CcField.Text = Composer.Message.Cc;
+            HeaderView.ToField.AddressString = Composer.Message.To;
+            HeaderView.CcField.AddressString = Composer.Message.Cc;
+            HeaderView.BccField.AddressString = Composer.Message.Bcc;
             UpdateHeaderSubjectView ();
             UpdateHeaderIntentView ();
         }
