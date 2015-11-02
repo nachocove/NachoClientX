@@ -14,6 +14,8 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using Android.Graphics.Drawables;
+using NachoCore.Model;
+using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
@@ -91,7 +93,10 @@ namespace NachoClient.AndroidClient
         {
             switch (index) {
             case EMAIL_SWIPE_TAG:
-                NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "Sending email to an attendee is not yet implemented. Please try again later.");
+                var attendee = adapter [position];
+                var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
+                message.To = attendee.Email;
+                StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, message, ""));
                 break;
             case DIAL_SWIPE_TAG:
                 NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "Calling an attendee is not yet implemented. Please try again later.");

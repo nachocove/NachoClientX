@@ -157,9 +157,7 @@ namespace NachoClient.AndroidClient
             }
             set {
                 allAttendees = value;
-                required = value.Where (x => x.AttendeeType == NcAttendeeType.Required).ToList ();
-                optional = value.Where (x => x.AttendeeType != NcAttendeeType.Required).ToList ();
-                NotifyDataSetChanged ();
+                UpdateRequiredOptional ();
             }
         }
 
@@ -174,6 +172,39 @@ namespace NachoClient.AndroidClient
                 state = newState;
                 NotifyDataSetChanged ();
             }
+        }
+
+        public void RemoveItem (int position)
+        {
+            if (AttendeeListBaseFragment.CurrentTab.All == state) {
+                allAttendees.RemoveAt (position);
+            } else {
+                allAttendees.Remove (CollectionToShow () [position]);
+            }
+            UpdateRequiredOptional ();
+        }
+
+        public void MakeRequired (int position)
+        {
+            var attendee = CollectionToShow () [position];
+            attendee.AttendeeTypeIsSet = true;
+            attendee.AttendeeType = NcAttendeeType.Required;
+            UpdateRequiredOptional ();
+        }
+
+        public void MakeOptional (int position)
+        {
+            var attendee = CollectionToShow () [position];
+            attendee.AttendeeTypeIsSet = true;
+            attendee.AttendeeType = NcAttendeeType.Optional;
+            UpdateRequiredOptional ();
+        }
+
+        private void UpdateRequiredOptional ()
+        {
+            required = allAttendees.Where (x => x.AttendeeType == NcAttendeeType.Required).ToList ();
+            optional = allAttendees.Where (x => x.AttendeeType != NcAttendeeType.Required).ToList ();
+            NotifyDataSetChanged ();
         }
 
         private List<McAttendee> CollectionToShow ()
