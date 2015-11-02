@@ -39,11 +39,12 @@ namespace NachoClient.AndroidClient
         View advancedImapSubview;
         View advancedExchangeSubview;
 
-        public static ValidationFragment newInstance (McAccount.AccountServiceEnum service, McAccount account)
+        public static ValidationFragment newInstance (McAccount.AccountServiceEnum service, McAccount account, bool showAdvanced)
         {
             var fragment = new ValidationFragment ();
             fragment.service = service;
             fragment.Account = account;
+            fragment.ShowAdvanced = showAdvanced;
             return fragment;
         }
 
@@ -57,7 +58,12 @@ namespace NachoClient.AndroidClient
             var view = inflater.Inflate (Resource.Layout.CredentialsFragment, container, false);
 
             var title = view.FindViewById<TextView> (Resource.Id.title);
-            title.SetText (Resource.String.update_password);
+
+            if (ShowAdvanced) {
+                title.SetText (Resource.String.update_settings);
+            } else {
+                title.SetText (Resource.String.update_password);
+            }
 
             var imageview = view.FindViewById<RoundedImageView> (Resource.Id.service_image);
             var labelview = view.FindViewById<TextView> (Resource.Id.service_prompt);
@@ -99,14 +105,14 @@ namespace NachoClient.AndroidClient
             } catch (KeychainItemNotFoundException ex) {
                 Log.Error (Log.LOG_UI, "KeychainItemNotFoundException {0}", ex.Message);
             }
-
-            UpdateSubmitEnabled ();
-
+                
             if ((McAccount.AccountServiceEnum.IMAP_SMTP == service) || (McAccount.AccountServiceEnum.Exchange == service)) {
                 if (ShowAdvanced) {
                     ShowAdvancedFields ();
                 }
-            } 
+            }
+
+            UpdateSubmitEnabled ();
 
             return view;
         }
@@ -169,6 +175,10 @@ namespace NachoClient.AndroidClient
 
             testCred.Username = creds.Username;
             testCred.UserSpecifiedUsername = creds.UserSpecifiedUsername;
+
+            if (ShowAdvanced) {
+                advancedFieldsViewController.PopulateAccountWithFields (Account);
+            }
 
             if (!BackEnd.Instance.ValidateConfig (Account.Id, server, testCred).isOK ()) {
                 HandleAccountIssue ("Network Error", "A network issue is preventing your changes from being validated. Would you like to save your changes anyway?");
@@ -297,7 +307,7 @@ namespace NachoClient.AndroidClient
         void UpdateSubmitEnabled ()
         {
             bool isAdvancedComplete = true;
-            if (ShowAdvanced) {
+            if (ShowAdvanced && (null != advancedFieldsViewController)) {
                 isAdvancedComplete = advancedFieldsViewController.CanSubmitFields ();
             }
             isAdvancedComplete = true; // FIXME

@@ -21,6 +21,7 @@ namespace NachoClient.AndroidClient
     public class ValidationActivity : NcActivity, CredentialsFragmentDelegate
     {
         private const string EXTRA_ACCOUNT_ID = "com.nachocove.nachomail.EXTRA_ACCOUNT_ID";
+        private const string EXTRA_SHOW_ADVANCED = "com.nachocove.nachomail.EXTRA_SHOW_ADVANCED";
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -29,18 +30,20 @@ namespace NachoClient.AndroidClient
 
             this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
 
+            var showAdvanced = Intent.GetBooleanExtra (EXTRA_SHOW_ADVANCED, false);
             var accountId = Intent.GetIntExtra (EXTRA_ACCOUNT_ID, -1);
             var account = McAccount.QueryById<McAccount> (accountId);
 
-            var validationFragment = ValidationFragment.newInstance (account.AccountService, account);
+            var validationFragment = ValidationFragment.newInstance (account.AccountService, account, showAdvanced);
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, validationFragment).AddToBackStack ("Validation").Commit ();
         }
 
-        public static Intent ValidationIntent (Context context, McAccount account)
+        public static Intent ValidationIntent (Context context, McAccount account, bool showAdvanced)
         {
             var intent = new Intent (context, typeof(ValidationActivity));
             intent.SetAction (Intent.ActionView);
             intent.PutExtra (EXTRA_ACCOUNT_ID, account.Id);
+            intent.PutExtra (EXTRA_SHOW_ADVANCED, showAdvanced);
             return intent;
         }
 
