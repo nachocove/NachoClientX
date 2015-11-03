@@ -94,7 +94,7 @@ namespace NachoClient.AndroidClient
             switch (index) {
             case EMAIL_SWIPE_TAG:
                 var attendee = adapter [position];
-                var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
+                var message = McEmailMessage.MessageWithSubject (McAccount.QueryById<McAccount> (accountId), "");
                 message.To = attendee.Email;
                 StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, message, ""));
                 break;

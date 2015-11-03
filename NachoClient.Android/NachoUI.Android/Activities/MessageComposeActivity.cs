@@ -46,7 +46,7 @@ namespace NachoClient.AndroidClient
                 composeFragment.Composer.RelatedCalendarItem = relatedCalendarItem;
             }
             if (Intent.HasExtra(EXTRA_MESSAGE)) {
-                composeFragment.Composer.Message = IntentHelper.RetreiveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
+                composeFragment.Composer.Message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
             }
             if (Intent.HasExtra (EXTRA_INITIAL_TEXT)) {
                 var text = Intent.GetStringExtra (EXTRA_INITIAL_TEXT);

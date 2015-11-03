@@ -581,6 +581,8 @@
     <Compile Include="NachoUI.Android\Activities\ImageViewActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ImageViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactViewActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\ContactEmailChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\ContactEmailChooserActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1425,6 +1427,8 @@
     <AndroidResource Include="Resources\drawable-hdpi\nav_search_active.png" />
     <AndroidResource Include="Resources\drawable-hdpi\nav_search.png" />
     <AndroidResource Include="Resources\layout\ContactViewActivity.axml" />
+    <AndroidResource Include="Resources\layout\ContactEmailChooserFragment.axml" />
+    <AndroidResource Include="Resources\layout\ContactEmailchooserActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
