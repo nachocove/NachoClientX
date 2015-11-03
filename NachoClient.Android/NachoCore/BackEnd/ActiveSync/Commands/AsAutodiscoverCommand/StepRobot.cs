@@ -585,7 +585,7 @@ namespace NachoCore.ActiveSync
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRHHARDURI");
                     return;
                 }
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP request to {1}", Step, currentUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP {2} request to {1}", Step, currentUri, MethodToUse);
                 if (IsNotReDirLoop (currentUri) && 0 < RetriesLeft--) {
                     HttpOp = HttpOpFactory ();
                     LastUri = currentUri;
@@ -735,7 +735,7 @@ namespace NachoCore.ActiveSync
                 } catch (UriFormatException) {
                     currentUriString = string.Format ("Could not format Uri, SrDomain: {0}", SrDomain);
                 }
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {1}.", Step, currentUriString);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {2}:{1}.", Step, currentUriString, MethodToUse);
                 ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
             }
 

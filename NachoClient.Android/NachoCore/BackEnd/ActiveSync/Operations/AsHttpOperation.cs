@@ -262,7 +262,7 @@ namespace NachoCore.ActiveSync
             OwnerSm = sm;
             HttpOpSm.Name = OwnerSm.Name + ":HTTPOP";
             ServerUri = Owner.ServerUri (this);
-            RedactedServerUri = Owner.ServerUri (this, true).ToString();
+            RedactedServerUri = string.Format ("{0}:{1}", Owner.Method (this), Owner.ServerUri (this, true).ToString());
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "HTTPOPEXE");
         }
 
@@ -911,7 +911,7 @@ namespace NachoCore.ActiveSync
                         var dummy = McServer.Create (AccountId, McAccount.ActiveSyncCapabilities, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
                         ServerUri = new Uri (dummy.BaseUri (), query);
-                        RedactedServerUri  = HashHelper.HashEmailAddressesInUrl(ServerUri.ToString());
+                        RedactedServerUri  = string.Format ("{0}:{1}", Owner.Method (this), HashHelper.HashEmailAddressesInUrl(ServerUri.ToString()));
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, RedactedServerUri, ex.Message);
