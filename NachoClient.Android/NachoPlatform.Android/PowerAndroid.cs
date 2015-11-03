@@ -34,7 +34,11 @@ namespace NachoPlatform
 
         public double BatteryLevel { 
             get {
-                return (double)BatteryInfo.Level / (double)BatteryInfo.Scale;
+                if (BatteryInfo.Level >= 0 && BatteryInfo.Scale >= 0) {
+                    return (double)BatteryInfo.Level / (double)BatteryInfo.Scale;
+                } else {
+                    return 0.0; // unknown
+                }
             }
         }
 
