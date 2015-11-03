@@ -251,6 +251,26 @@ namespace NachoPlatform
             var backupAgentHelper = new BackupAgentHelper ();
             backupAgentHelper.AddHelper(KNachoInstallprefs, helper);
         }
+
+        public override void OnFullBackup (FullBackupDataOutput data)
+        {
+            BackupFiles (MainApplication.Instance.FilesDir, data);
+        }
+
+        void BackupFiles(Java.IO.File root, FullBackupDataOutput data)
+        {
+            Java.IO.File[] list = root.ListFiles ();
+            foreach (Java.IO.File f in list) {
+                if (NcFileHandler.Instance.SkipFile (f.Name)) {
+                    continue;
+                }
+                if (f.IsDirectory) {
+                    BackupFiles (f, data);
+                } else {
+                    FullBackupFile (f, data);
+                }
+            }
+        }
     }
 
     /// <summary>

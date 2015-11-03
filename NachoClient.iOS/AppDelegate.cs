@@ -427,6 +427,7 @@ namespace NachoClient.iOS
                         File.Delete (destinationPath);
                     }
                     File.Copy (resourcePath, destinationPath);
+                    NcFileHandler.Instance.MarkFileForSkipBackup (destinationPath);
                 }
             }
         }

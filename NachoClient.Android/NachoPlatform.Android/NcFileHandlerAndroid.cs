@@ -2,6 +2,8 @@
 //
 using System;
 using NachoCore.Utils;
+using System.Collections.Generic;
+using Android.App.Backup;
 
 namespace NachoPlatform
 {
@@ -9,9 +11,11 @@ namespace NachoPlatform
     {
         private static volatile NcFileHandler instance;
         private static object syncRoot = new Object ();
+        List<string> ExcludePaths;
 
         private NcFileHandler ()
         {
+            ExcludePaths = new List<string> ();
         }
 
         public static NcFileHandler Instance {
@@ -28,7 +32,12 @@ namespace NachoPlatform
 
         public void MarkFileForSkipBackup (string filename)
         {
-            // TODO: Implement backup agent
+            ExcludePaths.Add (filename);
+        }
+
+        public bool SkipFile (string filename)
+        {
+            return ExcludePaths.Contains (filename);
         }
     }
 }
