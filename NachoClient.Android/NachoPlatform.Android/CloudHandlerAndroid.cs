@@ -155,6 +155,11 @@ namespace NachoPlatform
 
     public class NcBackupPrefs
     {
+        /// <summary>
+        /// These preferences are NOT ENCRYPTED. Anything that goes here will wind up on disk, and is visible
+        /// to anyone with a USB cable. Data stored here is considered non-sensitive, and will be backed up
+        /// to the Google Cloud Backup service.
+        /// </summary>
         private static volatile NcBackupPrefs instance;
         private static object syncRoot = new Object ();
         public static NcBackupPrefs Instance {
@@ -234,6 +239,7 @@ namespace NachoPlatform
         #endregion
     }
 
+    #region Backupgent
     class NcBackupAgentHelper : BackupAgentHelper
     {
         static string KNachoInstallprefs = "NachoInstallPrefs";
@@ -265,5 +271,5 @@ namespace NachoPlatform
             base.RestoreEntity (data);
         }
     }
-
+    #endregion
 }
