@@ -5,9 +5,6 @@
         android:orientation="vertical"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="20dp" />
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="fill_parent"
@@ -15,6 +12,7 @@
             android:background="@android:color/white">
             <EditText
                 android:id="@+id/imap_username"
+                android:inputType="textEmailAddress"
                 android:textSize="17dp"
                 android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
@@ -52,6 +50,7 @@
                 android:layout_toLeftOf="@+id/imap_server" />
             <EditText
                 android:id="@+id/imap_server"
+                android:inputType="textUri"
                 android:textSize="17dp"
                 android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
@@ -84,6 +83,7 @@
                 android:text="@string/default_imap_port"
                 android:textSize="17dp"
                 android:textColor="@android:color/black"
+                android:inputType="number"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:hint="@string/default_imap_port"
@@ -119,6 +119,7 @@
                 android:layout_toLeftOf="@+id/smtp_server" />
             <EditText
                 android:id="@+id/smtp_server"
+                android:inputType="textUri"
                 android:textSize="17dp"
                 android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
@@ -151,6 +152,7 @@
                 android:text="@string/default_smtp_port"
                 android:textColor="@android:color/black"
                 android:textSize="17dp"
+                android:inputType="number"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:hint="@string/default_smtp_port"
@@ -160,5 +162,8 @@
                 android:minHeight="40dp"
                 android:maxHeight="40dp" />
         </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
     </LinearLayout>
 </merge>

@@ -28,30 +28,6 @@ namespace NachoClient.iOS
             return copy;
         }
 
-        static public bool IsImageFile (string filename)
-        {
-            string[] subtype = {
-                ".tiff",
-                ".jpeg",
-                ".jpg",
-                ".gif",
-                ".png",
-            };
-
-            var extension = Pretty.GetExtension (filename);
-
-            if (null == extension) {
-                return false;
-            }
-
-            foreach (var s in subtype) {
-                if (String.Equals (s, extension, StringComparison.OrdinalIgnoreCase)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         // Given an attachment, estimate the size if the image is compressed.
         // We're only compressing images; otherwise just return the original attachment size.
         public static void EstimateAttachmentSizes (McAttachment attachment, out long s, out long m, out long l, out long a)
@@ -62,7 +38,7 @@ namespace NachoClient.iOS
                 s = m = l = a = 0;
                 return;
             }
-            if (!IsImageFile (attachment.DisplayName)) {
+            if (!attachment.IsImageFile ()) {
                 return;
             }
 
@@ -103,7 +79,7 @@ namespace NachoClient.iOS
         // Resize an image that will shrink to a new scaled image.
         public static McAttachment ResizeAttachmentToSize (McAttachment attachment, CGSize newSize)
         {
-            if (!IsImageFile (attachment.DisplayName)) {
+            if (!attachment.IsImageFile ()) {
                 return null;
             }
             var originalImage = UIImage.FromFile (attachment.GetFilePath ());

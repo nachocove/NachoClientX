@@ -68,12 +68,12 @@ namespace NachoClient.AndroidClient
             };
 
             var addButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            addButton.SetImageResource (Android.Resource.Drawable.IcMenuAdd);
+            addButton.SetImageResource (Resource.Drawable.nav_add);
             addButton.Visibility = Android.Views.ViewStates.Visible;
             addButton.Click += AddButton_Click;
 
             var searchButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
-            searchButton.SetImageResource (Android.Resource.Drawable.IcMenuSearch);
+            searchButton.SetImageResource (Resource.Drawable.nav_search);
             searchButton.Visibility = Android.Views.ViewStates.Visible;
             searchButton.Click += SearchButton_Click;
 

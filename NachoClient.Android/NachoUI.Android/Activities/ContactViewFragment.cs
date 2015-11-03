@@ -20,6 +20,11 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.AndroidClient
 {
+    public interface IContactViewFragmentOwner
+    {
+        McContact ContactToView { get; }
+    }
+
     public class ContactViewFragment : Fragment
     {
         McContact contact;
@@ -27,13 +32,6 @@ namespace NachoClient.AndroidClient
         ContactViewAdapter contactViewAdapter;
 
         ButtonBar buttonBar;
-
-        public static ContactViewFragment newInstance (McContact contact)
-        {
-            var fragment = new ContactViewFragment ();
-            fragment.contact = contact;
-            return fragment;
-        }
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -50,11 +48,16 @@ namespace NachoClient.AndroidClient
 
             view.Click += View_Click;
 
-            contactViewAdapter = new ContactViewAdapter (contact);
-            var listview = view.FindViewById<ListView> (Resource.Id.listView);
-            listview.Adapter = contactViewAdapter;
-
             return view;
+        }
+
+        public override void OnActivityCreated (Bundle savedInstanceState)
+        {
+            base.OnActivityCreated (savedInstanceState);
+            contact = ((IContactViewFragmentOwner)Activity).ContactToView;
+            contactViewAdapter = new ContactViewAdapter (contact);
+            var listview = View.FindViewById<ListView> (Resource.Id.listView);
+            listview.Adapter = contactViewAdapter;
         }
 
         public override void OnStart ()

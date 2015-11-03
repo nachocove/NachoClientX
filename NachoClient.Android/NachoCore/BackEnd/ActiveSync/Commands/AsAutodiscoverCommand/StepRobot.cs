@@ -99,7 +99,7 @@ namespace NachoCore.ActiveSync
             // A pointer to the cmd's event Q.
             private ConcurrentQueue<Event> RobotEventsQ;
 
-            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUerSpecifiedDomain, ConcurrentQueue<Event> robotEventsQ)
+            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUserSpecifiedDomain, ConcurrentQueue<Event> robotEventsQ)
             {
                 int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
                 CertTimeout = new TimeSpan (0, 0, timeoutSeconds);
@@ -131,7 +131,7 @@ namespace NachoCore.ActiveSync
 
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
-                IsUserSpecifiedDomain = isUerSpecifiedDomain;
+                IsUserSpecifiedDomain = isUserSpecifiedDomain;
                 RobotEventsQ = robotEventsQ;
 
                 StepSm = new NcStateMachine ("AUTODSTEP") {

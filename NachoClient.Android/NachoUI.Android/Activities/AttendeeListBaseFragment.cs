@@ -62,6 +62,7 @@ namespace NachoClient.AndroidClient
 
             var listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = adapter;
+            listView.ItemClick += ListView_ItemClick;
 
             HighlightTab (allTab);
             CheckEmptyList (view);
@@ -104,6 +105,14 @@ namespace NachoClient.AndroidClient
         {
             view.SetTextColor (Resources.GetColor (Resource.Color.NachoGreen));
             view.SetBackgroundResource (Resource.Drawable.BlackBorder);
+        }
+
+        private void ListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+        {
+            var contact = McContact.QueryByEmailAddress (NcApplication.Instance.Account.Id, adapter [e.Position].Email).FirstOrDefault ();
+            if (null != contact) {
+                StartActivity (ContactViewActivity.ShowContactIntent (this.Activity, contact));
+            }
         }
 
         private void AllTab_Click (object sender, EventArgs e)
@@ -157,9 +166,7 @@ namespace NachoClient.AndroidClient
             }
             set {
                 allAttendees = value;
-                required = value.Where (x => x.AttendeeType == NcAttendeeType.Required).ToList ();
-                optional = value.Where (x => x.AttendeeType != NcAttendeeType.Required).ToList ();
-                NotifyDataSetChanged ();
+                UpdateRequiredOptional ();
             }
         }
 
@@ -174,6 +181,39 @@ namespace NachoClient.AndroidClient
                 state = newState;
                 NotifyDataSetChanged ();
             }
+        }
+
+        public void RemoveItem (int position)
+        {
+            if (AttendeeListBaseFragment.CurrentTab.All == state) {
+                allAttendees.RemoveAt (position);
+            } else {
+                allAttendees.Remove (CollectionToShow () [position]);
+            }
+            UpdateRequiredOptional ();
+        }
+
+        public void MakeRequired (int position)
+        {
+            var attendee = CollectionToShow () [position];
+            attendee.AttendeeTypeIsSet = true;
+            attendee.AttendeeType = NcAttendeeType.Required;
+            UpdateRequiredOptional ();
+        }
+
+        public void MakeOptional (int position)
+        {
+            var attendee = CollectionToShow () [position];
+            attendee.AttendeeTypeIsSet = true;
+            attendee.AttendeeType = NcAttendeeType.Optional;
+            UpdateRequiredOptional ();
+        }
+
+        private void UpdateRequiredOptional ()
+        {
+            required = allAttendees.Where (x => x.AttendeeType == NcAttendeeType.Required).ToList ();
+            optional = allAttendees.Where (x => x.AttendeeType != NcAttendeeType.Required).ToList ();
+            NotifyDataSetChanged ();
         }
 
         private List<McAttendee> CollectionToShow ()
