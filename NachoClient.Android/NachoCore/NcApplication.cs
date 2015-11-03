@@ -126,7 +126,6 @@ namespace NachoCore
             set {
                 if (value != _UserId) {
                     _UserId = value;
-                    CloudHandler.Instance.SetUserId (_UserId);
                     InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_UserIdChanged, _UserId);
                 }
             }
@@ -284,7 +283,7 @@ namespace NachoCore
             UserId = Keychain.Instance.GetUserId ();
             string cloudUserId = CloudHandler.Instance.GetUserId ();
             if ((cloudUserId != null) && (cloudUserId != UserId)) {
-                UserId = cloudUserId; // this will also set it in the keychain
+                UserId = cloudUserId; // this will also set it in the CloudHandler
             }
         }
 
