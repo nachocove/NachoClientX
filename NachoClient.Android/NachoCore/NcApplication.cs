@@ -1101,11 +1101,11 @@ namespace NachoCore
 
     }
 
+    /// <summary>
+    /// This class is obsolete. It's here only to provide code to upgrade any previous installs.
+    /// </summary>
     public class UserIdFile
     {
-        /// <summary>
-        /// This class is obsolete. It's here only to provide code to upgrade any previous installs.
-        /// </summary>
         private const string FileName = "user_id";
         private const string OldFileName = "client_id";
 

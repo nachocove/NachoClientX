@@ -153,13 +153,13 @@ namespace NachoPlatform
         }
     }
 
+    /// <summary>
+    /// These preferences are NOT ENCRYPTED. Anything that goes here will wind up on disk, and is visible
+    /// to anyone with a USB cable. Data stored here is considered non-sensitive, and will be backed up
+    /// to the Google Cloud Backup service.
+    /// </summary>
     public class NcBackupPrefs
     {
-        /// <summary>
-        /// These preferences are NOT ENCRYPTED. Anything that goes here will wind up on disk, and is visible
-        /// to anyone with a USB cable. Data stored here is considered non-sensitive, and will be backed up
-        /// to the Google Cloud Backup service.
-        /// </summary>
         private static volatile NcBackupPrefs instance;
         private static object syncRoot = new Object ();
         public static NcBackupPrefs Instance {
@@ -253,6 +253,9 @@ namespace NachoPlatform
         }
     }
 
+    /// <summary>
+    /// This class exists only for debugging purposes. Once we know this works well, this can be removed.
+    /// </summary>
     public class NcSharedPrefsBackupHelper : SharedPreferencesBackupHelper
     {
         public NcSharedPrefsBackupHelper (Context context, string key) : base(context, key)
