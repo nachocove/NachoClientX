@@ -391,5 +391,30 @@ namespace NachoCore.Model
         {
             return (IsComplete (file) && !file.Truncated);
         }
+
+
+        public bool IsImageFile ()
+        {
+            string[] subtype = {
+                ".tiff",
+                ".jpeg",
+                ".jpg",
+                ".gif",
+                ".png",
+            };
+
+            var extension = Pretty.GetExtension (DisplayName);
+
+            if (null == extension) {
+                return false;
+            }
+
+            foreach (var s in subtype) {
+                if (String.Equals (s, extension, StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
