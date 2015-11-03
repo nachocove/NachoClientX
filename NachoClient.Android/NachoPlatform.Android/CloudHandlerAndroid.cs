@@ -41,13 +41,13 @@ namespace NachoPlatform
 
         public string GetUserId ()
         {
-            return Keychain.Instance.GetUserId ();
+            return BackupPrefs.GetKeyString (KUserId);
         }
 
         public void SetUserId (string UserId)
         {
-            Keychain.Instance.SetUserId (UserId);
             BackupPrefs.SetKey (KUserId, UserId);
+            MainApplication.Instance.BackupManager.DataChanged ();
         }
 
         public bool IsAlreadyPurchased ()
@@ -69,11 +69,13 @@ namespace NachoPlatform
         {
             BackupPrefs.SetKey (KPurchaseDate, purchaseDate.ToBinary ());
             BackupPrefs.SetKey (KIsAlreadyPurchased, true);
+            MainApplication.Instance.BackupManager.DataChanged ();
         }
 
         public void SetFirstInstallDate (DateTime installDate)
         {
             BackupPrefs.SetKey (KFirstInstallDate, installDate.ToBinary ());
+            MainApplication.Instance.BackupManager.DataChanged ();
         }
 
         public DateTime GetFirstInstallDate ()
@@ -115,8 +117,7 @@ namespace NachoPlatform
                             Log.Info (Log.LOG_SYS, "CloudHandler: Earlier UserId exists in cloud. Replacing local UserId {0} with {1}", NcApplication.Instance.ClientId, userId);
                             NcApplication.Instance.UserId = userId;
                         } else {
-                            var backupManager = new BackupManager (MainApplication.Instance);
-                            backupManager.DataChanged ();
+                            MainApplication.Instance.BackupManager.DataChanged ();
                         }
                     }
                 }
@@ -146,115 +147,10 @@ namespace NachoPlatform
 //                return false;
 //            }
 //            Log.Info (Log.LOG_SYS, "CloudHandler: Cloud is not available");
+            // TODO Need to verify this, but I suspect that the restore operation happens before the app really starts,
+            // so we'll always have the latest cloud-data here when we run.
             return false;
         }
-    }
-
-    // see https://developer.android.com/guide/topics/data/backup.html
-    public class NcBackupAgent : BackupAgent
-    {
-        public override void OnCreate ()
-        {
-            base.OnCreate ();
-        }
-        public override void OnBackup (Android.OS.ParcelFileDescriptor oldState, BackupDataOutput data, Android.OS.ParcelFileDescriptor newState)
-        {
-            if (!NeedNewBackup (oldState)) {
-                return;
-            }
-            var userid = Keychain.Instance.GetUserId ();
-            if (string.IsNullOrEmpty (userid)) {
-                return;
-            }
-            writeUserId (data, userid);
-            writeNewState (newState);
-        }
-
-        public override void OnRestore (BackupDataInput data, int appVersionCode, Android.OS.ParcelFileDescriptor newState)
-        {
-            while (data.ReadNextHeader ()) {
-                String key = data.Key;
-                switch (key) {
-                case CloudHandler.KUserId:
-                    String userid = readUserid (data);
-                    Keychain.Instance.SetUserId (userid);
-                    break;
-
-                default:
-                    Log.Error (Log.LOG_SYS, "BackupManager gave us data element {0} which we don't know to handle", key);
-                    data.SkipEntityData ();
-                    break;
-                }
-            }
-            writeNewState (newState);
-        }
-
-        private void writeUserId (BackupDataOutput data, string userId)
-        {
-            byte[] useridBytes = Encoding.ASCII.GetBytes (userId);
-            data.WriteEntityHeader(CloudHandler.KUserId, useridBytes.Length);
-            data.WriteEntityData(useridBytes, useridBytes.Length);
-        }
-
-        private string readUserid (BackupDataInput data)
-        {
-            int dataSize = data.DataSize;
-            byte[] dataBuf = new byte[dataSize];
-            data.ReadEntityData (dataBuf, 0, dataSize);
-            return Encoding.ASCII.GetString (dataBuf);
-        }
-
-        #region EpochHandling
-        private bool NeedNewBackup (Android.OS.ParcelFileDescriptor oldState)
-        {
-//            DataInputStream old = new DataInputStream(new FileInputStream (oldState.FileDescriptor));
-//            try {
-//                long stateModified = old.ReadLong();
-//                if (CurrentStateEpoch.HasValue && CurrentStateEpoch.Value == stateModified) {
-//                    return false;
-//                }
-//                return true;
-//            } catch (Java.IO.IOException e) {
-//                return true;
-//            }
-            return true;
-        }
-
-        private void writeNewState (Android.OS.ParcelFileDescriptor newState)
-        {
-//            DataOutputStream outstream = new DataOutputStream(new FileOutputStream(newState.FileDescriptor));
-//            outstream.WriteLong (NextEpoch ());
-        }
-
-        private long NextEpoch ()
-        {   
-            long nextValue = CurrentStateEpoch.HasValue ? CurrentStateEpoch.Value : 0;
-            nextValue++;
-            CurrentStateEpoch = nextValue;
-            return nextValue;
-        }
-
-        const string BackupPrefsEpoch = "BackupPrefsEpoch";
-        private long? _CurrentStateEpoch;
-        private long? CurrentStateEpoch {
-            get {
-                if (!_CurrentStateEpoch.HasValue) {
-                    long current = NcBackupPrefs.Instance.GetKeyLong (BackupPrefsEpoch);
-                    if (0 != current) {
-                        _CurrentStateEpoch = current;
-                    }
-                }
-                return _CurrentStateEpoch;
-            }
-
-            set {
-                if (value.HasValue) {
-                    _CurrentStateEpoch = value;
-                    NcBackupPrefs.Instance.SetKey (BackupPrefsEpoch, value.Value);
-                }
-            }
-        }
-        #endregion
     }
 
     public class NcBackupPrefs
@@ -323,7 +219,7 @@ namespace NachoPlatform
         }
 
         #region ISharedPreferences
-        const string BackupPrefsKey = "NachoBackupPrefs";
+        public const string BackupPrefsKey = "NachoBackupPrefs";
         ISharedPreferences _BackupPrefs;
         ISharedPreferences BackupPrefs
         {
@@ -336,6 +232,38 @@ namespace NachoPlatform
             }
         }
         #endregion
+    }
+
+    class NcBackupAgentHelper : BackupAgentHelper
+    {
+        static string KNachoInstallprefs = "NachoInstallPrefs";
+        public override void OnCreate()
+        {
+            base.OnCreate ();
+            Log.Info (Log.LOG_SYS, "NcBackUpAgentHelper: Backup Initialized");
+            NcSharedPrefsBackupHelper helper = new NcSharedPrefsBackupHelper(MainApplication.Instance.ApplicationContext, NcBackupPrefs.BackupPrefsKey);
+            var backupAgentHelper = new BackupAgentHelper ();
+            backupAgentHelper.AddHelper(KNachoInstallprefs, helper);
+        }
+    }
+
+    public class NcSharedPrefsBackupHelper : SharedPreferencesBackupHelper
+    {
+        public NcSharedPrefsBackupHelper (Context context, string key) : base(context, key)
+        {
+        }
+
+        public override void PerformBackup (Android.OS.ParcelFileDescriptor oldState, BackupDataOutput data, Android.OS.ParcelFileDescriptor newState)
+        {
+            Log.Info (Log.LOG_SYS, "NcSharedPrefsBackupHelper: Performing backup");
+            base.PerformBackup (oldState, data, newState);
+        }
+
+        public override void RestoreEntity (BackupDataInputStream data)
+        {
+            Log.Info (Log.LOG_SYS, "NcSharedPrefsBackupHelper: Performing Restore");
+            base.RestoreEntity (data);
+        }
     }
 
 }
