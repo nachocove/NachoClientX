@@ -650,6 +650,8 @@ namespace NachoClient.AndroidClient
         private IInterpolator mCloseInterpolator;
         private IInterpolator mOpenInterpolator;
 
+        private bool mDisableSwipes;
+
         public SwipeMenuListView (Context context) : base (context)
         {
             init ();
@@ -685,6 +687,11 @@ namespace NachoClient.AndroidClient
                 adapter.setOnMenuItemClickListener (MenuItemClickListener);
                 base.Adapter = adapter;
             }
+        }
+
+        public void EnableSwipe (bool enable)
+        {
+            mDisableSwipes = !enable;
         }
 
         public void MenuItemClickListener (SwipeMenuView view, SwipeMenu menu, int index)
@@ -725,6 +732,9 @@ namespace NachoClient.AndroidClient
 
         public override bool OnTouchEvent (MotionEvent ev)
         {
+            if (mDisableSwipes) {
+                return base.OnTouchEvent (ev);
+            }
             if (ev.Action != MotionEventActions.Down && mTouchView == null) {
                 return base.OnTouchEvent (ev);
             }
@@ -736,12 +746,6 @@ namespace NachoClient.AndroidClient
                 mTouchState = TOUCH_STATE_NONE;
 
                 mTouchPosition = PointToPosition ((int)ev.GetX (), (int)ev.GetY ());
-
-                if (mTouchPosition == oldPos && mTouchView != null && mTouchView.isOpen ()) {
-                    mTouchState = TOUCH_STATE_X;
-                    mTouchView.OnSwipe (ev);
-                    return true;
-                }
 
                 View view = GetChildAt (mTouchPosition - this.FirstVisiblePosition);
 
