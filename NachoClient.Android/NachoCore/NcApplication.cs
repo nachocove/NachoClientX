@@ -126,7 +126,7 @@ namespace NachoCore
             set {
                 if (value != _UserId) {
                     _UserId = value;
-                    Keychain.Instance.SetUserId (_UserId);
+                    CloudHandler.Instance.SetUserId (_UserId);
                     InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_UserIdChanged, _UserId);
                 }
             }
@@ -1119,7 +1119,7 @@ namespace NachoCore
             string filename = Path.Combine (NcApplication.GetDataDirPath (), FileName);
             if (File.Exists (filename)) {
                 string userid = ReadFile (filename);
-                Keychain.Instance.SetUserId (userid);
+                CloudHandler.Instance.SetUserId (userid);
                 File.Delete (filename);
             }
         }
