@@ -26,7 +26,7 @@ namespace NachoClient.AndroidClient
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
-            this.contact = IntentHelper.RetreiveValue<McContact> (Intent.GetStringExtra (EXTRA_CONTACT));
+            this.contact = IntentHelper.RetrieveValue<McContact> (Intent.GetStringExtra (EXTRA_CONTACT));
             SetContentView (Resource.Layout.ContactViewActivity);
         }
 

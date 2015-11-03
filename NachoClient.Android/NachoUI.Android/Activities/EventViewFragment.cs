@@ -348,7 +348,7 @@ namespace NachoClient.AndroidClient
 
         private void AttendeesView_Click (object sender, EventArgs e)
         {
-            StartActivity (AttendeeViewActivity.AttendeeViewIntent (this.Activity, detail.SpecificItem.attendees));
+            StartActivity (AttendeeViewActivity.AttendeeViewIntent (this.Activity, detail.Account.Id, detail.SpecificItem.attendees));
         }
 
         private void ReminderView_Click (object sender, EventArgs e)

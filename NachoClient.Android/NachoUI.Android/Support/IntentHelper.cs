@@ -16,7 +16,7 @@ namespace NachoClient.AndroidClient
             return key;
         }
 
-        public static T RetreiveValue<T> (string key) where T : class
+        public static T RetrieveValue<T> (string key) where T : class
         {
             object value;
             if (data.TryGetValue(key, out value)) {

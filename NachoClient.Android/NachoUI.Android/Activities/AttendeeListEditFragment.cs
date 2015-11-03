@@ -26,6 +26,8 @@ namespace NachoClient.AndroidClient
         private const int OPTIONAL_SWIPE_TAG = 3;
         private const int SEND_INVITE_SWIPE_TAG = 4;
 
+        private const int CONTACT_CHOOSER_REQUEST = 1;
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
@@ -44,6 +46,20 @@ namespace NachoClient.AndroidClient
             buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.calendar_add_attendee, AddButton_Click);
 
             return view;
+        }
+
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult (requestCode, resultCode, data);
+
+            if (CONTACT_CHOOSER_REQUEST == requestCode && Result.Ok == resultCode && null != data) {
+                string email;
+                McContact contact;
+                ContactEmailChooserActivity.GetSearchResults (data, out email, out contact);
+                string name = contact == null ? null : contact.GetDisplayName ();
+                var attendee = new McAttendee (accountId, name, email, CurrentTab.Optional == state ? NcAttendeeType.Optional : NcAttendeeType.Required);
+                adapter.AddItem (attendee);
+            }
         }
 
         protected override string EmptyListMessage ()
@@ -138,7 +154,7 @@ namespace NachoClient.AndroidClient
 
         private void AddButton_Click (object sender, EventArgs e)
         {
-            NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "Adding a new attendee is not yet implemented. Please try again later.");
+            StartActivityForResult (ContactEmailChooserActivity.EmptySearchIntent (this.Activity, accountId), CONTACT_CHOOSER_REQUEST);
         }
     }
 }

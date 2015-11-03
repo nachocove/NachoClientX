@@ -86,7 +86,7 @@ namespace NachoClient.AndroidClient
                 if (Intent.HasExtra (EXTRA_MESSAGE_FOR_MEETING)) {
                     // Create a meeting based on the recipients and the body of an email message.
                     // TODO Not yet implemented
-                    IntentHelper.RetreiveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE_FOR_MEETING));
+                    IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE_FOR_MEETING));
                 }
 
                 // Figure out the correct account for the new event.
@@ -128,7 +128,7 @@ namespace NachoClient.AndroidClient
 
                 buttonBar.SetTitle ("Edit Event");
 
-                ev = IntentHelper.RetreiveValue<McEvent> (Intent.GetStringExtra (EXTRA_EVENT_TO_EDIT));
+                ev = IntentHelper.RetrieveValue<McEvent> (Intent.GetStringExtra (EXTRA_EVENT_TO_EDIT));
                 cal = McCalendar.QueryById<McCalendar> (ev.CalendarId);
 
                 if (cal.AllDayEvent) {
@@ -403,7 +403,7 @@ namespace NachoClient.AndroidClient
 
         private void Attendee_Click (object sender, EventArgs e)
         {
-            StartActivityForResult (AttendeeEditActivity.AttendeeEditIntent (this, cal.attendees), ATTENDEE_ACTIVITY_REQUEST);
+            StartActivityForResult (AttendeeEditActivity.AttendeeEditIntent (this, account.Id, cal.attendees), ATTENDEE_ACTIVITY_REQUEST);
         }
     }
 }
