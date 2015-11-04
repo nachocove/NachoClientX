@@ -30,7 +30,8 @@ namespace NachoClient.AndroidClient
         MessageComposerDelegate,
         NachoWebClientDelegate,
         MessageComposeHeaderViewDelegate,
-        IntentFragmentDelegate
+        IntentFragmentDelegate,
+        AttachmentPickerFragmentDelegate
     {
 
         #region Properties
@@ -236,6 +237,13 @@ namespace NachoClient.AndroidClient
             UpdateHeaderIntentView ();
         }
 
+        public void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view)
+        {
+            var attachmentPicker = new AttachmentPickerFragment ();
+            attachmentPicker.Delegate = this;
+            attachmentPicker.Show (FragmentManager, "attachments");
+        }
+
         #endregion
 
         #region Web View
@@ -342,6 +350,7 @@ namespace NachoClient.AndroidClient
             HeaderView.BccField.AddressString = Composer.Message.Bcc;
             UpdateHeaderSubjectView ();
             UpdateHeaderIntentView ();
+            UpdateHeaderAttachmentsView ();
         }
 
         void UpdateHeaderSubjectView ()
@@ -352,6 +361,12 @@ namespace NachoClient.AndroidClient
         void UpdateHeaderIntentView ()
         {
             HeaderView.IntentValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
+        }
+
+        private void UpdateHeaderAttachmentsView ()
+        {
+            var attachments = McAttachment.QueryByItem (Composer.Message);
+            HeaderView.AttachmentsView.SetAttachments (attachments);
         }
 
         #endregion

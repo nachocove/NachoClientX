@@ -20,7 +20,7 @@ namespace NachoClient.AndroidClient
         void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc);
         void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc);
         void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
-//        void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
 //        void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
 //        void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
 //        void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address);
@@ -38,6 +38,7 @@ namespace NachoClient.AndroidClient
         public EmailAddressField BccField;
         public TextView IntentValueLabel;
         public TextView CcLabel;
+        public MessageComposeAttachmentsView AttachmentsView;
         LinearLayout IntentContainer;
         LinearLayout BccContainer;
         bool HasOpenedSubject;
@@ -101,6 +102,8 @@ namespace NachoClient.AndroidClient
             IntentValueLabel = view.FindViewById<TextView> (Resource.Id.compose_intent);
             SubjectField.TextChanged += SubjectChanged;
             IntentContainer.Click += SelectIntent;
+            AttachmentsView = view.FindViewById<MessageComposeAttachmentsView> (Resource.Id.compose_attachments);
+            AttachmentsView.HeaderView = this;
         }
 
         void BccFieldChanged (object sender, EventArgs e)
