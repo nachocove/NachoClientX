@@ -121,6 +121,9 @@ namespace NachoCore
 
         public string UserId {
             get {
+                if (null == _UserId) {
+                    _UserId = CloudHandler.Instance.GetUserId ();
+                }
                 return _UserId;
             }
             set {
