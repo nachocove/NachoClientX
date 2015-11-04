@@ -82,6 +82,10 @@ namespace NachoClient.AndroidClient
             case NcResult.SubKindEnum.Info_AccountSetChanged:
                 accountAdapter.Refresh ();
                 break;
+            case NcResult.SubKindEnum.Info_AccountChanged:
+                var activity = (NcTabBarActivity)this.Activity;
+                activity.SetSwitchAccountButtonImage (View);
+                break;
             }
         }
 
