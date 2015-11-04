@@ -772,6 +772,9 @@ namespace Test.iOS
         public void ReportCommResult (int serverId, DateTime delayUntil)
         {
         }
+        public void ReportCommResult (int accountId, McAccount.AccountCapabilityEnum capabilities, bool didFailGenerally)
+        {
+        }
         public void ReportCommResult (int accountId, string host, bool didFailGenerally)
         {
         }
