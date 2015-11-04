@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/NachoGreen">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/tutorial_footer">
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_weight=".2"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:src="@drawable/bg_s05left"
+            android:scaleType="fitEnd"
+            android:adjustViewBounds="true" />
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_weight=".6"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:scaleType="fitEnd"
+            android:adjustViewBounds="true"
+            android:src="@drawable/slide04bg" />
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_weight=".2"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:src="@drawable/bg_s05right"
+            android:scaleType="fitEnd"
+            android:adjustViewBounds="true" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/tutorial_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentBottom="true">
+        <TextView
+            android:text="@string/tut4_title"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:textSize="24dp"
+            android:maxLines="1"
+            android:padding="10dp"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white" />
+        <TextView
+            android:id="@+id/subject"
+            android:text="@string/tut4_message"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center|top"
+            android:textSize="17dp"
+            android:padding="10dp"
+            android:textStyle="normal"
+            android:lines="2"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white" />
+    </LinearLayout>
+</RelativeLayout>

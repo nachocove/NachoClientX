@@ -179,7 +179,7 @@ namespace NachoClient.AndroidClient
             listView.setOnSwipeEndListener ((position) => {
                 mSwipeRefreshLayout.Enabled = true;
             });
-
+                
             var parent = (MessageListDelegate)Activity;
             var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
 
@@ -328,6 +328,7 @@ namespace NachoClient.AndroidClient
         void ConfigureButtons ()
         {
             if (multiSelectActive) {
+                listView.EnableSwipe (false);
                 leftButton1.SetImageResource (Resource.Drawable.gen_close);
                 leftButton1.Visibility = ViewStates.Visible;
                 rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
@@ -337,6 +338,7 @@ namespace NachoClient.AndroidClient
                 rightButton3.SetImageResource (Resource.Drawable.gen_archive);
                 rightButton3.Visibility = ViewStates.Visible;
             } else {
+                listView.EnableSwipe (true);
                 leftButton1.SetImageResource (Resource.Drawable.nav_search);
                 leftButton1.Visibility = ViewStates.Visible;
                 rightButton1.SetImageResource (Resource.Drawable.contact_newemail);

@@ -242,7 +242,9 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
             // Cancel the refresh tokens, killing all currently active OAuth2 refresh attempts.
-            Oauth2RefreshCancelSource.Cancel ();
+            if (null != Oauth2RefreshCancelSource) {
+                Oauth2RefreshCancelSource.Cancel ();
+            }
             // stop the OAuth2 refresh timer.
             // TODO: This is the only place we stop the timer. If we have the timer
             // running, and stop/delete/remove all accounts with Oauth2 creds, the timer

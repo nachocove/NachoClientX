@@ -26,12 +26,13 @@ namespace NachoClient.AndroidClient
             SetContentView (Resource.Layout.AttendeeViewActivity);
 
             var fragment = FragmentManager.FindFragmentById<AttendeeListViewFragment> (Resource.Id.attendee_view_fragment);
+            fragment.AccountId = AccountIdFromIntent (Intent);
             fragment.Attendees = AttendeesFromIntent (Intent);
         }
 
-        public static Intent AttendeeViewIntent (Context context, IList<McAttendee> attendees)
+        public static Intent AttendeeViewIntent (Context context, int accountId, IList<McAttendee> attendees)
         {
-            return AttendeesIntent (context, typeof(AttendeeViewActivity), Intent.ActionView, attendees);
+            return AttendeesIntent (context, typeof(AttendeeViewActivity), Intent.ActionView, accountId, attendees);
         }
     }
 }

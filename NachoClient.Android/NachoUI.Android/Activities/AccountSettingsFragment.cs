@@ -120,7 +120,7 @@ namespace NachoClient.AndroidClient
             passwordExpiresView.Click += PasswordExpiresView_Click;
 
             passwordRectification = view.FindViewById<TextView> (Resource.Id.account_password_rectification);
-            passwordRectificationView= view.FindViewById<View> (Resource.Id.account_password_rectification_view);
+            passwordRectificationView = view.FindViewById<View> (Resource.Id.account_password_rectification_view);
             passwordRectificationView.Click += PasswordRectificationView_Click;
 
 
@@ -244,7 +244,7 @@ namespace NachoClient.AndroidClient
         void UpdatePasswordView_Click (object sender, EventArgs e)
         {
             StartActivityForResult (
-                ValidationActivity.ValidationIntent(this.Activity, account),
+                ValidationActivity.ValidationIntent (this.Activity, account, showAdvanced: false),
                 PASSWORD_REQUEST_CODE);
         }
 
@@ -322,7 +322,9 @@ namespace NachoClient.AndroidClient
 
         void AdvancedSettingsView_Click (object sender, EventArgs e)
         {
-            
+            StartActivityForResult (
+                ValidationActivity.ValidationIntent (this.Activity, account, showAdvanced: true),
+                PASSWORD_REQUEST_CODE);
         }
 
         void AccountDescriptionView_Click (object sender, EventArgs e)

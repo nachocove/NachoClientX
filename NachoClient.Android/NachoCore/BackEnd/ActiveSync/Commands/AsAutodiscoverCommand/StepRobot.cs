@@ -99,7 +99,7 @@ namespace NachoCore.ActiveSync
             // A pointer to the cmd's event Q.
             private ConcurrentQueue<Event> RobotEventsQ;
 
-            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUerSpecifiedDomain, ConcurrentQueue<Event> robotEventsQ)
+            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUserSpecifiedDomain, ConcurrentQueue<Event> robotEventsQ)
             {
                 int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
                 CertTimeout = new TimeSpan (0, 0, timeoutSeconds);
@@ -131,7 +131,7 @@ namespace NachoCore.ActiveSync
 
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
-                IsUserSpecifiedDomain = isUerSpecifiedDomain;
+                IsUserSpecifiedDomain = isUserSpecifiedDomain;
                 RobotEventsQ = robotEventsQ;
 
                 StepSm = new NcStateMachine ("AUTODSTEP") {
@@ -585,7 +585,7 @@ namespace NachoCore.ActiveSync
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRHHARDURI");
                     return;
                 }
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP request to {1}", Step, currentUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP {2} request to {1}", Step, currentUri, MethodToUse);
                 if (IsNotReDirLoop (currentUri) && 0 < RetriesLeft--) {
                     HttpOp = HttpOpFactory ();
                     LastUri = currentUri;
@@ -735,7 +735,7 @@ namespace NachoCore.ActiveSync
                 } catch (UriFormatException) {
                     currentUriString = string.Format ("Could not format Uri, SrDomain: {0}", SrDomain);
                 }
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {1}.", Step, currentUriString);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {2}:{1}.", Step, currentUriString, MethodToUse);
                 ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
             }
 

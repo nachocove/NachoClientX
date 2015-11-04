@@ -1094,6 +1094,11 @@ namespace NachoCore
             // Make the request
             var result = new PushAssistHttpResult ();
             ResetTimeout (timeoutAction);
+            // If we were Dispose()d, then Cts would be null. Don't crash, and follow the existing cancellation code path.
+            if (null == Cts) {
+                Cts = new CancellationTokenSource ();
+                Cts.Cancel ();
+            }
             using (var joinCts = CancellationTokenSource.CreateLinkedTokenSource (cToken, Cts.Token)) {
                 try {
                     var sendTask = Client.SendAsync (request, HttpCompletionOption.ResponseContentRead, joinCts.Token);

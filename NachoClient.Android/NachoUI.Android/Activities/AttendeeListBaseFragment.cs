@@ -27,6 +27,7 @@ namespace NachoClient.AndroidClient
         public const int OPTIONAL_CELL_TYPE = 1;
         public const int NUM_CELL_TYPES = 2;
 
+        protected int accountId;
         protected AttendeeListAdapter adapter;
         protected ButtonBar buttonBar;
 
@@ -40,7 +41,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (savedInstanceState);
 
-            adapter = new AttendeeListAdapter ();
+            adapter = new AttendeeListAdapter (CheckEmptyList);
             state = CurrentTab.All;
         }
 
@@ -62,6 +63,8 @@ namespace NachoClient.AndroidClient
 
             var listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = adapter;
+            listView.ItemClick += ListView_ItemClick;
+
 
             HighlightTab (allTab);
             CheckEmptyList (view);
@@ -75,7 +78,12 @@ namespace NachoClient.AndroidClient
             }
             set {
                 adapter.Attendees = new List<McAttendee> (value);
-                CheckEmptyList (View);
+            }
+        }
+
+        public int AccountId {
+            set {
+                accountId = value;
             }
         }
 
@@ -94,6 +102,13 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        private void CheckEmptyList ()
+        {
+            if (null != View) {
+                CheckEmptyList (View);
+            }
+        }
+
         private void HighlightTab (TextView view)
         {
             view.SetTextColor (Android.Graphics.Color.White);
@@ -106,6 +121,14 @@ namespace NachoClient.AndroidClient
             view.SetBackgroundResource (Resource.Drawable.BlackBorder);
         }
 
+        private void ListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+        {
+            var contact = McContact.QueryByEmailAddress (accountId, adapter [e.Position].Email).FirstOrDefault ();
+            if (null != contact) {
+                StartActivity (ContactViewActivity.ShowContactIntent (this.Activity, contact));
+            }
+        }
+
         private void AllTab_Click (object sender, EventArgs e)
         {
             if (CurrentTab.All != state) {
@@ -114,7 +137,7 @@ namespace NachoClient.AndroidClient
                 HighlightTab (allTab);
                 UnhighlightTab (requiredTab);
                 UnhighlightTab (optionalTab);
-                CheckEmptyList (View);
+                CheckEmptyList ();
             }
         }
 
@@ -126,7 +149,7 @@ namespace NachoClient.AndroidClient
                 UnhighlightTab (allTab);
                 HighlightTab (requiredTab);
                 UnhighlightTab (optionalTab);
-                CheckEmptyList (View);
+                CheckEmptyList ();
             }
         }
 
@@ -138,7 +161,7 @@ namespace NachoClient.AndroidClient
                 UnhighlightTab (allTab);
                 UnhighlightTab (requiredTab);
                 HighlightTab (optionalTab);
-                CheckEmptyList (View);
+                CheckEmptyList ();
             }
         }
     }
@@ -151,6 +174,8 @@ namespace NachoClient.AndroidClient
         private List<McAttendee> required;
         private List<McAttendee> optional;
 
+        private Action changedCallback;
+
         public List<McAttendee> Attendees {
             get {
                 return allAttendees;
@@ -161,8 +186,9 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public AttendeeListAdapter ()
+        public AttendeeListAdapter (Action changedCallback = null)
         {
+            this.changedCallback = changedCallback;
             Attendees = new List<McAttendee> ();
         }
 
@@ -172,6 +198,12 @@ namespace NachoClient.AndroidClient
                 state = newState;
                 NotifyDataSetChanged ();
             }
+        }
+
+        public void AddItem (McAttendee attendee)
+        {
+            allAttendees.Add (attendee);
+            UpdateRequiredOptional ();
         }
 
         public void RemoveItem (int position)
@@ -205,6 +237,9 @@ namespace NachoClient.AndroidClient
             required = allAttendees.Where (x => x.AttendeeType == NcAttendeeType.Required).ToList ();
             optional = allAttendees.Where (x => x.AttendeeType != NcAttendeeType.Required).ToList ();
             NotifyDataSetChanged ();
+            if (null != changedCallback) {
+                changedCallback ();
+            }
         }
 
         private List<McAttendee> CollectionToShow ()
