@@ -247,13 +247,14 @@ namespace NachoPlatform
         {
             base.OnCreate ();
             Log.Info (Log.LOG_SYS, "NcBackUpAgentHelper: Backup Initialized");
-            NcSharedPrefsBackupHelper helper = new NcSharedPrefsBackupHelper(MainApplication.Instance.ApplicationContext, NcBackupPrefs.BackupPrefsKey);
+            var helper = new SharedPreferencesBackupHelper(MainApplication.Instance.ApplicationContext, NcBackupPrefs.BackupPrefsKey);
             var backupAgentHelper = new BackupAgentHelper ();
             backupAgentHelper.AddHelper(KNachoInstallprefs, helper);
         }
 
         public override void OnFullBackup (FullBackupDataOutput data)
         {
+            Log.Info (Log.LOG_SYS, "NcBackupAgentHelper: Fullbackup started");
             BackupFiles (MainApplication.Instance.FilesDir, data);
         }
 
@@ -262,36 +263,16 @@ namespace NachoPlatform
             Java.IO.File[] list = root.ListFiles ();
             foreach (Java.IO.File f in list) {
                 if (NcFileHandler.Instance.SkipFile (f.Name)) {
+                    Log.Info (Log.LOG_SYS, "NcBackupAgentHelper: skipped file {0}", f.Name);
                     continue;
                 }
                 if (f.IsDirectory) {
                     BackupFiles (f, data);
                 } else {
+                    Log.Info (Log.LOG_SYS, "NcBackupAgentHelper: backing up file {0}", f.Name);
                     FullBackupFile (f, data);
                 }
             }
-        }
-    }
-
-    /// <summary>
-    /// This class exists only for debugging purposes. Once we know this works well, this can be removed.
-    /// </summary>
-    public class NcSharedPrefsBackupHelper : SharedPreferencesBackupHelper
-    {
-        public NcSharedPrefsBackupHelper (Context context, string key) : base(context, key)
-        {
-        }
-
-        public override void PerformBackup (Android.OS.ParcelFileDescriptor oldState, BackupDataOutput data, Android.OS.ParcelFileDescriptor newState)
-        {
-            Log.Info (Log.LOG_SYS, "NcSharedPrefsBackupHelper: Performing backup");
-            base.PerformBackup (oldState, data, newState);
-        }
-
-        public override void RestoreEntity (BackupDataInputStream data)
-        {
-            Log.Info (Log.LOG_SYS, "NcSharedPrefsBackupHelper: Performing Restore");
-            base.RestoreEntity (data);
         }
     }
     #endregion
