@@ -1532,6 +1532,7 @@
     <AndroidResource Include="Resources\drawable-hdpi\BG_S04Right.png" />
     <AndroidResource Include="Resources\drawable-hdpi\BG_S05Left.png" />
     <AndroidResource Include="Resources\drawable-hdpi\BG_S05Right.png" />
+    <AndroidResource Include="Resources\layout\AttachmentOptionItemView.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
