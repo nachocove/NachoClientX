@@ -1569,7 +1569,12 @@ namespace NachoCore.Model
             // Convert the matched e-mail addresses into SearchMatch objects, avoiding duplicates.
             foreach (var emailMatch in emailMatches) {
                 if (matchedAttributeIds.Add (emailMatch.Id)) {
-                    allMatches.Add (new SearchMatch (McContact.QueryById<McContact> ((int)emailMatch.ContactId), emailMatch));
+                    // An old bug resulted in some databases that have orphaned McContactEmailAddressAttribute records.
+                    // Don't crash if one of those orphaned objects is found during the search.
+                    var contact = McContact.QueryById<McContact> ((int)emailMatch.ContactId);
+                    if (null != contact) {
+                        allMatches.Add (new SearchMatch (contact, emailMatch));
+                    }
                 }
             }
 
