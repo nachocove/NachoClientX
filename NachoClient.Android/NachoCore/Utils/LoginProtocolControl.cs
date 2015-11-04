@@ -94,12 +94,17 @@ namespace NachoCore.Utils
                 if (_accountId.HasValue && _accountId.Value != account.Id) {
                     continue;
                 }
+                var states = _BackEnd.BackEndStates (account.Id);
+                if (null == states) {
+                    // no services yet
+                    continue;
+                }
+
                 var credReqCalled = false;
                 // if all controllers are in PostPost say so.
                 var allPostPost = true;
                 // otherwise, if all controllers are in PostPost or PostPre, then say so.
                 var allPostPreOrPost = true;
-                var states = _BackEnd.BackEndStates (account.Id);
                 foreach (var state in states) {
                     switch (state.Item1) {
                     case BackEndStateEnum.CredWait:
