@@ -176,7 +176,7 @@ namespace NachoCore.SMTP
         protected void ReportCommResult (string host, bool didFailGenerally)
         {
             if (!DontReportCommResult) {
-                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, host, didFailGenerally);
+                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, McAccount.AccountCapabilityEnum.EmailSender, didFailGenerally);
             }
         }
 

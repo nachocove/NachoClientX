@@ -313,6 +313,13 @@ namespace Test.iOS
         {
         }
 
+        public void ReportCommResult (int accountId, McAccount.AccountCapabilityEnum capabilities, bool didFailGenerally)
+        {
+            AccountId = accountId;
+            Capabilities = capabilities;
+            DidFailGenerally = didFailGenerally;
+        }
+
         public void ReportCommResult (int accountId, string host, bool didFailGenerally)
         {
             AccountId = accountId;
@@ -323,6 +330,8 @@ namespace Test.iOS
         public int AccountId { get; set; }
 
         public string Host { get; set; }
+
+        public McAccount.AccountCapabilityEnum Capabilities { get; set; }
 
         public bool DidFailGenerally { get; set; }
 

@@ -478,7 +478,7 @@ namespace NachoCore.IMAP
         protected void ReportCommResult (string host, bool didFailGenerally)
         {
             if (!DontReportCommResult) {
-                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, host, didFailGenerally);
+                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, didFailGenerally);
             }
         }
 

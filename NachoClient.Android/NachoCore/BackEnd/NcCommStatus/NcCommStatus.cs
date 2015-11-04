@@ -122,6 +122,13 @@ namespace NachoCore.Utils
             }
         }
 
+        public void ReportCommResult (int accountId, McAccount.AccountCapabilityEnum capabilities, bool didFailGenerally)
+        {
+            lock (syncRoot) {
+                ReportCommResult (GetServerId (accountId, capabilities), didFailGenerally);
+            }
+        }
+
         public void ReportCommResult (int accountId, string host, bool didFailGenerally)
         {
             lock (syncRoot) {
@@ -134,6 +141,13 @@ namespace NachoCore.Utils
             lock (syncRoot) {
                 ReportCommResult (GetServerId (accountId, host), delayUntil);
             }
+        }
+
+        private int GetServerId (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            var server = McServer.QueryByAccountIdAndCapabilities (accountId, capabilities);
+            // Allow 0 for scenario when we don't yet have a McServer record in DB (ex: auto-d).
+            return (null == server) ? 0 : server.Id;
         }
 
         private int GetServerId (int accountId, string host)
