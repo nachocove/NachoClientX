@@ -53,7 +53,7 @@ namespace NachoClient.AndroidClient
         void CredentialsValidated (McAccount account);
     }
 
-    public class CredentialsFragment : NcFragment, ILoginEvents, AccountAdvancedFieldsViewControllerDelegate
+    public class CredentialsFragment : NcFragment, ILoginEvents, AccountAdvancedFieldsViewControllerDelegate, CertAskDelegate
     {
         McAccount Account;
         McAccount.AccountServiceEnum service;
@@ -500,18 +500,15 @@ namespace NachoClient.AndroidClient
 
         private void HandleCertificateAsk (McAccount.AccountCapabilityEnum capability)
         {
-            //FIXME
-            NcApplication.Instance.CertAskResp (Account.Id, capability, true);
-
-//            if (NcApplication.Instance.CertAskReqPreApproved (Account.Id, capability)) {
-//                Log.Info (Log.LOG_UI, "CredentialsFragment got CertAskWait for service {0}, but cert is pre approved, so continuting on", service);
-//                NcApplication.Instance.CertAskResp (Account.Id, capability, true);
-//            } else {
-//                Log.Info (Log.LOG_UI, "CredentialsFragment got CertAskWait for service {0}, user must approve", service);
-//                StopRecevingLoginEvents ();
-//                // FIXME: ask the user
-//
-//            }
+            if (NcApplication.Instance.CertAskReqPreApproved (Account.Id, capability)) {
+                Log.Info (Log.LOG_UI, "CredentialsFragment got CertAskWait for service {0}, but cert is pre approved, so continuting on", service);
+                NcApplication.Instance.CertAskResp (Account.Id, capability, true);
+            } else {
+                Log.Info (Log.LOG_UI, "CredentialsFragment got CertAskWait for service {0}, user must approve", service);
+                StopRecevingLoginEvents ();
+                var certAskDialog = CertAskFragment.newInstance (Account.Id, capability, this);
+                certAskDialog.Show (FragmentManager, "cert ask");
+            }
         }
 
         private void HandleAccountVerified ()
@@ -525,33 +522,28 @@ namespace NachoClient.AndroidClient
         #endregion
 
         #region Cert Ask Interface
+       
+        public void AcceptCertificate (int accountId)
+        {
+            Log.Info (Log.LOG_UI, "CredentialsFragment certificate accepted by user");
+            LoginHelpers.UserInterventionStateChanged (accountId);
+            StartReceivingLoginEvents ();
+            // Checking the backend state should either result in a network down callback, in which case
+            // we stop, or a cert wait callback, in which case we'll accept the cert.
+            AcceptCertOnNextReq = true;
+            LoginEvents.CheckBackendState ();
+        }
 
-        //
-        //        // INachoCertificateResponderParent
-        //        public void DontAcceptCertificate (int accountId)
-        //        {
-        //            Log.Info (Log.LOG_UI, "CredentialsFragment certificate rejected by user");
-        //            IsSubmitting = false;
-        //            BackEnd.Instance.Stop (Account.Id);
-        //            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
-        //            LoginHelpers.UserInterventionStateChanged (accountId);
-        //            UpdateForSubmitting ();
-        //            statusLabel.Text = "Account not created because the certificate was not accepted";
-        //            DismissViewController (true, null);
-        //        }
-        //
-        //        // INachoCertificateResponderParent
-        //        public void AcceptCertificate (int accountId)
-        //        {
-        //            Log.Info (Log.LOG_UI, "CredentialsFragment certificate accepted by user");
-        //            LoginHelpers.UserInterventionStateChanged (accountId);
-        //            DismissViewController (true, null);
-        //            StartReceivingLoginEvents ();
-        //            // Checking the backend state should either result in a network down callback, in which case
-        //            // we stop, or a cert wait callback, in which case we'll accept the cert.
-        //            AcceptCertOnNextReq = true;
-        //            LoginEvents.CheckBackendState ();
-        //        }
+        public void DontAcceptCertificate (int accountId)
+        {
+            Log.Info (Log.LOG_UI, "CredentialsFragment certificate rejected by user");
+            IsSubmitting = false;
+            BackEnd.Instance.Stop (Account.Id);
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
+            LoginHelpers.UserInterventionStateChanged (accountId);
+            UpdateForSubmitting ();
+            statusLabel.Text = "Account not created because the certificate was not accepted";
+        }
 
         #endregion
 
