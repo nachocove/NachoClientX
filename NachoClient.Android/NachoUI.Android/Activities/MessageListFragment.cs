@@ -207,7 +207,7 @@ namespace NachoClient.AndroidClient
                 var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
                 var index = new NachoCore.Index.NcIndex (indexPath);
                 int maxResults = 1000;
-                if (String.IsNullOrEmpty (searchString) || (4 > searchString.Length)) {
+                if (4 > searchString.Length) {
                     maxResults = 20;
                 }
                 var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
@@ -711,20 +711,20 @@ namespace NachoClient.AndroidClient
         public void StartSearch ()
         {
             searching = true;
-            NotifyDataSetInvalidated ();
+            NotifyDataSetChanged ();
         }
 
         public void CancelSearch ()
         {
             if (searching) {
                 searching = false;
-                NotifyDataSetInvalidated ();
+                NotifyDataSetChanged ();
             }
         }
 
         public void RefreshSearchMatches ()
         {
-            NotifyDataSetInvalidated ();
+            NotifyDataSetChanged ();
         }
 
         public override long GetItemId (int position)
