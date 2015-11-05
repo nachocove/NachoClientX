@@ -206,12 +206,6 @@ namespace NachoCore
             }
         }
 
-        public static bool IsDevelopmentBuild {
-            get {
-                return BuildInfo.Version.StartsWith ("DEV");
-            }
-        }
-
         public static string ApplicationLogForCrashManager ()
         {
             // TODO: UtcNow isn't really the launch-time, nor is it really what we want.
@@ -221,7 +215,7 @@ namespace NachoCore
             string launchTime = String.Format ("{0:O}", DateTime.UtcNow);
             string log = String.Format ("Version: {0}\nBuild Number: {1}\nLaunch Time: {2}\nDevice ID: {3}\n",
                              BuildInfo.Version, BuildInfo.BuildNumber, launchTime, Device.Instance.Identity ());
-            if (IsDevelopmentBuild) {
+            if (BuildInfoHelper.IsDev) {
                 log += String.Format ("Build Time: {0}\nBuild User: {1}\n" +
                 "Source: {2}\n", BuildInfo.Time, BuildInfo.User, BuildInfo.Source);
             }

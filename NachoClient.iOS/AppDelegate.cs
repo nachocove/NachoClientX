@@ -1184,7 +1184,7 @@ namespace NachoClient.iOS
         private string UserName ()
         {
             string userName = null;
-            if (NcApplication.IsDevelopmentBuild) {
+            if (BuildInfoHelper.IsDev) {
                 userName = BuildInfo.User;
             }
             return userName;
