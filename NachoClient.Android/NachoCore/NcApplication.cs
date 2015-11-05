@@ -206,6 +206,28 @@ namespace NachoCore
             }
         }
 
+        public static bool IsDevelopmentBuild {
+            get {
+                return BuildInfo.Version.StartsWith ("DEV");
+            }
+        }
+
+        public static string ApplicationLogForCrashManager ()
+        {
+            // TODO: UtcNow isn't really the launch-time, nor is it really what we want.
+            // For convenience what we REALLY want here is the time of the crash for 
+            // easy-cut-n-pasting from HA to TeleViewer. What this really is is the
+            // upload-time, i.e. when we upload this sucker to HA.
+            string launchTime = String.Format ("{0:O}", DateTime.UtcNow);
+            string log = String.Format ("Version: {0}\nBuild Number: {1}\nLaunch Time: {2}\nDevice ID: {3}\n",
+                             BuildInfo.Version, BuildInfo.BuildNumber, launchTime, Device.Instance.Identity ());
+            if (IsDevelopmentBuild) {
+                log += String.Format ("Build Time: {0}\nBuild User: {1}\n" +
+                "Source: {2}\n", BuildInfo.Time, BuildInfo.User, BuildInfo.Source);
+            }
+            return log;
+        }
+
         public bool IsUp ()
         {
             return (ExecutionContextEnum.Migrating != ExecutionContext) && (ExecutionContextEnum.Initializing != ExecutionContext);
@@ -1091,9 +1113,9 @@ namespace NachoCore
             return dataDirPath;
         }
 
-        public static string GetVersionString()
+        public static string GetVersionString ()
         {
-            return String.Format("{0} ({1})", BuildInfo.Version, BuildInfo.BuildNumber);
+            return String.Format ("{0} ({1})", BuildInfo.Version, BuildInfo.BuildNumber);
         }
 
         // Fast track to UI
