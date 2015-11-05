@@ -24,6 +24,7 @@ using Android.Graphics.Drawables;
 using NachoCore.Brain;
 using NachoPlatform;
 using Android.Widget;
+using Android.Views.InputMethods;
 
 namespace NachoClient.AndroidClient
 {
@@ -50,7 +51,13 @@ namespace NachoClient.AndroidClient
 
         SwipeRefreshLayout mSwipeRefreshLayout;
 
+        bool searching;
+        string searchToken;
+        SearchHelper searcher;
+        Android.Widget.EditText searchEditText;
+
         public INachoEmailMessages messages;
+        public NachoMessageSearchResults searchResultsMessages;
 
         public bool multiSelectActive = false;
         public HashSet<long> MultiSelectSet = null;
@@ -103,6 +110,9 @@ namespace NachoClient.AndroidClient
 
             rightButton3 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button3);
             rightButton3.Click += RightButton3_Click;
+
+            var cancelButton = view.FindViewById (Resource.Id.cancel);
+            cancelButton.Click += CancelButton_Click;
 
             messageListAdapter = new MessageListAdapter (this);
 
@@ -178,6 +188,43 @@ namespace NachoClient.AndroidClient
 
             listView.setOnSwipeEndListener ((position) => {
                 mSwipeRefreshLayout.Enabled = true;
+            });
+
+            searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
+            searchEditText.TextChanged += SearchString_TextChanged;
+
+            searchResultsMessages = new NachoMessageSearchResults (NcApplication.Instance.Account.Id);
+
+            searcher = new SearchHelper ("MessageListViewController", (searchString) => {
+                if (String.IsNullOrEmpty (searchString)) {
+                    searchResultsMessages.UpdateMatches (null);
+                    searchResultsMessages.UpdateServerMatches (null);
+                    messageListAdapter.RefreshSearchMatches ();
+                    return; 
+                }
+                // On-device index
+                int curVersion = searcher.Version;
+                var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
+                var index = new NachoCore.Index.NcIndex (indexPath);
+                int maxResults = 1000;
+                if (String.IsNullOrEmpty (searchString) || (4 > searchString.Length)) {
+                    maxResults = 20;
+                }
+                var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
+
+                // Cull low scores
+                var maxScore = 0f;
+                foreach (var m in matches) {
+                    maxScore = Math.Max (maxScore, m.Score);
+                }
+                matches.RemoveAll (x => x.Score < (maxScore / 2));
+
+                if (curVersion == searcher.Version) {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        searchResultsMessages.UpdateMatches (matches);
+                        messageListAdapter.RefreshSearchMatches ();
+                    });
+                }
             });
                 
             var parent = (MessageListDelegate)Activity;
@@ -270,6 +317,8 @@ namespace NachoClient.AndroidClient
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+            imm.HideSoftInputFromWindow (searchEditText.WindowToken, HideSoftInputFlags.NotAlways);
             if (multiSelectActive) {
                 if (MultiSelectSet.Contains (e.Position)) {
                     MultiSelectSet.Remove (e.Position);
@@ -291,7 +340,7 @@ namespace NachoClient.AndroidClient
             if (multiSelectActive) {
                 MultiSelectCancel ();
             } else {
-                // TODO: Search
+                SearchButton_Click (sender, e);
             }
         }
 
@@ -391,6 +440,112 @@ namespace NachoClient.AndroidClient
         private int dp2px (int dp)
         {
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
+        }
+
+        void SearchButton_Click (object sender, EventArgs e)
+        {
+            StartSearching ();
+        }
+
+
+        void CancelButton_Click (object sender, EventArgs e)
+        {
+            if (searching) {
+                CancelSearch ();
+            }
+        }
+
+        void StartSearching ()
+        {
+            searching = true;
+            messageListAdapter.StartSearch ();
+
+            var search = View.FindViewById (Resource.Id.search);
+            search.Visibility = ViewStates.Visible;
+            var navbar = View.FindViewById (Resource.Id.navigation_bar);
+            navbar.Visibility = ViewStates.Gone;
+            var navtoolbar = View.FindViewById (Resource.Id.navigation_toolbar);
+            navtoolbar.Visibility = ViewStates.Gone;
+
+            var parent = (MessageListDelegate)Activity;
+            var hotEvent = View.FindViewById<View> (Resource.Id.hot_event);
+            if (parent.ShowHotEvent ()) {
+                hotEvent.Visibility = ViewStates.Gone;
+            }
+
+            searchEditText.RequestFocus ();
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+            imm.ShowSoftInput (searchEditText, ShowFlags.Implicit);
+        }
+
+        void CancelSearch ()
+        {
+            searching = false;
+            messageListAdapter.CancelSearch ();
+
+            searchEditText.ClearFocus ();
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+            imm.HideSoftInputFromWindow (searchEditText.WindowToken, HideSoftInputFlags.NotAlways);
+            searchEditText.Text = "";
+
+            var navbar = View.FindViewById (Resource.Id.navigation_bar);
+            navbar.Visibility = ViewStates.Visible;
+            var navtoolbar = View.FindViewById (Resource.Id.navigation_toolbar);
+            navtoolbar.Visibility = ViewStates.Visible;
+            var search = View.FindViewById (Resource.Id.search);
+            search.Visibility = ViewStates.Gone;
+
+            var parent = (MessageListDelegate)Activity;
+            var hotEvent = View.FindViewById<View> (Resource.Id.hot_event);
+            if (parent.ShowHotEvent ()) {
+                hotEvent.Visibility = ViewStates.Visible;
+            }
+        }
+
+        void SearchString_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
+        {
+            if (String.IsNullOrEmpty (searchEditText.Text)) {
+                searchResultsMessages.UpdateServerMatches (null);
+                messageListAdapter.RefreshSearchMatches ();
+            } else {
+                // Ask the server
+                KickoffSearchApi (0, searchEditText.Text);
+            }
+            searcher.Search (searchEditText.Text);
+        }
+
+        protected void KickoffSearchApi (int forSearchOption, string forSearchString)
+        {
+            if (String.IsNullOrEmpty (forSearchString) || (4 > forSearchString.Length)) {
+                searchResultsMessages.UpdateServerMatches (null);
+                messageListAdapter.RefreshSearchMatches ();
+                return;
+            }
+            if (String.IsNullOrEmpty (searchToken)) {
+                searchToken = BackEnd.Instance.StartSearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null).GetValue<string> ();
+            } else {
+                BackEnd.Instance.SearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null, searchToken);
+            }
+        }
+
+        protected void UpdateSearchResultsFromServer (List<NcEmailMessageIndex> indexList)
+        {
+            var threadList = new List<McEmailMessageThread> ();
+            foreach (var i in indexList) {
+                var thread = new McEmailMessageThread ();
+                thread.FirstMessageId = i.Id;
+                thread.MessageCount = 1;
+                threadList.Add (thread);
+            }
+            searchResultsMessages.UpdateServerMatches (threadList);
+            messageListAdapter.RefreshSearchMatches ();
+        }
+
+        public void OnBackPressed ()
+        {
+            if (searching) {
+                CancelSearch ();
+            }
         }
 
         public void DeleteThisMessage (McEmailMessageThread messageThread)
@@ -513,12 +668,20 @@ namespace NachoClient.AndroidClient
                 break;
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
-                List<int> adds;
-                List<int> deletes;
-                if (messages.Refresh (out adds, out deletes)) {
-                    messageListAdapter.NotifyDataSetChanged ();
-                }
+                RefreshIfVisible ();
                 break;
+            case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
+                UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
+                break;
+            }
+        }
+
+        public void RefreshIfVisible ()
+        {
+            List<int> adds;
+            List<int> deletes;
+            if (messages.Refresh (out adds, out deletes)) {
+                messageListAdapter.NotifyDataSetChanged ();
             }
         }
 
@@ -528,24 +691,60 @@ namespace NachoClient.AndroidClient
     {
         MessageListFragment owner;
 
+        bool searching;
+
         public MessageListAdapter (MessageListFragment owner)
         {
             this.owner = owner;
+
+        }
+
+        public void StartSearch ()
+        {
+            searching = true;
+            NotifyDataSetInvalidated ();
+        }
+
+        public void CancelSearch ()
+        {
+            if (searching) {
+                searching = false;
+                NotifyDataSetInvalidated ();
+            }
+        }
+
+        public void RefreshSearchMatches ()
+        {
+            NotifyDataSetInvalidated ();
         }
 
         public override long GetItemId (int position)
         {
-            return owner.messages.GetEmailThread (position).FirstMessageId;
+            if (searching) {
+                return owner.searchResultsMessages.GetEmailThread (position).FirstMessageId;
+            } else {
+                return owner.messages.GetEmailThread (position).FirstMessageId;
+            }
         }
 
         public override int Count {
             get {
-                return owner.messages.Count ();
+                if (searching) {
+                    return owner.searchResultsMessages.Count ();
+                } else {
+                    return owner.messages.Count ();
+                }
             }
         }
 
         public override McEmailMessageThread this [int position] {  
-            get { return owner.messages.GetEmailThread (position); }
+            get { 
+                if (searching) {
+                    return owner.searchResultsMessages.GetEmailThread (position);
+                } else {
+                    return owner.messages.GetEmailThread (position);
+                }
+            }
         }
 
         public override View GetView (int position, View convertView, ViewGroup parent)
@@ -556,7 +755,12 @@ namespace NachoClient.AndroidClient
                 var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
                 chiliView.Click += ChiliView_Click;
             }
-            var thread = owner.messages.GetEmailThread (position);
+            McEmailMessageThread thread;
+            if (searching) {
+                thread = owner.searchResultsMessages.GetEmailThread (position);
+            } else {
+                thread = owner.messages.GetEmailThread (position);
+            }
             var message = thread.FirstMessageSpecialCase ();
             Bind.BindMessageHeader (thread, message, view);
 
@@ -587,7 +791,12 @@ namespace NachoClient.AndroidClient
         {
             var chiliView = (Android.Widget.ImageView)sender;
             var position = (int)chiliView.Tag;
-            var thread = owner.messages.GetEmailThread (position);
+            McEmailMessageThread thread;
+            if (searching) {
+                thread = owner.searchResultsMessages.GetEmailThread (position);
+            } else {
+                thread = owner.messages.GetEmailThread (position);
+            }
             var message = thread.FirstMessageSpecialCase ();
             NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
             Bind.BindMessageChili (thread, message, chiliView);

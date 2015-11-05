@@ -6,6 +6,33 @@
     android:layout_height="fill_parent">
     <include
         layout="@layout/NavigationBar" />
+    <RelativeLayout
+        android:id="@+id/search"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone">
+        <EditText
+            android:id="@+id/searchstring"
+            android:textSize="17dp"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_alignParentLeft="true"
+            android:hint="@string/search"
+            android:drawableLeft="@android:drawable/ic_menu_search"
+            android:drawablePadding="10dp"
+            android:background="@android:color/white"
+            android:padding="5dp" />
+        <Button
+            android:id="@+id/cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cancel"
+            android:textSize="14dp"
+            android:textStyle="normal"
+            android:layout_alignParentRight="true"
+            android:textColor="@android:color/white"
+            android:background="@color/NachoGreen" />
+    </RelativeLayout>
     <include
         layout="@layout/HotEvent" />
     <android.support.v4.widget.SwipeRefreshLayout
