@@ -250,7 +250,7 @@ namespace NachoClient.AndroidClient
             }
             public override string Description {
                 get {
-                    NcApplication.ApplicationLogForCrashManager ();
+                    return NcApplication.ApplicationLogForCrashManager ();
                 }
             }
             public override bool IncludeDeviceData ()
