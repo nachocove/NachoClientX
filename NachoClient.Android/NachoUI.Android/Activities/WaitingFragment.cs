@@ -28,6 +28,9 @@ namespace NachoClient.AndroidClient
         TextView statusLabel;
         ProgressBar activityIndicatorView;
 
+        private bool waitForTutorial;
+        private const int TUTORIAL_REQUEST_CODE = 1;
+
         private class AccountSyncingStatusMessage
         {
             public string Title;
@@ -82,6 +85,13 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+
+            if (!waitForTutorial && !LoginHelpers.HasViewedTutorial ()) {
+                var intent = new Intent ();
+                intent.SetClass (this.Activity, typeof(TutorialActivity));
+                StartActivityForResult (intent, TUTORIAL_REQUEST_CODE);
+            }
+
             mIsVisible = true;
             Update ();
 
@@ -99,6 +109,22 @@ namespace NachoClient.AndroidClient
         {
             base.OnPause ();
             mIsVisible = false;
+        }
+
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult (requestCode, resultCode, data);
+
+            switch (requestCode) {
+            case TUTORIAL_REQUEST_CODE:
+                waitForTutorial = false;
+                if (DismissOnVisible) {
+                    DismissAfterDelay ();
+                } else {
+                    LoginEvents.CheckBackendState ();
+                }
+                break;
+            }
         }
 
         void Update ()
@@ -124,38 +150,27 @@ namespace NachoClient.AndroidClient
                 account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
                 account.Update ();
                 NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountSetChanged);
-                LoginHelpers.SetHasViewedTutorial (true);
             }
-        }
-
-        public void Complete ()
-        {
-            CompleteWithMessage (SuccessMessage);
         }
 
         void DismissAfterDelay ()
         {
+            if (waitForTutorial) {
+                return;
+            }
             Log.Info (Log.LOG_UI, "AccountSyncingViewController starting dismiss timer");
             DismissTimer = new NcTimer ("AccountSyncViewControllerDismiss", (state) => {
                 InvokeOnUIThread.Instance.Invoke (() => {
-                    Dismiss ();
+                    Log.Info (Log.LOG_UI, "AccountSyncingViewController dismissing by calling delegate");
+                    if (DismissTimer != null) {
+                        DismissTimer.Dispose ();
+                        DismissTimer = null;
+                    }
+                    var parent = (WaitingFragmentDelegate)Activity;
+                    parent.WaitingFinished (account);
                 });
             }, null, TimeSpan.FromSeconds (2), TimeSpan.Zero);
-
         }
-
-        private void Dismiss ()
-        {
-            Log.Info (Log.LOG_UI, "AccountSyncingViewController dismissing by calling delegate");
-            if (DismissTimer != null) {
-                DismissTimer.Dispose ();
-                DismissTimer = null;
-            }
-
-            var parent = (WaitingFragmentDelegate)Activity;
-            parent.WaitingFinished (account);
-        }
-
 
         #region Backend Events
 
