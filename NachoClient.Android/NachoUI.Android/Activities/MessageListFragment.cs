@@ -302,6 +302,7 @@ namespace NachoClient.AndroidClient
         public override void OnPause ()
         {
             base.OnPause ();
+            CancelSearchIfActive ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -499,6 +500,14 @@ namespace NachoClient.AndroidClient
             var hotEvent = View.FindViewById<View> (Resource.Id.hot_event);
             if (parent.ShowHotEvent ()) {
                 hotEvent.Visibility = ViewStates.Visible;
+            }
+        }
+
+        protected void CancelSearchIfActive ()
+        {
+            if (!String.IsNullOrEmpty (searchToken)) {
+                McPending.Cancel (NcApplication.Instance.Account.Id, searchToken);
+                searchToken = null;
             }
         }
 
