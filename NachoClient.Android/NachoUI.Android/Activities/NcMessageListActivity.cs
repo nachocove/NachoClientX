@@ -100,6 +100,7 @@ namespace NachoClient.AndroidClient
                 this.FragmentManager.PopBackStack ();
             }
             if (f is MessageListFragment) {
+                ((MessageListFragment)f).OnBackPressed ();
                 // Don't pop if we are the top, e.g. Inbox
                 if (1 < this.FragmentManager.BackStackEntryCount) {
                     this.FragmentManager.PopBackStack ();
