@@ -342,6 +342,7 @@ namespace NachoPlatform
     public interface IPlatformFileHandler
     {
         void MarkFileForSkipBackup (string filename);
+        bool SkipFile (string filename);
     }
 
     public interface IPlatformMdmConfig
