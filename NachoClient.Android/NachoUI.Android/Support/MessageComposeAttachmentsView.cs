@@ -105,15 +105,37 @@ namespace NachoClient.AndroidClient
             RedrawAttachments ();
         }
 
+        public void AddAttachment (McAttachment attachment)
+        {
+            Attachments.Add (attachment);
+            AddViewForAttachment (attachment);
+        }
+
+        public void RemoveAttachment (McAttachment attachment)
+        {
+            Attachments.Remove (attachment);
+            RedrawAttachments ();
+        }
+
         void RedrawAttachments ()
         {
             AttachmentListView.RemoveAllViews ();
-            var inflater = Context.GetSystemService (Context.LayoutInflaterService) as LayoutInflater;
             foreach (var attachment in Attachments) {
-                var view = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
-                Bind.BindAttachmentView (attachment, view);
-                AttachmentListView.AddView (view);
+                AddViewForAttachment (attachment);
             }
+        }
+
+        void AddViewForAttachment (McAttachment attachment)
+        {
+            var inflater = Context.GetSystemService (Context.LayoutInflaterService) as LayoutInflater;
+            var view = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
+            Bind.BindAttachmentView (attachment, view);
+            AttachmentListView.AddView (view);
+            view.Click += (object sender, EventArgs e) => {
+                if (HeaderView != null && HeaderView.Delegate != null){
+                    HeaderView.Delegate.MessageComposeHeaderViewDidSelectAttachment (HeaderView, attachment);
+                }
+            };
         }
 
     }

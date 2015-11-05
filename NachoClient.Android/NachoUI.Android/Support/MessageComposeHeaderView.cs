@@ -21,6 +21,7 @@ namespace NachoClient.AndroidClient
         void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc);
         void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
         void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
 //        void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
 //        void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
 //        void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address);

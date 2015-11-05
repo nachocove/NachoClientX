@@ -14,14 +14,18 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 
+using NachoCore.Model;
+
 namespace NachoClient.AndroidClient
 {
-    public interface AttachmentPickerFragmentDelegate {
+    public interface AttachmentPickerFragmentDelegate
+    {
+        void AttachmentPickerDidPickAttachment (AttachmentPickerFragment picker, McAttachment attachment);
     }
 
-    public class AttachmentPickerFragment : DialogFragment
+    public class AttachmentPickerFragment : DialogFragment, FilePickerFragmentDelegate
     {
-
+                
         GridView OptionsGridView;
         List<AttachmentOption> Options;
 
@@ -60,12 +64,27 @@ namespace NachoClient.AndroidClient
 
         void AddFile ()
         {
+            var filePicker = new FilePickerFragment ();
+            filePicker.Delegate = this;
+            filePicker.Show (FragmentManager, "attachments");
         }
 
         void OptionClicked (object sender, AdapterView.ItemClickEventArgs e)
         {
             var option = Options [e.Position];
             option.Action ();
+        }
+
+        public void FilePickerDidPickFile (FilePickerFragment picker, McAbstrFileDesc file)
+        {
+            picker.Dismiss ();
+            if (Delegate != null) {
+                var attachment = file as McAttachment;
+                if (attachment != null) {
+                    Delegate.AttachmentPickerDidPickAttachment (this, attachment);
+                }
+            }
+            Dismiss ();
         }
     }
 

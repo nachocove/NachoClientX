@@ -244,6 +244,17 @@ namespace NachoClient.AndroidClient
             attachmentPicker.Show (FragmentManager, "attachments");
         }
 
+        public void AttachmentPickerDidPickAttachment (AttachmentPickerFragment picker, McAttachment attachment)
+        {
+            attachment.Link (Composer.Message);
+            HeaderView.AttachmentsView.AddAttachment (attachment);
+        }
+
+        public void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment)
+        {
+            // TODO: display attachment
+        }
+
         #endregion
 
         #region Web View
