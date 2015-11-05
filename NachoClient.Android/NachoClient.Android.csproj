@@ -584,6 +584,7 @@
     <Compile Include="NachoUI.Android\Activities\ContactEmailChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactEmailChooserActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\TutorialActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\CertAskFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1528,6 +1529,7 @@
     <AndroidResource Include="Resources\drawable-hdpi\BG_S04Right.png" />
     <AndroidResource Include="Resources\drawable-hdpi\BG_S05Left.png" />
     <AndroidResource Include="Resources\drawable-hdpi\BG_S05Right.png" />
+    <AndroidResource Include="Resources\layout\CertAskFragment.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

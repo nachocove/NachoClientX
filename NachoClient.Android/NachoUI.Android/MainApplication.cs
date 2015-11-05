@@ -45,7 +45,6 @@ namespace NachoClient.AndroidClient
         public static void CertAskReqCallback (int accountId, X509Certificate2 certificate)
         {
             Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
-            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
         }
 
         public static bool CheckOnceForUpdates ()
