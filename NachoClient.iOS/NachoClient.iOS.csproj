@@ -1712,6 +1712,9 @@
       <Link>NachoCore\Model\Migration\NcMigration48.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\DnsiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration49.cs">
+      <Link>NachoCore\Model\Migration\NcMigration49.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

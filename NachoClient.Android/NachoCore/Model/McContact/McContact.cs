@@ -714,7 +714,7 @@ namespace NachoCore.Model
             // FIXME: Fix this hammer?
             // FIXME: For update, Id may not be zero. Insert() asserts that Id is zero, so zero it.
             // FIXME: After hammer is fixed, use DeleteAncillaryData to clean up associated McPortrait.
-            DeleteAncillaryData ();
+            DeleteAncillaryData (deleteAll: false);
 
             if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
                 foreach (var o in Dates) {
@@ -926,22 +926,22 @@ namespace NachoCore.Model
 
         public override void DeleteAncillary ()
         {
-            DeleteAncillaryData ();
+            DeleteAncillaryData (deleteAll: true);
         }
 
         private void DeleteStringAttribute (McContactStringType stringType)
         {
             NcAssert.True (NcModel.Instance.IsInTransaction ());
-            NcModel.Instance.Db.Query<McContactStringAttribute> (
+            NcModel.Instance.Db.Execute (
                 "DELETE FROM McContactStringAttribute WHERE ContactId = ? AND Type = ?", Id, (int)stringType);
         }
 
-        private NcResult DeleteAncillaryData ()
+        private NcResult DeleteAncillaryData (bool deleteAll)
         {
-            NcModel.Instance.RunInTransaction (() => {
-                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
-                    NcModel.Instance.Db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
-                }
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
+            if (deleteAll) {
+                NcModel.Instance.Db.Execute ("DELETE FROM McContactStringAttribute WHERE ContactId = ?", Id);
+            } else {
                 if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_RELATIONSHIPS)) {
                     DeleteStringAttribute (McContactStringType.Relationship);
                 }
@@ -954,13 +954,16 @@ namespace NachoCore.Model
                 if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_CATEGORIES)) {
                     DeleteStringAttribute (McContactStringType.Category);
                 }
-                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
-                    NcModel.Instance.Db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
-                }
-                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
-                    NcModel.Instance.Db.Query<McContactEmailAddressAttribute> ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId=?", Id);
-                }
-            });
+            }
+            if (deleteAll || HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
+                NcModel.Instance.Db.Execute ("DELETE FROM McContactDateAttribute WHERE ContactId = ?", Id);
+            }
+            if (deleteAll || HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
+                NcModel.Instance.Db.Execute ("DELETE FROM McContactAddressAttribute WHERE ContactId = ?", Id);
+            }
+            if (deleteAll || HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
+                NcModel.Instance.Db.Execute ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId = ?", Id);
+            }
             return NcResult.OK ();
         }
 
