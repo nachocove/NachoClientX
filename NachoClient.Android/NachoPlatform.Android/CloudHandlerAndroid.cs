@@ -46,8 +46,11 @@ namespace NachoPlatform
 
         public void SetUserId (string UserId)
         {
-            BackupPrefs.SetKey (KUserId, UserId);
-            MainApplication.Instance.BackupManager.DataChanged ();
+            var previous = GetUserId ();
+            if (previous != UserId) {
+                BackupPrefs.SetKey (KUserId, UserId);
+                MainApplication.Instance.BackupManager.DataChanged ();
+            }
         }
 
         public bool IsAlreadyPurchased ()
@@ -67,15 +70,21 @@ namespace NachoPlatform
 
         public void RecordPurchase (DateTime purchaseDate)
         {
-            BackupPrefs.SetKey (KPurchaseDate, purchaseDate.ToBinary ());
-            BackupPrefs.SetKey (KIsAlreadyPurchased, true);
-            MainApplication.Instance.BackupManager.DataChanged ();
+            var previous = GetPurchaseDate ();
+            if (previous != purchaseDate) {
+                BackupPrefs.SetKey (KPurchaseDate, purchaseDate.ToBinary ());
+                BackupPrefs.SetKey (KIsAlreadyPurchased, true);
+                MainApplication.Instance.BackupManager.DataChanged ();
+            }
         }
 
         public void SetFirstInstallDate (DateTime installDate)
         {
-            BackupPrefs.SetKey (KFirstInstallDate, installDate.ToBinary ());
-            MainApplication.Instance.BackupManager.DataChanged ();
+            var previous = GetFirstInstallDate ();
+            if (previous != installDate) {
+                BackupPrefs.SetKey (KFirstInstallDate, installDate.ToBinary ());
+                MainApplication.Instance.BackupManager.DataChanged ();
+            }
         }
 
         public DateTime GetFirstInstallDate ()
@@ -109,47 +118,17 @@ namespace NachoPlatform
                 } else {
                     string newUserId = (string)siea.Status.Value;
                     string userId = GetUserId ();
-                    if (userId == null) {
-                        Log.Info (Log.LOG_SYS, "CloudHandler: No UserId in cloud. Saving  UserId {0} to cloud", newUserId);
-                        SetUserId (newUserId);
-                    } else if (newUserId != userId) {
-                        if (CloudInstallDateEarlierThanLocal ()) {
-                            Log.Info (Log.LOG_SYS, "CloudHandler: Earlier UserId exists in cloud. Replacing local UserId {0} with {1}", NcApplication.Instance.ClientId, userId);
-                            NcApplication.Instance.UserId = userId;
+                    if (userId == null || newUserId != userId) {
+                        if (userId == null) {
+                            Log.Info (Log.LOG_SYS, "CloudHandler: No UserId in cloud. Saving  UserId {0} to cloud", newUserId);
                         } else {
-                            MainApplication.Instance.BackupManager.DataChanged ();
+                            Log.Info (Log.LOG_SYS, "CloudHandler: Replacing local UserId {0} with {1}", newUserId, userId);
                         }
+                        SetUserId (newUserId);
                     }
                 }
                 break;
             }
-        }
-        public bool CloudInstallDateEarlierThanLocal ()
-        {
-//            long cloudInstallDateLong = BackupPrefs.GetKeyLong (KFirstInstallDate);
-//            if (cloudInstallDateLong == 0) {
-//                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date is 0");
-//                return false;
-//            }
-//            DateTime cloudInstallDate = DateTime.FromBinary (cloudInstallDateLong);
-//
-//            string localInstallDateStr = NSUserDefaults.StandardUserDefaults.StringForKey (KFirstInstallDate);
-//            if (localInstallDateStr == null) {
-//                Log.Info (Log.LOG_SYS, "CloudHandler: Local first install date is null");
-//                return true;
-//            }
-//            DateTime localInstallDate = localInstallDateStr.ToDateTime (); 
-//            if (DateTime.Compare (cloudInstallDate, localInstallDate) < 0) {
-//                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date {0} is earlier than local {1}", cloudInstallDate, localInstallDate);
-//                return true;
-//            } else {
-//                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date {0} is not earlier than local {1}", cloudInstallDate, localInstallDate);
-//                return false;
-//            }
-//            Log.Info (Log.LOG_SYS, "CloudHandler: Cloud is not available");
-            // TODO Need to verify this, but I suspect that the restore operation happens before the app really starts,
-            // so we'll always have the latest cloud-data here when we run.
-            return false;
         }
     }
 
@@ -160,18 +139,18 @@ namespace NachoPlatform
     /// </summary>
     public class NcBackupPrefs
     {
-        private static volatile NcBackupPrefs instance;
+        private static volatile NcBackupPrefs _instance;
         private static object syncRoot = new Object ();
         public static NcBackupPrefs Instance {
             get {
-                if (instance == null) {
+                if (_instance == null) {
                     lock (syncRoot) {
-                        if (instance == null) {
-                            instance = new NcBackupPrefs ();
+                        if (_instance == null) {
+                            _instance = new NcBackupPrefs ();
                         }
                     }
                 }
-                return instance;
+                return _instance;
             }
         }
 
@@ -224,7 +203,7 @@ namespace NachoPlatform
         }
 
         #region ISharedPreferences
-        public const string BackupPrefsKey = "NachoBackupPrefs";
+        const string BackupPrefsKey = "NachoBackupPrefs";
         ISharedPreferences _BackupPrefs;
         ISharedPreferences BackupPrefs
         {
@@ -236,6 +215,16 @@ namespace NachoPlatform
                 return _BackupPrefs;
             }
         }
+
+        public static SharedPreferencesBackupHelper GetSharedPreferencesBackupHelper ()
+        {
+            return new SharedPreferencesBackupHelper (MainApplication.Instance.ApplicationContext, NcBackupPrefs.BackupPrefsKey);
+        }
+
+        public void ResetSettings ()
+        {
+            _BackupPrefs = null;
+        }
         #endregion
     }
 
@@ -246,15 +235,24 @@ namespace NachoPlatform
         public override void OnCreate()
         {
             base.OnCreate ();
-            Log.Info (Log.LOG_SYS, "NcBackUpAgentHelper: Backup Initialized");
-            var helper = new SharedPreferencesBackupHelper(MainApplication.Instance.ApplicationContext, NcBackupPrefs.BackupPrefsKey);
-            var backupAgentHelper = new BackupAgentHelper ();
-            backupAgentHelper.AddHelper(KNachoInstallprefs, helper);
+            Log.Info (Log.LOG_SYS, "CloudHandler:NcBackUpAgentHelper: Backup Initialized");
+            AddHelper (KNachoInstallprefs, NcBackupPrefs.GetSharedPreferencesBackupHelper ());
         }
 
+        public override void OnRestore (BackupDataInput data, int appVersionCode, Android.OS.ParcelFileDescriptor newState)
+        {
+            Log.Info (Log.LOG_SYS, "CloudHandler:NcBackupAgentHelper: Performing restore");
+            base.OnRestore (data, appVersionCode, newState);
+        }
+
+        public override void OnBackup (Android.OS.ParcelFileDescriptor oldState, BackupDataOutput data, Android.OS.ParcelFileDescriptor newState)
+        {
+            Log.Info (Log.LOG_SYS, "CloudHandler:NcBackupAgentHelper: Performing backup");
+            base.OnBackup (oldState, data, newState);
+        }
         public override void OnFullBackup (FullBackupDataOutput data)
         {
-            Log.Info (Log.LOG_SYS, "NcBackupAgentHelper: Fullbackup started");
+            Log.Info (Log.LOG_SYS, "CloudHandler:NcBackupAgentHelper: Fullbackup started");
             BackupFiles (MainApplication.Instance.FilesDir, data);
         }
 
@@ -263,14 +261,34 @@ namespace NachoPlatform
             Java.IO.File[] list = root.ListFiles ();
             foreach (Java.IO.File f in list) {
                 if (NcFileHandler.Instance.SkipFile (f.Name)) {
-                    Log.Info (Log.LOG_SYS, "NcBackupAgentHelper: skipped file {0}", f.Name);
+                    Log.Info (Log.LOG_SYS, "CloudHandler:NcBackupAgentHelper: skipped file {0}", f.Name);
                     continue;
                 }
                 if (f.IsDirectory) {
                     BackupFiles (f, data);
                 } else {
-                    Log.Info (Log.LOG_SYS, "NcBackupAgentHelper: backing up file {0}", f.Name);
+                    Log.Info (Log.LOG_SYS, "CloudHandler:NcBackupAgentHelper: backing up file {0}", f.Name);
                     FullBackupFile (f, data);
+                }
+            }
+        }
+    }
+
+    class NcRestoreObserver : RestoreObserver
+    {
+        public override void RestoreFinished (int error)
+        {
+            base.RestoreFinished (error);
+            if (error == 0)
+            {
+                // close the file, and get a new file handle.
+                //NcBackupPrefs.Instance.ResetSettings ();
+                var userid = NcBackupPrefs.Instance.GetKeyString (CloudHandler.KUserId);
+                if (!string.IsNullOrEmpty (userid)) {
+                    Log.Info (Log.LOG_SYS, "CloudHandler:NcRestoreObserver: Found UserId in restored settings: {0}", userid);
+                    NcApplication.Instance.UserId = userid;
+                } else {
+                    Log.Warn (Log.LOG_SYS, "CloudHandler:NcRestoreObserver: Restore finished, but no userid found.");
                 }
             }
         }
