@@ -203,7 +203,6 @@ namespace NachoClient.AndroidClient
                     return; 
                 }
                 // On-device index
-                int curVersion = searcher.Version;
                 var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
                 var index = new NachoCore.Index.NcIndex (indexPath);
                 int maxResults = 1000;
@@ -219,12 +218,10 @@ namespace NachoClient.AndroidClient
                 }
                 matches.RemoveAll (x => x.Score < (maxScore / 2));
 
-                if (curVersion == searcher.Version) {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResultsMessages.UpdateMatches (matches);
-                        messageListAdapter.RefreshSearchMatches ();
-                    });
-                }
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    searchResultsMessages.UpdateMatches (matches);
+                    messageListAdapter.RefreshSearchMatches ();
+                });
             });
                 
             var parent = (MessageListDelegate)Activity;
@@ -470,9 +467,7 @@ namespace NachoClient.AndroidClient
 
             var parent = (MessageListDelegate)Activity;
             var hotEvent = View.FindViewById<View> (Resource.Id.hot_event);
-            if (parent.ShowHotEvent ()) {
-                hotEvent.Visibility = ViewStates.Gone;
-            }
+            hotEvent.Visibility = ViewStates.Gone;
 
             searchEditText.RequestFocus ();
             InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
@@ -513,23 +508,19 @@ namespace NachoClient.AndroidClient
 
         void SearchString_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
         {
-            if (String.IsNullOrEmpty (searchEditText.Text)) {
+            var searchString = searchEditText.Text;
+            if (String.IsNullOrEmpty (searchString)) {
                 searchResultsMessages.UpdateServerMatches (null);
                 messageListAdapter.RefreshSearchMatches ();
-            } else {
-                // Ask the server
-                KickoffSearchApi (0, searchEditText.Text);
+            } else if (4 > searchString.Length) {
+                KickoffSearchApi (0, searchString);
             }
-            searcher.Search (searchEditText.Text);
+            searcher.Search (searchString);
         }
 
+        // Ask the server
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
-            if (String.IsNullOrEmpty (forSearchString) || (4 > forSearchString.Length)) {
-                searchResultsMessages.UpdateServerMatches (null);
-                messageListAdapter.RefreshSearchMatches ();
-                return;
-            }
             if (String.IsNullOrEmpty (searchToken)) {
                 searchToken = BackEnd.Instance.StartSearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null).GetValue<string> ();
             } else {
