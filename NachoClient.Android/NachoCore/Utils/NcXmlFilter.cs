@@ -571,8 +571,7 @@ namespace NachoCore.Wbxml
             // Cheating!! Use ASWBXL class to decode. This is less efficient
             // because it walks the tree twice.
             ASWBXML wbxml = new ASWBXML (new CancellationToken (false));
-            MemoryStream byteStream = new MemoryStream (Wbxml.ToArray (), false);
-            wbxml.LoadBytes (0, byteStream);
+            wbxml.LoadBytes (0, Wbxml.ToArray ());
             return new XDocument (wbxml.XmlDoc);
         }
     }

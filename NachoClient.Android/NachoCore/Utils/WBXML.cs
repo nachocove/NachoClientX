@@ -46,7 +46,7 @@ namespace NachoCore.Wbxml
             return XmlDoc.ToString (SaveOptions.DisableFormatting);
         }
 
-        public void LoadBytes (int accountId, Stream byteWBXML, Boolean? doFiltering = null)
+        public void LoadBytes (int accountId, byte[] rawBytes, Boolean? doFiltering = null)
         {
             XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
             int level = 0;
@@ -59,7 +59,7 @@ namespace NachoCore.Wbxml
             }
             filter.Start ();
 
-            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (byteWBXML, filter.WbxmlBuffer);
+            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (new MemoryStream (rawBytes), filter.WbxmlBuffer);
 
             // Version is ignored
             byte version = bytes.Dequeue ();
