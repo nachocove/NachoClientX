@@ -148,6 +148,16 @@ namespace NachoCore.Model
             UpdateSaveFinish ();
         }
 
+        protected void CompleteInsertFile (Stream inStream)
+        {
+            Prep ();
+            using (var stream = File.OpenWrite (GetFilePath ())) {
+                inStream.CopyTo (stream);
+            }
+            UpdateSaveFinish ();
+        }
+
+
         protected void CompleteInsertDuplicate (McAbstrFileDesc srcDesc)
         {
             Prep ();
@@ -250,6 +260,15 @@ namespace NachoCore.Model
         {
             var tmp = NcModel.Instance.TmpPath (AccountId);
             File.WriteAllText (tmp, content);
+            ReplaceFile (tmp);
+        }
+
+        public void UpdateData (Stream content)
+        {
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            using (var stream = File.OpenWrite (tmp)) {
+                content.CopyTo (stream);
+            }
             ReplaceFile (tmp);
         }
 
