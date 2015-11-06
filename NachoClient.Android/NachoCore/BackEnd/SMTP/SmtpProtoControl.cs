@@ -472,6 +472,10 @@ namespace NachoCore.SMTP
         {
             BackEndStatePreset = BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
+            if (null == Sm.Arg) {
+                Log.Error (Log.LOG_SMTP, "DoUiServConfReq: Sm.Arg is null");
+                throw new Exception ("DoUiServConfReq: Sm.Arg can not be null");
+            }
             AutoDFailureReason = (BackEnd.AutoDFailureReasonEnum)Sm.Arg;
             Owner.ServConfReq (this, AutoDFailureReason);
         }
@@ -487,6 +491,10 @@ namespace NachoCore.SMTP
         private void DoUiCertOkReq ()
         {
             BackEndStatePreset = BackEndStateEnum.CertAskWait;
+            if (null == Sm.Arg) {
+                Log.Error (Log.LOG_SMTP, "DoUiCertOkReq: Sm.Arg is null");
+                throw new Exception ("DoUiCertOkReq: Sm.Arg can not be null");
+            }
             _ServerCertToBeExamined = (X509Certificate2)Sm.Arg;
             Owner.CertAskReq (this, _ServerCertToBeExamined);
         }
