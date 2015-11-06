@@ -249,15 +249,19 @@ namespace NachoPlatform
             } else {
                 contact = contactToUpdate;
             }
+            // Person stuff
             contact.FirstName = Person.FirstName;
             contact.LastName = Person.LastName;
             contact.MiddleName = Person.MiddleName;
             contact.Suffix = Person.Suffix;
             contact.NickName = Person.Nickname;
+            contact.Title = Person.Prefix;
             contact.YomiFirstName = Person.FirstNamePhonetic;
             contact.YomiLastName = Person.LastNamePhonetic;
+
+            // Company stuff
             contact.CompanyName = Person.Organization;
-            contact.Title = Person.JobTitle;
+            contact.JobTitle = Person.JobTitle;
             contact.Department = Person.Department;
 
             contact.EmailAddresses = new List<McContactEmailAddressAttribute> ();
