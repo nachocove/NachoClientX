@@ -27,7 +27,7 @@ namespace NachoClient.AndroidClient
         void FilePickerDidPickFile (FilePickerFragment picker, McAbstrFileDesc file);
     }
 
-    public class FilePickerFragment : DialogFragment
+    public class FilePickerFragment : DialogFragment, AttachmentDownloaderDelegate
     {
 
         public FilePickerFragmentDelegate Delegate;
@@ -57,9 +57,36 @@ namespace NachoClient.AndroidClient
                         Delegate.FilePickerDidPickFile (this, attachment);
                     }
                 } else {
-                    // TODO: start download
+                    var downloader = new AttachmentDownloader ();
+                    downloader.Delegate = this;
+                    downloader.DownloadContext = e.View;
+                    var downloadView = e.View.FindViewById (Resource.Id.file_download);
+                    var downloadIndicator = e.View.FindViewById (Resource.Id.file_download_indicator);
+                    downloadView.Visibility = ViewStates.Gone;
+                    downloadIndicator.Visibility = ViewStates.Visible;
+                    downloader.Download (attachment);
                 }
             }
+        }
+
+        public void AttachmentDownloadDidFinish (AttachmentDownloader downloader)
+        {
+            var view = downloader.DownloadContext as View;
+            var downloadView = view.FindViewById (Resource.Id.file_download);
+            var downloadIndicator = view.FindViewById (Resource.Id.file_download_indicator);
+            downloadView.Visibility = ViewStates.Gone;
+            downloadIndicator.Visibility = ViewStates.Gone;
+        }
+
+        public void AttachmentDownloadDidFail (AttachmentDownloader downloader, NcResult result)
+        {
+            var view = downloader.DownloadContext as View;
+            var downloadView = view.FindViewById (Resource.Id.file_download);
+            var downloadIndicator = view.FindViewById (Resource.Id.file_download_indicator);
+            downloadView.Visibility = ViewStates.Gone;
+            downloadIndicator.ClearAnimation ();
+            downloadIndicator.Visibility = ViewStates.Gone;
+            NcAlertView.ShowMessage (Activity, "Download Error", "Sorry, we couldn't download the attachment.  Please try again.");
         }
     }
 
@@ -106,6 +133,7 @@ namespace NachoClient.AndroidClient
                 var nameLabel = view.FindViewById<TextView> (Resource.Id.file_name);
                 var infoLabel = view.FindViewById<TextView> (Resource.Id.file_info);
                 var dateLabel = view.FindViewById<TextView> (Resource.Id.file_date);
+                var downloadIndicator = view.FindViewById<ProgressBar> (Resource.Id.file_download_indicator);
 
                 if (attachment != null) {
                     var extension = Pretty.GetExtension (attachment.DisplayName);
@@ -113,6 +141,7 @@ namespace NachoClient.AndroidClient
                     infoLabel.Text = DetailTextForAttachment (attachment);
                     iconView.SetImageResource (FileIconFromExtension (extension));
                     dateLabel.Text = DateToString (attachment.CreatedAt);
+                    downloadIndicator.Visibility = ViewStates.Gone;
                     if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
                         downloadView.Visibility = ViewStates.Gone;
                     } else {

@@ -587,6 +587,7 @@
     <Compile Include="NachoUI.Android\Activities\ContactEmailChooserActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\TutorialActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\FilePickerFragment.cs" />
+    <Compile Include="NachoCore\Utils\AttachmentDownloader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

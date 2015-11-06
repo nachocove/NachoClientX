@@ -9,8 +9,11 @@
         android:layout_height="wrap_content">
         <ImageView
             android:id="@+id/file_icon"
-            android:layout_width="60dp"
-            android:layout_height="60dp" />
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="5dp"
+            android:layout_gravity="center_vertical"
+            android:scaleType="centerInside" />
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="0dp"
@@ -31,7 +34,20 @@
         </LinearLayout>
         <ImageView
             android:id="@+id/file_download"
-            android:layout_width="16dp"
-            android:layout_height="16dp" />
+            android:src="@drawable/email_att_download"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:paddingTop="3dp"
+            android:paddingRight="3dp"
+            android:layout_gravity="center_vertical"
+            android:background="@android:color/white" />
+        <ProgressBar
+            android:id="@+id/file_download_indicator"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center_vertical"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_centerInParent="true"
+            android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>
