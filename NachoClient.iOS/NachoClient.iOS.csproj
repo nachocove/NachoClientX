@@ -1715,6 +1715,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration49.cs">
       <Link>NachoCore\Model\Migration\NcMigration49.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimeStamp.cs">
+      <Link>NachoCore\Utils\NcTimeStamp.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

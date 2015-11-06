@@ -1175,7 +1175,7 @@ namespace NachoClient.iOS
 
         public override string ApplicationLogForCrashManager (BITCrashManager crashManager)
         {
-            NcApplication.ApplicationLogForCrashManager ();
+            return NcApplication.ApplicationLogForCrashManager ();
         }
 
         /// For some reason, UserName in HockeyApp web portal has a UUID prefixing the user name.
