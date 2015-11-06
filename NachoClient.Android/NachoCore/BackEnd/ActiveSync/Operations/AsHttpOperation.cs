@@ -552,7 +552,7 @@ namespace NachoCore.ActiveSync
                     if (null != response.Content.Headers) {
                         contentType = response.Content.Headers.ContentType;
                     }
-                    ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
+                    ContentType = (null == contentType || null == contentType.MediaType) ? null : contentType.MediaType.ToLower ();
                     try {
                         ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
                     } catch (Exception ex) {
