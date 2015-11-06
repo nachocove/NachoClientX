@@ -588,6 +588,7 @@
     <Compile Include="NachoUI.Android\Support\CalendarChooserDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
+    <Compile Include="NachoCore\Utils\NcTimeStamp.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
