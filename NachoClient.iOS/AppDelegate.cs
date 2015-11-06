@@ -317,10 +317,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
 
-            const uint MB = 1000 * 1000; // MB not MiB
-            WebCache.Configure (1 * MB, 50 * MB);
-            // end of one-time initialization
-
             NcApplication.Instance.StartBasalServices ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartBasalServices complete");
 
