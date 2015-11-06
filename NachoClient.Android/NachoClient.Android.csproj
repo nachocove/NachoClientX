@@ -1534,6 +1534,7 @@
     <AndroidResource Include="Resources\layout\CertAskFragment.axml" />
     <AndroidResource Include="Resources\layout\CalendarChooserCell.axml" />
     <AndroidResource Include="Resources\layout\CalendarChooserHeader.axml" />
+    <AndroidResource Include="Resources\layout\ContactInfo.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
