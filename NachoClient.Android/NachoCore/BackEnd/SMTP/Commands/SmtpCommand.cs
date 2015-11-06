@@ -106,7 +106,7 @@ namespace NachoCore.SMTP
                 } catch (AuthenticationException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: AuthenticationException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                    if (BEContext.Cred.Epoch == SavedCredEpoch) {
+                    if (!HasPasswordChanged ()) {
                         evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH1");
                     } else {
                         // credential was updated while we were running the command. Just try again.
@@ -115,7 +115,7 @@ namespace NachoCore.SMTP
                 } catch (ServiceNotAuthenticatedException ex) {
                     Log.Info (Log.LOG_SMTP, "{0}: ServiceNotAuthenticatedException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                    if (BEContext.Cred.Epoch == SavedCredEpoch) {
+                    if (!HasPasswordChanged ()) {
                         evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH2");
                     } else {
                         // credential was updated while we were running the command. Just try again.
