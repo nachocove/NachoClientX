@@ -300,8 +300,9 @@ namespace NachoCore.ActiveSync
                     // Minimize the latency of getting the body at the risk of #1313 lock-up.
                     // NachoHttp will remove the risk.
                     AttemptHttp ();
+                } else {
+                    NcTask.Run (AttemptHttp, "AttemptHttp");
                 }
-                NcTask.Run (AttemptHttp, "AttemptHttp");
             } else {
                 Owner.ResolveAllDeferred ();
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOH", null, "Too many retries."));
