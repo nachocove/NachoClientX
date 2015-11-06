@@ -41,7 +41,6 @@ namespace NachoClient.AndroidClient
             Notes,
             Contact,
             Interactions,
-
         };
 
         private TextView notesTab;
@@ -53,6 +52,8 @@ namespace NachoClient.AndroidClient
         private ListView interactionsView;
 
         protected CurrentTab state;
+
+        public INachoEmailMessages messages;
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -147,10 +148,25 @@ namespace NachoClient.AndroidClient
         public override void OnActivityCreated (Bundle savedInstanceState)
         {
             base.OnActivityCreated (savedInstanceState);
+
             contact = ((IContactViewFragmentOwner)Activity).ContactToView;
             contactViewAdapter = new ContactViewAdapter (contact);
             var listview = View.FindViewById<ListView> (Resource.Id.listView);
             listview.Adapter = contactViewAdapter;
+
+            messages = new UserInteractionEmailMessages (contact);
+            var interactionListView = View.FindViewById<ListView> (Resource.Id.interactions_listView);
+            interactionListView.Adapter = new InteractionListAdapter (this);
+
+            interactionListView.ItemClick += InteractionListView_ItemClick;
+        }
+
+        void InteractionListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+        {
+            var thread = messages.GetEmailThread (e.Position);
+            var message = thread.FirstMessageSpecialCase ();
+            var intent = MessageViewActivity.ShowMessageIntent (Activity, thread, message);
+            StartActivity (intent);
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
@@ -508,7 +524,74 @@ namespace NachoClient.AndroidClient
                 break;
             }
         }
-
     }
 
+    public class InteractionListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
+    {
+        ContactViewFragment owner;
+
+        bool searching;
+
+        public InteractionListAdapter (ContactViewFragment owner)
+        {
+            this.owner = owner;
+
+        }
+
+        public override long GetItemId (int position)
+        {
+ 
+            return owner.messages.GetEmailThread (position).FirstMessageId;
+        }
+
+        public override int Count {
+            get {
+                return owner.messages.Count ();
+            }
+        }
+
+        public override McEmailMessageThread this [int position] {  
+            get { 
+
+                return owner.messages.GetEmailThread (position);
+            }
+        }
+
+        public override View GetView (int position, View convertView, ViewGroup parent)
+        {
+            View view = convertView; // re-use an existing view, if one is available
+            if (view == null) {
+                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCell, parent, false);
+                var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+                chiliView.Click += ChiliView_Click;
+            }
+
+            var thread = owner.messages.GetEmailThread (position);
+            var message = thread.FirstMessageSpecialCase ();
+            Bind.BindMessageHeader (thread, message, view);
+
+            // Preview label view
+            var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
+            var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
+            previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+
+            var multiSelectView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.selected);
+            multiSelectView.Visibility = ViewStates.Invisible;
+
+            var chiliTagView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+            chiliTagView.Tag = position;
+
+            return view;
+        }
+
+        void ChiliView_Click (object sender, EventArgs e)
+        {
+            var chiliView = (Android.Widget.ImageView)sender;
+            var position = (int)chiliView.Tag;
+            var thread = owner.messages.GetEmailThread (position);
+            var message = thread.FirstMessageSpecialCase ();
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            Bind.BindMessageChili (thread, message, chiliView);
+        }
+    }
 }

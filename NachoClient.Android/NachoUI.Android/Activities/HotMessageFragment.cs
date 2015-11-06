@@ -148,8 +148,6 @@ namespace NachoClient.AndroidClient
 
         void DoneWithMessage ()
         {
-            var parent = (NowListActivity)this.Activity;
-            parent.DoneWithMessage ();
         }
 
         void ChiliButton_Click (object sender, EventArgs e)

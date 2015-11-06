@@ -526,7 +526,6 @@
     <Compile Include="NachoUI.Android\Activities\ChooseDeferralFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChooseFolderFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactsActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\EventListFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\CalendarActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\FoldersActivity.cs" />
@@ -587,6 +586,8 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration49.cs" />
     <Compile Include="NachoUI.Android\Activities\CertAskFragment.cs" />
     <Compile Include="NachoUI.Android\Support\CalendarChooserDialog.cs" />
+    <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1535,6 +1536,7 @@
     <AndroidResource Include="Resources\layout\CalendarChooserCell.axml" />
     <AndroidResource Include="Resources\layout\CalendarChooserHeader.axml" />
     <AndroidResource Include="Resources\layout\ContactInfo.axml" />
+    <AndroidResource Include="Resources\layout\MessageViewActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
