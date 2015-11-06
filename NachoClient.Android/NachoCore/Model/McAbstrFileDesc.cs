@@ -263,15 +263,6 @@ namespace NachoCore.Model
             ReplaceFile (tmp);
         }
 
-        public void UpdateData (Stream content)
-        {
-            var tmp = NcModel.Instance.TmpPath (AccountId);
-            using (var stream = File.OpenWrite (tmp)) {
-                content.CopyTo (stream);
-            }
-            ReplaceFile (tmp);
-        }
-
         /// Replace the contents of this McAbstrFileDesc with the given bytes.
         public void UpdateData (byte[] content)
         {

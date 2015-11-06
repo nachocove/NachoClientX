@@ -21,15 +21,6 @@ namespace NachoCore.Model
             return portrait;
         }
 
-        public static McPortrait InsertFile (int accountId, Stream portraitStream)
-        {
-            var portrait = new McPortrait () {
-                AccountId = accountId,
-            };
-            portrait.CompleteInsertFile (portraitStream);
-            return portrait;
-        }
-
         public static byte[] GetContentsByteArray (int portraitId)
         {
             var portrait = QueryById<McPortrait> (portraitId);
