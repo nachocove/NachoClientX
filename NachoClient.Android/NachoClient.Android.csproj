@@ -589,6 +589,8 @@
     <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
     <Compile Include="NachoCore\Utils\NcTimeStamp.cs" />
+    <Compile Include="NachoUI.Android\Support\LifecycleSpy.cs" />
+    <Compile Include="NachoUI.Android\Support\NotificationService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1538,6 +1540,7 @@
     <AndroidResource Include="Resources\layout\CalendarChooserHeader.axml" />
     <AndroidResource Include="Resources\layout\ContactInfo.axml" />
     <AndroidResource Include="Resources\layout\MessageViewActivity.axml" />
+    <AndroidResource Include="Resources\drawable-mdpi\notification.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
