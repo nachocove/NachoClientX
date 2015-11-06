@@ -181,6 +181,35 @@
                     android:layout_gravity="center_vertical"
                     android:src="@drawable/gen_more_arrow" />
             </LinearLayout>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="20dp" />
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/white">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:padding="4dp"
+                    android:text="Calendar" />
+                <TextView
+                    android:id="@+id/event_edit_calendar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_gravity="center_vertical"
+                    android:gravity="right"
+                    android:padding="4dp" />
+                <ImageView
+                    android:id="@+id/event_edit_calendar_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@drawable/gen_more_arrow" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

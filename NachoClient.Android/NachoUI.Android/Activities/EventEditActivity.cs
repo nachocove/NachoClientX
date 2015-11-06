@@ -43,6 +43,7 @@ namespace NachoClient.AndroidClient
         private EditText locationField;
         private TextView attendeeCountField;
         private TextView reminderField;
+        private TextView calendarField;
 
         private DateTime startTime;
         private DateTime endTime;
@@ -67,6 +68,7 @@ namespace NachoClient.AndroidClient
             locationField = FindViewById<EditText> (Resource.Id.event_edit_location);
             attendeeCountField = FindViewById<TextView> (Resource.Id.event_edit_attendee_count);
             reminderField = FindViewById<TextView> (Resource.Id.event_edit_reminder);
+            calendarField = FindViewById<TextView> (Resource.Id.event_edit_calendar);
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
 
@@ -185,10 +187,12 @@ namespace NachoClient.AndroidClient
             endField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             attendeeCountField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             reminderField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            calendarField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             startField.SetTextColor (titleField.TextColors);
             endField.SetTextColor (titleField.TextColors);
             attendeeCountField.SetTextColor (titleField.TextColors);
             reminderField.SetTextColor (titleField.TextColors);
+            calendarField.SetTextColor (titleField.TextColors);
 
             allDayField.Checked = cal.AllDayEvent;
             ConfigureStartEndFields ();
@@ -202,6 +206,11 @@ namespace NachoClient.AndroidClient
             reminderField.Click += Reminder_Click;
             var reminderArrow = FindViewById<ImageView> (Resource.Id.event_edit_reminder_arrow);
             reminderArrow.Click += Reminder_Click;
+
+            calendarField.Text = calendarFolder.DisplayName;
+            calendarField.Click += Calendar_Click;
+            var calendarArrow = FindViewById<ImageView> (Resource.Id.event_edit_calendar_arrow);
+            calendarArrow.Click += Calendar_Click;
         }
 
         protected override void OnActivityResult (int requestCode, Result resultCode, Intent data)
@@ -315,6 +324,30 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        private List<Tuple<McAccount, NachoFolders>> GetChoosableCalendars ()
+        {
+            var result = new List<Tuple<McAccount, NachoFolders>> ();
+            IEnumerable<McAccount> candidateAccounts;
+            if (Intent.ActionCreateDocument == Intent.Action && 0 == cal.attachments.Count) {
+                candidateAccounts = McAccount.GetAllAccounts ();
+            } else {
+                candidateAccounts = new McAccount[] { account };
+            }
+            foreach (var account in candidateAccounts) {
+                if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                    var calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+                    if (0 < calendars.Count ()) {
+                        result.Add (new Tuple<McAccount, NachoFolders> (account, calendars));
+                    }
+                }
+            }
+            if (0 == result.Count) {
+                Log.Error (Log.LOG_CALENDAR, "Couldn't find any calendars for the event editor's calendar chooser.");
+                result.Add (new Tuple<McAccount, NachoFolders> (account, new NachoFolders (calendarFolder)));
+            }
+            return result;
+        }
+
         private void SaveButton_Click (object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty (FindViewById<EditText> (Resource.Id.event_edit_title).Text)) {
@@ -404,6 +437,17 @@ namespace NachoClient.AndroidClient
         private void Attendee_Click (object sender, EventArgs e)
         {
             StartActivityForResult (AttendeeEditActivity.AttendeeEditIntent (this, account.Id, cal.attendees), ATTENDEE_ACTIVITY_REQUEST);
+        }
+
+        private void Calendar_Click (object sender, EventArgs e)
+        {
+            CalendarChooserDialog.Show (this, GetChoosableCalendars (), calendarFolder, (McFolder chosenFolder) => {
+                if (account.Id != chosenFolder.AccountId) {
+                    account = McAccount.QueryById<McAccount> (chosenFolder.AccountId);
+                }
+                calendarFolder = chosenFolder;
+                calendarField.Text = chosenFolder.DisplayName;
+            });
         }
     }
 }
