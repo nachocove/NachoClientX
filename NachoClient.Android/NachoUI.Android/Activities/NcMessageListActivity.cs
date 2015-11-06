@@ -20,8 +20,10 @@ namespace NachoClient.AndroidClient
     public class NcMessageListActivity : NcTabBarActivity, MessageListDelegate
     {
         protected McAccount account;
-        MessageViewFragment messageViewFragment;
         MessageListFragment messageListFragment;
+
+        private const string EXTRA_THREAD = "com.nachocove.nachomail.EXTRA_THREAD";
+        private const string EXTRA_MESSAGE = "com.nachocove.nachomail.EXTRA_MESSAGE";
 
         protected virtual INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
@@ -74,21 +76,13 @@ namespace NachoClient.AndroidClient
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
-                messageViewFragment = MessageViewFragment.newInstance (thread, message);
-                this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("Message").Commit ();
+                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
+                StartActivity (intent);
             } else {
                 var threadMessage = new NachoThreadedEmailMessages (McFolder.GetDefaultInboxFolder (NcApplication.Instance.Account.Id), thread.GetThreadId ());
                 messageListFragment = MessageListFragment.newInstance (threadMessage);
                 messageListFragment.onMessageClick += onMessageClick;
                 FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Thread").Commit ();
-            }
-        }
-
-        public void DoneWithMessage ()
-        {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MessageViewFragment) {
-                this.FragmentManager.PopBackStack ();
             }
         }
 
