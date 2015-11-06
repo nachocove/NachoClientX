@@ -1078,7 +1078,10 @@ namespace NachoCore.ActiveSync
                                         BodyPref = BodyPref (fetch),
                                     },
                                 },
-                            }));
+                            }) {
+                            DelayNotAllowed = fetch.DelayNotAllowed && 
+                                fetch.Operation == McPending.Operations.EmailBodyDownload,
+                        });
                 }
             }
             return null;

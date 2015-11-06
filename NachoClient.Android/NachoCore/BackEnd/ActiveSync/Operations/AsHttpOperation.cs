@@ -295,6 +295,12 @@ namespace NachoCore.ActiveSync
                 // Remove NcTask.Run once #1313 solved.
                 // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
                 Cts = new CancellationTokenSource ();
+                var itemOp = Owner as AsItemOperationsCommand;
+                if (null != itemOp && itemOp.DelayNotAllowed) {
+                    // Minimize the latency of getting the body at the risk of #1313 lock-up.
+                    // NachoHttp will remove the risk.
+                    AttemptHttp ();
+                }
                 NcTask.Run (AttemptHttp, "AttemptHttp");
             } else {
                 Owner.ResolveAllDeferred ();
