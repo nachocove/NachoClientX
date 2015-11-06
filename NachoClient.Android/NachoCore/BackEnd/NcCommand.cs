@@ -63,6 +63,8 @@ namespace NachoCore
         /// <value>The cred epoch.</value>
         protected int SavedCredEpoch;
 
+        public bool DelayNotAllowed { get; set; }
+
         protected enum ResolveAction
         {
             None,

@@ -160,4 +160,7 @@
     <string name="cert_warn">You should only allow sources you know and trust to configure your account.</string>
     <string name="allow">Allow</string>
     <string name="security_warning">Security Warning</string>
+    <string name="contact">Contact</string>
+    <string name="interactions">Interactions</string>
+    <string name="notes">Notes</string>
 </resources>

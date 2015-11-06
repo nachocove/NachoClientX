@@ -27,11 +27,33 @@ namespace NachoClient.AndroidClient
 
     public class ContactViewFragment : Fragment
     {
+        private const int EDIT_REQUEST_CODE = 1;
+        private const int NOTE_REQUEST_CODE = 2;
+
         McContact contact;
 
         ContactViewAdapter contactViewAdapter;
 
         ButtonBar buttonBar;
+
+        public enum CurrentTab
+        {
+            Notes,
+            Contact,
+            Interactions,
+        };
+
+        private TextView notesTab;
+        private TextView contactTab;
+        private TextView interactionsTab;
+
+        private View notesView;
+        private ListView contactView;
+        private ListView interactionsView;
+
+        protected CurrentTab state;
+
+        public INachoEmailMessages messages;
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -44,20 +66,133 @@ namespace NachoClient.AndroidClient
 
             buttonBar = new ButtonBar (view);
 
-            buttonBar.SetIconButton (ButtonBar.Button.Right1, Android.Resource.Drawable.IcMenuEdit, /*EditButton_Click*/ null);
+            notesTab = view.FindViewById<TextView> (Resource.Id.notes_tab);
+            contactTab = view.FindViewById<TextView> (Resource.Id.contact_tab);
+            interactionsTab = view.FindViewById<TextView> (Resource.Id.interactions_tab);
 
-            view.Click += View_Click;
+            notesTab.Click += NotesTab_Click;
+            contactTab.Click += ContactTab_Click;
+            interactionsTab.Click += InteractionsTab_Click;
+
+            notesView = view.FindViewById<View> (Resource.Id.notes_view);
+            contactView = view.FindViewById<ListView> (Resource.Id.listView);
+            interactionsView = view.FindViewById<ListView> (Resource.Id.interactions_listView);
+
+            state = CurrentTab.Contact;
+            HighlightTab (contactTab, contactView);
 
             return view;
+        }
+
+        void NotesTab_Click (object sender, EventArgs e)
+        {
+            if (CurrentTab.Notes != state) {
+                state = CurrentTab.Notes;
+                HighlightTab (notesTab, notesView);
+                UnhighlightTab (contactTab, contactView);
+                UnhighlightTab (interactionsTab, interactionsView);
+            }
+        }
+
+        void ContactTab_Click (object sender, EventArgs e)
+        {
+            if (CurrentTab.Contact != state) {
+                state = CurrentTab.Contact;
+                HighlightTab (contactTab, contactView);
+                UnhighlightTab (notesTab, notesView);
+                UnhighlightTab (interactionsTab, interactionsView);
+            }
+        }
+
+        void InteractionsTab_Click (object sender, EventArgs e)
+        {
+            if (CurrentTab.Interactions != state) {
+                state = CurrentTab.Interactions;
+                HighlightTab (interactionsTab, interactionsView);
+                UnhighlightTab (notesTab, notesView);
+                UnhighlightTab (contactTab, contactView);
+            }
+        }
+
+        private void HighlightTab (TextView view, View dataView)
+        {
+            view.SetTextColor (Android.Graphics.Color.White);
+            view.SetBackgroundResource (Resource.Color.NachoGreen);
+            dataView.Visibility = ViewStates.Visible;
+        }
+
+        private void UnhighlightTab (TextView view, View dataView)
+        {
+            view.SetTextColor (Resources.GetColor (Resource.Color.NachoGreen));
+            view.SetBackgroundResource (Resource.Drawable.BlackBorder);
+            dataView.Visibility = ViewStates.Invisible;
+        }
+
+        private void EditButton_Click (object sender, EventArgs e)
+        {
+            switch (state) {
+            case CurrentTab.Contact:
+                break;
+            case CurrentTab.Interactions:
+                break;
+            case CurrentTab.Notes:
+                string noteText = ContactsHelper.GetNoteText (contact);
+                var title = Pretty.NoteTitle (contact.GetDisplayNameOrEmailAddress ());
+                StartActivityForResult (
+                    NoteActivity.EditNoteIntent (this.Activity, title, null, noteText, insertDate: true),
+                    NOTE_REQUEST_CODE);
+                break;
+            }
         }
 
         public override void OnActivityCreated (Bundle savedInstanceState)
         {
             base.OnActivityCreated (savedInstanceState);
+
             contact = ((IContactViewFragmentOwner)Activity).ContactToView;
             contactViewAdapter = new ContactViewAdapter (contact);
             var listview = View.FindViewById<ListView> (Resource.Id.listView);
             listview.Adapter = contactViewAdapter;
+
+            messages = new UserInteractionEmailMessages (contact);
+            var interactionListView = View.FindViewById<ListView> (Resource.Id.interactions_listView);
+            interactionListView.Adapter = new InteractionListAdapter (this);
+
+            interactionListView.ItemClick += InteractionListView_ItemClick;
+        }
+
+        void InteractionListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+        {
+            var thread = messages.GetEmailThread (e.Position);
+            var message = thread.FirstMessageSpecialCase ();
+            var intent = MessageViewActivity.ShowMessageIntent (Activity, thread, message);
+            StartActivity (intent);
+        }
+
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult (requestCode, resultCode, data);
+
+            switch (requestCode) {
+
+            case EDIT_REQUEST_CODE:
+                if (Result.Ok == resultCode) {
+                    // The contact was edited. Refresh the UI.
+                    BindValues (View);
+                }
+                break;
+
+            case NOTE_REQUEST_CODE:
+                if (Result.Ok == resultCode) {
+                    string newNoteText = NoteActivity.ModifiedNoteText (data);
+                    if (null != newNoteText) {
+                        ContactsHelper.SaveNoteText (contact, newNoteText);
+                        contact = McContact.QueryById<McContact> (contact.Id);
+                        BindValues (View);
+                    }
+                }
+                break;
+            }
         }
 
         public override void OnStart ()
@@ -76,6 +211,12 @@ namespace NachoClient.AndroidClient
 
         void BindValues (View view)
         {
+            if (contact.CanUserEdit ()) {
+                buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.gen_edit, EditButton_Click);
+            } else {
+                buttonBar.ClearButton (ButtonBar.Button.Right1);
+            }
+
             var title = view.FindViewById<TextView> (Resource.Id.contact_title);
             var subtitle1 = view.FindViewById<TextView> (Resource.Id.contact_subtitle1);
 
@@ -97,6 +238,19 @@ namespace NachoClient.AndroidClient
             BindContactVip (contact, vipView);
             vipView.Click += VipView_Click;
             vipView.Tag = contact.Id;
+
+            var notesTextView = view.FindViewById<TextView> (Resource.Id.notes_text);
+            if (!contact.CanUserEdit ()) {
+                notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
+            } else {
+                notesTextView.Text = ContactsHelper.GetNoteText (contact);
+                if (string.IsNullOrEmpty (notesTextView.Text)) {
+                    notesTextView.Text = "You have not entered any " +
+                    "notes for this contact. You can add and " +
+                    "edit notes by tapping the edit button in the top" +
+                    " right corner of this screen.";
+                }
+            }
         }
 
         void BindContactVip (McContact contact, ImageView vipView)
@@ -128,11 +282,7 @@ namespace NachoClient.AndroidClient
             var s = (StatusIndEventArgs)e;
 
         }
-
-        void View_Click (object sender, EventArgs e)
-        {
-            Log.Info (Log.LOG_UI, "View_Click");
-        }
+            
     }
 
 
@@ -374,7 +524,74 @@ namespace NachoClient.AndroidClient
                 break;
             }
         }
-
     }
 
+    public class InteractionListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
+    {
+        ContactViewFragment owner;
+
+        bool searching;
+
+        public InteractionListAdapter (ContactViewFragment owner)
+        {
+            this.owner = owner;
+
+        }
+
+        public override long GetItemId (int position)
+        {
+ 
+            return owner.messages.GetEmailThread (position).FirstMessageId;
+        }
+
+        public override int Count {
+            get {
+                return owner.messages.Count ();
+            }
+        }
+
+        public override McEmailMessageThread this [int position] {  
+            get { 
+
+                return owner.messages.GetEmailThread (position);
+            }
+        }
+
+        public override View GetView (int position, View convertView, ViewGroup parent)
+        {
+            View view = convertView; // re-use an existing view, if one is available
+            if (view == null) {
+                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCell, parent, false);
+                var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+                chiliView.Click += ChiliView_Click;
+            }
+
+            var thread = owner.messages.GetEmailThread (position);
+            var message = thread.FirstMessageSpecialCase ();
+            Bind.BindMessageHeader (thread, message, view);
+
+            // Preview label view
+            var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
+            var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
+            previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+
+            var multiSelectView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.selected);
+            multiSelectView.Visibility = ViewStates.Invisible;
+
+            var chiliTagView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+            chiliTagView.Tag = position;
+
+            return view;
+        }
+
+        void ChiliView_Click (object sender, EventArgs e)
+        {
+            var chiliView = (Android.Widget.ImageView)sender;
+            var position = (int)chiliView.Tag;
+            var thread = owner.messages.GetEmailThread (position);
+            var message = thread.FirstMessageSpecialCase ();
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            Bind.BindMessageChili (thread, message, chiliView);
+        }
+    }
 }

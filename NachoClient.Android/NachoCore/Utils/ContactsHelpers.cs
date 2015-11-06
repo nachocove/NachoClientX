@@ -485,6 +485,30 @@ namespace NachoCore.Utils
 
             return Initials;
         }
+
+        public static void SaveNoteText (McContact contact, string noteText)
+        {
+            NcAssert.True (null != contact);
+            McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+            if (null != contactBody) {
+                contactBody.UpdateData (noteText);
+            } else {
+                contact.BodyId = McBody.InsertFile (contact.AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, noteText).Id;
+            }
+            contact.Update ();
+            NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+        }
+
+        public static string GetNoteText (McContact contact)
+        {
+            NcAssert.True (null != contact);
+            McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+            if (null != contactBody) {
+                return contactBody.GetContentsString ();
+            } else {
+                return "";
+            }
+        }
     }
 }
 
