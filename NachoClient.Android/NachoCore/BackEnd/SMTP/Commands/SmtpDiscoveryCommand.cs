@@ -53,20 +53,22 @@ namespace NachoCore.SMTP
                 return evt1;
             } catch (OperationCanceledException ex ) {
                 ResolveAllDeferred ();
-                evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPDISCOCANCEL"); // will be ignored by the caller
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPDISCOCANCEL"); // will be ignored by the caller
                 errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
                 if (Initial) {
                     evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPURIFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
+                    evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotFindServer;
                 } else {
-                    evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPURIHARD");
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPURITEMP1");
                 }
                 errResult.Message = ex.Message;
             } catch (SocketException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: SocketException: {0}", ex.Message);
                 if (Initial) {
                     evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
+                    evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCONNTEMP");
                 }
@@ -104,8 +106,9 @@ namespace NachoCore.SMTP
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: {0}", ex);
                 if (Initial) {
                     evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPSERVFAILUNDEF");
+                    evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
                 } else {
-                    evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPUNKHARD");
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPUNKTEMP");
                 }
                 errResult.Message = ex.Message;
                 serverFailedGenerally = true;
