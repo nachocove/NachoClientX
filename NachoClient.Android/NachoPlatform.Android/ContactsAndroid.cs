@@ -95,6 +95,11 @@ namespace NachoPlatform
             return cur.GetString (cur.GetColumnIndex (Column));
         }
 
+        public static byte[] GetFieldByte (Android.Database.ICursor cur, string Column)
+        {
+            return cur.GetBlob (cur.GetColumnIndex (Column));
+        }
+
         public static int GetFieldInt (Android.Database.ICursor cur, string Column)
         {
             return cur.GetInt (cur.GetColumnIndex (Column));
@@ -144,46 +149,83 @@ namespace NachoPlatform
                 }
 
                 Contact.DeviceLastUpdate = _LastUpdate;
-
+                string displayName = null;
                 var cr = MainApplication.Instance.ContentResolver;
                 {
                     // Name
-                    string whereName = ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.StructuredName.InterfaceConsts.ContactId + " = ?";
-                    String[] whereNameParams = new String[] { ContactsContract.CommonDataKinds.StructuredName.ContentItemType, Contact.ServerId };
                     var pCur = cr.Query (ContactsContract.Data.ContentUri,
                                    null, // FIXME Add projection for speed
-                                   whereName, whereNameParams,
+                                   ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.StructuredName.InterfaceConsts.ContactId + " = ?",
+                                   new String[] { ContactsContract.CommonDataKinds.StructuredName.ContentItemType, Contact.ServerId },
                                    ContactsContract.CommonDataKinds.StructuredName.GivenName);
                     bool GotIt = false;
-                    pCur.MoveToFirst ();
-                    do {
-                        if (GotIt) {
-                            Log.Warn (Log.LOG_SYS, "Contact has more than one name");
-                        } else {
-                            var displayName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.DisplayName);
+                    if (pCur.MoveToFirst ()) {
+                        do {
+                            if (GotIt) {
+                                Log.Warn (Log.LOG_SYS, "Contact has more than one name");
+                            } else {
+                                displayName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.DisplayName);
 
-                            Contact.FirstName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.GivenName);
-                            Contact.LastName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.FamilyName);
-                            Contact.MiddleName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.MiddleName);
-                            Contact.NickName = GetField (pCur, ContactsContract.CommonDataKinds.Nickname.Name);
-                            Contact.YomiFirstName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.PhoneticGivenName);
-                            Contact.YomiLastName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.PhoneticFamilyName);
-                            Contact.Title = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.Prefix);
-                            Contact.Suffix = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.Suffix);
-
-                            Contact.CompanyName = GetField (pCur, ContactsContract.CommonDataKinds.Organization.Company);
-                            Contact.YomiCompanyName = GetField (pCur, ContactsContract.CommonDataKinds.Organization.PhoneticName);
-                            Contact.JobTitle = GetField (pCur, ContactsContract.CommonDataKinds.Organization.Title);
-                            Contact.Department = GetField (pCur, ContactsContract.CommonDataKinds.Organization.Department);
-                            Log.Info (Log.LOG_SYS, "Contact/{3}: {0}:{1}:{2}", Contact.FirstName, Contact.MiddleName, Contact.LastName, displayName);
-                            GotIt = true;
-                        }
-                    } while (pCur.MoveToNext ());
+                                Contact.FirstName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.GivenName);
+                                Contact.LastName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.FamilyName);
+                                Contact.MiddleName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.MiddleName);
+                                Contact.YomiFirstName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.PhoneticGivenName);
+                                Contact.YomiLastName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.PhoneticFamilyName);
+                                Contact.Title = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.Prefix);
+                                Contact.Suffix = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.Suffix);
+                                GotIt = true;
+                            }
+                        } while (pCur.MoveToNext ());
+                    }
                     pCur.Close ();
                     if (!GotIt) {
                         Log.Error (Log.LOG_SYS, "No name found for contact");
                     }
                 }
+                {
+                    // nickname
+                    var pCur = cr.Query (ContactsContract.Data.ContentUri,
+                                   null, // FIXME Add projection for speed
+                                   ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.Nickname.InterfaceConsts.ContactId + " = ?",
+                                   new String[] { ContactsContract.CommonDataKinds.Nickname.ContentItemType, Contact.ServerId },
+                                   null);
+                    var GotIt = false;
+                    if (pCur.MoveToFirst ()) {
+                        do {
+                            if (GotIt) {
+                                Log.Warn (Log.LOG_SYS, "Contact has more than one nickname");
+                            } else {
+                                Contact.NickName = GetField (pCur, ContactsContract.CommonDataKinds.Nickname.Name);
+                            }
+                        } while (pCur.MoveToNext ());
+                    }
+                    pCur.Close ();
+                }
+                Log.Info (Log.LOG_SYS, "NcContact({0}): display={1} first={2} middle={3} last={4} (nick={5})", Contact.ServerId, displayName, Contact.FirstName, Contact.MiddleName, Contact.LastName, Contact.NickName);
+                {
+                    // company stuff
+                    var pCur = cr.Query (ContactsContract.Data.ContentUri,
+                                   null, // FIXME Add projection for speed
+                                   ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.Organization.InterfaceConsts.ContactId + " = ?",
+                                   new String[] { ContactsContract.CommonDataKinds.Organization.ContentItemType, Contact.ServerId },
+                                   null);
+                    var GotIt = false;
+                    if (pCur.MoveToFirst ()) {
+                        do {
+                            if (GotIt) {
+                                Log.Warn (Log.LOG_SYS, "Contact has more than one nickname");
+                            } else {
+                                Contact.CompanyName = GetField (pCur, ContactsContract.CommonDataKinds.Organization.Company);
+                                Contact.YomiCompanyName = GetField (pCur, ContactsContract.CommonDataKinds.Organization.PhoneticName);
+                                Contact.JobTitle = GetField (pCur, ContactsContract.CommonDataKinds.Organization.Title);
+                                Contact.Department = GetField (pCur, ContactsContract.CommonDataKinds.Organization.Department);
+                                GotIt = true;
+                            }
+                        } while (pCur.MoveToNext ());
+                    }
+                    pCur.Close ();
+                }
+                Log.Info (Log.LOG_SYS, "NcContact({0}): company={1} dept={2} title={3}", Contact.ServerId, Contact.CompanyName, Contact.Department, Contact.JobTitle);
 
                 {
                     // Birthday (Not sure how to get this yet. All java examples use Event.TYPE_BIRTHDAY, but that doesn't seem to exist in C#
@@ -220,6 +262,7 @@ namespace NachoPlatform
                             attr.City = GetField (pCur, ContactsContract.CommonDataKinds.StructuredPostal.City);
                             attr.Country = GetField (pCur, ContactsContract.CommonDataKinds.StructuredPostal.Country);
                             attr.State = GetField (pCur, ContactsContract.CommonDataKinds.StructuredPostal.Region);
+                            Log.Info (Log.LOG_SYS, "NcContact({0}): street={1} city={2} state={3} zip={4} country={5}", Contact.ServerId, attr.Street, attr.City, attr.State, attr.PostalCode, attr.Country);
                             Contact.AddAddressAttribute (Account.Id, addrType, label, attr);
                         } while (pCur.MoveToNext ());
                     }
@@ -248,10 +291,15 @@ namespace NachoPlatform
                             } else if (phoneType.ToLowerInvariant () == "work") {
                                 name = "BusinessPhoneNumber";
                                 label = "Work";
+                            } else if (phoneType.ToLowerInvariant () == "mobile") {
+                                name = "MobilePhoneNumber";
+                                label = null;
                             } else {
+                                // assume mobile
                                 name = "MobilePhoneNumber";
                                 label = null;
                             }
+                            Log.Info (Log.LOG_SYS, "NcContact({0}): phoneType={1} phoneLabel={2} phoneNo={3}", Contact.ServerId, name, label, phoneNo);
                             Contact.AddPhoneNumberAttribute (Account.Id, name, label, phoneNo);
                         } while (pCur.MoveToNext ());
                     }
@@ -264,16 +312,15 @@ namespace NachoPlatform
                                    null, 
                                    ContactsContract.CommonDataKinds.Email.InterfaceConsts.ContactId + " = ?",
                                    new String[]{ Contact.ServerId }, null);
-                    var i = 0;
                     if (pCur.MoveToFirst ()) {
                         do {
                             String email = GetField (pCur, ContactsContract.CommonDataKinds.Email.Address);
                             EmailDataKind type = (EmailDataKind)GetFieldInt (pCur, ContactsContract.CommonDataKinds.Email.InterfaceConsts.Type);
                             String label = GetField (pCur, ContactsContract.CommonDataKinds.Email.InterfaceConsts.Label);
                             string emailType = ContactsContract.CommonDataKinds.Email.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, label);
-                            Log.Info (Log.LOG_SYS, "Email type: {0}:{1}:{2}", emailType, label, type);
-                            Contact.AddEmailAddressAttribute (Account.Id, string.Format ("Email{0}Address", i), emailType, email); // FIXME what are name and label?
-                            i++;
+                            var name = string.Format ("EmailAddress{0}", emailType);
+                            Log.Info (Log.LOG_SYS, "NcContact({0}): emailType={1} emailLabel={2} email={3} ({4} {5})", Contact.ServerId, name, emailType, email, type, label);
+                            Contact.AddEmailAddressAttribute (Account.Id, name, emailType, email); // FIXME what are name and label?
                         } while (pCur.MoveToNext ());
                     }
                     pCur.Close ();
@@ -292,8 +339,8 @@ namespace NachoPlatform
                             if (GotIt) {
                                 Log.Warn (Log.LOG_SYS, "More than one note");
                             } else {
-                                var note = GetField (pCur, ContactsContract.CommonDataKinds.Note.NoteColumnId);
-                                if (!string.IsNullOrEmpty (note)) {
+                                var note = GetFieldByte (pCur, ContactsContract.CommonDataKinds.Note.NoteColumnId);
+                                if (note.Length > 0) {
                                     McBody body = null;
                                     if (0 != Contact.BodyId) {
                                         body = McBody.QueryById<McBody> (Contact.BodyId);
@@ -303,6 +350,7 @@ namespace NachoPlatform
                                     } else {
                                         body.UpdateData (note);
                                     }
+                                    Log.Info (Log.LOG_SYS, "NcContact({0}): bodyId={1} note={2}", Contact.ServerId, body.Id, note);
                                     Contact.BodyId = body.Id;
                                 }
                             }
@@ -340,6 +388,7 @@ namespace NachoPlatform
                                         } else {
                                             portrait.UpdateData (ms.ToArray ());
                                         }
+                                        Log.Info (Log.LOG_SYS, "NcContact({0}): portraitId={1} datalen={2}", Contact.ServerId, portrait.Id, ms.Length);
                                         Contact.PortraitId = portrait.Id;
                                     }
                                 }

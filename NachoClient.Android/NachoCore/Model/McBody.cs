@@ -28,6 +28,20 @@ namespace NachoCore.Model
         }
 
         /// <summary>
+        /// Create a new McBody with the given byte array as the contents
+        /// </summary>
+        /// <returns>A new McBody object that has been added to the database</returns>
+        public static McBody InsertFile (int accountId, McAbstrFileDesc.BodyTypeEnum bodyType, byte[] content)
+        {
+            var body = new McBody () {
+                AccountId = accountId,
+                BodyType = bodyType,
+            };
+            body.CompleteInsertFile (content);
+            return body;
+        }
+
+        /// <summary>
         /// Create a new McBody. The contents are filled in by passing a FileStream for the McBody's file to a delegate.
         /// </summary>
         /// <returns>A new McBody object that has been added to the database</returns>
