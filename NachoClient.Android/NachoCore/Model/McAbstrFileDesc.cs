@@ -148,16 +148,6 @@ namespace NachoCore.Model
             UpdateSaveFinish ();
         }
 
-        protected void CompleteInsertFile (Stream inStream)
-        {
-            Prep ();
-            using (var stream = File.OpenWrite (GetFilePath ())) {
-                inStream.CopyTo (stream);
-            }
-            UpdateSaveFinish ();
-        }
-
-
         protected void CompleteInsertDuplicate (McAbstrFileDesc srcDesc)
         {
             Prep ();
