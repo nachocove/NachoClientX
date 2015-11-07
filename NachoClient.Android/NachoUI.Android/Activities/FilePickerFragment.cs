@@ -50,22 +50,43 @@ namespace NachoClient.AndroidClient
         {
             var adapter = FileListView.Adapter as FilePickerAdapter;
             var file = adapter [e.Position];
-            var attachment = McAttachment.QueryById<McAttachment> (file.Id);
-            if (attachment != null) {
-                if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                    if (Delegate != null) {
-                        Delegate.FilePickerDidPickFile (this, attachment);
+            if (file.FileType == 0) {
+                var attachment = McAttachment.QueryById<McAttachment> (file.Id);
+                if (attachment != null) {
+                    if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                        if (Delegate != null) {
+                            Delegate.FilePickerDidPickFile (this, attachment);
+                        }
+                    } else {
+                        var downloader = new AttachmentDownloader ();
+                        downloader.Delegate = this;
+                        downloader.DownloadContext = e.View;
+                        var downloadView = e.View.FindViewById (Resource.Id.file_download);
+                        var downloadIndicator = e.View.FindViewById (Resource.Id.file_download_indicator);
+                        downloadView.Visibility = ViewStates.Gone;
+                        downloadIndicator.Visibility = ViewStates.Visible;
+                        downloader.Download (attachment);
                     }
-                } else {
-                    var downloader = new AttachmentDownloader ();
-                    downloader.Delegate = this;
-                    downloader.DownloadContext = e.View;
-                    var downloadView = e.View.FindViewById (Resource.Id.file_download);
-                    var downloadIndicator = e.View.FindViewById (Resource.Id.file_download_indicator);
-                    downloadView.Visibility = ViewStates.Gone;
-                    downloadIndicator.Visibility = ViewStates.Visible;
-                    downloader.Download (attachment);
                 }
+            } else if (file.FileType == 1) {
+                var note = McNote.QueryById<McNote> (file.Id);
+                var attachment = McAttachment.InsertFile (NcApplication.Instance.Account.Id, ((FileStream stream) => {
+                    using (var noteStream = new MemoryStream ()) {
+                        using (var noteWriter = new StreamWriter (noteStream)) {
+                            noteWriter.Write (note.noteContent);
+                            noteWriter.Flush ();
+                            noteStream.Position = 0;
+                            noteStream.CopyTo (stream);
+                        }
+                    }
+                }));
+                attachment.SetDisplayName (note.DisplayName + ".txt");
+                attachment.UpdateSaveFinish ();
+                if (Delegate != null) {
+                    Delegate.FilePickerDidPickFile (this, attachment);
+                }
+            } else {
+                NcAlertView.ShowMessage (Activity, "Cannot Attach", "Sorry, we cannot attach this item.");
             }
         }
 
@@ -116,7 +137,7 @@ namespace NachoClient.AndroidClient
 
         public override long GetItemId (int position)
         {
-            return Files [position].Id;
+            return position;
         }
 
         public override View GetView (int position, View convertView, ViewGroup parent)
@@ -126,16 +147,17 @@ namespace NachoClient.AndroidClient
                 view = Parent.Activity.LayoutInflater.Inflate (Resource.Layout.FileItemView, null);
             }
             var file = Files [position];
+            var iconView = view.FindViewById<ImageView> (Resource.Id.file_icon);
+            var downloadView = view.FindViewById<ImageView> (Resource.Id.file_download);
+            var nameLabel = view.FindViewById<TextView> (Resource.Id.file_name);
+            var infoLabel = view.FindViewById<TextView> (Resource.Id.file_info);
+            var dateLabel = view.FindViewById<TextView> (Resource.Id.file_date);
+            var downloadIndicator = view.FindViewById<ProgressBar> (Resource.Id.file_download_indicator);
+            bool populated = false;
             if (file.FileType == 0) {
                 var attachment = McAttachment.QueryById<McAttachment> (file.Id);
-                var iconView = view.FindViewById<ImageView> (Resource.Id.file_icon);
-                var downloadView = view.FindViewById<ImageView> (Resource.Id.file_download);
-                var nameLabel = view.FindViewById<TextView> (Resource.Id.file_name);
-                var infoLabel = view.FindViewById<TextView> (Resource.Id.file_info);
-                var dateLabel = view.FindViewById<TextView> (Resource.Id.file_date);
-                var downloadIndicator = view.FindViewById<ProgressBar> (Resource.Id.file_download_indicator);
-
                 if (attachment != null) {
+                    populated = true;
                     var extension = Pretty.GetExtension (attachment.DisplayName);
                     nameLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
                     infoLabel.Text = DetailTextForAttachment (attachment);
@@ -148,6 +170,28 @@ namespace NachoClient.AndroidClient
                         downloadView.Visibility = ViewStates.Visible;
                     }
                 }
+            } else if (file.FileType == 1) {
+                var note = McNote.QueryById<McNote> (file.Id);
+                if (note != null) {
+                    populated = true;
+                    nameLabel.Text = Path.GetFileNameWithoutExtension (note.DisplayName);
+                    infoLabel.Text = "Note";
+                    iconView.SetImageResource (Resource.Drawable.email_att_files);
+                    dateLabel.Text = DateToString (note.CreatedAt);
+                    downloadIndicator.Visibility = ViewStates.Gone;
+                    downloadView.Visibility = ViewStates.Gone;
+                }
+            }
+
+            if (!populated) {
+                nameLabel.Text = "";
+                infoLabel.Text = "This file is unavailable";
+                dateLabel.Text = "";
+                iconView.Visibility = ViewStates.Invisible;
+                downloadView.Visibility = ViewStates.Gone;
+                downloadIndicator.Visibility = ViewStates.Gone;
+            } else {
+                iconView.Visibility = ViewStates.Visible;
             }
 
             return view;
