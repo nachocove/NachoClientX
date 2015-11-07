@@ -32,6 +32,9 @@ namespace NachoClient.AndroidClient
 
         public FilePickerFragmentDelegate Delegate;
         ListView FileListView;
+        TextView SortSegmentByName;
+        TextView SortSegmentByDate;
+        TextView SortSegmentByContact;
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
         {
@@ -41,9 +44,63 @@ namespace NachoClient.AndroidClient
             FileListView = view.FindViewById<ListView> (Resource.Id.file_picker_list);
             FileListView.Adapter = new FilePickerAdapter (this);
             FileListView.ItemClick += FileClicked;
+            SortSegmentByName = view.FindViewById<TextView> (Resource.Id.file_picker_by_name);
+            SortSegmentByDate = view.FindViewById<TextView> (Resource.Id.file_picker_by_date);
+            SortSegmentByContact = view.FindViewById<TextView> (Resource.Id.file_picker_by_sender);
+            SortSegmentByName.Click += ClickNameSegment;
+            SortSegmentByDate.Click += ClickDateSegment;
+            SortSegmentByContact.Click += ClickContactSegment;
+            HighlightTab (SortSegmentByName);
             builder.SetTitle ("Pick a File");
             builder.SetView (view);
             return builder.Create ();
+        }
+
+        void ClickContactSegment (object sender, EventArgs e)
+        {
+            SelectTab (SortSegmentByContact);
+            var adapter = FileListView.Adapter as FilePickerAdapter;
+            adapter.SortByContat ();
+        }
+
+        void ClickDateSegment (object sender, EventArgs e)
+        {
+            SelectTab (SortSegmentByDate);
+            var adapter = FileListView.Adapter as FilePickerAdapter;
+            adapter.SortByDate ();
+        }
+
+        void ClickNameSegment (object sender, EventArgs e)
+        {
+            SelectTab (SortSegmentByName);
+            var adapter = FileListView.Adapter as FilePickerAdapter;
+            adapter.SortByName ();
+        }
+
+        private void SelectTab (TextView view)
+        {
+            HighlightTab (view);
+            if (view != SortSegmentByName) {
+                UnhighlightTab (SortSegmentByName);
+            }
+            if (view != SortSegmentByDate) {
+                UnhighlightTab (SortSegmentByDate);
+            }
+            if (view != SortSegmentByContact) {
+                UnhighlightTab (SortSegmentByContact);
+            }
+        }
+
+        private void HighlightTab (TextView view)
+        {
+            view.SetTextColor (Android.Graphics.Color.White);
+            view.SetBackgroundResource (Resource.Color.NachoGreen);
+        }
+
+        private void UnhighlightTab (TextView view)
+        {
+            view.SetTextColor (Resources.GetColor (Resource.Color.NachoGreen));
+            view.SetBackgroundResource (Resource.Drawable.BlackBorder);
         }
 
         void FileClicked (object sender, AdapterView.ItemClickEventArgs e)
@@ -116,11 +173,59 @@ namespace NachoClient.AndroidClient
 
         List<NcFileIndex> Files;
         Fragment Parent;
+        bool ShowContactHeaders;
 
         public FilePickerAdapter (Fragment parent) : base ()
         {
             Parent = parent;
             Files = McAbstrFileDesc.GetAllFiles (NcApplication.Instance.Account.Id);
+            SortByName ();
+        }
+
+        public void SortByName ()
+        {
+            ShowContactHeaders = false;
+            Files.Sort ((x, y) => {
+                if (x.DisplayName != null && y.DisplayName != null){
+                    return x.DisplayName.CompareTo (y.DisplayName);
+                }else if (x.DisplayName != null){
+                    return -1;
+                }else if (y.DisplayName != null){
+                    return 1;
+                }
+                return x.Id - y.Id;
+            });
+            NotifyDataSetChanged ();
+        }
+
+        public void SortByDate ()
+        {
+            ShowContactHeaders = false;
+            Files.Sort ((x, y) => {
+                return y.CreatedAt.CompareTo (x.CreatedAt);
+            });
+            NotifyDataSetChanged ();
+        }
+
+        public void SortByContat ()
+        {
+            ShowContactHeaders = true;
+            Files.Sort ((x, y) => {
+                if (x.Contact != null && y.Contact != null){
+                    var result = x.Contact.CompareTo (y.Contact);
+                    if (result == 0){
+                        return y.CreatedAt.CompareTo (x.CreatedAt);
+                    }else{
+                        return result;
+                    }
+                }else if (x.Contact != null){
+                    return -1;
+                }else if (y.Contact != null){
+                    return 1;
+                }
+                return x.Id - y.Id;
+            });
+            NotifyDataSetChanged ();
         }
 
         public override int Count {
@@ -192,6 +297,19 @@ namespace NachoClient.AndroidClient
                 downloadIndicator.Visibility = ViewStates.Gone;
             } else {
                 iconView.Visibility = ViewStates.Visible;
+            }
+
+            var header = view.FindViewById<LinearLayout> (Resource.Id.file_contact_header);
+            if (ShowContactHeaders && !String.IsNullOrEmpty(file.Contact)) {
+                if (position == 0 || !Files [position - 1].Contact.Equals (file.Contact)) {
+                    header.Visibility = ViewStates.Visible;
+                    var contactNameLabel = view.FindViewById<TextView> (Resource.Id.file_contact_name);
+                    contactNameLabel.Text = file.Contact;
+                } else {
+                    header.Visibility = ViewStates.Gone;
+                }
+            } else {
+                header.Visibility = ViewStates.Gone;
             }
 
             return view;
