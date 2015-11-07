@@ -47,7 +47,7 @@ namespace NachoPlatform
             var deviceAccount = McAccount.GetDeviceAccount ();
             var retval = new List<PlatformContactRecordAndroid> ();
             var cr = MainApplication.Instance.ContentResolver;
-            var projection = new string[] {
+            var projection = new [] {
                 ContactsContract.Contacts.InterfaceConsts.Id,
                 ContactsContract.Contacts.InterfaceConsts.ContactLastUpdatedTimestamp,
                 ContactsContract.Contacts.InterfaceConsts.HasPhoneNumber,
@@ -192,7 +192,7 @@ namespace NachoPlatform
                 var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri,
                                null, // FIXME Add projection for speed
                                ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.StructuredName.InterfaceConsts.ContactId + " = ?",
-                               new String[] { ContactsContract.CommonDataKinds.StructuredName.ContentItemType, Contact.ServerId },
+                               new [] { ContactsContract.CommonDataKinds.StructuredName.ContentItemType, Contact.ServerId },
                                ContactsContract.CommonDataKinds.StructuredName.GivenName);
                 bool GotIt = false;
                 if (pCur.MoveToFirst ()) {
@@ -222,7 +222,7 @@ namespace NachoPlatform
                 var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri,
                                null, // FIXME Add projection for speed
                                ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.Nickname.InterfaceConsts.ContactId + " = ?",
-                               new String[] { ContactsContract.CommonDataKinds.Nickname.ContentItemType, Contact.ServerId },
+                               new [] { ContactsContract.CommonDataKinds.Nickname.ContentItemType, Contact.ServerId },
                                null);
                 var GotIt = false;
                 if (pCur.MoveToFirst ()) {
@@ -242,7 +242,7 @@ namespace NachoPlatform
                 var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri,
                                null, // FIXME Add projection for speed
                                ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.Organization.InterfaceConsts.ContactId + " = ?",
-                               new String[] { ContactsContract.CommonDataKinds.Organization.ContentItemType, Contact.ServerId },
+                               new [] { ContactsContract.CommonDataKinds.Organization.ContentItemType, Contact.ServerId },
                                null);
                 var GotIt = false;
                 if (pCur.MoveToFirst ()) {
@@ -285,7 +285,7 @@ namespace NachoPlatform
                                null, // FIXME Add projection for speed
                                ContactsContract.CommonDataKinds.StructuredPostal.InterfaceConsts.ContactId + "=? AND " +
                                ContactsContract.CommonDataKinds.StructuredPostal.InterfaceConsts.Mimetype + "=?",
-                               new String[]{ Contact.ServerId, ContactsContract.CommonDataKinds.StructuredPostal.ContentItemType },
+                               new []{ Contact.ServerId, ContactsContract.CommonDataKinds.StructuredPostal.ContentItemType },
                                null);
                 if (pCur.MoveToFirst ()) {
                     do {
@@ -308,9 +308,9 @@ namespace NachoPlatform
             {
                 var pCur = MainApplication.Instance.ContentResolver.Query (
                                ContactsContract.CommonDataKinds.Phone.ContentUri,
-                               new String[]{ }, 
+                               null, 
                                ContactsContract.CommonDataKinds.Phone.InterfaceConsts.ContactId + " = ?",
-                               new String[]{ Contact.ServerId }, null);
+                               new []{ Contact.ServerId }, null);
                 if (pCur.MoveToFirst ()) {
                     do {
                         String phoneNo = GetField (pCur, ContactsContract.CommonDataKinds.Phone.Number);
@@ -345,7 +345,7 @@ namespace NachoPlatform
                                ContactsContract.CommonDataKinds.Email.ContentUri,
                                null, 
                                ContactsContract.CommonDataKinds.Email.InterfaceConsts.ContactId + " = ?",
-                               new String[]{ Contact.ServerId }, null);
+                               new []{ Contact.ServerId }, null);
                 if (pCur.MoveToFirst ()) {
                     do {
                         String email = GetField (pCur, ContactsContract.CommonDataKinds.Email.Address);
@@ -365,7 +365,7 @@ namespace NachoPlatform
                                null, // FIXME Add projection for speed
                                ContactsContract.CommonDataKinds.Note.InterfaceConsts.ContactId + "=? AND " +
                                ContactsContract.CommonDataKinds.Note.InterfaceConsts.Mimetype + "=?",
-                               new String[]{ Contact.ServerId, ContactsContract.CommonDataKinds.Note.ContentItemType },
+                               new []{ Contact.ServerId, ContactsContract.CommonDataKinds.Note.ContentItemType },
                                null);
                 bool GotIt = false;
                 if (pCur.MoveToFirst ()) {
@@ -395,9 +395,9 @@ namespace NachoPlatform
             protected void GetContactPhoto ()
             {
                 var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri, 
-                               new string[] { ContactsContract.Contacts.InterfaceConsts.PhotoThumbnailUri },
+                               new [] { ContactsContract.Contacts.InterfaceConsts.PhotoThumbnailUri },
                                ContactsContract.CommonDataKinds.Note.InterfaceConsts.ContactId + "=?",
-                               new String[]{ Contact.ServerId },
+                               new []{ Contact.ServerId },
                                null);
                 bool GotIt = false;
                 if (pCur.MoveToFirst ()) {
