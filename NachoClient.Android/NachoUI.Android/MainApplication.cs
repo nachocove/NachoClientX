@@ -9,6 +9,7 @@ using NachoCore.Utils;
 using System.Security.Cryptography.X509Certificates;
 using NachoPlatform;
 using Android.App.Backup;
+using Android.Content;
 
 namespace NachoClient.AndroidClient
 {
@@ -22,6 +23,7 @@ namespace NachoClient.AndroidClient
         public MainApplication (IntPtr javaReference, JniHandleOwnership transfer) : base (javaReference, transfer)
         {
             _instance = this;
+            LifecycleSpy.SharedInstance.Init (this);
             BackupManager = new BackupManager (this);
         }
 
@@ -35,6 +37,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate ();
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
+            StartService (new Intent (this, typeof(NotificationService)));
         }
 
         public static void Startup ()
