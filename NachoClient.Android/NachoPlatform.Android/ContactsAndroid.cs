@@ -149,11 +149,37 @@ namespace NachoPlatform
                 }
 
                 Contact.DeviceLastUpdate = _LastUpdate;
-                string displayName = null;
-                var cr = MainApplication.Instance.ContentResolver;
+
+                new FromAndroidContent (Contact).Populate ();
+
+                return NcResult.OK (Contact);
+            }
+
+            public class FromAndroidContent
+            {
+                McContact Contact;
+
+                public FromAndroidContent (McContact contact)
                 {
-                    // Name
-                    var pCur = cr.Query (ContactsContract.Data.ContentUri,
+                    Contact = contact;
+                }
+
+                public void Populate ()
+                {
+                    GetContactInfo ();
+                    GetContactNick ();
+                    GetContactAddress ();
+                    GetContactPhones ();
+                    GetContactEmails ();
+                    GetContactCompany ();
+                    GetContactBirthday ();
+                    GetContactNotes ();
+                    GetContactPhoto ();
+                }
+
+                protected void GetContactInfo ()
+                {
+                    var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri,
                                    null, // FIXME Add projection for speed
                                    ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.StructuredName.InterfaceConsts.ContactId + " = ?",
                                    new String[] { ContactsContract.CommonDataKinds.StructuredName.ContentItemType, Contact.ServerId },
@@ -164,8 +190,6 @@ namespace NachoPlatform
                             if (GotIt) {
                                 Log.Warn (Log.LOG_SYS, "Contact has more than one name");
                             } else {
-                                displayName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.DisplayName);
-
                                 Contact.FirstName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.GivenName);
                                 Contact.LastName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.FamilyName);
                                 Contact.MiddleName = GetField (pCur, ContactsContract.CommonDataKinds.StructuredName.MiddleName);
@@ -182,9 +206,10 @@ namespace NachoPlatform
                         Log.Error (Log.LOG_SYS, "No name found for contact");
                     }
                 }
+
+                protected void GetContactNick ()
                 {
-                    // nickname
-                    var pCur = cr.Query (ContactsContract.Data.ContentUri,
+                    var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri,
                                    null, // FIXME Add projection for speed
                                    ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.Nickname.InterfaceConsts.ContactId + " = ?",
                                    new String[] { ContactsContract.CommonDataKinds.Nickname.ContentItemType, Contact.ServerId },
@@ -201,10 +226,10 @@ namespace NachoPlatform
                     }
                     pCur.Close ();
                 }
-                Log.Info (Log.LOG_SYS, "NcContact({0}): display={1} first={2} middle={3} last={4} (nick={5})", Contact.ServerId, displayName, Contact.FirstName, Contact.MiddleName, Contact.LastName, Contact.NickName);
+
+                protected void GetContactCompany ()
                 {
-                    // company stuff
-                    var pCur = cr.Query (ContactsContract.Data.ContentUri,
+                    var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri,
                                    null, // FIXME Add projection for speed
                                    ContactsContract.Data.InterfaceConsts.Mimetype + " = ? AND " + ContactsContract.CommonDataKinds.Organization.InterfaceConsts.ContactId + " = ?",
                                    new String[] { ContactsContract.CommonDataKinds.Organization.ContentItemType, Contact.ServerId },
@@ -225,8 +250,8 @@ namespace NachoPlatform
                     }
                     pCur.Close ();
                 }
-                Log.Info (Log.LOG_SYS, "NcContact({0}): company={1} dept={2} title={3}", Contact.ServerId, Contact.CompanyName, Contact.Department, Contact.JobTitle);
 
+                protected void GetContactBirthday ()
                 {
                     // Birthday (Not sure how to get this yet. All java examples use Event.TYPE_BIRTHDAY, but that doesn't seem to exist in C#
 //                    Contact.Dates.RemoveAll ((x) => x.Name == "Birthday");
@@ -243,9 +268,10 @@ namespace NachoPlatform
 //                    }
 //                    pCur.Close ();
                 }
+
+                protected void GetContactAddress ()
                 {
-                    // Addresses
-                    var pCur = cr.Query (ContactsContract.Data.ContentUri, 
+                    var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri, 
                                    null, // FIXME Add projection for speed
                                    ContactsContract.CommonDataKinds.StructuredPostal.InterfaceConsts.ContactId + "=? AND " +
                                    ContactsContract.CommonDataKinds.StructuredPostal.InterfaceConsts.Mimetype + "=?",
@@ -262,16 +288,15 @@ namespace NachoPlatform
                             attr.City = GetField (pCur, ContactsContract.CommonDataKinds.StructuredPostal.City);
                             attr.Country = GetField (pCur, ContactsContract.CommonDataKinds.StructuredPostal.Country);
                             attr.State = GetField (pCur, ContactsContract.CommonDataKinds.StructuredPostal.Region);
-                            Log.Info (Log.LOG_SYS, "NcContact({0}): street={1} city={2} state={3} zip={4} country={5}", Contact.ServerId, attr.Street, attr.City, attr.State, attr.PostalCode, attr.Country);
-                            Contact.AddAddressAttribute (Account.Id, addrType, label, attr);
+                            Contact.AddAddressAttribute (Contact.AccountId, addrType, label, attr);
                         } while (pCur.MoveToNext ());
                     }
                     pCur.Close ();
                 }
 
+                protected void GetContactPhones ()
                 {
-                    // Phone numbers
-                    var pCur = cr.Query (
+                    var pCur = MainApplication.Instance.ContentResolver.Query (
                                    ContactsContract.CommonDataKinds.Phone.ContentUri,
                                    new String[]{ }, 
                                    ContactsContract.CommonDataKinds.Phone.InterfaceConsts.ContactId + " = ?",
@@ -284,7 +309,6 @@ namespace NachoPlatform
                             string phoneType = ContactsContract.CommonDataKinds.Phone.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, phLabel);
                             string name;
                             string label;
-                            Log.Info (Log.LOG_SYS, "Phone type: {0}:{1}:{2}", phoneType, phLabel, type);
                             if (phoneType.ToLowerInvariant () == "home") {
                                 name = "HomePhoneNumber";
                                 label = "Home";
@@ -299,15 +323,15 @@ namespace NachoPlatform
                                 name = "MobilePhoneNumber";
                                 label = null;
                             }
-                            Log.Info (Log.LOG_SYS, "NcContact({0}): phoneType={1} phoneLabel={2} phoneNo={3}", Contact.ServerId, name, label, phoneNo);
-                            Contact.AddPhoneNumberAttribute (Account.Id, name, label, phoneNo);
+                            Contact.AddPhoneNumberAttribute (Contact.AccountId, name, label, phoneNo);
                         } while (pCur.MoveToNext ());
                     }
                     pCur.Close ();
                 }
+
+                protected void GetContactEmails ()
                 {
-                    // Emails
-                    var pCur = cr.Query (
+                    var pCur = MainApplication.Instance.ContentResolver.Query (
                                    ContactsContract.CommonDataKinds.Email.ContentUri,
                                    null, 
                                    ContactsContract.CommonDataKinds.Email.InterfaceConsts.ContactId + " = ?",
@@ -319,15 +343,15 @@ namespace NachoPlatform
                             String label = GetField (pCur, ContactsContract.CommonDataKinds.Email.InterfaceConsts.Label);
                             string emailType = ContactsContract.CommonDataKinds.Email.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, label);
                             var name = string.Format ("EmailAddress{0}", emailType);
-                            Log.Info (Log.LOG_SYS, "NcContact({0}): emailType={1} emailLabel={2} email={3} ({4} {5})", Contact.ServerId, name, emailType, email, type, label);
-                            Contact.AddEmailAddressAttribute (Account.Id, name, emailType, email); // FIXME what are name and label?
+                            Contact.AddEmailAddressAttribute (Contact.AccountId, name, emailType, email); // FIXME what are name and label?
                         } while (pCur.MoveToNext ());
                     }
                     pCur.Close ();
                 }
+
+                protected void GetContactNotes ()
                 {
-                    // Notes
-                    var pCur = cr.Query (ContactsContract.Data.ContentUri, 
+                    var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri, 
                                    null, // FIXME Add projection for speed
                                    ContactsContract.CommonDataKinds.Note.InterfaceConsts.ContactId + "=? AND " +
                                    ContactsContract.CommonDataKinds.Note.InterfaceConsts.Mimetype + "=?",
@@ -346,11 +370,10 @@ namespace NachoPlatform
                                         body = McBody.QueryById<McBody> (Contact.BodyId);
                                     }
                                     if (null == body) {
-                                        body = McBody.InsertFile (Account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, note);
+                                        body = McBody.InsertFile (Contact.AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, note);
                                     } else {
                                         body.UpdateData (note);
                                     }
-                                    Log.Info (Log.LOG_SYS, "NcContact({0}): bodyId={1} note={2}", Contact.ServerId, body.Id, note);
                                     Contact.BodyId = body.Id;
                                 }
                             }
@@ -358,9 +381,10 @@ namespace NachoPlatform
                     }
                     pCur.Close ();
                 }
+
+                protected void GetContactPhoto ()
                 {
-                    // Photo
-                    var pCur = cr.Query (ContactsContract.Data.ContentUri, 
+                    var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri, 
                                    new string[] { ContactsContract.Contacts.InterfaceConsts.PhotoThumbnailUri },
                                    ContactsContract.CommonDataKinds.Note.InterfaceConsts.ContactId + "=?",
                                    new String[]{ Contact.ServerId },
@@ -384,11 +408,10 @@ namespace NachoPlatform
                                             portrait = McPortrait.QueryById<McPortrait> (Contact.PortraitId);
                                         }
                                         if (null == portrait) {
-                                            portrait = McPortrait.InsertFile (Account.Id, ms.ToArray ());
+                                            portrait = McPortrait.InsertFile (Contact.AccountId, ms.ToArray ());
                                         } else {
                                             portrait.UpdateData (ms.ToArray ());
                                         }
-                                        Log.Info (Log.LOG_SYS, "NcContact({0}): portraitId={1} datalen={2}", Contact.ServerId, portrait.Id, ms.Length);
                                         Contact.PortraitId = portrait.Id;
                                     }
                                 }
@@ -397,7 +420,6 @@ namespace NachoPlatform
                     }
                     pCur.Close ();
                 }
-                return NcResult.OK (Contact);
             }
         }
     }
