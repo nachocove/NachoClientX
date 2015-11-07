@@ -104,7 +104,7 @@ namespace NachoCore.ActiveSync
         private Uri ServerUri;
         private string RedactedServerUri;
         private bool ServerUriBeingTested;
-        private Stream ContentData;
+        private byte[] ContentData;
         private string ContentType;
         private uint ConsecThrottlePriorDelaySecs;
         private bool ExtraRetry451Consumed;
@@ -554,7 +554,7 @@ namespace NachoCore.ActiveSync
                     }
                     ContentType = (null == contentType || null == contentType.MediaType) ? null : contentType.MediaType.ToLower ();
                     try {
-                        ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
+                        ContentData = await response.Content.ReadAsByteArrayAsync ().ConfigureAwait (false);
                     } catch (Exception ex) {
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
                         CancelTimeoutTimer ("Exception creating ContentData");
@@ -619,7 +619,7 @@ namespace NachoCore.ActiveSync
                 // There is a chance that the non-OK status comes with an HTML explaination.
                 // If so, then dump it.
                 // TODO: find some way to make cancellation token work here.
-                var possibleMessage = new StreamReader (ContentData, Encoding.UTF8).ReadToEnd ();
+                var possibleMessage = Encoding.UTF8.GetString (ContentData);
                 Log.Info (Log.LOG_HTTP, "HTML response: {0}", possibleMessage);
             }
             Event preProcessEvent = Owner.PreProcessResponse (this, response);
@@ -761,7 +761,7 @@ namespace NachoCore.ActiveSync
                         NcAssert.True (false, "ContentTypeWbxmlMultipart unimplemented.");
                         return null;
                     case ContentTypeXml:
-                        responseDoc = XDocument.Load (ContentData);
+                        responseDoc = XDocument.Parse (Encoding.UTF8.GetString (ContentData));
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));
                     default:
@@ -772,7 +772,7 @@ namespace NachoCore.ActiveSync
                         }
                         // Just *try* to see if it will parse as XML. Could be poorly configured auto-d.
                         try {
-                            responseDoc = XDocument.Load (ContentData);
+                            responseDoc = XDocument.Parse (Encoding.UTF8.GetString (ContentData));
                         } catch {
                         }
                         if (null == responseDoc) {
