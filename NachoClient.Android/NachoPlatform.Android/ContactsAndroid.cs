@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore.Utils;
 using Android.Provider;
-using Android.Widget;
 using NachoClient.AndroidClient;
 using Android.Content;
 using NachoPlatform;
