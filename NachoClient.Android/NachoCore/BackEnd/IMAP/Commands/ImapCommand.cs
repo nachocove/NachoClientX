@@ -128,7 +128,7 @@ namespace NachoCore.IMAP
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_IMAP, "AuthenticationException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                if (BEContext.Cred.Epoch == SavedCredEpoch) {
+                if (!HasPasswordChanged ()) {
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
                 } else {
                     // credential was updated while we were running the command. Just try again.
@@ -137,7 +137,7 @@ namespace NachoCore.IMAP
             } catch (ServiceNotAuthenticatedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                if (BEContext.Cred.Epoch == SavedCredEpoch) {
+                if (!HasPasswordChanged ()) {
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
                 } else {
                     // credential was updated while we were running the command. Just try again.
