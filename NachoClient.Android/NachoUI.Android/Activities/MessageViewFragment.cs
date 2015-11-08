@@ -211,11 +211,6 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void DoneWithMessage ()
-        {
-            ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
-        }
-
         void SaveButton_Click (object sender, EventArgs e)
         {
             Log.Info (Log.LOG_UI, "SaveButton_Click");
@@ -233,14 +228,14 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "ArchiveButton_Click");
             NcEmailArchiver.Archive (message);
-            DoneWithMessage ();
+            ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
         }
 
         void DeleteButton_Click (object sender, EventArgs e)
         {
             Log.Info (Log.LOG_UI, "DeleteButton_Click");
             NcEmailArchiver.Delete (message);
-            DoneWithMessage ();
+            ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
         }
 
         void ForwardButton_Click (object sender, EventArgs e)
@@ -285,7 +280,7 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "OnFolderSelected: {0}", message);
             NcEmailArchiver.Move (message, folder);
-            DoneWithMessage ();
+            ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
         }
 
     }
