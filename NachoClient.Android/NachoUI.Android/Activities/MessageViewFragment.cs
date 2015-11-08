@@ -17,6 +17,7 @@ using NachoCore.Utils;
 
 using MimeKit;
 using Android.Content.PM;
+using NachoCore.Brain;
 
 namespace NachoClient.AndroidClient
 {
@@ -96,6 +97,8 @@ namespace NachoClient.AndroidClient
 
             thread = ((IMessageViewFragmentOwner)Activity).ThreadToView;
             message = ((IMessageViewFragmentOwner)Activity).MessageToView;
+
+            NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
 
             var inflater = Activity.LayoutInflater;
             var attachments = McAttachment.QueryByItem (message);
