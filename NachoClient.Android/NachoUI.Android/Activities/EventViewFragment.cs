@@ -60,6 +60,10 @@ namespace NachoClient.AndroidClient
                     // The event was edited. Refresh the UI.
                     detail.HasBeenEdited = true;
                     BindEventView ();
+                } else if (EventEditActivity.DELETE_EVENT_RESULT_CODE == resultCode) {
+                    // The event was deleted.  Close the event detail view.
+                    this.Activity.SetResult (Result.Ok);
+                    this.Activity.Finish ();
                 }
                 break;
 
