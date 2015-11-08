@@ -23,6 +23,8 @@ namespace NachoClient.AndroidClient
     [Activity (Label = "EventEditActivity")]            
     public class EventEditActivity : NcActivity
     {
+        public const Result DELETE_EVENT_RESULT_CODE = Result.FirstUser;
+
         private const string EXTRA_EVENT_TO_EDIT = "com.nachocove.nachomail.EXTRA_EVENT_TO_EDIT";
         private const string EXTRA_MESSAGE_FOR_MEETING = "com.nachocove.nachomail.EXTRA_MESSAGE_FOR_MEETING";
         private const string EXTRA_START_DATE = "com.nachocove.nachomail.EXTRA_START_DATE";
@@ -44,6 +46,7 @@ namespace NachoClient.AndroidClient
         private TextView attendeeCountField;
         private TextView reminderField;
         private TextView calendarField;
+        private View deleteButton;
 
         private DateTime startTime;
         private DateTime endTime;
@@ -69,6 +72,7 @@ namespace NachoClient.AndroidClient
             attendeeCountField = FindViewById<TextView> (Resource.Id.event_edit_attendee_count);
             reminderField = FindViewById<TextView> (Resource.Id.event_edit_reminder);
             calendarField = FindViewById<TextView> (Resource.Id.event_edit_calendar);
+            deleteButton = FindViewById<View> (Resource.Id.event_delete_button);
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
 
@@ -124,6 +128,10 @@ namespace NachoClient.AndroidClient
                         break;
                     }
                 }
+
+                deleteButton.Visibility = ViewStates.Gone;
+                FindViewById<View> (Resource.Id.event_delete_button_filler).Visibility = ViewStates.Gone;
+
             } else {
                 NcAssert.True (Intent.ActionEdit == Intent.Action, "The intent for EventEditActivity must have an action of Edit or CreateDocument.");
                 NcAssert.True (Intent.HasExtra (EXTRA_EVENT_TO_EDIT), "When EventEditActivity is called with an Edit action, the event to edit must be specified.");
@@ -169,6 +177,8 @@ namespace NachoClient.AndroidClient
                     descriptionField.Text = cal.Description;
                 }
                 calendarFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
+
+                deleteButton.Click += DeleteButton_Click;
             }
 
             allDayField.CheckedChange += AllDayField_CheckedChange;
@@ -348,6 +358,16 @@ namespace NachoClient.AndroidClient
             return result;
         }
 
+        private void DeleteEvent ()
+        {
+            if (0 != cal.attendees.Count) {
+                var iCalCancelPart = CalendarHelper.MimeCancelFromCalendar (cal);
+                var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
+                CalendarHelper.SendMeetingCancelations (account, cal, null, mimeBody);
+            }
+            BackEnd.Instance.DeleteCalCmd (account.Id, cal.Id);
+        }
+
         private void SaveButton_Click (object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty (FindViewById<EditText> (Resource.Id.event_edit_title).Text)) {
@@ -447,6 +467,22 @@ namespace NachoClient.AndroidClient
                 }
                 calendarFolder = chosenFolder;
                 calendarField.Text = chosenFolder.DisplayName;
+            });
+        }
+
+        private void DeleteButton_Click (object sender, EventArgs e)
+        {
+            string message;
+            if (0 == cal.attendees.Count) {
+                message = "Delete this event?";
+            } else {
+                message = "Cancel this meeting and notify the attendees?";
+            }
+            NcAlertView.Show (this, "Delete Event", message, () => {
+                DeleteEvent ();
+                SetResult (DELETE_EVENT_RESULT_CODE);
+                Finish ();
+            }, () => {
             });
         }
     }

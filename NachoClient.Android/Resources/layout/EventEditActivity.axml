@@ -210,6 +210,22 @@
                     android:layout_gravity="center_vertical"
                     android:src="@drawable/gen_more_arrow" />
             </LinearLayout>
+            <View
+                android:id="@+id/event_delete_button_filler"
+                android:layout_width="match_parent"
+                android:layout_height="20dp" />
+            <TextView
+                android:id="@+id/event_delete_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="4dp"
+                android:background="@android:color/white"
+                android:textColor="@android:color/holo_red_dark"
+                android:text="Delete event" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="20dp" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>
