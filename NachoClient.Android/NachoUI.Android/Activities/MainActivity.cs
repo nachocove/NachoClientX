@@ -44,7 +44,7 @@ namespace NachoClient.AndroidClient
             SetupHockeyAppUpdateManager ();
             CopyAssetsToDocuments ();
 
-            MainApplication.Startup ();
+            MainApplication.OneTimeStartup ();
 
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.Main);
@@ -56,14 +56,6 @@ namespace NachoClient.AndroidClient
         protected override void OnStart ()
         {
             base.OnStart ();
-
-            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: StartBasalServices");
-            NcApplication.Instance.StartBasalServices ();
-
-            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: AppStartupTasks");
-            NcApplication.Instance.AppStartupTasks ();
-
-            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: OnStart finished");
         }
 
         protected override void OnResume ()

@@ -18,6 +18,7 @@ namespace NachoClient.AndroidClient
     {
         static MainApplication _instance;
         static bool checkForUpdates = true;
+        static bool startupCalled = false;
         public BackupManager BackupManager;
 
         public MainApplication (IntPtr javaReference, JniHandleOwnership transfer) : base (javaReference, transfer)
@@ -36,12 +37,28 @@ namespace NachoClient.AndroidClient
         public override void OnCreate ()
         {
             base.OnCreate ();
-            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
-            StartService (new Intent (this, typeof(NotificationService)));
         }
 
-        public static void Startup ()
+        // Start everthing after we have some UI
+        public static void OneTimeStartup ()
         {
+
+            if (startupCalled) {
+                return;
+            }
+            startupCalled = true;
+
+            // This creates the NcApplication object
+            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
+
+            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: StartBasalServices");
+            NcApplication.Instance.StartBasalServices ();
+
+            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: AppStartupTasks");
+            NcApplication.Instance.AppStartupTasks ();
+
+            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: OnStart finished");
+
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
         }
 
