@@ -30,6 +30,13 @@ namespace NachoClient.AndroidClient
             fragment.Attendees = AttendeesFromIntent (Intent);
         }
 
+        public override void OnBackPressed ()
+        {
+            var fragment = FragmentManager.FindFragmentById<AttendeeListEditFragment> (Resource.Id.attendee_edit_fragment);
+            SetResult (Result.Ok, ResultIntent (fragment.Attendees));
+            Finish ();
+        }
+
         public static Intent AttendeeEditIntent (Context context, int accountId, IList<McAttendee> attendees)
         {
             return AttendeesIntent (context, typeof(AttendeeEditActivity), Intent.ActionEdit, accountId, attendees);
