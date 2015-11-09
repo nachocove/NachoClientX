@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 using Android.App;
 using Android.Content;
@@ -13,6 +14,7 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using Android.Provider;
 
 using NachoCore.Model;
 
@@ -28,6 +30,8 @@ namespace NachoClient.AndroidClient
                 
         GridView OptionsGridView;
         List<AttachmentOption> Options;
+        static int SELECT_PHOTO = 1;
+        public McAccount Account;
 
         public AttachmentPickerFragmentDelegate Delegate;
 
@@ -54,8 +58,49 @@ namespace NachoClient.AndroidClient
             base.OnAttach (activity);
         }
 
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            if (requestCode == SELECT_PHOTO) {
+                if (resultCode == Result.Ok && data != null) {
+                    if (Delegate != null) {
+                        var uri = data.Data;
+                        string docId = null;
+                        var cursor = Activity.ContentResolver.Query (uri, null, null, null, null);
+                        cursor.MoveToFirst ();
+                        docId = cursor.GetString (0);
+                        docId = docId.Split (':') [1];
+                        cursor.Close ();
+
+                        var selection = MediaStore.Images.Media.InterfaceConsts.Id + "=?";
+                        cursor = Activity.ContentResolver.Query (MediaStore.Images.Media.ExternalContentUri, null, selection, new string[] { docId }, null);
+                        var index = cursor.GetColumnIndexOrThrow (MediaStore.Images.Media.InterfaceConsts.Data);
+                        cursor.MoveToFirst ();
+                        var path = cursor.GetString (index);
+                        if (path != null) {
+                            var attachment = McAttachment.InsertSaveStart (Account.Id);
+                            var filename = Path.GetFileName (path);
+                            attachment.SetDisplayName (filename);
+                            attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
+                            attachment.UpdateFileCopy (path);
+                            Delegate.AttachmentPickerDidPickAttachment (this, attachment);
+                            Dismiss ();
+                        } else {
+                            NcAlertView.ShowMessage (Activity, "Can't Attach Image", "Sorry, we can't attach that image.");
+                        }
+                        cursor.Close ();
+                    }
+                }
+            } else {
+                base.OnActivityResult (requestCode, resultCode, data);
+            }
+        }
+
         void AddPhoto ()
         {
+            var intent = new Intent ();
+            intent.SetType ("image/*");
+            intent.SetAction (Intent.ActionGetContent);
+            StartActivityForResult (Intent.CreateChooser (intent, "Select Photo"), SELECT_PHOTO);
         }
 
         void TakePhoto ()

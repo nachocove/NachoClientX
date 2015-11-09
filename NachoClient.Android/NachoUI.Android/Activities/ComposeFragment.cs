@@ -240,6 +240,7 @@ namespace NachoClient.AndroidClient
         public void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view)
         {
             var attachmentPicker = new AttachmentPickerFragment ();
+            attachmentPicker.Account = Composer.Account;
             attachmentPicker.Delegate = this;
             attachmentPicker.Show (FragmentManager, "attachments");
         }
