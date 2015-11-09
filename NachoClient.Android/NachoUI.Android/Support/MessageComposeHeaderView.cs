@@ -200,7 +200,7 @@ namespace NachoClient.AndroidClient
                 var searchString = constraint == null ? "" : constraint.ToString ();
                 List<McContactEmailAddressAttribute> contacts;
                 if (!String.IsNullOrWhiteSpace (searchString)) {
-                    contacts = McContact.SearchIndexAllContacts (searchString);
+                    contacts = McContact.SearchAllContactsForEmail (searchString);
                 } else {
                     contacts = new List<McContactEmailAddressAttribute> ();
                 }
@@ -260,8 +260,16 @@ namespace NachoClient.AndroidClient
             if (convertView == null) {
                 view = new TextView (Context);
             }
-            var contact = SearchResults [position].GetContact ();
-            view.Text = contact.GetDisplayNameOrEmailAddress ();
+
+            string email = SearchResults [position].Value;
+            string displayName = SearchResults [position].GetContact ().GetDisplayName ();
+
+            string viewText = email;
+            if (!string.IsNullOrEmpty(displayName) && displayName != email) {
+                viewText = string.Format ("{0} <{1}>", displayName, email);
+            }
+            view.Text = viewText;
+
             return view;
         }
 

@@ -12,9 +12,9 @@ namespace NachoClient.AndroidClient
 {
     public static class ReminderChooser
     {
-        public delegate void AlertSelectedDelegate (bool hasReminder, int reminder);
+        public delegate void ReminderSelectedDelegate (bool hasReminder, int reminder);
 
-        public static void Show (Context context, bool hasReminder, int reminder, AlertSelectedDelegate selectedCallback)
+        public static void Show (Context context, bool hasReminder, int reminder, ReminderSelectedDelegate selectedCallback)
         {
             var dialog = new AlertDialog.Builder (context).Create ();
 
@@ -26,7 +26,7 @@ namespace NachoClient.AndroidClient
             view.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
                 dialog.Dismiss ();
                 if (null != selectedCallback) {
-                    int selectedValue = adapter.ReminderAtPosition (e.Position);
+                    int selectedValue = adapter [e.Position];
                     selectedCallback (0 <= selectedValue, selectedValue);
                 }
             };
@@ -61,7 +61,7 @@ namespace NachoClient.AndroidClient
                 }
             }
 
-            public override int this[int index] {
+            public override int this [int index] {
                 get {
                     return reminderTimes [index];
                 }
@@ -86,15 +86,10 @@ namespace NachoClient.AndroidClient
                     icon.SetImageResource (Resource.Drawable.gen_checkbox);
                 }
 
-                var text = view.FindViewById<TextView>(Resource.Id.alert_chooser_text);
+                var text = view.FindViewById<TextView> (Resource.Id.alert_chooser_text);
                 text.Text = Pretty.ReminderString (0 <= reminderTimes [position], (uint)reminderTimes [position]);
 
                 return view;
-            }
-
-            public int ReminderAtPosition (int position)
-            {
-                return reminderTimes [position];
             }
         }
     }

@@ -104,7 +104,7 @@ namespace NachoCore.ActiveSync
         private Uri ServerUri;
         private string RedactedServerUri;
         private bool ServerUriBeingTested;
-        private Stream ContentData;
+        private byte[] ContentData;
         private string ContentType;
         private uint ConsecThrottlePriorDelaySecs;
         private bool ExtraRetry451Consumed;
@@ -295,7 +295,14 @@ namespace NachoCore.ActiveSync
                 // Remove NcTask.Run once #1313 solved.
                 // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
                 Cts = new CancellationTokenSource ();
-                NcTask.Run (AttemptHttp, "AttemptHttp");
+                var itemOp = Owner as AsItemOperationsCommand;
+                if (null != itemOp && itemOp.DelayNotAllowed) {
+                    // Minimize the latency of getting the body at the risk of #1313 lock-up.
+                    // NachoHttp will remove the risk.
+                    AttemptHttp ();
+                } else {
+                    NcTask.Run (AttemptHttp, "AttemptHttp");
+                }
             } else {
                 Owner.ResolveAllDeferred ();
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOH", null, "Too many retries."));
@@ -545,9 +552,9 @@ namespace NachoCore.ActiveSync
                     if (null != response.Content.Headers) {
                         contentType = response.Content.Headers.ContentType;
                     }
-                    ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
+                    ContentType = (null == contentType || null == contentType.MediaType) ? null : contentType.MediaType.ToLower ();
                     try {
-                        ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
+                        ContentData = await response.Content.ReadAsByteArrayAsync ().ConfigureAwait (false);
                     } catch (Exception ex) {
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
                         CancelTimeoutTimer ("Exception creating ContentData");
@@ -612,7 +619,7 @@ namespace NachoCore.ActiveSync
                 // There is a chance that the non-OK status comes with an HTML explaination.
                 // If so, then dump it.
                 // TODO: find some way to make cancellation token work here.
-                var possibleMessage = new StreamReader (ContentData, Encoding.UTF8).ReadToEnd ();
+                var possibleMessage = Encoding.UTF8.GetString (ContentData);
                 Log.Info (Log.LOG_HTTP, "HTML response: {0}", possibleMessage);
             }
             Event preProcessEvent = Owner.PreProcessResponse (this, response);
@@ -754,7 +761,7 @@ namespace NachoCore.ActiveSync
                         NcAssert.True (false, "ContentTypeWbxmlMultipart unimplemented.");
                         return null;
                     case ContentTypeXml:
-                        responseDoc = XDocument.Load (ContentData);
+                        responseDoc = XDocument.Parse (Encoding.UTF8.GetString (ContentData));
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));
                     default:
@@ -765,7 +772,7 @@ namespace NachoCore.ActiveSync
                         }
                         // Just *try* to see if it will parse as XML. Could be poorly configured auto-d.
                         try {
-                            responseDoc = XDocument.Load (ContentData);
+                            responseDoc = XDocument.Parse (Encoding.UTF8.GetString (ContentData));
                         } catch {
                         }
                         if (null == responseDoc) {

@@ -317,10 +317,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
 
-            const uint MB = 1000 * 1000; // MB not MiB
-            WebCache.Configure (1 * MB, 50 * MB);
-            // end of one-time initialization
-
             NcApplication.Instance.StartBasalServices ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartBasalServices complete");
 
@@ -427,6 +423,7 @@ namespace NachoClient.iOS
                         File.Delete (destinationPath);
                     }
                     File.Copy (resourcePath, destinationPath);
+                    NcFileHandler.Instance.MarkFileForSkipBackup (destinationPath);
                 }
             }
         }
@@ -1168,26 +1165,13 @@ namespace NachoClient.iOS
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
     {
-        private bool IsDevelopmentBuild {
-            get {
-                return BuildInfo.Version.StartsWith ("DEV");
-            }
-        }
-
         public HockeyAppCrashDelegate () : base ()
         {
         }
 
         public override string ApplicationLogForCrashManager (BITCrashManager crashManager)
         {
-            string launchTime = String.Format ("{0:O}", DateTime.UtcNow);
-            string log = String.Format ("Version: {0}\nBuild Number: {1}\nLaunch Time: {2}\nDevice ID: {3}\n",
-                             BuildInfo.Version, BuildInfo.BuildNumber, launchTime, Device.Instance.Identity ());
-            if (IsDevelopmentBuild) {
-                log += String.Format ("Build Time: {0}\nBuild User: {1}\n" +
-                "Source: {2}\n", BuildInfo.Time, BuildInfo.User, BuildInfo.Source);
-            }
-            return log;
+            return NcApplication.ApplicationLogForCrashManager ();
         }
 
         /// For some reason, UserName in HockeyApp web portal has a UUID prefixing the user name.
@@ -1196,7 +1180,7 @@ namespace NachoClient.iOS
         private string UserName ()
         {
             string userName = null;
-            if (IsDevelopmentBuild) {
+            if (BuildInfoHelper.IsDev) {
                 userName = BuildInfo.User;
             }
             return userName;

@@ -1085,7 +1085,6 @@
     <Compile Include="NachoUI.iOS\Interfaces\INachoCertificateResponder.cs" />
     <Compile Include="NachoUI.iOS\Support\IBodyRender.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyImageView.cs" />
-    <Compile Include="WebCache.cs" />
     <Compile Include="NachoUI.iOS\AccountSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountSettingsViewController.designer.cs">
       <DependentUpon>AccountSettingsViewController.cs</DependentUpon>
@@ -1712,6 +1711,12 @@
       <Link>NachoCore\Model\Migration\NcMigration48.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\DnsiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration49.cs">
+      <Link>NachoCore\Model\Migration\NcMigration49.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimeStamp.cs">
+      <Link>NachoCore\Utils\NcTimeStamp.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

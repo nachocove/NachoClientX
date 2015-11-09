@@ -21,7 +21,6 @@ namespace NachoClient.AndroidClient
     {
 
         NowFragment nowFragment;
-        MessageViewFragment messageViewFragment;
         MessageListFragment messageListFragment;
 
         protected override void OnCreate (Bundle bundle)
@@ -41,8 +40,8 @@ namespace NachoClient.AndroidClient
 
             if (1 == thread.MessageCount) {
                 var message = thread.FirstMessageSpecialCase ();
-                messageViewFragment = MessageViewFragment.newInstance (thread, message);
-                this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
+                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
+                StartActivity (intent);
             } else {
                 var threadMessage = new NachoThreadedEmailMessages (McFolder.GetDefaultInboxFolder (NcApplication.Instance.Account.Id), thread.GetThreadId ());
                 messageListFragment = MessageListFragment.newInstance (threadMessage);
@@ -51,21 +50,10 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public void DoneWithMessage ()
-        {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MessageViewFragment) {
-                this.FragmentManager.PopBackStack ();
-            }
-        }
-
         public override void OnBackPressed ()
         {
             base.OnBackPressed ();
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MessageViewFragment) {
-                this.FragmentManager.PopBackStack ();
-            }
             if (f is MessageListFragment) {
                 if (1 < this.FragmentManager.BackStackEntryCount) {
                     this.FragmentManager.PopBackStack ();

@@ -61,7 +61,9 @@ namespace NachoCore
         /// while we were busy.
         /// </summary>
         /// <value>The cred epoch.</value>
-        protected int SavedCredEpoch;
+        private int SavedCredEpoch;
+
+        public bool DelayNotAllowed { get; set; }
 
         protected enum ResolveAction
         {
@@ -188,6 +190,11 @@ namespace NachoCore
             } else {
                 throw new CommandLockTimeOutException (string.Format ("Could not acquire lock object after {0:n0}ms", timeout));
             }
+        }
+
+        public bool HasPasswordChanged ()
+        {
+            return ((null == BEContext.Cred) || BEContext.Cred.Epoch != SavedCredEpoch);
         }
     }
 

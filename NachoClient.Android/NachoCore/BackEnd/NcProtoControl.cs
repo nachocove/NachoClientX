@@ -773,9 +773,13 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
                 Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})-{1}/{2} for email id {3}", emailMessage.AccountId, pending.Id, pending.Token, emailMessage.Id);
             });
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD");
-            }, "DnldEmailBodyCmd");
+            if (doNotDelay) {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD0");
+            } else {
+                NcTask.Run (delegate {
+                    Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD1");
+                }, "DnldEmailBodyCmd");
+            }
             return result;
         }
 

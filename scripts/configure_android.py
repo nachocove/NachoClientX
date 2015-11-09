@@ -14,6 +14,10 @@ def edit_manifest(manifest_file, android, build, version):
     root.attrib["{http://schemas.android.com/apk/res/android}versionName"] = version
     application = root.findall('application')[0]
     application.attrib["{http://schemas.android.com/apk/res/android}label"] = android['label']
+    meta_data = application.findall('meta-data')
+    for md in meta_data:
+        if md.attrib.get('{http://schemas.android.com/apk/res/android}name', '') == 'com.google.android.backup.api_key':
+            md.attrib['{http://schemas.android.com/apk/res/android}value'] = android['backup.api_key']
     tree.write(manifest_file)
 
 

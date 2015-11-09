@@ -23,6 +23,7 @@ projects = {
             'keystore': {'filename': '',
                          'alias': '',
                          },
+            'backup.api_key': 'AEdPqrEAAAAIHhu7nvviRVUbM-wMP0XfbO1OAPy579Irm97hJw',
         },
         'aws': {
             'prefix': 'dev',
@@ -58,6 +59,7 @@ projects = {
             'keystore': {'filename': 'com.nachocove.mail.alpha.keystore',
                          'alias': 'com.nachocove.mail.alpha',
                          },
+            'backup.api_key': 'AEdPqrEAAAAI6nEa_tRWJ5NsItWcRQ4vDQVTyXlzBZA34k1MJQ',
         },
         'aws': {
             'prefix': 'alpha',
@@ -93,6 +95,7 @@ projects = {
             'keystore': {'filename': 'com.nachocove.mail.beta.keystore',
                          'alias': 'com.nachocove.mail.beta',
                          },
+            'backup.api_key': 'AEdPqrEAAAAIWORF8SdqdCn_lVgJTP6lxCod1PGW3He-2OIV0g',
         },
         'aws': {
             'prefix': 'beta',
@@ -128,6 +131,7 @@ projects = {
             'keystore': {'filename': 'com.nachocove.mail.keystore',
                          'alias': 'com.nachocove.mail',
                          },
+            'backup.api_key': 'AEdPqrEAAAAIEP3e9PW3CpJ8D8MpJDOAg2dugLzFunXiC9LbfA',
         },
         'aws': {
             'prefix': 'prod',

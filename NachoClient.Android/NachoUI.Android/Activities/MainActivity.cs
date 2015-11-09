@@ -44,7 +44,7 @@ namespace NachoClient.AndroidClient
             SetupHockeyAppUpdateManager ();
             CopyAssetsToDocuments ();
 
-            MainApplication.Startup ();
+            MainApplication.OneTimeStartup ();
 
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.Main);
@@ -56,14 +56,6 @@ namespace NachoClient.AndroidClient
         protected override void OnStart ()
         {
             base.OnStart ();
-
-            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: StartBasalServices");
-            NcApplication.Instance.StartBasalServices ();
-
-            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: AppStartupTasks");
-            NcApplication.Instance.AppStartupTasks ();
-
-            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: OnStart finished");
         }
 
         protected override void OnResume ()
@@ -248,38 +240,9 @@ namespace NachoClient.AndroidClient
             {
                 return true;
             }
-            public override bool OnCrashesFound ()
-            {
-                Log.Info (Log.LOG_SYS, "HA: OnCrashesFound");
-                return base.OnCrashesFound ();
-            }
-
-            public override void OnCrashesSent ()
-            {
-                Log.Info (Log.LOG_SYS, "HA: OnCrashesSent");
-                base.OnCrashesSent ();
-            }
-
-            public override void OnCrashesNotSent ()
-            {
-                Log.Info (Log.LOG_SYS, "HA: OnCrashesNotSent");
-                base.OnCrashesNotSent ();
-            }
-            public override void OnConfirmedCrashesFound ()
-            {
-                Log.Info (Log.LOG_SYS, "HA: OnConfirmedCrashesFound");
-                base.OnConfirmedCrashesFound ();
-            }
-
-            public override void OnNewCrashesFound ()
-            {
-                Log.Info (Log.LOG_SYS, "HA: OnNewCrashesFound");
-                base.OnNewCrashesFound ();
-            }
             public override string Description {
                 get {
-                    Log.Info (Log.LOG_SYS, "HA: Fetching Description");
-                    return string.Format ("JANV TEST\nUserID: {0}\nDeviceId: {1}", UserIdFile.SharedInstance.Read (), Device.Instance.Identity());
+                    return NcApplication.ApplicationLogForCrashManager ();
                 }
             }
             public override bool IncludeDeviceData ()
@@ -294,11 +257,12 @@ namespace NachoClient.AndroidClient
 
         private void SetupHockeyAppCrashManager ()
         {
+            var myListener = new MyCustomCrashManagerListener ();
             // Register the crash manager before Initializing the trace writer
-            HockeyApp.CrashManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomCrashManagerListener ()); 
+            HockeyApp.CrashManager.Register (this, BuildInfo.HockeyAppAppId, myListener); 
 
             // Initialize the Trace Writer
-            HockeyApp.TraceWriter.Initialize ();
+            HockeyApp.TraceWriter.Initialize (myListener);
 
             // Wire up Unhandled Expcetion handler from Android
             AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => 

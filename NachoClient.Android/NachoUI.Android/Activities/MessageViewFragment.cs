@@ -17,9 +17,19 @@ using NachoCore.Utils;
 
 using MimeKit;
 using Android.Content.PM;
+using NachoCore.Brain;
 
 namespace NachoClient.AndroidClient
 {
+    public interface IMessageViewFragmentOwner
+    {
+        void DoneWithMessage ();
+
+        McEmailMessage MessageToView { get; }
+
+        McEmailMessageThread ThreadToView { get; }
+    }
+
     public class MessageViewFragment : Fragment
     {
         McEmailMessage message;
@@ -78,8 +88,21 @@ namespace NachoClient.AndroidClient
             var webclient = new NachoWebViewClient ();
             webview.SetWebViewClient (webclient);
 
+            return view;
+        }
+
+        public override void OnActivityCreated (Bundle savedInstanceState)
+        {
+            base.OnActivityCreated (savedInstanceState);
+
+            thread = ((IMessageViewFragmentOwner)Activity).ThreadToView;
+            message = ((IMessageViewFragmentOwner)Activity).MessageToView;
+
+            NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
+
+            var inflater = Activity.LayoutInflater;
             var attachments = McAttachment.QueryByItem (message);
-            var attachmentsView = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_view);
+            var attachmentsView = View.FindViewById<LinearLayout> (Resource.Id.attachment_list_view);
             Bind.BindAttachmentListView (attachments, attachmentsView, inflater, AttachmentToggle_Click, AttachmentSelectedCallback, AttachmentErrorCallback);
 
             // MarkAsRead() will change the message from unread to read only if the body has been
@@ -87,8 +110,20 @@ namespace NachoClient.AndroidClient
             // here, rather than in ConfigureAndLayout(), to handle the case where the body is
             // downloaded long after the message view has been opened.
             EmailHelper.MarkAsRead (thread);
+        }
 
-            return view;
+        public override void OnStart ()
+        {
+            base.OnStart ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            BindValues (View);
+        }
+
+        public override void OnPause ()
+        {
+            base.OnPause ();
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         public  void AttachmentSelectedCallback (McAttachment attachment)
@@ -108,12 +143,12 @@ namespace NachoClient.AndroidClient
                 var mimetype = Android.Webkit.MimeTypeMap.Singleton.GetMimeTypeFromExtension (extension);
                 myIntent.SetDataAndType (Android.Net.Uri.FromFile (file), mimetype);
                 var packageManager = this.Activity.PackageManager;
-                var activities = packageManager.QueryIntentActivities(myIntent, PackageInfoFlags.MatchDefaultOnly);
+                var activities = packageManager.QueryIntentActivities (myIntent, PackageInfoFlags.MatchDefaultOnly);
                 var isIntentSafe = 0 < activities.Count;
-                if(isIntentSafe) {
+                if (isIntentSafe) {
                     StartActivity (myIntent);
                 } else {
-                    NcAlertView.ShowMessage(Activity, "Attachment", "No application can open this attachment.");
+                    NcAlertView.ShowMessage (Activity, "Attachment", "No application can open this attachment.");
                 }
             } catch (Exception e) {
                 // TODO: handle exception
@@ -129,20 +164,6 @@ namespace NachoClient.AndroidClient
         {
             var attachmentsView = View.FindViewById<View> (Resource.Id.attachment_list_view);
             Bind.ToggleAttachmentList (attachmentsView);
-        }
-
-        public override void OnStart ()
-        {
-            base.OnStart ();
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-
-            BindValues (View);
-        }
-
-        public override void OnPause ()
-        {
-            base.OnPause ();
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         void BindValues (View view)
@@ -193,12 +214,6 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void DoneWithMessage ()
-        {
-            var parent = (NcMessageListActivity)this.Activity;
-            parent.DoneWithMessage ();
-        }
-
         void SaveButton_Click (object sender, EventArgs e)
         {
             Log.Info (Log.LOG_UI, "SaveButton_Click");
@@ -216,14 +231,14 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "ArchiveButton_Click");
             NcEmailArchiver.Archive (message);
-            DoneWithMessage ();
+            ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
         }
 
         void DeleteButton_Click (object sender, EventArgs e)
         {
             Log.Info (Log.LOG_UI, "DeleteButton_Click");
             NcEmailArchiver.Delete (message);
-            DoneWithMessage ();
+            ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
         }
 
         void ForwardButton_Click (object sender, EventArgs e)
@@ -268,11 +283,10 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "OnFolderSelected: {0}", message);
             NcEmailArchiver.Move (message, folder);
-            DoneWithMessage ();
+            ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
         }
 
     }
-
 
     public class AttachmentListViewAdapter : Android.Widget.BaseAdapter<object>
     {
@@ -333,14 +347,14 @@ namespace NachoClient.AndroidClient
                 return false;
             }
             try {
-                var uri = Android.Net.Uri.Parse(url);
-                var norm = uri.NormalizeScheme();
+                var uri = Android.Net.Uri.Parse (url);
+                var norm = uri.NormalizeScheme ();
                 var scheme = norm.Scheme;
-                if("http" == scheme || "https" == scheme) {
+                if ("http" == scheme || "https" == scheme) {
                     view.Context.StartActivity (new Intent (Intent.ActionView, Android.Net.Uri.Parse (url)));
                     return true;
                 }
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 Log.Info (Log.LOG_UI, "ShouldOverrideUrl: {0}", ex);
             }
             return false;

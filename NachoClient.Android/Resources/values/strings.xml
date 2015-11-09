@@ -55,6 +55,7 @@
     <string name="demo_signature">Sent by Nacho Mail</string>
     <string name="demo_days_to_sync">One month</string>
     <string name="demo_notifications">Hot, VIPs, Inbox</string>
+    <string name="demo_certificate">Subject: CN=outlook.com</string>
     <string name="to_inbox">Go to Inbox</string>
     <string name="to_deadline">Go to Deadlines</string>
     <string name="to_deferred">Go to Deferred Messages</string>
@@ -155,4 +156,11 @@
     <string name="tut4_message">Your next meeting is here.  Manage\nyour schedule using Calendar.</string>
     <string name="tut5_title">Just One Last Thing...</string>
     <string name="tut5_message">Sliding right or left elsewhere will get you\nshortcuts and options for the items.</string>
+    <string name="cert_ask">Do you want to alow {0} from {1} to provide information about your account?</string>
+    <string name="cert_warn">You should only allow sources you know and trust to configure your account.</string>
+    <string name="allow">Allow</string>
+    <string name="security_warning">Security Warning</string>
+    <string name="contact">Contact</string>
+    <string name="interactions">Interactions</string>
+    <string name="notes">Notes</string>
 </resources>
