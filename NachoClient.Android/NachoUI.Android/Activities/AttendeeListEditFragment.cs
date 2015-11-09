@@ -42,8 +42,8 @@ namespace NachoClient.AndroidClient
             listView.setMenuCreator (SwipeMenu_Create);
             listView.setOnMenuItemClickListener (SwipeMenu_Click);
 
-            buttonBar.SetTextButton (ButtonBar.Button.Right1, Resource.String.save, SaveButton_Click);
-            buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.calendar_add_attendee, AddButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.calendar_add_attendee, AddButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Left1, Resource.Drawable.gen_close, CancelButton_Click);
 
             return view;
         }
@@ -146,15 +146,15 @@ namespace NachoClient.AndroidClient
             return false;
         }
 
-        private void SaveButton_Click (object sender, EventArgs e)
-        {
-            this.Activity.SetResult (Result.Ok, AttendeeEditActivity.ResultIntent (Attendees));
-            this.Activity.Finish ();
-        }
-
         private void AddButton_Click (object sender, EventArgs e)
         {
             StartActivityForResult (ContactEmailChooserActivity.EmptySearchIntent (this.Activity, accountId), CONTACT_CHOOSER_REQUEST);
+        }
+
+        private void CancelButton_Click (object sender, EventArgs e)
+        {
+            this.Activity.SetResult (Result.Canceled);
+            this.Activity.Finish ();
         }
     }
 }

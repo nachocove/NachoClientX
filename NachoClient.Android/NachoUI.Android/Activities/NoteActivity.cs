@@ -38,6 +38,8 @@ namespace NachoClient.AndroidClient
 
             buttonBar.SetTextButton (ButtonBar.Button.Right1, "Done", DoneButton_Click);
 
+            buttonBar.SetIconButton (ButtonBar.Button.Left1, Resource.Drawable.gen_close, CancelButton_Click);
+
             instructions = FindViewById<TextView> (Resource.Id.note_instructions);
 
             textField = FindViewById<EditText> (Resource.Id.note_text);
@@ -64,6 +66,23 @@ namespace NachoClient.AndroidClient
             }
 
             textField.Text = unmodifiedText;
+        }
+
+        public override void OnBackPressed ()
+        {
+            SaveChanges ();
+        }
+
+        private void SaveChanges ()
+        {
+            if (textField.Text == unmodifiedText) {
+                SetResult (Result.Canceled);
+            } else {
+                var resultIntent = new Intent ();
+                resultIntent.PutExtra (EXTRA_NOTE_TEXT, textField.Text);
+                SetResult (Result.Ok, resultIntent);
+            }
+            Finish ();
         }
 
         public static Intent EditNoteIntent (Context context, string title, string instructions, string text, bool insertDate)
@@ -95,13 +114,12 @@ namespace NachoClient.AndroidClient
 
         private void DoneButton_Click (object sender, EventArgs e)
         {
-            if (textField.Text == unmodifiedText) {
-                SetResult (Result.Canceled);
-            } else {
-                var resultIntent = new Intent ();
-                resultIntent.PutExtra (EXTRA_NOTE_TEXT, textField.Text);
-                SetResult (Result.Ok, resultIntent);
-            }
+            SaveChanges ();
+        }
+
+        private void CancelButton_Click (object sender, EventArgs e)
+        {
+            SetResult (Result.Canceled);
             Finish ();
         }
     }
