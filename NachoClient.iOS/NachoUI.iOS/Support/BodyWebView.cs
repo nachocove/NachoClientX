@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Concurrent;
 using CoreGraphics;
 using Foundation;
 using UIKit;
@@ -19,14 +20,19 @@ namespace NachoClient.iOS
     {
         public delegate void LinkSelectedCallback (NSUrl url);
 
+        // We re-use instances. if you add an ivar, add the reset code for it to Reset() in-order!
         protected NSUrl baseUrl;
         protected nfloat preferredWidth;
         private Action sizeChangedCallback;
         private bool loadingComplete;
         private LinkSelectedCallback onLinkSelected;
 
-        public BodyWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, NSUrl baseUrl, LinkSelectedCallback onLinkSelected)
-            : base (new CGRect(0, Y, preferredWidth, initialHeight))
+        public void InitializeFrame (nfloat Y, nfloat preferredWidth, nfloat initialHeight)
+        {
+            this.Frame = new CGRect (0, Y, preferredWidth, initialHeight);
+        }
+
+        public void InitializeRemaining (nfloat preferredWidth, Action sizeChangedCallback, NSUrl baseUrl, LinkSelectedCallback onLinkSelected)
         {
             this.baseUrl = baseUrl;
             this.preferredWidth = preferredWidth;
@@ -42,6 +48,28 @@ namespace NachoClient.iOS
             loadingComplete = false;
         }
 
+        public virtual void Reset ()
+        {
+            StopLoading ();
+            LoadFinished -= OnLoadFinished;
+            ShouldStartLoad -= OnShouldStartLoad;
+            if (!loadingComplete) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            }
+            LoadHtmlString (string.Empty, null);
+            baseUrl = null;
+            preferredWidth = (nfloat)0.0;
+            sizeChangedCallback = null;
+            loadingComplete = false;
+            onLinkSelected = null;
+        }
+
+        public BodyWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, NSUrl baseUrl, LinkSelectedCallback onLinkSelected)
+            : base (new CGRect(0, Y, preferredWidth, initialHeight))
+        {
+            InitializeRemaining (preferredWidth, sizeChangedCallback, baseUrl, onLinkSelected);
+        }
+
         /// <summary>
         /// Have the UIWebView load the content to be displayed.
         /// </summary>
@@ -54,13 +82,7 @@ namespace NachoClient.iOS
 
         protected override void Dispose (bool disposing)
         {
-            StopLoading ();
-            onLinkSelected = null;
-            LoadFinished -= OnLoadFinished;
-            ShouldStartLoad -= OnShouldStartLoad;
-            if (!loadingComplete) {
-                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            }
+            Reset ();
             base.Dispose (disposing);
         }
 
@@ -175,6 +197,30 @@ namespace NachoClient.iOS
         public BodyHtmlWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, NSUrl baseUrl, BodyWebView.LinkSelectedCallback onLinkSelected)
             : base (Y, preferredWidth, initialHeight, sizeChangedCallback, baseUrl, onLinkSelected)
         {
+        }
+
+        public static ConcurrentStack<BodyHtmlWebView> ViewCache = new ConcurrentStack<BodyHtmlWebView> ();
+
+        public static BodyHtmlWebView Create (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl, BodyWebView.LinkSelectedCallback onLinkSelected)
+        {
+            BodyHtmlWebView retval = null;
+            if (ViewCache.TryPop (out retval)) {
+                retval.InitializeFrame (Y, preferredWidth, initialHeight);
+                retval.InitializeRemaining (preferredWidth, sizeChangedCallback, baseUrl, onLinkSelected);
+                retval.SetHtml (html);
+                return retval;
+            }
+            return new BodyHtmlWebView (Y, preferredWidth, initialHeight, sizeChangedCallback, html, baseUrl, onLinkSelected);
+        }
+
+        public static void Release (BodyHtmlWebView webView)
+        {
+            if (2 > ViewCache.Count) {
+                webView.Reset ();
+                ViewCache.Push (webView);
+            } else {
+                webView.Dispose ();
+            }
         }
 
         public void SetHtml (string html)
