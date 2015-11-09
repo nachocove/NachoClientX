@@ -80,13 +80,13 @@ namespace NachoClient.AndroidClient
         protected override void OnPause ()
         {
             base.OnPause ();
-            UnregisterHockeyAppManagers ();
+            UnregisterHockeyAppUpdateManager ();
         }
 
         protected override void OnDestroy ()
         {
             base.OnDestroy ();
-            UnregisterHockeyAppManagers ();
+            UnregisterHockeyAppUpdateManager ();
         }
 
         void ShowScreenForApplicationState ()
@@ -236,13 +236,21 @@ namespace NachoClient.AndroidClient
         #region HockeyApp
         public class MyCustomCrashManagerListener : HockeyApp.CrashManagerListener
         {
+            public string LastTrace { get; set; }
+
             public override bool ShouldAutoUploadCrashes ()
             {
                 return true;
             }
             public override string Description {
                 get {
-                    return NcApplication.ApplicationLogForCrashManager ();
+                    var descr = NcApplication.ApplicationLogForCrashManager ();
+                    if (!string.IsNullOrEmpty (LastTrace))
+                    {
+                        descr += "\n" + LastTrace;
+                        LastTrace = null;
+                    }
+                    return descr;
                 }
             }
             public override bool IncludeDeviceData ()
@@ -252,6 +260,26 @@ namespace NachoClient.AndroidClient
             public override bool IncludeDeviceIdentifier ()
             {
                 return true;
+            }
+            public override int MaxRetryAttempts {
+                get {
+                    return 1000;
+                }
+            }
+        }
+
+        class UnCaughtExceptionHandler : Java.Lang.Object, Java.Lang.Thread.IUncaughtExceptionHandler
+        {
+            MyCustomCrashManagerListener CrashListener;
+            public UnCaughtExceptionHandler(MyCustomCrashManagerListener theListener)
+            {
+                CrashListener = theListener;
+            }
+
+            public void UncaughtException(Java.Lang.Thread thread, Java.Lang.Throwable ex)
+            {
+                CrashListener.LastTrace = ex.GetStackTrace ().ToString ();
+                HockeyApp.TraceWriter.WriteTrace (ex);
             }
         }
 
@@ -265,20 +293,26 @@ namespace NachoClient.AndroidClient
             HockeyApp.TraceWriter.Initialize (myListener);
 
             // Wire up Unhandled Expcetion handler from Android
-            AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => 
-            {
+            AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => {
                 // Use the trace writer to log exceptions so HockeyApp finds them
+                myListener.LastTrace = args.Exception.ToString ();
                 HockeyApp.TraceWriter.WriteTrace(args.Exception);
                 args.Handled = true;
             };
 
             // Wire up the .NET Unhandled Exception handler
-            AppDomain.CurrentDomain.UnhandledException +=
-                (sender, args) => HockeyApp.TraceWriter.WriteTrace(args.ExceptionObject);
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) => {
+                myListener.LastTrace = args.ExceptionObject.ToString ();
+                HockeyApp.TraceWriter.WriteTrace (args.ExceptionObject);
+            };
 
             // Wire up the unobserved task exception handler
-            TaskScheduler.UnobservedTaskException += 
-                (sender, args) => HockeyApp.TraceWriter.WriteTrace(args.Exception);
+            TaskScheduler.UnobservedTaskException += (sender, args) => {
+                myListener.LastTrace = args.Exception.ToString ();
+                HockeyApp.TraceWriter.WriteTrace (args.Exception);
+            };
+
+            Java.Lang.Thread.DefaultUncaughtExceptionHandler = new UnCaughtExceptionHandler (myListener);
         }
 
         public class MyCustomUpdateManagerListener : HockeyApp.UpdateManagerListener
@@ -302,7 +336,7 @@ namespace NachoClient.AndroidClient
             HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener(), true);
         }
 
-        private void UnregisterHockeyAppManagers ()
+        private void UnregisterHockeyAppUpdateManager ()
         {
             HockeyApp.UpdateManager.Unregister ();
         }
