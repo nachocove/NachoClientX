@@ -595,6 +595,7 @@
     <Compile Include="NachoCore\Utils\NcTimeStamp.cs" />
     <Compile Include="NachoUI.Android\Support\LifecycleSpy.cs" />
     <Compile Include="NachoUI.Android\Support\NotificationService.cs" />
+    <Compile Include="NachoUI.Android\Activities\QuckResponseFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1582,6 +1583,8 @@
     <AndroidResource Include="Resources\layout\ContactInfo.axml" />
     <AndroidResource Include="Resources\layout\MessageViewActivity.axml" />
     <AndroidResource Include="Resources\drawable-mdpi\notification.png" />
+    <AndroidResource Include="Resources\layout\QuickResponseFragment.axml" />
+    <AndroidResource Include="Resources\layout\QuickResponseDialogItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
