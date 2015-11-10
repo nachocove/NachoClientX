@@ -19,6 +19,7 @@ namespace NachoClient.AndroidClient
         private const string TELEMETRY_ON_STOP = "ON_STOP";
         private const string TELEMETRY_ON_DESTROY = "ON_DESTROY";
         private const string TELEMETRY_ON_RESTART = "ON_RESTART";
+        private const string TELEMETRY_ON_NEWINTENT = "ON_NEWINTENT";
 
         bool updateRegistered;
 
@@ -33,6 +34,12 @@ namespace NachoClient.AndroidClient
         {
             Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_START);
             base.OnStart ();
+        }
+
+        protected override void OnNewIntent (Android.Content.Intent intent)
+        {
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_NEWINTENT);
+            base.OnNewIntent (intent);
         }
 
         protected override void OnResume ()
