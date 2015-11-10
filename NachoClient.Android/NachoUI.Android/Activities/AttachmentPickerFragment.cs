@@ -31,7 +31,9 @@ namespace NachoClient.AndroidClient
         GridView OptionsGridView;
         List<AttachmentOption> Options;
         static int SELECT_PHOTO = 1;
+        static int TAKE_PHOTO = 2;
         public McAccount Account;
+        Android.Net.Uri CameraOutputUri;
 
         public AttachmentPickerFragmentDelegate Delegate;
 
@@ -90,6 +92,19 @@ namespace NachoClient.AndroidClient
                         cursor.Close ();
                     }
                 }
+            } else if (requestCode == TAKE_PHOTO) {
+                if (resultCode == Result.Ok) {
+                    var mediaScanIntent = new Intent (Intent.ActionMediaScannerScanFile);
+                    mediaScanIntent.SetData (CameraOutputUri);
+                    Activity.SendBroadcast (mediaScanIntent);
+                    var attachment = McAttachment.InsertSaveStart (Account.Id);
+                    var filename = Path.GetFileName (CameraOutputUri.Path);
+                    attachment.SetDisplayName (filename);
+                    attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
+                    attachment.UpdateFileCopy (CameraOutputUri.Path);
+                    Delegate.AttachmentPickerDidPickAttachment (this, attachment);
+                    Dismiss ();
+                }
             } else {
                 base.OnActivityResult (requestCode, resultCode, data);
             }
@@ -105,6 +120,15 @@ namespace NachoClient.AndroidClient
 
         void TakePhoto ()
         {
+            var dir = new Java.IO.File (Android.OS.Environment.GetExternalStoragePublicDirectory (Android.OS.Environment.DirectoryPictures), "NachoAttachmentCamera");
+            if (!dir.Exists ()) {
+                dir.Mkdirs ();
+            }
+            var intent = new Intent (MediaStore.ActionImageCapture);
+            var file = new Java.IO.File (dir, String.Format("photo_{0}.jpg", Guid.NewGuid ()));
+            CameraOutputUri = Android.Net.Uri.FromFile (file);
+            intent.PutExtra (MediaStore.ExtraOutput, CameraOutputUri);
+            StartActivityForResult (intent, TAKE_PHOTO);
         }
 
         void AddFile ()
