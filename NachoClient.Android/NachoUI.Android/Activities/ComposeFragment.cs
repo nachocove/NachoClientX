@@ -31,7 +31,8 @@ namespace NachoClient.AndroidClient
         NachoWebClientDelegate,
         MessageComposeHeaderViewDelegate,
         IntentFragmentDelegate,
-        AttachmentPickerFragmentDelegate
+        AttachmentPickerFragmentDelegate,
+        QuickResponseFragmentDelegate
     {
 
         #region Properties
@@ -40,6 +41,7 @@ namespace NachoClient.AndroidClient
         MessageComposeHeaderView HeaderView;
         Android.Webkit.WebView WebView;
         Android.Widget.ImageView SendButton;
+        Android.Widget.ImageView QuickResponseButton;
         bool IsWebViewLoaded;
         bool FocusWebViewOnLoad;
         List<Tuple<string, JavascriptCallback>> JavaScriptQueue;
@@ -80,7 +82,9 @@ namespace NachoClient.AndroidClient
             buttonBar = new ButtonBar (view);
 
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.contact_quickemail, QuickResponseButton_Click);
             SendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
+            QuickResponseButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button2);
 
             HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
             HeaderView.Delegate = this;
@@ -182,6 +186,11 @@ namespace NachoClient.AndroidClient
             Activity.Finish ();
         }
 
+        void QuickResponseButton_Click (object sender, EventArgs e)
+        {
+            ShowQuickResponses ();
+        }
+
         #endregion
 
         #region User Action - Header
@@ -254,6 +263,29 @@ namespace NachoClient.AndroidClient
         public void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment)
         {
             // TODO: display attachment
+        }
+
+        public void QuickResponseFragmentDidSelectResponse (QuickResponseFragment fragment, NcQuickResponse.QuickResponse response)
+        {
+            if (!EmailHelper.IsReplyAction(Composer.Kind) && !EmailHelper.IsForwardAction(Composer.Kind)) {
+                Composer.Message.Subject = response.subject;
+                UpdateHeaderSubjectView ();
+            }
+            if (Composer.IsMessagePrepared) {
+                var javascriptString = JavaScriptEscapedString (response.body + Composer.SignatureText());
+                EvaluateJavascript (String.Format ("Editor.defaultEditor.replaceUserText({0});", javascriptString));
+            } else {
+                Composer.InitialText = response.body;
+            }
+            if (response.intent != null) {
+                Composer.Message.Intent = response.intent.type;
+            } else {
+                Composer.Message.Intent = McEmailMessage.IntentType.None;
+            }
+            Composer.Message.IntentDate = DateTime.MinValue;
+            Composer.Message.IntentDateType = MessageDeferralType.None;
+            UpdateHeaderIntentView ();
+            HeaderView.ShowIntentField ();
         }
 
         #endregion
@@ -337,6 +369,17 @@ namespace NachoClient.AndroidClient
 
         #region Helpers
 
+        string JavaScriptEscapedString (string s)
+        {
+            var primitive = new System.Json.JsonPrimitive (s);
+            string escaped = "";
+            using (var writer = new StringWriter ()) {
+                primitive.Save (writer);
+                escaped = writer.ToString ();
+            }
+            return escaped.Replace("\n", "\\n");
+        }
+
         delegate void HtmlContentCallback (string html);
 
         void GetHtmlContent (HtmlContentCallback callback)
@@ -379,6 +422,21 @@ namespace NachoClient.AndroidClient
         {
             var attachments = McAttachment.QueryByItem (Composer.Message);
             HeaderView.AttachmentsView.SetAttachments (attachments);
+        }
+
+        void ShowQuickResponses ()
+        {
+            NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
+
+            if (EmailHelper.IsReplyAction (Composer.Kind)) {
+                responseType = NcQuickResponse.QRTypeEnum.Reply;
+            } else if (EmailHelper.IsForwardAction (Composer.Kind)) {
+                responseType = NcQuickResponse.QRTypeEnum.Forward;
+            }
+
+            var quickResponsesFragment = new QuickResponseFragment (responseType);
+            quickResponsesFragment.Delegate = this;
+            quickResponsesFragment.Show (FragmentManager, "quick_responses");
         }
 
         #endregion

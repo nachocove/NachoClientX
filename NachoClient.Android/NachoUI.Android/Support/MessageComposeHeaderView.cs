@@ -163,6 +163,12 @@ namespace NachoClient.AndroidClient
             SubjectField.RequestFocus ();
         }
 
+        public void ShowIntentField ()
+        {
+            HasOpenedSubject = true;
+            RequestLayout ();
+        }
+
         protected override void OnLayout (bool changed, int l, int t, int r, int b)
         {
             IntentContainer.Visibility = ShouldHideIntent ? ViewStates.Gone : ViewStates.Visible;
