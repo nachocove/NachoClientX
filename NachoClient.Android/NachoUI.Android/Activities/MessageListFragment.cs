@@ -313,6 +313,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+            RefreshVisibleMessageCells ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -656,6 +657,7 @@ namespace NachoClient.AndroidClient
 
         void RefreshVisibleMessageCells ()
         {
+            ClearCache ();
             for (var i = listView.FirstVisiblePosition; i <= listView.LastVisiblePosition; i++) {
                 var cell = listView.GetChildAt (i - listView.FirstVisiblePosition);
                 if (null != cell) {
@@ -680,6 +682,13 @@ namespace NachoClient.AndroidClient
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
+
+            if (null == s.Account) {
+                return;
+            }
+            if (NcApplication.Instance.Account.Id != s.Account.Id) {
+                return;
+            }
 
             switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageChanged:
@@ -884,10 +893,14 @@ namespace NachoClient.AndroidClient
 
             NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
 
-            // Preview label view
+            // Preview label view                
             var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
-            var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
-            previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+            if (null == message) {
+                previewView.Text = "";
+            } else {
+                var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
+                previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+            }
 
             var multiSelectView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.selected);
             if (owner.multiSelectActive) {
