@@ -90,15 +90,20 @@ namespace NachoClient.AndroidClient
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, moreFragment).AddToBackStack (null).Commit ();
         }
 
+        public static Intent HotListIntent (Context context)
+        {
+            if (LoginHelpers.ShowHotCards ()) {
+                return new Intent(context, typeof(NowActivity));
+            } else {
+                return new Intent(context, typeof(NowListActivity));
+            }
+        }
+
         void HotButton_Click (object sender, EventArgs e)
         {
             MaybePopMoreFragment ();
 
-            if (this is NowListActivity) {
-                return;
-            } 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(NowListActivity));
+            var intent = HotListIntent (this);
             StartActivity (intent);
         }
 

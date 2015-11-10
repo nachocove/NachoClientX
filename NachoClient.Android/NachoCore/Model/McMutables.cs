@@ -120,6 +120,16 @@ namespace NachoCore.Model
             return "1" == value;
         }
 
+        public static bool GetBoolDefault (int accountId, string module, string key, bool defaultValue)
+        {
+            var value = Get (accountId, module, key);
+            if (null == value) {
+                return defaultValue;
+            } else {
+                return "1" == value;
+            }
+        }
+
         public static void SetBool (int accountId, string module, string key, bool value)
         {
             Set (accountId, module, key, value ? "1" : "0");

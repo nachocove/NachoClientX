@@ -83,8 +83,7 @@ namespace NachoClient.AndroidClient
                 NcApplication.Instance.Account = account;
                 LoginHelpers.SetSwitchToTime (account);
             }
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(NowListActivity));
+            var intent = NcTabBarActivity.HotListIntent(this);
             StartActivity (intent);
         }
 

@@ -163,4 +163,5 @@
     <string name="contact">Contact</string>
     <string name="interactions">Interactions</string>
     <string name="notes">Notes</string>
+    <string name="show_hot_cards">Show Cards on the Hot screen</string>
 </resources>
