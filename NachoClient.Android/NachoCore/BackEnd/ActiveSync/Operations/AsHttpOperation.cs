@@ -292,17 +292,13 @@ namespace NachoCore.ActiveSync
             if (0 < TriesLeft) {
                 --TriesLeft;
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
-                // Remove NcTask.Run once #1313 solved.
-                // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
+                // Using response.Content.ReadAsStreamAsync causes lock-ups sometimes.
+                // These lock-ups would cause loss of a thread.
+                // We switched back to ReadAsByteArrayAsync to avoid lock-ups. 
+                // This will have the side-effect of big responses being memory-resident
+                // until NachoHttp comes in.
                 Cts = new CancellationTokenSource ();
-                var itemOp = Owner as AsItemOperationsCommand;
-                if (null != itemOp && itemOp.DelayNotAllowed) {
-                    // Minimize the latency of getting the body at the risk of #1313 lock-up.
-                    // NachoHttp will remove the risk.
-                    AttemptHttp ();
-                } else {
-                    NcTask.Run (AttemptHttp, "AttemptHttp");
-                }
+                AttemptHttp ();
             } else {
                 Owner.ResolveAllDeferred ();
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOH", null, "Too many retries."));
@@ -454,12 +450,6 @@ namespace NachoCore.ActiveSync
         {
             IHttpClient client;
             var cToken = Cts.Token;
-
-            if (cToken.IsCancellationRequested) {
-                // Because of #1313, we are using Task.Run to start AttemptHttp. 
-                // Sometimes there is a big delay.
-                return;
-            }
 
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
