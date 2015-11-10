@@ -65,7 +65,6 @@ namespace NachoCore.Utils
         }
 
         static string[] LoginRunningTasks = new string[] {
-            "AttemptHttp",
             "Brain",
             "CheckNotified",
             "DeviceProtoControl:DeviceDbChange",
