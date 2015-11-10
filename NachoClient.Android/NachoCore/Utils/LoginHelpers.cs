@@ -141,6 +141,18 @@ namespace NachoCore.Utils
             }
         }
 
+        static public bool ShowHotCards()
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            return McMutables.GetBoolDefault (accountId, "GlobalSettings", "ShowHotCards", true);
+        }
+
+        static public void SetShowHotCards(bool show)
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            McMutables.SetBool (accountId, "GlobalSettings", "ShowHotCards", show);
+        }
+
         static public int GlobalAccountId {
             get { return McAccount.GetDeviceAccount ().Id; }
         }

@@ -5,6 +5,8 @@
     android:layout_height="fill_parent">
     <include
         layout="@layout/NavigationBar" />
+    <include
+        layout="@layout/HotEvent" />
     <nachoclient.androidclient.VerticalViewPager
         android:id="@+id/pager"
         android:layout_width="fill_parent"

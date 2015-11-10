@@ -18,6 +18,8 @@ using Android.Support.Design.Widget;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using Android.Graphics.Drawables;
+using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
@@ -31,6 +33,12 @@ namespace NachoClient.AndroidClient
         ViewPager pager;
         PriorityInboxPagerAdaptor adapter;
 
+        private const int LATE_TAG = 1;
+        private const int FORWARD_TAG = 2;
+
+        HotEventAdapter hotEventAdapter;
+
+        public event EventHandler<McEvent> onEventClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
         // Pages thru hot messages
@@ -64,6 +72,62 @@ namespace NachoClient.AndroidClient
             var hotImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.hot_image);
             hotImage.SetImageResource (Resource.Drawable.nav_nachonow_active);
 
+            var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
+
+            hotEvent.Visibility = ViewStates.Visible;
+            var hoteventListView = view.FindViewById<SwipeMenuListView> (Resource.Id.hotevent_listView);
+            hotEventAdapter = new HotEventAdapter ();
+            hoteventListView.Adapter = hotEventAdapter;
+            var hoteventEmptyView = view.FindViewById<View> (Resource.Id.hot_event_empty);
+            hoteventListView.EmptyView = hoteventEmptyView;
+
+            hoteventListView.ItemClick += HoteventListView_ItemClick;
+
+            hoteventListView.setMenuCreator ((menu) => {
+                SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
+                lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                lateItem.setWidth (dp2px (90));
+                lateItem.setTitle ("I'm Late");
+                lateItem.setTitleSize (14);
+                lateItem.setTitleColor (A.Color_White);
+                lateItem.setIcon (A.Id_NachoSwipeCalendarLate);
+                lateItem.setId (LATE_TAG);
+                menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
+
+                SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
+                forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                forwardItem.setWidth (dp2px (90));
+                forwardItem.setTitle ("Forward");
+                forwardItem.setTitleSize (14);
+                forwardItem.setTitleColor (A.Color_White);
+                forwardItem.setIcon (A.Id_NachoSwipeCalendarForward);
+                forwardItem.setId (FORWARD_TAG);
+                menu.addMenuItem (forwardItem, SwipeMenu.SwipeSide.RIGHT);
+            });
+
+            hoteventListView.setOnMenuItemClickListener (( position, menu, index) => {
+                var cal = CalendarHelper.GetMcCalendarRootForEvent (hotEventAdapter [position].Id);
+                switch (index) {
+                case LATE_TAG:
+                    if (null != cal) {
+                        var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Re: " + cal.GetSubject ());
+                        outgoingMessage.To = cal.OrganizerEmail;
+                        StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, outgoingMessage, "Running late."));
+                    }
+                    break;
+                case FORWARD_TAG:
+                    if (null != cal) {
+                        StartActivity (MessageComposeActivity.ForwardCalendarIntent (
+                            this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + cal.GetSubject ())));
+                    }
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
+                }
+                return false;
+            });
+
+
             return view;
         }
 
@@ -82,6 +146,16 @@ namespace NachoClient.AndroidClient
         {
             if (null != onMessageClick) {
                 onMessageClick (this, thread);
+            }
+        }
+
+        void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+        {
+            if (null != onEventClick) {
+                var currentEvent = hotEventAdapter [0];
+                if (null != currentEvent) {
+                    onEventClick (this, currentEvent);
+                }
             }
         }
 
@@ -113,6 +187,10 @@ namespace NachoClient.AndroidClient
             pager.Adapter = adapter;
         }
 
+        int dp2px (int dp)
+        {
+            return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
+        }
     }
 
     public class PriorityInboxPagerAdaptor : Android.Support.V13.App.FragmentStatePagerAdapter

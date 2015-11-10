@@ -47,7 +47,27 @@ namespace NachoClient.AndroidClient
             layoutManager = new LinearLayoutManager (this.Activity);
             recyclerView.SetLayoutManager (layoutManager);
 
+            var hotSwitch = view.FindViewById<Switch> (Resource.Id.show_hot_cards);
+            hotSwitch.Checked = LoginHelpers.ShowHotCards ();
+            hotSwitch.CheckedChange += HotSwitch_CheckedChange;
+
+            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
+                var crashButton = view.FindViewById<Button> (Resource.Id.crash_button);
+                crashButton.Visibility = ViewStates.Visible;
+                crashButton.Click += CrashButton_Click;
+            }
+
             return view;
+        }
+
+        void HotSwitch_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
+        {
+            LoginHelpers.SetShowHotCards (e.IsChecked); 
+        }
+
+        void CrashButton_Click (object sender, EventArgs e)
+        {
+            throw new Exception ("CRASH SIMULATION");  
         }
 
         public override void OnResume ()

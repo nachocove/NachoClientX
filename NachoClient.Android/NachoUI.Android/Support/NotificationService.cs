@@ -145,7 +145,8 @@ namespace NachoClient.AndroidClient
             var nMgr = (NotificationManager)GetSystemService (NotificationService);
             var notification = new Android.App.Notification( Resource.Drawable.notification, fromString);
             notification.Flags |= NotificationFlags.AutoCancel;
-            var pendingIntent = PendingIntent.GetActivity (this, 0, new Intent (this, typeof(NowListActivity)), 0);
+            var intent = NcTabBarActivity.HotListIntent (this);
+            var pendingIntent = PendingIntent.GetActivity (this, 0, intent, 0);
             notification.SetLatestEventInfo (this, fromString, subjectString, pendingIntent);
             nMgr.Notify (0, notification);
 

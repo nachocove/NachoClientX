@@ -17,7 +17,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "NowActivity")]            
-    public class NowActivity : NcTabBarActivity
+    public class NowActivity : NcTabBarActivity, MessageListDelegate
     {
 
         NowFragment nowFragment;
@@ -30,8 +30,26 @@ namespace NachoClient.AndroidClient
             base.OnCreate (bundle, Resource.Layout.NowActivity);
 
             nowFragment = new NowFragment ();
+            nowFragment.onEventClick += onEventClick;
             nowFragment.onMessageClick += onMessageClick;
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, nowFragment).AddToBackStack ("Now").Commit ();
+        }
+
+        public bool ShowHotEvent ()
+        {
+            return false;
+        }
+
+        public void SetActiveImage (Android.Views.View view)
+        {
+            // Highlight the tab bar icon of this activity
+            var tabImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.hot_image);
+            tabImage.SetImageResource (Resource.Drawable.nav_nachonow_active);
+        }
+
+        void onEventClick (object sender, McEvent ev)
+        {
+            StartActivity (EventViewActivity.ShowEventIntent (this, ev));
         }
 
         void onMessageClick (object sender, McEmailMessageThread thread)
