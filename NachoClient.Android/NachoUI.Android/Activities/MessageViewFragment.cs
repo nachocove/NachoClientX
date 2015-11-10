@@ -207,6 +207,8 @@ namespace NachoClient.AndroidClient
             } else {
                 webview.LoadData (e, "text/plain", null);
             }
+
+            EmailHelper.MarkAsRead (thread);
         }
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
