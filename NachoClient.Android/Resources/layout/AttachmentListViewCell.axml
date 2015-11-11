@@ -10,6 +10,16 @@
         android:layout_width="fill_parent"
         android:padding="3dp"
         android:layout_height="wrap_content">
+        <ImageButton
+            android:id="@+id/attachment_remove"
+            android:visibility="gone"
+            android:src="@drawable/gen_delete_small"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:padding="9dp"
+            android:scaleType="fitCenter"
+            android:layout_gravity="center"
+            android:background="@android:color/white" />
         <ImageView
             android:id="@+id/attachment_icon"
             android:src="@drawable/email_att_files"
