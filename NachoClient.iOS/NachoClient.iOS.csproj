@@ -1717,6 +1717,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimeStamp.cs">
       <Link>NachoCore\Utils\NcTimeStamp.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\NcHttpClientiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

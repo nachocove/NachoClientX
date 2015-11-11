@@ -6,6 +6,9 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using DnDns.Query;
 using DnDns.Enums;
+using System.Threading;
+using System.Net.Http;
+using System.Net;
 
 namespace NachoPlatform
 {
@@ -378,4 +381,50 @@ namespace NachoPlatform
     {
         DnsQueryResponse ResQuery (IDnsLockObject op, string host, NsClass dnsClass, NsType dnsType);
     }
+
+    #region INcHttpClient
+
+    public enum NcHttpClientState {
+        Unknown = 0,
+        Running,
+        Suspended,
+        Canceling,
+        Completed
+    }
+
+    public class NcHttpRequest
+    {
+        public Dictionary<string, List<string>> Headers { get; set; }
+
+        public Stream Content { get; protected set; }
+
+        public string ContentType { get; protected set; }
+
+        public string Url { get; protected set; }
+
+        public HttpMethod Method { get; protected set; }
+
+        public NcHttpRequest(HttpMethod method, string url)
+        {
+            Url = url;
+            Method = method;
+            Headers = new Dictionary<string, List<string>> ();
+        }
+
+        public void SetContent (Stream stream, string contentType)
+        {
+            Content = stream;
+            ContentType = contentType;
+        }
+    }
+
+    public interface INcHttpClient
+    {
+        void GetRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, CancellationToken cancellationToken);
+        void GetRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, Action<long, long, long> progress, CancellationToken cancellationToken);
+        void SendRequest (NcHttpRequest request, int timeout, Action success, Action<Exception> error, Action<long, long, long> progress, CancellationToken cancellationToken);
+        void SendRequest (NcHttpRequest request, int timeout, Action success, Action<Exception> error, CancellationToken cancellationToken);
+    }
+
+    #endregion
 }
