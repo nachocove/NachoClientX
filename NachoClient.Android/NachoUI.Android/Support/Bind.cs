@@ -198,15 +198,15 @@ namespace NachoClient.AndroidClient
             }
             colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
 
-            titleView.Text = Pretty.SubjectString (detailView.SpecificItem.Subject);
+            titleView.Text = Pretty.SubjectString (detailView.SpecificItem.GetSubject ());
 
             var startAndDuration = "";
             if (detailView.SpecificItem.AllDayEvent) {
                 startAndDuration = "ALL DAY";
             } else {
-                var start = Pretty.Time (detailView.SpecificItem.StartTime);
-                if (detailView.SpecificItem.EndTime > detailView.SpecificItem.StartTime) {
-                    var duration = Pretty.CompactDuration (detailView.SpecificItem.StartTime, detailView.SpecificItem.EndTime);
+                var start = Pretty.Time (detailView.StartTime);
+                if (detailView.EndTime > detailView.StartTime) {
+                    var duration = Pretty.CompactDuration (detailView.StartTime, detailView.EndTime);
                     startAndDuration = String.Join (" - ", new string[] { start, duration });
                 } else {
                     startAndDuration = start;
@@ -214,7 +214,7 @@ namespace NachoClient.AndroidClient
             }
             durationView.Text = startAndDuration;
 
-            var location = detailView.SpecificItem.Location;
+            var location = detailView.SpecificItem.GetLocation ();
             if (String.IsNullOrEmpty (location)) {
                 locationView.Text = "";
                 locationImageView.Visibility = ViewStates.Invisible;
