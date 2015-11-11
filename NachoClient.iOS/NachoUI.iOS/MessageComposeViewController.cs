@@ -542,7 +542,7 @@ namespace NachoClient.iOS
         // User deleting an attachment
         public void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment)
         {
-            attachment.Delete ();
+            attachment.Unlink (Composer.Message);
         }
 
         // User adding an attachment from media browser

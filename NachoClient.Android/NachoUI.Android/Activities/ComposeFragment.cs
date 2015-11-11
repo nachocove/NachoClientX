@@ -265,6 +265,11 @@ namespace NachoClient.AndroidClient
             // TODO: display attachment
         }
 
+        public void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment)
+        {
+            attachment.Unlink (Composer.Message);
+        }
+
         public void QuickResponseFragmentDidSelectResponse (QuickResponseFragment fragment, NcQuickResponse.QuickResponse response)
         {
             if (!EmailHelper.IsReplyAction(Composer.Kind) && !EmailHelper.IsForwardAction(Composer.Kind)) {

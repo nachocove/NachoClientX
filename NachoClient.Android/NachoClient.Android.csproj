@@ -1585,6 +1585,10 @@
     <AndroidResource Include="Resources\drawable-mdpi\notification.png" />
     <AndroidResource Include="Resources\layout\QuickResponseFragment.axml" />
     <AndroidResource Include="Resources\layout\QuickResponseDialogItem.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_delete_small.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_delete_small.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_delete_small.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_delete_small.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

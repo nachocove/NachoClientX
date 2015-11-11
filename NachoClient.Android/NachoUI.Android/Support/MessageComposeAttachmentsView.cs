@@ -129,11 +129,19 @@ namespace NachoClient.AndroidClient
         {
             var inflater = Context.GetSystemService (Context.LayoutInflaterService) as LayoutInflater;
             var view = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
+            var deleteButton = view.FindViewById<ImageButton> (Resource.Id.attachment_remove);
+            deleteButton.Visibility = ViewStates.Visible;
             Bind.BindAttachmentView (attachment, view);
             AttachmentListView.AddView (view);
             view.Click += (object sender, EventArgs e) => {
                 if (HeaderView != null && HeaderView.Delegate != null){
                     HeaderView.Delegate.MessageComposeHeaderViewDidSelectAttachment (HeaderView, attachment);
+                }
+            };
+            deleteButton.Click += (object sender, EventArgs e) => {
+                RemoveAttachment (attachment);
+                if (HeaderView != null && HeaderView.Delegate != null){
+                    HeaderView.Delegate.MessageComposeHeaderViewDidRemoveAttachment (HeaderView, attachment);
                 }
             };
         }
