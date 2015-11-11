@@ -17,7 +17,7 @@ namespace NachoCore.Utils
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
                 Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
-                Tokens = new String[] { DateTime.Now.ToString () },
+                Stamp = DateTime.UtcNow,
             });
 
         }
@@ -33,15 +33,13 @@ namespace NachoCore.Utils
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                 Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
-                Tokens = new String[] { DateTime.Now.ToString () },
+                Stamp = DateTime.UtcNow,
             });
         }
 
         public static TimeSpan DeliveryTime (StatusIndEventArgs e)
         {
-            string sentString = e.Tokens [0];
-            var sentTime = DateTime.Parse (sentString);
-            var deliveryTime = DateTime.Now - sentTime;
+            var deliveryTime = DateTime.UtcNow - e.Stamp;
             return deliveryTime;
         }
     }
