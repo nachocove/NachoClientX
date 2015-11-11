@@ -67,9 +67,6 @@ namespace NachoPlatform
                 task = session.CreateUploadTask (rq);
             } else {
                 task = session.CreateDownloadTask (rq);
-                cancellationToken.Register (() => {
-                    task.Cancel ();
-                });
             }
             cancellationToken.Register (() => {
                 task.Cancel ();
