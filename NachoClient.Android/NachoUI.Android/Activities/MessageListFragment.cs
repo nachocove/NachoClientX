@@ -321,7 +321,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnPause ();
             CancelSearchIfActive ();
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment OnPause");
         }
 
