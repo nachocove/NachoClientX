@@ -190,6 +190,19 @@ namespace NachoClient.AndroidClient
         {
             ShowQuickResponses ();
         }
+            
+        public void Discard ()
+        {
+            Composer.Message.Delete ();
+        }
+            
+        public void Save (Action callback)
+        {
+            GetHtmlContent ((string html) => {
+                Composer.Save (html);
+                callback ();
+            });
+        }
 
         #endregion
 
