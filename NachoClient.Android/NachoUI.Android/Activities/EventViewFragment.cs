@@ -33,11 +33,25 @@ namespace NachoClient.AndroidClient
         private View view;
         private ButtonBar buttonBar;
 
+        private ImageView attendButton;
+        private ImageView maybeButton;
+        private ImageView declineButton;
+
+        private NcResponseType userResponse = NcResponseType.None;
+        private string responseCmdToken = null;
+
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             view = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
             buttonBar = new ButtonBar (view);
+
+            attendButton = view.FindViewById<ImageView> (Resource.Id.event_attend_button);
+            maybeButton = view.FindViewById<ImageView> (Resource.Id.event_maybe_button);
+            declineButton = view.FindViewById<ImageView> (Resource.Id.event_decline_button);
+
             BindListeners ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
             return view;
         }
 
@@ -46,6 +60,7 @@ namespace NachoClient.AndroidClient
             base.OnActivityCreated (savedInstanceState);
             this.ev = ((IEventViewFragmentOwner)Activity).EventToView;
             this.detail = new NcEventDetail (ev);
+            userResponse = detail.SpecificItem.HasResponseType () ? detail.SpecificItem.GetResponseType () : NcResponseType.None;
             BindEventView ();
         }
 
@@ -92,6 +107,12 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public override void OnDestroy ()
+        {
+            base.OnDestroy ();
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
         ViewStates VisibleIfTrue (bool b)
         {
             return b ? ViewStates.Visible : ViewStates.Gone;
@@ -121,6 +142,10 @@ namespace NachoClient.AndroidClient
             notesView.Click += NotesView_Click;
             var notesArrow = view.FindViewById<View> (Resource.Id.event_notes_arrow);
             notesArrow.Click += NotesView_Click;
+
+            attendButton.Click += AttendButton_Click;
+            maybeButton.Click += MaybeButton_Click;
+            declineButton.Click += DeclineButton_Click;
         }
 
         /// <summary>
@@ -131,6 +156,11 @@ namespace NachoClient.AndroidClient
             // TODO: Attachments
 
             detail.Refresh ();
+
+            if (!detail.IsValid) {
+                EventWasDeleted ();
+                return;
+            }
 
             buttonBar.SetTitle (Pretty.LongMonthForceYear (detail.StartTime));
 
@@ -278,6 +308,7 @@ namespace NachoClient.AndroidClient
             } else {
                 // Show the Attend, Maybe, and Decline buttons.
                 rsvpView.Visibility = ViewStates.Visible;
+                SelectButtonForResponse (userResponse);
             }
         }
 
@@ -345,6 +376,159 @@ namespace NachoClient.AndroidClient
             return names [0].ToUpper ();
         }
 
+        private void ClearResponseButtons ()
+        {
+            attendButton.SetImageResource (Resource.Drawable.event_attend);
+            attendButton.Enabled = true;
+            maybeButton.SetImageResource (Resource.Drawable.event_maybe);
+            maybeButton.Enabled = true;
+            declineButton.SetImageResource (Resource.Drawable.event_decline);
+            declineButton.Enabled = true;
+        }
+
+        private void SelectButtonForResponse (NcResponseType response)
+        {
+            ClearResponseButtons ();
+
+            switch (response) {
+            case NcResponseType.Accepted:
+                attendButton.SetImageResource (Resource.Drawable.event_attend_active);
+                attendButton.Enabled = false;
+                break;
+            case NcResponseType.Tentative:
+                maybeButton.SetImageResource (Resource.Drawable.event_maybe_active);
+                maybeButton.Enabled = false;
+                break;
+            case NcResponseType.Declined:
+                declineButton.SetImageResource (Resource.Drawable.event_decline_active);
+                declineButton.Enabled = false;
+                break;
+            default:
+                // For any other response, leave all of the buttons unset.
+                break;
+            }
+        }
+
+        private void MakeStatusUpdates (NcResponseType response, bool occurrenceOnly)
+        {
+            userResponse = response;
+            if (occurrenceOnly) {
+                DateTime occurrenceStartTime;
+                if (detail.SpecificItem is McException) {
+                    occurrenceStartTime = ((McException)detail.SpecificItem).ExceptionStartTime;
+                } else {
+                    occurrenceStartTime = detail.Occurrence.StartTime;
+                }
+                var cmdResult = BackEnd.Instance.RespondCalCmd (detail.Account.Id, detail.SeriesItem.Id, response, occurrenceStartTime);
+                if (cmdResult.isOK ()) {
+                    responseCmdToken = cmdResult.GetValue<string> ();
+                    if (detail.SeriesItem.ResponseRequestedIsSet && detail.SeriesItem.ResponseRequested) {
+                        var iCalPart = CalendarHelper.MimeResponseFromCalendar (detail.SeriesItem, response, occurrenceStartTime);
+                        var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
+                        CalendarHelper.SendMeetingResponse (detail.Account, detail.SeriesItem, mimeBody, response);
+                    }
+                }
+            } else {
+                var cmdResult = BackEnd.Instance.RespondCalCmd (detail.Account.Id, detail.SeriesItem.Id, response);
+                if (cmdResult.isOK ()) {
+                    responseCmdToken = cmdResult.GetValue<string> ();
+                    if (detail.SeriesItem.ResponseRequestedIsSet && detail.SeriesItem.ResponseRequested) {
+                        var iCalPart = CalendarHelper.MimeResponseFromCalendar (detail.SeriesItem, response);
+                        var mimebody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
+                        CalendarHelper.SendMeetingResponse (detail.Account, detail.SeriesItem, mimebody, response);
+                    }
+                }
+            }
+        }
+
+        private void UpdateStatus (NcResponseType response)
+        {
+            if (detail.IsRecurring) {
+                if (NcResponseType.Declined == response) {
+                    new AlertDialog.Builder (this.Activity)
+                        .SetTitle ("Decline Meeting?")
+                        .SetMessage ("Declining the meeting will also delete the meeting from your calendar.")
+                        .SetPositiveButton ("Decline", (sender, e) => {
+                            new AlertDialog.Builder (this.Activity)
+                                .SetTitle ("Series or Occurrence?")
+                                .SetMessage ("Decline the entire series or just this one occurrence?")
+                                .SetPositiveButton ("Series", (sender1, e1) => {
+                                    MakeStatusUpdates (response, false);
+                                    this.Activity.SetResult (Result.Ok);
+                                    this.Activity.Finish ();
+                                })
+                                .SetNegativeButton ("Occurrence", (sender1, e1) => {
+                                    MakeStatusUpdates (response, true);
+                                    this.Activity.SetResult (Result.Ok);
+                                    this.Activity.Finish ();
+                                })
+                                .SetNeutralButton ("Cancel", (sender1, e1) => {
+                                    SelectButtonForResponse (userResponse);
+                                })
+                                .Create ().Show ();
+                        })
+                        .SetNegativeButton ("Cancel", (sender, e) => {
+                            SelectButtonForResponse (userResponse);
+                        })
+                        .Create ().Show ();
+                } else {
+                    new AlertDialog.Builder (this.Activity)
+                        .SetTitle ("Series or Occurrence?")
+                        .SetMessage ("Respond to the entire series or just this one occurrence?")
+                        .SetPositiveButton ("Series", (sender, e) => {
+                            MakeStatusUpdates (response, false);
+                        })
+                        .SetNegativeButton ("Occurrence", (sender, e) => {
+                            MakeStatusUpdates (response, true);
+                        })
+                        .SetNeutralButton ("Cancel", (sender, e) => {
+                            SelectButtonForResponse (userResponse);
+                        })
+                        .Create ().Show ();
+                }
+            } else if (NcResponseType.Declined == response) {
+                new AlertDialog.Builder (this.Activity)
+                    .SetTitle ("Decline Meeting?")
+                    .SetMessage ("Declining the meeting will also delete the meeting from your calendar.")
+                    .SetPositiveButton ("Decline", (sender, e) => {
+                        MakeStatusUpdates (response, false);
+                        this.Activity.SetResult (Result.Ok);
+                        this.Activity.Finish ();
+                    })
+                    .SetNegativeButton ("Cancel", (sender, e) => {
+                        SelectButtonForResponse (userResponse);
+                    })
+                    .Create ().Show ();
+            } else {
+                MakeStatusUpdates (response, false);
+            }
+        }
+
+        private void EventWasDeleted ()
+        {
+            NcAlertView.Show (this.Activity, "Deleted Event", "The event has been deleted.", () => {
+                this.Activity.SetResult (Result.Canceled);
+                this.Activity.Finish ();
+            });
+        }
+
+        private void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_CalendarChanged == s.Status.SubKind) {
+                BindEventView ();
+            }
+            if (NcResult.SubKindEnum.Info_CalendarUpdateSucceeded == s.Status.SubKind) {
+                if (null != responseCmdToken && null != s.Tokens && s.Tokens.Contains (responseCmdToken)) {
+                    responseCmdToken = null;
+                    detail.Refresh ();
+                    if (!detail.IsValid) {
+                        EventWasDeleted ();
+                    }
+                }
+            }
+        }
+
         private void EditButton_Click (object sender, EventArgs e)
         {
             StartActivityForResult (EventEditActivity.EditEventIntent (this.Activity, ev), EDIT_REQUEST_CODE);
@@ -382,6 +566,24 @@ namespace NachoClient.AndroidClient
             StartActivityForResult (
                 NoteActivity.EditNoteIntent (this.Activity, title, null, noteText, insertDate: false),
                 NOTE_REQUEST_CODE);
+        }
+
+        private void AttendButton_Click (object sender, EventArgs e)
+        {
+            SelectButtonForResponse (NcResponseType.Accepted);
+            UpdateStatus (NcResponseType.Accepted);
+        }
+
+        private void MaybeButton_Click (object sender, EventArgs e)
+        {
+            SelectButtonForResponse (NcResponseType.Tentative);
+            UpdateStatus (NcResponseType.Tentative);
+        }
+
+        private void DeclineButton_Click (object sender, EventArgs e)
+        {
+            SelectButtonForResponse (NcResponseType.Declined);
+            UpdateStatus (NcResponseType.Declined);
         }
     }
 }

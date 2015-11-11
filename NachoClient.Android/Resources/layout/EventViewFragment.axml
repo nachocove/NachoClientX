@@ -16,7 +16,6 @@
             android:background="@android:color/white">
             <TextView
                 android:id="@+id/event_title"
-                android:text="@string/demo_event_subject"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="0"
@@ -39,7 +38,8 @@
                 android:layout_height="wrap_content"
                 android:gravity="left"
                 android:padding="10dp"
-                android:layout_gravity="center_vertical">
+                android:layout_gravity="center_vertical"
+                android:visibility="gone">
                 <ImageView
                     android:src="@drawable/event_organizer"
                     android:layout_width="22dp"
@@ -75,6 +75,7 @@
                     android:padding="10dp"
                     android:layout_gravity="center_vertical">
                     <ImageView
+                        android:id="@+id/event_attend_button"
                         android:src="@drawable/event_attend"
                         android:layout_width="22dp"
                         android:layout_height="22dp"
@@ -101,6 +102,7 @@
                     android:padding="10dp"
                     android:layout_gravity="center_vertical">
                     <ImageView
+                        android:id="@+id/event_maybe_button"
                         android:src="@drawable/event_maybe"
                         android:layout_width="22dp"
                         android:layout_height="22dp"
@@ -127,6 +129,7 @@
                     android:padding="10dp"
                     android:layout_gravity="center_vertical">
                     <ImageView
+                        android:id="@+id/event_decline_button"
                         android:src="@drawable/event_decline"
                         android:layout_width="22dp"
                         android:layout_height="22dp"
@@ -152,7 +155,8 @@
                 android:layout_height="wrap_content"
                 android:gravity="left"
                 android:padding="10dp"
-                android:layout_gravity="center_vertical">
+                android:layout_gravity="center_vertical"
+                android:visibility="gone">
                 <ImageView
                     android:src="@drawable/event_decline"
                     android:layout_width="22dp"
@@ -178,7 +182,8 @@
                 android:layout_height="wrap_content"
                 android:gravity="left"
                 android:padding="10dp"
-                android:layout_gravity="center_vertical">
+                android:layout_gravity="center_vertical"
+                android:visibility="gone">
                 <ImageView
                     android:src="@drawable/event_decline"
                     android:layout_width="22dp"
@@ -236,7 +241,6 @@
                     android:textColor="@android:color/black"
                     android:textSize="17dp"
                     android:textStyle="normal"
-                    android:text="@string/demo_event_when"
                     android:layout_gravity="center_vertical"
                     android:paddingLeft="10dp" />
                 <TextView
@@ -248,7 +252,6 @@
                     android:textColor="@android:color/black"
                     android:textSize="17dp"
                     android:textStyle="normal"
-                    android:text="@string/demo_event_duration"
                     android:layout_gravity="center_vertical"
                     android:paddingLeft="10dp" />
                 <TextView
@@ -260,7 +263,6 @@
                     android:textColor="@android:color/black"
                     android:textSize="17dp"
                     android:textStyle="normal"
-                    android:text="@string/demo_event_recurrence"
                     android:layout_gravity="center_vertical"
                     android:paddingLeft="10dp" />
             </RelativeLayout>
@@ -300,7 +302,6 @@
                     android:textColor="@android:color/black"
                     android:textSize="17dp"
                     android:textStyle="normal"
-                    android:text="@string/demo_event_location"
                     android:layout_gravity="center_vertical"
                     android:paddingLeft="10dp" />
             </RelativeLayout>
@@ -379,7 +380,6 @@
                         android:textColor="@android:color/black"
                         android:textSize="17dp"
                         android:textStyle="normal"
-                        android:text="@string/demo_event_reminder"
                         android:paddingLeft="10dp" />
                     <ImageView
                         android:id="@+id/event_reminder_arrow"
@@ -423,7 +423,6 @@
                     android:textColor="@android:color/black"
                     android:textSize="17dp"
                     android:textStyle="normal"
-                    android:text="@string/demo_event_notes"
                     android:paddingLeft="10dp" />
             </RelativeLayout>
             <RelativeLayout
@@ -457,7 +456,6 @@
                     android:layout_toRightOf="@id/image"
                     android:layout_below="@id/label"
                     android:id="@+id/event_organizer_initials"
-                    android:text="@string/demo_event_organizer_initials"
                     android:textSize="24dp"
                     android:textColor="@android:color/white"
                     android:layout_width="40dp"
@@ -477,7 +475,6 @@
                     android:textColor="@android:color/black"
                     android:textSize="17dp"
                     android:textStyle="normal"
-                    android:text="@string/demo_event_organizer"
                     android:layout_gravity="center_vertical"
                     android:paddingLeft="10dp" />
                 <TextView
@@ -489,7 +486,6 @@
                     android:textColor="@android:color/black"
                     android:textSize="17dp"
                     android:textStyle="normal"
-                    android:text="@string/demo_event_organizer_email"
                     android:layout_gravity="center_vertical"
                     android:paddingLeft="10dp" />
             </RelativeLayout>
@@ -524,7 +520,6 @@
                     android:layout_toRightOf="@id/image"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_0"
-                    android:text="@string/demo_event_organizer_initials"
                     android:textSize="24dp"
                     android:textColor="@android:color/white"
                     android:layout_width="40dp"
@@ -539,7 +534,6 @@
                     android:layout_toRightOf="@id/image"
                     android:layout_below="@id/event_attendee_0"
                     android:id="@+id/event_attendee_name_0"
-                    android:text="@string/demo_event_organizer"
                     android:maxLines="1"
                     android:layout_width="40dp"
                     android:layout_height="wrap_content"
@@ -550,7 +544,6 @@
                     android:layout_toRightOf="@id/event_attendee_0"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_1"
-                    android:text="@string/demo_event_organizer_initials"
                     android:textSize="24dp"
                     android:textColor="@android:color/white"
                     android:layout_width="40dp"
@@ -565,7 +558,6 @@
                     android:layout_toRightOf="@id/event_attendee_name_0"
                     android:layout_below="@id/event_attendee_1"
                     android:id="@+id/event_attendee_name_1"
-                    android:text="@string/demo_event_organizer"
                     android:maxLines="1"
                     android:layout_width="40dp"
                     android:layout_height="wrap_content"
@@ -576,7 +568,6 @@
                     android:layout_toRightOf="@id/event_attendee_1"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_2"
-                    android:text="@string/demo_event_organizer_initials"
                     android:textSize="24dp"
                     android:textColor="@android:color/white"
                     android:layout_width="40dp"
@@ -591,7 +582,6 @@
                     android:layout_toRightOf="@id/event_attendee_name_1"
                     android:layout_below="@id/event_attendee_2"
                     android:id="@+id/event_attendee_name_2"
-                    android:text="@string/demo_event_organizer"
                     android:maxLines="1"
                     android:layout_width="40dp"
                     android:layout_height="wrap_content"
@@ -602,7 +592,6 @@
                     android:layout_toRightOf="@id/event_attendee_2"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_3"
-                    android:text="@string/demo_event_organizer_initials"
                     android:textSize="24dp"
                     android:textColor="@android:color/white"
                     android:layout_width="40dp"
@@ -617,7 +606,6 @@
                     android:layout_toRightOf="@id/event_attendee_name_2"
                     android:layout_below="@id/event_attendee_3"
                     android:id="@+id/event_attendee_name_3"
-                    android:text="@string/demo_event_organizer"
                     android:maxLines="1"
                     android:layout_width="40dp"
                     android:layout_height="wrap_content"
@@ -628,7 +616,6 @@
                     android:layout_toRightOf="@id/event_attendee_3"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_4"
-                    android:text="@string/demo_event_organizer_initials"
                     android:textSize="24dp"
                     android:textColor="@android:color/white"
                     android:layout_width="40dp"
@@ -643,7 +630,6 @@
                     android:layout_toRightOf="@id/event_attendee_name_3"
                     android:layout_below="@id/event_attendee_4"
                     android:id="@+id/event_attendee_name_4"
-                    android:text="@string/demo_event_organizer"
                     android:maxLines="1"
                     android:layout_width="40dp"
                     android:layout_height="wrap_content"
@@ -691,7 +677,6 @@
                         android:textColor="@android:color/black"
                         android:textSize="17dp"
                         android:textStyle="normal"
-                        android:text="@string/demo_event_notes"
                         android:paddingLeft="10dp" />
                     <ImageView
                         android:id="@+id/event_notes_arrow"
@@ -736,7 +721,6 @@
                     android:textColor="@android:color/black"
                     android:textSize="17dp"
                     android:textStyle="normal"
-                    android:text="@string/demo_event_calendar"
                     android:layout_gravity="center_vertical"
                     android:paddingLeft="10dp" />
             </RelativeLayout>
