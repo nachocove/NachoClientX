@@ -119,7 +119,10 @@ namespace NachoClient.iOS
         {
             loadingComplete = true;
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            PostLoadAdjustment ();
+            NcTimeStamp.Add ("OnLoadFinished");
+            NcTimeStamp.Dump ();
+            return;
+            //PostLoadAdjustment ();
             // Force a re-layout of this web view now that the JavaScript magic has been applied.
             // The ScrollView.ContentSize is never smaller than the frame size, so in order to
             // figure out how big the content really is, we have to set the frame height to a
@@ -215,7 +218,7 @@ namespace NachoClient.iOS
 
         public static void Release (BodyHtmlWebView webView)
         {
-            if (2 > ViewCache.Count) {
+            if (3 > ViewCache.Count) {
                 webView.Reset ();
                 ViewCache.Push (webView);
             } else {
@@ -234,7 +237,11 @@ namespace NachoClient.iOS
 
         protected override void LoadContent ()
         {
-            LoadHtmlString (disableJavaScript + html, baseUrl);
+            var tmp = NachoCore.Model.NcModel.Instance.TmpPath (1) + ".html";
+            File.WriteAllText (tmp, disableJavaScript + html);
+            LoadRequest (new NSUrlRequest (new NSUrl (tmp, false)));
+            //LoadHtmlString (disableJavaScript + html, baseUrl);
+            PostLoadAdjustment ();
         }
 
         protected override void PostLoadAdjustment ()
