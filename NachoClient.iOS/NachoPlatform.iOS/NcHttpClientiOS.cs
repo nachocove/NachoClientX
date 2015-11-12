@@ -54,8 +54,9 @@ namespace NachoPlatform
                     }
                 } else if (request.Content is MemoryStream) {
                     var memStream = request.Content as MemoryStream;
-                    RequestBodyStream = NSInputStream.FromData (NSData.FromArray (memStream.GetBuffer ()));
-                    //RequestBody = NSData.FromStream (memStream);
+                    // FIX: RequestBodyStream doesn't yet work. Not entirely sure why. Debug this.
+                    //RequestBodyStream = NSInputStream.FromData (NSData.FromArray (memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ()));
+                    RequestBody = NSData.FromStream (memStream);
                     if (!request.ContainsHeader ("Content-Length")) {
                         request.AddHeader ("Content-Length", memStream.Length.ToString ());
                     }
