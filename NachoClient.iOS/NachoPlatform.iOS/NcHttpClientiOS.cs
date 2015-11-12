@@ -57,14 +57,11 @@ namespace NachoPlatform
                 if (request.Content is FileStream) {
                     var fileStream = request.Content as FileStream;
                     RequestBodyStream = NSInputStream.FromFile (fileStream.Name);
-                    //RequestBody = NSData.FromStream (fileStream);
                     if (!request.ContainsHeader ("Content-Length")) {
                         request.AddHeader ("Content-Length", fileStream.Length.ToString ());
                     }
                 } else if (request.Content is MemoryStream) {
                     var memStream = request.Content as MemoryStream;
-                    // FIX: RequestBodyStream doesn't yet work, and in any case this copies the data in memory, so is not terribly useful.
-                    //RequestBodyStream = NSInputStream.FromData (NSData.FromArray (memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ()));
                     RequestBody = NSData.FromStream (memStream);
                     if (!request.ContainsHeader ("Content-Length")) {
                         request.AddHeader ("Content-Length", memStream.Length.ToString ());
@@ -79,15 +76,21 @@ namespace NachoPlatform
                 nsHeaders.Add (new NSString (x.Key), new NSString (String.Join (",", x.Value)));
             }
 
-            OriginalRequest = new NSMutableUrlRequest () {
+            var req = new NSMutableUrlRequest () {
                 AllowsCellularAccess = true,
-                Body = RequestBody,
                 CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
                 Headers = nsHeaders,
                 HttpMethod = request.Method.ToString ().ToUpperInvariant (),
                 Url = NSUrl.FromString (request.Url),
                 TimeoutInterval = timeout,
             };
+            if (RequestBody != null) {
+                req.Body = RequestBody;
+            } else if (RequestBodyStream != null) {
+                req.BodyStream = RequestBodyStream;
+            }
+            OriginalRequest = req;
+
             Log.Info (Log.LOG_HTTP, "Request Http URL: {0}\n{1}\n", OriginalRequest.Url, OriginalRequest.Headers.ToString ());
 
             var config = NSUrlSessionConfiguration.DefaultSessionConfiguration;
@@ -97,7 +100,7 @@ namespace NachoPlatform
 
             var session = NSUrlSession.FromConfiguration (config, dele, null);
             if (isSend) {
-                task = session.CreateUploadTask (OriginalRequest);
+                task = session.CreateDownloadTask (OriginalRequest);
             } else {
                 if (null != RequestBody) {
                     Log.Warn (Log.LOG_HTTP, "Download task without an uploaded body. This is likely OK.");
@@ -141,7 +144,7 @@ namespace NachoPlatform
 
         public void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
-            var dele = new NcUploadTaskDelegate (this, cancellationToken, success, error, progress);
+            var dele = new NcDownloadTaskDelegate (this, cancellationToken, success, error, progress);
             dele.sw.Start ();
             Log.Info (Log.LOG_HTTP, "SendRequest: Started stopwatch");
             SetupAndRunRequest (true, request, timeout, dele, cancellationToken);
@@ -198,14 +201,6 @@ namespace NachoPlatform
                 completionHandler (NSUrlSessionResponseDisposition.Allow);
             }
 
-            public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
-            {
-                Token.ThrowIfCancellationRequested ();
-                if (null != ProgressAction) {
-                    ProgressAction (bytesSent, totalBytesSent, totalBytesExpectedToSend);
-                }
-            }
-
             public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
             {
                 sw.Stop ();
@@ -218,9 +213,45 @@ namespace NachoPlatform
                 }
             }
 
+            public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
+            {
+                Token.ThrowIfCancellationRequested ();
+                if (null != ProgressAction) {
+                    ProgressAction (bytesSent, totalBytesSent, totalBytesExpectedToSend);
+                }
+            }
+
+            public override void DidReceiveData (NSUrlSession session, NSUrlSessionDataTask dataTask, NSData data)
+            {
+                throw new System.NotImplementedException ();
+            }
+
+            public override void DidFinishEventsForBackgroundSession (NSUrlSession session)
+            {
+                throw new System.NotImplementedException ();
+            }
+            public override void DidBecomeDownloadTask (NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlSessionDownloadTask downloadTask)
+            {
+                throw new System.NotImplementedException ();
+            }
+            public override void DidBecomeStreamTask (NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlSessionStreamTask streamTask)
+            {
+                throw new System.NotImplementedException ();
+            }
+            public override void WillCacheResponse (NSUrlSession session, NSUrlSessionDataTask dataTask, NSCachedUrlResponse proposedResponse, Action<NSCachedUrlResponse> completionHandler)
+            {
+                throw new System.NotImplementedException ();
+            }
+            public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
+            {
+                throw new System.NotImplementedException ();
+            }
+            public override void DidBecomeInvalid (NSUrlSession session, NSError error)
+            {
+                throw new System.NotImplementedException ();
+            }
             public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
             {
-                Log.Info (Log.LOG_HTTP, "DidReceiveChallenge: {0}", challenge.ProtectionSpace.AuthenticationMethod);
                 BaseDidReceiveChallenge (Owner.Cred, session, task, challenge, completionHandler);
             }
         }
@@ -258,6 +289,8 @@ namespace NachoPlatform
                 var fileStream = Owner.OutputStream as FileStream;
                 if (fileStream != null) {
                     completionHandler (NSInputStream.FromFile (fileStream.Name));
+                } else {
+                    Log.Error (Log.LOG_HTTP, "NeedNewBodyStream called for stream type {0}", Owner.OutputStream.GetType ().Name);
                 }
             }
 
@@ -290,6 +323,14 @@ namespace NachoPlatform
                 }
             }
 
+            public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
+            {
+                Token.ThrowIfCancellationRequested ();
+                if (null != ProgressAction) {
+                    ProgressAction (bytesSent, totalBytesSent, totalBytesExpectedToSend);
+                }
+            }
+
             public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
             {
                 Token.ThrowIfCancellationRequested ();
@@ -298,6 +339,22 @@ namespace NachoPlatform
                 }
             }
 
+            public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
+            {
+                throw new System.NotImplementedException ();
+            }
+            public override void DidResume (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long resumeFileOffset, long expectedTotalBytes)
+            {
+                throw new System.NotImplementedException ();
+            }
+            public override void DidBecomeInvalid (NSUrlSession session, NSError error)
+            {
+                throw new System.NotImplementedException ();
+            }
+            public override void DidFinishEventsForBackgroundSession (NSUrlSession session)
+            {
+                throw new System.NotImplementedException ();
+            }
             public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
             {
                 BaseDidReceiveChallenge (Owner.Cred, session, task, challenge, completionHandler);
@@ -330,6 +387,7 @@ namespace NachoPlatform
 
         public static void BaseDidReceiveChallenge (McCred cred, NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
         {
+            Log.Info (Log.LOG_HTTP, "DidReceiveChallenge: {0}", challenge.ProtectionSpace.AuthenticationMethod);
             if (challenge.ProtectionSpace.AuthenticationMethod != "NSURLAuthenticationMethodServerTrust" ||
                 ServicePointManager.ServerCertificateValidationCallback == null) {
                 HandleCredentialsRequest (cred, challenge, completionHandler);
