@@ -16,8 +16,14 @@ using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
+    public class MessageViewActivityData
+    {
+        public McEmailMessageThread Thread;
+        public McEmailMessage Message;
+    }
+
     [Activity (Label = "MessageViewActivity")]
-    public class MessageViewActivity : NcActivity, IMessageViewFragmentOwner
+    public class MessageViewActivity : NcActivityWithData<MessageViewActivityData>, IMessageViewFragmentOwner
     {
         private const string EXTRA_THREAD = "com.nachocove.nachomail.EXTRA_THREAD";
         private const string EXTRA_MESSAGE = "com.nachocove.nachomail.EXTRA_MESSAGE";
@@ -28,8 +34,15 @@ namespace NachoClient.AndroidClient
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
-            this.thread = IntentHelper.RetrieveValue<McEmailMessageThread> (Intent.GetStringExtra (EXTRA_THREAD));
-            this.message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
+            var dataFromIntent = RetainedData;
+            if (null == dataFromIntent) {
+                dataFromIntent = new MessageViewActivityData ();
+                dataFromIntent.Thread = IntentHelper.RetrieveValue<McEmailMessageThread> (Intent.GetStringExtra (EXTRA_THREAD));
+                dataFromIntent.Message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
+                RetainedData = dataFromIntent;
+            }
+            this.thread = dataFromIntent.Thread;
+            this.message = dataFromIntent.Message;
 
             SetContentView (Resource.Layout.MessageViewActivity);
         }

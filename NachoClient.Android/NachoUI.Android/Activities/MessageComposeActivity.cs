@@ -16,7 +16,7 @@ using NachoCore;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "MessageComposeActivity")]            
-    public class MessageComposeActivity : NcActivity
+    public class MessageComposeActivity : NcActivityWithData<McEmailMessage>
     {
 
         public static readonly string EXTRA_ACTION = "com.nachocove.nachomail.action";
@@ -46,7 +46,12 @@ namespace NachoClient.AndroidClient
                 composeFragment.Composer.RelatedCalendarItem = relatedCalendarItem;
             }
             if (Intent.HasExtra(EXTRA_MESSAGE)) {
-                composeFragment.Composer.Message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
+                var message = RetainedData;
+                if (null == message) {
+                    message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
+                    RetainedData = message;
+                }
+                composeFragment.Composer.Message = message;
             }
             if (Intent.HasExtra (EXTRA_INITIAL_TEXT)) {
                 var text = Intent.GetStringExtra (EXTRA_INITIAL_TEXT);

@@ -28,6 +28,8 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle, Resource.Layout.FoldersActivity);
 
+            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
+
             folderListFragment = FolderListFragment.newInstance ();
             folderListFragment.onFolderSelected += onFolderSelected;
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, folderListFragment).AddToBackStack ("Folders").Commit ();

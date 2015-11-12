@@ -27,7 +27,12 @@ namespace NachoClient.AndroidClient
 
             var fragment = FragmentManager.FindFragmentById<AttendeeListViewFragment> (Resource.Id.attendee_view_fragment);
             fragment.AccountId = AccountIdFromIntent (Intent);
-            fragment.Attendees = AttendeesFromIntent (Intent);
+            var attendees = RetainedData;
+            if (null == attendees) {
+                attendees = AttendeesFromIntent (Intent);
+                RetainedData = attendees;
+            }
+            fragment.Attendees = attendees;
         }
 
         public static Intent AttendeeViewIntent (Context context, int accountId, IList<McAttendee> attendees)

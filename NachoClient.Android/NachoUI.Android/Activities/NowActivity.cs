@@ -27,6 +27,8 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "NowActivity OnCreate");
 
+            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
+
             base.OnCreate (bundle, Resource.Layout.NowActivity);
 
             nowFragment = new NowFragment ();
