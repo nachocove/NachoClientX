@@ -30,7 +30,9 @@ namespace NachoClient.AndroidClient
         MessageComposerDelegate,
         NachoWebClientDelegate,
         MessageComposeHeaderViewDelegate,
-        IntentFragmentDelegate
+        IntentFragmentDelegate,
+        AttachmentPickerFragmentDelegate,
+        QuickResponseFragmentDelegate
     {
 
         #region Properties
@@ -39,6 +41,7 @@ namespace NachoClient.AndroidClient
         MessageComposeHeaderView HeaderView;
         Android.Webkit.WebView WebView;
         Android.Widget.ImageView SendButton;
+        Android.Widget.ImageView QuickResponseButton;
         bool IsWebViewLoaded;
         bool FocusWebViewOnLoad;
         List<Tuple<string, JavascriptCallback>> JavaScriptQueue;
@@ -79,7 +82,9 @@ namespace NachoClient.AndroidClient
             buttonBar = new ButtonBar (view);
 
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.contact_quickemail, QuickResponseButton_Click);
             SendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
+            QuickResponseButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button2);
 
             HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
             HeaderView.Delegate = this;
@@ -132,11 +137,31 @@ namespace NachoClient.AndroidClient
                 Composer.Save (html);
                 if (Composer.IsOversize) {
                     if (Composer.CanResize) {
-                        var alert = new AlertDialog.Builder (Activity).SetTitle ("Large Message").SetMessage (String.Format ("This message is {0}.  You can make it smaller by sizing down the attached images.", Pretty.PrettyFileSize(Composer.MessageSize)));
-                        alert.SetNeutralButton (String.Format ("Small Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedSmallSize)), ResizeImagesSmall);
-                        alert.SetNeutralButton (String.Format ("Medium Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedMediumSize)), ResizeImagesMedium);
-                        alert.SetNeutralButton (String.Format ("Large Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedLargeSize)), ResizeImagesLarge);
-                        alert.SetNeutralButton (String.Format ("Actual Size ({0})", Pretty.PrettyFileSize(Composer.MessageSize)), AcknowlegeSizeWarning);
+                        var alert = new AlertDialog.Builder (Activity).SetTitle (String.Format ("This message is {0}. Do you want to resize images?", Pretty.PrettyFileSize(Composer.MessageSize)));
+                        alert.SetSingleChoiceItems (new string[] {
+                            String.Format ("Small Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedSmallSize)),
+                            String.Format ("Medium Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedMediumSize)),
+                            String.Format ("Large Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedLargeSize)),
+                            String.Format ("Actual Size ({0})", Pretty.PrettyFileSize(Composer.MessageSize))
+                        }, -1, (object sender, DialogClickEventArgs e) => {
+                            switch (e.Which){
+                            case 0:
+                                ResizeImagesSmall (sender, e);
+                                break;
+                            case 1:
+                                ResizeImagesMedium (sender, e);
+                                break;
+                            case 2:
+                                ResizeImagesLarge (sender, e);
+                                break;
+                            case 3:
+                                AcknowlegeSizeWarning (sender, e);
+                                break;
+                            default:
+                                NcAssert.CaseError();
+                                break;
+                            }
+                        });
                         alert.Show ();
                     } else {
                         var alert = new AlertDialog.Builder (Activity).SetTitle ("Large Message").SetMessage (String.Format ("This message is {0}", Pretty.PrettyFileSize(Composer.MessageSize)));
@@ -179,6 +204,24 @@ namespace NachoClient.AndroidClient
         {
             Composer.Send ();
             Activity.Finish ();
+        }
+
+        void QuickResponseButton_Click (object sender, EventArgs e)
+        {
+            ShowQuickResponses ();
+        }
+            
+        public void Discard ()
+        {
+            Composer.Message.Delete ();
+        }
+            
+        public void Save (Action callback)
+        {
+            GetHtmlContent ((string html) => {
+                Composer.Save (html);
+                callback ();
+            });
         }
 
         #endregion
@@ -234,6 +277,53 @@ namespace NachoClient.AndroidClient
             Composer.Message.IntentDateType = request;
             Composer.Message.IntentDate = selectedDate;
             UpdateHeaderIntentView ();
+        }
+
+        public void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view)
+        {
+            var attachmentPicker = new AttachmentPickerFragment ();
+            attachmentPicker.Account = Composer.Account;
+            attachmentPicker.Delegate = this;
+            attachmentPicker.Show (FragmentManager, "attachments");
+        }
+
+        public void AttachmentPickerDidPickAttachment (AttachmentPickerFragment picker, McAttachment attachment)
+        {
+            attachment.Link (Composer.Message);
+            HeaderView.AttachmentsView.AddAttachment (attachment);
+        }
+
+        public void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment)
+        {
+            // TODO: display attachment
+        }
+
+        public void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment)
+        {
+            attachment.Unlink (Composer.Message);
+        }
+
+        public void QuickResponseFragmentDidSelectResponse (QuickResponseFragment fragment, NcQuickResponse.QuickResponse response)
+        {
+            if (!EmailHelper.IsReplyAction(Composer.Kind) && !EmailHelper.IsForwardAction(Composer.Kind)) {
+                Composer.Message.Subject = response.subject;
+                UpdateHeaderSubjectView ();
+            }
+            if (Composer.IsMessagePrepared) {
+                var javascriptString = JavaScriptEscapedString (response.body + Composer.SignatureText());
+                EvaluateJavascript (String.Format ("Editor.defaultEditor.replaceUserText({0});", javascriptString));
+            } else {
+                Composer.InitialText = response.body;
+            }
+            if (response.intent != null) {
+                Composer.Message.Intent = response.intent.type;
+            } else {
+                Composer.Message.Intent = McEmailMessage.IntentType.None;
+            }
+            Composer.Message.IntentDate = DateTime.MinValue;
+            Composer.Message.IntentDateType = MessageDeferralType.None;
+            UpdateHeaderIntentView ();
+            HeaderView.ShowIntentField ();
         }
 
         #endregion
@@ -296,9 +386,7 @@ namespace NachoClient.AndroidClient
 
         public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
         {
-            // TODO: return android image
-//            return ImageiOS.FromStream (stream);
-            return null;
+            return ImageAndroid.FromStream (stream);
         }
 
         void DisplayMessageBody ()
@@ -316,6 +404,17 @@ namespace NachoClient.AndroidClient
         #endregion
 
         #region Helpers
+
+        string JavaScriptEscapedString (string s)
+        {
+            var primitive = new System.Json.JsonPrimitive (s);
+            string escaped = "";
+            using (var writer = new StringWriter ()) {
+                primitive.Save (writer);
+                escaped = writer.ToString ();
+            }
+            return escaped.Replace("\n", "\\n");
+        }
 
         delegate void HtmlContentCallback (string html);
 
@@ -342,6 +441,7 @@ namespace NachoClient.AndroidClient
             HeaderView.BccField.AddressString = Composer.Message.Bcc;
             UpdateHeaderSubjectView ();
             UpdateHeaderIntentView ();
+            UpdateHeaderAttachmentsView ();
         }
 
         void UpdateHeaderSubjectView ()
@@ -352,6 +452,27 @@ namespace NachoClient.AndroidClient
         void UpdateHeaderIntentView ()
         {
             HeaderView.IntentValueLabel.Text = NcMessageIntent.GetIntentString (Composer.Message.Intent, Composer.Message.IntentDateType, Composer.Message.IntentDate);
+        }
+
+        private void UpdateHeaderAttachmentsView ()
+        {
+            var attachments = McAttachment.QueryByItem (Composer.Message);
+            HeaderView.AttachmentsView.SetAttachments (attachments);
+        }
+
+        void ShowQuickResponses ()
+        {
+            NcQuickResponse.QRTypeEnum responseType = NcQuickResponse.QRTypeEnum.Compose;
+
+            if (EmailHelper.IsReplyAction (Composer.Kind)) {
+                responseType = NcQuickResponse.QRTypeEnum.Reply;
+            } else if (EmailHelper.IsForwardAction (Composer.Kind)) {
+                responseType = NcQuickResponse.QRTypeEnum.Forward;
+            }
+
+            var quickResponsesFragment = new QuickResponseFragment (responseType);
+            quickResponsesFragment.Delegate = this;
+            quickResponsesFragment.Show (FragmentManager, "quick_responses");
         }
 
         #endregion

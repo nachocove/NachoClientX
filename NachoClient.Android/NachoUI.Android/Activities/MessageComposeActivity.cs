@@ -16,7 +16,7 @@ using NachoCore;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "MessageComposeActivity")]            
-    public class MessageComposeActivity : NcActivity
+    public class MessageComposeActivity : NcActivityWithData<McEmailMessage>
     {
 
         public static readonly string EXTRA_ACTION = "com.nachocove.nachomail.action";
@@ -46,7 +46,12 @@ namespace NachoClient.AndroidClient
                 composeFragment.Composer.RelatedCalendarItem = relatedCalendarItem;
             }
             if (Intent.HasExtra(EXTRA_MESSAGE)) {
-                composeFragment.Composer.Message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
+                var message = RetainedData;
+                if (null == message) {
+                    message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
+                    RetainedData = message;
+                }
+                composeFragment.Composer.Message = message;
             }
             if (Intent.HasExtra (EXTRA_INITIAL_TEXT)) {
                 var text = Intent.GetStringExtra (EXTRA_INITIAL_TEXT);
@@ -90,6 +95,29 @@ namespace NachoClient.AndroidClient
             intent.PutExtra (EXTRA_RELATED_CALENDAR_ID, calendarId);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
             return intent;
+        }
+
+        public override void OnBackPressed ()
+        {
+            var alert = new Android.App.AlertDialog.Builder (this).SetTitle ("Would you like to save this message?").SetMessage ("You can access saved messages from your Drafts folder.");
+            alert.SetNegativeButton ("Discard Draft", Discard);
+            alert.SetPositiveButton ("Save Draft", Save);
+            alert.Show ();
+        }
+
+        public void Discard (object sender, EventArgs args)
+        {
+            var fragment = FragmentManager.FindFragmentById<ComposeFragment> (Resource.Id.content);
+            fragment.Discard ();
+            Finish ();
+        }
+
+        public void Save (object sender, EventArgs args)
+        {
+            var fragment = FragmentManager.FindFragmentById<ComposeFragment> (Resource.Id.content);
+            fragment.Save (() => {
+                Finish ();
+            });
         }
     }
 }

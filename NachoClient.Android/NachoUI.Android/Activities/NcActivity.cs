@@ -1,13 +1,16 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using Android.Support.V7.App;
 using Android.OS;
-using NachoCore.Utils;
+using Android.Support.V7.App;
 using NachoClient.Build;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
+    /// <summary>
+    /// Activity base class that (1) logs state transitions, and (2) checks with HockeyApp for updates.
+    /// </summary>
     public class NcActivity : AppCompatActivity
     {
         private string ClassName;
@@ -19,6 +22,7 @@ namespace NachoClient.AndroidClient
         private const string TELEMETRY_ON_STOP = "ON_STOP";
         private const string TELEMETRY_ON_DESTROY = "ON_DESTROY";
         private const string TELEMETRY_ON_RESTART = "ON_RESTART";
+        private const string TELEMETRY_ON_NEWINTENT = "ON_NEWINTENT";
 
         bool updateRegistered;
 
@@ -33,6 +37,12 @@ namespace NachoClient.AndroidClient
         {
             Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_START);
             base.OnStart ();
+        }
+
+        protected override void OnNewIntent (Android.Content.Intent intent)
+        {
+            Telemetry.RecordUiViewController (ClassName, TELEMETRY_ON_NEWINTENT);
+            base.OnNewIntent (intent);
         }
 
         protected override void OnResume ()
@@ -89,7 +99,48 @@ namespace NachoClient.AndroidClient
                 base.OnNoUpdateAvailable ();
             }
         }
+    }
 
+    /// <summary>
+    /// Activity base class on top of NcActivity that provides a way for activities to save data
+    /// that must survive across a configuration change such as rotating the device.  Preserving
+    /// the data is not automatic.  Derived classes must call RetainedData at the appropriate time.
+    /// </summary>
+    public class NcActivityWithData<T> : NcActivity
+    {
+        private class DataFragment : Android.App.Fragment
+        {
+            public T Data {
+                get;
+                set;
+            }
+
+            public override void OnCreate (Bundle savedInstanceState)
+            {
+                base.OnCreate (savedInstanceState);
+                this.RetainInstance = true;
+            }
+        }
+
+        private const string DATA_FRAGMENT_TAG = "DataFragment";
+
+        public T RetainedData {
+            get {
+                var fragment = FragmentManager.FindFragmentByTag<DataFragment> (DATA_FRAGMENT_TAG);
+                if (null == fragment) {
+                    return default(T);
+                }
+                return fragment.Data;
+            }
+            set {
+                var fragment = FragmentManager.FindFragmentByTag<DataFragment> (DATA_FRAGMENT_TAG);
+                if (null == fragment) {
+                    fragment = new DataFragment ();
+                    FragmentManager.BeginTransaction ().Add (fragment, DATA_FRAGMENT_TAG).Commit ();
+                }
+                fragment.Data = value;
+            }
+        }
     }
 }
 

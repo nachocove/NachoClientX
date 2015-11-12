@@ -59,6 +59,8 @@ namespace NachoClient.AndroidClient
 
             Log.Info (Log.LOG_LIFECYCLE, "MainActivity: OnStart finished");
 
+            MainApplication.Instance.StartService(new Intent(MainApplication.Instance, typeof(NotificationService)));
+
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
         }
 

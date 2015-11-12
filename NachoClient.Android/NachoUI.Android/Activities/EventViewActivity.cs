@@ -18,7 +18,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "EventViewActivity")]            
-    public class EventViewActivity : NcActivity, IEventViewFragmentOwner
+    public class EventViewActivity : NcActivityWithData<McEvent>, IEventViewFragmentOwner
     {
         private const string EXTRA_EVENT = "com.nachocove.nachomail.EXTRA_EVENT";
 
@@ -27,7 +27,13 @@ namespace NachoClient.AndroidClient
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
-            this.ev = IntentHelper.RetrieveValue<McEvent> (Intent.GetStringExtra (EXTRA_EVENT));
+            var savedEvent = RetainedData;
+            if (null == savedEvent) {
+                this.ev = IntentHelper.RetrieveValue<McEvent> (Intent.GetStringExtra (EXTRA_EVENT));
+                RetainedData = this.ev;
+            } else {
+                this.ev = savedEvent;
+            }
             SetContentView (Resource.Layout.EventViewActivity);
         }
 

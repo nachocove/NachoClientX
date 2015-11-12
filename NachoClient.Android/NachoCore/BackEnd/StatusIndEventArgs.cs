@@ -16,6 +16,7 @@ namespace NachoCore
         public McAccount Account;
         public NcResult Status;
         public string[] Tokens;
+        public DateTime Stamp;
 
         public bool AppliesToAccount (McAccount account)
         {

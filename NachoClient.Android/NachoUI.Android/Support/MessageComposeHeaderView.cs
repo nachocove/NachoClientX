@@ -20,9 +20,9 @@ namespace NachoClient.AndroidClient
         void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc);
         void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc);
         void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
-//        void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
-//        void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
-//        void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
+        void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
+        void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
+        void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
 //        void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address);
 //        void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address);
 //        void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address);
@@ -38,6 +38,7 @@ namespace NachoClient.AndroidClient
         public EmailAddressField BccField;
         public TextView IntentValueLabel;
         public TextView CcLabel;
+        public MessageComposeAttachmentsView AttachmentsView;
         LinearLayout IntentContainer;
         LinearLayout BccContainer;
         bool HasOpenedSubject;
@@ -101,6 +102,8 @@ namespace NachoClient.AndroidClient
             IntentValueLabel = view.FindViewById<TextView> (Resource.Id.compose_intent);
             SubjectField.TextChanged += SubjectChanged;
             IntentContainer.Click += SelectIntent;
+            AttachmentsView = view.FindViewById<MessageComposeAttachmentsView> (Resource.Id.compose_attachments);
+            AttachmentsView.HeaderView = this;
         }
 
         void BccFieldChanged (object sender, EventArgs e)
@@ -157,6 +160,12 @@ namespace NachoClient.AndroidClient
         public void FocusSubject ()
         {
             SubjectField.RequestFocus ();
+        }
+
+        public void ShowIntentField ()
+        {
+            HasOpenedSubject = true;
+            RequestLayout ();
         }
 
         protected override void OnLayout (bool changed, int l, int t, int r, int b)
