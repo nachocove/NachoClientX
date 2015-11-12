@@ -33,19 +33,5 @@ namespace NachoClient.AndroidClient
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, moreFragment).Commit ();
         }
 
-        public override void OnBackPressed ()
-        {
-            base.OnBackPressed ();
-        }
-
-        protected override void OnSaveInstanceState (Bundle outState)
-        {
-            base.OnSaveInstanceState (outState);
-        }
-
-        public override void SwitchAccount (McAccount account)
-        {
-            base.SwitchAccount (account);
-        }
     }
 }

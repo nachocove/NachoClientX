@@ -7,8 +7,8 @@
     android:background="@color/NachoGreen">
     <ImageView
         android:id="@+id/left_button1"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="center_vertical"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
@@ -26,8 +26,8 @@
         android:visibility="gone" />
     <ImageView
         android:id="@+id/left_button2"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="center_vertical"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
@@ -45,8 +45,8 @@
         android:visibility="gone" />
     <ImageView
         android:id="@+id/left_button3"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="center_vertical"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
@@ -79,8 +79,8 @@
         android:visibility="invisible" />
     <ImageView
         android:id="@+id/right_button3"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="center_vertical"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
@@ -98,8 +98,8 @@
         android:visibility="gone" />
     <ImageView
         android:id="@+id/right_button2"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="center_vertical"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
@@ -117,8 +117,8 @@
         android:visibility="gone" />
     <ImageView
         android:id="@+id/right_button1"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="center_vertical"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"

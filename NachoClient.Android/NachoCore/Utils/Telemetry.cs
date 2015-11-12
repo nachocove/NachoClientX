@@ -279,7 +279,6 @@ namespace NachoCore.Utils
 
         public static void RecordUiViewController (string uiObject, string state)
         {
-            Console.WriteLine ("UI {0} {1}", uiObject, state);
             RecordUiWithString (TelemetryEvent.UIVIEWCONTROLER, uiObject, state);
         }
 

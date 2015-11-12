@@ -18,8 +18,8 @@
             <ImageView
                 android:id="@+id/reply"
                 android:src="@drawable/toolbar_icn_reply"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
@@ -35,8 +35,8 @@
             android:orientation="vertical">
             <ImageView
                 android:src="@drawable/toolbar_icn_reply_all"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
@@ -53,8 +53,8 @@
             android:orientation="vertical">
             <ImageView
                 android:src="@drawable/toolbar_icn_fwd"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
@@ -71,8 +71,8 @@
             android:orientation="vertical">
             <ImageView
                 android:src="@drawable/email_archive_gray"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
@@ -89,8 +89,8 @@
             android:orientation="vertical">
             <ImageView
                 android:src="@drawable/email_delete"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
