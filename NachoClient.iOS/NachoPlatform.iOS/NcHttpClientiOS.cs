@@ -33,10 +33,15 @@ namespace NachoPlatform
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NSUrlSessionDelegate dele, CancellationToken cancellationToken)
         {
             // Mostly lifted from ModernHttpClientiOS NativeMessageHandler
-            NSInputStream RequestBodyStream = null;
+            string uploadFilename = null;
             NSData RequestBody = null;
             if (request.Content != null) {
-                request.Content.Flush (); // make sure it's all written
+                if (isSend) {
+                    request.AddHeader ("Expect", "100-continue");
+                    // TODO: Should also set up the authorization header here, so we don't wind up uploading
+                    // the data more than once on servers that don't support '100-continue' (i.e. upload once,
+                    // get a 401, add the header, and upload again)
+                }
                 if (!string.IsNullOrEmpty (request.ContentType)) {
                     if (!request.ContainsHeader ("Content-Type")) {
                         request.AddHeader ("Content-Type", request.ContentType);
@@ -46,15 +51,15 @@ namespace NachoPlatform
                     }
                 }
                 if (request.Content is FileStream) {
+                    // FIX: RequestBodyStream doesn't yet work. Need to figure out how to use NeedNewBodyStream
                     var fileStream = request.Content as FileStream;
-                    RequestBodyStream = NSInputStream.FromFile (fileStream.Name);
-                    //RequestBody = NSData.FromStream (request.Content);
+                    uploadFilename = fileStream.Name;
                     if (!request.ContainsHeader ("Content-Length")) {
                         request.AddHeader ("Content-Length", fileStream.Length.ToString ());
                     }
                 } else if (request.Content is MemoryStream) {
                     var memStream = request.Content as MemoryStream;
-                    // FIX: RequestBodyStream doesn't yet work. Not entirely sure why. Debug this.
+                    // FIX: RequestBodyStream doesn't yet work. Need to figure out how to use NeedNewBodyStream
                     //RequestBodyStream = NSInputStream.FromData (NSData.FromArray (memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ()));
                     RequestBody = NSData.FromStream (memStream);
                     if (!request.ContainsHeader ("Content-Length")) {
@@ -72,7 +77,7 @@ namespace NachoPlatform
 
             OriginalRequest = new NSMutableUrlRequest () {
                 AllowsCellularAccess = true,
-                BodyStream = RequestBodyStream,
+                //BodyStream = RequestBodyStream,
                 Body = RequestBody,
                 CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
                 Headers = nsHeaders,
@@ -80,7 +85,6 @@ namespace NachoPlatform
                 Url = NSUrl.FromString (request.Url),
                 TimeoutInterval = timeout,
             };
-
             Log.Info (Log.LOG_HTTP, "Request Http URL: {0}\n{1}\n", OriginalRequest.Url, OriginalRequest.Headers.ToString ());
 
             var config = NSUrlSessionConfiguration.DefaultSessionConfiguration;
@@ -90,8 +94,15 @@ namespace NachoPlatform
 
             var session = NSUrlSession.FromConfiguration (config, dele, new NSOperationQueue ());
             if (isSend) {
-                task = session.CreateUploadTask (OriginalRequest);
+                if (!string.IsNullOrEmpty (uploadFilename)) {
+                    task = session.CreateUploadTask (OriginalRequest, NSUrl.FromFilename (uploadFilename));
+                } else {
+                    task = session.CreateUploadTask (OriginalRequest);
+                }
             } else {
+                if (null != RequestBody) {
+                    Log.Warn (Log.LOG_HTTP, "Download task without an uploaded body. This is likely OK.");
+                }
                 task = session.CreateDownloadTask (OriginalRequest);
             }
             cancellationToken.Register (() => {
@@ -204,6 +215,7 @@ namespace NachoPlatform
 
             public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
             {
+                Log.Info (Log.LOG_HTTP, "DidReceiveChallenge: {0}", challenge.ProtectionSpace.AuthenticationMethod);
                 BaseDidReceiveChallenge (Owner.Credentials, session, task, challenge, completionHandler);
             }
         }
