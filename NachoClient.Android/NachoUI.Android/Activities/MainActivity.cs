@@ -146,8 +146,7 @@ namespace NachoClient.AndroidClient
 
             Log.Info (Log.LOG_UI, "MainActivity ShowApplication");
 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(NowListActivity));
+            var intent = NcTabBarActivity.HotListIntent (this);
             StartActivity (intent);
         }
 
