@@ -94,8 +94,6 @@ namespace NachoPlatform
             }
             OriginalRequest = req;
 
-            Log.Info (Log.LOG_HTTP, "Request Http URL: {0}\n{1}\n", OriginalRequest.Url, OriginalRequest.Headers.ToString ());
-
             var config = NSUrlSessionConfiguration.DefaultSessionConfiguration;
             config.TimeoutIntervalForRequest = timeout;
             config.TimeoutIntervalForResource = timeout;
@@ -129,7 +127,6 @@ namespace NachoPlatform
         {
             var dele = new NcDownloadTaskDelegate (this, cancellationToken, success, error, progress);
             dele.sw.Start ();
-            Log.Info (Log.LOG_HTTP, "GetRequest: Started stopwatch");
             SetupAndRunRequest (false, request, timeout, dele, cancellationToken);
         }
 
@@ -142,7 +139,6 @@ namespace NachoPlatform
         {
             var dele = new NcDownloadTaskDelegate (this, cancellationToken, success, error, progress);
             dele.sw.Start ();
-            Log.Info (Log.LOG_HTTP, "SendRequest: Started stopwatch");
             SetupAndRunRequest (true, request, timeout, dele, cancellationToken);
         }
 
@@ -237,18 +233,7 @@ namespace NachoPlatform
                     completionHandler(null);
                 }
             }
-            public override void DidResume (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long resumeFileOffset, long expectedTotalBytes)
-            {
-                throw new System.NotImplementedException ();
-            }
-            public override void DidBecomeInvalid (NSUrlSession session, NSError error)
-            {
-                throw new System.NotImplementedException ();
-            }
-            public override void DidFinishEventsForBackgroundSession (NSUrlSession session)
-            {
-                throw new System.NotImplementedException ();
-            }
+
             public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
             {
                 BaseDidReceiveChallenge (Owner.Cred, session, task, challenge, completionHandler);
