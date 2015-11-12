@@ -10,6 +10,7 @@ using System.Threading;
 using System.Net.Http;
 using System.Net;
 using System.Threading.Tasks;
+using Portable.Text;
 
 namespace NachoPlatform
 {
@@ -438,14 +439,23 @@ namespace NachoPlatform
         {
             return Headers.ContainsKey (key);
         }
+
+        public void SetBasicAuthHeader (McCred cred)
+        {
+            AddHeader ("Authorization", string.Format ("{0} {1}", "Basic", Convert.ToBase64String (Encoding.ASCII.GetBytes (string.Format ("{0}:{1}", cred.Username, cred.GetPassword ())))));
+        }
     }
+
+    public delegate void ProgressDelegate (long bytes, long totalBytes, long totalBytesExpected);
+    public delegate void SuccessDelete (HttpStatusCode status, Stream stream, Dictionary<string, List<string>> headers, CancellationToken token);
+    public delegate void ErrorDelegate (Exception exception);
 
     public interface INcHttpClient
     {
-        void GetRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, CancellationToken cancellationToken);
-        void GetRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, Action<long, long, long> progress, CancellationToken cancellationToken);
-        void SendRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, CancellationToken cancellationToken);
-        void SendRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, Action<long, long, long> progress, CancellationToken cancellationToken);
+        void GetRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, CancellationToken cancellationToken);
+        void GetRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
+        void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, CancellationToken cancellationToken);
+        void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
     }
 
     #endregion

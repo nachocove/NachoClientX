@@ -21,13 +21,13 @@ namespace NachoPlatform
 {
     public class NcHttpClient : INcHttpClient
     {
-        NetworkCredential Credentials { get; set; }
+        McCred Cred { get; set; }
 
         NSMutableUrlRequest OriginalRequest { get; set; }
 
         public NcHttpClient (McCred cred)
         {
-            Credentials = new NetworkCredential (cred.Username, cred.GetPassword ());
+            Cred = cred;
         }
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NSUrlSessionDelegate dele, CancellationToken cancellationToken)
@@ -38,9 +38,10 @@ namespace NachoPlatform
             if (request.Content != null) {
                 if (isSend) {
                     request.AddHeader ("Expect", "100-continue");
-                    // TODO: Should also set up the authorization header here, so we don't wind up uploading
-                    // the data more than once on servers that don't support '100-continue' (i.e. upload once,
-                    // get a 401, add the header, and upload again)
+
+                    // TODO For ActiveSync this works fine, because it assumes BASIC auth.
+                    // For anything else, this would need to be adapted.
+                    //request.SetBasicAuthHeader (Cred);
                 }
                 if (!string.IsNullOrEmpty (request.ContentType)) {
                     if (!request.ContainsHeader ("Content-Type")) {
@@ -116,17 +117,17 @@ namespace NachoPlatform
         NSUrlSessionTask task { get; set; }
 
         public void GetRequest (NcHttpRequest request, int timeout,
-                                Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> success,
-                                Action<Exception> error,
+                                SuccessDelete success,
+                                ErrorDelegate error,
                                 CancellationToken cancellationToken)
         {
             GetRequest (request, timeout, success, error, null, cancellationToken);
         }
 
         public void GetRequest (NcHttpRequest request, int timeout,
-                                Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> success,
-                                Action<Exception> error,
-                                Action<long, long, long> progress,
+                                SuccessDelete success,
+                                ErrorDelegate error,
+                                ProgressDelegate progress,
                                 CancellationToken cancellationToken)
         {
             var dele = new NcDownloadTaskDelegate (this, cancellationToken, success, error, progress);
@@ -135,12 +136,12 @@ namespace NachoPlatform
             SetupAndRunRequest (false, request, timeout, dele, cancellationToken);
         }
 
-        public void SendRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, CancellationToken cancellationToken)
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, CancellationToken cancellationToken)
         {
             SendRequest (request, timeout, success, error, null, cancellationToken);
         }
 
-        public void SendRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, Action<long, long, long> progress, CancellationToken cancellationToken)
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             var dele = new NcUploadTaskDelegate (this, cancellationToken, success, error, progress);
             dele.sw.Start ();
@@ -154,11 +155,11 @@ namespace NachoPlatform
 
         class NcUploadTaskDelegate : NSUrlSessionDataDelegate
         {
-            protected Action<HttpStatusCode, Dictionary<string, List<string>>, CancellationToken> SuccessAction { get; set; }
+            protected SuccessDelete SuccessAction { get; set; }
 
-            protected Action<Exception> ErrorAction { get; set; }
+            protected ErrorDelegate ErrorAction { get; set; }
 
-            protected Action<long, long, long> ProgressAction { get; set; }
+            protected ProgressDelegate ProgressAction { get; set; }
 
             protected CancellationToken Token { get; set; }
 
@@ -166,7 +167,7 @@ namespace NachoPlatform
 
             NcHttpClient Owner { get; set; }
 
-            public NcUploadTaskDelegate (NcHttpClient owner, CancellationToken cancellationToken, Action<HttpStatusCode, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, Action<long, long, long> progress = null)
+            public NcUploadTaskDelegate (NcHttpClient owner, CancellationToken cancellationToken, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress = null)
             {
                 sw = new PlatformStopwatch ();
                 SuccessAction = success;
@@ -186,10 +187,8 @@ namespace NachoPlatform
 
                     int status = (int)resp.StatusCode;
                     var headers = FromNsHeaders (resp.AllHeaderFields);
-                    SuccessAction ((HttpStatusCode)status, headers, Token);
+                    SuccessAction ((HttpStatusCode)status, null, headers, Token);
                 }
-                //public void DownloadSuccess (HttpStatusCode status , Stream stream, Dictionary<string, List<string>> headers, CancellationToken token)
-
                 completionHandler (NSUrlSessionResponseDisposition.Allow);
             }
 
@@ -216,7 +215,7 @@ namespace NachoPlatform
             public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
             {
                 Log.Info (Log.LOG_HTTP, "DidReceiveChallenge: {0}", challenge.ProtectionSpace.AuthenticationMethod);
-                BaseDidReceiveChallenge (Owner.Credentials, session, task, challenge, completionHandler);
+                BaseDidReceiveChallenge (Owner.Cred, session, task, challenge, completionHandler);
             }
         }
 
@@ -226,11 +225,11 @@ namespace NachoPlatform
 
         class NcDownloadTaskDelegate : NSUrlSessionDownloadDelegate
         {
-            protected Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> SuccessAction;
+            protected SuccessDelete SuccessAction;
 
-            protected Action<Exception> ErrorAction { get; set; }
+            protected ErrorDelegate ErrorAction { get; set; }
 
-            protected Action<long, long, long> ProgressAction { get; set; }
+            protected ProgressDelegate ProgressAction { get; set; }
 
             protected CancellationToken Token { get; set; }
 
@@ -238,7 +237,7 @@ namespace NachoPlatform
 
             NcHttpClient Owner { get; set; }
 
-            public NcDownloadTaskDelegate (NcHttpClient owner, CancellationToken cancellationToken, Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, Action<long, long, long> progress = null)
+            public NcDownloadTaskDelegate (NcHttpClient owner, CancellationToken cancellationToken, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress = null)
             {
                 sw = new PlatformStopwatch ();
                 SuccessAction = success;
@@ -292,7 +291,7 @@ namespace NachoPlatform
 
             public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
             {
-                BaseDidReceiveChallenge (Owner.Credentials, session, task, challenge, completionHandler);
+                BaseDidReceiveChallenge (Owner.Cred, session, task, challenge, completionHandler);
             }
         }
 
@@ -320,18 +319,19 @@ namespace NachoPlatform
 
         static readonly Regex cnRegex = new Regex (@"CN\s*=\s*([^,]*)", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
-        public static void BaseDidReceiveChallenge (NetworkCredential credentials, NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
+        public static void BaseDidReceiveChallenge (McCred cred, NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
         {
             if (challenge.ProtectionSpace.AuthenticationMethod != "NSURLAuthenticationMethodServerTrust" ||
                 ServicePointManager.ServerCertificateValidationCallback == null) {
-                HandleCredentialsRequest (credentials, challenge, completionHandler);
+                HandleCredentialsRequest (cred, challenge, completionHandler);
             } else {
                 CertValidation (task.OriginalRequest.Url, challenge, completionHandler);
             }
         }
 
-        static void HandleCredentialsRequest (NetworkCredential credentials, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
+        static void HandleCredentialsRequest (McCred cred, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
         {
+            NetworkCredential credentials = new NetworkCredential (cred.Username, cred.GetPassword ());
             if (null != credentials) {
                 var authenticationType = AuthenticationTypeFromAuthenticationMethod (challenge.ProtectionSpace.AuthenticationMethod);
                 var uri = UriFromNSUrlProtectionSpace (challenge.ProtectionSpace);
@@ -355,6 +355,7 @@ namespace NachoPlatform
         }
 
         static string SubjectAltNameOid = "2.5.29.17";
+
         static void CertValidation (NSUrl Url, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
         {
             // Convert Mono Certificates to .NET certificates and build cert 
@@ -410,8 +411,8 @@ namespace NachoPlatform
                         // TODO Quite the hack. Need to figure out how to get the raw data rather than string splitting
                         foreach (var line in ext.Format (true).Split (new [] {'\n'})) {
                             var parts = line.Split (new []{ '=' });
-                            if (parts[0] == "DNS Name") {
-                                if (MatchHostnameToPattern(Url.Host, parts[1])) {
+                            if (parts [0] == "DNS Name") {
+                                if (MatchHostnameToPattern (Url.Host, parts [1])) {
                                     found = true;
                                     break;
                                 }
@@ -427,7 +428,7 @@ namespace NachoPlatform
                 }
             }
 
-        sslErrorVerify:
+            sslErrorVerify:
             // NachoCove: Add this to make it look like other HTTP client
             var url = Url.ToString ();
             var request = new HttpWebRequest (new Uri (url));
