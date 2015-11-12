@@ -597,6 +597,8 @@
     <Compile Include="NachoUI.Android\Support\NotificationService.cs" />
     <Compile Include="NachoUI.Android\Activities\QuckResponseFragment.cs" />
     <Compile Include="NachoPlatform.Android\ImageAndroid.cs" />
+    <Compile Include="NachoCore\Adapters\NcEmailSingleton.cs" />
+    <Compile Include="NachoUI.Android\Activities\MoreActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1590,6 +1592,7 @@
     <AndroidResource Include="Resources\drawable-mdpi\gen_delete_small.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\gen_delete_small.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_delete_small.png" />
+    <AndroidResource Include="Resources\layout\MoreActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

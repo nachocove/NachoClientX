@@ -88,10 +88,10 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-            base.OnBackPressed ();
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is MessageViewFragment) {
                 this.FragmentManager.PopBackStack ();
+                return;
             }
             if (f is MessageListFragment) {
                 ((MessageListFragment)f).OnBackPressed ();
@@ -99,7 +99,9 @@ namespace NachoClient.AndroidClient
                 if (1 < this.FragmentManager.BackStackEntryCount) {
                     this.FragmentManager.PopBackStack ();
                 }
+                return;
             }
+            base.OnBackPressed ();
         }
 
         protected override void OnSaveInstanceState (Bundle outState)
