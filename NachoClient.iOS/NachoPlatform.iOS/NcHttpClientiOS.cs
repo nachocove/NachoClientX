@@ -25,6 +25,8 @@ namespace NachoPlatform
 
         NSMutableUrlRequest OriginalRequest { get; set; }
 
+        public Stream OutputStream { get; set; }
+
         public NcHttpClient (McCred cred)
         {
             Cred = cred;
@@ -33,9 +35,10 @@ namespace NachoPlatform
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NSUrlSessionDelegate dele, CancellationToken cancellationToken)
         {
             // Mostly lifted from ModernHttpClientiOS NativeMessageHandler
-            string uploadFilename = null;
+            NSInputStream RequestBodyStream = null;
             NSData RequestBody = null;
             if (request.Content != null) {
+                OutputStream = request.Content;
                 if (isSend) {
                     request.AddHeader ("Expect", "100-continue");
 
@@ -53,7 +56,8 @@ namespace NachoPlatform
                 }
                 if (request.Content is FileStream) {
                     var fileStream = request.Content as FileStream;
-                    uploadFilename = fileStream.Name;
+                    RequestBodyStream = NSInputStream.FromFile (fileStream.Name);
+                    //RequestBody = NSData.FromStream (fileStream);
                     if (!request.ContainsHeader ("Content-Length")) {
                         request.AddHeader ("Content-Length", fileStream.Length.ToString ());
                     }
@@ -77,8 +81,6 @@ namespace NachoPlatform
 
             OriginalRequest = new NSMutableUrlRequest () {
                 AllowsCellularAccess = true,
-                // FIX: BodyStream doesn't yet work. Need to figure out how to use NeedNewBodyStream
-                //BodyStream = RequestBodyStream,
                 Body = RequestBody,
                 CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
                 Headers = nsHeaders,
@@ -93,13 +95,9 @@ namespace NachoPlatform
             config.TimeoutIntervalForResource = timeout;
             config.URLCache = new NSUrlCache (0, 0, "HttpClientCache");
 
-            var session = NSUrlSession.FromConfiguration (config, dele, new NSOperationQueue ());
+            var session = NSUrlSession.FromConfiguration (config, dele, null);
             if (isSend) {
-                if (!string.IsNullOrEmpty (uploadFilename)) {
-                    task = session.CreateUploadTask (OriginalRequest, NSUrl.FromFilename (uploadFilename));
-                } else {
-                    task = session.CreateUploadTask (OriginalRequest);
-                }
+                task = session.CreateUploadTask (OriginalRequest);
             } else {
                 if (null != RequestBody) {
                     Log.Warn (Log.LOG_HTTP, "Download task without an uploaded body. This is likely OK.");
@@ -177,6 +175,14 @@ namespace NachoPlatform
                 Owner = owner;
             }
 
+            public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
+            {
+                var fileStream = Owner.OutputStream as FileStream;
+                if (fileStream != null) {
+                    completionHandler (NSInputStream.FromFile (fileStream.Name));
+                }
+            }
+
             public override void DidReceiveResponse (NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlResponse response, Action<NSUrlSessionResponseDisposition> completionHandler)
             {
                 Token.ThrowIfCancellationRequested ();
@@ -247,9 +253,12 @@ namespace NachoPlatform
                 Owner = owner;
             }
 
-            ~NcDownloadTaskDelegate ()
+            public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
             {
-                Log.Info (Log.LOG_HTTP, "NcUploadTaskDelegate Destruct");
+                var fileStream = Owner.OutputStream as FileStream;
+                if (fileStream != null) {
+                    completionHandler (NSInputStream.FromFile (fileStream.Name));
+                }
             }
 
             public override void DidWriteData (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long bytesWritten, long totalBytesWritten, long totalBytesExpectedToWrite)
