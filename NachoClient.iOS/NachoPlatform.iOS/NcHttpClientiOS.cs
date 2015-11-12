@@ -51,7 +51,6 @@ namespace NachoPlatform
                     }
                 }
                 if (request.Content is FileStream) {
-                    // FIX: RequestBodyStream doesn't yet work. Need to figure out how to use NeedNewBodyStream
                     var fileStream = request.Content as FileStream;
                     uploadFilename = fileStream.Name;
                     if (!request.ContainsHeader ("Content-Length")) {
@@ -59,7 +58,7 @@ namespace NachoPlatform
                     }
                 } else if (request.Content is MemoryStream) {
                     var memStream = request.Content as MemoryStream;
-                    // FIX: RequestBodyStream doesn't yet work. Need to figure out how to use NeedNewBodyStream
+                    // FIX: RequestBodyStream doesn't yet work, and in any case this copies the data in memory, so is not terribly useful.
                     //RequestBodyStream = NSInputStream.FromData (NSData.FromArray (memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ()));
                     RequestBody = NSData.FromStream (memStream);
                     if (!request.ContainsHeader ("Content-Length")) {
@@ -77,6 +76,7 @@ namespace NachoPlatform
 
             OriginalRequest = new NSMutableUrlRequest () {
                 AllowsCellularAccess = true,
+                // FIX: BodyStream doesn't yet work. Need to figure out how to use NeedNewBodyStream
                 //BodyStream = RequestBodyStream,
                 Body = RequestBody,
                 CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
