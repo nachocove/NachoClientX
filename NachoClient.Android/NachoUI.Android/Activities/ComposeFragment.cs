@@ -137,11 +137,31 @@ namespace NachoClient.AndroidClient
                 Composer.Save (html);
                 if (Composer.IsOversize) {
                     if (Composer.CanResize) {
-                        var alert = new AlertDialog.Builder (Activity).SetTitle ("Large Message").SetMessage (String.Format ("This message is {0}.  You can make it smaller by sizing down the attached images.", Pretty.PrettyFileSize(Composer.MessageSize)));
-                        alert.SetNeutralButton (String.Format ("Small Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedSmallSize)), ResizeImagesSmall);
-                        alert.SetNeutralButton (String.Format ("Medium Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedMediumSize)), ResizeImagesMedium);
-                        alert.SetNeutralButton (String.Format ("Large Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedLargeSize)), ResizeImagesLarge);
-                        alert.SetNeutralButton (String.Format ("Actual Size ({0})", Pretty.PrettyFileSize(Composer.MessageSize)), AcknowlegeSizeWarning);
+                        var alert = new AlertDialog.Builder (Activity).SetTitle (String.Format ("This message is {0}. Do you want to resize images?", Pretty.PrettyFileSize(Composer.MessageSize)));
+                        alert.SetSingleChoiceItems (new string[] {
+                            String.Format ("Small Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedSmallSize)),
+                            String.Format ("Medium Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedMediumSize)),
+                            String.Format ("Large Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedLargeSize)),
+                            String.Format ("Actual Size ({0})", Pretty.PrettyFileSize(Composer.MessageSize))
+                        }, -1, (object sender, DialogClickEventArgs e) => {
+                            switch (e.Which){
+                            case 0:
+                                ResizeImagesSmall (sender, e);
+                                break;
+                            case 1:
+                                ResizeImagesMedium (sender, e);
+                                break;
+                            case 2:
+                                ResizeImagesLarge (sender, e);
+                                break;
+                            case 3:
+                                AcknowlegeSizeWarning (sender, e);
+                                break;
+                            default:
+                                NcAssert.CaseError();
+                                break;
+                            }
+                        });
                         alert.Show ();
                     } else {
                         var alert = new AlertDialog.Builder (Activity).SetTitle ("Large Message").SetMessage (String.Format ("This message is {0}", Pretty.PrettyFileSize(Composer.MessageSize)));
@@ -353,9 +373,7 @@ namespace NachoClient.AndroidClient
 
         public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
         {
-            // TODO: return android image
-//            return ImageiOS.FromStream (stream);
-            return null;
+            return ImageAndroid.FromStream (stream);
         }
 
         void DisplayMessageBody ()

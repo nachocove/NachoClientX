@@ -596,6 +596,7 @@
     <Compile Include="NachoUI.Android\Support\LifecycleSpy.cs" />
     <Compile Include="NachoUI.Android\Support\NotificationService.cs" />
     <Compile Include="NachoUI.Android\Activities\QuckResponseFragment.cs" />
+    <Compile Include="NachoPlatform.Android\ImageAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
