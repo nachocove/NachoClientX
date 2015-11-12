@@ -21,8 +21,8 @@ namespace NachoClient.AndroidClient
     {
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
-            var messages = NcEmailManager.Inbox (NcApplication.Instance.Account.Id);
-            messages.Refresh (out adds, out deletes);
+            var messages = NcEmailSingleton.InboxSingleton (NcApplication.Instance.Account.Id);
+            NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes);
             return messages;
         }
 

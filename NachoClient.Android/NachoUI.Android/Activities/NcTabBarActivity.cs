@@ -17,7 +17,6 @@ namespace NachoClient.AndroidClient
 {
     public class NcTabBarActivity : NcActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate, AccountListDelegate
     {
-        MoreFragment moreFragment = new MoreFragment ();
         SwitchAccountFragment switchAccountFragment = new SwitchAccountFragment ();
 
         protected void OnCreate (Bundle bundle, int layoutId)
@@ -69,25 +68,15 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        protected bool MaybePopMoreFragment ()
-        {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MoreFragment) {
-                FragmentManager.PopBackStack ();
-                return true;
-            } else {
-                return false;
-            }
-        }
-
         void MoreButton_Click (object sender, EventArgs e)
         {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MoreFragment) {
-                // Already displayed
+            if (this is MoreActivity) {
                 return;
-            }
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, moreFragment).AddToBackStack (null).Commit ();
+            } 
+            var intent = new Intent ();
+            intent.SetClass (this, typeof(MoreActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+            StartActivity (intent);
         }
 
         public static Intent HotListIntent (Context context)
@@ -101,45 +90,41 @@ namespace NachoClient.AndroidClient
 
         void HotButton_Click (object sender, EventArgs e)
         {
-            MaybePopMoreFragment ();
-
             var intent = HotListIntent (this);
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
             StartActivity (intent);
         }
 
         void InboxButton_Click (object sender, EventArgs e)
         {
-            MaybePopMoreFragment ();
-
             if (this is InboxActivity) {
                 return;
             } 
             var intent = new Intent ();
             intent.SetClass (this, typeof(InboxActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
             StartActivity (intent);
         }
 
         void ContactsButton_Click (object sender, EventArgs e)
         {
-            MaybePopMoreFragment ();
-
             if (this is ContactsActivity) {
                 return;
             } 
             var intent = new Intent ();
             intent.SetClass (this, typeof(ContactsActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
             StartActivity (intent);
         }
 
         void CalendarButton_Click (object sender, EventArgs e)
         {
-            MaybePopMoreFragment ();
-
             if (this is CalendarActivity) {
                 return;
             } 
             var intent = new Intent ();
             intent.SetClass (this, typeof(CalendarActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
             StartActivity (intent);
         }
 
@@ -203,19 +188,27 @@ namespace NachoClient.AndroidClient
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is SwitchAccountFragment) {
                 this.FragmentManager.PopBackStack ();
+                return;
             }
             if (f is ChooseProviderFragment) {
                 this.FragmentManager.PopBackStack ();
+                return;
             }
             if (f is CredentialsFragment) {
                 ((CredentialsFragment)f).OnBackPressed ();
                 this.FragmentManager.PopBackStack ();
+                return;
             }
             if (f is GoogleSignInFragment) {
                 this.FragmentManager.PopBackStack ();
+                return;
             }
             if (f is WaitingFragment) {
                 this.FragmentManager.PopBackStack ();
+                return;
+            }
+            if(MoreFragment.moreTabActivities.Contains(this.GetType())) {
+                base.OnBackPressed ();
             }
         }
 

@@ -97,6 +97,15 @@ namespace NachoClient.AndroidClient
             intent.SetClass (this.Activity, typeof(SupportActivity));
             StartActivity (intent);
         }
+
+        static public List<Type> moreTabActivities = new List<Type>() {
+            typeof(AboutActivity),
+            typeof(DeadlineActivity),
+            typeof(DeferredActivity),
+            typeof(FoldersActivity),
+            typeof(SettingsActivity),
+            typeof(SupportActivity),
+        };
     }
 }
 
