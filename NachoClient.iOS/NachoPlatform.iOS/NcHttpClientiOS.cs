@@ -27,9 +27,12 @@ namespace NachoPlatform
 
         public Stream OutputStream { get; set; }
 
+        public bool AllowAutoRedirect { get; set; }
+
         public NcHttpClient (McCred cred)
         {
             Cred = cred;
+            AllowAutoRedirect = true;
         }
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NSUrlSessionDelegate dele, CancellationToken cancellationToken)
@@ -99,14 +102,7 @@ namespace NachoPlatform
             config.URLCache = new NSUrlCache (0, 0, "HttpClientCache");
 
             var session = NSUrlSession.FromConfiguration (config, dele, null);
-            if (isSend) {
-                task = session.CreateDownloadTask (OriginalRequest);
-            } else {
-                if (null != RequestBody) {
-                    Log.Warn (Log.LOG_HTTP, "Download task without an uploaded body. This is likely OK.");
-                }
-                task = session.CreateDownloadTask (OriginalRequest);
-            }
+            task = session.CreateDownloadTask (OriginalRequest);
             cancellationToken.Register (() => {
                 task.Cancel ();
             });
@@ -148,112 +144,6 @@ namespace NachoPlatform
             dele.sw.Start ();
             Log.Info (Log.LOG_HTTP, "SendRequest: Started stopwatch");
             SetupAndRunRequest (true, request, timeout, dele, cancellationToken);
-        }
-
-        #endregion
-
-        #region NcUploadTaskDelegate
-
-        class NcUploadTaskDelegate : NSUrlSessionDataDelegate
-        {
-            protected SuccessDelete SuccessAction { get; set; }
-
-            protected ErrorDelegate ErrorAction { get; set; }
-
-            protected ProgressDelegate ProgressAction { get; set; }
-
-            protected CancellationToken Token { get; set; }
-
-            public PlatformStopwatch sw { get; protected set; }
-
-            NcHttpClient Owner { get; set; }
-
-            public NcUploadTaskDelegate (NcHttpClient owner, CancellationToken cancellationToken, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress = null)
-            {
-                sw = new PlatformStopwatch ();
-                SuccessAction = success;
-                ErrorAction = error;
-                ProgressAction = progress;
-                Token = cancellationToken;
-                Owner = owner;
-            }
-
-            public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
-            {
-                var fileStream = Owner.OutputStream as FileStream;
-                if (fileStream != null) {
-                    completionHandler (NSInputStream.FromFile (fileStream.Name));
-                }
-            }
-
-            public override void DidReceiveResponse (NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlResponse response, Action<NSUrlSessionResponseDisposition> completionHandler)
-            {
-                Token.ThrowIfCancellationRequested ();
-                if (null != SuccessAction) {
-                    NcAssert.True (dataTask.Response is NSHttpUrlResponse);
-                    var resp = dataTask.Response as NSHttpUrlResponse;
-                    NcAssert.NotNull (resp);
-
-                    int status = (int)resp.StatusCode;
-                    var headers = FromNsHeaders (resp.AllHeaderFields);
-                    SuccessAction ((HttpStatusCode)status, null, headers, Token);
-                }
-                completionHandler (NSUrlSessionResponseDisposition.Allow);
-            }
-
-            public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
-            {
-                sw.Stop ();
-                Log.Info (Log.LOG_HTTP, "Uploaded {0}kB in {1}ms", ((double)task.BytesSent / (double)1024).ToString ("n2"), sw.ElapsedMilliseconds);
-                Token.ThrowIfCancellationRequested ();
-                if (null != error) {
-                    if (null != ErrorAction) {
-                        ErrorAction (createExceptionForNSError (error));
-                    }
-                }
-            }
-
-            public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
-            {
-                Token.ThrowIfCancellationRequested ();
-                if (null != ProgressAction) {
-                    ProgressAction (bytesSent, totalBytesSent, totalBytesExpectedToSend);
-                }
-            }
-
-            public override void DidReceiveData (NSUrlSession session, NSUrlSessionDataTask dataTask, NSData data)
-            {
-                throw new System.NotImplementedException ();
-            }
-
-            public override void DidFinishEventsForBackgroundSession (NSUrlSession session)
-            {
-                throw new System.NotImplementedException ();
-            }
-            public override void DidBecomeDownloadTask (NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlSessionDownloadTask downloadTask)
-            {
-                throw new System.NotImplementedException ();
-            }
-            public override void DidBecomeStreamTask (NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlSessionStreamTask streamTask)
-            {
-                throw new System.NotImplementedException ();
-            }
-            public override void WillCacheResponse (NSUrlSession session, NSUrlSessionDataTask dataTask, NSCachedUrlResponse proposedResponse, Action<NSCachedUrlResponse> completionHandler)
-            {
-                throw new System.NotImplementedException ();
-            }
-            public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
-            {
-                throw new System.NotImplementedException ();
-            }
-            public override void DidBecomeInvalid (NSUrlSession session, NSError error)
-            {
-                throw new System.NotImplementedException ();
-            }
-            public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
-            {
-                BaseDidReceiveChallenge (Owner.Cred, session, task, challenge, completionHandler);
-            }
         }
 
         #endregion
@@ -341,7 +231,11 @@ namespace NachoPlatform
 
             public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
             {
-                throw new System.NotImplementedException ();
+                if (Owner.AllowAutoRedirect) {
+                    completionHandler(newRequest);
+                } else {
+                    completionHandler(null);
+                }
             }
             public override void DidResume (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long resumeFileOffset, long expectedTotalBytes)
             {
