@@ -20,8 +20,14 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.AndroidClient
 {
+    public class EventEditActivityData
+    {
+        public McEvent Event;
+        public McEmailMessage EmailMessage;
+    }
+
     [Activity (Label = "EventEditActivity")]            
-    public class EventEditActivity : NcActivity
+    public class EventEditActivity : NcActivityWithData<EventEditActivityData>
     {
         public const Result DELETE_EVENT_RESULT_CODE = Result.FirstUser;
 
@@ -59,6 +65,18 @@ namespace NachoClient.AndroidClient
 
             SetContentView (Resource.Layout.EventEditActivity);
 
+            var dataFromIntent = RetainedData;
+            if (null == dataFromIntent) {
+                dataFromIntent = new EventEditActivityData ();
+                if (Intent.HasExtra(EXTRA_EVENT_TO_EDIT)) {
+                    dataFromIntent.Event = IntentHelper.RetrieveValue<McEvent> (Intent.GetStringExtra (EXTRA_EVENT_TO_EDIT));
+                }
+                if (Intent.HasExtra(EXTRA_MESSAGE_FOR_MEETING)) {
+                    dataFromIntent.EmailMessage = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE_FOR_MEETING));
+                }
+                RetainedData = dataFromIntent;
+            }
+
             buttonBar = new ButtonBar (FindViewById<View> (Resource.Id.button_bar));
 
             buttonBar.SetTextButton (ButtonBar.Button.Right1, Resource.String.save, SaveButton_Click);
@@ -92,7 +110,6 @@ namespace NachoClient.AndroidClient
                 if (Intent.HasExtra (EXTRA_MESSAGE_FOR_MEETING)) {
                     // Create a meeting based on the recipients and the body of an email message.
                     // TODO Not yet implemented
-                    IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE_FOR_MEETING));
                 }
 
                 // Figure out the correct account for the new event.
@@ -138,7 +155,7 @@ namespace NachoClient.AndroidClient
 
                 buttonBar.SetTitle ("Edit Event");
 
-                ev = IntentHelper.RetrieveValue<McEvent> (Intent.GetStringExtra (EXTRA_EVENT_TO_EDIT));
+                ev = dataFromIntent.Event;
                 cal = McCalendar.QueryById<McCalendar> (ev.CalendarId);
 
                 if (cal.AllDayEvent) {

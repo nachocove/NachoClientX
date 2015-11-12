@@ -25,8 +25,6 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle, Resource.Layout.ContactsActivity);
 
-            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
-
             contactsListFragment = ContactsListFragment.newInstance ();
             contactsListFragment.onContactClick += ContactsListFragment_onContactClick;
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, contactsListFragment).AddToBackStack ("Contacts").Commit ();

@@ -17,7 +17,7 @@ using NachoCore.Model;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "ContactViewActivity")]
-    public class ContactViewActivity : NcActivity, IContactViewFragmentOwner
+    public class ContactViewActivity : NcActivityWithData<McContact>, IContactViewFragmentOwner
     {
         private const string EXTRA_CONTACT = "com.nachocove.nachomail.EXTRA_CONTACT";
 
@@ -26,7 +26,12 @@ namespace NachoClient.AndroidClient
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
-            this.contact = IntentHelper.RetrieveValue<McContact> (Intent.GetStringExtra (EXTRA_CONTACT));
+            var contact = RetainedData;
+            if (null == contact) {
+                contact = IntentHelper.RetrieveValue<McContact> (Intent.GetStringExtra (EXTRA_CONTACT));
+                RetainedData = contact;
+            }
+            this.contact = contact;
             SetContentView (Resource.Layout.ContactViewActivity);
         }
 

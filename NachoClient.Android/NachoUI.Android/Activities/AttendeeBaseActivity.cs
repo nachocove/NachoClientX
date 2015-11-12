@@ -16,7 +16,7 @@ using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
-    public class AttendeeBaseActivity : NcActivity
+    public class AttendeeBaseActivity : NcActivityWithData<IList<McAttendee>>
     {
         private const string EXTRA_ACCOUNT = "com.nachocove.nachomail.EXTRA_ACCOUNT";
         private const string EXTRA_ATTENDEES = "com.nachocove.nachomail.EXTRA_ATTENDEES";
