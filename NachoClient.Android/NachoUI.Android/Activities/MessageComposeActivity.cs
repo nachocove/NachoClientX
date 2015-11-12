@@ -91,6 +91,29 @@ namespace NachoClient.AndroidClient
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
             return intent;
         }
+
+        public override void OnBackPressed ()
+        {
+            var alert = new Android.App.AlertDialog.Builder (this).SetTitle ("Would you like to save this message?").SetMessage ("You can access saved messages from your Drafts folder.");
+            alert.SetNegativeButton ("Discard Draft", Discard);
+            alert.SetPositiveButton ("Save Draft", Save);
+            alert.Show ();
+        }
+
+        public void Discard (object sender, EventArgs args)
+        {
+            var fragment = FragmentManager.FindFragmentById<ComposeFragment> (Resource.Id.content);
+            fragment.Discard ();
+            Finish ();
+        }
+
+        public void Save (object sender, EventArgs args)
+        {
+            var fragment = FragmentManager.FindFragmentById<ComposeFragment> (Resource.Id.content);
+            fragment.Save (() => {
+                Finish ();
+            });
+        }
     }
 }
 
