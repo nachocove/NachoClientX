@@ -9,6 +9,7 @@ using DnDns.Enums;
 using System.Threading;
 using System.Net.Http;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace NachoPlatform
 {
@@ -394,9 +395,11 @@ namespace NachoPlatform
 
     public class NcHttpRequest
     {
-        public Dictionary<string, List<string>> Headers { get; set; }
+        public Dictionary<string, List<string>> Headers { get; protected set; }
 
         public Stream Content { get; protected set; }
+
+        public long? ContentLength { get; protected set; }
 
         public string ContentType { get; protected set; }
 
@@ -413,8 +416,27 @@ namespace NachoPlatform
 
         public void SetContent (Stream stream, string contentType)
         {
+            SetContent (stream, null, contentType);
+        }
+
+        public void SetContent (Stream stream, long? contentLength, string contentType)
+        {
             Content = stream;
             ContentType = contentType;
+            ContentLength = contentLength;
+        }
+
+        public void AddHeader (string key, string value)
+        {
+            if (!Headers.ContainsKey (key)) {
+                Headers [key] = new List<string> ();
+            }
+            Headers [key].Add (value);
+        }
+
+        public bool ContainsHeader (string key)
+        {
+            return Headers.ContainsKey (key);
         }
     }
 
@@ -422,8 +444,8 @@ namespace NachoPlatform
     {
         void GetRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, CancellationToken cancellationToken);
         void GetRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Stream, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, Action<long, long, long> progress, CancellationToken cancellationToken);
-        void SendRequest (NcHttpRequest request, int timeout, Action success, Action<Exception> error, Action<long, long, long> progress, CancellationToken cancellationToken);
-        void SendRequest (NcHttpRequest request, int timeout, Action success, Action<Exception> error, CancellationToken cancellationToken);
+        void SendRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, CancellationToken cancellationToken);
+        void SendRequest (NcHttpRequest request, int timeout, Action<HttpStatusCode, Dictionary<string, List<string>>, CancellationToken> success, Action<Exception> error, Action<long, long, long> progress, CancellationToken cancellationToken);
     }
 
     #endregion
