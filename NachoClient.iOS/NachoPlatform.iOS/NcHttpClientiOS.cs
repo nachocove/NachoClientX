@@ -191,7 +191,9 @@ namespace NachoPlatform
             public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
             {
                 sw.Stop ();
-                Log.Info (Log.LOG_HTTP, "Finished request {0}kB in {1}ms ({2} bytes)", ((double)task.BytesReceived / (double)1024).ToString ("n2"), sw.ElapsedMilliseconds, task.BytesReceived);
+                var sent = (double)task.BytesSent / (double)1024;
+                var received = (double)task.BytesReceived / (double)1024;
+                Log.Info (Log.LOG_HTTP, "Finished request {0}ms (sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n2"), received.ToString ("n2"));
 
                 Token.ThrowIfCancellationRequested ();
                 if (null != error && null != ErrorAction) {
