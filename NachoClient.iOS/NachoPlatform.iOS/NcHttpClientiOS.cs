@@ -170,29 +170,8 @@ namespace NachoPlatform
                 Owner = owner;
             }
 
-            public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
-            {
-                var fileStream = Owner.OutputStream as FileStream;
-                if (fileStream != null) {
-                    completionHandler (NSInputStream.FromFile (fileStream.Name));
-                } else {
-                    Log.Error (Log.LOG_HTTP, "NeedNewBodyStream called for stream type {0}", Owner.OutputStream.GetType ().Name);
-                }
-            }
-
-            public override void DidWriteData (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long bytesWritten, long totalBytesWritten, long totalBytesExpectedToWrite)
-            {
-                Token.ThrowIfCancellationRequested ();
-                if (null != ProgressAction) {
-                    ProgressAction (bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
-                }
-            }
-
             public override void DidFinishDownloading (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, NSUrl location)
             {
-                sw.Stop ();
-                Log.Info (Log.LOG_HTTP, "Downloaded {0}kB in {1}ms ({2} bytes)", ((double)downloadTask.BytesReceived / (double)1024).ToString ("n2"), sw.ElapsedMilliseconds, downloadTask.BytesReceived);
-
                 Token.ThrowIfCancellationRequested ();
                 if (null != SuccessAction) {
                     NcAssert.True (downloadTask.Response is NSHttpUrlResponse);
@@ -209,6 +188,17 @@ namespace NachoPlatform
                 }
             }
 
+            public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
+            {
+                sw.Stop ();
+                Log.Info (Log.LOG_HTTP, "Finished request {0}kB in {1}ms ({2} bytes)", ((double)task.BytesReceived / (double)1024).ToString ("n2"), sw.ElapsedMilliseconds, task.BytesReceived);
+
+                Token.ThrowIfCancellationRequested ();
+                if (null != error && null != ErrorAction) {
+                    ErrorAction (createExceptionForNSError (error));
+                }
+            }
+
             public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
             {
                 Token.ThrowIfCancellationRequested ();
@@ -217,11 +207,21 @@ namespace NachoPlatform
                 }
             }
 
-            public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
+            public override void DidWriteData (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long bytesWritten, long totalBytesWritten, long totalBytesExpectedToWrite)
             {
                 Token.ThrowIfCancellationRequested ();
-                if (null != error && null != ErrorAction) {
-                    ErrorAction (createExceptionForNSError (error));
+                if (null != ProgressAction) {
+                    ProgressAction (bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+                }
+            }
+
+            public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
+            {
+                var fileStream = Owner.OutputStream as FileStream;
+                if (fileStream != null) {
+                    completionHandler (NSInputStream.FromFile (fileStream.Name));
+                } else {
+                    Log.Error (Log.LOG_HTTP, "NeedNewBodyStream called for stream type {0}", Owner.OutputStream.GetType ().Name);
                 }
             }
 
@@ -266,7 +266,6 @@ namespace NachoPlatform
 
         public static void BaseDidReceiveChallenge (McCred cred, NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
         {
-            Log.Info (Log.LOG_HTTP, "DidReceiveChallenge: {0}", challenge.ProtectionSpace.AuthenticationMethod);
             if (challenge.ProtectionSpace.AuthenticationMethod != "NSURLAuthenticationMethodServerTrust" ||
                 ServicePointManager.ServerCertificateValidationCallback == null) {
                 HandleCredentialsRequest (cred, challenge, completionHandler);
@@ -291,13 +290,6 @@ namespace NachoPlatform
                 }
             }
             completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
-        }
-
-        static void DummyCertValidation (NSUrl Url, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
-        {
-            // just accept the cert. Useful for testing ONLY
-            Log.Error (Log.LOG_HTTP, "DummyCertValidation");
-            completionHandler (NSUrlSessionAuthChallengeDisposition.UseCredential, NSUrlCredential.FromTrust (challenge.ProtectionSpace.ServerSecTrust));
         }
 
         static string SubjectAltNameOid = "2.5.29.17";
