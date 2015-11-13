@@ -6,6 +6,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
+using System.Linq;
 
 namespace NachoPlatform
 {
@@ -117,6 +118,25 @@ namespace NachoPlatform
             // match the start of the pattern
             string start = pattern.Substring (0, index);
             return (String.Compare (hostname, 0, start, 0, start.Length, true, CultureInfo.InvariantCulture) == 0);
+        }
+
+        /// <summary>
+        /// Verifies client ciphers and is only available in Mono and Xamarin products.
+        /// </summary>
+        /// <returns><c>true</c>, if client ciphers was verifyed, <c>false</c> otherwise.</returns>
+        /// <param name="uri"></param>
+        /// <param name="protocol"></param>
+        /// <param name="cipherSuite"></param>
+        public static bool verifyClientCiphers (Uri uri, string protocol, string cipherSuite)
+        {
+            var callback = ServicePointManager.ClientCipherSuitesCallback;
+            if (callback == null)
+                return true;
+
+            var SSLProto = protocol.StartsWith ("SSL", StringComparison.InvariantCulture) ? SecurityProtocolType.Ssl3 : SecurityProtocolType.Tls;
+            var acceptedCiphers = callback (SSLProto, new[] { cipherSuite });
+
+            return acceptedCiphers.Contains (cipherSuite);
         }
     }
 }

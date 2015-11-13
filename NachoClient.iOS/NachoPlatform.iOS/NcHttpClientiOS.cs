@@ -128,7 +128,6 @@ namespace NachoPlatform
                                 CancellationToken cancellationToken)
         {
             var dele = new NcDownloadTaskDelegate (this, cancellationToken, success, error, progress);
-            dele.sw.Start ();
             SetupAndRunRequest (false, request, timeout, dele, cancellationToken);
         }
 
@@ -140,7 +139,6 @@ namespace NachoPlatform
         public void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             var dele = new NcDownloadTaskDelegate (this, cancellationToken, success, error, progress);
-            dele.sw.Start ();
             SetupAndRunRequest (true, request, timeout, dele, cancellationToken);
         }
 
@@ -165,6 +163,7 @@ namespace NachoPlatform
             public NcDownloadTaskDelegate (NcHttpClient owner, CancellationToken cancellationToken, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress = null)
             {
                 sw = new PlatformStopwatch ();
+                sw.Start ();
                 SuccessAction = success;
                 ErrorAction = error;
                 ProgressAction = progress;
@@ -195,7 +194,7 @@ namespace NachoPlatform
                 sw.Stop ();
                 var sent = (double)task.BytesSent / (double)1024;
                 var received = (double)task.BytesReceived / (double)1024;
-                Log.Info (Log.LOG_HTTP, "Finished request {0}ms (sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n2"), received.ToString ("n2"));
+                Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n2"), received.ToString ("n2"));
 
                 Token.ThrowIfCancellationRequested ();
                 if (null != error && null != ErrorAction) {
@@ -225,7 +224,7 @@ namespace NachoPlatform
                 if (fileStream != null) {
                     completionHandler (NSInputStream.FromFile (fileStream.Name));
                 } else {
-                    Log.Error (Log.LOG_HTTP, "NeedNewBodyStream called for stream type {0}", Owner.OutputStream.GetType ().Name);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient: NeedNewBodyStream called for stream type {0}", Owner.OutputStream.GetType ().Name);
                 }
             }
 
