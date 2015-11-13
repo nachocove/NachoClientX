@@ -604,6 +604,8 @@
     <Compile Include="NachoCore\Adapters\NcEmailSingleton.cs" />
     <Compile Include="NachoUI.Android\Activities\MoreActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
+    <Compile Include="NachoPlatform\INcHttpClient\INcHttpClient.cs" />
+    <Compile Include="NachoPlatform\INcHttpClient\INcHttpClientUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -669,6 +671,7 @@
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
     <Folder Include="NachoCore\Model\McEmailAddress\" />
     <Folder Include="Resources\anim\" />
+    <Folder Include="NachoPlatform\INcHttpClient\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
