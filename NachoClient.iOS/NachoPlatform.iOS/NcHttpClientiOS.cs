@@ -53,7 +53,9 @@ namespace NachoPlatform
                     if (!request.ContainsHeader ("Content-Type")) {
                         request.AddHeader ("Content-Type", request.ContentType);
                     }
-                    if (!request.ContainsHeader ("Content-Length") && request.ContentLength.HasValue) {
+                }
+                if (request.ContentLength.HasValue) {
+                    if (!request.ContainsHeader ("Content-Length")) {
                         request.AddHeader ("Content-Length", request.ContentLength.Value.ToString ());
                     }
                 }
