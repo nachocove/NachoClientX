@@ -24,9 +24,17 @@ namespace NachoClient.AndroidClient
     {
         public McEvent Event;
         public McEmailMessage EmailMessage;
+
+        public McCalendar CalendarItem;
+        public McAccount Account;
+        public McFolder CalendarFolder;
+        public DateTime StartTime;
+        public DateTime EndTime;
+        public bool EndTimeChanged;
+        public bool DescriptionChanged;
     }
 
-    [Activity (Label = "EventEditActivity")]            
+    [Activity (Label = "EventEditActivity")]
     public class EventEditActivity : NcActivityWithData<EventEditActivityData>
     {
         public const Result DELETE_EVENT_RESULT_CODE = Result.FirstUser;
@@ -37,8 +45,9 @@ namespace NachoClient.AndroidClient
 
         private const int ATTENDEE_ACTIVITY_REQUEST = 1;
 
+        private const string REMINDER_CHOOSER_TAG = "ReminderChooser";
+
         private McAccount account;
-        private McEvent ev;
         private McCalendar cal;
         private McFolder calendarFolder;
 
@@ -65,7 +74,14 @@ namespace NachoClient.AndroidClient
 
             SetContentView (Resource.Layout.EventEditActivity);
 
+            // "dataFromIntent" is for the non-searializable objects that were passed in via the activity's intent.
+            // Those objects may come from either the retained data or directly from the intent.  "dataFromIntent"
+            // will never be null after this block of code.
+            // "preConfigChange" is for the editor's in-progress state that was saved before Android changed the
+            // configuration and restarted the activity.  It will be null if the activity is being launched for the
+            // first time.
             var dataFromIntent = RetainedData;
+            var preConfigChange = dataFromIntent;
             if (null == dataFromIntent) {
                 dataFromIntent = new EventEditActivityData ();
                 if (Intent.HasExtra(EXTRA_EVENT_TO_EDIT)) {
@@ -94,55 +110,67 @@ namespace NachoClient.AndroidClient
 
             descriptionField.TextChanged += DescriptionField_TextChanged;
 
+            if (null != preConfigChange) {
+                cal = preConfigChange.CalendarItem;
+                account = preConfigChange.Account;
+                calendarFolder = preConfigChange.CalendarFolder;
+                startTime = preConfigChange.StartTime;
+                endTime = preConfigChange.EndTime;
+                endTimeChanged = preConfigChange.EndTimeChanged;
+                descriptionChanged = preConfigChange.DescriptionChanged;
+            }
+
             if (Intent.ActionCreateDocument == Intent.Action) {
                 buttonBar.SetTitle ("New Event");
 
-                DateTime startDate = DateTime.MinValue;
-                if (Intent.HasExtra(EXTRA_START_DATE)) {
-                    startDate = DateTime.Parse (Intent.GetStringExtra (EXTRA_START_DATE));
-                }
+                if (null == preConfigChange) {
 
-                ev = null;
-                cal = CalendarHelper.DefaultMeeting (startDate);
-                startTime = cal.StartTime.ToLocalTime ();
-                endTime = cal.EndTime.ToLocalTime ();
+                    DateTime startDate = DateTime.MinValue;
+                    if (Intent.HasExtra (EXTRA_START_DATE)) {
+                        startDate = DateTime.Parse (Intent.GetStringExtra (EXTRA_START_DATE));
+                    }
 
-                if (Intent.HasExtra (EXTRA_MESSAGE_FOR_MEETING)) {
-                    // Create a meeting based on the recipients and the body of an email message.
-                    // TODO Not yet implemented
-                }
+                    cal = CalendarHelper.DefaultMeeting (startDate);
+                    startTime = cal.StartTime.ToLocalTime ();
+                    endTime = cal.EndTime.ToLocalTime ();
 
-                // Figure out the correct account for the new event.
-                account = NcApplication.Instance.Account;
-                if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == new NachoFolders (account.Id, NachoFolders.FilterForCalendars).Count ()) {
-                    bool foundAccount = false;
-                    foreach (var candidateAccountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
-                        if (candidateAccountId != account.Id) {
-                            var candidateAccount = McAccount.QueryById<McAccount> (candidateAccountId);
-                            if (candidateAccount.HasCapability(McAccount.AccountCapabilityEnum.CalWriter) && 0 < new NachoFolders(candidateAccountId, NachoFolders.FilterForCalendars).Count()) {
-                                foundAccount = true;
-                                account = candidateAccount;
-                                break;
+                    if (Intent.HasExtra (EXTRA_MESSAGE_FOR_MEETING)) {
+                        // Create a meeting based on the recipients and the body of an email message.
+                        // TODO Not yet implemented
+                    }
+
+                    // Figure out the correct account for the new event.
+                    account = NcApplication.Instance.Account;
+                    if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == new NachoFolders (account.Id, NachoFolders.FilterForCalendars).Count ()) {
+                        bool foundAccount = false;
+                        foreach (var candidateAccountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+                            if (candidateAccountId != account.Id) {
+                                var candidateAccount = McAccount.QueryById<McAccount> (candidateAccountId);
+                                if (candidateAccount.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && 0 < new NachoFolders (candidateAccountId, NachoFolders.FilterForCalendars).Count ()) {
+                                    foundAccount = true;
+                                    account = candidateAccount;
+                                    break;
+                                }
                             }
                         }
+                        if (!foundAccount) {
+                            NcAlertView.Show (this, "No Calendar Support", "None of the accounts support creating or editing calendar events.", () => {
+                                SetResult (Result.Canceled);
+                                Finish ();
+                            });
+                            return;
+                        }
                     }
-                    if (!foundAccount) {
-                        NcAlertView.Show (this, "No Calendar Support", "None of the accounts support creating or editing calendar events.", () => {
-                            SetResult (Result.Canceled);
-                            Finish ();
-                        });
-                        return;
-                    }
-                }
 
-                // Figure out the correct calendar within that account for the new event.
-                var accountCalendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
-                calendarFolder = accountCalendars.GetFolder (0);
-                for (int f = 0; f < accountCalendars.Count(); ++f) {
-                    var calendar = accountCalendars.GetFolder (f);
-                    if (Xml.FolderHierarchy.TypeCode.DefaultCal_8 == calendar.Type) {
-                        calendarFolder = calendar;
-                        break;
+                    // Figure out the correct calendar within that account for the new event.
+                    var accountCalendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+                    calendarFolder = accountCalendars.GetFolder (0);
+                    for (int f = 0; f < accountCalendars.Count (); ++f) {
+                        var calendar = accountCalendars.GetFolder (f);
+                        if (Xml.FolderHierarchy.TypeCode.DefaultCal_8 == calendar.Type) {
+                            calendarFolder = calendar;
+                            break;
+                        }
                     }
                 }
 
@@ -155,45 +183,50 @@ namespace NachoClient.AndroidClient
 
                 buttonBar.SetTitle ("Edit Event");
 
-                ev = dataFromIntent.Event;
-                cal = McCalendar.QueryById<McCalendar> (ev.CalendarId);
+                if (null == preConfigChange) {
 
-                if (cal.AllDayEvent) {
-                    // Calculate start and end times that will be used if the user changes the event to not be an all-day event.
-                    // The times will be hidden from the user until the all-day switch is changed.
-                    var tempCal = CalendarHelper.DefaultMeeting ();
-                    TimeSpan startTimeOfDay = tempCal.StartTime.ToLocalTime ().TimeOfDay;
-                    TimeSpan endTimeOfDay = tempCal.EndTime.ToLocalTime ().TimeOfDay;
-                    if (startTimeOfDay > endTimeOfDay) {
-                        // This can happen in the current time is between 22:30 and 23:30.
-                        endTimeOfDay = startTimeOfDay;
+                    cal = null;
+                    if (null != dataFromIntent.Event) {
+                        cal = McCalendar.QueryById<McCalendar> (dataFromIntent.Event.CalendarId);
                     }
-                    var timeZone = new AsTimeZone (cal.TimeZone).ConvertToSystemTimeZone ();
-                    startTime = DateTime.SpecifyKind (CalendarHelper.ConvertTimeFromUtc (cal.StartTime, timeZone), DateTimeKind.Local).Date + startTimeOfDay;
-                    // The end time for the event is midnight at the end of the last day.  Subtract a day
-                    // so that endTime falls somewhere within the last day of the event.
-                    endTime = DateTime.SpecifyKind (CalendarHelper.ConvertTimeFromUtc (cal.EndTime, timeZone), DateTimeKind.Local).AddDays (-1).Date + endTimeOfDay;
-                } else {
-                    startTime = cal.StartTime.ToLocalTime ();
-                    endTime = cal.EndTime.ToLocalTime ();
-                }
+                    if (null == dataFromIntent.Event || null == cal) {
+                        NcAlertView.Show (this, "Event Deleted", "The event can't be edited because it has been deleted.", () => {
+                            SetResult (Result.Canceled);
+                            Finish ();
+                        });
+                        return;
+                    }
+                    cal = McCalendar.QueryById<McCalendar> (dataFromIntent.Event.CalendarId);
 
-                if (null == ev || null == cal) {
-                    NcAlertView.Show (this, "Event Deleted", "The event can't be edited because it has been deleted.", () => {
-                        SetResult (Result.Canceled);
-                        Finish ();
-                    });
-                    return;
-                }
+                    if (cal.AllDayEvent) {
+                        // Calculate start and end times that will be used if the user changes the event to not be an all-day event.
+                        // The times will be hidden from the user until the all-day switch is changed.
+                        var tempCal = CalendarHelper.DefaultMeeting ();
+                        TimeSpan startTimeOfDay = tempCal.StartTime.ToLocalTime ().TimeOfDay;
+                        TimeSpan endTimeOfDay = tempCal.EndTime.ToLocalTime ().TimeOfDay;
+                        if (startTimeOfDay > endTimeOfDay) {
+                            // This can happen in the current time is between 22:30 and 23:30.
+                            endTimeOfDay = startTimeOfDay;
+                        }
+                        var timeZone = new AsTimeZone (cal.TimeZone).ConvertToSystemTimeZone ();
+                        startTime = DateTime.SpecifyKind (CalendarHelper.ConvertTimeFromUtc (cal.StartTime, timeZone), DateTimeKind.Local).Date + startTimeOfDay;
+                        // The end time for the event is midnight at the end of the last day.  Subtract a day
+                        // so that endTime falls somewhere within the last day of the event.
+                        endTime = DateTime.SpecifyKind (CalendarHelper.ConvertTimeFromUtc (cal.EndTime, timeZone), DateTimeKind.Local).AddDays (-1).Date + endTimeOfDay;
+                    } else {
+                        startTime = cal.StartTime.ToLocalTime ();
+                        endTime = cal.EndTime.ToLocalTime ();
+                    }
 
-                account = McAccount.QueryById<McAccount> (cal.AccountId);
+                    account = McAccount.QueryById<McAccount> (cal.AccountId);
+                    calendarFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
+                }
 
                 titleField.Text = cal.GetSubject ();
                 locationField.Text = cal.GetLocation ();
                 if (McBody.BodyTypeEnum.PlainText_1 == cal.DescriptionType) {
                     descriptionField.Text = cal.Description;
                 }
-                calendarFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
 
                 deleteButton.Click += DeleteButton_Click;
             }
@@ -238,6 +271,27 @@ namespace NachoClient.AndroidClient
             calendarField.Click += Calendar_Click;
             var calendarArrow = FindViewById<ImageView> (Resource.Id.event_edit_calendar_arrow);
             calendarArrow.Click += Calendar_Click;
+
+            if (null != bundle) {
+                var reminderFragment = FragmentManager.FindFragmentByTag<ReminderChooserFragment> (REMINDER_CHOOSER_TAG);
+                if (null != reminderFragment) {
+                    ConfigureReminderChooser (reminderFragment);
+                }
+            }
+        }
+
+        protected override void OnPause ()
+        {
+            base.OnPause ();
+
+            var retained = RetainedData;
+            retained.CalendarItem = cal;
+            retained.Account = account;
+            retained.CalendarFolder = calendarFolder;
+            retained.StartTime = startTime;
+            retained.EndTime = endTime;
+            retained.EndTimeChanged = endTimeChanged;
+            retained.DescriptionChanged = descriptionChanged;
         }
 
         protected override void OnActivityResult (int requestCode, Result resultCode, Intent data)
@@ -385,6 +439,17 @@ namespace NachoClient.AndroidClient
             BackEnd.Instance.DeleteCalCmd (account.Id, cal.Id);
         }
 
+        private void ConfigureReminderChooser (ReminderChooserFragment reminderFragment)
+        {
+            reminderFragment.SetValues (cal.HasReminder (), (int)cal.GetReminder (), (bool hasReminder, int reminder) => {
+                cal.ReminderIsSet = hasReminder;
+                if (hasReminder) {
+                    cal.Reminder = (uint)reminder;
+                }
+                reminderField.Text = Pretty.ReminderString (hasReminder, (uint)reminder);
+            });
+        }
+
         private void SaveButton_Click (object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty (FindViewById<EditText> (Resource.Id.event_edit_title).Text)) {
@@ -462,13 +527,9 @@ namespace NachoClient.AndroidClient
 
         private void Reminder_Click (object sender, EventArgs e)
         {
-            ReminderChooser.Show (this, cal.HasReminder (), (int)cal.GetReminder (), (bool hasReminder, int reminder) => {
-                cal.ReminderIsSet = hasReminder;
-                if (hasReminder) {
-                    cal.Reminder = (uint)reminder;
-                }
-                reminderField.Text = Pretty.ReminderString (hasReminder, (uint)reminder);
-            });
+            var reminderFragment = new ReminderChooserFragment ();
+            ConfigureReminderChooser (reminderFragment);
+            reminderFragment.Show (FragmentManager, REMINDER_CHOOSER_TAG);
         }
 
         private void Attendee_Click (object sender, EventArgs e)
@@ -504,4 +565,3 @@ namespace NachoClient.AndroidClient
         }
     }
 }
-

@@ -197,7 +197,7 @@ namespace NachoClient.AndroidClient
     {
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
-        INachoEmailMessages messages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
+        INachoEmailMessages messages = NcEmailSingleton.PrioritySingleton (NcApplication.Instance.Account.Id);
 
         public PriorityInboxPagerAdaptor (Android.App.FragmentManager fm) : base (fm)
         {

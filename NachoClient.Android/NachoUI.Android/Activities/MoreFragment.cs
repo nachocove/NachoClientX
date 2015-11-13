@@ -53,6 +53,10 @@ namespace NachoClient.AndroidClient
             var aboutView = view.FindViewById<View> (Resource.Id.about);
             aboutView.Click += AboutView_Click;
 
+            // Highlight the tab bar icon of this activity
+            var moreImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            moreImage.SetImageResource (Resource.Drawable.nav_more_active);
+
             return view;
         }
 
@@ -97,6 +101,15 @@ namespace NachoClient.AndroidClient
             intent.SetClass (this.Activity, typeof(SupportActivity));
             StartActivity (intent);
         }
+
+        static public List<Type> moreTabActivities = new List<Type>() {
+            typeof(AboutActivity),
+            typeof(DeadlineActivity),
+            typeof(DeferredActivity),
+            typeof(FoldersActivity),
+            typeof(SettingsActivity),
+            typeof(SupportActivity),
+        };
     }
 }
 
