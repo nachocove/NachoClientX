@@ -344,6 +344,9 @@
     <Compile Include="..\Test.Android\KeyChainAccessTest.cs">
       <Link>KeyChainAccessTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\NcBase64Test.cs">
+      <Link>NcBase64Test.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -384,12 +387,6 @@
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\tasks.xsd">
       <Link>Resources\xsd\common\tasks.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\Request\Ping.xsd">
-      <Link>Resources\xsd\request\Ping.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\Response\Ping.xsd">
-      <Link>Resources\xsd\response\Ping.xsd</Link>
-    </BundleResource>
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\contacts.xsd">
       <Link>Resources\xsd\common\contacts.xsd</Link>
     </BundleResource>
@@ -398,6 +395,12 @@
     </BundleResource>
     <BundleResource Include="..\Test.Android\Resources\nco9.com.crt">
       <Link>Resources\nco9.com.crt</Link>
+    </BundleResource>
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\request\Ping.xsd">
+      <Link>Resources\xsd\request\Ping.xsd</Link>
+    </BundleResource>
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\response\Ping.xsd">
+      <Link>Resources\xsd\response\Ping.xsd</Link>
     </BundleResource>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />

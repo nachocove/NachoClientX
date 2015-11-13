@@ -59,7 +59,7 @@ namespace NachoCore.Wbxml
             }
             filter.Start ();
 
-            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (new MemoryStream (rawBytes), filter.WbxmlBuffer);
+            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (rawBytes, filter.WbxmlBuffer);
 
             // Version is ignored
             byte version = bytes.Dequeue ();
@@ -158,11 +158,8 @@ namespace NachoCore.Wbxml
                             if (0 < accountId) {
                                 var tmpPath = NcModel.Instance.TmpPath (accountId);
                                 using (var fileStream = File.OpenWrite (tmpPath)) {
-                                    using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
-                                        new FromBase64Transform (), CryptoStreamMode.Write)) {
-                                        bytes.DequeueStringToStream (cryptoStream, CToken);
-                                        currentNode.Add (new XAttribute ("nacho-attachment-file", tmpPath));
-                                    }
+                                    bytes.DequeueStringToStream (fileStream, CToken, true);
+                                    currentNode.Add (new XAttribute ("nacho-attachment-file", tmpPath));
                                 }
                             }
                             #else

@@ -70,8 +70,9 @@ namespace NachoCore.Wbxml
             return (continuationBitmask & byteval) != 0;
         }
 
-        public void DequeueStringToStream (Stream stream, CancellationToken cToken)
+        public void DequeueStringToStream (Stream stream, CancellationToken cToken, bool base64Decode = false)
         {
+            var decoder = new NcBase64 ();
             byte currentByte = 0x00;
             do {
                 if (cToken.IsCancellationRequested) {
@@ -79,7 +80,14 @@ namespace NachoCore.Wbxml
                 }
                 currentByte = this.Dequeue ();
                 if (currentByte != 0x00) {
-                    stream.WriteByte (currentByte);
+                    if (base64Decode) {
+                        var decoded = decoder.Next (currentByte);
+                        if (0 <= decoded) {
+                            stream.WriteByte ((byte)decoded);
+                        }
+                    } else {
+                        stream.WriteByte (currentByte);
+                    }
                 }
             } while (currentByte != 0x00);
             stream.Flush ();

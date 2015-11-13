@@ -599,6 +599,7 @@
     <Compile Include="NachoPlatform.Android\ImageAndroid.cs" />
     <Compile Include="NachoCore\Adapters\NcEmailSingleton.cs" />
     <Compile Include="NachoUI.Android\Activities\MoreActivity.cs" />
+    <Compile Include="NachoCore\Utils\NcBase64.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

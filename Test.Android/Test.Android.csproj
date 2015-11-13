@@ -150,6 +150,7 @@
     <Compile Include="Oauth2RefreshTest.cs" />
     <Compile Include="McCredTest.cs" />
     <Compile Include="KeyChainAccessTest.cs" />
+    <Compile Include="NcBase64Test.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -220,12 +221,6 @@
     <Folder Include="Common\" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\Request\Ping.xsd">
-      <Link>Assets\xsd\Request\Ping.xsd</Link>
-    </AndroidAsset>
-    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\Response\Ping.xsd">
-      <Link>Assets\xsd\Response\Ping.xsd</Link>
-    </AndroidAsset>
     <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\airsyncbase.xsd">
       <Link>Assets\xsd\common\airsyncbase.xsd</Link>
     </AndroidAsset>
@@ -258,6 +253,12 @@
     </AndroidAsset>
     <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\tasks.xsd">
       <Link>Assets\xsd\common\tasks.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\request\Ping.xsd">
+      <Link>Assets\xsd\Request\Ping.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\response\Ping.xsd">
+      <Link>Assets\xsd\Response\Ping.xsd</Link>
     </AndroidAsset>
   </ItemGroup>
   <ItemGroup>
