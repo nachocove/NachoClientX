@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using NachoCore.Utils;
@@ -22,7 +23,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void TestDecoder ()
+        public void TestDecoderASCII ()
         {
             var vectors = new TupleList<string,string> { 
                 {"",""},
@@ -50,6 +51,26 @@ namespace Test.Common
             }
         }
 
+        [Test]
+        public void TestDecoderBinary ()
+        {
+            var builder = new ArrayList ();
+            for (var i = 0; i < 256; i++) {
+                builder.Add ((byte)i);
+            }
+            var input = builder.ToArray (typeof(byte)) as byte[];
+            var base64 = Convert.ToBase64String (input);
+            var decoder = new NcBase64 ();
+            builder = new ArrayList ();
+            foreach (var enco in base64) {
+                var resultInt = decoder.Next (Convert.ToByte (enco));
+                if (0 <= resultInt) {
+                    builder.Add ((byte)resultInt);
+                }
+            }
+            var output = builder.ToArray (typeof(byte)) as byte[];
+            Assert.IsTrue (input.SequenceEqual (output));
+        }
     }
 }
 

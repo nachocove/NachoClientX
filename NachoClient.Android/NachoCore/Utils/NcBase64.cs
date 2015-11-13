@@ -24,6 +24,12 @@ namespace NachoCore.Utils
             } else if (encoded >= 48 && encoded <= 57) {
                 // 0-9
                 index = (uint)(encoded - 48 + 52);
+            } else if (encoded == 43) {
+                // +
+                index = 62;
+            } else if (encoded == 47) {
+                // /
+                index = 63;
             } else {
                 // ignore everything else, = included
                 return -1;
