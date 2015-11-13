@@ -19,46 +19,34 @@ namespace NachoCore.Wbxml
 
     class ASWBXMLByteQueue
     {
-        private Stream ByteStream;
-        private int? PeekHolder;
+        private byte[] Bytes;
         private GatedMemoryStream RedactedCopy;
-        private long BytesRead;
+        private long Pos;
 
-        public ASWBXMLByteQueue (Stream bytes, GatedMemoryStream redactedCopy = null)
+        public ASWBXMLByteQueue (byte[] bytes, GatedMemoryStream redactedCopy = null)
         {
-            PeekHolder = null;
-            ByteStream = bytes;
+            Bytes = bytes;
             RedactedCopy = redactedCopy;
         }
 
         public int Peek ()
         {
-            if (null == PeekHolder) {
-                var value = ByteStream.ReadByte ();
-                PeekHolder = value;
+            if (Pos == Bytes.Length) {
+                return -1;
             }
-            return (int)PeekHolder;
+            return Bytes [Pos];
         }
 
         public byte Dequeue ()
         {
-            int value;
-            if (null == PeekHolder) {
-                value = ByteStream.ReadByte ();
-            } else {
-                value = (int)PeekHolder;
-                PeekHolder = null;
+            if (Pos == Bytes.Length) {
+                throw new WBXMLReadPastEndException (Pos);
             }
-            if (-1 == value) {
-                throw new WBXMLReadPastEndException (BytesRead);
-            } else {
-                BytesRead++;
-            }
-            byte aByte = Convert.ToByte (value);
+            var retval = Bytes [Pos++];
             if (null != RedactedCopy) {
-                RedactedCopy.WriteByte (aByte);
+                RedactedCopy.WriteByte (retval);
             }
-            return aByte;
+            return retval;
         }
 
         public int DequeueMultibyteInt ()
