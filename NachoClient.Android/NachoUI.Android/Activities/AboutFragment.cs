@@ -34,7 +34,9 @@ namespace NachoClient.AndroidClient
             var versionView = view.FindViewById<TextView> (Resource.Id.version);
             versionView.Text = String.Format (fmt, NcApplication.GetVersionString ());
 
-            // FIXME: Un-highlight any highlighted tab bar items.
+            // Highlight the tab bar icon of this activity
+            var moreImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            moreImage.SetImageResource (Resource.Drawable.nav_more_active);
 
             return view;
         }

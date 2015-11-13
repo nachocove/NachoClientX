@@ -122,7 +122,8 @@
             android:background="@android:color/white"
             android:orientation="vertical">
             <ImageView
-                android:src="@drawable/gen_more"
+                android:id="@+id/more_image"
+                android:src="@drawable/nav_more"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_marginTop="8dp"

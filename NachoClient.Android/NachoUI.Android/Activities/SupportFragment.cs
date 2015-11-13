@@ -43,7 +43,9 @@ namespace NachoClient.AndroidClient
             var callSupport = view.FindViewById<View> (Resource.Id.call_support);
             callSupport.Click += CallSupport_Click;
 
-            // FIXME: Un-highlight any highlighted tab bar items.
+            // Highlight the tab bar icon of this activity
+            var moreImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            moreImage.SetImageResource (Resource.Drawable.nav_more_active);
 
             return view;
         }

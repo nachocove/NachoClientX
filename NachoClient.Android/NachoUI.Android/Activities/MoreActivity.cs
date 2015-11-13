@@ -27,8 +27,6 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle, Resource.Layout.MoreActivity);
 
-            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
-
             var moreFragment = MoreFragment.newInstance ();
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, moreFragment).Commit ();
         }

@@ -84,8 +84,8 @@ namespace NachoClient.AndroidClient
             cancelButton.Click += CancelButton_Click;
 
             // Highlight the tab bar icon of this activity
-            var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.contacts_image);
-            inboxImage.SetImageResource (Resource.Drawable.nav_contacts_active);
+            var contactsImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.contacts_image);
+            contactsImage.SetImageResource (Resource.Drawable.nav_contacts_active);
 
             letterBar = view.FindViewById<View> (Resource.Id.letter_bar);
             var letterList = view.FindViewById<Android.Widget.LinearLayout> (Resource.Id.letter_list);

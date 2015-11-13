@@ -53,6 +53,10 @@ namespace NachoClient.AndroidClient
             var aboutView = view.FindViewById<View> (Resource.Id.about);
             aboutView.Click += AboutView_Click;
 
+            // Highlight the tab bar icon of this activity
+            var moreImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            moreImage.SetImageResource (Resource.Drawable.nav_more_active);
+
             return view;
         }
 
