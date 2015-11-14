@@ -43,7 +43,10 @@ namespace NachoCore.Wbxml
                 throw new WBXMLReadPastEndException (Pos);
             }
             var retval = Bytes [Pos++];
-            if (null != RedactedCopy) {
+            // We currently redact (telemetry) anything big, so stop copying bytes when something gets big.
+            // The alternative is to rewrite the logic so we know what is redacted before we start keeping bytes.
+            // We were ballooning attachment downloads in memory here.
+            if (null != RedactedCopy && 1024 >= RedactedCopy.Length) {
                 RedactedCopy.WriteByte (retval);
             }
             return retval;
