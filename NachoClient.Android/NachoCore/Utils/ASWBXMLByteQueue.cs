@@ -19,46 +19,37 @@ namespace NachoCore.Wbxml
 
     class ASWBXMLByteQueue
     {
-        private Stream ByteStream;
-        private int? PeekHolder;
+        private byte[] Bytes;
         private GatedMemoryStream RedactedCopy;
-        private long BytesRead;
+        private long Pos;
 
-        public ASWBXMLByteQueue (Stream bytes, GatedMemoryStream redactedCopy = null)
+        public ASWBXMLByteQueue (byte[] bytes, GatedMemoryStream redactedCopy = null)
         {
-            PeekHolder = null;
-            ByteStream = bytes;
+            Bytes = bytes;
             RedactedCopy = redactedCopy;
         }
 
         public int Peek ()
         {
-            if (null == PeekHolder) {
-                var value = ByteStream.ReadByte ();
-                PeekHolder = value;
+            if (Pos == Bytes.Length) {
+                return -1;
             }
-            return (int)PeekHolder;
+            return Bytes [Pos];
         }
 
         public byte Dequeue ()
         {
-            int value;
-            if (null == PeekHolder) {
-                value = ByteStream.ReadByte ();
-            } else {
-                value = (int)PeekHolder;
-                PeekHolder = null;
+            if (Pos == Bytes.Length) {
+                throw new WBXMLReadPastEndException (Pos);
             }
-            if (-1 == value) {
-                throw new WBXMLReadPastEndException (BytesRead);
-            } else {
-                BytesRead++;
+            var retval = Bytes [Pos++];
+            // We currently redact (telemetry) anything big, so stop copying bytes when something gets big.
+            // The alternative is to rewrite the logic so we know what is redacted before we start keeping bytes.
+            // We were ballooning attachment downloads in memory here.
+            if (null != RedactedCopy && 1024 >= RedactedCopy.Length) {
+                RedactedCopy.WriteByte (retval);
             }
-            byte aByte = Convert.ToByte (value);
-            if (null != RedactedCopy) {
-                RedactedCopy.WriteByte (aByte);
-            }
-            return aByte;
+            return retval;
         }
 
         public int DequeueMultibyteInt ()
@@ -82,8 +73,9 @@ namespace NachoCore.Wbxml
             return (continuationBitmask & byteval) != 0;
         }
 
-        public void DequeueStringToStream (Stream stream, CancellationToken cToken)
+        public void DequeueStringToStream (Stream stream, CancellationToken cToken, bool base64Decode = false)
         {
+            var decoder = new NcBase64 ();
             byte currentByte = 0x00;
             do {
                 if (cToken.IsCancellationRequested) {
@@ -91,7 +83,14 @@ namespace NachoCore.Wbxml
                 }
                 currentByte = this.Dequeue ();
                 if (currentByte != 0x00) {
-                    stream.WriteByte (currentByte);
+                    if (base64Decode) {
+                        var decoded = decoder.Next (currentByte);
+                        if (0 <= decoded) {
+                            stream.WriteByte ((byte)decoded);
+                        }
+                    } else {
+                        stream.WriteByte (currentByte);
+                    }
                 }
             } while (currentByte != 0x00);
             stream.Flush ();
