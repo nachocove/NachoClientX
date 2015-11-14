@@ -433,11 +433,11 @@ namespace NachoClient.AndroidClient
                 return (0 == position ? "Recent" : null);
             }
             var index = position - recentsCount;
-            foreach (var s in sections) {
+            foreach (var s in sections.Reverse()) {
                 if (index == s.Start) {
                     return s.FirstLetter.ToString ();
                 }
-                if (index < s.Start) {
+                if (index > s.Start) {
                     return null;
                 }
             }
