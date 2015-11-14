@@ -30,7 +30,8 @@ namespace NachoPlatform
 
         public readonly bool AllowAutoRedirect = false;
 
-        public readonly bool PreAuthenticate = false; // FIXME. Seems to not work right.
+        public readonly bool PreAuthenticate = false;
+        // FIXME. Seems to not work right.
 
         public NcHttpClient (McCred cred)
         {
@@ -235,9 +236,9 @@ namespace NachoPlatform
             public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
             {
                 if (Owner.AllowAutoRedirect) {
-                    completionHandler(newRequest);
+                    completionHandler (newRequest);
                 } else {
-                    completionHandler(null);
+                    completionHandler (null);
                 }
             }
 
@@ -330,8 +331,8 @@ namespace NachoPlatform
             }
 
             root = netCerts [0];
-        sslErrorVerify:
-            if (NcHttpCertificateValidation.CertValidation (new Uri(Url.ToString ()), root, chain, errors)) {
+            sslErrorVerify:
+            if (NcHttpCertificateValidation.CertValidation (new Uri (Url.ToString ()), root, chain, errors)) {
                 completionHandler (
                     NSUrlSessionAuthChallengeDisposition.UseCredential,
                     NSUrlCredential.FromTrust (challenge.ProtectionSpace.ServerSecTrust));
