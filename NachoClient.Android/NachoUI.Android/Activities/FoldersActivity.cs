@@ -17,12 +17,9 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "FoldersActivity")]            
-    public class FoldersActivity : NcTabBarActivity, MessageListDelegate
+    public class FoldersActivity : NcTabBarActivity
     {
-        INachoEmailMessages messages;
-
         FolderListFragment folderListFragment;
-        MessageListFragment messageListFragment;
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -32,48 +29,27 @@ namespace NachoClient.AndroidClient
 
             folderListFragment = FolderListFragment.newInstance ();
             folderListFragment.onFolderSelected += onFolderSelected;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, folderListFragment).AddToBackStack ("Folders").Commit ();
+            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, folderListFragment).Commit ();
+        }
+
+        protected override void OnResume ()
+        {
+            base.OnResume ();
+            // Highlight the tab bar icon of this activity
+            var moreImage = FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            moreImage.SetImageResource (Resource.Drawable.nav_more_active);
         }
 
         void onFolderSelected (McFolder folder)
         {
             Log.Info (Log.LOG_UI, "FoldersActivity onFolderClick: {0}", folder);
 
-            messages = new NachoEmailMessages (folder);
-
-            List<int> adds;
-            List<int> deletes;
-            messages.Refresh (out adds, out deletes);
-
-            messageListFragment = MessageListFragment.newInstance (messages);
-            messageListFragment.onMessageClick += onMessageClick;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Messages").Commit ();
-
-        }
-
-        void onMessageClick (object sender, McEmailMessageThread thread)
-        {
-            Log.Info (Log.LOG_UI, "FoldersActivity onMessageClick: {0}", thread);
-
-            if (1 == thread.MessageCount) {
-                var message = thread.FirstMessageSpecialCase ();
-                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-                StartActivity (intent);
-            } else {
-                var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
-                messageListFragment = MessageListFragment.newInstance (threadMessages);
-                messageListFragment.onMessageClick += onMessageClick;
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Thread").Commit ();
-            }
+            var intent = MessageFolderActivity.ShowFolderIntent (this, folder);
+            StartActivity (intent);
         }
 
         public override void OnBackPressed ()
         {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MessageListFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
             base.OnBackPressed ();
         }
 
@@ -91,19 +67,6 @@ namespace NachoClient.AndroidClient
             if (null != folderListFragment) {
                 folderListFragment.SwitchAccount ();
             }
-        }
-
-        // MessageListDelegate
-        public bool ShowHotEvent()
-        {
-            return false;
-        }
-
-        // MessageListDelegate
-        public void SetActiveImage (View view)
-        {
-            // Highlight the tab bar icon of this activity
-            // See inbox & nacho now activities
         }
     }
 }

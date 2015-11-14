@@ -98,6 +98,13 @@ namespace NachoClient.AndroidClient
             thread = ((IMessageViewFragmentOwner)Activity).ThreadToView;
             message = ((IMessageViewFragmentOwner)Activity).MessageToView;
 
+            // Refresh message to make sure it's still around
+            message = McEmailMessage.QueryById<McEmailMessage>(message.Id);
+            if (null == message) {
+                ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
+                return;
+            }
+
             NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
 
             var inflater = Activity.LayoutInflater;

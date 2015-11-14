@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +30,8 @@ namespace NachoClient.AndroidClient
 {
     public interface MessageListDelegate
     {
+        void ListIsEmpty ();
+
         bool ShowHotEvent ();
 
         void SetActiveImage (View view);
@@ -68,6 +70,7 @@ namespace NachoClient.AndroidClient
         Android.Widget.ImageView rightButton3;
 
         public event EventHandler<McEvent> onEventClick;
+        public event EventHandler<INachoEmailMessages> onThreadClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
         public static MessageListFragment newInstance (INachoEmailMessages messages)
@@ -89,8 +92,13 @@ namespace NachoClient.AndroidClient
             // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
 
-            var activity = (NcTabBarActivity)this.Activity;
-            activity.HookNavigationToolbar (view);
+            if (Activity is NcTabBarActivity) {
+                var activity = (NcTabBarActivity)this.Activity;
+                activity.HookNavigationToolbar (view);
+            } else {
+                var navToolbar = view.FindViewById<View> (Resource.Id.navigation_toolbar);
+                navToolbar.Visibility = ViewStates.Gone;
+            }
 
             mSwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
             mSwipeRefreshLayout.SetColorSchemeResources (Resource.Color.refresh_1, Resource.Color.refresh_2, Resource.Color.refresh_3);
@@ -313,7 +321,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
-            RefreshVisibleMessageCells ();
+            RefreshIfNeeded ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -346,9 +354,19 @@ namespace NachoClient.AndroidClient
                     MultiSelectSet.Add (e.Position);
                 }
                 RefreshVisibleMessageCells ();
-            } else {
+                return;
+            }
+
+            var thread = messageListAdapter [e.Position];
+
+            if (1 == thread.MessageCount) {
                 if (null != onMessageClick) {
-                    onMessageClick (this, messageListAdapter [e.Position]);
+                    onMessageClick (this, thread);
+                }
+            } else {
+                var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
+                if (null != onThreadClick) {
+                    onThreadClick (this, threadMessages);
                 }
             }
         }
@@ -717,6 +735,26 @@ namespace NachoClient.AndroidClient
                 messageListAdapter.NotifyDataSetChanged ();
             }
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfVisible");
+            if (0 == messages.Count ()) {
+                ((MessageListDelegate)Activity).ListIsEmpty ();
+            }
+        }
+
+        public void RefreshIfNeeded ()
+        {
+            List<int> adds;
+            List<int> deletes;
+            NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfNeeded");
+            if (NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes)) {
+                ClearCache ();
+                messageListAdapter.NotifyDataSetChanged ();
+            } else {
+                RefreshVisibleMessageCells ();
+            }
+            NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfNeeded");
+            if (0 == messages.Count ()) {
+                ((MessageListDelegate)Activity).ListIsEmpty ();
+            }
         }
 
         int[] first = new int[3];
@@ -841,6 +879,12 @@ namespace NachoClient.AndroidClient
         public void RefreshSearchMatches ()
         {
             NotifyDataSetChanged ();
+        }
+
+        public override bool HasStableIds {
+            get {
+                return true;
+            }
         }
 
         public override long GetItemId (int position)

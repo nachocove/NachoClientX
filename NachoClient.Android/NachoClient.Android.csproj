@@ -600,6 +600,8 @@
     <Compile Include="NachoCore\Adapters\NcEmailSingleton.cs" />
     <Compile Include="NachoUI.Android\Activities\MoreActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1602,6 +1604,7 @@
     <AndroidResource Include="Resources\drawable-mdpi\nav_more.png" />
     <AndroidResource Include="Resources\drawable-hdpi\nav_more_active.png" />
     <AndroidResource Include="Resources\drawable-hdpi\nav_more.png" />
+    <AndroidResource Include="Resources\layout\MessageThreadActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

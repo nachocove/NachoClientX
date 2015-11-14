@@ -45,6 +45,7 @@
             android:scrollbars="vertical"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
+            android:animateLayoutChanges="true"
             android:background="@color/NachoLightGray" />
     </android.support.v4.widget.SwipeRefreshLayout>
     <View

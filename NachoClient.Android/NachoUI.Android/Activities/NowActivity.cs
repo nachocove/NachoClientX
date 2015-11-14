@@ -32,9 +32,14 @@ namespace NachoClient.AndroidClient
             base.OnCreate (bundle, Resource.Layout.NowActivity);
 
             nowFragment = new NowFragment ();
-            nowFragment.onEventClick += onEventClick;
-            nowFragment.onMessageClick += onMessageClick;
+            nowFragment.onEventClick += NowFragment_onEventClick;
+            nowFragment.onThreadClick += NowFragment_onThreadClick;
+            nowFragment.onMessageClick += NowFragment_onMessageClick;
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, nowFragment).AddToBackStack ("Now").Commit ();
+        }
+
+        public void ListIsEmpty()
+        {
         }
 
         public bool ShowHotEvent ()
@@ -49,25 +54,22 @@ namespace NachoClient.AndroidClient
             tabImage.SetImageResource (Resource.Drawable.nav_nachonow_active);
         }
 
-        void onEventClick (object sender, McEvent ev)
+        void NowFragment_onEventClick (object sender, McEvent ev)
         {
             StartActivity (EventViewActivity.ShowEventIntent (this, ev));
         }
 
-        void onMessageClick (object sender, McEmailMessageThread thread)
+        void NowFragment_onThreadClick (object sender, INachoEmailMessages threadMessages)
         {
-            Log.Info (Log.LOG_UI, "NowActivity onMessageClick: {0}", thread);
+            var intent = MessageThreadActivity.ShowThreadIntent (this, threadMessages);
+            StartActivity (intent);
+        }
 
-            if (1 == thread.MessageCount) {
-                var message = thread.FirstMessageSpecialCase ();
-                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-                StartActivity (intent);
-            } else {
-                var threadMessage = new NachoThreadedEmailMessages (McFolder.GetDefaultInboxFolder (NcApplication.Instance.Account.Id), thread.GetThreadId ());
-                messageListFragment = MessageListFragment.newInstance (threadMessage);
-                messageListFragment.onMessageClick += onMessageClick;
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
-            }
+        void NowFragment_onMessageClick (object sender, McEmailMessageThread thread)
+        {
+            var message = thread.FirstMessageSpecialCase ();
+            var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
+            StartActivity (intent);
         }
 
         public override void OnBackPressed ()
