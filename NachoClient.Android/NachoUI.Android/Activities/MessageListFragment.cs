@@ -103,10 +103,7 @@ namespace NachoClient.AndroidClient
             mSwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
             mSwipeRefreshLayout.SetColorSchemeResources (Resource.Color.refresh_1, Resource.Color.refresh_2, Resource.Color.refresh_3);
 
-            mSwipeRefreshLayout.Refresh += (object sender, EventArgs e) => {
-                var nr = messages.StartSync ();
-                rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
-            };
+            mSwipeRefreshLayout.Refresh += SwipeRefreshLayout_Refresh;
 
             leftButton1 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
             leftButton1.Click += LeftButton1_Click;
@@ -299,6 +296,12 @@ namespace NachoClient.AndroidClient
             parent.SetActiveImage (view);
 
             return view;
+        }
+
+        void SwipeRefreshLayout_Refresh (object sender, EventArgs e)
+        {
+            var nr = messages.StartSync ();
+            rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
         }
 
         void ListView_ScrollStateChanged (object sender, AbsListView.ScrollStateChangedEventArgs e)
@@ -721,6 +724,10 @@ namespace NachoClient.AndroidClient
                 break;
             case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
                 UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
+                break;
+            case NcResult.SubKindEnum.Error_SyncFailed:
+            case NcResult.SubKindEnum.Info_SyncSucceeded:
+                cancelRefreshTimer ();
                 break;
             }
         }
