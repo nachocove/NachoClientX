@@ -200,7 +200,7 @@ namespace NachoPlatform
                 sw.Stop ();
                 var sent = (double)task.BytesSent / (double)1024;
                 var received = (double)task.BytesReceived / (double)1024;
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
+                Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
 
                 Token.ThrowIfCancellationRequested ();
                 if (null != error && null != ErrorAction) {
