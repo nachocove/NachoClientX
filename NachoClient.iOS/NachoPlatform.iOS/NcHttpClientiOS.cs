@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 using NachoCore.Model;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace NachoPlatform
 {
@@ -27,12 +28,13 @@ namespace NachoPlatform
 
         public Stream OutputStream { get; set; }
 
-        public bool AllowAutoRedirect { get; set; }
+        public readonly bool AllowAutoRedirect = false;
+
+        public readonly bool PreAuthenticate = true;
 
         public NcHttpClient (McCred cred)
         {
             Cred = cred;
-            AllowAutoRedirect = true;
         }
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NSUrlSessionDelegate dele, CancellationToken cancellationToken)
@@ -47,7 +49,6 @@ namespace NachoPlatform
 
                     // TODO For ActiveSync this works fine, because it assumes BASIC auth.
                     // For anything else, this would need to be adapted.
-                    //request.SetBasicAuthHeader (Cred);
                 }
                 if (!string.IsNullOrEmpty (request.ContentType)) {
                     if (!request.ContainsHeader ("Content-Type")) {
@@ -79,6 +80,11 @@ namespace NachoPlatform
             var nsHeaders = new NSMutableDictionary ();
             foreach (var x in request.Headers) {
                 nsHeaders.Add (new NSString (x.Key), new NSString (String.Join (",", x.Value)));
+            }
+
+            if (PreAuthenticate) {
+                var basicAuth = Convert.ToBase64String (Encoding.ASCII.GetBytes (string.Format ("{0}:{1}", Cred.Username, Cred.GetPassword ())));
+                nsHeaders.Add (new NSString("Authorization"),  new NSString(string.Format ("{0} {1}", "Basic", basicAuth)));
             }
 
             var req = new NSMutableUrlRequest () {
@@ -194,7 +200,7 @@ namespace NachoPlatform
                 sw.Stop ();
                 var sent = (double)task.BytesSent / (double)1024;
                 var received = (double)task.BytesReceived / (double)1024;
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n2"), received.ToString ("n2"));
+                Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
 
                 Token.ThrowIfCancellationRequested ();
                 if (null != error && null != ErrorAction) {
@@ -267,11 +273,16 @@ namespace NachoPlatform
 
         public static void BaseDidReceiveChallenge (McCred cred, NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
         {
-            if (challenge.ProtectionSpace.AuthenticationMethod != "NSURLAuthenticationMethodServerTrust" ||
-                ServicePointManager.ServerCertificateValidationCallback == null) {
+            if (challenge.ProtectionSpace.AuthenticationMethod != "NSURLAuthenticationMethodServerTrust") {
+                Log.Warn (Log.LOG_HTTP, "NcHttpClient: Doing auth, so pre-auth didn't work!");
                 HandleCredentialsRequest (cred, challenge, completionHandler);
             } else {
-                CertValidation (task.OriginalRequest.Url, challenge, completionHandler);
+                if (ServicePointManager.ServerCertificateValidationCallback == null) {
+                    Log.Warn (Log.LOG_HTTP, "NcHttpClient: No ServerCertificateValidationCallback!");
+                    completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
+                } else {
+                    CertValidation (task.OriginalRequest.Url, challenge, completionHandler);
+                }
             }
         }
 

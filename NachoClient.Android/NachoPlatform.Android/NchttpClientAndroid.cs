@@ -12,6 +12,7 @@ using System.Net;
 using Javax.Net.Ssl;
 using System.Security.Cryptography.X509Certificates;
 using OkHttp.Okio;
+using System.Text;
 
 namespace NachoPlatform
 {
@@ -23,12 +24,13 @@ namespace NachoPlatform
 
         McCred Cred { get; set; }
 
-        public bool AllowAutoRedirect { get; set; }
+        public readonly bool AllowAutoRedirect = false;
+
+        public readonly bool PreAuthenticate = true;
 
         public NcHttpClient (McCred cred)
         {
             Cred = cred;
-            AllowAutoRedirect = true;
         }
 
         string BasicAuthorizationString ()
@@ -65,80 +67,65 @@ namespace NachoPlatform
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NcOkHttpCallback callbacks, CancellationToken cancellationToken)
         {
-            var url = new Java.Net.URL (request.Url);
-
             client.SetHostnameVerifier (new HostnameVerifier (this));
 
             client.SetConnectTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Milliseconds);
             client.SetWriteTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Milliseconds);
             client.SetReadTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Milliseconds);
+            client.FollowRedirects = AllowAutoRedirect;
+            client.SetFollowSslRedirects (AllowAutoRedirect);
 
+            var builder = new Request.Builder ()
+                .Url (new Java.Net.URL (request.Url));
+            
             RequestBody body;
-
             if (request.Content != null) {
                 if (isSend) {
                     // 100-continue doesn't appear to work in OkHttp
                     // https://github.com/square/okhttp/issues/675
                     // https://github.com/square/okhttp/issues/1337
-                    //request.AddHeader ("Expect", "100-continue");
-
-                    // TODO For ActiveSync this works fine, because it assumes BASIC auth.
-                    // For anything else, this would need to be adapted.
-                    request.SetBasicAuthHeader (Cred);
-                }
-                if (!request.ContainsHeader ("Content-Type")) {
-                    request.AddHeader ("Content-Type", request.ContentType);
+                    builder.AddHeader ("Expect", "100-continue");
                 }
                 if (request.Content is FileStream) {
                     var fileStream = request.Content as FileStream;
                     Java.IO.File file = new Java.IO.File (fileStream.Name);
                     body = RequestBody.Create (MediaType.Parse (request.ContentType), file);
-                    if (!request.ContainsHeader ("Content-Length")) {
-                        request.AddHeader ("Content-Length", fileStream.Length.ToString ());
-                    }
                 } else if (request.Content is MemoryStream) {
                     var memStream = request.Content as MemoryStream;
                     byte[] b = memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ();
                     body = RequestBody.Create (MediaType.Parse (request.ContentType), b);
-                    if (!request.ContainsHeader ("Content-Length")) {
-                        request.AddHeader ("Content-Length", memStream.Length.ToString ());
-                    }
                 } else {
                     NcAssert.CaseError (string.Format ("request.Content is of unknown type {0}", request.Content.GetType ().Name));
                     return;
                 }
             } else {
-                if (!request.ContainsHeader ("Content-Type")) {
-                    request.AddHeader ("Content-Type", "text/plain");
-                }
+                builder.Header ("Content-Type", "text/plain");
                 body = default(RequestBody);
             }
-
-
             if (null != callbacks.ProgressAction) {
                 body = new NcOkHttpProgressRequestBody (body, callbacks.ProgressAction);
             }
 
-            var builder = new Request.Builder ()
-                .Method (request.Method.ToString ().ToUpperInvariant (), body)
-                .Url (url);
+            builder.Method (request.Method.ToString ().ToUpperInvariant (), body);
             
-            if (null != Cred) {
-                var basicAuth = BasicAuthorizationString ();
-                builder = builder.AddHeader ("Authorization", basicAuth);
-                client.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth));
-            }
-
             foreach (var kvp in request.Headers) {
                 builder.AddHeader (kvp.Key, String.Join (",", kvp.Value));
             }
+
+            if (null != Cred) {
+                var basicAuth = BasicAuthorizationString ();
+                client.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth));
+                if (PreAuthenticate) {
+                    builder.Header ("Authorization", basicAuth);
+                }
+            }
+
             var rq = builder.Build ();
             OriginalRequest = rq;
+
             var call = client.NewCall (rq);
             cancellationToken.Register (() => {
-                NcTask.Run (() => {
-                    call.Cancel ();
-                }, "NcHttpClientCancel");
+                call.Cancel ();
             });
             call.Enqueue (callbacks);
         }
@@ -168,20 +155,20 @@ namespace NachoPlatform
                 Owner = owner;
             }
 
-            void LogCompletion (Request request, Response response)
+            void LogCompletion (long sent, long received)
             {
                 sw.Stop ();
-                var sent = request.Body ().ContentLength ();
-                var received = response.Body ().ByteStream ().Length;
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n"), received.ToString ("n"));
+                Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
             }
 
             #region ICallback implementation
 
             public void OnFailure (Request p0, Java.IO.IOException p1)
             {
-                LogCompletion (p0, null);
                 Token.ThrowIfCancellationRequested ();
+                var sent = p0.Body ().ContentLength ();
+
+                LogCompletion (sent, -1);
                 if (ErrorAction != null) {
                     ErrorAction (createExceptionForJavaIOException (p1));
                 }
@@ -189,11 +176,43 @@ namespace NachoPlatform
 
             public void OnResponse (Response p0)
             {
-                LogCompletion (p0.Request (), p0);
                 Token.ThrowIfCancellationRequested ();
-                var respBody = p0.Body ();
-                if (SuccessAction != null) {
-                    SuccessAction ((HttpStatusCode)p0.Code (), respBody.ByteStream (), FromOkHttpHeaders (p0.Headers ()), Token);
+                var source = p0.Body ().Source ();
+                var filename = Path.GetTempFileName ();
+
+                // Copy the stream from the network to a file.
+                try {
+                    var fileStream = new FileStream (filename, FileMode.Open);
+                    var buffer = new byte[4 * 1024];
+                    long received = 0;
+                    int n;
+                    do {
+                        Token.ThrowIfCancellationRequested ();
+                        n = source.Read (buffer);
+                        if (n > 0) {
+                            // Read could take a bit. Check again
+                            Token.ThrowIfCancellationRequested ();
+                            received += n;
+                            fileStream.Write (buffer, 0, n);
+
+                            if (ProgressAction != null) {
+                                ProgressAction(false, n, received, -1);
+                            }
+                        }
+                    } while (n > 0);
+                    fileStream.Flush ();
+                    fileStream.Close ();
+
+                    long sent = p0.Request ().Body ().ContentLength ();
+                    LogCompletion (sent, received);
+
+                    // reopen as read-only
+                    fileStream = new FileStream(filename, FileMode.Open, FileAccess.Read);
+                    if (SuccessAction != null) {
+                        SuccessAction ((HttpStatusCode)p0.Code (), fileStream, FromOkHttpHeaders (p0.Headers ()), Token);
+                    }
+                } finally {
+                    File.Delete (filename);
                 }
             }
 
@@ -228,6 +247,7 @@ namespace NachoPlatform
 
             public Request Authenticate (Java.Net.Proxy proxy, Response response)
             {
+                Log.Warn (Log.LOG_HTTP, "NcHttpClient: Doing auth, so pre-auth didn't work!");
                 return response.Request ().NewBuilder ().Header ("Authorization", CredString).Build ();
             }
 
@@ -263,8 +283,10 @@ namespace NachoPlatform
             {
                 var defaultVerifier = HttpsURLConnection.DefaultHostnameVerifier;
 
-                if (ServicePointManager.ServerCertificateValidationCallback == null)
+                if (ServicePointManager.ServerCertificateValidationCallback == null) {
+                    Log.Warn (Log.LOG_HTTP, "NcHttpClient: No ServerCertificateValidationCallback!");
                     return defaultVerifier.Verify (uri.Host, session);
+                }
 
                 // Convert java certificates to .NET certificates and build cert chain from root certificate
                 var certificates = session.GetPeerCertificateChain ();
@@ -334,26 +356,27 @@ namespace NachoPlatform
 
                 bufferedSink.Flush ();
             }
+        }
 
-            public class NcOkHttpCountingSink : ForwardingSink
+        public class NcOkHttpCountingSink : ForwardingSink
+        {
+            long bytesWritten;
+
+            NcOkHttpProgressRequestBody Owner;
+
+            public NcOkHttpCountingSink (ISink sink, NcOkHttpProgressRequestBody owner) : base (sink)
             {
-                long bytesWritten;
+                Owner = owner;
+            }
 
-                NcOkHttpProgressRequestBody Owner;
-
-                public NcOkHttpCountingSink (ISink dele, NcOkHttpProgressRequestBody owner) : base (dele)
-                {
-                    Owner = owner;
-                }
-
-                public override void Write (OkBuffer p0, long p1)
-                {
-                    base.Write (p0, p1);
-                    bytesWritten += p1;
-                    Owner.ProgressAction (bytesWritten, Owner.ContentLength (), -1);
-                }
+            public override void Write (OkBuffer p0, long p1)
+            {
+                base.Write (p0, p1);
+                bytesWritten += p1;
+                Owner.ProgressAction (true, bytesWritten, Owner.ContentLength (), -1);
             }
         }
+
     }
 }
 

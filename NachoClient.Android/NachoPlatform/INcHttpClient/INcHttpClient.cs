@@ -68,14 +68,9 @@ namespace NachoPlatform
         {
             return Headers.ContainsKey (key);
         }
-
-        public void SetBasicAuthHeader (McCred cred)
-        {
-            AddHeader ("Authorization", string.Format ("{0} {1}", "Basic", Convert.ToBase64String (Encoding.ASCII.GetBytes (string.Format ("{0}:{1}", cred.Username, cred.GetPassword ())))));
-        }
     }
 
-    public delegate void ProgressDelegate (long bytes, long totalBytes, long totalBytesExpected);
+    public delegate void ProgressDelegate (bool isRequest, long bytes, long totalBytes, long totalBytesExpected);
     public delegate void SuccessDelete (HttpStatusCode status, Stream stream, Dictionary<string, List<string>> headers, CancellationToken token);
     public delegate void ErrorDelegate (Exception exception);
 
@@ -199,9 +194,9 @@ namespace NachoPlatform
             Console.WriteLine ("HTTP: Request failed: {0}", ex.Message);
         }
 
-        public void Progress (long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
+        public void Progress (bool isRequest, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
         {
-            Console.WriteLine ("HTTP: Progress: {0}:{1}:{2}", bytesSent, totalBytesSent, totalBytesExpectedToSend);
+            Console.WriteLine ("HTTP: {0} Progress: {1}:{2}:{3}", isRequest ? "Request" : "Response", bytesSent, totalBytesSent, totalBytesExpectedToSend);
         }
     }}
 
