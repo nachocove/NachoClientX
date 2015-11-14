@@ -174,7 +174,7 @@ namespace NachoClient.AndroidClient
             var letterbox = (View)sender;
             if (null != contactsListAdapter) {
                 var position = contactsListAdapter.PositionForSection ((int)letterbox.Tag);
-                listView.SmoothScrollToPositionFromTop (position, dp2px (10), 125);
+                listView.SetSelection (position);
             }
         }
 
