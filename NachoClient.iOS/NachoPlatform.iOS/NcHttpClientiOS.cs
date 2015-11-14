@@ -30,7 +30,7 @@ namespace NachoPlatform
 
         public readonly bool AllowAutoRedirect = false;
 
-        public readonly bool PreAuthenticate = true;
+        public readonly bool PreAuthenticate = false; // FIXME. Seems to not work right.
 
         public NcHttpClient (McCred cred)
         {
@@ -46,9 +46,6 @@ namespace NachoPlatform
                 OutputStream = request.Content;
                 if (isSend) {
                     request.AddHeader ("Expect", "100-continue");
-
-                    // TODO For ActiveSync this works fine, because it assumes BASIC auth.
-                    // For anything else, this would need to be adapted.
                 }
                 if (!string.IsNullOrEmpty (request.ContentType)) {
                     if (!request.ContainsHeader ("Content-Type")) {
@@ -77,15 +74,16 @@ namespace NachoPlatform
                 }
             }
 
+            if (PreAuthenticate) {
+                var basicAuth = Convert.ToBase64String (Encoding.ASCII.GetBytes (string.Format ("{0}:{1}", Cred.Username, Cred.GetPassword ())));
+                request.AddHeader ("Authorization", string.Format ("{0} {1}", "Basic", basicAuth));
+            }
+
             var nsHeaders = new NSMutableDictionary ();
             foreach (var x in request.Headers) {
                 nsHeaders.Add (new NSString (x.Key), new NSString (String.Join (",", x.Value)));
             }
 
-            if (PreAuthenticate) {
-                var basicAuth = Convert.ToBase64String (Encoding.ASCII.GetBytes (string.Format ("{0}:{1}", Cred.Username, Cred.GetPassword ())));
-                nsHeaders.Add (new NSString("Authorization"),  new NSString(string.Format ("{0} {1}", "Basic", basicAuth)));
-            }
 
             var req = new NSMutableUrlRequest () {
                 AllowsCellularAccess = true,
@@ -198,8 +196,8 @@ namespace NachoPlatform
             public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
             {
                 sw.Stop ();
-                var sent = (double)task.BytesSent / (double)1024;
-                var received = (double)task.BytesReceived / (double)1024;
+                long sent = task.BytesSent;
+                long received = task.BytesReceived;
                 Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
 
                 Token.ThrowIfCancellationRequested ();
@@ -212,7 +210,7 @@ namespace NachoPlatform
             {
                 Token.ThrowIfCancellationRequested ();
                 if (null != ProgressAction) {
-                    ProgressAction (bytesSent, totalBytesSent, totalBytesExpectedToSend);
+                    ProgressAction (true, bytesSent, totalBytesSent, totalBytesExpectedToSend);
                 }
             }
 
@@ -220,7 +218,7 @@ namespace NachoPlatform
             {
                 Token.ThrowIfCancellationRequested ();
                 if (null != ProgressAction) {
-                    ProgressAction (bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+                    ProgressAction (false, bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
                 }
             }
 
