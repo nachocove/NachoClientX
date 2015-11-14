@@ -70,8 +70,17 @@ namespace NachoPlatform
         }
     }
 
+    /// <summary>
+    /// Progress delegate. Note that the totalBytesExpected is frequently wrong. -1 means 'unknown'.
+    /// </summary>
     public delegate void ProgressDelegate (bool isRequest, long bytes, long totalBytes, long totalBytesExpected);
-    public delegate void SuccessDelete (HttpStatusCode status, Stream stream, Dictionary<string, List<string>> headers, CancellationToken token);
+    /// <summary>
+    /// Success delete. Called when the request (and response) are done.
+    /// </summary>
+    public delegate void SuccessDelete (HttpStatusCode status, Stream stream, string contentType, Dictionary<string, List<string>> headers, CancellationToken token);
+    /// <summary>
+    /// Error delegate. Called on error.
+    /// </summary>
     public delegate void ErrorDelegate (Exception exception);
 
     public interface INcHttpClient
@@ -161,11 +170,11 @@ namespace NachoPlatform
             client.GetRequest (request, 1000000, DownloadSuccess, Error, Progress, Cts.Token);
         }
 
-        public void DownloadSuccess (HttpStatusCode status, Stream stream, Dictionary<string, List<string>> headers, CancellationToken token)
+        public void DownloadSuccess (HttpStatusCode status, Stream stream, string contentType, Dictionary<string, List<string>> headers, CancellationToken token)
         {
             FileStream fs = stream as FileStream;
             NcAssert.NotNull (fs);
-            Log.Info (Log.LOG_HTTP, "Response {0} length {1}", status, fs.Length);
+            Log.Info (Log.LOG_HTTP, "Response {0} content-type {1} length {2}", status, contentType, fs.Length);
             foreach (var header in headers) {
                 Log.Info (Log.LOG_HTTP, "Response Header: {0}={1}", header.Key, string.Join (", ", header.Value));
             }
@@ -175,9 +184,9 @@ namespace NachoPlatform
             }
         }
 
-        public void UploadSuccess (HttpStatusCode status, Stream stream, Dictionary<string, List<string>> headers, CancellationToken token)
+            public void UploadSuccess (HttpStatusCode status, Stream stream, string contentType, Dictionary<string, List<string>> headers, CancellationToken token)
         {
-            Log.Info (Log.LOG_HTTP, "Response {0}", status);
+            Log.Info (Log.LOG_HTTP, "Response {0} content-type {1}", status, contentType);
             foreach (var header in headers) {
                 Log.Info (Log.LOG_HTTP, "Response Header: {0}={1}", header.Key, string.Join (", ", header.Value));
             }

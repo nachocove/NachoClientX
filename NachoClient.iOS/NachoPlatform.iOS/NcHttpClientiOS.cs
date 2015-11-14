@@ -189,7 +189,7 @@ namespace NachoPlatform
 
                     int status = (int)resp.StatusCode;
                     var headers = FromNsHeaders (resp.AllHeaderFields);
-                    SuccessAction ((HttpStatusCode)status, fileStream, headers, Token);
+                    SuccessAction ((HttpStatusCode)status, fileStream, resp.MimeType, headers, Token);
                 }
             }
 

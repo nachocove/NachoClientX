@@ -196,7 +196,7 @@ namespace NachoPlatform
                             fileStream.Write (buffer, 0, n);
 
                             if (ProgressAction != null) {
-                                ProgressAction(false, n, received, -1);
+                                ProgressAction (false, n, received, -1);
                             }
                         }
                     } while (n > 0);
@@ -207,9 +207,9 @@ namespace NachoPlatform
                     LogCompletion (sent, received);
 
                     // reopen as read-only
-                    fileStream = new FileStream(filename, FileMode.Open, FileAccess.Read);
+                    fileStream = new FileStream (filename, FileMode.Open, FileAccess.Read);
                     if (SuccessAction != null) {
-                        SuccessAction ((HttpStatusCode)p0.Code (), fileStream, FromOkHttpHeaders (p0.Headers ()), Token);
+                        SuccessAction ((HttpStatusCode)p0.Code (), fileStream, p0.Body ().ContentType ().ToString (), FromOkHttpHeaders (p0.Headers ()), Token);
                     }
                 } finally {
                     File.Delete (filename);
@@ -356,27 +356,26 @@ namespace NachoPlatform
 
                 bufferedSink.Flush ();
             }
-        }
 
-        public class NcOkHttpCountingSink : ForwardingSink
-        {
-            long bytesWritten;
-
-            NcOkHttpProgressRequestBody Owner;
-
-            public NcOkHttpCountingSink (ISink sink, NcOkHttpProgressRequestBody owner) : base (sink)
+            public class NcOkHttpCountingSink : ForwardingSink
             {
-                Owner = owner;
-            }
+                long bytesWritten;
 
-            public override void Write (OkBuffer p0, long p1)
-            {
-                base.Write (p0, p1);
-                bytesWritten += p1;
-                Owner.ProgressAction (true, bytesWritten, Owner.ContentLength (), -1);
+                NcOkHttpProgressRequestBody Owner;
+
+                public NcOkHttpCountingSink (ISink sink, NcOkHttpProgressRequestBody owner) : base (sink)
+                {
+                    Owner = owner;
+                }
+
+                public override void Write (OkBuffer p0, long p1)
+                {
+                    base.Write (p0, p1);
+                    bytesWritten += p1;
+                    Owner.ProgressAction (true, bytesWritten, Owner.ContentLength (), -1);
+                }
             }
         }
-
     }
 }
 
