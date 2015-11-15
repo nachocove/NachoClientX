@@ -502,6 +502,15 @@ namespace NachoClient.AndroidClient
 
         private void AllDayField_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
         {
+            if (allDayField.Checked && !endTimeChanged && startTime.Date != endTime.Date && TimeSpan.FromHours (1) >= endTime - startTime) {
+                // The user changed the event be an all-day event.  The event is no more than
+                // an hour long, its start and end times are on different days, and the user
+                // hasn't explicitly changed the end time.  It is more likely that the user
+                // wants the event to be a single day rather than an multi-day all-day event.
+                // If the app is guessing incorrectly, the user can still correct the times
+                // before saving the event.
+                endTime = startTime;
+            }
             ConfigureStartEndFields ();
         }
 
