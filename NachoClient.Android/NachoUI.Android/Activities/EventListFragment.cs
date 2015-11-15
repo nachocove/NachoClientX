@@ -43,7 +43,7 @@ namespace NachoClient.AndroidClient
         ImageView addButton;
         ImageView todayButton;
 
-        private bool firstTime = true;
+        private bool jumpToToday = false;
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -139,14 +139,19 @@ namespace NachoClient.AndroidClient
                 mSwipeRefreshLayout.Enabled = true;
             });
 
-            if (firstTime) {
-                firstTime = false;
+            if (jumpToToday) {
+                jumpToToday = false;
                 eventListAdapter.Refresh (() => {
                     listView.SetSelection (eventListAdapter.PositionForToday);
                 });
             }
 
             return view;
+        }
+
+        public void StartAtToday ()
+        {
+            jumpToToday = true;
         }
 
         void TodayButton_Click (object sender, EventArgs e)
