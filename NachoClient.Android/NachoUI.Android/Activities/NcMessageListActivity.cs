@@ -16,7 +16,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NcMessageListActivity", ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]            
+    [Activity (Label = "NcMessageListActivity")]
     public class NcMessageListActivity : NcTabBarActivity, MessageListDelegate
     {
         protected McAccount account;
@@ -24,6 +24,8 @@ namespace NachoClient.AndroidClient
 
         private const string EXTRA_THREAD = "com.nachocove.nachomail.EXTRA_THREAD";
         private const string EXTRA_MESSAGE = "com.nachocove.nachomail.EXTRA_MESSAGE";
+
+        private const string MESSAGE_LIST_FRAGMENT_TAG = "MessageList";
 
         protected virtual INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
@@ -49,19 +51,21 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle, Resource.Layout.NcMessageListActivity);
 
-            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
-
             account = NcApplication.Instance.Account;
 
             List<int> adds;
             List<int> deletes;
             var messages = GetMessages (out adds, out deletes);
 
-            messageListFragment = MessageListFragment.newInstance (messages);
-            messageListFragment.onEventClick += MessageListFragment_onEventClick;
-            messageListFragment.onThreadClick += MessageListFragment_onThreadClick;
-            messageListFragment.onMessageClick += MessageListFragment_onMessageClick;
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, messageListFragment).Commit ();
+            messageListFragment = null;
+            if (null != bundle) {
+                messageListFragment = FragmentManager.FindFragmentByTag<MessageListFragment> (MESSAGE_LIST_FRAGMENT_TAG);
+            }
+            if (null == messageListFragment) {
+                messageListFragment = new MessageListFragment ();
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, messageListFragment, MESSAGE_LIST_FRAGMENT_TAG).Commit ();
+            }
+            messageListFragment.Initialize (messages, MessageListFragment_onEventClick, MessageListFragment_onThreadClick, MessageListFragment_onMessageClick);
         }
 
         protected override void OnResume ()

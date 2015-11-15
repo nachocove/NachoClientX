@@ -21,7 +21,24 @@ namespace NachoClient.AndroidClient
     {
         private const string EXTRA_FOLDER = "com.nachocove.nachomail.EXTRA_FOLDER";
 
-        McFolder folder;
+        private const string DATA_FRAGMENT_TAG = "FolderDataFragment";
+
+        McFolder folder = null;
+
+        private McFolder Folder {
+            get {
+                if (null == folder) {
+                    var data = FragmentManager.FindFragmentByTag<DataFragment> (DATA_FRAGMENT_TAG);
+                    if (null == data) {
+                        data = new DataFragment ();
+                        data.Folder = IntentHelper.RetrieveValue<McFolder> (Intent.GetStringExtra (EXTRA_FOLDER));
+                        FragmentManager.BeginTransaction ().Add (data, DATA_FRAGMENT_TAG).Commit ();
+                    }
+                    folder = data.Folder;
+                }
+                return folder;
+            }
+        }
 
         public static Intent ShowFolderIntent (Context context, McFolder folder)
         {
@@ -33,8 +50,7 @@ namespace NachoClient.AndroidClient
 
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
-            folder = IntentHelper.RetrieveValue<McFolder> (Intent.GetStringExtra (EXTRA_FOLDER));
-            var messages = new NachoEmailMessages (folder);
+            var messages = new NachoEmailMessages (Folder);
             messages.Refresh (out adds, out deletes);
             return messages;
         }
@@ -48,8 +64,19 @@ namespace NachoClient.AndroidClient
             view.FindViewById<View> (Resource.Id.account).Visibility = ViewStates.Gone;
 
             var title = view.FindViewById<TextView> (Resource.Id.title);
-            title.Text = folder.DisplayName;
+            title.Text = Folder.DisplayName;
             title.Visibility = ViewStates.Visible;
+        }
+
+        private class DataFragment : Fragment
+        {
+            public McFolder Folder { get; set; }
+
+            public override void OnCreate (Bundle savedInstanceState)
+            {
+                base.OnCreate (savedInstanceState);
+                this.RetainInstance = true;
+            }
         }
     }
 }

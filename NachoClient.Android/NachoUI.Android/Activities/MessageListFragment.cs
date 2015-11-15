@@ -73,12 +73,23 @@ namespace NachoClient.AndroidClient
         public event EventHandler<INachoEmailMessages> onThreadClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
-        public static MessageListFragment newInstance (INachoEmailMessages messages)
+        public void Initialize (INachoEmailMessages messages, EventHandler<McEvent> eventClickHandler, EventHandler<INachoEmailMessages> threadClickHandler, EventHandler<McEmailMessageThread> messageClickHandler)
         {
-            var fragment = new MessageListFragment ();
-            fragment.messages = messages;
-            fragment.ClearCache ();
-            return fragment;
+            this.messages = messages;
+            if (null != eventClickHandler) {
+                onEventClick += eventClickHandler;
+            }
+            if (null != threadClickHandler) {
+                onThreadClick += threadClickHandler;
+            }
+            if (null != messageClickHandler) {
+                onMessageClick += messageClickHandler;
+            }
+        }
+
+        public void Initialize (INachoEmailMessages messages, EventHandler<McEmailMessageThread> messageClickHandler)
+        {
+            Initialize (messages, null, null, messageClickHandler);
         }
 
         public override void OnCreate (Bundle savedInstanceState)

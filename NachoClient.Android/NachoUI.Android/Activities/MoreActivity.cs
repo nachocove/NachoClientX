@@ -19,17 +19,19 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "MoreActivity")]            
+    [Activity (Label = "MoreActivity")]
     public class MoreActivity : NcTabBarActivity
     {
+        private const string MORE_FRAGMENT_TAG = "MoreFragment";
 
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.MoreActivity);
 
-            var moreFragment = MoreFragment.newInstance ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, moreFragment).Commit ();
+            if (null == bundle || null == FragmentManager.FindFragmentByTag<MoreFragment> (MORE_FRAGMENT_TAG)) {
+                var moreFragment = MoreFragment.newInstance ();
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, moreFragment, MORE_FRAGMENT_TAG).Commit ();
+            }
         }
-
     }
 }

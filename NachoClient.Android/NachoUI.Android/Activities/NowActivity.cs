@@ -16,12 +16,12 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NowActivity")]            
+    [Activity (Label = "NowActivity")]
     public class NowActivity : NcTabBarActivity, MessageListDelegate
     {
+        private const string NOW_FRAGMENT_TAG = "NowFragment";
 
         NowFragment nowFragment;
-        MessageListFragment messageListFragment;
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -31,11 +31,17 @@ namespace NachoClient.AndroidClient
 
             base.OnCreate (bundle, Resource.Layout.NowActivity);
 
-            nowFragment = new NowFragment ();
+            nowFragment = null;
+            if (null != bundle) {
+                nowFragment = FragmentManager.FindFragmentByTag<NowFragment> (NOW_FRAGMENT_TAG);
+            }
+            if (null == nowFragment) {
+                nowFragment = new NowFragment ();
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, nowFragment, NOW_FRAGMENT_TAG).AddToBackStack ("Now").Commit ();
+            }
             nowFragment.onEventClick += NowFragment_onEventClick;
             nowFragment.onThreadClick += NowFragment_onThreadClick;
             nowFragment.onMessageClick += NowFragment_onMessageClick;
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, nowFragment).AddToBackStack ("Now").Commit ();
         }
 
         public void ListIsEmpty()

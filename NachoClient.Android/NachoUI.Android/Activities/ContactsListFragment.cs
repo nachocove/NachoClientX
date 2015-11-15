@@ -32,6 +32,8 @@ namespace NachoClient.AndroidClient
         private const int CALL_TAG = 1;
         private const int EMAIL_TAG = 2;
 
+        private const string SAVED_SEARCHING_KEY = "ContactsListFragment.searching";
+
         bool searching;
         Android.Widget.EditText searchEditText;
         View letterBar;
@@ -157,6 +159,18 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnActivityCreated (Bundle savedInstanceState)
+        {
+            base.OnActivityCreated (savedInstanceState);
+            if (null != savedInstanceState) {
+                searching = savedInstanceState.GetBoolean (SAVED_SEARCHING_KEY, false);
+                if (searching) {
+                    StartSearching ();
+                    contactsListAdapter.Search (searchEditText.Text);
+                }
+            }
+        }
+
         public override void OnResume ()
         {
             base.OnResume ();
@@ -167,6 +181,12 @@ namespace NachoClient.AndroidClient
         {
             base.OnPause ();
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            outState.PutBoolean (SAVED_SEARCHING_KEY, searching);
         }
 
         void Letterbox_Click (object sender, EventArgs e)
