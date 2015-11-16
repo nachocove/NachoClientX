@@ -28,9 +28,23 @@ namespace NachoPlatform
 
         public readonly bool PreAuthenticate = true;
 
-        public NcHttpClient (McCred cred)
+        private NcHttpClient ()
         {
-            Cred = cred;
+        }
+
+        private static object LockObj = new object ();
+        static NcHttpClient _Instance { get; set; }
+        public static NcHttpClient Instance {
+            get {
+                if (_Instance == null) {
+                    lock (LockObj) {
+                        if (_Instance == null) {
+                            _Instance = new NcHttpClient ();
+                        }
+                    }
+                }
+                return _Instance;
+            }
         }
 
         string BasicAuthorizationString ()
@@ -41,23 +55,23 @@ namespace NachoPlatform
 
         #region INcHttpClient implementation
 
-        public void GetRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, CancellationToken cancellationToken)
+        public void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken)
         {
             GetRequest (request, timeout, success, error, null, cancellationToken);
         }
 
-        public void GetRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
+        public void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             var callbacks = new NcOkHttpCallback (this, cancellationToken, success, error, progress);
             SetupAndRunRequest (false, request, timeout, callbacks, cancellationToken);
         }
 
-        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, CancellationToken cancellationToken)
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken)
         {
             SendRequest (request, timeout, success, error, null, cancellationToken);
         }
 
-        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             var callbacks = new NcOkHttpCallback (this, cancellationToken, success, error, progress);
             SetupAndRunRequest (true, request, timeout, callbacks, cancellationToken);
@@ -76,7 +90,7 @@ namespace NachoPlatform
             client.SetFollowSslRedirects (AllowAutoRedirect);
 
             var builder = new Request.Builder ()
-                .Url (new Java.Net.URL (request.Url));
+                .Url (new Java.Net.URL (request.RequestUri.ToString ()));
             
             RequestBody body;
             if (request.Content != null) {
@@ -112,6 +126,7 @@ namespace NachoPlatform
                 builder.AddHeader (kvp.Key, String.Join (",", kvp.Value));
             }
 
+            Cred = request.Cred;
             if (null != Cred) {
                 var basicAuth = BasicAuthorizationString ();
                 client.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth));
@@ -132,7 +147,7 @@ namespace NachoPlatform
 
         public class NcOkHttpCallback : Java.Lang.Object, ICallback
         {
-            protected SuccessDelete SuccessAction;
+            protected SuccessDelegate SuccessAction;
 
             protected ErrorDelegate ErrorAction { get; set; }
 
@@ -144,7 +159,7 @@ namespace NachoPlatform
 
             NcHttpClient Owner { get; set; }
 
-            public NcOkHttpCallback (NcHttpClient owner, CancellationToken cancellationToken, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress = null)
+            public NcOkHttpCallback (NcHttpClient owner, CancellationToken cancellationToken, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress = null)
             {
                 sw = new PlatformStopwatch ();
                 sw.Start ();
@@ -165,7 +180,9 @@ namespace NachoPlatform
 
             public void OnFailure (Request p0, Java.IO.IOException p1)
             {
-                Token.ThrowIfCancellationRequested ();
+                if (Token.IsCancellationRequested) {
+                    return;
+                }
                 var sent = p0.Body ().ContentLength ();
 
                 LogCompletion (sent, -1);
@@ -176,7 +193,9 @@ namespace NachoPlatform
 
             public void OnResponse (Response p0)
             {
-                Token.ThrowIfCancellationRequested ();
+                if (Token.IsCancellationRequested) {
+                    return;
+                }
                 var source = p0.Body ().Source ();
                 var filename = Path.GetTempFileName ();
 
@@ -187,11 +206,15 @@ namespace NachoPlatform
                     long received = 0;
                     int n;
                     do {
-                        Token.ThrowIfCancellationRequested ();
+                        if (Token.IsCancellationRequested) {
+                            return;
+                        }
                         n = source.Read (buffer);
                         if (n > 0) {
                             // Read could take a bit. Check again
-                            Token.ThrowIfCancellationRequested ();
+                            if (Token.IsCancellationRequested) {
+                                return;
+                            }
                             received += n;
                             fileStream.Write (buffer, 0, n);
 
@@ -208,8 +231,14 @@ namespace NachoPlatform
 
                     // reopen as read-only
                     fileStream = new FileStream (filename, FileMode.Open, FileAccess.Read);
-                    if (SuccessAction != null) {
-                        SuccessAction ((HttpStatusCode)p0.Code (), fileStream, p0.Body ().ContentType ().ToString (), FromOkHttpHeaders (p0.Headers ()), Token);
+                    try {
+                        if (SuccessAction != null) {
+                            var response = new NcHttpResponse ((HttpStatusCode)p0.Code (), fileStream, p0.Body ().ContentType ().ToString (), FromOkHttpHeaders (p0.Headers ()));
+                            SuccessAction (response, Token);
+                        }
+                    } finally {
+                        fileStream.Dispose ();
+
                     }
                 } finally {
                     File.Delete (filename);
@@ -219,14 +248,11 @@ namespace NachoPlatform
             #endregion
         }
 
-        public static Dictionary<string, List<string>> FromOkHttpHeaders (Headers headers)
+        public static NcHttpHeaders FromOkHttpHeaders (Headers headers)
         {
-            var ret = new Dictionary<string, List<string>> ();
+            var ret = new NcHttpHeaders ();
             foreach (var n in headers.Names()) {
-                if (!ret.ContainsKey (n)) {
-                    ret [n] = new List<string> ();
-                }
-                ret [n].Add (headers.Get (n));
+                ret.Add (n, headers.Get (n));
             }
             return ret;
         }

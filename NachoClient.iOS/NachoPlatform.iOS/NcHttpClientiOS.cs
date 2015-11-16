@@ -22,7 +22,7 @@ namespace NachoPlatform
 {
     public class NcHttpClient : INcHttpClient
     {
-        McCred Cred { get; set; }
+        public McCred Cred { get; protected set; }
 
         NSMutableUrlRequest OriginalRequest { get; set; }
 
@@ -30,12 +30,26 @@ namespace NachoPlatform
 
         public readonly bool AllowAutoRedirect = false;
 
-        public readonly bool PreAuthenticate = false;
         // FIXME. Seems to not work right.
+        public readonly bool PreAuthenticate = false;
 
-        public NcHttpClient (McCred cred)
+        private NcHttpClient ()
         {
-            Cred = cred;
+        }
+
+        private static object LockObj = new object ();
+        static NcHttpClient _Instance { get; set; }
+        public static NcHttpClient Instance {
+            get {
+                if (_Instance == null) {
+                    lock (LockObj) {
+                        if (_Instance == null) {
+                            _Instance = new NcHttpClient ();
+                        }
+                    }
+                }
+                return _Instance;
+            }
         }
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NSUrlSessionDelegate dele, CancellationToken cancellationToken)
@@ -46,7 +60,7 @@ namespace NachoPlatform
             if (request.Content != null) {
                 OutputStream = request.Content;
                 if (isSend) {
-                    request.AddHeader ("Expect", "100-continue");
+                    //request.AddHeader ("Expect", "100-continue");
                 }
                 if (!string.IsNullOrEmpty (request.ContentType)) {
                     if (!request.ContainsHeader ("Content-Type")) {
@@ -75,7 +89,8 @@ namespace NachoPlatform
                 }
             }
 
-            if (PreAuthenticate) {
+            Cred = request.Cred;
+            if (PreAuthenticate && null != Cred) {
                 var basicAuth = Convert.ToBase64String (Encoding.ASCII.GetBytes (string.Format ("{0}:{1}", Cred.Username, Cred.GetPassword ())));
                 request.AddHeader ("Authorization", string.Format ("{0} {1}", "Basic", basicAuth));
             }
@@ -85,13 +100,12 @@ namespace NachoPlatform
                 nsHeaders.Add (new NSString (x.Key), new NSString (String.Join (",", x.Value)));
             }
 
-
             var req = new NSMutableUrlRequest () {
                 AllowsCellularAccess = true,
                 CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
                 Headers = nsHeaders,
                 HttpMethod = request.Method.ToString ().ToUpperInvariant (),
-                Url = NSUrl.FromString (request.Url),
+                Url = NSUrl.FromString (request.RequestUri.ToString ()),
                 TimeoutInterval = timeout,
             };
             if (RequestBody != null) {
@@ -107,7 +121,7 @@ namespace NachoPlatform
             config.URLCache = new NSUrlCache (0, 0, "HttpClientCache");
 
             var session = NSUrlSession.FromConfiguration (config, dele, null);
-            task = session.CreateDownloadTask (OriginalRequest);
+            var task = session.CreateDownloadTask (OriginalRequest);
             cancellationToken.Register (() => {
                 task.Cancel ();
             });
@@ -116,10 +130,8 @@ namespace NachoPlatform
 
         #region INcHttpClient implementation
 
-        NSUrlSessionTask task { get; set; }
-
         public void GetRequest (NcHttpRequest request, int timeout,
-                                SuccessDelete success,
+                                SuccessDelegate success,
                                 ErrorDelegate error,
                                 CancellationToken cancellationToken)
         {
@@ -127,7 +139,7 @@ namespace NachoPlatform
         }
 
         public void GetRequest (NcHttpRequest request, int timeout,
-                                SuccessDelete success,
+            SuccessDelegate success,
                                 ErrorDelegate error,
                                 ProgressDelegate progress,
                                 CancellationToken cancellationToken)
@@ -136,12 +148,12 @@ namespace NachoPlatform
             SetupAndRunRequest (false, request, timeout, dele, cancellationToken);
         }
 
-        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, CancellationToken cancellationToken)
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken)
         {
             SendRequest (request, timeout, success, error, null, cancellationToken);
         }
 
-        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             var dele = new NcDownloadTaskDelegate (this, cancellationToken, success, error, progress);
             SetupAndRunRequest (true, request, timeout, dele, cancellationToken);
@@ -153,7 +165,7 @@ namespace NachoPlatform
 
         class NcDownloadTaskDelegate : NSUrlSessionDownloadDelegate
         {
-            protected SuccessDelete SuccessAction;
+            protected SuccessDelegate SuccessAction;
 
             protected ErrorDelegate ErrorAction { get; set; }
 
@@ -165,7 +177,7 @@ namespace NachoPlatform
 
             NcHttpClient Owner { get; set; }
 
-            public NcDownloadTaskDelegate (NcHttpClient owner, CancellationToken cancellationToken, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress = null)
+            public NcDownloadTaskDelegate (NcHttpClient owner, CancellationToken cancellationToken, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress = null)
             {
                 sw = new PlatformStopwatch ();
                 sw.Start ();
@@ -178,30 +190,35 @@ namespace NachoPlatform
 
             public override void DidFinishDownloading (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, NSUrl location)
             {
-                Token.ThrowIfCancellationRequested ();
+                if (Token.IsCancellationRequested) {
+                    return;
+                }
                 if (null != SuccessAction) {
                     NcAssert.True (downloadTask.Response is NSHttpUrlResponse);
                     var resp = downloadTask.Response as NSHttpUrlResponse;
-                    NcAssert.NotNull (resp);
-
                     NcAssert.True (location.IsFileUrl);
-                    var fileStream = new FileStream (location.Path, FileMode.Open);
-                    NcAssert.True (null != fileStream && downloadTask.BytesReceived == fileStream.Length);
-
-                    int status = (int)resp.StatusCode;
-                    var headers = FromNsHeaders (resp.AllHeaderFields);
-                    SuccessAction ((HttpStatusCode)status, fileStream, resp.MimeType, headers, Token);
+                    using (var fileStream = new FileStream (location.Path, FileMode.Open)) {
+                        try {
+                            int status = (int)resp.StatusCode;
+                            var response = new NcHttpResponse ((HttpStatusCode)status, fileStream, resp.MimeType, FromNsHeaders (resp.AllHeaderFields));
+                            SuccessAction (response, Token);
+                        } catch (Exception ex) {
+                            Log.Error (Log.LOG_HTTP, "Error running SuccessAction: {0}", ex);
+                        }
+                    }
                 }
             }
 
             public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
             {
-                sw.Stop ();
                 long sent = task.BytesSent;
                 long received = task.BytesReceived;
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
+                Log.Debug (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2}){3}", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
+                    error != null ? string.Format(" (Error: {0})", error.ToString ()) : "");
 
-                Token.ThrowIfCancellationRequested ();
+                if (Token.IsCancellationRequested) {
+                    return;
+                }
                 if (null != error && null != ErrorAction) {
                     ErrorAction (createExceptionForNSError (error));
                 }
@@ -209,7 +226,9 @@ namespace NachoPlatform
 
             public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
             {
-                Token.ThrowIfCancellationRequested ();
+                if (Token.IsCancellationRequested) {
+                    return;
+                }
                 if (null != ProgressAction) {
                     ProgressAction (true, bytesSent, totalBytesSent, totalBytesExpectedToSend);
                 }
@@ -217,19 +236,11 @@ namespace NachoPlatform
 
             public override void DidWriteData (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long bytesWritten, long totalBytesWritten, long totalBytesExpectedToWrite)
             {
-                Token.ThrowIfCancellationRequested ();
+                if (Token.IsCancellationRequested) {
+                    return;
+                }
                 if (null != ProgressAction) {
                     ProgressAction (false, bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
-                }
-            }
-
-            public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
-            {
-                var fileStream = Owner.OutputStream as FileStream;
-                if (fileStream != null) {
-                    completionHandler (NSInputStream.FromFile (fileStream.Name));
-                } else {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient: NeedNewBodyStream called for stream type {0}", Owner.OutputStream.GetType ().Name);
                 }
             }
 
@@ -250,21 +261,15 @@ namespace NachoPlatform
 
         #endregion
 
-        public static Dictionary<string, List<string>> FromNsHeaders (NSDictionary headers)
+        public static NcHttpHeaders FromNsHeaders (NSDictionary headers)
         {
-            var ret = new Dictionary<string, List<string>> ();
+            var ret = new NcHttpHeaders ();
             foreach (var v in headers) {
                 // NB: Cocoa trolling us so hard by giving us back dummy
                 // dictionary entries
                 if (v.Key == null || v.Value == null)
                     continue;
-                var key = v.Key.ToString ();
-                if (!ret.ContainsKey (key)) {
-                    ret [key] = new List<string> ();
-                }
-                foreach (var val in v.Value.ToString ().Split (new []{','})) {
-                    ret [key].Add (val);
-                }
+                ret.Add (v.Key.ToString (), v.Value.ToString ());
             }
             return ret;
         }
@@ -277,7 +282,7 @@ namespace NachoPlatform
                 HandleCredentialsRequest (cred, challenge, completionHandler);
             } else {
                 if (ServicePointManager.ServerCertificateValidationCallback == null) {
-                    Log.Warn (Log.LOG_HTTP, "NcHttpClient: No ServerCertificateValidationCallback!");
+                    Log.Warn (Log.LOG_HTTP, "NcHttpClient: No ServerCertificateValidationCallback!");  // FIXME This is probably OK. Need to see.
                     completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
                 } else {
                     CertValidation (task.OriginalRequest.Url, challenge, completionHandler);

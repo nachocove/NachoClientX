@@ -10,12 +10,14 @@ using System.Threading;
 using System.Text;
 using NachoCore.Utils;
 using System.Linq;
+using System.Net.Http.Headers;
 
 namespace NachoPlatform
 {
     #region INcHttpClient
 
-    public enum NcHttpClientState {
+    public enum NcHttpClientState
+    {
         Unknown = 0,
         Running,
         Suspended,
@@ -23,9 +25,15 @@ namespace NachoPlatform
         Completed
     }
 
+    public class NcHttpHeaders : HttpHeaders
+    {
+        public NcHttpHeaders ()
+        {}
+    }
+
     public class NcHttpRequest
     {
-        public Dictionary<string, List<string>> Headers { get; protected set; }
+        public NcHttpHeaders Headers { get; protected set; }
 
         public Stream Content { get; protected set; }
 
@@ -33,15 +41,40 @@ namespace NachoPlatform
 
         public string ContentType { get; protected set; }
 
-        public string Url { get; protected set; }
+        public Uri RequestUri { get; protected set; }
 
         public HttpMethod Method { get; protected set; }
 
-        public NcHttpRequest(HttpMethod method, string url)
+        McCred _Cred;
+
+        public McCred Cred { 
+            get { return _Cred; }
+            set {
+                if (value != null) {
+                    NcAssert.True (RequestUri.IsHttps());
+                }
+                _Cred = value;
+            }
+        }
+
+        public NcHttpRequest (HttpMethod method, Uri uri)
         {
-            Url = url;
+            RequestUri = uri;
             Method = method;
-            Headers = new Dictionary<string, List<string>> ();
+            Headers = new NcHttpHeaders ();
+        }
+
+        public NcHttpRequest (HttpMethod method, string url) : this (method, new Uri (url))
+        {
+        }
+
+        public NcHttpRequest (HttpMethod method, string url, McCred cred) : this (method, new Uri (url), cred)
+        {
+        }
+
+        public NcHttpRequest (HttpMethod method, Uri uri, McCred cred) : this (method, uri)
+        {
+            Cred = cred;
         }
 
         public void SetContent (Stream stream, string contentType)
@@ -58,15 +91,55 @@ namespace NachoPlatform
 
         public void AddHeader (string key, string value)
         {
-            if (!Headers.ContainsKey (key)) {
-                Headers [key] = new List<string> ();
+            if (!Headers.Contains (key)) {
+                Headers.Add (key, new List<string> ());
             }
-            Headers [key].Add (value);
+            // FIXME: Make sure this does lists properly
+            Headers.Add (key, value);
         }
 
         public bool ContainsHeader (string key)
         {
-            return Headers.ContainsKey (key);
+            return Headers.Contains (key);
+        }
+    }
+
+    public class NcHttpResponse
+    {
+        public NcHttpHeaders Headers { get; protected set; }
+
+        public Stream Content { get; protected set; }
+
+        public string ContentType { get; protected set; }
+
+        public HttpStatusCode StatusCode { get; protected set; }
+
+        public long ContentLength { get {
+                if (null != Content) {
+                    return Content.Length;
+                }
+                if (Headers.Contains ("Content-Length")) {
+                    long len;
+                    if (long.TryParse (Headers.GetValues ("Content-Length").First (), out len)) {
+                        return len;
+                    }
+                }
+                return -1;
+            }
+        }
+
+        public bool HasBody {
+            get {
+                return ContentLength > 0;
+            }
+        }
+
+        public NcHttpResponse (HttpStatusCode status, Stream stream, string contentType, NcHttpHeaders headers)
+        {
+            StatusCode = status;
+            Content = stream;
+            ContentType = contentType;
+            Headers = headers;
         }
     }
 
@@ -77,7 +150,7 @@ namespace NachoPlatform
     /// <summary>
     /// Success delete. Called when the request (and response) are done.
     /// </summary>
-    public delegate void SuccessDelete (HttpStatusCode status, Stream stream, string contentType, Dictionary<string, List<string>> headers, CancellationToken token);
+    public delegate void SuccessDelegate (NcHttpResponse response, CancellationToken token);
     /// <summary>
     /// Error delegate. Called on error.
     /// </summary>
@@ -85,10 +158,13 @@ namespace NachoPlatform
 
     public interface INcHttpClient
     {
-        void GetRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, CancellationToken cancellationToken);
-        void GetRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
-        void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, CancellationToken cancellationToken);
-        void SendRequest (NcHttpRequest request, int timeout, SuccessDelete success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
+        void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken);
+
+        void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
+
+        void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken);
+
+        void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
     }
 
     #endregion
@@ -143,15 +219,14 @@ namespace NachoPlatform
                 
             fileStream = new FileStream (destinationPath, FileMode.Open);
 
-            var request = new NcHttpRequest (HttpMethod.Post, url1);
+            var request = new NcHttpRequest (HttpMethod.Post, url1, Cred);
             request.AddHeader ("User-Agent", Device.Instance.UserAgent ());
             request.AddHeader ("X-MS-PolicyKey", "1495342484");
             request.AddHeader ("MS-ASProtocolVersion", "14.1");
             request.SetContent (fileStream, "application/vnd.ms-sync.wbxml");
 
-            Log.Info (Log.LOG_HTTP, "Starting Upload with {0}:{1}", request.Method.ToString (), request.Url);
-            var client = new NcHttpClient (Cred);
-            client.SendRequest (request, 1000000, UploadSuccess, Error, Progress, Cts.Token);
+            Log.Info (Log.LOG_HTTP, "Starting Upload with {0}:{1}", request.Method.ToString (), request.RequestUri.ToString ());
+            NcHttpClient.Instance.SendRequest (request, 1000000, UploadSuccess, Error, Progress, Cts.Token);
         }
 
         void StartDownload ()
@@ -164,18 +239,18 @@ namespace NachoPlatform
             request.AddHeader ("X-MS-PolicyKey", "1495342484");
             request.AddHeader ("MS-ASProtocolVersion", "14.1");
             request.SetContent (memStream, "application/vnd.ms-sync.wbxml");
+            request.Cred = Cred;
 
-            Log.Info (Log.LOG_HTTP, "Starting Download with {0}:{1}", request.Method.ToString (), request.Url);
-            var client = new NcHttpClient (Cred);
-            client.GetRequest (request, 1000000, DownloadSuccess, Error, Progress, Cts.Token);
+            Log.Info (Log.LOG_HTTP, "Starting Download with {0}:{1}", request.Method.ToString (), request.RequestUri.ToString ());
+            NcHttpClient.Instance.GetRequest (request, 1000000, DownloadSuccess, Error, Progress, Cts.Token);
         }
 
-        public void DownloadSuccess (HttpStatusCode status, Stream stream, string contentType, Dictionary<string, List<string>> headers, CancellationToken token)
+        public void DownloadSuccess (NcHttpResponse response, CancellationToken token)
         {
-            FileStream fs = stream as FileStream;
+            FileStream fs = response.Content as FileStream;
             NcAssert.NotNull (fs);
-            Log.Info (Log.LOG_HTTP, "Response {0} content-type {1} length {2}", status, contentType, fs.Length);
-            foreach (var header in headers) {
+            Log.Info (Log.LOG_HTTP, "Response {0} content-type {1} length {2}", response.StatusCode, response.ContentType, fs.Length);
+            foreach (var header in response.Headers) {
                 Log.Info (Log.LOG_HTTP, "Response Header: {0}={1}", header.Key, string.Join (", ", header.Value));
             }
             using (var data = new FileStream (Location, FileMode.OpenOrCreate)) {
@@ -184,15 +259,15 @@ namespace NachoPlatform
             }
         }
 
-            public void UploadSuccess (HttpStatusCode status, Stream stream, string contentType, Dictionary<string, List<string>> headers, CancellationToken token)
+        public void UploadSuccess (NcHttpResponse response, CancellationToken token)
         {
-            Log.Info (Log.LOG_HTTP, "Response {0} content-type {1}", status, contentType);
-            foreach (var header in headers) {
+            Log.Info (Log.LOG_HTTP, "Response {0} content-type {1}", response.StatusCode, response.ContentType);
+            foreach (var header in response.Headers) {
                 Log.Info (Log.LOG_HTTP, "Response Header: {0}={1}", header.Key, string.Join (", ", header.Value));
             }
-            if (stream != null) {
+            if (response.Content != null) {
                 var mem = new MemoryStream ();
-                stream.CopyTo (mem);
+                response.Content.CopyTo (mem);
                 Log.Info (Log.LOG_HTTP, "Response Data({0}):\n{1}", mem.Length, Convert.ToBase64String (mem.GetBuffer ().Take ((int)mem.Length).ToArray ()));
             }
             Console.WriteLine ("HTTP: Finished Upload");
@@ -207,5 +282,6 @@ namespace NachoPlatform
         {
             Console.WriteLine ("HTTP: {0} Progress: {1}:{2}:{3}", isRequest ? "Request" : "Response", bytesSent, totalBytesSent, totalBytesExpectedToSend);
         }
-    }}
+    }
+}
 
