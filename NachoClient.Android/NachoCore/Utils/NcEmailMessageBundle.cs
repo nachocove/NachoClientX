@@ -697,8 +697,12 @@ namespace NachoCore.Utils
         protected override void VisitMimePart (MimePart entity)
         {
             if (entity.ContentType.Matches ("image", "*")) {
-                // even though it's not an inline image, go ahead and include in message
-                VisitImagePart (entity);
+                // We'll skip anything with an explicit size of 0 because it's likely to be a part we truncated.
+                // If there's no size set, assume there might be some data.
+                if (entity.ContentDisposition == null || entity.ContentDisposition.Size > 0) {
+                    // even though it's not an inline image, go ahead and include in message
+                    VisitImagePart (entity);
+                }
             }
         }
 
