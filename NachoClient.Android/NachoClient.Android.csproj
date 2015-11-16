@@ -467,8 +467,6 @@
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="NachoUI.Android\MainApplication.cs" />
     <Compile Include="NachoUI.Android\Support\Bind.cs" />
-    <Compile Include="NachoUI.Android\Support\BodyRenderer.cs" />
-    <Compile Include="NachoUI.Android\Support\BodyDownloader.cs" />
     <Compile Include="NachoUI.Android\Support\WebViewNoScroll.cs" />
     <Compile Include="NachoCore\Adapters\ILoginProtocol.cs" />
     <Compile Include="NachoCore\Utils\LoginProtocolControl.cs" />
@@ -603,6 +601,7 @@
     <Compile Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration50.cs" />
     <Compile Include="NachoCore\Utils\FolderLists.cs" />
     <Compile Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />

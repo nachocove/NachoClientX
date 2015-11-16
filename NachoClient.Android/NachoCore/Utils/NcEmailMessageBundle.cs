@@ -126,6 +126,7 @@ namespace NachoCore.Utils
         public IPlatformRtfConverter RtfConverter = null;
         private bool HasHtmlUrl = true;
         private McEmailMessage Message = null;
+        private McBody Body = null;
         private MimeMessage MimeMessage = null;
         private NcBundleStorage Storage;
         private BundleManifest Manifest;
@@ -152,15 +153,30 @@ namespace NachoCore.Utils
 
         #endregion
 
+        public static string FileStoragePathForBodyId (int accountId, int bodyId)
+        {
+            var dataRoot = NcApplication.GetDataDirPath ();
+            return Path.Combine (dataRoot, "files", accountId.ToString(), "bundles", bodyId.ToString ());
+        }
+
         #region Constructors
 
         public NcEmailMessageBundle (McEmailMessage message)
         {
-            var dataRoot = NcApplication.GetDataDirPath ();
-            var bundleRoot = Path.Combine (dataRoot, "files", message.AccountId.ToString(), "bundles", message.Id.ToString ());
+            NcAssert.True (message.BodyId != 0);
+            var bundleRoot = FileStoragePathForBodyId (message.AccountId, message.BodyId);
             Storage = new NcBundleFileStorage (bundleRoot);
             HasHtmlUrl = true;
             Message = message;
+            ReadManifest ();
+        }
+
+        public NcEmailMessageBundle (McBody body)
+        {
+            var bundleRoot = FileStoragePathForBodyId (body.AccountId, body.Id);
+            Storage = new NcBundleFileStorage (bundleRoot);
+            HasHtmlUrl = true;
+            Body = body;
             ReadManifest ();
         }
 
@@ -390,16 +406,18 @@ namespace NachoCore.Utils
             parsed = new ParseResult ();
 
             if (Message != null) {
-                var body = Message.GetBody ();
-                if (body.BodyType == McAbstrFileDesc.BodyTypeEnum.PlainText_1) {
-                    parsed.FullText = body.GetContentsString ();
-                } else if (body.BodyType == McAbstrFileDesc.BodyTypeEnum.HTML_2) {
+                Body = Message.GetBody ();
+            }
+            if (Body != null){
+                if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.PlainText_1) {
+                    parsed.FullText = Body.GetContentsString ();
+                } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.HTML_2) {
                     parsed.FullHtmlDocument = TemplateHtmlDocument ();
-                    IncludeHtml (body.GetContentsString ());
-                } else if (body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4) {
-                    MimeMessage = MimeMessage.Load (body.GetFilePath ());
+                    IncludeHtml (Body.GetContentsString ());
+                } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4) {
+                    MimeMessage = MimeMessage.Load (Body.GetFilePath ());
                 } else {
-                    parsed.FullText = body.GetContentsString ();
+                    parsed.FullText = Body.GetContentsString ();
                 }
             }
 
@@ -679,8 +697,12 @@ namespace NachoCore.Utils
         protected override void VisitMimePart (MimePart entity)
         {
             if (entity.ContentType.Matches ("image", "*")) {
-                // even though it's not an inline image, go ahead and include in message
-                VisitImagePart (entity);
+                // We'll skip anything with an explicit size of 0 because it's likely to be a part we truncated.
+                // If there's no size set, assume there might be some data.
+                if (entity.ContentDisposition == null || entity.ContentDisposition.Size > 0) {
+                    // even though it's not an inline image, go ahead and include in message
+                    VisitImagePart (entity);
+                }
             }
         }
 
