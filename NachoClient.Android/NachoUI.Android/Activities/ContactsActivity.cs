@@ -16,18 +16,24 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "ContactsActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
+    [Activity (Label = "ContactsActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]
     public class ContactsActivity : NcTabBarActivity
     {
-        ContactsListFragment contactsListFragment;
+        private const string CONTACTS_LIST_FRAGMENT_TAG = "ContactsListFragment";
 
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.ContactsActivity);
 
-            contactsListFragment = ContactsListFragment.newInstance ();
-            contactsListFragment.onContactClick += ContactsListFragment_onContactClick;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, contactsListFragment).AddToBackStack ("Contacts").Commit ();
+            ContactsListFragment fragment = null;
+            if (null != bundle) {
+                fragment = FragmentManager.FindFragmentByTag<ContactsListFragment> (CONTACTS_LIST_FRAGMENT_TAG);
+            }
+            if (null == fragment) {
+                fragment = ContactsListFragment.newInstance ();
+                FragmentManager.BeginTransaction ().Add (Resource.Id.content, fragment, CONTACTS_LIST_FRAGMENT_TAG).Commit ();
+            }
+            fragment.onContactClick += ContactsListFragment_onContactClick;
         }
 
         void ContactsListFragment_onContactClick (object sender, McContact contact)
@@ -37,11 +43,11 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-            base.OnBackPressed ();
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is ContactsListFragment) {
                 ((ContactsListFragment)f).OnBackPressed ();
             }
+            base.OnBackPressed ();
         }
 
         protected override void OnSaveInstanceState (Bundle outState)

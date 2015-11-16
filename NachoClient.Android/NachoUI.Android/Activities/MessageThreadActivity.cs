@@ -22,12 +22,12 @@ namespace NachoClient.AndroidClient
         public INachoEmailMessages ThreadMessages;
     }
 
-    [Activity (Label = "MessageThreadActivity")]            
-    public class MessageThreadActivity : NcActivity, MessageListDelegate
+    [Activity (Label = "MessageThreadActivity")]
+    public class MessageThreadActivity : NcActivityWithData<INachoEmailMessages>, MessageListDelegate
     {
         private const string EXTRA_THREAD = "com.nachocove.nachomail.EXTRA_THREAD";
 
-        MessageListFragment messageListFragment;
+        private const string MESSAGE_LIST_FRAGMENT_TAG = "MessageList";
 
         public static Intent ShowThreadIntent (Context context, INachoEmailMessages threadMessages)
         {
@@ -43,16 +43,25 @@ namespace NachoClient.AndroidClient
 
             SetContentView (Resource.Layout.MessageThreadActivity);
 
-            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
+            var threadMessages = RetainedData;
+            if (null == threadMessages) {
+                threadMessages = IntentHelper.RetrieveValue<INachoEmailMessages> (Intent.GetStringExtra (EXTRA_THREAD));
+                RetainedData = threadMessages;
+            }
 
             List<int> adds;
             List<int> deletes;
-            var threadMessages = IntentHelper.RetrieveValue<INachoEmailMessages> (Intent.GetStringExtra (EXTRA_THREAD));
             threadMessages.Refresh (out adds, out deletes);
 
-            messageListFragment = MessageListFragment.newInstance (threadMessages);
-            messageListFragment.onMessageClick += MessageListFragment_onMessageClick;
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, messageListFragment).Commit ();
+            MessageListFragment fragment = null;
+            if (null != bundle) {
+                fragment = FragmentManager.FindFragmentByTag<MessageListFragment> (MESSAGE_LIST_FRAGMENT_TAG);
+            }
+            if (null == fragment) {
+                fragment = new MessageListFragment ();
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, fragment, MESSAGE_LIST_FRAGMENT_TAG).Commit ();
+            }
+            fragment.Initialize (threadMessages, MessageListFragment_onMessageClick);
         }
 
         protected override void OnResume ()
