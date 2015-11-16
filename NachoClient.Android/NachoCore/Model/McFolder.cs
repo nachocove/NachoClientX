@@ -47,11 +47,12 @@ namespace NachoCore.Model
         public DateTime LastSyncAttempt { get; set; }
 
         #region IMAP Folder metadata
+
         // Nacho Mail Code requires the McEmailMessage.ServerId to be unique across all folders. In IMAP,
         // the UID is unique only within a folder (otehr folders may have messages with the same UID).
         // In order to make the ServerId for a message unique, we create this ImapGuid, and prepend it to
         // the UID to create the McEmailMessgae.ServerId. See ImapProtoControl.ImapMessageFolderGuid(),
-        // ImapProtoControl.ImapMessageUid() and ImapProtoControl.MessageServerId() for functions that 
+        // ImapProtoControl.ImapMessageUid() and ImapProtoControl.MessageServerId() for functions that
         // Convert to and from the McEmailMessage.ServerId to the various pieces of information.
         //
         // The ImapGuid will not change if the folder is moved or renamed.
@@ -154,11 +155,11 @@ namespace NachoCore.Model
 
         public string ServerIdHashString ()
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(ServerId);
-            SHA256Managed hashstring = new SHA256Managed();
-            byte[] hash = hashstring.ComputeHash(bytes);
-            string hex = BitConverter.ToString(hash);
-            return hex.Replace("-","");
+            byte[] bytes = Encoding.UTF8.GetBytes (ServerId);
+            SHA256Managed hashstring = new SHA256Managed ();
+            byte[] hash = hashstring.ComputeHash (bytes);
+            string hex = BitConverter.ToString (hash);
+            return hex.Replace ("-", "");
         }
 
         // "factory" to create folders.
@@ -1127,7 +1128,7 @@ namespace NachoCore.Model
             NcAssert.True (tags.Any ());
             var folderLower = folderName.ToLowerInvariant ();
             foreach (var tag in tags) {
-                if (folderLower.Contains (tag.ToLowerInvariant())) {
+                if (folderLower.Contains (tag.ToLowerInvariant ())) {
                     return true;
                 }
             }
@@ -1171,6 +1172,34 @@ namespace NachoCore.Model
                 return null;
             }
             return "(" + string.Join (",", folderList) + ")";
+        }
+
+        public const int HOT_FAKE_FOLDER_ID = -1;
+        public const int LTR_FAKE_FOLDER_ID = -2;
+        public const int DEFERRED_FAKE_FOLDER_ID = -3;
+
+        public static McFolder GetHotFakeFolder ()
+        {
+            return  new McFolder () {
+                Id = HOT_FAKE_FOLDER_ID,
+                DisplayName = "Hot List",
+            };
+        }
+
+        public static McFolder GetLtrFakeFolder ()
+        {
+            return new McFolder () {
+                Id = LTR_FAKE_FOLDER_ID,
+                DisplayName = "Likely To Read",
+            };
+        }
+
+        public static McFolder GetDeferredFakeFolder ()
+        {
+            return new McFolder () {
+                Id = DEFERRED_FAKE_FOLDER_ID,
+                DisplayName = "Deferred Messages",
+            };
         }
     }
 }

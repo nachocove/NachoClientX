@@ -602,6 +602,9 @@
     <Compile Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration50.cs" />
+    <Compile Include="NachoCore\Utils\FolderLists.cs" />
+    <Compile Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1605,6 +1608,11 @@
     <AndroidResource Include="Resources\drawable-hdpi\nav_more_active.png" />
     <AndroidResource Include="Resources\drawable-hdpi\nav_more.png" />
     <AndroidResource Include="Resources\layout\MessageThreadActivity.axml" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\folder_folder.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\folder_folder.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\folder_folder.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\folder_folder.png" />
+    <AndroidResource Include="Resources\drawable\folder_folder.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
