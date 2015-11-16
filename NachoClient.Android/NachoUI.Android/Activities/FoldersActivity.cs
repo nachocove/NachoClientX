@@ -28,7 +28,7 @@ namespace NachoClient.AndroidClient
             this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
 
             folderListFragment = FolderListFragment.newInstance ();
-            folderListFragment.onFolderSelected += onFolderSelected;
+            folderListFragment.OnFolderSelected += FolderListFragment_OnFolderSelected;
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, folderListFragment).Commit ();
         }
 
@@ -40,11 +40,27 @@ namespace NachoClient.AndroidClient
             moreImage.SetImageResource (Resource.Drawable.nav_more_active);
         }
 
-        void onFolderSelected (McFolder folder)
+        void FolderListFragment_OnFolderSelected (object sender, McFolder folder)
         {
-            Log.Info (Log.LOG_UI, "FoldersActivity onFolderClick: {0}", folder);
+            Log.Info (Log.LOG_UI, "FoldersActivity OnFolderSelected: {0}", folder);
 
-            var intent = MessageFolderActivity.ShowFolderIntent (this, folder);
+            Intent intent = null;
+
+            switch (folder.Id) {
+            case McFolder.HOT_FAKE_FOLDER_ID:
+                intent = HotFolderActivity.ShowHotFolderIntent (this, folder);
+                break;
+            case McFolder.LTR_FAKE_FOLDER_ID:
+                intent = LtrFolderActivity.ShowLtrFolderIntent (this, folder);
+                break;
+            case McFolder.DEFERRED_FAKE_FOLDER_ID:
+                intent = DeferredActivity.ShowDeferredFolderIntent (this, folder);
+                break;
+            default:
+                intent = MessageFolderActivity.ShowFolderIntent (this, folder);
+                folder.UpdateSet_LastAccessed (DateTime.UtcNow);
+                break;
+            }
             StartActivity (intent);
         }
 
@@ -61,8 +77,6 @@ namespace NachoClient.AndroidClient
         public override void SwitchAccount (McAccount account)
         {
             base.SwitchAccount (account);
-
-            FragmentManager.PopBackStackImmediate ("Folders", PopBackStackFlags.None);
 
             if (null != folderListFragment) {
                 folderListFragment.SwitchAccount ();

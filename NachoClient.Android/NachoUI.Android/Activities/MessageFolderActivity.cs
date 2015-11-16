@@ -19,7 +19,7 @@ namespace NachoClient.AndroidClient
     [Activity (Label = "MessageFolderActivity")]            
     public class MessageFolderActivity : NcMessageListActivity
     {
-        private const string EXTRA_FOLDER = "com.nachocove.nachomail.EXTRA_FOLDER";
+        protected const string EXTRA_FOLDER = "com.nachocove.nachomail.EXTRA_FOLDER";
 
         private const string DATA_FRAGMENT_TAG = "FolderDataFragment";
 
@@ -77,6 +77,11 @@ namespace NachoClient.AndroidClient
                 base.OnCreate (savedInstanceState);
                 this.RetainInstance = true;
             }
+        }
+
+        public override void OnBackPressed ()
+        {
+            Finish ();
         }
     }
 }

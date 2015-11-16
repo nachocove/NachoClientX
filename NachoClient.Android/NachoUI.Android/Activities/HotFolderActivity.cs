@@ -16,12 +16,12 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "DeferredActivity")]            
-    public class DeferredActivity : MessageFolderActivity
+    [Activity (Label = "HotFolderActivity")]            
+    public class HotFolderActivity : MessageFolderActivity
     {
-        public static Intent ShowDeferredFolderIntent (Context context, McFolder folder)
+        public static Intent ShowHotFolderIntent (Context context, McFolder folder)
         {
-            var intent = new Intent (context, typeof(DeferredActivity));
+            var intent = new Intent (context, typeof(HotFolderActivity));
             intent.SetAction (Intent.ActionView);
             intent.PutExtra (EXTRA_FOLDER, IntentHelper.StoreValue (folder));
             return intent;
@@ -29,7 +29,7 @@ namespace NachoClient.AndroidClient
 
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
-            var messages = new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id);
+            var messages = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
             messages.Refresh (out adds, out deletes);
             return messages;
         }
