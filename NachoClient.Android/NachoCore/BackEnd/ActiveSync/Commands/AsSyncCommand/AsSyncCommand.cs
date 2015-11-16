@@ -9,6 +9,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Wbxml;
 using System.IO;
+using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
@@ -460,7 +461,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SYNCCANCEL0");
@@ -741,7 +742,7 @@ namespace NachoCore.ActiveSync
         }
 
         // Called when we get an empty Sync response body.
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SYNCCANCEL1");
@@ -1318,24 +1319,14 @@ namespace NachoCore.ActiveSync
             return ServerUri (Op).ToString ();
         }
 
-        public HttpRequestHeaders PushAssistRequestHeaders ()
+        public NcHttpHeaders PushAssistRequestHeaders ()
         {
             Op = new AsHttpOperation (CommandName, this, BEContext);
-            HttpRequestMessage request;
+            NcHttpRequest request;
             if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
                 return null;
             }
             return request.Headers;
-        }
-
-        public HttpContentHeaders PushAssistContentHeaders ()
-        {
-            Op = new AsHttpOperation (CommandName, this, BEContext);
-            HttpRequestMessage request;
-            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
-                return null;
-            }
-            return request.Content.Headers;
         }
 
         public byte[] PushAssistRequestData ()

@@ -12,6 +12,7 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 // Reference: http://msdn.microsoft.com/en-us/library/hh531590(v=exchg.140).aspx
 namespace NachoCore.ActiveSync
@@ -183,7 +184,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             var xmlStatus = doc.Root.Element (m_ns + Xml.Provision.Status);
             switch ((Xml.Provision.ProvisionStatusCode)uint.Parse (xmlStatus.Value)) {

@@ -8,6 +8,7 @@ using System.Threading;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Text.RegularExpressions;
+using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
@@ -28,7 +29,7 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
         {
             if (ProcessOptionsHeaders (response.Headers, BEContext)) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsOptionsSuccess));
@@ -66,7 +67,7 @@ namespace NachoCore.ActiveSync
         // (or from most preferred to least preferred).
         private static string[] SupportedVersions = new string[] { "14.1", "14.0", "12.1", "12.0" };
 
-        internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IBEContext beContext)
+        internal static bool ProcessOptionsHeaders (NcHttpHeaders headers, IBEContext beContext)
         {
             IEnumerable<string> values = null;
             McProtocolState protocolState = beContext.ProtocolState;

@@ -61,7 +61,6 @@ namespace Test.Common
                 RequestUrl = ServerUrl,
                 RequestData = RequestData,
                 RequestHeaders = request.Headers,
-                ContentHeaders = request.Content.Headers,
                 NoChangeResponseData = ResponseData,
                 Protocol = PushAssistProtocol.ACTIVE_SYNC,
                 ResponseTimeoutMsec = ResponseTimeout,

@@ -1218,7 +1218,6 @@ namespace NachoCore.ActiveSync
                     },
                     RequestData = ping.PushAssistRequestData (),
                     RequestHeaders = ping.PushAssistRequestHeaders (),
-                    ContentHeaders = ping.PushAssistContentHeaders (),
                     NoChangeResponseData = ping.PushAssistNoChangeResponseData (),
                 };
             } catch (KeychainItemNotFoundException ex) {

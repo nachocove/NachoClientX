@@ -7,6 +7,7 @@ using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
@@ -67,7 +68,7 @@ namespace NachoCore.ActiveSync
             });
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             McProtocolState protocolState;
             // NOTE: Important to remember that in this context, SmEvt.E.Success means to do another long-poll.
@@ -130,24 +131,14 @@ namespace NachoCore.ActiveSync
             return ServerUri (Op).ToString ();
         }
 
-        public HttpRequestHeaders PushAssistRequestHeaders ()
+        public NcHttpHeaders PushAssistRequestHeaders ()
         {
             Op = new AsHttpOperation (CommandName, this, BEContext);
-            HttpRequestMessage request;
+            NcHttpRequest request;
             if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
                 return null;
             }
             return request.Headers;
-        }
-
-        public HttpContentHeaders PushAssistContentHeaders ()
-        {
-            Op = new AsHttpOperation (CommandName, this, BEContext);
-            HttpRequestMessage request;
-            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
-                return null;
-            }
-            return request.Content.Headers;
         }
 
         public byte[] PushAssistRequestData ()

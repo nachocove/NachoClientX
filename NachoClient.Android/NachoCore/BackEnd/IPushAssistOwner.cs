@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
+using NachoPlatform;
 
 namespace NachoCore
 {
@@ -27,11 +28,9 @@ namespace NachoCore
 
         public byte[] RequestData;
 
-        public HttpRequestHeaders RequestHeaders;
+        public NcHttpHeaders RequestHeaders;
 
-        public HttpContentHeaders ContentHeaders;
-
-        public HttpResponseHeaders ResponseHeaders;
+        public NcHttpHeaders ResponseHeaders;
 
         public byte[] ExpectedResponseData;
 

@@ -725,11 +725,6 @@ namespace NachoCore
                     httpHeadersDict.Add (header.Key, ExtractHttpHeaderValue (header));
                 }
             }
-            if (null != parameters.ContentHeaders) {
-                foreach (var header in parameters.ContentHeaders) {
-                    httpHeadersDict.Add (header.Key, ExtractHttpHeaderValue (header));
-                }
-            }
             var jsonRequest = new StartSessionRequest () {
                 MailServerUrl = parameters.RequestUrl,
                 Platform = GetPlatformName (),

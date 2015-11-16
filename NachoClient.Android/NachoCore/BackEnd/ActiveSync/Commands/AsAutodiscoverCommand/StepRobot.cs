@@ -674,7 +674,7 @@ namespace NachoCore.ActiveSync
                 DoRobot2ReDir ();
             }
 
-            private async void DoRobotGetServerCert ()
+            private void DoRobotGetServerCert ()
             {
                 X509Certificate2 cached;
                 if (ServerCertificatePeek.Instance.Cache.TryGetValue (ReDirUri.Host, out cached)) {
@@ -684,31 +684,30 @@ namespace NachoCore.ActiveSync
                 }
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
-                    var handler = new HttpClientHandler () { AllowAutoRedirect = false };
-                    var client = (IHttpClient)Activator.CreateInstance (AsHttpOperation.HttpClientType, handler);
-                    client.Timeout = CertTimeout;
+                    var request = new NcHttpRequest (HttpMethod.Get, ReDirUri);
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
-                    try {
-                        LastUri = ReDirUri;
-                        await client.GetAsync (ReDirUri).ConfigureAwait (false);
-                    } catch (Exception ex) {
-                        // Exceptions don't matter - only the cert matters.
-                        Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", ex.ToString ());
-                    } finally {
-                        client.Dispose ();
-                        handler.Dispose ();
-                    }
-                    ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
-                    if (null == ServerCertificate) {
-                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC1");
-                        return;
-                    }
-                    StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSC2");
-                    return;
+                    LastUri = ReDirUri;
+                    NcHttpClient.Instance.GetRequest (request, CertTimeout.Milliseconds, GetServerCertSuccess, GetServerCertError, Cts.Token);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRGSC3");
                     return;
                 }
+            }
+
+            void GetServerCertSuccess (NcHttpResponse response, CancellationToken token)
+            {
+                ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
+                if (null == ServerCertificate) {
+                    StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC1");
+                } else {
+                    StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSC2");
+                }
+            }
+
+            void GetServerCertError (Exception exception)
+            {
+                Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", exception.ToString ());
+                GetServerCertSuccess (null, Cts.Token);
             }
 
             private void DoRobotGotCert ()
@@ -933,7 +932,7 @@ namespace NachoCore.ActiveSync
                 return true;
             }
 
-            public Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+            public Event PreProcessResponse (AsHttpOperation Sender, NcHttpResponse response)
             {
                 switch (response.StatusCode) {
                 case HttpStatusCode.Found:
@@ -957,13 +956,13 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+            public Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
             {
                 // We should never get back content that isn't XML.
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPR0HARD");
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+            public Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
             {
                 var xmlResponse = doc.Root.ElementAnyNs (Xml.Autodisco.Response);
                 var xmlUser = xmlResponse.ElementAnyNs (Xml.Autodisco.User);

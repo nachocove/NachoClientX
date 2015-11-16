@@ -7,6 +7,7 @@ using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
@@ -205,7 +206,7 @@ namespace NachoCore.ActiveSync
             PendingList.Remove (pending);
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "IOPCANCEL");

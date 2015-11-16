@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
@@ -71,7 +72,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SMCANCEL0");
@@ -87,7 +88,7 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "SMCANCEL1");
