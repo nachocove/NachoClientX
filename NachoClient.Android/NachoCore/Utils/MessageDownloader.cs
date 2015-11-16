@@ -140,10 +140,14 @@ namespace NachoCore.Utils
             if (Bundle == null) {
                 Bundle = new NcEmailMessageBundle (Message);
             }
-            NcTask.Run (delegate {
-                Bundle.Update();
-                InvokeOnUIThread.Instance.Invoke(BundleUpdated);
-            }, "MessageDownloader_UpdateBundle");
+            if (Bundle.NeedsUpdate) {
+                NcTask.Run (delegate {
+                    Bundle.Update ();
+                    InvokeOnUIThread.Instance.Invoke (BundleUpdated);
+                }, "MessageDownloader_UpdateBundle");
+            } else {
+                BundleUpdated ();
+            }
         }
 
         void BundleUpdated ()

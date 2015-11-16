@@ -126,6 +126,7 @@ namespace NachoCore.Utils
         public IPlatformRtfConverter RtfConverter = null;
         private bool HasHtmlUrl = true;
         private McEmailMessage Message = null;
+        private McBody Body = null;
         private MimeMessage MimeMessage = null;
         private NcBundleStorage Storage;
         private BundleManifest Manifest;
@@ -157,10 +158,20 @@ namespace NachoCore.Utils
         public NcEmailMessageBundle (McEmailMessage message)
         {
             var dataRoot = NcApplication.GetDataDirPath ();
-            var bundleRoot = Path.Combine (dataRoot, "files", message.AccountId.ToString(), "bundles", message.Id.ToString ());
+            var bundleRoot = Path.Combine (dataRoot, "files", message.AccountId.ToString(), "bundles", message.BodyId.ToString ());
             Storage = new NcBundleFileStorage (bundleRoot);
             HasHtmlUrl = true;
             Message = message;
+            ReadManifest ();
+        }
+
+        public NcEmailMessageBundle (McBody body)
+        {
+            var dataRoot = NcApplication.GetDataDirPath ();
+            var bundleRoot = Path.Combine (dataRoot, "files", body.AccountId.ToString(), "bundles", body.Id.ToString ());
+            Storage = new NcBundleFileStorage (bundleRoot);
+            HasHtmlUrl = true;
+            Body = body;
             ReadManifest ();
         }
 
@@ -390,16 +401,18 @@ namespace NachoCore.Utils
             parsed = new ParseResult ();
 
             if (Message != null) {
-                var body = Message.GetBody ();
-                if (body.BodyType == McAbstrFileDesc.BodyTypeEnum.PlainText_1) {
-                    parsed.FullText = body.GetContentsString ();
-                } else if (body.BodyType == McAbstrFileDesc.BodyTypeEnum.HTML_2) {
+                Body = Message.GetBody ();
+            }
+            if (Body != null){
+                if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.PlainText_1) {
+                    parsed.FullText = Body.GetContentsString ();
+                } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.HTML_2) {
                     parsed.FullHtmlDocument = TemplateHtmlDocument ();
-                    IncludeHtml (body.GetContentsString ());
-                } else if (body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4) {
-                    MimeMessage = MimeMessage.Load (body.GetFilePath ());
+                    IncludeHtml (Body.GetContentsString ());
+                } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4) {
+                    MimeMessage = MimeMessage.Load (Body.GetFilePath ());
                 } else {
-                    parsed.FullText = body.GetContentsString ();
+                    parsed.FullText = Body.GetContentsString ();
                 }
             }
 
