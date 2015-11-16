@@ -20,14 +20,17 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public class HotMessageFragment : Android.App.Fragment
+    public class HotMessageFragment : Android.App.Fragment, MessageDownloadDelegate
     {
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
         McEmailMessage message;
         McEmailMessageThread thread;
+        NcEmailMessageBundle bundle;
 
-        BodyDownloader bodyDownloader;
+        MessageDownloader messageDownloader;
+
+        Android.Webkit.WebView webView;
 
         // Display first message of a thread in a cardview
         public static HotMessageFragment newInstance (McEmailMessageThread thread)
@@ -36,6 +39,7 @@ namespace NachoClient.AndroidClient
 
             fragment.thread = thread;
             fragment.message = thread.FirstMessageSpecialCase ();
+            fragment.bundle = new NcEmailMessageBundle (fragment.message);
 
             // Hot query returns single messages for threads so
             // fix up the number of messages in the thread here
@@ -73,10 +77,8 @@ namespace NachoClient.AndroidClient
             var chiliButton = view.FindViewById (Resource.Id.chili);
             chiliButton.Click += ChiliButton_Click;
 
-            var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
-            webview.SetOnTouchListener (new IgnoreTouchListener (view));
-
-            bodyDownloader = new BodyDownloader ();
+            webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
+            webView.SetOnTouchListener (new IgnoreTouchListener (view));
 
             BindValues (view);
 
@@ -87,16 +89,37 @@ namespace NachoClient.AndroidClient
         {
             Bind.BindMessageHeader (thread, message, view);
 
-            var body = McBody.QueryById<McBody> (message.BodyId);
-
-            if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
-                var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
-                var bodyRenderer = new BodyRenderer ();
-                bodyRenderer.Start (webview, body, message.NativeBodyType);
+            if (bundle.NeedsUpdate) {
+                messageDownloader = new MessageDownloader ();
+                messageDownloader.Bundle = bundle;
+                messageDownloader.Delegate = this;
+                messageDownloader.Download (message);
             } else {
-                bodyDownloader = new BodyDownloader ();
-                bodyDownloader.Finished += BodyDownloader_Finished;
-                bodyDownloader.Start (message);
+                RenderBody ();
+            }
+        }
+
+        public void MessageDownloadDidFinish (MessageDownloader downloader)
+        {
+            RenderBody ();
+        }
+
+        public void MessageDownloadDidFail (MessageDownloader downloader, NcResult result)
+        {
+            // TODO: show this inline, possibly with message preview (if available)
+            // and give the user an option to retry if appropriate
+            NcAlertView.ShowMessage (Activity, "Could not download message", "Sorry, we were unable to download the message.");
+        }
+
+        void RenderBody ()
+        {
+            if (bundle != null) {
+                if (bundle.FullHtmlUrl != null) {
+                    webView.LoadUrl (bundle.FullHtmlUrl.AbsoluteUri);
+                } else {
+                    var html = bundle.FullHtml;
+                    webView.LoadDataWithBaseURL (bundle.BaseUrl.AbsoluteUri, html, "text/html", "utf-8", null);
+                }
             }
         }
 
@@ -113,36 +136,6 @@ namespace NachoClient.AndroidClient
             {
 //                view.OnTouchEvent (e);
                 return false;
-            }
-        }
-
-        void BodyDownloader_Finished (object sender, string e)
-        {
-            bodyDownloader = null;
-
-            message = (McEmailMessage)McAbstrItem.RefreshItem (message);
-
-            if (null == View) {
-                Log.Info (Log.LOG_UI, "HotMessageFragment: BodyDownloader_Finished: View is null");
-                return;
-            }
-            var webview = View.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
-
-            if (null == e) {
-                var body = McBody.QueryById<McBody> (message.BodyId);
-                var bodyRenderer = new BodyRenderer ();
-                bodyRenderer.Start (webview, body, message.NativeBodyType);
-            } else {
-                webview.LoadData (e, "text/plain", null);
-            }
-        }
-
-        private void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-
-            if ((null != bodyDownloader) && bodyDownloader.HandleStatusEvent (s)) {
-                return;
             }
         }
 
