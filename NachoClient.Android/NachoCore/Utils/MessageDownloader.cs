@@ -46,8 +46,7 @@ namespace NachoCore.Utils
                     EnqueueDownload ();
                 }
             } else {
-                var result = NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed, NcResult.WhyEnum.NotSpecified);
-                FailWithResult (result);
+                EnqueueDownload ();
             }
         }
 
@@ -128,6 +127,8 @@ namespace NachoCore.Utils
         void DownloadComplete ()
         {
             StopListeningForStatusIndicator ();
+            var message = McEmailMessage.QueryById<McEmailMessage> (Message.Id);
+            Message.BodyId = message.BodyId;
             if (CreateBundleIfNeeded) {
                 CheckBundle ();
             } else {

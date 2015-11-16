@@ -109,7 +109,11 @@ namespace NachoClient.AndroidClient
                 ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
                 return;
             }
-            bundle = new NcEmailMessageBundle (message);
+            if (message.BodyId != 0) {
+                bundle = new NcEmailMessageBundle (message);
+            } else {
+                bundle = null;
+            }
 
             NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
 
@@ -185,7 +189,7 @@ namespace NachoClient.AndroidClient
             // view, the full subject needs to be shown.
             view.FindViewById<TextView> (Resource.Id.subject).SetMaxLines (100);
 
-            if (bundle.NeedsUpdate) {
+            if (bundle == null || bundle.NeedsUpdate) {
                 messageDownloader = new MessageDownloader ();
                 messageDownloader.Bundle = bundle;
                 messageDownloader.Delegate = this;
@@ -197,6 +201,7 @@ namespace NachoClient.AndroidClient
 
         public void MessageDownloadDidFinish (MessageDownloader downloader)
         {
+            bundle = downloader.Bundle;
             RenderBody ();
         }
 
@@ -211,7 +216,9 @@ namespace NachoClient.AndroidClient
         {
             if (bundle != null) {
                 if (bundle.FullHtmlUrl != null) {
+                    Log.Info (Log.LOG_UI, "{0} LoadUrl called", DateTime.Now.MillisecondsSinceEpoch());
                     webView.LoadUrl (bundle.FullHtmlUrl.AbsoluteUri);
+                    Log.Info (Log.LOG_UI, "{0} LoadUrl returned", DateTime.Now.MillisecondsSinceEpoch());
                 } else {
                     var html = bundle.FullHtml;
                     webView.LoadDataWithBaseURL (bundle.BaseUrl.AbsoluteUri, html, "text/html", "utf-8", null);
@@ -346,6 +353,11 @@ namespace NachoClient.AndroidClient
         //            Log.Info (Log.LOG_UI, "ShouldInterceptRequest: {1} {0}", request.Url, request.Method);
         //            return base.ShouldInterceptRequest (view, request);
         //        }
+
+        public override void OnPageFinished (Android.Webkit.WebView view, string url)
+        {
+            Log.Info (Log.LOG_UI, "{0} OnPageFinished", DateTime.Now.MillisecondsSinceEpoch());
+        }
 
         public override bool ShouldOverrideUrlLoading (Android.Webkit.WebView view, string url)
         {

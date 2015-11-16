@@ -157,6 +157,7 @@ namespace NachoCore.Utils
 
         public NcEmailMessageBundle (McEmailMessage message)
         {
+            NcAssert.True (message.BodyId != 0);
             var dataRoot = NcApplication.GetDataDirPath ();
             var bundleRoot = Path.Combine (dataRoot, "files", message.AccountId.ToString(), "bundles", message.BodyId.ToString ());
             Storage = new NcBundleFileStorage (bundleRoot);

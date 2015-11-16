@@ -39,7 +39,6 @@ namespace NachoClient.AndroidClient
 
             fragment.thread = thread;
             fragment.message = thread.FirstMessageSpecialCase ();
-            fragment.bundle = new NcEmailMessageBundle (fragment.message);
 
             // Hot query returns single messages for threads so
             // fix up the number of messages in the thread here
@@ -88,8 +87,12 @@ namespace NachoClient.AndroidClient
         void BindValues (View view)
         {
             Bind.BindMessageHeader (thread, message, view);
-
-            if (bundle.NeedsUpdate) {
+            if (message.BodyId != 0) {
+                bundle = new NcEmailMessageBundle (message);
+            } else {
+                bundle = null;
+            }
+            if (bundle == null || bundle.NeedsUpdate) {
                 messageDownloader = new MessageDownloader ();
                 messageDownloader.Bundle = bundle;
                 messageDownloader.Delegate = this;
@@ -101,14 +104,13 @@ namespace NachoClient.AndroidClient
 
         public void MessageDownloadDidFinish (MessageDownloader downloader)
         {
+            bundle = downloader.Bundle;
             RenderBody ();
         }
 
         public void MessageDownloadDidFail (MessageDownloader downloader, NcResult result)
         {
             // TODO: show this inline, possibly with message preview (if available)
-            // and give the user an option to retry if appropriate
-            NcAlertView.ShowMessage (Activity, "Could not download message", "Sorry, we were unable to download the message.");
         }
 
         void RenderBody ()
