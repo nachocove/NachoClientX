@@ -29,6 +29,11 @@ namespace NachoClient.AndroidClient
 
     public class CertAskFragment : DialogFragment
     {
+        private const string ACCOUNT_ID_KEY = "CertAskFragment.accountId";
+        private const string CERT_INFO_KEY = "CertAskFragment.certInfo";
+        private const string CERT_COMMON_NAME_KEY = "CertAskFragment.certCommonName";
+        private const string CERT_ORGANIZATION_KEY = "CertAskFragment.certOrganization";
+
         protected int accountId;
         protected string certInfo;
         protected string certCommonName;
@@ -57,6 +62,22 @@ namespace NachoClient.AndroidClient
             return fragment;
         }
 
+        public void SetListener (CertAskDelegate listener)
+        {
+            this.listener = listener;
+        }
+
+        public override void OnCreate (Bundle savedInstanceState)
+        {
+            base.OnCreate (savedInstanceState);
+            if (null != savedInstanceState) {
+                accountId = savedInstanceState.GetInt (ACCOUNT_ID_KEY);
+                certInfo = savedInstanceState.GetString (CERT_INFO_KEY);
+                certCommonName = savedInstanceState.GetString (CERT_COMMON_NAME_KEY);
+                certOrganization = savedInstanceState.GetString (CERT_ORGANIZATION_KEY);
+            }
+        }
+
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
         {
             var builder = new AlertDialog.Builder (this.Activity);
@@ -81,6 +102,15 @@ namespace NachoClient.AndroidClient
             });
 
             return builder.Create ();
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            outState.PutInt (ACCOUNT_ID_KEY, accountId);
+            outState.PutString (CERT_INFO_KEY, certInfo);
+            outState.PutString (CERT_COMMON_NAME_KEY, certCommonName);
+            outState.PutString (CERT_ORGANIZATION_KEY, certOrganization);
         }
     }
 }

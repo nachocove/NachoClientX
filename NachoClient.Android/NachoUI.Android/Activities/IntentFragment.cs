@@ -40,9 +40,12 @@ namespace NachoClient.AndroidClient
             return builder.Create ();
         }
 
-        public override void OnAttach (Activity activity)
+        public override void OnPause ()
         {
-            base.OnAttach (activity);
+            base.OnPause ();
+            // Don't try to preserve the state across a configuration change.
+            // Instead, just get rid of this dialog.
+            Dismiss ();
         }
 
         void OnListItemClick (object sender, AdapterView.ItemClickEventArgs e)

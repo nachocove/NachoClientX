@@ -46,6 +46,7 @@ namespace NachoClient.AndroidClient
         private const int ATTENDEE_ACTIVITY_REQUEST = 1;
 
         private const string REMINDER_CHOOSER_TAG = "ReminderChooser";
+        private const string CALENDAR_CHOOSER_TAG = "CalendarChooser";
 
         private McAccount account;
         private McCalendar cal;
@@ -277,6 +278,10 @@ namespace NachoClient.AndroidClient
                 if (null != reminderFragment) {
                     ConfigureReminderChooser (reminderFragment);
                 }
+                var calendarFragment = FragmentManager.FindFragmentByTag<CalendarChooserFragment> (CALENDAR_CHOOSER_TAG);
+                if (null != calendarFragment) {
+                    ConfigureCalendarChooser (calendarFragment);
+                }
             }
         }
 
@@ -450,6 +455,17 @@ namespace NachoClient.AndroidClient
             });
         }
 
+        private void ConfigureCalendarChooser (CalendarChooserFragment calendarFragment)
+        {
+            calendarFragment.SetValues (GetChoosableCalendars (), calendarFolder, (McFolder selectedFolder) => {
+                if (account.Id != selectedFolder.AccountId) {
+                    account = McAccount.QueryById<McAccount> (selectedFolder.AccountId);
+                }
+                calendarFolder = selectedFolder;
+                calendarField.Text = selectedFolder.DisplayName;
+            });
+        }
+
         private void SaveButton_Click (object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty (FindViewById<EditText> (Resource.Id.event_edit_title).Text)) {
@@ -548,13 +564,9 @@ namespace NachoClient.AndroidClient
 
         private void Calendar_Click (object sender, EventArgs e)
         {
-            CalendarChooserDialog.Show (this, GetChoosableCalendars (), calendarFolder, (McFolder chosenFolder) => {
-                if (account.Id != chosenFolder.AccountId) {
-                    account = McAccount.QueryById<McAccount> (chosenFolder.AccountId);
-                }
-                calendarFolder = chosenFolder;
-                calendarField.Text = chosenFolder.DisplayName;
-            });
+            var calendarFragment = new CalendarChooserFragment ();
+            ConfigureCalendarChooser (calendarFragment);
+            calendarFragment.Show (FragmentManager, CALENDAR_CHOOSER_TAG);
         }
 
         private void DeleteButton_Click (object sender, EventArgs e)

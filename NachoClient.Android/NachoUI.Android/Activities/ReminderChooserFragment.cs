@@ -30,12 +30,24 @@ namespace NachoClient.AndroidClient
             adapter = new ReminderChooserAdapter (reminder);
 
             var view = new ListView (this.Activity);
+            view.Id = Resource.Id.listView;
             view.Adapter = adapter;
-            view.ItemClick += ItemClick;
 
             dialog = new AlertDialog.Builder (this.Activity).Create ();
             dialog.SetView (view);
             return dialog;
+        }
+
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            dialog.FindViewById<ListView> (Resource.Id.listView).ItemClick += ItemClick;
+        }
+
+        public override void OnPause ()
+        {
+            base.OnPause ();
+            dialog.FindViewById<ListView> (Resource.Id.listView).ItemClick -= ItemClick;
         }
 
         private void ItemClick (object sender, AdapterView.ItemClickEventArgs e)
