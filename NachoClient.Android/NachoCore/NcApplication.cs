@@ -612,18 +612,6 @@ namespace NachoCore
                 }
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer exited.");
             }, null, new TimeSpan (0, 0, KClass4LateShowSeconds + (SafeMode ? KSafeModeMaxSeconds : 0)), TimeSpan.Zero);
-
-            NcTask.Run (() => {
-                XXNachoHttpTest ();
-            }, "XXNachoHttpTest");
-
-
-        }
-        static NachoHttpTest MyTest;
-        void XXNachoHttpTest ()
-        {
-            MyTest = new NachoHttpTest ();
-            MyTest.StartTest ();
         }
 
         public void StopClass4Services ()
