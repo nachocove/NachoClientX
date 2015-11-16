@@ -153,13 +153,18 @@ namespace NachoCore.Utils
 
         #endregion
 
+        public static string FileStoragePathForBodyId (int accountId, int bodyId)
+        {
+            var dataRoot = NcApplication.GetDataDirPath ();
+            return Path.Combine (dataRoot, "files", accountId.ToString(), "bundles", bodyId.ToString ());
+        }
+
         #region Constructors
 
         public NcEmailMessageBundle (McEmailMessage message)
         {
             NcAssert.True (message.BodyId != 0);
-            var dataRoot = NcApplication.GetDataDirPath ();
-            var bundleRoot = Path.Combine (dataRoot, "files", message.AccountId.ToString(), "bundles", message.BodyId.ToString ());
+            var bundleRoot = FileStoragePathForBodyId (message.AccountId, message.BodyId);
             Storage = new NcBundleFileStorage (bundleRoot);
             HasHtmlUrl = true;
             Message = message;
@@ -168,8 +173,7 @@ namespace NachoCore.Utils
 
         public NcEmailMessageBundle (McBody body)
         {
-            var dataRoot = NcApplication.GetDataDirPath ();
-            var bundleRoot = Path.Combine (dataRoot, "files", body.AccountId.ToString(), "bundles", body.Id.ToString ());
+            var bundleRoot = FileStoragePathForBodyId (body.AccountId, body.Id);
             Storage = new NcBundleFileStorage (bundleRoot);
             HasHtmlUrl = true;
             Body = body;

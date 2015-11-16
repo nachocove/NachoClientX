@@ -92,5 +92,23 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Query<McBody> ("UPDATE McBody SET LastModified = ?", LastModified);
         }
 
+        public override int Delete ()
+        {
+            DeleteFileStoredBundle ();
+            return base.Delete ();
+        }
+
+        void DeleteFileStoredBundle ()
+        {
+            var path = NcEmailMessageBundle.FileStoragePathForBodyId (AccountId, Id);
+            if (Directory.Exists (path)) {
+                try {
+                    Directory.Delete (path, true);
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_DB, "McBody: Exception trying to delete bundle: {0}", ex);
+                }
+            }
+        }
+
     }
 }
