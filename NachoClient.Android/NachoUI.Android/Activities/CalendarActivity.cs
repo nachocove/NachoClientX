@@ -19,14 +19,23 @@ namespace NachoClient.AndroidClient
     [Activity (Label = "CalendarActivity")]            
     public class CalendarActivity : NcTabBarActivity
     {
+        private const string EVENT_LIST_FRAGMENT_TAG = "EventList";
+
         // All of the work happens in NcTabBarActivity and in EventListFragment.  The only thing that
         // happens in this class is hooking up the correct base fragment
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.CalendarActivity);
 
-            var eventListFragment = new EventListFragment ();
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, eventListFragment).Commit ();
+            EventListFragment fragment = null;
+            if (null != bundle) {
+                fragment = FragmentManager.FindFragmentByTag<EventListFragment> (EVENT_LIST_FRAGMENT_TAG);
+            }
+            if (null == fragment) {
+                fragment = new EventListFragment ();
+                fragment.StartAtToday ();
+                FragmentManager.BeginTransaction ().Add (Resource.Id.content, fragment, EVENT_LIST_FRAGMENT_TAG).Commit ();
+            }
         }
     }
 }

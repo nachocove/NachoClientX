@@ -16,12 +16,12 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NowActivity")]            
+    [Activity (Label = "NowActivity")]
     public class NowActivity : NcTabBarActivity, MessageListDelegate
     {
+        private const string NOW_FRAGMENT_TAG = "NowFragment";
 
         NowFragment nowFragment;
-        MessageListFragment messageListFragment;
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -31,10 +31,21 @@ namespace NachoClient.AndroidClient
 
             base.OnCreate (bundle, Resource.Layout.NowActivity);
 
-            nowFragment = new NowFragment ();
-            nowFragment.onEventClick += onEventClick;
-            nowFragment.onMessageClick += onMessageClick;
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, nowFragment).AddToBackStack ("Now").Commit ();
+            nowFragment = null;
+            if (null != bundle) {
+                nowFragment = FragmentManager.FindFragmentByTag<NowFragment> (NOW_FRAGMENT_TAG);
+            }
+            if (null == nowFragment) {
+                nowFragment = new NowFragment ();
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, nowFragment, NOW_FRAGMENT_TAG).AddToBackStack ("Now").Commit ();
+            }
+            nowFragment.onEventClick += NowFragment_onEventClick;
+            nowFragment.onThreadClick += NowFragment_onThreadClick;
+            nowFragment.onMessageClick += NowFragment_onMessageClick;
+        }
+
+        public void ListIsEmpty()
+        {
         }
 
         public bool ShowHotEvent ()
@@ -49,25 +60,22 @@ namespace NachoClient.AndroidClient
             tabImage.SetImageResource (Resource.Drawable.nav_nachonow_active);
         }
 
-        void onEventClick (object sender, McEvent ev)
+        void NowFragment_onEventClick (object sender, McEvent ev)
         {
             StartActivity (EventViewActivity.ShowEventIntent (this, ev));
         }
 
-        void onMessageClick (object sender, McEmailMessageThread thread)
+        void NowFragment_onThreadClick (object sender, INachoEmailMessages threadMessages)
         {
-            Log.Info (Log.LOG_UI, "NowActivity onMessageClick: {0}", thread);
+            var intent = MessageThreadActivity.ShowThreadIntent (this, threadMessages);
+            StartActivity (intent);
+        }
 
-            if (1 == thread.MessageCount) {
-                var message = thread.FirstMessageSpecialCase ();
-                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-                StartActivity (intent);
-            } else {
-                var threadMessage = new NachoThreadedEmailMessages (McFolder.GetDefaultInboxFolder (NcApplication.Instance.Account.Id), thread.GetThreadId ());
-                messageListFragment = MessageListFragment.newInstance (threadMessage);
-                messageListFragment.onMessageClick += onMessageClick;
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
-            }
+        void NowFragment_onMessageClick (object sender, McEmailMessageThread thread)
+        {
+            var message = thread.FirstMessageSpecialCase ();
+            var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
+            StartActivity (intent);
         }
 
         public override void OnBackPressed ()

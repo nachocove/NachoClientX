@@ -16,7 +16,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NcMessageListActivity", ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]            
+    [Activity (Label = "NcMessageListActivity")]
     public class NcMessageListActivity : NcTabBarActivity, MessageListDelegate
     {
         protected McAccount account;
@@ -25,9 +25,15 @@ namespace NachoClient.AndroidClient
         private const string EXTRA_THREAD = "com.nachocove.nachomail.EXTRA_THREAD";
         private const string EXTRA_MESSAGE = "com.nachocove.nachomail.EXTRA_MESSAGE";
 
+        private const string MESSAGE_LIST_FRAGMENT_TAG = "MessageList";
+
         protected virtual INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
             throw new NotImplementedException ();
+        }
+
+        public virtual void ListIsEmpty ()
+        {
         }
 
         public virtual bool ShowHotEvent ()
@@ -45,24 +51,26 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle, Resource.Layout.NcMessageListActivity);
 
-            this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
-
             account = NcApplication.Instance.Account;
 
             List<int> adds;
             List<int> deletes;
             var messages = GetMessages (out adds, out deletes);
 
-            messageListFragment = MessageListFragment.newInstance (messages);
-            messageListFragment.onMessageClick += onMessageClick;
-            messageListFragment.onEventClick += MessageListFragment_onEventClick;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
+            messageListFragment = null;
+            if (null != bundle) {
+                messageListFragment = FragmentManager.FindFragmentByTag<MessageListFragment> (MESSAGE_LIST_FRAGMENT_TAG);
+            }
+            if (null == messageListFragment) {
+                messageListFragment = new MessageListFragment ();
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, messageListFragment, MESSAGE_LIST_FRAGMENT_TAG).Commit ();
+            }
+            messageListFragment.Initialize (messages, MessageListFragment_onEventClick, MessageListFragment_onThreadClick, MessageListFragment_onMessageClick);
         }
 
         protected override void OnResume ()
         {
             base.OnResume ();
-            MaybeSwitchAccount ();
         }
 
         void MessageListFragment_onEventClick (object sender, McEvent ev)
@@ -70,37 +78,21 @@ namespace NachoClient.AndroidClient
             StartActivity (EventViewActivity.ShowEventIntent (this, ev));
         }
 
-        void onMessageClick (object sender, McEmailMessageThread thread)
+        void MessageListFragment_onThreadClick (object sender, INachoEmailMessages threadMessages)
         {
-            Log.Info (Log.LOG_UI, "NcMessageListActivity onMessageClick: {0}", thread);
+            var intent = MessageThreadActivity.ShowThreadIntent (this, threadMessages);
+            StartActivity (intent);
+        }
 
-            if (1 == thread.MessageCount) {
-                var message = thread.FirstMessageSpecialCase ();
-                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-                StartActivity (intent);
-            } else {
-                var threadMessage = new NachoThreadedEmailMessages (McFolder.GetDefaultInboxFolder (NcApplication.Instance.Account.Id), thread.GetThreadId ());
-                messageListFragment = MessageListFragment.newInstance (threadMessage);
-                messageListFragment.onMessageClick += onMessageClick;
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Thread").Commit ();
-            }
+        void MessageListFragment_onMessageClick (object sender, McEmailMessageThread thread)
+        {
+            var message = thread.FirstMessageSpecialCase ();
+            var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
+            StartActivity (intent);
         }
 
         public override void OnBackPressed ()
         {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MessageViewFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
-            if (f is MessageListFragment) {
-                ((MessageListFragment)f).OnBackPressed ();
-                // Don't pop if we are the top, e.g. Inbox
-                if (1 < this.FragmentManager.BackStackEntryCount) {
-                    this.FragmentManager.PopBackStack ();
-                }
-                return;
-            }
             base.OnBackPressed ();
         }
 
@@ -120,7 +112,6 @@ namespace NachoClient.AndroidClient
             if ((null != account) && (NcApplication.Instance.Account.Id == account.Id)) {
                 return;
             }
-            FragmentManager.PopBackStackImmediate ("Inbox", PopBackStackFlags.None);
             account = NcApplication.Instance.Account;
             List<int> adds;
             List<int> deletes;

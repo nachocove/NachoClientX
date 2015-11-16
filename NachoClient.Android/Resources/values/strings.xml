@@ -152,4 +152,8 @@
     <string name="interactions">Interactions</string>
     <string name="notes">Notes</string>
     <string name="show_hot_cards">Show Cards on the Hot screen</string>
+    <string name="thread">Thread</string>
+    <string name="recent_folders">Recent Folders</string>
+    <string name="default_folders">Default Folders</string>
+    <string name="your_folders">Your Folders</string>
 </resources>

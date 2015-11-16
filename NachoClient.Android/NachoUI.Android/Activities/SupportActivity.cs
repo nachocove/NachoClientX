@@ -16,26 +16,28 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "SupportActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
+    [Activity (Label = "SupportActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]
     public class SupportActivity : NcTabBarActivity
     {
+        private const string SUPPORT_FRAGMENT_TAG = "SupportFragment";
 
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.SupportActivity);
 
-            var supportFragment = SupportFragment.newInstance ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, supportFragment).Commit ();
+            if (null == bundle || null == FragmentManager.FindFragmentByTag<SupportFragment> (SUPPORT_FRAGMENT_TAG)) {
+                var supportFragment = SupportFragment.newInstance ();
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, supportFragment, SUPPORT_FRAGMENT_TAG).Commit ();
+            }
         }
 
         public override void OnBackPressed ()
         {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is SupportMessageFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
+            if (0 < FragmentManager.BackStackEntryCount) {
+                FragmentManager.PopBackStack ();
+            } else {
+                base.OnBackPressed ();
             }
-            base.OnBackPressed ();
         }
 
         protected override void OnSaveInstanceState (Bundle outState)

@@ -26,6 +26,8 @@ namespace NachoClient.AndroidClient
         private const int DESCRIPTION_REQUEST_CODE = 2;
         private const int PASSWORD_REQUEST_CODE = 4;
 
+        private const string SAVED_ACCOUNT_ID_KEY = "AccountSettingsFragment.accountId";
+
         ButtonBar buttonBar;
 
         ImageView accountIcon;
@@ -69,6 +71,17 @@ namespace NachoClient.AndroidClient
             var fragment = new AccountSettingsFragment ();
             fragment.account = account;
             return fragment;
+        }
+
+        public override void OnCreate (Bundle savedInstanceState)
+        {
+            base.OnCreate (savedInstanceState);
+            if (null == account && null != savedInstanceState) {
+                int accountId = savedInstanceState.GetInt (SAVED_ACCOUNT_ID_KEY, 0);
+                if (0 != accountId) {
+                    account = McAccount.QueryById<McAccount> (accountId);
+                }
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -209,6 +222,12 @@ namespace NachoClient.AndroidClient
             } else {
                 accountIssuesSeparator.Visibility = ViewStates.Gone;
             }
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            outState.PutInt (SAVED_ACCOUNT_ID_KEY, account.Id);
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)

@@ -32,6 +32,8 @@ namespace NachoClient.AndroidClient
         private const int CALL_TAG = 1;
         private const int EMAIL_TAG = 2;
 
+        private const string SAVED_SEARCHING_KEY = "ContactsListFragment.searching";
+
         bool searching;
         Android.Widget.EditText searchEditText;
         View letterBar;
@@ -157,6 +159,18 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnActivityCreated (Bundle savedInstanceState)
+        {
+            base.OnActivityCreated (savedInstanceState);
+            if (null != savedInstanceState) {
+                searching = savedInstanceState.GetBoolean (SAVED_SEARCHING_KEY, false);
+                if (searching) {
+                    StartSearching ();
+                    contactsListAdapter.Search (searchEditText.Text);
+                }
+            }
+        }
+
         public override void OnResume ()
         {
             base.OnResume ();
@@ -169,12 +183,18 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            outState.PutBoolean (SAVED_SEARCHING_KEY, searching);
+        }
+
         void Letterbox_Click (object sender, EventArgs e)
         {
             var letterbox = (View)sender;
             if (null != contactsListAdapter) {
                 var position = contactsListAdapter.PositionForSection ((int)letterbox.Tag);
-                listView.SmoothScrollToPositionFromTop (position, dp2px (10), 125);
+                listView.SetSelection (position);
             }
         }
 
@@ -433,11 +453,11 @@ namespace NachoClient.AndroidClient
                 return (0 == position ? "Recent" : null);
             }
             var index = position - recentsCount;
-            foreach (var s in sections) {
+            foreach (var s in sections.Reverse()) {
                 if (index == s.Start) {
                     return s.FirstLetter.ToString ();
                 }
-                if (index < s.Start) {
+                if (index > s.Start) {
                     return null;
                 }
             }

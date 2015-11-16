@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +30,8 @@ namespace NachoClient.AndroidClient
 {
     public interface MessageListDelegate
     {
+        void ListIsEmpty ();
+
         bool ShowHotEvent ();
 
         void SetActiveImage (View view);
@@ -68,14 +70,26 @@ namespace NachoClient.AndroidClient
         Android.Widget.ImageView rightButton3;
 
         public event EventHandler<McEvent> onEventClick;
+        public event EventHandler<INachoEmailMessages> onThreadClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
-        public static MessageListFragment newInstance (INachoEmailMessages messages)
+        public void Initialize (INachoEmailMessages messages, EventHandler<McEvent> eventClickHandler, EventHandler<INachoEmailMessages> threadClickHandler, EventHandler<McEmailMessageThread> messageClickHandler)
         {
-            var fragment = new MessageListFragment ();
-            fragment.messages = messages;
-            fragment.ClearCache ();
-            return fragment;
+            this.messages = messages;
+            if (null != eventClickHandler) {
+                onEventClick += eventClickHandler;
+            }
+            if (null != threadClickHandler) {
+                onThreadClick += threadClickHandler;
+            }
+            if (null != messageClickHandler) {
+                onMessageClick += messageClickHandler;
+            }
+        }
+
+        public void Initialize (INachoEmailMessages messages, EventHandler<McEmailMessageThread> messageClickHandler)
+        {
+            Initialize (messages, null, null, messageClickHandler);
         }
 
         public override void OnCreate (Bundle savedInstanceState)
@@ -89,16 +103,18 @@ namespace NachoClient.AndroidClient
             // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
 
-            var activity = (NcTabBarActivity)this.Activity;
-            activity.HookNavigationToolbar (view);
+            if (Activity is NcTabBarActivity) {
+                var activity = (NcTabBarActivity)this.Activity;
+                activity.HookNavigationToolbar (view);
+            } else {
+                var navToolbar = view.FindViewById<View> (Resource.Id.navigation_toolbar);
+                navToolbar.Visibility = ViewStates.Gone;
+            }
 
             mSwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
             mSwipeRefreshLayout.SetColorSchemeResources (Resource.Color.refresh_1, Resource.Color.refresh_2, Resource.Color.refresh_3);
 
-            mSwipeRefreshLayout.Refresh += (object sender, EventArgs e) => {
-                var nr = messages.StartSync ();
-                rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
-            };
+            mSwipeRefreshLayout.Refresh += SwipeRefreshLayout_Refresh;
 
             leftButton1 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
             leftButton1.Click += LeftButton1_Click;
@@ -293,6 +309,12 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        void SwipeRefreshLayout_Refresh (object sender, EventArgs e)
+        {
+            var nr = messages.StartSync ();
+            rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
+        }
+
         void ListView_ScrollStateChanged (object sender, AbsListView.ScrollStateChangedEventArgs e)
         {
             switch (e.ScrollState) {
@@ -313,7 +335,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
-            RefreshVisibleMessageCells ();
+            RefreshIfNeeded ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -346,9 +368,19 @@ namespace NachoClient.AndroidClient
                     MultiSelectSet.Add (e.Position);
                 }
                 RefreshVisibleMessageCells ();
-            } else {
+                return;
+            }
+
+            var thread = messageListAdapter [e.Position];
+
+            if (1 == thread.MessageCount) {
                 if (null != onMessageClick) {
-                    onMessageClick (this, messageListAdapter [e.Position]);
+                    onMessageClick (this, thread);
+                }
+            } else {
+                var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
+                if (null != onThreadClick) {
+                    onThreadClick (this, threadMessages);
                 }
             }
         }
@@ -704,6 +736,10 @@ namespace NachoClient.AndroidClient
             case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
                 UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
                 break;
+            case NcResult.SubKindEnum.Error_SyncFailed:
+            case NcResult.SubKindEnum.Info_SyncSucceeded:
+                cancelRefreshTimer ();
+                break;
             }
         }
 
@@ -717,6 +753,26 @@ namespace NachoClient.AndroidClient
                 messageListAdapter.NotifyDataSetChanged ();
             }
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfVisible");
+            if (0 == messages.Count ()) {
+                ((MessageListDelegate)Activity).ListIsEmpty ();
+            }
+        }
+
+        public void RefreshIfNeeded ()
+        {
+            List<int> adds;
+            List<int> deletes;
+            NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfNeeded");
+            if (NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes)) {
+                ClearCache ();
+                messageListAdapter.NotifyDataSetChanged ();
+            } else {
+                RefreshVisibleMessageCells ();
+            }
+            NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfNeeded");
+            if (0 == messages.Count ()) {
+                ((MessageListDelegate)Activity).ListIsEmpty ();
+            }
         }
 
         int[] first = new int[3];
@@ -841,6 +897,12 @@ namespace NachoClient.AndroidClient
         public void RefreshSearchMatches ()
         {
             NotifyDataSetChanged ();
+        }
+
+        public override bool HasStableIds {
+            get {
+                return true;
+            }
         }
 
         public override long GetItemId (int position)

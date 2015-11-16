@@ -55,7 +55,7 @@ namespace NachoClient.AndroidClient
         {
             DateTime lastRefresh;
             if (lastRefreshDictionary.TryGetValue (messages, out lastRefresh)) {
-                if (lastRefresh > RefreshSpy.SharedInstance.lastRefreshStatusIndTime) {
+                if (lastRefresh > RefreshSpy.SharedInstance.lastChangeStatusIndTime) {
                     adds = null;
                     deletes = null;
                     return false;
@@ -71,7 +71,7 @@ namespace NachoClient.AndroidClient
 
         class RefreshSpy
         {
-            public DateTime lastRefreshStatusIndTime = DateTime.MaxValue;
+            public DateTime lastChangeStatusIndTime = DateTime.MaxValue;
 
             static RefreshSpy _instance;
             static object lockObject = new object();
@@ -91,7 +91,7 @@ namespace NachoClient.AndroidClient
 
             private RefreshSpy ()
             {
-                lastRefreshStatusIndTime = DateTime.UtcNow;
+                lastChangeStatusIndTime = DateTime.UtcNow;
                 NcApplication.Instance.StatusIndEvent += NcApplication_Instance_StatusIndEvent;
             }
 
@@ -110,7 +110,7 @@ namespace NachoClient.AndroidClient
 
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
                 case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
-                    lastRefreshStatusIndTime = DateTime.UtcNow;
+                    lastChangeStatusIndTime = DateTime.UtcNow;
                     break;
 
                 }

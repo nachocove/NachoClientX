@@ -603,9 +603,15 @@
     <Compile Include="NachoPlatform.Android\NchttpClientAndroid.cs" />
     <Compile Include="NachoCore\Adapters\NcEmailSingleton.cs" />
     <Compile Include="NachoUI.Android\Activities\MoreActivity.cs" />
+    <Compile Include="NachoCore\Utils\NcBase64.cs" />
     <Compile Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
     <Compile Include="NachoPlatform\INcHttpClient\INcHttpClient.cs" />
     <Compile Include="NachoPlatform\INcHttpClient\INcHttpClientUtils.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
+    <Compile Include="NachoCore\Utils\FolderLists.cs" />
+    <Compile Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1609,6 +1615,12 @@
     <AndroidResource Include="Resources\drawable-mdpi\nav_more.png" />
     <AndroidResource Include="Resources\drawable-hdpi\nav_more_active.png" />
     <AndroidResource Include="Resources\drawable-hdpi\nav_more.png" />
+    <AndroidResource Include="Resources\layout\MessageThreadActivity.axml" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\folder_folder.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\folder_folder.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\folder_folder.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\folder_folder.png" />
+    <AndroidResource Include="Resources\drawable\folder_folder.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -17,8 +17,16 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "DeferredActivity")]            
-    public class DeferredActivity : NcMessageListActivity
+    public class DeferredActivity : MessageFolderActivity
     {
+        public static Intent ShowDeferredFolderIntent (Context context, McFolder folder)
+        {
+            var intent = new Intent (context, typeof(DeferredActivity));
+            intent.SetAction (Intent.ActionView);
+            intent.PutExtra (EXTRA_FOLDER, IntentHelper.StoreValue (folder));
+            return intent;
+        }
+
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
             var messages = new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id);

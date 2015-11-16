@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +39,7 @@ namespace NachoClient.AndroidClient
         HotEventAdapter hotEventAdapter;
 
         public event EventHandler<McEvent> onEventClick;
+        public event EventHandler<INachoEmailMessages> onThreadClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
         // Pages thru hot messages
@@ -142,6 +143,13 @@ namespace NachoClient.AndroidClient
             base.OnPause ();
         }
 
+        void Adapter_onThreadClick (object sender, INachoEmailMessages threadMessages)
+        {
+            if (null != onThreadClick) {
+                onThreadClick (this, threadMessages);
+            }
+        }
+
         void Adapter_onMessageClick (object sender, McEmailMessageThread thread)
         {
             if (null != onMessageClick) {
@@ -184,6 +192,7 @@ namespace NachoClient.AndroidClient
             pager.Adapter = null; // Seems to be required
             adapter = new PriorityInboxPagerAdaptor (ChildFragmentManager);
             adapter.onMessageClick += Adapter_onMessageClick;
+            adapter.onThreadClick += Adapter_onThreadClick;
             pager.Adapter = adapter;
         }
 
@@ -195,6 +204,7 @@ namespace NachoClient.AndroidClient
 
     public class PriorityInboxPagerAdaptor : Android.Support.V13.App.FragmentStatePagerAdapter
     {
+        public event EventHandler<INachoEmailMessages> onThreadClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
         INachoEmailMessages messages = NcEmailSingleton.PrioritySingleton (NcApplication.Instance.Account.Id);
@@ -208,6 +218,11 @@ namespace NachoClient.AndroidClient
             get { return messages.Count (); }
         }
 
+        public override int GetItemPosition (Java.Lang.Object objectValue)
+        {
+            return PositionNone;
+        }
+
         public override Android.App.Fragment GetItem (int position)
         {
             var thread = messages.GetEmailThread (position);
@@ -218,8 +233,15 @@ namespace NachoClient.AndroidClient
 
         void HotMessageFragment_onMessageClick (object sender, McEmailMessageThread thread)
         {
-            if (null != onMessageClick) {
-                onMessageClick (this, thread);
+            if (1 == thread.MessageCount) {
+                if (null != onMessageClick) {
+                    onMessageClick (this, thread);
+                }
+            } else {
+                var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
+                if (null != onThreadClick) {
+                    onThreadClick (this, threadMessages);
+                }
             }
         }
 

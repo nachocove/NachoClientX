@@ -17,12 +17,9 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "FoldersActivity")]            
-    public class FoldersActivity : NcTabBarActivity, MessageListDelegate
+    public class FoldersActivity : NcTabBarActivity
     {
-        INachoEmailMessages messages;
-
         FolderListFragment folderListFragment;
-        MessageListFragment messageListFragment;
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -31,49 +28,44 @@ namespace NachoClient.AndroidClient
             this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
 
             folderListFragment = FolderListFragment.newInstance ();
-            folderListFragment.onFolderSelected += onFolderSelected;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, folderListFragment).AddToBackStack ("Folders").Commit ();
+            folderListFragment.OnFolderSelected += FolderListFragment_OnFolderSelected;
+            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, folderListFragment).Commit ();
         }
 
-        void onFolderSelected (McFolder folder)
+        protected override void OnResume ()
         {
-            Log.Info (Log.LOG_UI, "FoldersActivity onFolderClick: {0}", folder);
-
-            messages = new NachoEmailMessages (folder);
-
-            List<int> adds;
-            List<int> deletes;
-            messages.Refresh (out adds, out deletes);
-
-            messageListFragment = MessageListFragment.newInstance (messages);
-            messageListFragment.onMessageClick += onMessageClick;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Messages").Commit ();
-
+            base.OnResume ();
+            // Highlight the tab bar icon of this activity
+            var moreImage = FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            moreImage.SetImageResource (Resource.Drawable.nav_more_active);
         }
 
-        void onMessageClick (object sender, McEmailMessageThread thread)
+        void FolderListFragment_OnFolderSelected (object sender, McFolder folder)
         {
-            Log.Info (Log.LOG_UI, "FoldersActivity onMessageClick: {0}", thread);
+            Log.Info (Log.LOG_UI, "FoldersActivity OnFolderSelected: {0}", folder);
 
-            if (1 == thread.MessageCount) {
-                var message = thread.FirstMessageSpecialCase ();
-                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-                StartActivity (intent);
-            } else {
-                var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
-                messageListFragment = MessageListFragment.newInstance (threadMessages);
-                messageListFragment.onMessageClick += onMessageClick;
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Thread").Commit ();
+            Intent intent = null;
+
+            switch (folder.Id) {
+            case McFolder.HOT_FAKE_FOLDER_ID:
+                intent = HotFolderActivity.ShowHotFolderIntent (this, folder);
+                break;
+            case McFolder.LTR_FAKE_FOLDER_ID:
+                intent = LtrFolderActivity.ShowLtrFolderIntent (this, folder);
+                break;
+            case McFolder.DEFERRED_FAKE_FOLDER_ID:
+                intent = DeferredActivity.ShowDeferredFolderIntent (this, folder);
+                break;
+            default:
+                intent = MessageFolderActivity.ShowFolderIntent (this, folder);
+                folder.UpdateSet_LastAccessed (DateTime.UtcNow);
+                break;
             }
+            StartActivity (intent);
         }
 
         public override void OnBackPressed ()
         {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is MessageListFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
             base.OnBackPressed ();
         }
 
@@ -86,24 +78,9 @@ namespace NachoClient.AndroidClient
         {
             base.SwitchAccount (account);
 
-            FragmentManager.PopBackStackImmediate ("Folders", PopBackStackFlags.None);
-
             if (null != folderListFragment) {
                 folderListFragment.SwitchAccount ();
             }
-        }
-
-        // MessageListDelegate
-        public bool ShowHotEvent()
-        {
-            return false;
-        }
-
-        // MessageListDelegate
-        public void SetActiveImage (View view)
-        {
-            // Highlight the tab bar icon of this activity
-            // See inbox & nacho now activities
         }
     }
 }
