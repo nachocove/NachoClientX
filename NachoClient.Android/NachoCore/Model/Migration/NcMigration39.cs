@@ -26,7 +26,6 @@ namespace NachoCore.Model
                         smtpAdjusted = protocolState.SmtpProtoControlState - 1;
                     }
                     if (imapAdjusted != 0 || smtpAdjusted != 0) {
-                        Console.WriteLine ("Adjusting {0}: imapAdjusted={1}, smtpAdjusted={2}", account.Id, imapAdjusted, smtpAdjusted);
                         protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                             var target = (McProtocolState)record;
                             if (imapAdjusted != 0) {
@@ -37,8 +36,6 @@ namespace NachoCore.Model
                             }
                             return true;
                         });
-                    } else {
-                        Console.WriteLine ("Nothing to adjust for account {0}", account.Id);
                     }
                 }
             }
