@@ -52,26 +52,26 @@ namespace NachoPlatform
                     //request.AddHeader ("Expect", "100-continue");
                 }
                 if (!string.IsNullOrEmpty (request.ContentType)) {
-                    if (!request.ContainsHeader ("Content-Type")) {
-                        request.AddHeader ("Content-Type", request.ContentType);
+                    if (!request.Headers.Contains ("Content-Type")) {
+                        request.Headers.Add ("Content-Type", request.ContentType);
                     }
                 }
                 if (request.ContentLength.HasValue) {
-                    if (!request.ContainsHeader ("Content-Length")) {
-                        request.AddHeader ("Content-Length", request.ContentLength.Value.ToString ());
+                    if (!request.Headers.Contains ("Content-Length")) {
+                        request.Headers.Add ("Content-Length", request.ContentLength.Value.ToString ());
                     }
                 }
                 if (request.Content is FileStream) {
                     var fileStream = request.Content as FileStream;
                     RequestBodyStream = NSInputStream.FromFile (fileStream.Name);
-                    if (!request.ContainsHeader ("Content-Length")) {
-                        request.AddHeader ("Content-Length", fileStream.Length.ToString ());
+                    if (!request.Headers.Contains ("Content-Length")) {
+                        request.Headers.Add ("Content-Length", fileStream.Length.ToString ());
                     }
                 } else if (request.Content is MemoryStream) {
                     var memStream = request.Content as MemoryStream;
                     RequestBody = NSData.FromStream (memStream);
-                    if (!request.ContainsHeader ("Content-Length")) {
-                        request.AddHeader ("Content-Length", memStream.Length.ToString ());
+                    if (!request.Headers.Contains ("Content-Length")) {
+                        request.Headers.Add ("Content-Length", memStream.Length.ToString ());
                     }
                 } else {
                     NcAssert.CaseError (string.Format ("request.Content is of unknown type {0}", request.Content.GetType ().Name));
@@ -80,7 +80,7 @@ namespace NachoPlatform
 
             if (PreAuthenticate && null != request.Cred) {
                 var basicAuth = Convert.ToBase64String (Encoding.ASCII.GetBytes (string.Format ("{0}:{1}", request.Cred.Username, request.Cred.GetPassword ())));
-                request.AddHeader ("Authorization", string.Format ("{0} {1}", "Basic", basicAuth));
+                request.Headers.Add ("Authorization", string.Format ("{0} {1}", "Basic", basicAuth));
             }
 
             var nsHeaders = new NSMutableDictionary ();
