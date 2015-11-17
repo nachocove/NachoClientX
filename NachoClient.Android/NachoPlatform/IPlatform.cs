@@ -378,4 +378,17 @@ namespace NachoPlatform
     {
         DnsQueryResponse ResQuery (IDnsLockObject op, string host, NsClass dnsClass, NsType dnsType);
     }
+
+    public class ThreadDeathEventArgs : EventArgs
+    {
+        public int ThreadId { get; set; }
+    }
+
+    public delegate void ThreadDeathEventHandler (Object sender, ThreadDeathEventArgs e);
+
+    public interface IThreads
+    {
+        bool DetectsThreadDeath { get; }
+        event ThreadDeathEventHandler ThreadDeathEvent;
+    }
 }

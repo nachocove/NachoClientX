@@ -463,10 +463,26 @@ namespace NachoCore.Model
             DbConnGCTimer.Stfu = true;
         }
 
+        private void ThreadDeadCallback (object sender, ThreadDeathEventArgs tdea)
+        {
+            NcSQLiteConnection db = null;
+            if (DbConns.TryGetValue (tdea.ThreadId, out db)) {
+                if (DbConns.TryRemove (tdea.ThreadId, out db)) {
+                    db.Eliminate ();
+                } else {
+                    Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", tdea.ThreadId);
+                }
+            }
+        }
+
         public void Start ()
         {
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
-            DbConnGCTimer.Stfu = true;
+            if (Threads.Instance.DetectsThreadDeath) {
+                Threads.Instance.ThreadDeathEvent += ThreadDeadCallback;
+            } else {
+                DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
+                DbConnGCTimer.Stfu = true;
+            }
 
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
                 var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";

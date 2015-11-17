@@ -1720,6 +1720,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcBase64.cs">
       <Link>NachoCore\Utils\NcBase64.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\ThreadsiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

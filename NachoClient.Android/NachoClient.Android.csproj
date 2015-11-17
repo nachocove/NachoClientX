@@ -603,6 +603,7 @@
     <Compile Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
+    <Compile Include="NachoPlatform.Android\ThreadsAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
