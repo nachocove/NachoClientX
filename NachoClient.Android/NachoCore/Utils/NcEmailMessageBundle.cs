@@ -927,17 +927,17 @@ namespace NachoCore.Utils
             List<HtmlNode> bodyElements = new List<HtmlNode> ();
             nodes.Add (document.DocumentNode);
             HtmlNode node;
-            int remaingTableNodes = 0;
+            int remainingTableNodes = 0;
             bool inTable = false;
             while (nodes.Count > 0) {
                 node = nodes [0];
                 nodes.RemoveAt (0);
-                inTable = remaingTableNodes > 0;
-                if (remaingTableNodes > 0) {
+                inTable = remainingTableNodes > 0;
+                if (remainingTableNodes > 0) {
                     // if we're in a table, adjust the remaing node count by the number of children pushed minus ourselves
-                    remaingTableNodes += node.ChildNodes.Count - 1;
+                    remainingTableNodes += node.ChildNodes.Count - 1;
                 } else if (node.NodeType == HtmlNodeType.Element && node.Name.Equals ("table")) {
-                    remaingTableNodes = node.ChildNodes.Count;
+                    remainingTableNodes = node.ChildNodes.Count;
                 }
                 if (node.NodeType == HtmlNodeType.Element) {
                     // Remove any and all script tags, wherever they exist in the document.
