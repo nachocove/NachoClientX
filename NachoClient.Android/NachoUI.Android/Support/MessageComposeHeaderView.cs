@@ -261,19 +261,29 @@ namespace NachoClient.AndroidClient
 
         public override View GetView (int position, View convertView, ViewGroup parent)
         {
-            var view = convertView as TextView;
+            var view = convertView as LinearLayout;
             if (convertView == null) {
-                view = new TextView (Context);
+                var inflater = Context.GetSystemService (Context.LayoutInflaterService) as LayoutInflater;
+                view = inflater.Inflate (Resource.Layout.ContactSearchMenuItem, null) as LinearLayout;
             }
 
+            var primaryLabel = view.FindViewById<TextView> (Resource.Id.contact_item_primary_label);
+            var secondaryLabel = view.FindViewById<TextView> (Resource.Id.contact_item_secondary_label);
+            var photoView = view.FindViewById<ContactPhotoView> (Resource.Id.contact_item_photo);
+
+            var contact = SearchResults [position].GetContact ();
             string email = SearchResults [position].Value;
-            string displayName = SearchResults [position].GetContact ().GetDisplayName ();
+            string displayName = contact.GetDisplayName ();
 
-            string viewText = email;
-            if (!string.IsNullOrEmpty(displayName) && displayName != email) {
-                viewText = string.Format ("{0} <{1}>", displayName, email);
+            if (!string.IsNullOrEmpty (displayName) && displayName != email) {
+                primaryLabel.Text = displayName;
+                secondaryLabel.Text = email;
+                secondaryLabel.Visibility = ViewStates.Visible;
+            } else {
+                primaryLabel.Text = email;
+                secondaryLabel.Visibility = ViewStates.Gone;
             }
-            view.Text = viewText;
+            photoView.SetContact (contact);
 
             return view;
         }
