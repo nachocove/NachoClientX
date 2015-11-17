@@ -358,17 +358,17 @@ namespace NachoCore.ActiveSync
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
-                    var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
-                                     (state) => {
+                    var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper",
+                        (state) => {
                             if (!cToken.IsCancellationRequested) {
                                 Log.Error (Log.LOG_HTTP, "AsHttpOperation:ToWbxmlStream wedged (#1313)");
                             }
                         },
-                                     cToken, 
+                        cToken, 
                         // We only want to see this Error if truly wedged.
                         // This timer doesn't perform any recovery action.
-                                     ((Owner.IsContentLarge (this)) ? 60 : 30) * 1000, 
-                                     System.Threading.Timeout.Infinite);
+                        ((Owner.IsContentLarge (this)) ? 60 : 30) * 1000, 
+                        System.Threading.Timeout.Infinite);
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (AccountId, Owner.IsContentLarge (this), cToken);
                     capture.Stop ();
