@@ -282,20 +282,22 @@ namespace NachoPlatform
 
         static void HandleCredentialsRequest (McCred cred, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
         {
-            NetworkCredential credentials = new NetworkCredential (cred.Username, cred.GetPassword ());
-            if (null != credentials) {
-                var authenticationType = AuthenticationTypeFromAuthenticationMethod (challenge.ProtectionSpace.AuthenticationMethod);
-                var uri = UriFromNSUrlProtectionSpace (challenge.ProtectionSpace);
-                if (null != authenticationType && null != uri) {
-                    var credential = new NSUrlCredential (
-                                         credentials.UserName,
-                                         credentials.Password,
-                                         NSUrlCredentialPersistence.ForSession);
-                    completionHandler (NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
-                    return;
+            if (null != cred) {
+                NetworkCredential credentials = new NetworkCredential (cred.Username, cred.GetPassword ());
+                if (null != credentials) {
+                    var authenticationType = AuthenticationTypeFromAuthenticationMethod (challenge.ProtectionSpace.AuthenticationMethod);
+                    var uri = UriFromNSUrlProtectionSpace (challenge.ProtectionSpace);
+                    if (null != authenticationType && null != uri) {
+                        var credential = new NSUrlCredential (
+                                             credentials.UserName,
+                                             credentials.Password,
+                                             NSUrlCredentialPersistence.ForSession);
+                        completionHandler (NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
+                        return;
+                    }
                 }
+                completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
             }
-            completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
         }
 
         static void CertValidation (NSUrl Url, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
