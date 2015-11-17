@@ -647,6 +647,38 @@ namespace NachoCore.Model
             return f;
         }
 
+        public string GetDefaultOrSinglePhoneNumber()
+        {
+            if (0 == PhoneNumbers.Count) {
+                return null;
+            }
+            if (1 == PhoneNumbers.Count) {
+                return PhoneNumbers [0].Value;
+            }
+            foreach (var p in PhoneNumbers) {
+                if (p.IsDefault) {
+                    return p.Value;
+                }
+            }
+            return null;
+        }
+
+        public string GetDefaultOrSingleEmailAddress()
+        {
+            if (0 == EmailAddresses.Count) {
+                return null;
+            }
+            if (1 == EmailAddresses.Count) {
+                return EmailAddresses [0].Value;
+            }
+            foreach (var e in EmailAddresses) {
+                if (e.IsDefault) {
+                    return e.Value;
+                }
+            }
+            return null;
+        }
+
         /// <summary>
         ///        Db.CreateTable<McContact> ();
         ///        Db.CreateTable<McContactDateAttribute> ();
