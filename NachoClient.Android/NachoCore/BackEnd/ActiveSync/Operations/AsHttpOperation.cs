@@ -389,11 +389,11 @@ namespace NachoCore.ActiveSync
             if (null != mime) {
                 request.SetContent (mime, ContentTypeMail);
             }
-            request.AddHeader ("User-Agent", Device.Instance.UserAgent ());
+            request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
             if (Owner.DoSendPolicyKey (this)) {
-                request.AddHeader ("X-MS-PolicyKey", BEContext.ProtocolState.AsPolicyKey);
+                request.Headers.Add ("X-MS-PolicyKey", BEContext.ProtocolState.AsPolicyKey);
             }
-            request.AddHeader ("MS-ASProtocolVersion", BEContext.ProtocolState.AsProtocolVersion);
+            request.Headers.Add ("MS-ASProtocolVersion", BEContext.ProtocolState.AsProtocolVersion);
             return true;
         }
 

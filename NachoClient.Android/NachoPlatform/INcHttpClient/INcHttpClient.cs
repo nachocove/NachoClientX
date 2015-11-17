@@ -88,20 +88,6 @@ namespace NachoPlatform
             ContentType = contentType;
             ContentLength = contentLength;
         }
-
-        public void AddHeader (string key, string value)
-        {
-            if (!Headers.Contains (key)) {
-                Headers.Add (key, new List<string> ());
-            }
-            // FIXME: Make sure this does lists properly
-            Headers.Add (key, value);
-        }
-
-        public bool ContainsHeader (string key)
-        {
-            return Headers.Contains (key);
-        }
     }
 
     public class NcHttpResponse
