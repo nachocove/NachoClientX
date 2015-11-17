@@ -16,15 +16,6 @@ namespace NachoPlatform
 {
     #region INcHttpClient
 
-    public enum NcHttpClientState
-    {
-        Unknown = 0,
-        Running,
-        Suspended,
-        Canceling,
-        Completed
-    }
-
     public class NcHttpHeaders : HttpHeaders
     {
         public NcHttpHeaders ()
