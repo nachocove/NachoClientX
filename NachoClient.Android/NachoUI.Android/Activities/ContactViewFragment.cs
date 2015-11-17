@@ -154,11 +154,22 @@ namespace NachoClient.AndroidClient
             var listview = View.FindViewById<ListView> (Resource.Id.listView);
             listview.Adapter = contactViewAdapter;
 
+            listview.SetOnCreateContextMenuListener (this);
+
+            contactViewAdapter.OnDialNumber += ContactViewAdapter_OnDialNumber;
+            contactViewAdapter.OnSendMessage += ContactViewAdapter_OnSendMessage;
+
             messages = new UserInteractionEmailMessages (contact);
             var interactionListView = View.FindViewById<ListView> (Resource.Id.interactions_listView);
             interactionListView.Adapter = new InteractionListAdapter (this);
 
             interactionListView.ItemClick += InteractionListView_ItemClick;
+
+            var callButton = View.FindViewById (Resource.Id.call);
+            callButton.Click += CallButton_Click;
+
+            var emailButton = View.FindViewById (Resource.Id.email);
+            emailButton.Click += EmailButton_Click;
         }
 
         void InteractionListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
@@ -280,35 +291,72 @@ namespace NachoClient.AndroidClient
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-
         }
-            
-    }
 
+        void ContactViewAdapter_OnSendMessage (object sender, string emailAddress)
+        {
+            Util.SendEmail (Activity, contact, emailAddress);
+        }
+
+        void ContactViewAdapter_OnDialNumber (object sender, string phoneNumber)
+        {
+            Util.CallNumber (Activity, contact, phoneNumber);
+        }
+
+        void EmailButton_Click (object sender, EventArgs e)
+        {
+            Util.SendEmail (Activity, contact, null);
+        }
+
+        void CallButton_Click (object sender, EventArgs e)
+        {
+            Util.CallNumber (Activity, contact, null);
+        }
+
+        public override void OnCreateContextMenu (IContextMenu menu, View v, IContextMenuContextMenuInfo menuInfo)
+        {
+            base.OnCreateContextMenu (menu, v, menuInfo);
+            menu.Add ("Copy");
+        }
+
+        public override bool OnContextItemSelected (IMenuItem item)
+        {
+            ClipboardManager clipboard = (ClipboardManager)Activity.GetSystemService (Context.ClipboardService); 
+            var info = (Android.Widget.AdapterView.AdapterContextMenuInfo)item.MenuInfo;
+            var tv = info.TargetView.FindViewById<TextView> (Resource.Id.value);
+            clipboard.Text = tv.Text;
+            return true;
+        }
+    }
 
     public class ContactViewAdapter : Android.Widget.BaseAdapter<object>
     {
         McContact contact;
+
+        public event EventHandler<string> OnDialNumber;
+        public event EventHandler<string> OnSendMessage;
 
         class DisplayInfo
         {
             public int imageId;
             public string labelString;
             public string valueString;
+            public int buttonId;
 
-            public DisplayInfo (int imageId, string labelString, string valueString)
+            public DisplayInfo (int imageId, string labelString, string valueString, int buttonId = 0)
             {
                 this.imageId = imageId;
                 this.labelString = labelString;
                 this.valueString = valueString;
+                this.buttonId = buttonId;
             }
         };
 
         List<DisplayInfo> displayList;
 
-        void Add (int imageId, string labelString, string valueString)
+        void Add (int imageId, string labelString, string valueString, int buttonId = 0)
         {
-            displayList.Add (new DisplayInfo (imageId, labelString, valueString));
+            displayList.Add (new DisplayInfo (imageId, labelString, valueString, buttonId));
         }
 
         public ContactViewAdapter (McContact contact)
@@ -323,7 +371,7 @@ namespace NachoClient.AndroidClient
                     if (e.IsDefault) {
                         var emailAddress = McEmailAddress.QueryById <McEmailAddress> (e.EmailAddress);
                         var canonicalEmail = (null == emailAddress ? "" : emailAddress.CanonicalEmailAddress);
-                        Add (Resource.Drawable.contacts_icn_email, "EMAIL", canonicalEmail);
+                        Add (Resource.Drawable.contacts_icn_email, "EMAIL", canonicalEmail, Resource.Drawable.contacts_email);
                         break;
                     }
                 }
@@ -335,7 +383,7 @@ namespace NachoClient.AndroidClient
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
                         var label = (String.IsNullOrEmpty (p.Label) ? "PHONE" : p.Label.ToUpper ());
-                        Add (Resource.Drawable.contacts_icn_phone, label, p.Value);
+                        Add (Resource.Drawable.contacts_icn_phone, label, p.Value, Resource.Drawable.contacts_call);
                         break;
                     }
                 }
@@ -346,8 +394,7 @@ namespace NachoClient.AndroidClient
                     if (!e.IsDefault) {
                         var emailAddress = McEmailAddress.QueryById <McEmailAddress> (e.EmailAddress);
                         var canonicalEmail = (null == emailAddress ? "" : emailAddress.CanonicalEmailAddress);
-                        Add (Resource.Drawable.contacts_icn_email, "EMAIL", canonicalEmail);
-                        break;
+                        Add (Resource.Drawable.contacts_icn_email, "EMAIL", canonicalEmail, Resource.Drawable.contacts_email);
                     }
                 }
             }
@@ -356,12 +403,10 @@ namespace NachoClient.AndroidClient
                 foreach (var p in contact.PhoneNumbers) {
                     if (!p.IsDefault) {
                         var label = (String.IsNullOrEmpty (p.Label) ? "PHONE" : p.Label.ToUpper ());
-                        Add (Resource.Drawable.contacts_icn_phone, label, p.Value);
-                        break;
+                        Add (Resource.Drawable.contacts_icn_phone, label, p.Value, Resource.Drawable.contacts_call);
                     }
                 }
             }
-
 
             if (contact.IMAddresses.Count > 0) {
                 foreach (var imAddressAttribute in contact.IMAddresses) {
@@ -387,7 +432,6 @@ namespace NachoClient.AndroidClient
                 foreach (var c in contact.Relationships) {
                     if (c.Name == Xml.Contacts.Child) {
                         Add (Xml.Contacts.Children);
-                        break;
                     }
                 }
             }
@@ -428,15 +472,17 @@ namespace NachoClient.AndroidClient
             View view = convertView; // re-use an existing view, if one is available
             if (view == null) {
                 view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.ContactViewCell, parent, false);
+                var buttonView = view.FindViewById<ImageView> (Resource.Id.button);
+                buttonView.Click += (object sender, EventArgs e) => ButtonView_Click (position);
             }
             var info = displayList [position];
 
-            Bind (view, info.imageId, info.labelString, info.valueString);
+            Bind (view, info.imageId, info.labelString, info.valueString, info.buttonId);
 
             return view;
         }
 
-        void Bind (View view, int resid, string label, string value, int button = 0)
+        void Bind (View view, int resid, string label, string value, int button)
         {
             var imageView = view.FindViewById<ImageView> (Resource.Id.image);
             var labelView = view.FindViewById<TextView> (Resource.Id.label);
@@ -451,6 +497,24 @@ namespace NachoClient.AndroidClient
             } else {
                 buttonView.Visibility = ViewStates.Visible;
                 buttonView.SetImageResource (button);
+            }
+        }
+
+        void ButtonView_Click (int position)
+        {
+            var info = displayList [position];
+
+            switch (info.buttonId) {
+            case Resource.Drawable.contacts_call:
+                if (null != OnDialNumber) {
+                    OnDialNumber (this, info.valueString);
+                }
+                break;
+            case Resource.Drawable.contacts_email:
+                if (null != OnSendMessage) {
+                    OnSendMessage (this, info.valueString);
+                }
+                break;
             }
         }
 

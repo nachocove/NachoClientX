@@ -1627,6 +1627,7 @@
     <AndroidResource Include="Resources\layout\AboutViewerActivity.axml" />
     <AndroidResource Include="Resources\layout\AboutViewerFragment.axml" />
     <AndroidResource Include="Resources\layout\ContactSearchMenuItem.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\notification.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
