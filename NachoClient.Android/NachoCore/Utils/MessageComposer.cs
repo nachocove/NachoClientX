@@ -583,6 +583,9 @@ namespace NachoCore.Utils
                         if (node.Attributes.Contains ("nacho-image-attachment")){
                             node.Attributes.Remove ("nacho-image-attachment");
                         }
+                        if (node.Attributes.Contains ("nacho-resize")){
+                            node.Attributes.Remove ("nacho-resize");
+                        }
                         if (node.Attributes.Contains ("nacho-bundle-entry")) {
                             var entryName = node.Attributes ["nacho-bundle-entry"].Value;
                             if (!SrcsByEntryName.ContainsKey (entryName)) {
