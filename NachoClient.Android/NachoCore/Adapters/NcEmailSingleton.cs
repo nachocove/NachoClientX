@@ -102,6 +102,9 @@ namespace NachoClient.AndroidClient
                 if (null == s.Account) {
                     return;
                 }
+                if (null == NcApplication.Instance.Account) {
+                    return;
+                }
                 if (NcApplication.Instance.Account.Id != s.Account.Id) {
                     return;
                 }
