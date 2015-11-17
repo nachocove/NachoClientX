@@ -10,6 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using NachoPlatform;
 using Android.App.Backup;
 using Android.Content;
+using System.IO;
 
 namespace NachoClient.AndroidClient
 {
@@ -26,6 +27,7 @@ namespace NachoClient.AndroidClient
             _instance = this;
             LifecycleSpy.SharedInstance.Init (this);
             BackupManager = new BackupManager (this);
+            CopyAssetsToDocuments ();
         }
 
         public static MainApplication Instance {
@@ -77,6 +79,21 @@ namespace NachoClient.AndroidClient
                 return check;
             } else {
                 return false;
+            }
+        }
+
+        void CopyAssetsToDocuments ()
+        {
+            var documentsPath = System.Environment.GetFolderPath (System.Environment.SpecialFolder.MyDocuments);
+            string[] assets = { "nacho.html", "nacho.css", "nacho.js" };
+            foreach (var assetName in assets) {
+                var destinationPath = Path.Combine (documentsPath, assetName);
+                // TODO: only copy if newer...how to check the modified time of an asset (don't think it's possible)
+                using (var assetStream = Assets.Open (assetName)) {
+                    using (var destinationStream = new FileStream (destinationPath, FileMode.Create)) {
+                        assetStream.CopyTo (destinationStream);
+                    }
+                }
             }
         }
 
