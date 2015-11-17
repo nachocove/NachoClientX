@@ -337,7 +337,7 @@ namespace NachoCore.Utils
             var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             var htmlPath = Path.Combine (documentsPath, "nacho.html");
             var doc = new HtmlDocument ();
-            using (var stream = new FileStream (htmlPath, FileMode.Open)) {
+            using (var stream = new FileStream (htmlPath, FileMode.Open, FileAccess.Read)) {
                 doc.Load (stream);
             }
             List<HtmlNode> nodes = new List<HtmlNode> ();
