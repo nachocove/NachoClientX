@@ -169,7 +169,7 @@ namespace NachoClient.AndroidClient
 
         void NewMeetingButton_Click (object sender, EventArgs e)
         {
-
+            StartActivity (EventEditActivity.NewEventIntent (this.Activity));
         }
 
         void ComposeButton_Click (object sender, EventArgs e)
