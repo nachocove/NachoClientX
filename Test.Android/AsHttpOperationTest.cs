@@ -20,13 +20,16 @@ using NachoPlatform;
  * Use a mock HttpClient.
  * BEContext?
  */
+using System.Net;
+
+
 namespace Test.iOS
 {
     class BaseMockOwner : IAsHttpOperationOwner 
     {
         public static NcResult Status { get; set; } // for checking StatusInd posts work
 
-        public delegate Event ProcessResponseStandinDelegate (AsHttpOperation sender, HttpResponseMessage response, XDocument doc);
+        public delegate Event ProcessResponseStandinDelegate (AsHttpOperation sender, NcHttpResponse response, XDocument doc);
         public ProcessResponseStandinDelegate ProcessResponseStandin { set; get; }
 
         public delegate XDocument ProvideXDocumentDelegate ();
@@ -56,17 +59,17 @@ namespace Test.iOS
             return null;
         }
 
-        public virtual Event PreProcessResponse (AsHttpOperation sender, HttpResponseMessage response)
+        public virtual Event PreProcessResponse (AsHttpOperation sender, NcHttpResponse response)
         {
             return null;
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response, CancellationToken cToken)
+        public virtual Event ProcessResponse (AsHttpOperation sender, NcHttpResponse response, CancellationToken cToken)
         {
             return Event.Create ((uint)SmEvt.E.Success, "MOCKSUCCESS");
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public virtual Event ProcessResponse (AsHttpOperation sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             if (null != ProcessResponseStandin) {
                 return ProcessResponseStandin (sender, response, doc);
@@ -193,8 +196,8 @@ namespace Test.iOS
 
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", contentType);
+                response.Headers.Add ("Content-Length", mockResponseLength);
+                response.Headers.Add ("Content-Type", contentType);
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
                 Assert.AreEqual (contentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
@@ -212,8 +215,8 @@ namespace Test.iOS
 
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.Accepted;
-                response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
+                response.Headers.Add ("Content-Length", mockResponseLength);
+                response.Headers.Add ("Content-Type", WBXMLContentType);
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
                 Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
@@ -243,8 +246,8 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (sm => {
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
+                response.Headers.Add ("Content-Length", mockResponseLength);
+                response.Headers.Add ("Content-Type", WBXMLContentType);
                 response.Headers.Add (HeaderXMsCredentialServiceUrl, match);
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
@@ -279,8 +282,8 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (sm => {
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
+                response.Headers.Add ("Content-Length", mockResponseLength);
+                response.Headers.Add ("Content-Type", WBXMLContentType);
                 response.Headers.Add (HeaderXMsCredentialsExpire, "2");
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
@@ -307,8 +310,8 @@ namespace Test.iOS
 
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
+                response.Headers.Add ("Content-Length", mockResponseLength);
+                response.Headers.Add ("Content-Type", WBXMLContentType);
             }, request => {
             });
         }
@@ -326,11 +329,11 @@ namespace Test.iOS
                 string badWbxml = "wbxml bad wbxml";
                 byte[] bytes = new byte[badWbxml.Length * sizeof(char)];
                 System.Buffer.BlockCopy(badWbxml.ToCharArray(), 0, bytes, 0, bytes.Length);
-                response.Content = new ByteArrayContent(bytes);  
+                response.Content = new MemoryStream(bytes);  
 
                 response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
+                response.Headers.Add ("Content-Length", mockResponseLength);
+                response.Headers.Add ("Content-Type", WBXMLContentType);
             }, request => {
             });
 
@@ -353,11 +356,11 @@ namespace Test.iOS
                 string badXml = "xml bad xml";
                 byte[] bytes = new byte[badXml.Length * sizeof(char)];
                 System.Buffer.BlockCopy(badXml.ToCharArray(), 0, bytes, 0, bytes.Length);
-                response.Content = new ByteArrayContent(bytes);  
+                response.Content = new MemoryStream(bytes);  
 
                 response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", contentType);
+                response.Headers.Add ("Content-Length", mockResponseLength);
+                response.Headers.Add ("Content-Type", contentType);
             }, request => {
             });
 
@@ -379,11 +382,11 @@ namespace Test.iOS
                 string goodXml = CommonMockData.BasicPhonyPingRequestXml;
                 byte[] bytes = new byte[goodXml.Length * sizeof(char)];
                 System.Buffer.BlockCopy(goodXml.ToCharArray(), 0, bytes, 0, bytes.Length);
-                response.Content = new ByteArrayContent(bytes);  
+                response.Content = new MemoryStream(bytes);  
 
                 response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", contentType);
+                response.Headers.Add ("Content-Length", mockResponseLength);
+                response.Headers.Add ("Content-Type", contentType);
             }, request => {
             });
 
@@ -420,8 +423,8 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (sm => {
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Content.Headers.Add ("Content-Length", responseLength);
-                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
+                response.Headers.Add ("Content-Length", responseLength);
+                response.Headers.Add ("Content-Type", WBXMLContentType);
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
                 Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
@@ -440,7 +443,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (sm => {
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+                response.Headers.Add ("Content-Length", mockResponseLength);
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
             });
@@ -725,7 +728,7 @@ namespace Test.iOS
             Assert.AreEqual (CommonMockData.Host, mockCommStatus.Host);
         }
 
-        private void PerformHttpOperationWithSettings (Action<NcStateMachine> provideSm, Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
+        private void PerformHttpOperationWithSettings (Action<NcStateMachine> provideSm, Action<NcHttpResponse> provideResponse, Action<HttpRequestMessage> provideRequest)
         {
             var autoResetEvent = new AutoResetEvent(false);
             string errorString = null;
@@ -768,7 +771,6 @@ namespace Test.iOS
 
             var mockCommStatusInstance = MockNcCommStatus.Instance;
             op.NcCommStatusSingleton = mockCommStatusInstance;
-            AsHttpOperation.HttpClientType = typeof (MockHttpClient);
             owner.ProcessResponseStandin = (sender, response, doc) => {
                 Assert.AreSame (op, sender, "Owner's sender and AsHttpOperation should match when response is processed");
                 return Event.Create ((uint)SmEvt.E.Success, "BasicPhonyPingSuccess");
@@ -910,11 +912,9 @@ namespace Test.iOS
             return owner;
         }
 
-        private HttpResponseMessage CreateMockResponse (byte[] wbxml, Action<HttpResponseMessage> provideResponse)
+        private NcHttpResponse CreateMockResponse (byte[] wbxml, Action<NcHttpResponse> provideResponse)
         {
-            var mockResponse = new HttpResponseMessage () {
-                Content = new ByteArrayContent (wbxml),
-            };
+            var mockResponse = new NcHttpResponse (HttpStatusCode.Accepted, new MemoryStream (wbxml), "", null);
      
             // allow the caller to modify the mockResponse object (esp. headers and StatusCode)
             provideResponse (mockResponse);
