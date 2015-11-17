@@ -11,19 +11,31 @@ using System.Net;
 using Javax.Net.Ssl;
 using System.Security.Cryptography.X509Certificates;
 using OkHttp.Okio;
+using System.Net.Http;
 
 namespace NachoPlatform
 {
     public class NcHttpClient : INcHttpClient
     {
-        readonly OkHttpClient client = new OkHttpClient ();
+        readonly OkHttpClient _client;
 
         public readonly bool AllowAutoRedirect = false;
 
         public readonly bool PreAuthenticate = true;
 
+        long defaultTimeoutSecs = 30;
+
         private NcHttpClient ()
         {
+            _client = new OkHttpClient ();
+            _client.SetHostnameVerifier (new HostnameVerifier ());
+
+            // FIXME: If we are using the instance pattern, setting the client timeouts won't work well for multiple requests
+            _client.SetConnectTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
+            _client.SetWriteTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
+            _client.SetReadTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
+            _client.FollowRedirects = AllowAutoRedirect;
+            _client.SetFollowSslRedirects (AllowAutoRedirect);
         }
 
         private static object LockObj = new object ();
@@ -69,64 +81,68 @@ namespace NachoPlatform
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NcOkHttpCallback callbacks, CancellationToken cancellationToken)
         {
-            client.SetHostnameVerifier (new HostnameVerifier (this));
-
-            client.SetConnectTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Milliseconds);
-            client.SetWriteTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Milliseconds);
-            client.SetReadTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Milliseconds);
-            client.FollowRedirects = AllowAutoRedirect;
-            client.SetFollowSslRedirects (AllowAutoRedirect);
+            OkHttpClient cloned = _client.Clone(); // Clone to make a customized OkHttp for this request.
+            cloned.SetConnectTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
+            cloned.SetWriteTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
+            cloned.SetReadTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
 
             var builder = new Request.Builder ()
                 .Url (new Java.Net.URL (request.RequestUri.ToString ()));
-            
-            RequestBody body;
-            if (request.Content != null) {
-                if (isSend) {
-                    // 100-continue doesn't appear to work in OkHttp
-                    // https://github.com/square/okhttp/issues/675
-                    // https://github.com/square/okhttp/issues/1337
-                    builder.AddHeader ("Expect", "100-continue");
-                }
-                if (request.Content is FileStream) {
-                    var fileStream = request.Content as FileStream;
-                    Java.IO.File file = new Java.IO.File (fileStream.Name);
-                    body = RequestBody.Create (MediaType.Parse (request.ContentType), file);
-                } else if (request.Content is MemoryStream) {
-                    var memStream = request.Content as MemoryStream;
-                    byte[] b = memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ();
-                    body = RequestBody.Create (MediaType.Parse (request.ContentType), b);
+
+            RequestBody body = null;
+            if (request.Method == HttpMethod.Post || request.Method == HttpMethod.Put) {
+                if (request.Content != null) {
+                    if (isSend) {
+                        // 100-continue doesn't appear to work in OkHttp
+                        // https://github.com/square/okhttp/issues/675
+                        // https://github.com/square/okhttp/issues/1337
+                        //builder.AddHeader ("Expect", "100-continue");
+                    }
+                    if (request.Content is FileStream) {
+                        var fileStream = request.Content as FileStream;
+                        Java.IO.File file = new Java.IO.File (fileStream.Name);
+                        body = RequestBody.Create (MediaType.Parse (request.ContentType), file);
+                    } else if (request.Content is MemoryStream) {
+                        // If this was passed in, we are not guaranteed to be able to call GetBuffer() so to be safe copy this.
+                        // FIXME: Is there a better way?
+                        var memStream = new MemoryStream ();
+                        request.Content.CopyTo (memStream);
+                        body = RequestBody.Create (MediaType.Parse (request.ContentType), memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ());
+                    } else {
+                        NcAssert.CaseError (string.Format ("request.Content is of unknown type {0}", request.Content.GetType ().Name));
+                        return;
+                    }
                 } else {
-                    NcAssert.CaseError (string.Format ("request.Content is of unknown type {0}", request.Content.GetType ().Name));
-                    return;
+                    builder.Header ("Content-Type", "text/plain");
+                    body = default(RequestBody);
                 }
-            } else {
-                builder.Header ("Content-Type", "text/plain");
-                body = default(RequestBody);
-            }
-            if (null != callbacks.ProgressAction) {
-                body = new NcOkHttpProgressRequestBody (body, callbacks.ProgressAction);
+                if (null != callbacks.ProgressAction) {
+                    body = new NcOkHttpProgressRequestBody (body, callbacks.ProgressAction);
+                }
             }
 
             builder.Method (request.Method.ToString ().ToUpperInvariant (), body);
-            
+
             foreach (var kvp in request.Headers) {
                 builder.AddHeader (kvp.Key, String.Join (",", kvp.Value));
             }
 
             if (null != request.Cred) {
                 var basicAuth = OkHttp.Credentials.Basic (request.Cred.Username, request.Cred.GetPassword ());
-                client.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth));
+                cloned.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth));
                 if (PreAuthenticate) {
                     builder.Header ("Authorization", basicAuth);
                 }
             }
 
             var rq = builder.Build ();
-
-            var call = client.NewCall (rq);
+            var call = cloned.NewCall (rq);
             cancellationToken.Register (() => {
-                call.Cancel ();
+                try {
+                    call.Cancel ();
+                } catch (Exception ex) {
+                    Log.Warn (Log.LOG_HTTP, "Could not cancel call: {0}", ex);
+                }
             });
             call.Enqueue (callbacks);
         }
@@ -169,9 +185,8 @@ namespace NachoPlatform
                 if (Token.IsCancellationRequested) {
                     return;
                 }
-                var sent = p0.Body ().ContentLength ();
+                LogCompletion (SentBytesFromRequestBody(p0), -1);
 
-                LogCompletion (sent, -1);
                 if (ErrorAction != null) {
                     ErrorAction (createExceptionForJavaIOException (p1));
                 }
@@ -187,49 +202,72 @@ namespace NachoPlatform
 
                 // Copy the stream from the network to a file.
                 try {
-                    var fileStream = new FileStream (filename, FileMode.Open);
-                    var buffer = new byte[4 * 1024];
                     long received = 0;
-                    int n;
-                    do {
-                        if (Token.IsCancellationRequested) {
-                            return;
-                        }
-                        n = source.Read (buffer);
-                        if (n > 0) {
-                            // Read could take a bit. Check again
+                    using (var fileStream = new FileStream (filename, FileMode.Open)) {
+                        var buffer = new byte[4 * 1024];
+                        int n;
+                        do {
                             if (Token.IsCancellationRequested) {
                                 return;
                             }
-                            received += n;
-                            fileStream.Write (buffer, 0, n);
+                            n = source.Read (buffer);
+                            if (n > 0) {
+                                // Read could take a bit. Check again
+                                if (Token.IsCancellationRequested) {
+                                    return;
+                                }
+                                received += n;
+                                fileStream.Write (buffer, 0, n);
 
-                            if (ProgressAction != null) {
-                                ProgressAction (false, n, received, -1);
+                                if (ProgressAction != null) {
+                                    ProgressAction (false, n, received, -1);
+                                }
                             }
-                        }
-                    } while (n > 0);
-                    fileStream.Flush ();
-                    fileStream.Close ();
+                        } while (n > 0);
+                    }
 
-                    long sent = p0.Request ().Body ().ContentLength ();
-                    LogCompletion (sent, received);
+                    LogCompletion (SentBytesFromRequestBody(p0.Request ()), received);
 
                     // reopen as read-only
-                    fileStream = new FileStream (filename, FileMode.Open, FileAccess.Read);
-                    try {
+                    using (var fileStream = new FileStream (filename, FileMode.Open, FileAccess.Read)) {
                         if (SuccessAction != null) {
-                            var response = new NcHttpResponse ((HttpStatusCode)p0.Code (), fileStream, p0.Body ().ContentType ().ToString (), FromOkHttpHeaders (p0.Headers ()));
+                            
+                            var response = new NcHttpResponse ((HttpStatusCode)p0.Code (), fileStream, ContentTypeFromResponseBody(p0), FromOkHttpHeaders (p0.Headers ()));
                             SuccessAction (response, Token);
                         }
-                    } finally {
-                        fileStream.Dispose ();
-
                     }
                 } finally {
                     File.Delete (filename);
                 }
             }
+
+            long SentBytesFromRequestBody (Request req)
+            {
+                long sent = -1;
+                if (null != req) {
+                    var body = req.Body ();
+                    if (null != body) {
+                        sent = body.ContentLength ();
+                    }
+                }
+                return sent;
+            }
+
+            string ContentTypeFromResponseBody (Response resp)
+            {
+                string contentType = "";
+                if (null != resp) {
+                    var body = resp.Body ();
+                    if (null != body) {
+                        var cType = body.ContentType ();
+                        if (cType != null) {
+                            contentType = cType.ToString ();
+                        }
+                    }
+                }
+                return contentType;
+            }
+
 
             #endregion
         }
@@ -271,11 +309,8 @@ namespace NachoPlatform
 
         class HostnameVerifier : Java.Lang.Object, IHostnameVerifier
         {
-            NcHttpClient Owner { get; set; }
-
-            public HostnameVerifier (NcHttpClient owner)
+            public HostnameVerifier ()
             {
-                Owner = owner;
             }
 
             public bool Verify (string hostname, ISSLSession session)
@@ -296,7 +331,6 @@ namespace NachoPlatform
                 var defaultVerifier = HttpsURLConnection.DefaultHostnameVerifier;
 
                 if (ServicePointManager.ServerCertificateValidationCallback == null) {
-                    Log.Warn (Log.LOG_HTTP, "NcHttpClient: No ServerCertificateValidationCallback!");
                     return defaultVerifier.Verify (uri.Host, session);
                 }
 
