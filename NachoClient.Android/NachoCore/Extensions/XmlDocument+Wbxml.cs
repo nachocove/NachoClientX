@@ -29,7 +29,7 @@ namespace NachoCore.Utils
                 encoder.EmitToStream (writer);
                 Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitToStream(L) done (#1313)");
                 writer.Close ();
-                return new FileStream (tmp, FileMode.Open);
+                return new FileStream (tmp, FileMode.Open, FileAccess.Read);
             } else {
                 var writer = new BinaryWriter (new MemoryStream ());
                 Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitToStream (#1313)");
