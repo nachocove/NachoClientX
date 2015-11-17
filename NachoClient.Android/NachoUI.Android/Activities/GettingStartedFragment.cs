@@ -24,6 +24,8 @@ namespace NachoClient.AndroidClient
 
     public class GettingStartedFragment : Fragment
     {
+        private const string WELCOME_KEY = "GettingStarted.welcomeId";
+
         int welcomeId;
 
         // Just shows "Welcome to NachoMail"
@@ -37,6 +39,9 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            if (null != savedInstanceState) {
+                welcomeId = savedInstanceState.GetInt (WELCOME_KEY, Resource.String.gettingstarted);
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -49,6 +54,12 @@ namespace NachoClient.AndroidClient
             var submitButton = view.FindViewById<Button> (Resource.Id.submit);
             submitButton.Click += SubmitButton_Click;
             return view;
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            outState.PutInt (WELCOME_KEY, welcomeId);
         }
 
         void SubmitButton_Click (object sender, EventArgs e)

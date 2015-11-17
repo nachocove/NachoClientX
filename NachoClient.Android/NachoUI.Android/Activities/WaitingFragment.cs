@@ -25,6 +25,8 @@ namespace NachoClient.AndroidClient
 
     public class WaitingFragment : Fragment, ILoginEvents
     {
+        private const string ACCOUNT_ID_KEY = "accountId";
+
         TextView statusLabel;
         ProgressBar activityIndicatorView;
 
@@ -67,6 +69,9 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            if (null != savedInstanceState) {
+                account = McAccount.QueryById<McAccount> (savedInstanceState.GetInt (ACCOUNT_ID_KEY));
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -127,6 +132,12 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            outState.PutInt (ACCOUNT_ID_KEY, account.Id);
+        }
+
         void Update ()
         {
             statusLabel.Text = Message.Details;
@@ -166,8 +177,12 @@ namespace NachoClient.AndroidClient
                         DismissTimer.Dispose ();
                         DismissTimer = null;
                     }
-                    var parent = (WaitingFragmentDelegate)Activity;
-                    parent.WaitingFinished (account);
+                    if (null != this.Activity) {
+                        // The activity can be null if there was a configuration change while waiting for
+                        // the timer to fire.
+                        var parent = (WaitingFragmentDelegate)Activity;
+                        parent.WaitingFinished (account);
+                    }
                 });
             }, null, TimeSpan.FromSeconds (2), TimeSpan.Zero);
         }
