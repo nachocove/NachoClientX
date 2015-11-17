@@ -604,6 +604,7 @@
     <Compile Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -1612,6 +1613,7 @@
     <AndroidResource Include="Resources\drawable-mdpi\folder_folder.png" />
     <AndroidResource Include="Resources\drawable-hdpi\folder_folder.png" />
     <AndroidResource Include="Resources\drawable\folder_folder.png" />
+    <AndroidResource Include="Resources\layout\ContactSearchMenuItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

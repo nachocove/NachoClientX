@@ -183,6 +183,8 @@ namespace NachoCore.Utils
             Message.From = mailbox.ToString ();
             Message.Insert ();
             EmailHelper.SaveEmailMessageInDrafts (Message);
+            var body = McBody.InsertFile (Account.Id, McAbstrFileDesc.BodyTypeEnum.None, "");
+            Message.BodyId = body.Id;
 
             // Now we need to start building the initial message.  It could be blank, it
             // could inlude a quick reply, or it could be quoting another message.
@@ -463,6 +465,7 @@ namespace NachoCore.Utils
         {
             if (Message.BodyId != 0) {
                 Body = McBody.QueryById<McBody> (Message.BodyId);
+                Body.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
                 Body.UpdateData ((FileStream stream) => {
                     Mime.WriteTo (stream);
                 });
