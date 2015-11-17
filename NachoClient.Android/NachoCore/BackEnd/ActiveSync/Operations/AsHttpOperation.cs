@@ -433,10 +433,10 @@ namespace NachoCore.ActiveSync
 
             ServicePointManager.FindServicePoint (request.RequestUri).ConnectionLimit = 25;
             Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
-            NcHttpClient.Instance.SendRequest (request, (int)baseTimeout, HttpSuccess, HttpError, HttpProgress, cToken);
+            NcHttpClient.Instance.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, AttemptHttpProgress, cToken);
         }
 
-        void HttpSuccess (NcHttpResponse response, CancellationToken token)
+        void AttemptHttpSuccess (NcHttpResponse response, CancellationToken token)
         {
             // FIXME: Should we do this much processing in the Callback? Or should we save things here, and process
             // outside of the response callback? This would mean we need a post-request callback or signal.
@@ -486,7 +486,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        void HttpError (Exception ex)
+        void AttemptHttpError (Exception ex)
         {
             if (ex is OperationCanceledException) {
                 Log.Info (Log.LOG_HTTP, "AttemptHttp OperationCanceledException {0}: exception {1}", RedactedServerUri, ex.Message);
@@ -524,7 +524,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        void HttpProgress (bool isRequest, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
+        void AttemptHttpProgress (bool isRequest, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
         {
             Log.Debug (Log.LOG_HTTP, "HTTP: {0} Progress: {1}:{2}:{3}", isRequest ? "Request" : "Response", bytesSent, totalBytesSent, totalBytesExpectedToSend);
         }
