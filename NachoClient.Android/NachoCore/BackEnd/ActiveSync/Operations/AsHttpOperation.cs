@@ -613,8 +613,8 @@ namespace NachoCore.ActiveSync
                             var isWedged = false;
                             int timeoutInSeconds = response.ContentLength >= 100000 ? 60 : 20;
                             long loadBytesDuration;
-                            using (var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
-                                                    (state) => {
+                            using (var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper",
+                                (state) => {
                                     if (!cToken.IsCancellationRequested) {
                                         Log.Error (Log.LOG_HTTP, "LoadBytes timed out after {0:n0}s trying to process {1:n0} bytes for command {2}",
                                             timeoutInSeconds, response.ContentLength, CommandName);
@@ -622,7 +622,7 @@ namespace NachoCore.ActiveSync
                                         TimeoutTimerCallback (state);
                                     }
                                 },
-                                                    cToken, timeoutInSeconds * 1000, System.Threading.Timeout.Infinite)) {
+                                cToken, timeoutInSeconds * 1000, System.Threading.Timeout.Infinite)) {
                                 using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
                                     decoder.LoadBytes (AccountId, ContentData);
                                     loadBytesDuration = capture.ElapsedMilliseconds;
