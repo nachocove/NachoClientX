@@ -1,7 +1,6 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using NachoCore.Model;
 using System.Threading;
 using NachoCore.Utils;
 using OkHttp;
@@ -12,17 +11,12 @@ using System.Net;
 using Javax.Net.Ssl;
 using System.Security.Cryptography.X509Certificates;
 using OkHttp.Okio;
-using System.Text;
 
 namespace NachoPlatform
 {
     public class NcHttpClient : INcHttpClient
     {
         readonly OkHttpClient client = new OkHttpClient ();
-
-        Request OriginalRequest { get; set; }
-
-        McCred Cred { get; set; }
 
         public readonly bool AllowAutoRedirect = false;
 
@@ -45,12 +39,6 @@ namespace NachoPlatform
                 }
                 return _Instance;
             }
-        }
-
-        string BasicAuthorizationString ()
-        {
-            NcAssert.NotNull (Cred);
-            return OkHttp.Credentials.Basic (Cred.Username, Cred.GetPassword ());
         }
 
         #region INcHttpClient implementation
@@ -126,9 +114,8 @@ namespace NachoPlatform
                 builder.AddHeader (kvp.Key, String.Join (",", kvp.Value));
             }
 
-            Cred = request.Cred;
-            if (null != Cred) {
-                var basicAuth = BasicAuthorizationString ();
+            if (null != request.Cred) {
+                var basicAuth = OkHttp.Credentials.Basic (request.Cred.Username, request.Cred.GetPassword ());
                 client.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth));
                 if (PreAuthenticate) {
                     builder.Header ("Authorization", basicAuth);
@@ -136,7 +123,6 @@ namespace NachoPlatform
             }
 
             var rq = builder.Build ();
-            OriginalRequest = rq;
 
             var call = client.NewCall (rq);
             cancellationToken.Register (() => {
@@ -294,8 +280,8 @@ namespace NachoPlatform
 
             public bool Verify (string hostname, ISSLSession session)
             {
-                Uri uri = new Uri (Owner.OriginalRequest.Uri ().ToString ());
-                return verifyServerCertificate (uri, session) & NcHttpCertificateValidation.verifyClientCiphers (uri, session.Protocol, session.CipherSuite);
+                var uriBuilder = new UriBuilder (null == session ? "http" : "https", hostname);
+                return verifyServerCertificate (uriBuilder.Uri, session) & NcHttpCertificateValidation.verifyClientCiphers (uriBuilder.Uri, session.Protocol, session.CipherSuite);
             }
 
             /// <summary>
