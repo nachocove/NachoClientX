@@ -596,7 +596,6 @@
     <Compile Include="NachoUI.Android\Support\NotificationService.cs" />
     <Compile Include="NachoUI.Android\Activities\QuckResponseFragment.cs" />
     <Compile Include="NachoPlatform.Android\ImageAndroid.cs" />
-    <Compile Include="NachoPlatform.Android\NchttpClientAndroid.cs" />
     <Compile Include="NachoCore\Adapters\NcEmailSingleton.cs" />
     <Compile Include="NachoUI.Android\Activities\MoreActivity.cs" />
     <Compile Include="NachoCore\Utils\NcBase64.cs" />
@@ -613,6 +612,7 @@
     <Compile Include="NachoUI.Android\Activities\AboutViewerFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
+    <Compile Include="NachoPlatform.Android\NcHttpClientAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
