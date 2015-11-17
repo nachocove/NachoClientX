@@ -603,11 +603,12 @@
     <Compile Include="NachoCore\Utils\FolderLists.cs" />
     <Compile Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AboutViewerActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AboutViewerFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\AboutAssets.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="..\native.Android\libs\armeabi\libnachoplatform.so">
       <Link>NachoPlatform.Android\libs\armeabi\libnachoplatform.so</Link>
@@ -621,6 +622,7 @@
     <None Include="NachoCore\Model\README.md" />
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
+    <None Include="Assets\AboutAssets.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
@@ -694,6 +696,8 @@
     <AndroidAsset Include="..\NachoClient.iOS\Resources\nacho.js">
       <Link>Assets\nacho.js</Link>
     </AndroidAsset>
+    <AndroidAsset Include="Assets\LegalInfo.txt" />
+    <AndroidAsset Include="Assets\ReleaseNotes.txt" />
   </ItemGroup>
   <ItemGroup>
     <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />
@@ -1613,6 +1617,8 @@
     <AndroidResource Include="Resources\drawable-mdpi\folder_folder.png" />
     <AndroidResource Include="Resources\drawable-hdpi\folder_folder.png" />
     <AndroidResource Include="Resources\drawable\folder_folder.png" />
+    <AndroidResource Include="Resources\layout\AboutViewerActivity.axml" />
+    <AndroidResource Include="Resources\layout\AboutViewerFragment.axml" />
     <AndroidResource Include="Resources\layout\ContactSearchMenuItem.axml" />
   </ItemGroup>
   <ItemGroup>
