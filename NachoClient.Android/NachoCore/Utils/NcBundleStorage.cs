@@ -201,7 +201,7 @@ namespace NachoCore.Utils
         {
             var filePath = FullFilePathForLocalPath (path);
             if (File.Exists (filePath)) {
-                return new BinaryReader (new FileStream (filePath, FileMode.Open));
+                return new BinaryReader (new FileStream (filePath, FileMode.Open, FileAccess.Read));
             }
             return null;
         }
@@ -252,7 +252,7 @@ namespace NachoCore.Utils
         {
             var filePath = FullFilePathForLocalPath (path);
             if (File.Exists(filePath)){
-                using (Stream contents = new FileStream(filePath, FileMode.Open)) {
+                using (Stream contents = new FileStream(filePath, FileMode.Open, FileAccess.Read)) {
                     DataContractSerializer serializer = new DataContractSerializer (t);
                     var o = serializer.ReadObject (contents);
                     return o;
