@@ -706,6 +706,7 @@ namespace NachoCore.ActiveSync
 
             void GetServerCertError (Exception exception)
             {
+                ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
                 Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", exception.ToString ());
                 GetServerCertSuccess (null, Cts.Token);
             }
