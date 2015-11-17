@@ -288,10 +288,11 @@ namespace NachoCore.Utils
                     if (oldState != State && null != StateChangeIndication) {
                         StateChangeIndication ();
                     }
-                } catch {
+                } catch (Exception ex) {
                     lock (LockObj) {
                         InProcess = false;
                     }
+                    Log.Error (Log.LOG_SYS, "FireLoop Exception: {0}", ex);
                     throw;
                 }
                 PossiblyLeave:
