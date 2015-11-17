@@ -447,7 +447,13 @@ namespace NachoCore.ActiveSync
 
             System.Net.Http.Headers.MediaTypeHeaderValue cType = null;
             if (!string.IsNullOrEmpty (response.ContentType)) {
-                cType = new System.Net.Http.Headers.MediaTypeHeaderValue (response.ContentType);
+                // make sure to parse out any charset stuff, i.e. "text/xml; charset=utf-8"
+                var contentType = response.ContentType.Split (new []{ ';' });
+                if (contentType.Any ()) {
+                    cType = new System.Net.Http.Headers.MediaTypeHeaderValue (contentType [0]);
+                } else {
+                    Log.Info (Log.LOG_HTTP, "Could not parse contentType {0}", response.ContentType);
+                }
             }
             ContentType = (null == cType || null == cType.MediaType) ? null : cType.MediaType.ToLower ();
             MemoryStream memContent = response.Content as MemoryStream;
