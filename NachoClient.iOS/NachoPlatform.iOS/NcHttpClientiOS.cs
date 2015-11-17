@@ -187,7 +187,7 @@ namespace NachoPlatform
                     NcAssert.True (downloadTask.Response is NSHttpUrlResponse);
                     var resp = downloadTask.Response as NSHttpUrlResponse;
                     NcAssert.True (location.IsFileUrl);
-                    using (var fileStream = new FileStream (location.Path, FileMode.Open)) {
+                    using (var fileStream = new FileStream (location.Path, FileMode.Open, FileAccess.Read)) {
                         try {
                             int status = (int)resp.StatusCode;
                             var response = new NcHttpResponse ((HttpStatusCode)status, fileStream, resp.MimeType, FromNsHeaders (resp.AllHeaderFields));

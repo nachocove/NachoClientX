@@ -208,7 +208,7 @@ namespace NachoPlatform
                 // Copy the stream from the network to a file.
                 try {
                     long received = 0;
-                    using (var fileStream = new FileStream (filename, FileMode.Open)) {
+                    using (var fileStream = new FileStream (filename, FileMode.Open, FileAccess.Write)) {
                         var buffer = new byte[4 * 1024];
                         int n;
                         do {
