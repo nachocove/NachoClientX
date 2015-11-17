@@ -14,6 +14,7 @@ using Android.Widget;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -27,6 +28,8 @@ namespace NachoClient.AndroidClient
         private const int EDIT_REQUEST_CODE = 1;
         private const int NOTE_REQUEST_CODE = 2;
 
+        private const string REMINDER_CHOOSER_TAG = "ReminderChooser";
+
         private McEvent ev;
         private NcEventDetail detail;
 
@@ -39,6 +42,9 @@ namespace NachoClient.AndroidClient
 
         private NcResponseType userResponse = NcResponseType.None;
         private string responseCmdToken = null;
+
+        private NcEmailMessageBundle bodyMessageBundle;
+        private Android.Webkit.WebView webView;
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
@@ -62,6 +68,12 @@ namespace NachoClient.AndroidClient
             this.detail = new NcEventDetail (ev);
             userResponse = detail.SpecificItem.HasResponseType () ? detail.SpecificItem.GetResponseType () : NcResponseType.None;
             BindEventView ();
+            if (null != savedInstanceState) {
+                var reminderFragment = FragmentManager.FindFragmentByTag<ReminderChooserFragment> (REMINDER_CHOOSER_TAG);
+                if (null != reminderFragment) {
+                    ConfigureReminderChooser (reminderFragment);
+                }
+            }
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
@@ -195,15 +207,22 @@ namespace NachoClient.AndroidClient
                 locationLabel.Text = location;
             }
 
-            var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.event_description_webview);
+            webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.event_description_webview);
+            var webClient = new NachoWebViewClient ();
+            webView.SetWebViewClient (webClient);
             var body = McBody.QueryById<McBody> (detail.SpecificItem.BodyId);
             if (McBody.IsNontruncatedBodyComplete (body)) {
-                var bodyRenderer = new BodyRenderer ();
-                bodyRenderer.Start (webview, body, detail.SpecificItem.NativeBodyType);
-                var webClient = new NachoWebViewClient ();
-                webview.SetWebViewClient (webClient);
+                bodyMessageBundle = new NcEmailMessageBundle (body);
+                if (bodyMessageBundle.NeedsUpdate) {
+                    NcTask.Run (delegate {
+                        bodyMessageBundle.Update ();
+                        InvokeOnUIThread.Instance.Invoke (RenderBody);
+                    }, "MessageDownloader_UpdateBundle");
+                } else {
+                    RenderBody ();
+                }
             } else {
-                webview.Visibility = ViewStates.Gone;
+                webView.Visibility = ViewStates.Gone;
             }
 
             var reminderView = view.FindViewById<TextView> (Resource.Id.event_reminder_label);
@@ -274,6 +293,16 @@ namespace NachoClient.AndroidClient
             cancelView.Visibility = VisibleIfTrue (detail.ShowCancelMeetingButton);
             cancelSeparator.Visibility = VisibleIfTrue (detail.ShowCancelMeetingButton);
 
+        }
+
+        void RenderBody ()
+        {
+            if (bodyMessageBundle.FullHtmlUrl != null) {
+                webView.LoadUrl (bodyMessageBundle.FullHtmlUrl.AbsoluteUri);
+            } else {
+                var html = bodyMessageBundle.FullHtml;
+                webView.LoadDataWithBaseURL (bodyMessageBundle.BaseUrl.AbsoluteUri, html, "text/html", "utf-8", null);
+            }
         }
 
         public void ConfigureRsvpBar (NcEventDetail detail, View view)
@@ -529,6 +558,20 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        private void ConfigureReminderChooser (ReminderChooserFragment reminderFragment)
+        {
+            reminderFragment.SetValues (detail.SpecificItem.HasReminder (), (int)detail.SpecificItem.GetReminder (),
+                (bool hasReminder, int reminder) => {
+                    detail.SpecificItem.ReminderIsSet = hasReminder;
+                    if (hasReminder) {
+                        detail.SpecificItem.Reminder = (uint)reminder;
+                    }
+                    detail.SpecificItem.Update ();
+                    BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
+                    BindEventView ();
+                });
+        }
+
         private void EditButton_Click (object sender, EventArgs e)
         {
             StartActivityForResult (EventEditActivity.EditEventIntent (this.Activity, ev), EDIT_REQUEST_CODE);
@@ -542,15 +585,9 @@ namespace NachoClient.AndroidClient
         private void ReminderView_Click (object sender, EventArgs e)
         {
             if (detail.CanChangeReminder) {
-                ReminderChooser.Show (this.Activity, detail.SpecificItem.HasReminder (), (int)detail.SpecificItem.GetReminder (), (bool hasReminder, int reminder) => {
-                    detail.SpecificItem.ReminderIsSet = hasReminder;
-                    if (hasReminder) {
-                        detail.SpecificItem.Reminder = (uint)reminder;
-                    }
-                    detail.SpecificItem.Update ();
-                    BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
-                    BindEventView ();
-                });
+                var reminderFragment = new ReminderChooserFragment ();
+                ConfigureReminderChooser (reminderFragment);
+                reminderFragment.Show (FragmentManager, REMINDER_CHOOSER_TAG);
             }
         }
 

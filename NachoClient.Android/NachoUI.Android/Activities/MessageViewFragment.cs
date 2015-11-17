@@ -30,13 +30,18 @@ namespace NachoClient.AndroidClient
         McEmailMessageThread ThreadToView { get; }
     }
 
-    public class MessageViewFragment : Fragment
+    public class MessageViewFragment : Fragment, MessageDownloadDelegate
     {
         McEmailMessage message;
         McEmailMessageThread thread;
+        NcEmailMessageBundle bundle;
 
-        BodyDownloader bodyDownloader;
         ButtonBar buttonBar;
+
+        MessageDownloader messageDownloader;
+
+        Android.Webkit.WebView webView;
+        NachoWebViewClient webViewClient;
 
         public static MessageViewFragment newInstance (McEmailMessageThread thread, McEmailMessage message)
         {
@@ -46,18 +51,8 @@ namespace NachoClient.AndroidClient
             return fragment;
         }
 
-        public override void OnCreate (Bundle savedInstanceState)
-        {
-            base.OnCreate (savedInstanceState);
-        }
-
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
-
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MessageViewFragment, container, false);
 
             buttonBar = new ButtonBar (view);
@@ -84,9 +79,9 @@ namespace NachoClient.AndroidClient
             var chiliButton = view.FindViewById (Resource.Id.chili);
             chiliButton.Click += ChiliButton_Click;
 
-            var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
-            var webclient = new NachoWebViewClient ();
-            webview.SetWebViewClient (webclient);
+            webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
+            webViewClient = new NachoWebViewClient ();
+            webView.SetWebViewClient (webViewClient);
 
             return view;
         }
@@ -103,6 +98,11 @@ namespace NachoClient.AndroidClient
             if (null == message) {
                 ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
                 return;
+            }
+            if (message.BodyId != 0) {
+                bundle = new NcEmailMessageBundle (message);
+            } else {
+                bundle = null;
             }
 
             NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
@@ -122,7 +122,6 @@ namespace NachoClient.AndroidClient
         public override void OnStart ()
         {
             base.OnStart ();
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             BindValues (View);
         }
@@ -130,7 +129,6 @@ namespace NachoClient.AndroidClient
         public override void OnPause ()
         {
             base.OnPause ();
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         public  void AttachmentSelectedCallback (McAttachment attachment)
@@ -181,50 +179,42 @@ namespace NachoClient.AndroidClient
             // view, the full subject needs to be shown.
             view.FindViewById<TextView> (Resource.Id.subject).SetMaxLines (100);
 
-            var body = McBody.QueryById<McBody> (message.BodyId);
-
-            if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
-                var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
-                var bodyRenderer = new BodyRenderer ();
-                bodyRenderer.Start (webview, body, message.NativeBodyType);
+            if (bundle == null || bundle.NeedsUpdate) {
+                messageDownloader = new MessageDownloader ();
+                messageDownloader.Bundle = bundle;
+                messageDownloader.Delegate = this;
+                messageDownloader.Download (message);
             } else {
-                bodyDownloader = new BodyDownloader ();
-                bodyDownloader.Finished += BodyDownloader_Finished;
-                bodyDownloader.Start (message);
+                RenderBody ();
             }
         }
 
-        void BodyDownloader_Finished (object sender, string e)
+        public void MessageDownloadDidFinish (MessageDownloader downloader)
         {
-            bodyDownloader = null;
+            bundle = downloader.Bundle;
+            RenderBody ();
+        }
 
-            message = (McEmailMessage)McAbstrItem.RefreshItem (message);
+        public void MessageDownloadDidFail (MessageDownloader downloader, NcResult result)
+        {
+            // TODO: show this inline, possibly with message preview (if available)
+            // and give the user an option to retry if appropriate
+            NcAlertView.ShowMessage (Activity, "Could not download message", "Sorry, we were unable to download the message.");
+        }
 
-            if (null == View) {
-                Log.Info (Log.LOG_UI, "MessageViewFragment: BodyDownloader_Finished: View is null");
-                return;
+        void RenderBody ()
+        {
+            if (bundle != null) {
+                if (bundle.FullHtmlUrl != null) {
+                    Log.Info (Log.LOG_UI, "{0} LoadUrl called", DateTime.Now.MillisecondsSinceEpoch());
+                    webView.LoadUrl (bundle.FullHtmlUrl.AbsoluteUri);
+                    Log.Info (Log.LOG_UI, "{0} LoadUrl returned", DateTime.Now.MillisecondsSinceEpoch());
+                } else {
+                    var html = bundle.FullHtml;
+                    webView.LoadDataWithBaseURL (bundle.BaseUrl.AbsoluteUri, html, "text/html", "utf-8", null);
+                }
             }
-
-            var webview = View.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
-
-            if (null == e) {
-                var body = McBody.QueryById<McBody> (message.BodyId);
-                var bodyRenderer = new BodyRenderer ();
-                bodyRenderer.Start (webview, body, message.NativeBodyType);
-            } else {
-                webview.LoadData (e, "text/plain", null);
-            }
-
             EmailHelper.MarkAsRead (thread);
-        }
-
-        private void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-
-            if ((null != bodyDownloader) && bodyDownloader.HandleStatusEvent (s)) {
-                return;
-            }
         }
 
         void SaveButton_Click (object sender, EventArgs e)
@@ -287,9 +277,7 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", message);
             var folderFragment = ChooseFolderFragment.newInstance (null);
             folderFragment.setOnFolderSelected (OnFolderSelected);
-            var ft = FragmentManager.BeginTransaction ();
-            ft.AddToBackStack (null);
-            folderFragment.Show (ft, "dialog");
+            folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }
 
         public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)
@@ -353,6 +341,11 @@ namespace NachoClient.AndroidClient
         //            Log.Info (Log.LOG_UI, "ShouldInterceptRequest: {1} {0}", request.Url, request.Method);
         //            return base.ShouldInterceptRequest (view, request);
         //        }
+
+        public override void OnPageFinished (Android.Webkit.WebView view, string url)
+        {
+            Log.Info (Log.LOG_UI, "{0} OnPageFinished", DateTime.Now.MillisecondsSinceEpoch());
+        }
 
         public override bool ShouldOverrideUrlLoading (Android.Webkit.WebView view, string url)
         {

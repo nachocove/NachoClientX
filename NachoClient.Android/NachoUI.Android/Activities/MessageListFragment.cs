@@ -92,11 +92,6 @@ namespace NachoClient.AndroidClient
             Initialize (messages, null, null, messageClickHandler);
         }
 
-        public override void OnCreate (Bundle savedInstanceState)
-        {
-            base.OnCreate (savedInstanceState);
-        }
-
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             // Use this to return your custom view for this Fragment
@@ -649,9 +644,7 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "ShowPriorityChooser: {0}", messageThread);
             var deferralFragment = ChooseDeferralFragment.newInstance (messageThread);
             deferralFragment.setOnDeferralSelected (OnDeferralSelected);
-            var ft = FragmentManager.BeginTransaction ();
-            ft.AddToBackStack (null);
-            deferralFragment.Show (ft, "dialog");
+            deferralFragment.Show (FragmentManager, "ChooseDeferralFragment");
         }
 
         public void ShowFolderChooser (McEmailMessageThread messageThread)
@@ -659,9 +652,7 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
             var folderFragment = ChooseFolderFragment.newInstance (messageThread);
             folderFragment.setOnFolderSelected (OnFolderSelected);
-            var ft = FragmentManager.BeginTransaction ();
-            ft.AddToBackStack (null);
-            folderFragment.Show (ft, "dialog");
+            folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }
 
         public void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)

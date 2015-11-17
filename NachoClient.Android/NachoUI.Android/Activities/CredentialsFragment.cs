@@ -55,6 +55,8 @@ namespace NachoClient.AndroidClient
 
     public class CredentialsFragment : NcFragment, ILoginEvents, AccountAdvancedFieldsViewControllerDelegate, CertAskDelegate
     {
+        private const string CERT_ASK_DIALOG_TAG = "CertAskDialogFragment";
+
         McAccount Account;
         McAccount.AccountServiceEnum service;
 
@@ -89,8 +91,12 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
+            if (null != savedInstanceState) {
+                var certAskFragment = FragmentManager.FindFragmentByTag<CertAskFragment> (CERT_ASK_DIALOG_TAG);
+                if (null != certAskFragment) {
+                    certAskFragment.SetListener (this);
+                }
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -507,7 +513,7 @@ namespace NachoClient.AndroidClient
                 Log.Info (Log.LOG_UI, "CredentialsFragment got CertAskWait for service {0}, user must approve", service);
                 StopRecevingLoginEvents ();
                 var certAskDialog = CertAskFragment.newInstance (Account.Id, capability, this);
-                certAskDialog.Show (FragmentManager, "cert ask");
+                certAskDialog.Show (FragmentManager, CERT_ASK_DIALOG_TAG);
             }
         }
 

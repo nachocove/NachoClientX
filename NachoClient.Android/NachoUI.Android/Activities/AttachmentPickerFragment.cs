@@ -27,7 +27,8 @@ namespace NachoClient.AndroidClient
 
     public class AttachmentPickerFragment : DialogFragment, FilePickerFragmentDelegate
     {
-                
+        private const string FILE_PICKER_TAG = "FilePickerFragment";
+
         GridView OptionsGridView;
         List<AttachmentOption> Options;
         static int SELECT_PHOTO = 1;
@@ -36,6 +37,17 @@ namespace NachoClient.AndroidClient
         Android.Net.Uri CameraOutputUri;
 
         public AttachmentPickerFragmentDelegate Delegate;
+
+        public override void OnCreate (Bundle savedInstanceState)
+        {
+            base.OnCreate (savedInstanceState);
+            if (null != savedInstanceState) {
+                var filePicker = FragmentManager.FindFragmentByTag<FilePickerFragment> (FILE_PICKER_TAG);
+                if (null != filePicker) {
+                    filePicker.Delegate = this;
+                }
+            }
+        }
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
         {
@@ -135,7 +147,7 @@ namespace NachoClient.AndroidClient
         {
             var filePicker = new FilePickerFragment ();
             filePicker.Delegate = this;
-            filePicker.Show (FragmentManager, "attachments");
+            filePicker.Show (FragmentManager, FILE_PICKER_TAG);
         }
 
         void OptionClicked (object sender, AdapterView.ItemClickEventArgs e)

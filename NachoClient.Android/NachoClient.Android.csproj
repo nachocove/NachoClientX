@@ -470,8 +470,6 @@
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="NachoUI.Android\MainApplication.cs" />
     <Compile Include="NachoUI.Android\Support\Bind.cs" />
-    <Compile Include="NachoUI.Android\Support\BodyRenderer.cs" />
-    <Compile Include="NachoUI.Android\Support\BodyDownloader.cs" />
     <Compile Include="NachoUI.Android\Support\WebViewNoScroll.cs" />
     <Compile Include="NachoCore\Adapters\ILoginProtocol.cs" />
     <Compile Include="NachoCore\Utils\LoginProtocolControl.cs" />
@@ -557,7 +555,6 @@
     <Compile Include="NachoUI.Android\Activities\NowListActivity.cs" />
     <Compile Include="NachoUI.Android\Support\NcAttachmentView.cs" />
     <Compile Include="NachoUI.Android\Support\DateTimePicker.cs" />
-    <Compile Include="NachoUI.Android\Support\ReminderChooser.cs" />
     <Compile Include="NachoUI.Android\Activities\NoteActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NcTabBarActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NcActivity.cs" />
@@ -592,7 +589,6 @@
     <Compile Include="NachoCore\Utils\AttachmentDownloader.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration49.cs" />
     <Compile Include="NachoUI.Android\Activities\CertAskFragment.cs" />
-    <Compile Include="NachoUI.Android\Support\CalendarChooserDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
     <Compile Include="NachoCore\Utils\NcTimeStamp.cs" />
@@ -609,12 +605,16 @@
     <Compile Include="NachoPlatform\INcHttpClient\INcHttpClientUtils.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration50.cs" />
     <Compile Include="NachoCore\Utils\FolderLists.cs" />
     <Compile Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AboutViewerActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AboutViewerFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\AboutAssets.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="..\native.Android\libs\armeabi\libnachoplatform.so">
       <Link>NachoPlatform.Android\libs\armeabi\libnachoplatform.so</Link>
@@ -628,6 +628,7 @@
     <None Include="NachoCore\Model\README.md" />
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
+    <None Include="Assets\AboutAssets.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
@@ -702,6 +703,8 @@
     <AndroidAsset Include="..\NachoClient.iOS\Resources\nacho.js">
       <Link>Assets\nacho.js</Link>
     </AndroidAsset>
+    <AndroidAsset Include="Assets\LegalInfo.txt" />
+    <AndroidAsset Include="Assets\ReleaseNotes.txt" />
   </ItemGroup>
   <ItemGroup>
     <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />
@@ -1621,6 +1624,9 @@
     <AndroidResource Include="Resources\drawable-mdpi\folder_folder.png" />
     <AndroidResource Include="Resources\drawable-hdpi\folder_folder.png" />
     <AndroidResource Include="Resources\drawable\folder_folder.png" />
+    <AndroidResource Include="Resources\layout\AboutViewerActivity.axml" />
+    <AndroidResource Include="Resources\layout\AboutViewerFragment.axml" />
+    <AndroidResource Include="Resources\layout\ContactSearchMenuItem.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

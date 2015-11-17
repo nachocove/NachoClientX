@@ -156,4 +156,10 @@
     <string name="recent_folders">Recent Folders</string>
     <string name="default_folders">Default Folders</string>
     <string name="your_folders">Your Folders</string>
+    <string name="release_notes">Release Notes</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="license_agreement">License Agreement</string>
+    <string name="open_source">Open Source Contributions</string>
+    <string name="download_error">Error downloading infomation.  Please try again.</string>
+
 </resources>

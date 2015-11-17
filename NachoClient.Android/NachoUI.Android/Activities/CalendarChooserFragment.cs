@@ -1,38 +1,64 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Collections.Generic;
 using Android.App;
-using Android.Content;
-using Android.Widget;
-using NachoCore;
 using NachoCore.Model;
+using System.Collections.Generic;
+using NachoCore;
+using Android.Widget;
 using Android.Views;
+using Android.OS;
 
 namespace NachoClient.AndroidClient
 {
-    public static class CalendarChooserDialog
+    public class CalendarChooserFragment : DialogFragment
     {
         public delegate void CalendarSelectedDelegate (McFolder selectedFolder);
 
-        public static void Show (Context context, List<Tuple<McAccount, NachoFolders>> calendars, McFolder initialSelection, CalendarSelectedDelegate selectedCallback)
+        private List<Tuple<McAccount, NachoFolders>> calendars;
+        private McFolder initialSelection;
+        private CalendarSelectedDelegate selectedCallback;
+        private AlertDialog dialog;
+        private CalendarChooserAdapter adapter;
+
+        public void SetValues (List<Tuple<McAccount, NachoFolders>> calendars, McFolder initialSelection, CalendarSelectedDelegate selectedCallback)
         {
-            var dialog = new AlertDialog.Builder (context).Create ();
+            this.calendars = calendars;
+            this.initialSelection = initialSelection;
+            this.selectedCallback = selectedCallback;
+        }
 
-            var view = new ListView (context);
+        public override Dialog OnCreateDialog (Bundle savedInstanceState)
+        {
+            adapter = new CalendarChooserAdapter (calendars, initialSelection);
 
-            var adapter = new CalendarChooserAdapter (calendars, initialSelection);
+            var view = new ListView (this.Activity);
+            view.Id = Resource.Id.listView;
             view.Adapter = adapter;
 
-            view.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
-                dialog.Dismiss ();
-                if (null != selectedCallback) {
-                    selectedCallback (adapter [e.Position]);
-                }
-            };
-
+            dialog = new AlertDialog.Builder (this.Activity).Create ();
             dialog.SetView (view);
-            dialog.Show ();
+            return dialog;
+        }
+
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            dialog.FindViewById<ListView> (Resource.Id.listView).ItemClick += ItemClick;
+        }
+
+        public override void OnPause ()
+        {
+            base.OnPause ();
+            dialog.FindViewById<ListView> (Resource.Id.listView).ItemClick -= ItemClick;
+        }
+
+        private void ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+        {
+            dialog.Dismiss ();
+            if (null != selectedCallback) {
+                selectedCallback (adapter [e.Position]);
+            }
         }
 
         private class CalendarChooserAdapter : BaseAdapter<McFolder>
