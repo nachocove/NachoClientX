@@ -932,7 +932,6 @@ namespace NachoCore.Utils
             while (nodes.Count > 0) {
                 node = nodes [0];
                 nodes.RemoveAt (0);
-                Log.Info (Log.LOG_UI, "Remaining Table Nodes: {0}", remaingTableNodes);
                 inTable = remaingTableNodes > 0;
                 if (remaingTableNodes > 0) {
                     // if we're in a table, adjust the remaing node count by the number of children pushed minus ourselves
