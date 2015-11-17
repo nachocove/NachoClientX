@@ -51,18 +51,8 @@ namespace NachoClient.AndroidClient
             return fragment;
         }
 
-        public override void OnCreate (Bundle savedInstanceState)
-        {
-            base.OnCreate (savedInstanceState);
-        }
-
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
-
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MessageViewFragment, container, false);
 
             buttonBar = new ButtonBar (view);
@@ -287,9 +277,7 @@ namespace NachoClient.AndroidClient
             Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", message);
             var folderFragment = ChooseFolderFragment.newInstance (null);
             folderFragment.setOnFolderSelected (OnFolderSelected);
-            var ft = FragmentManager.BeginTransaction ();
-            ft.AddToBackStack (null);
-            folderFragment.Show (ft, "dialog");
+            folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }
 
         public void OnFolderSelected (McFolder folder, McEmailMessageThread thread)

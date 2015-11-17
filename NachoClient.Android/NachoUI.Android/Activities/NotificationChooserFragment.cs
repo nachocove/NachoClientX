@@ -20,6 +20,8 @@ namespace NachoClient.AndroidClient
 {
     public class NotificationChooserFragment : DialogFragment
     {
+        private const string SAVED_VALUE_KEY = "NotificationChooserFragment.savedValue";
+
         McAccount.NotificationConfigurationEnum value;
 
         public event EventHandler<McAccount.NotificationConfigurationEnum> OnNotificationsChanged;
@@ -37,6 +39,12 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            if (null != savedInstanceState) {
+                int savedValue = savedInstanceState.GetInt (SAVED_VALUE_KEY, -1);
+                if (-1 != savedValue) {
+                    value = (McAccount.NotificationConfigurationEnum)savedValue;
+                }
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -58,6 +66,12 @@ namespace NachoClient.AndroidClient
             listview.Adapter = notificationAdapter;
 
             return view;
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            outState.PutInt (SAVED_VALUE_KEY, (int)value);
         }
 
         void SaveButton_Click (object sender, EventArgs e)

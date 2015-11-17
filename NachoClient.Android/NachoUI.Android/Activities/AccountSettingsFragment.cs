@@ -27,6 +27,8 @@ namespace NachoClient.AndroidClient
         private const int PASSWORD_REQUEST_CODE = 4;
 
         private const string SAVED_ACCOUNT_ID_KEY = "AccountSettingsFragment.accountId";
+        private const string DAYS_TO_SYNC_FRAGMENT_TAG = "DaysToSyncFragment";
+        private const string NOTIFICATIONS_FRAGMENT_TAG = "NotificationChooserFragment";
 
         ButtonBar buttonBar;
 
@@ -76,10 +78,20 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-            if (null == account && null != savedInstanceState) {
-                int accountId = savedInstanceState.GetInt (SAVED_ACCOUNT_ID_KEY, 0);
-                if (0 != accountId) {
-                    account = McAccount.QueryById<McAccount> (accountId);
+            if (null != savedInstanceState) {
+                if (null == account) {
+                    int accountId = savedInstanceState.GetInt (SAVED_ACCOUNT_ID_KEY, 0);
+                    if (0 != accountId) {
+                        account = McAccount.QueryById<McAccount> (accountId);
+                    }
+                }
+                var daysToSyncFragment = FragmentManager.FindFragmentByTag<DaysToSyncChooserFragment> (DAYS_TO_SYNC_FRAGMENT_TAG);
+                if (null != daysToSyncFragment) {
+                    daysToSyncFragment.OnDaysToSyncChanged += DaysToSyncFragment_OnDaysToSyncChanged;
+                }
+                var notificationsFragment = FragmentManager.FindFragmentByTag<NotificationChooserFragment> (NOTIFICATIONS_FRAGMENT_TAG);
+                if (null != notificationsFragment) {
+                    notificationsFragment.OnNotificationsChanged += NotificationsFragment_OnNotificationsChanged;
                 }
             }
         }
@@ -301,9 +313,7 @@ namespace NachoClient.AndroidClient
         {
             var notificationsFragment = NotificationChooserFragment.newInstance (account.NotificationConfiguration);
             notificationsFragment.OnNotificationsChanged += NotificationsFragment_OnNotificationsChanged;
-            var ft = FragmentManager.BeginTransaction ();
-            ft.AddToBackStack (null);
-            notificationsFragment.Show (ft, "dialog");
+            notificationsFragment.Show (FragmentManager, NOTIFICATIONS_FRAGMENT_TAG);
         }
 
         void NotificationsFragment_OnNotificationsChanged (object sender, McAccount.NotificationConfigurationEnum e)
@@ -317,9 +327,7 @@ namespace NachoClient.AndroidClient
         {
             var daysToSyncFragment = DaysToSyncChooserFragment.newInstance (account.DaysToSyncEmail);
             daysToSyncFragment.OnDaysToSyncChanged += DaysToSyncFragment_OnDaysToSyncChanged;
-            var ft = FragmentManager.BeginTransaction ();
-            ft.AddToBackStack (null);
-            daysToSyncFragment.Show (ft, "dialog");
+            daysToSyncFragment.Show (FragmentManager, DAYS_TO_SYNC_FRAGMENT_TAG);
         }
 
         void DaysToSyncFragment_OnDaysToSyncChanged (object sender, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode e)

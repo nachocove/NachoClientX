@@ -552,7 +552,6 @@
     <Compile Include="NachoUI.Android\Activities\NowListActivity.cs" />
     <Compile Include="NachoUI.Android\Support\NcAttachmentView.cs" />
     <Compile Include="NachoUI.Android\Support\DateTimePicker.cs" />
-    <Compile Include="NachoUI.Android\Support\ReminderChooser.cs" />
     <Compile Include="NachoUI.Android\Activities\NoteActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NcTabBarActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NcActivity.cs" />
@@ -587,7 +586,6 @@
     <Compile Include="NachoCore\Utils\AttachmentDownloader.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration49.cs" />
     <Compile Include="NachoUI.Android\Activities\CertAskFragment.cs" />
-    <Compile Include="NachoUI.Android\Support\CalendarChooserDialog.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageViewActivity.cs" />
     <Compile Include="NachoCore\Utils\NcTimeStamp.cs" />
@@ -605,6 +603,7 @@
     <Compile Include="NachoCore\Utils\FolderLists.cs" />
     <Compile Include="NachoUI.Android\Activities\HotFolderActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\LtrFolderActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
   </ItemGroup>
   <ItemGroup>

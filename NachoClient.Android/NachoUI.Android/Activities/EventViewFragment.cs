@@ -28,6 +28,8 @@ namespace NachoClient.AndroidClient
         private const int EDIT_REQUEST_CODE = 1;
         private const int NOTE_REQUEST_CODE = 2;
 
+        private const string REMINDER_CHOOSER_TAG = "ReminderChooser";
+
         private McEvent ev;
         private NcEventDetail detail;
 
@@ -66,6 +68,12 @@ namespace NachoClient.AndroidClient
             this.detail = new NcEventDetail (ev);
             userResponse = detail.SpecificItem.HasResponseType () ? detail.SpecificItem.GetResponseType () : NcResponseType.None;
             BindEventView ();
+            if (null != savedInstanceState) {
+                var reminderFragment = FragmentManager.FindFragmentByTag<ReminderChooserFragment> (REMINDER_CHOOSER_TAG);
+                if (null != reminderFragment) {
+                    ConfigureReminderChooser (reminderFragment);
+                }
+            }
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
@@ -550,6 +558,20 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        private void ConfigureReminderChooser (ReminderChooserFragment reminderFragment)
+        {
+            reminderFragment.SetValues (detail.SpecificItem.HasReminder (), (int)detail.SpecificItem.GetReminder (),
+                (bool hasReminder, int reminder) => {
+                    detail.SpecificItem.ReminderIsSet = hasReminder;
+                    if (hasReminder) {
+                        detail.SpecificItem.Reminder = (uint)reminder;
+                    }
+                    detail.SpecificItem.Update ();
+                    BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
+                    BindEventView ();
+                });
+        }
+
         private void EditButton_Click (object sender, EventArgs e)
         {
             StartActivityForResult (EventEditActivity.EditEventIntent (this.Activity, ev), EDIT_REQUEST_CODE);
@@ -563,15 +585,9 @@ namespace NachoClient.AndroidClient
         private void ReminderView_Click (object sender, EventArgs e)
         {
             if (detail.CanChangeReminder) {
-                ReminderChooser.Show (this.Activity, detail.SpecificItem.HasReminder (), (int)detail.SpecificItem.GetReminder (), (bool hasReminder, int reminder) => {
-                    detail.SpecificItem.ReminderIsSet = hasReminder;
-                    if (hasReminder) {
-                        detail.SpecificItem.Reminder = (uint)reminder;
-                    }
-                    detail.SpecificItem.Update ();
-                    BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
-                    BindEventView ();
-                });
+                var reminderFragment = new ReminderChooserFragment ();
+                ConfigureReminderChooser (reminderFragment);
+                reminderFragment.Show (FragmentManager, REMINDER_CHOOSER_TAG);
             }
         }
 
