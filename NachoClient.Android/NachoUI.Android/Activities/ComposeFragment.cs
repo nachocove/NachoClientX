@@ -34,6 +34,7 @@ namespace NachoClient.AndroidClient
         AttachmentPickerFragmentDelegate,
         QuickResponseFragmentDelegate
     {
+        private const string ATTACHMENT_PICKER_TAG = "AttachmentPickerFragment";
 
         #region Properties
 
@@ -71,6 +72,12 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            if (null != savedInstanceState) {
+                var attachmentPicker = FragmentManager.FindFragmentByTag<AttachmentPickerFragment> (ATTACHMENT_PICKER_TAG);
+                if (null != attachmentPicker) {
+                    attachmentPicker.Delegate = this;
+                }
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -284,7 +291,7 @@ namespace NachoClient.AndroidClient
             var attachmentPicker = new AttachmentPickerFragment ();
             attachmentPicker.Account = Composer.Account;
             attachmentPicker.Delegate = this;
-            attachmentPicker.Show (FragmentManager, "attachments");
+            attachmentPicker.Show (FragmentManager, ATTACHMENT_PICKER_TAG);
         }
 
         public void AttachmentPickerDidPickAttachment (AttachmentPickerFragment picker, McAttachment attachment)

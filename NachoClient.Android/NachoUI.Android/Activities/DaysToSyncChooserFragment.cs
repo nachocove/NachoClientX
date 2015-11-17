@@ -20,6 +20,8 @@ namespace NachoClient.AndroidClient
 {
     public class DaysToSyncChooserFragment : DialogFragment
     {
+        private const string SAVED_DAYS_TO_SYNC_KEY = "DaysToSyncChooser.saved";
+
         public NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode value;
 
         public event EventHandler<NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode> OnDaysToSyncChanged;
@@ -38,6 +40,12 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            if (null != savedInstanceState) {
+                int savedDaysToSync = savedInstanceState.GetInt (SAVED_DAYS_TO_SYNC_KEY, -1);
+                if (-1 != savedDaysToSync) {
+                    value = (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode)savedDaysToSync;
+                }
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -59,6 +67,12 @@ namespace NachoClient.AndroidClient
             listview.Adapter = daysToSyncAdapter;
 
             return view;
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            outState.PutInt (SAVED_DAYS_TO_SYNC_KEY, (int)value);
         }
 
         void SaveButton_Click (object sender, EventArgs e)

@@ -62,6 +62,15 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnPause ()
+        {
+            base.OnPause ();
+            // There isn't a good place to store messageThread across a configuration change.
+            // So don't even try.  Always dismiss the dialog so Android doesn't try to
+            // recreate it.
+            Dismiss ();
+        }
+
         public void setOnFolderSelected (OnFolderSelectedListener onFolderSelected)
         {
             mOnFolderSelected = onFolderSelected;

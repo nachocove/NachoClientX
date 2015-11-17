@@ -40,11 +40,6 @@ namespace NachoClient.AndroidClient
             this.messageThread = messageThread;
         }
 
-        public override void OnCreate (Bundle savedInstanceState)
-        {
-            base.OnCreate (savedInstanceState);
-        }
-
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             Dialog.Window.RequestFeature(WindowFeatures.NoTitle);
@@ -83,6 +78,15 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnPause ()
+        {
+            base.OnPause ();
+            // There isn't a good place to store messageThread across a configuration change.
+            // So don't even try.  Always dismiss the dialog so Android doesn't try to
+            // recreate it.
+            Dismiss ();
+        }
+
         public void setOnDeferralSelected (OnDeferralSelectedListener onDeferralSelected)
         {
             mOnDeferralSelected = onDeferralSelected;
@@ -95,8 +99,6 @@ namespace NachoClient.AndroidClient
                 mOnDeferralSelected (request, messageThread, selectedDate);
             }
         }
-
-
     }
 
     public class DeferralAdapter : BaseAdapter
