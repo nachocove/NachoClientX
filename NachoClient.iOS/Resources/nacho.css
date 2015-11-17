@@ -49,7 +49,7 @@ blockquote[type="cite"]
     color: rgb(43,217,178);
 }
 
-img {
+img[nacho-resize] {
     max-width: 100%;
     height: auto;
 }

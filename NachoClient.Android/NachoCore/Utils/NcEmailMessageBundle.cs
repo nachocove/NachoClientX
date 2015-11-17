@@ -132,7 +132,7 @@ namespace NachoCore.Utils
         private BundleManifest Manifest;
         private int SubmessageCount = 0;
 
-        private static int LastestVersion = 1;
+        private static int LastestVersion = 2;
 
         private static string FullTextEntryName = "full-text";
         private static string TopTextEntryName = "top-text";
@@ -749,6 +749,7 @@ namespace NachoCore.Utils
                     img.SetAttributeValue("src", Storage.UrlForPath(entry.Path, entry.ContentType).ToString ());
                 }
                 img.SetAttributeValue ("nacho-image-attachment", "true");
+                img.SetAttributeValue ("nacho-resize", "true");
             }
         }
 
@@ -926,9 +927,19 @@ namespace NachoCore.Utils
             List<HtmlNode> bodyElements = new List<HtmlNode> ();
             nodes.Add (document.DocumentNode);
             HtmlNode node;
+            int remaingTableNodes = 0;
+            bool inTable = false;
             while (nodes.Count > 0) {
                 node = nodes [0];
                 nodes.RemoveAt (0);
+                Log.Info (Log.LOG_UI, "Remaining Table Nodes: {0}", remaingTableNodes);
+                inTable = remaingTableNodes > 0;
+                if (remaingTableNodes > 0) {
+                    // if we're in a table, adjust the remaing node count by the number of children pushed minus ourselves
+                    remaingTableNodes += node.ChildNodes.Count - 1;
+                } else if (node.NodeType == HtmlNodeType.Element && node.Name.Equals ("table")) {
+                    remaingTableNodes = node.ChildNodes.Count;
+                }
                 if (node.NodeType == HtmlNodeType.Element) {
                     // Remove any and all script tags, wherever they exist in the document.
                     // This allows us to enable javascript in a webview to run our own javascript
@@ -991,6 +1002,10 @@ namespace NachoCore.Utils
                     if (node.Name.Equals ("img") && node.Attributes.Contains("src")) {
                         // Removing our special attributes because no one else should be setting them
                         node.Attributes.Remove ("nacho-bundle-entry");
+                        node.Attributes.Remove ("nacho-resize");
+                        if (!inTable) {
+                            node.Attributes.Add ("nacho-resize", "true");
+                        }
                         // There should only be one src per img tag, we'll only consider the first one
                         var srcs = node.Attributes.AttributesWithName ("src");
                         string src = null;
