@@ -10,6 +10,9 @@ using NachoCore.Utils;
 using NachoClient.Build;
 using NachoPlatform;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace NachoCore.Model
 {
@@ -217,61 +220,51 @@ namespace NachoCore.Model
             public string refresh_token { get; set; }
         }
 
-        private async Task<bool> TryRefreshGoogleOauth2 (CancellationToken Token)
-        {
-            var handler = new NativeMessageHandler ();
-            var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
-            try {
-                var query = "client_secret=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientSecret) +
-                    "&grant_type=" + "refresh_token" +
-                    "&refresh_token=" + Uri.EscapeDataString (GetRefreshToken ()) +
-                    "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
-                var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
-                var httpRequest = new HttpRequestMessage (HttpMethod.Post, requestUri);
-                var httpResponse = await client.SendAsync (httpRequest, HttpCompletionOption.ResponseContentRead, Token);
-                if (httpResponse.StatusCode == System.Net.HttpStatusCode.OK) {
-                    var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
-                    var response = JsonConvert.DeserializeObject<OAuth2RefreshRespose> (jsonResponse);
-                    if ("Bearer" != response.token_type) {
-                        Log.Error (Log.LOG_SYS, "Unknown OAUTH2 token_type {0}", response.token_type);
-                    }
-                    if (null == response.access_token || null == response.expires_in) {
-                        Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token {0} or expires_in {1}", response.access_token, response.expires_in);
-                        return false;
-                    }
-                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", response.expires_in);
-                    // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
-                    UpdateOauth2 (response.access_token, 
-                        string.IsNullOrEmpty (response.refresh_token) ? GetRefreshToken () : response.refresh_token,
-                        uint.Parse (response.expires_in));
-                    return true;
-                } else {
-                    Log.Error (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", httpResponse.StatusCode.ToString ());
-                    return false;
-                }
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_SYS, "OAUTH2 Exception {0}", ex.ToString ());
-                return false;
-            }
-        }
-
-        public async void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
+        public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
         {
             var account = McAccount.QueryById<McAccount> (AccountId);
-            bool result;
             switch (account.AccountService) {
             case McAccount.AccountServiceEnum.GoogleDefault:
-                result = await TryRefreshGoogleOauth2 (Token);
+                var query = "client_secret=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientSecret) +
+                            "&grant_type=" + "refresh_token" +
+                            "&refresh_token=" + Uri.EscapeDataString (GetRefreshToken ()) +
+                            "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
+                var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
+                var request = new NcHttpRequest (HttpMethod.Post, requestUri);
+                int timeoutSecs = 30;
+
+                NcHttpClient.Instance.SendRequest (request, timeoutSecs, ((response, token) => {
+                    if (response.StatusCode != System.Net.HttpStatusCode.OK) {
+                        Log.Error (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", response.StatusCode.ToString ());
+                        onFailure (this);
+                        return;
+                    }
+                    var memStream = new MemoryStream ();
+                    response.Content.CopyTo (memStream);
+                    var jsonResponse = memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ();
+                    var decodedResponse = JsonConvert.DeserializeObject<OAuth2RefreshRespose> (Encoding.UTF8.GetString (jsonResponse));
+                    if ("Bearer" != decodedResponse.token_type) {
+                        Log.Error (Log.LOG_SYS, "Unknown OAUTH2 token_type {0}", decodedResponse.token_type);
+                    }
+                    if (null == decodedResponse.access_token || null == decodedResponse.expires_in) {
+                        Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token {0} or expires_in {1}", decodedResponse.access_token, decodedResponse.expires_in);
+                        onFailure (this);
+                    }
+                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", decodedResponse.expires_in);
+                    // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
+                    UpdateOauth2 (decodedResponse.access_token, 
+                        string.IsNullOrEmpty (decodedResponse.refresh_token) ? GetRefreshToken () : decodedResponse.refresh_token,
+                        uint.Parse (decodedResponse.expires_in));
+                    onSuccess (this);
+                }), ((ex) => {
+                    Log.Error (Log.LOG_SYS, "OAUTH2 Exception {0}", ex.ToString ());
+                    onFailure (this);
+                }), Token);
                 break;
 
             default:
                 Log.Error (Log.LOG_SYS, "Can not refresh {0}:{1}", account.Id, account.AccountService);
                 return;
-            }
-            if (result) {
-                onSuccess (this);
-            } else {
-                onFailure (this);
             }
         }
     }
