@@ -10,6 +10,8 @@ using Android.Content;
 using NachoPlatform;
 using System.IO;
 using Android.Graphics;
+using NachoCore.ActiveSync;
+using Android.OS;
 
 namespace NachoPlatform
 {
@@ -23,8 +25,24 @@ namespace NachoPlatform
 
         private Contacts ()
         {
+            MainApplication.Instance.ContentResolver.RegisterContentObserver (ContactsContract.Contacts.ContentUri, true, new NcContactContentObserver (this, new Handler ()));
         }
 
+        public class NcContactContentObserver : Android.Database.ContentObserver
+        {
+            Contacts Owner { get; set; }
+            public NcContactContentObserver (Contacts owner, Handler handler) : base (handler)
+            {
+                Owner = owner;
+            }
+            public override void OnChange (bool selfChange)
+            {
+                if (Owner.ChangeIndicator != null) {
+                    Owner.ChangeIndicator (this, new EventArgs ());
+                }
+            }
+        }
+            
         public static Contacts Instance {
             get {
                 if (instance == null) {
@@ -306,6 +324,7 @@ namespace NachoPlatform
 
             protected void GetContactPhones ()
             {
+                Contact.PhoneNumbers = new List<McContactStringAttribute> ();
                 var pCur = MainApplication.Instance.ContentResolver.Query (
                                ContactsContract.CommonDataKinds.Phone.ContentUri,
                                null, 
@@ -316,21 +335,27 @@ namespace NachoPlatform
                         String phoneNo = GetField (pCur, ContactsContract.CommonDataKinds.Phone.Number);
                         PhoneDataKind type = (PhoneDataKind)GetFieldInt (pCur, ContactsContract.CommonDataKinds.Phone.InterfaceConsts.Type);
                         String phLabel = GetField (pCur, ContactsContract.CommonDataKinds.Phone.InterfaceConsts.Label);
-                        string phoneType = ContactsContract.CommonDataKinds.Phone.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, phLabel);
+                        string phoneType = ContactsContract.CommonDataKinds.Phone.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, phLabel).ToLowerInvariant ();
                         string name;
                         string label;
-                        if (phoneType.ToLowerInvariant () == "home") {
-                            name = "HomePhoneNumber";
+                        if (phoneType == "home") {
+                            name = Xml.Contacts.HomePhoneNumber;
                             label = "Home";
-                        } else if (phoneType.ToLowerInvariant () == "work") {
-                            name = "BusinessPhoneNumber";
+                        } else if (phoneType == "work") {
+                            name = Xml.Contacts.BusinessPhoneNumber;
                             label = "Work";
-                        } else if (phoneType.ToLowerInvariant () == "mobile") {
-                            name = "MobilePhoneNumber";
+                        } else if (phoneType == "mobile") {
+                            name = Xml.Contacts.MobilePhoneNumber;
+                            label = null;
+                        } else if (phoneType == "home fax") {
+                            name = Xml.Contacts.HomeFaxNumber;
+                            label = null;
+                        } else if (phoneType == "work fax") {
+                            name = Xml.Contacts.BusinessFaxNumber;
                             label = null;
                         } else {
                             // assume mobile
-                            name = "MobilePhoneNumber";
+                            name = Xml.Contacts.MobilePhoneNumber;
                             label = null;
                         }
                         Contact.AddPhoneNumberAttribute (Contact.AccountId, name, label, phoneNo);
@@ -341,6 +366,7 @@ namespace NachoPlatform
 
             protected void GetContactEmails ()
             {
+                Contact.EmailAddresses = new List<McContactEmailAddressAttribute> ();
                 var pCur = MainApplication.Instance.ContentResolver.Query (
                                ContactsContract.CommonDataKinds.Email.ContentUri,
                                null, 
