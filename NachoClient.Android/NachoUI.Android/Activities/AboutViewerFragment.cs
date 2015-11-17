@@ -36,13 +36,11 @@ namespace NachoClient.AndroidClient
                 buttonBar.SetTitle (title);
             }
 
-            var sv = view.FindViewById<View> (Resource.Id.scrollView);
             var tv = view.FindViewById<TextView> (Resource.Id.text_information);
             var wv = view.FindViewById<WebView> (Resource.Id.webview);
 
             var filename = AboutViewerActivity.FileFromIntent (Activity.Intent);
             if (null != filename) {
-                // Read the contents of our asset
                 string content;
                 using (var sr = new StreamReader (Activity.Assets.Open (filename))) {
                     content = sr.ReadToEnd ();
@@ -53,8 +51,10 @@ namespace NachoClient.AndroidClient
 
             var url = AboutViewerActivity.UrlFromIntent (Activity.Intent);
             if (null != url) {
-                tv.Visibility = ViewStates.Gone;
+                // Hide scrollview, show spinner, until the load is finished
+                var sv = view.FindViewById<View> (Resource.Id.scrollView);
                 sv.Visibility = ViewStates.Invisible;
+                tv.Visibility = ViewStates.Gone;
                 wv.SetWebViewClient (new AboutViewerWebViewClient (view));
                 wv.LoadUrl (url);
             }
@@ -89,8 +89,8 @@ namespace NachoClient.AndroidClient
             var tv = aboutViewerView.FindViewById<TextView> (Resource.Id.text_information);
             tv.SetText (Resource.String.download_error);
             tv.Visibility = ViewStates.Visible;
+            Done ();
         }
-
 
         public override void OnReceivedError (WebView view, ClientError errorCode, string description, string failingUrl)
         {
@@ -109,7 +109,6 @@ namespace NachoClient.AndroidClient
         public override void OnPageFinished (WebView view, string url)
         {
             base.OnPageFinished (view, url);
-            ShowError ();
             Done ();
         }
     }
