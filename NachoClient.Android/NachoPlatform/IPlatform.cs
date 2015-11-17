@@ -26,9 +26,8 @@ namespace NachoPlatform
     public enum OsCode
     {
         iOS,
-        Android}
-
-    ;
+        Android,
+    };
 
     public interface IPlatformDevice
     {
