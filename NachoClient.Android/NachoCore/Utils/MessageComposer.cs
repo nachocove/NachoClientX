@@ -34,6 +34,7 @@ namespace NachoCore.Utils
         public McCalendar RelatedCalendarItem;
         public EmailHelper.Action Kind = EmailHelper.Action.Send;
         public List<McAttachment> InitialAttachments;
+        public string InitialRecipient;
         public string InitialText;
         public NcEmailMessageBundle Bundle {
             get {
@@ -181,6 +182,9 @@ namespace NachoCore.Utils
             }
             var mailbox = new MailboxAddress (Pretty.UserNameForAccount (Account), Account.EmailAddr);
             Message.From = mailbox.ToString ();
+            if(!String.IsNullOrEmpty(InitialRecipient)) {
+                Message.To = InitialRecipient;
+            }
             Message.Insert ();
             EmailHelper.SaveEmailMessageInDrafts (Message);
             var body = McBody.InsertFile (Account.Id, McAbstrFileDesc.BodyTypeEnum.None, "");

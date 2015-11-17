@@ -24,6 +24,7 @@ namespace NachoClient.AndroidClient
         public static readonly string EXTRA_RELATED_CALENDAR_ID = "com.nachocove.nachomail.relatedCalendarId";
         public static readonly string EXTRA_MESSAGE = "com.nachocove.nachomail.message";
         public static readonly string EXTRA_INITIAL_TEXT = "com.nachocove.nachomail.initialText";
+        public static readonly string EXTRA_INITIAL_RECIPIENT = "com.nachocove.nachomail.initialRecipient";
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -57,15 +58,22 @@ namespace NachoClient.AndroidClient
                 var text = Intent.GetStringExtra (EXTRA_INITIAL_TEXT);
                 composeFragment.Composer.InitialText = text;
             }
+            if (Intent.HasExtra (EXTRA_INITIAL_RECIPIENT)) {
+                var to = Intent.GetStringExtra (EXTRA_INITIAL_RECIPIENT);
+                composeFragment.Composer.InitialRecipient = to;
+            }
 
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, composeFragment).AddToBackStack("Now").Commit ();
            
         }
 
-        public static Intent NewMessageIntent (Context context)
+        public static Intent NewMessageIntent (Context context, string recipient = null)
         {
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
+            if (!String.IsNullOrEmpty (recipient)) {
+                intent.PutExtra (EXTRA_INITIAL_RECIPIENT, recipient);
+            }
             return intent;
         }
 
