@@ -774,9 +774,9 @@
       <Project>{17E3A80E-B371-4138-AB0F-7176BF026EAF}</Project>
       <Name>TokenAutoCompleteBinding</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\rtfparserkit\rtfparserkit\rtfparserkit.csproj">
-      <Project>{6396290E-A074-4D52-842E-27FABF7A0865}</Project>
-      <Name>rtfparserkit</Name>
+    <ProjectReference Include="..\..\rtfparserkitBinding\rtfparserkitBinding\rtfparserkitBinding.csproj">
+      <Project>{40A75D1C-1C71-41F5-9B84-A3884CD1EE81}</Project>
+      <Name>rtfparserkitBinding</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
