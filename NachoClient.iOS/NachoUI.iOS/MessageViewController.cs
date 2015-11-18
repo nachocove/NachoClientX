@@ -457,12 +457,13 @@ namespace NachoClient.iOS
 
             var subjectLabelView = View.ViewWithTag ((int)TagType.SUBJECT_TAG) as UILabel;
             subjectLabelView.Lines = 0;
-            if (string.IsNullOrEmpty (message.Subject)) {
+            string subject = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
+            if (string.IsNullOrEmpty (subject)) {
                 subjectLabelView.TextColor = A.Color_9B9B9B;
                 subjectLabelView.Text = Pretty.NoSubjectString ();
             } else {
                 subjectLabelView.TextColor = A.Color_0F424C;
-                subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+                subjectLabelView.Text = subject;
             }
             cursor.LayoutView (subjectLabelView);
 
