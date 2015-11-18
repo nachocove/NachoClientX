@@ -191,38 +191,49 @@ namespace NachoClient.AndroidClient
 
             var detailView = new NcEventDetail (ev);
 
-            int colorIndex = 0;
-            var folder = McFolder.QueryByFolderEntryId<McCalendar> (detailView.Account.Id, detailView.SpecificItem.Id).FirstOrDefault ();
-            if (null != folder) {
-                colorIndex = folder.DisplayColor;
-            }
-            colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
+            if (detailView.IsValid) {
 
-            titleView.Text = Pretty.SubjectString (detailView.SpecificItem.GetSubject ());
-
-            var startAndDuration = "";
-            if (detailView.SpecificItem.AllDayEvent) {
-                startAndDuration = "ALL DAY";
-            } else {
-                var start = Pretty.Time (detailView.StartTime);
-                if (detailView.EndTime > detailView.StartTime) {
-                    var duration = Pretty.CompactDuration (detailView.StartTime, detailView.EndTime);
-                    startAndDuration = String.Join (" - ", new string[] { start, duration });
-                } else {
-                    startAndDuration = start;
+                int colorIndex = 0;
+                var folder = McFolder.QueryByFolderEntryId<McCalendar> (detailView.Account.Id, detailView.SpecificItem.Id).FirstOrDefault ();
+                if (null != folder) {
+                    colorIndex = folder.DisplayColor;
                 }
-            }
-            durationView.Text = startAndDuration;
+                colorView.Visibility = ViewStates.Visible;
+                colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
 
-            var location = detailView.SpecificItem.GetLocation ();
-            if (String.IsNullOrEmpty (location)) {
+                titleView.Text = Pretty.SubjectString (detailView.SpecificItem.GetSubject ());
+
+                var startAndDuration = "";
+                if (detailView.SpecificItem.AllDayEvent) {
+                    startAndDuration = "ALL DAY";
+                } else {
+                    var start = Pretty.Time (detailView.StartTime);
+                    if (detailView.EndTime > detailView.StartTime) {
+                        var duration = Pretty.CompactDuration (detailView.StartTime, detailView.EndTime);
+                        startAndDuration = String.Join (" - ", new string[] { start, duration });
+                    } else {
+                        startAndDuration = start;
+                    }
+                }
+                durationView.Text = startAndDuration;
+
+                var location = detailView.SpecificItem.GetLocation ();
+                if (String.IsNullOrEmpty (location)) {
+                    locationView.Text = "";
+                    locationImageView.Visibility = ViewStates.Invisible;
+                } else {
+                    locationView.Text = location;
+                    locationImageView.Visibility = ViewStates.Visible;
+                }
+
+            } else {
+
+                titleView.Text = "";
+                colorView.Visibility = ViewStates.Invisible;
+                durationView.Text = "This event has been deleted.";
                 locationView.Text = "";
                 locationImageView.Visibility = ViewStates.Invisible;
-            } else {
-                locationView.Text = location;
-                locationImageView.Visibility = ViewStates.Visible;
             }
-
         }
 
         public static void BindEventDateCell (DateTime date, View view)
