@@ -99,6 +99,8 @@ namespace NachoCore.ActiveSync
             // A pointer to the cmd's event Q.
             private ConcurrentQueue<Event> RobotEventsQ;
 
+            NcHttpClient HttpClient { get; set; }
+
             public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUserSpecifiedDomain, ConcurrentQueue<Event> robotEventsQ)
             {
                 int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
@@ -107,6 +109,7 @@ namespace NachoCore.ActiveSync
                 Ct = Cts.Token;
                 DisposedJunk = new ConcurrentBag<object> ();
                 RefreshRetries ();
+                HttpClient = new NcHttpClient ();
 
                 Command = command;
                 Ns = AsAutodiscoverCommand.RequestSchema;
@@ -572,7 +575,6 @@ namespace NachoCore.ActiveSync
                     DontReportCommResult = true,
                     TriesLeft = 2,
                     TimeoutExpander = KDefaultTimeoutExpander,
-                    DontReUseHttpClient = true,
                 };
             }
 
@@ -687,7 +689,7 @@ namespace NachoCore.ActiveSync
                     var request = new NcHttpRequest (HttpMethod.Get, ReDirUri);
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     LastUri = ReDirUri;
-                    NcHttpClient.Instance.GetRequest (request, CertTimeout.Milliseconds, GetServerCertSuccess, GetServerCertError, Cts.Token);
+                    HttpClient.GetRequest (request, CertTimeout.Milliseconds, GetServerCertSuccess, GetServerCertError, Cts.Token);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRGSC3");
                     return;

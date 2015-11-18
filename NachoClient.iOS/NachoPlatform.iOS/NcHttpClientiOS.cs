@@ -23,23 +23,8 @@ namespace NachoPlatform
         // FIXME. Seems to not work right.
         public readonly bool PreAuthenticate = false;
 
-        private NcHttpClient ()
+        public NcHttpClient ()
         {
-        }
-
-        private static object LockObj = new object ();
-        static NcHttpClient _Instance { get; set; }
-        public static NcHttpClient Instance {
-            get {
-                if (_Instance == null) {
-                    lock (LockObj) {
-                        if (_Instance == null) {
-                            _Instance = new NcHttpClient ();
-                        }
-                    }
-                }
-                return _Instance;
-            }
         }
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NSUrlSessionDelegate dele, CancellationToken cancellationToken)

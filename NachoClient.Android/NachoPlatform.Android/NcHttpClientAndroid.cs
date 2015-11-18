@@ -25,7 +25,7 @@ namespace NachoPlatform
 
         long defaultTimeoutSecs = 30;
 
-        private NcHttpClient ()
+        public NcHttpClient ()
         {
             _client = new OkHttpClient ();
             _client.SetHostnameVerifier (new HostnameVerifier ());
@@ -36,21 +36,6 @@ namespace NachoPlatform
             _client.SetReadTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
             _client.FollowRedirects = AllowAutoRedirect;
             _client.SetFollowSslRedirects (AllowAutoRedirect);
-        }
-
-        private static object LockObj = new object ();
-        static NcHttpClient _Instance { get; set; }
-        public static NcHttpClient Instance {
-            get {
-                if (_Instance == null) {
-                    lock (LockObj) {
-                        if (_Instance == null) {
-                            _Instance = new NcHttpClient ();
-                        }
-                    }
-                }
-                return _Instance;
-            }
         }
 
         #region INcHttpClient implementation

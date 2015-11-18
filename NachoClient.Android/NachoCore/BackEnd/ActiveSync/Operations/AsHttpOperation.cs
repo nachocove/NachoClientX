@@ -1,21 +1,13 @@
 // # Copyright (C) 2013, 2014, 2015 Nacho Cove, Inc. All rights reserved.
 //
-using DnDns.Enums;
-using DnDns.Query;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Globalization;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Linq;
-using System.Xml.Schema;
-using ModernHttpClient;
 using NachoCore.Model;
 using NachoCore.Wbxml;
 using NachoCore.Utils;
@@ -119,7 +111,7 @@ namespace NachoCore.ActiveSync
 
         public bool DontReportCommResult { set; get; }
 
-        public bool DontReUseHttpClient { set; get; }
+        NcHttpClient HttpClient { get; set; }
 
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
@@ -134,6 +126,7 @@ namespace NachoCore.ActiveSync
             Allow451Follow = true;
             CommandName = commandName;
             Owner = owner;
+            HttpClient = new NcHttpClient ();
 
             HttpOpSm = new NcStateMachine ("HTTPOP") {
                 Name = "as:http_op",
@@ -433,11 +426,16 @@ namespace NachoCore.ActiveSync
 
             ServicePointManager.FindServicePoint (request.RequestUri).ConnectionLimit = 25;
             Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
-            NcHttpClient.Instance.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, AttemptHttpProgress, cToken);
+            sw.Start ();
+            HttpClient.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, AttemptHttpProgress, cToken);
         }
+        PlatformStopwatch sw = new PlatformStopwatch ();
 
         void AttemptHttpSuccess (NcHttpResponse response, CancellationToken token)
         {
+            sw.Stop ();
+            Log.Info (Log.LOG_HTTP, "Request took {0}ms ({1} bytes down)", sw.ElapsedMilliseconds, response.ContentLength);
+
             // FIXME: Should we do this much processing in the Callback? Or should we save things here, and process
             // outside of the response callback? This would mean we need a post-request callback or signal.
 
@@ -471,7 +469,11 @@ namespace NachoCore.ActiveSync
             ContentData = memContent.GetBuffer ().Take ((int)memContent.Length).ToArray ();
             CancelTimeoutTimer ("Success");
             try {
+                sw.Reset ();
+                sw.Start ();
                 var evt = ProcessHttpResponse (response, token);
+                sw.Stop ();
+                Log.Info (Log.LOG_HTTP, "Processing request took {0}ms ({1} bytes down)", sw.ElapsedMilliseconds, response.ContentLength);
                 if (token.IsCancellationRequested) {
                     Log.Info (Log.LOG_HTTP, "AttemptHttp: Dropping event because of cancellation: {0}/{1}", evt.EventCode, evt.Mnemonic);
                 } else {

@@ -671,7 +671,7 @@ namespace NachoCore
         {
             MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
                 MonitorReport ();
-            }, null, new TimeSpan (0, 0, 30), new TimeSpan (0, 0, 60));
+            }, null, new TimeSpan (0, 0, 10), new TimeSpan (0, 0, 10));
             MonitorTimer.Stfu = true;
         }
 

@@ -233,7 +233,8 @@ namespace NachoCore.Model
                 var request = new NcHttpRequest (HttpMethod.Post, requestUri);
                 int timeoutSecs = 30;
 
-                NcHttpClient.Instance.SendRequest (request, timeoutSecs, ((response, token) => {
+                var Client = new NcHttpClient ();
+                Client.SendRequest (request, timeoutSecs, ((response, token) => {
                     if (response.StatusCode != System.Net.HttpStatusCode.OK) {
                         Log.Error (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", response.StatusCode.ToString ());
                         onFailure (this);
