@@ -64,7 +64,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        protected override Stream ToMime (AsHttpOperation Sender)
+        protected override FileStream ToMime (AsHttpOperation Sender)
         {
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 long length;

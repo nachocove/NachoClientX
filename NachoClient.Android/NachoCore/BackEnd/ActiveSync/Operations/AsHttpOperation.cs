@@ -352,7 +352,7 @@ namespace NachoCore.ActiveSync
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
-                    var stream = doc.ToWbxmlStream (AccountId, true, cToken);
+                    var stream = doc.ToWbxmlStream (AccountId, cToken);
                     capture.Stop ();
                     request.SetContent (stream, ContentTypeWbxml);
                 } else {
@@ -360,10 +360,13 @@ namespace NachoCore.ActiveSync
                     // Xamarin bug: this prints out the wrong decl, which breaks autodiscovery. Revert to SO
                     // Method once bug is fixed.
                     var xmlText = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + doc.ToString ();
-                    request.SetContent (new MemoryStream (Encoding.UTF8.GetBytes (xmlText)), ContentTypeXml);
+                    Log.Info (Log.LOG_HTTP, "Length of string: {0}", xmlText.Length);
+                    byte[] data = Encoding.UTF8.GetBytes (xmlText);
+                    Log.Info (Log.LOG_HTTP, "Length of data: {0}", data.Length);
+                    request.SetContent (data, ContentTypeXml);
                 }
             }
-            Stream mime;
+            FileStream mime;
             if (!Owner.SafeToMime (this, out mime)) {
                 return false;
             }
@@ -516,9 +519,9 @@ namespace NachoCore.ActiveSync
             }, "AttemptHttpError");
         }
 
-        void AttemptHttpProgress (bool isRequest, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
+        void AttemptHttpProgress (bool isRequest, string taskDescription, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
         {
-            Log.Info (Log.LOG_HTTP, "HTTP: {0} Progress: {1}:{2}:{3}", isRequest ? "Request" : "Response", bytesSent, totalBytesSent, totalBytesExpectedToSend);
+            Log.Info (Log.LOG_HTTP, "HTTP-Progress({0}): {1} Progress: {2}:{3}:{4}", taskDescription, isRequest ? "Request" : "Response", bytesSent, totalBytesSent, totalBytesExpectedToSend);
         }
 
         private bool Is2xx (HttpStatusCode statusCode)

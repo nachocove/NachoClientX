@@ -851,7 +851,7 @@ namespace NachoCore.ActiveSync
                 throw new Exception ("We should not be getting this (HTTP 451) while doing autodiscovery.");
             }
 
-            public virtual bool SafeToMime (AsHttpOperation Sender, out Stream mime)
+            public virtual bool SafeToMime (AsHttpOperation Sender, out FileStream mime)
             {
                 // We don't generate MIME.
                 mime = null;

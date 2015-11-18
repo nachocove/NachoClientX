@@ -20,8 +20,7 @@ namespace NachoPlatform
     {
         public readonly bool AllowAutoRedirect = false;
 
-        // FIXME. Seems to not work right.
-        public readonly bool PreAuthenticate = false;
+        public readonly bool PreAuthenticate = true;
 
         public NcHttpClient ()
         {
@@ -32,7 +31,7 @@ namespace NachoPlatform
             // Mostly lifted from ModernHttpClientiOS NativeMessageHandler
             NSInputStream RequestBodyStream = null;
             NSData RequestBody = null;
-            if (request.Content != null) {
+            if (request.HasContent ()) {
                 if (isSend) {
                     //request.AddHeader ("Expect", "100-continue");
                 }
@@ -41,26 +40,12 @@ namespace NachoPlatform
                         request.Headers.Add ("Content-Type", request.ContentType);
                     }
                 }
-                if (request.ContentLength.HasValue) {
-                    if (!request.Headers.Contains ("Content-Length")) {
-                        request.Headers.Add ("Content-Length", request.ContentLength.Value.ToString ());
-                    }
-                }
                 if (request.Content is FileStream) {
                     var fileStream = request.Content as FileStream;
                     RequestBodyStream = NSInputStream.FromFile (fileStream.Name);
-                    if (!request.Headers.Contains ("Content-Length")) {
-                        request.Headers.Add ("Content-Length", fileStream.Length.ToString ());
-                    }
                     dele.FilePath = fileStream.Name;
-                } else if (request.Content is MemoryStream) {
-                    System.Diagnostics.StackTrace t = new System.Diagnostics.StackTrace();
-                    Log.Warn (Log.LOG_HTTP, "NcHttpClient: Someone is using a memorystream!\n{0}", t.ToString ());
-                    var memStream = request.Content as MemoryStream;
-                    RequestBody = NSData.FromStream (memStream);
-                    if (!request.Headers.Contains ("Content-Length")) {
-                        request.Headers.Add ("Content-Length", memStream.Length.ToString ());
-                    }
+                } else if (request.Content is byte[]) {
+                    RequestBody = NSData.FromArray (request.Content as byte[]);
                 } else {
                     NcAssert.CaseError (string.Format ("request.Content is of unknown type {0}", request.Content.GetType ().Name));
                 }
@@ -96,14 +81,15 @@ namespace NachoPlatform
             config.URLCache = new NSUrlCache (0, 0, "HttpClientCache");
 
             var session = NSUrlSession.FromConfiguration (config, dele, null);
-            Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task for {0}", req.Url);
             var task = session.CreateDownloadTask (req);
+            task.TaskDescription = request.guid;
             cancellationToken.Register (() => {
                 // make sure don't run on the UI thread.
                 NcTask.Run(() => {
                     task.Cancel ();
                 }, "NcHttpClient.iOS.Cancel");
             });
+            Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task {0} for {1}", task.TaskDescription, req.Url);
             task.Resume ();
         }
 
@@ -187,7 +173,7 @@ namespace NachoPlatform
                             var response = new NcHttpResponse ((HttpStatusCode)status, fileStream, resp.MimeType, FromNsHeaders (resp.AllHeaderFields));
                             SuccessAction (response, Token);
                         } catch (Exception ex) {
-                            Log.Error (Log.LOG_HTTP, "NcHttpClient: Error running SuccessAction: {0}", ex);
+                            Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): Error running SuccessAction: {1}", downloadTask.TaskDescription, ex);
                         }
                     }
                 }
@@ -198,7 +184,7 @@ namespace NachoPlatform
                 try {
                     long sent = task.BytesSent;
                     long received = task.BytesReceived;
-                    Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2}){3}", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", task.TaskDescription, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
                         error != null ? string.Format(" (Error: {0})", error) : "");
 
                     if (Token.IsCancellationRequested) {
@@ -209,7 +195,7 @@ namespace NachoPlatform
                     }
                     session.FinishTasksAndInvalidate ();
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient: DidCompleteWithError exception {0}", ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidCompleteWithError exception {1}", task.TaskDescription, ex);
                 }
             }
 
@@ -220,10 +206,10 @@ namespace NachoPlatform
                         return;
                     }
                     if (null != ProgressAction) {
-                        ProgressAction (true, bytesSent, totalBytesSent, totalBytesExpectedToSend);
+                        ProgressAction (true, task.TaskDescription, bytesSent, totalBytesSent, totalBytesExpectedToSend);
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient: DidSendBodyData exception {0}", ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidSendBodyData exception {1}", task.TaskDescription, ex);
                 }
             }
 
@@ -234,16 +220,16 @@ namespace NachoPlatform
                         return;
                     }
                     if (null != ProgressAction) {
-                        ProgressAction (false, bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+                        ProgressAction (false, downloadTask.TaskDescription, bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient: DidWriteData exception {0}", ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidWriteData exception {1}", downloadTask.TaskDescription, ex);
                 }
             }
 
             public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
             {
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: WillPerformHttpRedirection");
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection", task.TaskDescription);
                 try {
                     if (Owner.AllowAutoRedirect) {
                         completionHandler (newRequest);
@@ -251,7 +237,7 @@ namespace NachoPlatform
                         completionHandler (null);
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient: WillPerformHttpRedirection exception {0}", ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection exception {1}",task.TaskDescription, ex);
                 }
             }
 
@@ -260,7 +246,7 @@ namespace NachoPlatform
                 try {
                     BaseDidReceiveChallenge (Cred, session, task, challenge, completionHandler);
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient: DidReceiveChallenge exception {0}", ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidReceiveChallenge exception {1}", task.TaskDescription, ex);
                 }
             }
 
@@ -269,7 +255,7 @@ namespace NachoPlatform
                 if (!string.IsNullOrEmpty (FilePath)) {
                     completionHandler (new NSInputStream (FilePath));
                 } else {
-                    throw new Exception ("Can not satisfy NeedNewBodyStream. No FilePath");
+                    throw new Exception (string.Format ("NcHttpClient({0}): Can not satisfy NeedNewBodyStream. No FilePath", task.TaskDescription));
                 }
             }
         }
@@ -293,11 +279,11 @@ namespace NachoPlatform
         public static void BaseDidReceiveChallenge (McCred cred, NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
         {
             if (challenge.ProtectionSpace.AuthenticationMethod != "NSURLAuthenticationMethodServerTrust") {
-                Log.Warn (Log.LOG_HTTP, "NcHttpClient: Doing auth, so pre-auth didn't work!");
+                Log.Warn (Log.LOG_HTTP, "NcHttpClient({0}): Doing auth, so pre-auth didn't work!", task.TaskDescription);
                 HandleCredentialsRequest (cred, challenge, completionHandler);
             } else {
                 if (ServicePointManager.ServerCertificateValidationCallback == null) {
-                    Log.Warn (Log.LOG_HTTP, "NcHttpClient: No ServerCertificateValidationCallback!");  // FIXME This is probably OK. Need to see.
+                    Log.Warn (Log.LOG_HTTP, "NcHttpClient({0}): No ServerCertificateValidationCallback!", task.TaskDescription);  // FIXME This is probably OK. Need to see.
                     completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
                 } else {
                     CertValidation (task.OriginalRequest.Url, challenge, completionHandler);

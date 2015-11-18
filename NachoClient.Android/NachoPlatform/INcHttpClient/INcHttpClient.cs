@@ -26,8 +26,6 @@ namespace NachoPlatform
     {
         public NcHttpHeaders Headers { get; protected set; }
 
-        public Stream Content { get; protected set; }
-
         public long? ContentLength { get; protected set; }
 
         public string ContentType { get; protected set; }
@@ -36,7 +34,11 @@ namespace NachoPlatform
 
         public HttpMethod Method { get; protected set; }
 
-        McCred _Cred;
+        protected FileStream ContentStream { get; set; }
+
+        protected byte[] ContentData { get; set; }
+
+        protected McCred _Cred;
 
         public McCred Cred { 
             get { return _Cred; }
@@ -48,11 +50,14 @@ namespace NachoPlatform
             }
         }
 
+        public string guid { get; protected set; }
+
         public NcHttpRequest (HttpMethod method, Uri uri)
         {
             RequestUri = uri;
             Method = method;
             Headers = new NcHttpHeaders ();
+            guid = Guid.NewGuid ().ToString ();
         }
 
         public NcHttpRequest (HttpMethod method, string url) : this (method, new Uri (url))
@@ -68,16 +73,51 @@ namespace NachoPlatform
             Cred = cred;
         }
 
-        public void SetContent (Stream stream, string contentType)
+        public object Content {
+            get {
+                if (ContentStream != null && ContentStream.Length > 0) {
+                    return ContentStream;
+                }
+                if (ContentData != null && ContentData.Length > 0) {
+                    return ContentData;
+                }
+                return null;
+            }
+        }
+
+        public bool HasContent ()
+        {
+            return (ContentStream != null && ContentStream.Length > 0) || (ContentData != null && ContentData.Length > 0);
+        }
+
+        public void SetContent (FileStream stream, string contentType)
         {
             SetContent (stream, null, contentType);
         }
 
-        public void SetContent (Stream stream, long? contentLength, string contentType)
+        public void SetContent (FileStream stream, long? contentLength, string contentType)
         {
-            Content = stream;
+            ContentStream = stream;
             ContentType = contentType;
             ContentLength = contentLength;
+        }
+
+        public void SetContent (byte[] data, string contentType)
+        {
+            SetContent (data, data.Length, contentType);
+        }
+
+        public void SetContent (byte[] data, long? contentLength, string contentType)
+        {
+            ContentData = data;
+            ContentLength = contentLength;
+            ContentType = contentType;
+        }
+
+        public override string ToString ()
+        {
+            // TODO Remove this method or add redaction to the URL
+            return string.Format ("[NcHttpRequest({0}): {1}:{2} ContentLength={3}, ContentType={4}, Headers={5}]", guid, Method, RequestUri, ContentLength, ContentType, Headers);
         }
     }
 
@@ -123,7 +163,7 @@ namespace NachoPlatform
     /// <summary>
     /// Progress delegate. Note that the totalBytesExpected is frequently wrong. -1 means 'unknown'.
     /// </summary>
-    public delegate void ProgressDelegate (bool isRequest, long bytes, long totalBytes, long totalBytesExpected);
+    public delegate void ProgressDelegate (bool isRequest, string taskDescription, long bytes, long totalBytes, long totalBytesExpected);
     /// <summary>
     /// Success delete. Called when the request (and response) are done.
     /// </summary>

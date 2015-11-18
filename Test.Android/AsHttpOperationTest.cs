@@ -96,7 +96,7 @@ namespace Test.iOS
             return true;
         }
 
-        public virtual bool SafeToMime (AsHttpOperation sender, out Stream mime)
+        public virtual bool SafeToMime (AsHttpOperation sender, out FileStream mime)
         {
             mime = null;
             return true;
