@@ -127,11 +127,6 @@ namespace Test.iOS
             return false;
         }
 
-        public virtual bool IsContentLarge (AsHttpOperation Sender)
-        {
-            return false;
-        }
-
         public virtual bool DoSendPolicyKey (AsHttpOperation sender)
         {
             return true;

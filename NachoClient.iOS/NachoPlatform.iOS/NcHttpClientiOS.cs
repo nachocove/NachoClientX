@@ -27,10 +27,9 @@ namespace NachoPlatform
         {
         }
 
-        protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NSUrlSessionDelegate dele, CancellationToken cancellationToken)
+        protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NcDownloadTaskDelegate dele, CancellationToken cancellationToken)
         {
             // Mostly lifted from ModernHttpClientiOS NativeMessageHandler
-            NSInputStream RequestBodyStream = null;
             NSData RequestBody = null;
             if (request.Content != null) {
                 if (isSend) {
@@ -48,10 +47,7 @@ namespace NachoPlatform
                 }
                 if (request.Content is FileStream) {
                     var fileStream = request.Content as FileStream;
-                    RequestBodyStream = NSInputStream.FromFile (fileStream.Name);
-                    if (!request.Headers.Contains ("Content-Length")) {
-                        request.Headers.Add ("Content-Length", fileStream.Length.ToString ());
-                    }
+                    dele.FilePath = fileStream.Name;
                 } else if (request.Content is MemoryStream) {
                     var memStream = request.Content as MemoryStream;
                     RequestBody = NSData.FromStream (memStream);
@@ -83,8 +79,6 @@ namespace NachoPlatform
             };
             if (RequestBody != null) {
                 req.Body = RequestBody;
-            } else if (RequestBodyStream != null) {
-                req.BodyStream = RequestBodyStream;
             }
 
             var config = NSUrlSessionConfiguration.DefaultSessionConfiguration;
@@ -93,9 +87,13 @@ namespace NachoPlatform
             config.URLCache = new NSUrlCache (0, 0, "HttpClientCache");
 
             var session = NSUrlSession.FromConfiguration (config, dele, null);
+            Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task for {0}", req.Url);
             var task = session.CreateDownloadTask (req);
             cancellationToken.Register (() => {
-                task.Cancel ();
+                // make sure don't run on the UI thread.
+                NcTask.Run(() => {
+                    task.Cancel ();
+                }, "NcHttpClient.iOS.Cancel");
             });
             task.Resume ();
         }
@@ -135,7 +133,7 @@ namespace NachoPlatform
 
         #region NcDownloadTaskDelegate
 
-        class NcDownloadTaskDelegate : NSUrlSessionDownloadDelegate
+        protected class NcDownloadTaskDelegate : NSUrlSessionDownloadDelegate
         {
             protected SuccessDelegate SuccessAction;
 
@@ -150,6 +148,8 @@ namespace NachoPlatform
             McCred Cred { get; set; }
 
             NcHttpClient Owner { get; set; }
+
+            public string FilePath { get; set; }
 
             public NcDownloadTaskDelegate (NcHttpClient owner, McCred cred, CancellationToken cancellationToken, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress = null)
             {
@@ -178,7 +178,7 @@ namespace NachoPlatform
                             var response = new NcHttpResponse ((HttpStatusCode)status, fileStream, resp.MimeType, FromNsHeaders (resp.AllHeaderFields));
                             SuccessAction (response, Token);
                         } catch (Exception ex) {
-                            Log.Error (Log.LOG_HTTP, "Error running SuccessAction: {0}", ex);
+                            Log.Error (Log.LOG_HTTP, "NcHttpClient: Error running SuccessAction: {0}", ex);
                         }
                     }
                 }
@@ -186,51 +186,103 @@ namespace NachoPlatform
 
             public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error)
             {
-                long sent = task.BytesSent;
-                long received = task.BytesReceived;
-                Log.Debug (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2}){3}", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
-                    error != null ? string.Format(" (Error: {0})", error) : "");
+                try {
+                    long sent = task.BytesSent;
+                    long received = task.BytesReceived;
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2}){3}", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
+                        error != null ? string.Format(" (Error: {0})", error) : "");
 
-                if (Token.IsCancellationRequested) {
-                    return;
-                }
-                if (null != error && null != ErrorAction) {
-                    ErrorAction (createExceptionForNSError (error));
+                    if (Token.IsCancellationRequested) {
+                        return;
+                    }
+                    if (null != error && null != ErrorAction) {
+                        ErrorAction (createExceptionForNSError (error));
+                    }
+                    session.FinishTasksAndInvalidate ();
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient: DidCompleteWithError exception {0}", ex);
                 }
             }
 
             public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
             {
-                if (Token.IsCancellationRequested) {
-                    return;
-                }
-                if (null != ProgressAction) {
-                    ProgressAction (true, bytesSent, totalBytesSent, totalBytesExpectedToSend);
+                try {
+                    if (Token.IsCancellationRequested) {
+                        return;
+                    }
+                    if (null != ProgressAction) {
+                        ProgressAction (true, bytesSent, totalBytesSent, totalBytesExpectedToSend);
+                    }
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient: DidSendBodyData exception {0}", ex);
                 }
             }
 
             public override void DidWriteData (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long bytesWritten, long totalBytesWritten, long totalBytesExpectedToWrite)
             {
-                if (Token.IsCancellationRequested) {
-                    return;
-                }
-                if (null != ProgressAction) {
-                    ProgressAction (false, bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+                try {
+                    if (Token.IsCancellationRequested) {
+                        return;
+                    }
+                    if (null != ProgressAction) {
+                        ProgressAction (false, bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+                    }
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient: DidWriteData exception {0}", ex);
                 }
             }
 
             public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
             {
-                if (Owner.AllowAutoRedirect) {
-                    completionHandler (newRequest);
-                } else {
-                    completionHandler (null);
+                Log.Info (Log.LOG_HTTP, "NcHttpClient: WillPerformHttpRedirection");
+                try {
+                    if (Owner.AllowAutoRedirect) {
+                        completionHandler (newRequest);
+                    } else {
+                        completionHandler (null);
+                    }
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient: WillPerformHttpRedirection exception {0}", ex);
                 }
             }
 
             public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
             {
-                BaseDidReceiveChallenge (Cred, session, task, challenge, completionHandler);
+                try {
+                    BaseDidReceiveChallenge (Cred, session, task, challenge, completionHandler);
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient: DidReceiveChallenge exception {0}", ex);
+                }
+            }
+
+            public override void DidBecomeInvalid (NSUrlSession session, NSError error)
+            {
+                Log.Info (Log.LOG_HTTP, "NcHttpClient: DidBecomeInvalid");
+            }
+
+            public override void DidFinishEventsForBackgroundSession (NSUrlSession session)
+            {
+                Log.Info (Log.LOG_HTTP, "NcHttpClient: DidFinishEventsForBackgroundSession");
+            }
+
+            protected override void Dispose (bool disposing)
+            {
+                base.Dispose (disposing);
+                Log.Info (Log.LOG_HTTP, "NcHttpClient: Dispose");
+            }
+
+            public override void DidResume (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long resumeFileOffset, long expectedTotalBytes)
+            {
+                Log.Info (Log.LOG_HTTP, "NcHttpClient: DidResume");
+            }
+
+            public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
+            {
+                if (!string.IsNullOrEmpty (FilePath)) {
+                    completionHandler (new NSInputStream (FilePath));
+                } else {
+                    throw new Exception ("Can not satisfy NeedNewBodyStream. No FilePath");
+                }
             }
         }
 

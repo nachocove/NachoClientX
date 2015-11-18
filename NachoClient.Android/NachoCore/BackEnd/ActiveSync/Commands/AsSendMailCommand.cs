@@ -102,11 +102,6 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.HardFail, "SMHARD0", null, 
                 string.Format ("Server sent non-empty response to SendMail w/unrecognized TL Status: {0}", doc.ToString ()));
         }
-
-        public override bool IsContentLarge (AsHttpOperation Sender)
-        {
-            return true;
-        }
     }
 }
 

@@ -31,7 +31,6 @@ namespace NachoCore.ActiveSync
         HttpMethod Method (AsHttpOperation Sender);
         bool UseWbxml (AsHttpOperation Sender);
         bool IgnoreBody (AsHttpOperation Sender);
-        bool IsContentLarge (AsHttpOperation Sender);
         bool DoSendPolicyKey (AsHttpOperation Sender);
         // TODO: is this really a good idea?
         void StatusInd (bool didSucceed);
