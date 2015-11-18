@@ -58,28 +58,24 @@ namespace NachoClient.AndroidClient
 
         public void SetContact (McContact contact)
         {
-            if (contact.PortraitId == 0) {
-                InitialsView.SetBackgroundResource(GetContactColor (contact));
-                InitialsView.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
+            var initials = NachoCore.Utils.ContactsHelper.GetInitials (contact);
+            var color = GetContactColor (contact);
+            SetPortraitId (contact.PortraitId, initials, color);
+        }
+
+        public void SetPortraitId (int portraitId, string initials, int colorResource)
+        {
+            if (portraitId == 0) {
+                InitialsView.SetBackgroundResource(colorResource);
+                InitialsView.Text = initials;
                 InitialsView.Visibility = ViewStates.Visible;
                 PhotoView.Visibility = ViewStates.Gone;
             } else {
-                var image = ContactToPortraitImage (contact);
+                var image = PortraitToImage (portraitId);
                 PhotoView.SetImageBitmap (image);
                 PhotoView.Visibility = ViewStates.Visible;
                 InitialsView.Visibility = ViewStates.Gone;
             }
-        }
-
-        public static Bitmap ContactToPortraitImage (McContact contact)
-        {
-            if (null == contact) {
-                return null;
-            }
-            if (0 == contact.PortraitId) {
-                return null;
-            }
-            return PortraitToImage (contact.PortraitId);
         }
 
         public static Bitmap PortraitToImage (int portraitId)
