@@ -20,6 +20,9 @@ namespace NachoClient.AndroidClient
 {
     public class GoogleSignInFragment : Fragment
     {
+        private const string ACCOUNT_ID_KEY = "accountId";
+        private const string SERVICE_KEY = "service";
+
         McAccount Account;
         McAccount.AccountServiceEnum Service;
 
@@ -36,6 +39,13 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            if (null != savedInstanceState) {
+                int accountId = savedInstanceState.GetInt (ACCOUNT_ID_KEY, 0);
+                if (0 != accountId) {
+                    Account = McAccount.QueryById<McAccount> (accountId);
+                }
+                Service = (McAccount.AccountServiceEnum)savedInstanceState.GetInt (SERVICE_KEY, (int)McAccount.AccountServiceEnum.None);
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -60,10 +70,13 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public override void OnResume ()
+        public override void OnSaveInstanceState (Bundle outState)
         {
-            base.OnResume ();
-
+            base.OnSaveInstanceState (outState);
+            if (null != Account) {
+                outState.PutInt (ACCOUNT_ID_KEY, Account.Id);
+            }
+            outState.PutInt (SERVICE_KEY, (int)Service);
         }
 
         void RestartAuthenticator ()
