@@ -496,6 +496,30 @@ namespace NachoClient.AndroidClient
                     cal.SetDescription (descriptionField.Text, McBody.BodyTypeEnum.PlainText_1);
                 }
 
+                // The app does not keep track of the account owner's name. Use the e-mail address instead.
+                cal.OrganizerName = account.EmailAddr;
+                cal.OrganizerEmail = account.EmailAddr;
+                cal.MeetingStatusIsSet = true;
+                cal.ResponseRequestedIsSet = true;
+                if (0 == cal.attendees.Count) {
+                    cal.MeetingStatus = NcMeetingStatus.Appointment;
+                    cal.ResponseRequested = false;
+                } else {
+                    cal.MeetingStatus = NcMeetingStatus.MeetingOrganizer;
+                    cal.ResponseRequested = true;
+                }
+
+                // There is no UI for setting the BusyStatus.  For new events, set it to Free for
+                // all-day events and Busy for other events.  If the app doesn't explicitly set
+                // BusyStatus, some servers will treat it as if it were Free, while others will act
+                // as if it were Busy.
+                if (!cal.BusyStatusIsSet) {
+                    cal.BusyStatus = cal.AllDayEvent ? NcBusyStatus.Free : NcBusyStatus.Busy;
+                    cal.BusyStatusIsSet = true;
+                }
+
+                cal.DtStamp = DateTime.UtcNow;
+
                 if (Intent.ActionCreateDocument == Intent.Action) {
                     cal.Insert ();
                     calendarFolder.Link (cal);
