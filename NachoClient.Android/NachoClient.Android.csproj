@@ -607,6 +607,7 @@
     <Compile Include="NachoUI.Android\Activities\AboutViewerFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
+    <Compile Include="NachoPlatform.Android\RtfConverterAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -772,6 +773,10 @@
     <ProjectReference Include="..\..\TokenAutoCompleteBinding\TokenAutoCompleteBinding\TokenAutoCompleteBinding.csproj">
       <Project>{17E3A80E-B371-4138-AB0F-7176BF026EAF}</Project>
       <Name>TokenAutoCompleteBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\rtfparserkit\rtfparserkit\rtfparserkit.csproj">
+      <Project>{6396290E-A074-4D52-842E-27FABF7A0865}</Project>
+      <Name>rtfparserkit</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
