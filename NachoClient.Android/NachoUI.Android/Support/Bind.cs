@@ -36,7 +36,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static void BindMessageHeader (McEmailMessageThread thread, McEmailMessage message, View view)
+        public static void BindMessageHeader (McEmailMessageThread thread, McEmailMessage message, View view, bool isDraft = false)
         {
             var isUnreadView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.message_read);
             isUnreadView.Visibility = ViewStates.Invisible;
@@ -66,19 +66,38 @@ namespace NachoClient.AndroidClient
 
             SetVisibility (ViewStates.Visible, userImageView, senderView, subjectView, dateView, chiliView);
 
-            if (!message.IsRead) {
+            if (!message.IsRead  && !isDraft) {
                 isUnreadView.Visibility = ViewStates.Visible;
             }
 
-            userImageView.Text = message.cachedFromLetters;
-            userImageView.SetBackgroundResource (ColorForUser (message.cachedFromColor));
+            if (isDraft) {
+                userImageView.Visibility = ViewStates.Invisible;
+            } else {
+                userImageView.Visibility = ViewStates.Visible;
+                userImageView.Text = message.cachedFromLetters;
+                userImageView.SetBackgroundResource (ColorForUser (message.cachedFromColor));
+            }
 
-            BindMessageChili (thread, message, chiliView);
+            if (isDraft) {
+                chiliView.Visibility = ViewStates.Invisible;
+            } else {
+                chiliView.Visibility = ViewStates.Visible;
+                BindMessageChili (thread, message, chiliView);
+            }
 
-            senderView.Text = Pretty.SenderString (message.From);
+            if (isDraft) {
+                senderView.Text = Pretty.RecipientString(message.To);
+            } else {
+                senderView.Text = Pretty.SenderString (message.From);
+            }
             senderView.Visibility = ViewStates.Visible;
 
-            subjectView.Text = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
+            var subjectString = message.Subject;
+            if (isDraft && String.IsNullOrEmpty (subjectString)) {
+                subjectString = Pretty.NoSubjectString ();
+            }
+
+            subjectView.Text = EmailHelper.CreateSubjectWithIntent (subjectString, message.Intent, message.IntentDateType, message.IntentDate);
             subjectView.Visibility = ViewStates.Visible;
 
             dateView.Text = Pretty.MediumFullDateTime (message.DateReceived);
