@@ -13,8 +13,8 @@ namespace NachoCore.Utils
     public class NcTask
     {
         public const int MaxCancellationTestInterval = 100;
-        private static ConcurrentDictionary<WeakReference,string> TaskMap;
-        private static ConcurrentDictionary<string,string> UniqueList;
+        private static ConcurrentDictionary<WeakReference,string> TaskMap = new ConcurrentDictionary<WeakReference, string> ();
+        private static ConcurrentDictionary<string,string> UniqueList = new ConcurrentDictionary<string, string> ();
         private static int TaskId = 0;
         public static CancellationTokenSource Cts = new CancellationTokenSource ();
 
@@ -26,12 +26,6 @@ namespace NachoCore.Utils
 
         public static void StartService ()
         {
-            if (null == TaskMap) {
-                TaskMap = new ConcurrentDictionary<WeakReference, string> ();
-            }
-            if (null == UniqueList) {
-                UniqueList = new ConcurrentDictionary<string, string> ();
-            }
             Dump (true);
             Cts = new CancellationTokenSource ();
         }
@@ -212,9 +206,6 @@ namespace NachoCore.Utils
 
         public static void Dump (bool warnLivedTasks = false)
         {
-            if (null == TaskMap) {
-                return;
-            }
             foreach (var pair in TaskMap) {
                 try {
                     var taskName = pair.Value;
