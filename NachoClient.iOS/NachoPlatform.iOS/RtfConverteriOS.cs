@@ -5,7 +5,7 @@ using NachoCore.Utils;
 using NachoPlatform;
 using Foundation;
 
-namespace NachoClient.iOS
+namespace NachoPlatform
 {
     public class RtfConverter : IPlatformRtfConverter
     {
