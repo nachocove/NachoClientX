@@ -161,7 +161,6 @@
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\Icon.png" />
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
     <ProjectReference Include="..\NachoClient.Android\NachoClient.Android.csproj">
       <Project>{D1408661-612A-4362-B534-5BF16C7A8BE0}</Project>
@@ -215,6 +214,10 @@
       <Project>{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}</Project>
       <Name>ModernHttpClient.Android</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\rtfparserkitBinding\rtfparserkitBinding\rtfparserkitBinding.csproj">
+      <Project>{40A75D1C-1C71-41F5-9B84-A3884CD1EE81}</Project>
+      <Name>rtfparserkitBinding</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\xsd\" />
@@ -264,4 +267,5 @@
   <ItemGroup>
     <Content Include="Resources\utopiasystems.cer" />
   </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
 </Project>
