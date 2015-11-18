@@ -41,7 +41,7 @@ namespace NachoClient.AndroidClient
             var isUnreadView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.message_read);
             isUnreadView.Visibility = ViewStates.Invisible;
 
-            var userImageView = view.FindViewById<Android.Widget.TextView> (Resource.Id.user_image);
+            var userImageView = view.FindViewById<ContactPhotoView> (Resource.Id.user_image);
             userImageView.Visibility = ViewStates.Invisible;
 
             var senderView = view.FindViewById<Android.Widget.TextView> (Resource.Id.sender);
@@ -74,8 +74,9 @@ namespace NachoClient.AndroidClient
                 userImageView.Visibility = ViewStates.Invisible;
             } else {
                 userImageView.Visibility = ViewStates.Visible;
-                userImageView.Text = message.cachedFromLetters;
-                userImageView.SetBackgroundResource (ColorForUser (message.cachedFromColor));
+                var initials = message.cachedFromLetters;
+                var color = ColorForUser (message.cachedFromColor);
+                userImageView.SetPortraitId (message.cachedPortraitId, initials, color);
             }
 
             if (isDraft) {
@@ -176,9 +177,8 @@ namespace NachoClient.AndroidClient
             subtitle2Label.Text = displaySubtitle2;
             subtitle2Label.SetTextColor (displaySubtitle2Color);
 
-            var userInitials = view.FindViewById<Android.Widget.TextView> (Resource.Id.user_initials);
-            userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
-            userInitials.SetBackgroundResource (Bind.ColorForUser (contact.CircleColor));
+            var userPhotoView = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
+            userPhotoView.SetContact (contact);
 
             var vipView = view.FindViewById<ImageView> (Resource.Id.vip);
             BindContactVip (contact, vipView);
