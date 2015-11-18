@@ -25,7 +25,7 @@ namespace NachoPlatform
 
         long defaultTimeoutSecs = 30;
 
-        public NcHttpClient ()
+        private NcHttpClient ()
         {
             _client = new OkHttpClient ();
             _client.SetHostnameVerifier (new HostnameVerifier ());
@@ -36,6 +36,21 @@ namespace NachoPlatform
             _client.SetReadTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
             _client.FollowRedirects = AllowAutoRedirect;
             _client.SetFollowSslRedirects (AllowAutoRedirect);
+        }
+
+        private static object LockObj = new object ();
+        static NcHttpClient _Instance { get; set; }
+        public static NcHttpClient Instance {
+            get {
+                if (_Instance == null) {
+                    lock (LockObj) {
+                        if (_Instance == null) {
+                            _Instance = new NcHttpClient ();
+                        }
+                    }
+                }
+                return _Instance;
+            }
         }
 
         #region INcHttpClient implementation
@@ -110,6 +125,9 @@ namespace NachoPlatform
             }
 
             if (null != request.Cred) {
+                if (!request.RequestUri.IsHttps ()) {
+                    Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace().ToString ());
+                }
                 var basicAuth = OkHttp.Credentials.Basic (request.Cred.Username, request.Cred.GetPassword ());
                 cloned.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth));
                 if (PreAuthenticate) {

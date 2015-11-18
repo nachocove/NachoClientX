@@ -22,8 +22,23 @@ namespace NachoPlatform
 
         public readonly bool PreAuthenticate = true;
 
-        public NcHttpClient ()
+        private NcHttpClient ()
         {
+        }
+
+        private static object LockObj = new object ();
+        static NcHttpClient _Instance { get; set; }
+        public static NcHttpClient Instance {
+            get {
+                if (_Instance == null) {
+                    lock (LockObj) {
+                        if (_Instance == null) {
+                            _Instance = new NcHttpClient ();
+                        }
+                    }
+                }
+                return _Instance;
+            }
         }
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NcDownloadTaskDelegate dele, CancellationToken cancellationToken)
@@ -51,7 +66,13 @@ namespace NachoPlatform
                 }
             }
 
+            if (null != request.Cred && !request.RequestUri.IsHttps ()) {
+                Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace().ToString ());
+            }
+                
             if (PreAuthenticate && null != request.Cred) {
+                // In the !PreAuthenticate case, the Creds have alredy been added to the NcDownloadTaskDelegate by the caller,
+                // so there's nothing else to do here.
                 var basicAuth = Convert.ToBase64String (Encoding.ASCII.GetBytes (string.Format ("{0}:{1}", request.Cred.Username, request.Cred.GetPassword ())));
                 request.Headers.Add ("Authorization", string.Format ("{0} {1}", "Basic", basicAuth));
             }

@@ -111,8 +111,6 @@ namespace NachoCore.ActiveSync
 
         public bool DontReportCommResult { set; get; }
 
-        NcHttpClient HttpClient { get; set; }
-
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
             NcCapture.AddKind (KLoadBytes);
@@ -126,7 +124,6 @@ namespace NachoCore.ActiveSync
             Allow451Follow = true;
             CommandName = commandName;
             Owner = owner;
-            HttpClient = new NcHttpClient ();
 
             HttpOpSm = new NcStateMachine ("HTTPOP") {
                 Name = "as:http_op",
@@ -418,7 +415,7 @@ namespace NachoCore.ActiveSync
             ServicePointManager.FindServicePoint (request.RequestUri).ConnectionLimit = 25;
             Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
             sw.Start ();
-            HttpClient.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, AttemptHttpProgress, cToken);
+            NcHttpClient.Instance.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, AttemptHttpProgress, cToken);
         }
         PlatformStopwatch sw = new PlatformStopwatch ();
 
