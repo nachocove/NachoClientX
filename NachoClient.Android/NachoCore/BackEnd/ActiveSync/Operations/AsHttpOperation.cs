@@ -352,7 +352,7 @@ namespace NachoCore.ActiveSync
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
-                    var stream = doc.ToWbxmlStream (AccountId, true, cToken);
+                    var stream = doc.ToWbxmlStream (AccountId, false, cToken);
                     capture.Stop ();
                     request.SetContent (stream, ContentTypeWbxml);
                 } else {

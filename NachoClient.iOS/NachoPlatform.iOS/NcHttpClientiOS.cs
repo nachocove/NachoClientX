@@ -30,6 +30,7 @@ namespace NachoPlatform
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NcDownloadTaskDelegate dele, CancellationToken cancellationToken)
         {
             // Mostly lifted from ModernHttpClientiOS NativeMessageHandler
+            NSInputStream RequestBodyStream = null;
             NSData RequestBody = null;
             if (request.Content != null) {
                 if (isSend) {
@@ -47,6 +48,10 @@ namespace NachoPlatform
                 }
                 if (request.Content is FileStream) {
                     var fileStream = request.Content as FileStream;
+                    RequestBodyStream = NSInputStream.FromFile (fileStream.Name);
+                    if (!request.Headers.Contains ("Content-Length")) {
+                        request.Headers.Add ("Content-Length", fileStream.Length.ToString ());
+                    }
                     dele.FilePath = fileStream.Name;
                 } else if (request.Content is MemoryStream) {
                     var memStream = request.Content as MemoryStream;
@@ -79,6 +84,8 @@ namespace NachoPlatform
             };
             if (RequestBody != null) {
                 req.Body = RequestBody;
+            } else if (RequestBodyStream != null) {
+                req.BodyStream = RequestBodyStream;
             }
 
             var config = NSUrlSessionConfiguration.DefaultSessionConfiguration;
