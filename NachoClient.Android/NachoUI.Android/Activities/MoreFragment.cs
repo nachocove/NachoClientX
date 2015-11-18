@@ -103,7 +103,7 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
-        static public List<Type> moreTabActivities = new List<Type>() {
+        static public List<Type> moreTabActivities = new List<Type> () {
             typeof(AboutActivity),
             typeof(DeadlineActivity),
             typeof(DeferredActivity),
