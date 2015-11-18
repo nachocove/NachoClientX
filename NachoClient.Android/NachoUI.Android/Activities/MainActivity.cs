@@ -283,6 +283,9 @@ namespace NachoClient.AndroidClient
 
         private void SetupHockeyAppCrashManager ()
         {
+            if (BuildInfoHelper.IsDev) {
+                return;
+            }
             var myListener = new MyCustomCrashManagerListener ();
             // Register the crash manager before Initializing the trace writer
             HockeyApp.CrashManager.Register (this, BuildInfo.HockeyAppAppId, myListener); 
@@ -330,6 +333,9 @@ namespace NachoClient.AndroidClient
 
         private void SetupHockeyAppUpdateManager ()
         {
+            if (BuildInfoHelper.IsDev) {
+                return;
+            }
             //Register to with the Update Manager
             HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener(), true);
         }
