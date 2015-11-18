@@ -105,6 +105,14 @@ namespace NachoClient.AndroidClient
             return intent;
         }
 
+        public static Intent DraftIntent (Context context, McEmailMessage message)
+        {
+            var intent = new Intent (context, typeof(MessageComposeActivity));
+            intent.SetAction (Intent.ActionSend);
+            intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
+            return intent;
+        }
+
         public override void OnBackPressed ()
         {
             var alert = new Android.App.AlertDialog.Builder (this).SetTitle ("Would you like to save this message?").SetMessage ("You can access saved messages from your Drafts folder.");
