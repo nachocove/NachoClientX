@@ -54,6 +54,8 @@ namespace NachoPlatform
                     }
                     dele.FilePath = fileStream.Name;
                 } else if (request.Content is MemoryStream) {
+                    System.Diagnostics.StackTrace t = new System.Diagnostics.StackTrace();
+                    Log.Warn (Log.LOG_HTTP, "NcHttpClient: Someone is using a memorystream!\n{0}", t.ToString ());
                     var memStream = request.Content as MemoryStream;
                     RequestBody = NSData.FromStream (memStream);
                     if (!request.Headers.Contains ("Content-Length")) {
