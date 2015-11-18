@@ -137,10 +137,14 @@ namespace NachoClient.AndroidClient
             );
 
             listView.setOnMenuItemClickListener (( position, menu, index) => {
+                string alternateEmailAddress;
+                var contact = contactsListAdapter.GetContact (position, out alternateEmailAddress);
                 switch (index) {
                 case CALL_TAG:
+                    Util.CallNumber (Activity, contact, null);
                     break;
                 case EMAIL_TAG:
+                    Util.SendEmail (Activity, contact, alternateEmailAddress);
                     break;
                 default:
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
@@ -474,7 +478,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        McContact GetContact (int position, out string alternateEmailAddress)
+        public McContact GetContact (int position, out string alternateEmailAddress)
         {
             if (searching) {
                 var contactEmailAttribute = searchResults [position];

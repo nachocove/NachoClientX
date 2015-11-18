@@ -42,7 +42,6 @@ namespace NachoClient.AndroidClient
             base.OnCreate (bundle);
 
             SetupHockeyAppUpdateManager ();
-            CopyAssetsToDocuments ();
 
             MainApplication.OneTimeStartup ();
 
@@ -340,21 +339,6 @@ namespace NachoClient.AndroidClient
             HockeyApp.UpdateManager.Unregister ();
         }
         #endregion
-
-        void CopyAssetsToDocuments ()
-        {
-            var documentsPath = System.Environment.GetFolderPath (System.Environment.SpecialFolder.MyDocuments);
-            string[] assets = { "nacho.html", "nacho.css", "nacho.js" };
-            foreach (var assetName in assets) {
-                var destinationPath = Path.Combine (documentsPath, assetName);
-                // TODO: only copy if newer...how to check the modified time of an asset (don't think it's possible)
-                using (var assetStream = Assets.Open (assetName)) {
-                    using (var destinationStream = new FileStream (destinationPath, FileMode.Create)) {
-                        assetStream.CopyTo (destinationStream);
-                    }
-                }
-            }
-        }
     }
 }
 

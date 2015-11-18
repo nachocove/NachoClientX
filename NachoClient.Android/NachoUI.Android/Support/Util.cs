@@ -4,6 +4,7 @@ using System;
 using NachoCore.Model;
 using Android.Widget;
 using NachoCore;
+using Android.Content;
 
 namespace NachoClient.AndroidClient
 {
@@ -83,14 +84,59 @@ namespace NachoClient.AndroidClient
                 return Resource.Drawable.UserColor0;
             }
         }
+
+        public static void SendEmail (Context context, McContact contact, string alternateEmailAddress)
+        {
+            if (null != alternateEmailAddress) {
+                var intent = MessageComposeActivity.NewMessageIntent (context, alternateEmailAddress);
+                context.StartActivity (intent);
+                return;
+            }
+            if (0 == contact.EmailAddresses.Count) {
+                NcAlertView.ShowMessage (context, "Cannot Send Message", "This contact does not have an email address.");
+                return;
+            }
+            var emailAddress = contact.GetDefaultOrSingleEmailAddress ();
+            if (null == emailAddress) {
+                NcAlertView.ShowMessage (context, "Contact has multiple addresses", "Please send an email address to use.");
+                return;
+            }
+            context.StartActivity (MessageComposeActivity.NewMessageIntent (context, emailAddress));
+        }
+
+        public static void CallNumber(Context context, McContact contact, string alternatePhoneNumber)
+        {
+            try {
+                if (null != alternatePhoneNumber) {
+                    var number = Android.Net.Uri.Parse (String.Format ("tel:{0}", alternatePhoneNumber));
+                    context.StartActivity (new Intent (Intent.ActionDial, number));
+                    return;
+                }
+                if (0 == contact.PhoneNumbers.Count) {
+                    NcAlertView.ShowMessage (context, "Cannot Call Contact", "This contact does not have a phone number.");
+                    return;
+                }
+                var phoneNumber = contact.GetDefaultOrSinglePhoneNumber ();
+                if (null == phoneNumber) {
+                    NcAlertView.ShowMessage (context, "Contact has multiple numbers", "Please select a number to call.");
+                    return;
+                }
+                var phoneUri = Android.Net.Uri.Parse (String.Format ("tel:{0}", phoneNumber));
+                context.StartActivity (new Intent (Intent.ActionDial, phoneUri));
+            } catch (ActivityNotFoundException) {
+                NcAlertView.ShowMessage (context, "Cannot Call", "This device does not support making phone calls.");
+            }
+        }
     }
+
 
     /// <summary>
     /// Use JavaObjectWrapper to store an object with a C# type in a place that
     /// only accepts Java objects derived from Java.Lang.Object.  For example,
     /// this class can be used with View.SetTag() and View.GetTag().
     /// </summary>
-    public class JavaObjectWrapper<T> : Java.Lang.Object {
+    public class JavaObjectWrapper<T> : Java.Lang.Object
+    {
         public T Item { get; set; }
     }
 }

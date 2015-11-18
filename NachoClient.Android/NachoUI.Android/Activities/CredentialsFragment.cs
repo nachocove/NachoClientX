@@ -56,6 +56,11 @@ namespace NachoClient.AndroidClient
     public class CredentialsFragment : NcFragment, ILoginEvents, AccountAdvancedFieldsViewControllerDelegate, CertAskDelegate
     {
         private const string CERT_ASK_DIALOG_TAG = "CertAskDialogFragment";
+        private const string ACCOUNT_ID_KEY = "accountId";
+        private const string SERVICE_KEY = "service";
+        private const string IS_SUBMITTING_KEY = "isSubmitting";
+        private const string IS_SHOWING_ADVANCED_KEY = "isShowingAdvanced";
+        private const string ACCEPT_CERT_KEY = "acceptCertOnNextReq";
 
         McAccount Account;
         McAccount.AccountServiceEnum service;
@@ -65,6 +70,8 @@ namespace NachoClient.AndroidClient
         private bool HideAdvancedButton = false;
         private bool AcceptCertOnNextReq = false;
         private bool LockEmailField = false;
+
+        private bool WasShowingAdvanced = false;
 
         AccountAdvancedFieldsViewController advancedFieldsViewController;
 
@@ -96,6 +103,14 @@ namespace NachoClient.AndroidClient
                 if (null != certAskFragment) {
                     certAskFragment.SetListener (this);
                 }
+                int accountId = savedInstanceState.GetInt (ACCOUNT_ID_KEY, 0);
+                if (0 != accountId) {
+                    Account = McAccount.QueryById<McAccount> (accountId);
+                }
+                service = (McAccount.AccountServiceEnum)savedInstanceState.GetInt (SERVICE_KEY, (int)McAccount.AccountServiceEnum.None);
+                IsSubmitting = savedInstanceState.GetBoolean (IS_SUBMITTING_KEY, false);
+                WasShowingAdvanced = savedInstanceState.GetBoolean (IS_SHOWING_ADVANCED_KEY, false);
+                AcceptCertOnNextReq = savedInstanceState.GetBoolean (ACCEPT_CERT_KEY, false);
             }
         }
 
@@ -165,6 +180,9 @@ namespace NachoClient.AndroidClient
                     ToggleAdvancedFields ();
                 }
             }
+            if (WasShowingAdvanced && !IsShowingAdvanced) {
+                ToggleAdvancedFields ();
+            }
             if (Account != null && Account.IsMdmBased == true) {
                 if (!String.IsNullOrEmpty (NcMdmConfig.Instance.EmailAddr)) {
                     LockEmailField = true;
@@ -172,12 +190,30 @@ namespace NachoClient.AndroidClient
                     emailField.Alpha = 0.6f;
                 }
             }
+
+            if (IsSubmitting) {
+                UpdateForSubmitting ();
+                StartReceivingLoginEvents ();
+                LoginEvents.CheckBackendState ();
+            }
                 
             emailField.KeyPress += EmailField_KeyPress; 
 
             passwordField.KeyPress += PasswordField_KeyPress;
 
             return view;
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            if (null != Account) {
+                outState.PutInt (ACCOUNT_ID_KEY, Account.Id);
+            }
+            outState.PutInt (SERVICE_KEY, (int)service);
+            outState.PutBoolean (IS_SUBMITTING_KEY, IsSubmitting);
+            outState.PutBoolean (IS_SHOWING_ADVANCED_KEY, IsShowingAdvanced);
+            outState.PutBoolean (ACCEPT_CERT_KEY, AcceptCertOnNextReq);
         }
 
         void EmailField_KeyPress (object sender, View.KeyEventArgs e)

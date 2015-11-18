@@ -94,8 +94,6 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
 
             if (Activity is NcTabBarActivity) {
@@ -674,8 +672,10 @@ namespace NachoClient.AndroidClient
         {
             ClearCache ();
             messages = newMessages;
-            messageListAdapter = new MessageListAdapter (this);
-            listView.Adapter = messageListAdapter;
+            if (null != listView) {
+                messageListAdapter = new MessageListAdapter (this);
+                listView.Adapter = messageListAdapter;
+            }
         }
 
         void RefreshVisibleMessageCells ()

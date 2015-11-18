@@ -91,15 +91,16 @@ namespace NachoClient.AndroidClient
 
         private bool SwipeMenu_Click (int position, SwipeMenu menu, int index)
         {
+            var attendee = adapter [position];
             switch (index) {
             case EMAIL_SWIPE_TAG:
-                var attendee = adapter [position];
-                var message = McEmailMessage.MessageWithSubject (McAccount.QueryById<McAccount> (accountId), "");
-                message.To = attendee.Email;
-                StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, message, ""));
+                StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity, attendee.Email));
                 break;
             case DIAL_SWIPE_TAG:
-                NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "Calling an attendee is not yet implemented. Please try again later.");
+                var contact = McContact.QueryByEmailAddress (accountId, attendee.Email).FirstOrDefault ();
+                if (null != contact) {
+                    Util.CallNumber (this.Activity, contact, null);
+                }
                 break;
             }
             return false;

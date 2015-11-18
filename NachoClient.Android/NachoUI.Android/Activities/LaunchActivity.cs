@@ -15,9 +15,11 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "LaunchActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]            
+    [Activity (Label = "LaunchActivity", WindowSoftInputMode = Android.Views.SoftInput.AdjustResize)]
     public class LaunchActivity : NcActivity, GettingStartedDelegate, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate
     {
+        private const string GETTING_STARTED_FRAGMENT_TAG = "GettingStarted";
+
         McAccount account;
 
         protected override void OnCreate (Bundle bundle)
@@ -28,8 +30,10 @@ namespace NachoClient.AndroidClient
 
             account = McAccount.GetAccountBeingConfigured ();
 
-            var gettingStartedFragment = GettingStartedFragment.newInstance (account);
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, gettingStartedFragment).Commit ();
+            if (null == bundle || null == FragmentManager.FindFragmentByTag<GettingStartedFragment> (GETTING_STARTED_FRAGMENT_TAG)) {
+                var gettingStartedFragment = GettingStartedFragment.newInstance (account);
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, gettingStartedFragment, GETTING_STARTED_FRAGMENT_TAG).Commit ();
+            }
         }
 
         protected override void OnResume ()
@@ -94,19 +98,12 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-            var f = FragmentManager.FindFragmentById (Resource.Id.content);
-            if (f is GettingStartedFragment) {
-                this.FragmentManager.PopBackStack (); // Let me go!
-            }
-            if (f is ChooseProviderFragment) {
-                this.FragmentManager.PopBackStack (); // Let me go!
-            }
-            if (f is CredentialsFragment) {
-                ((CredentialsFragment)f).OnBackPressed ();
-                this.FragmentManager.PopBackStack (); // Let me go!
-            }
-            if (f is GoogleSignInFragment) {
-                this.FragmentManager.PopBackStack (); // Let me go!
+            if (0 < FragmentManager.BackStackEntryCount) {
+                var topFragment = FragmentManager.FindFragmentById (Resource.Id.content);
+                if (topFragment is CredentialsFragment) {
+                    ((CredentialsFragment)topFragment).OnBackPressed ();
+                }
+                FragmentManager.PopBackStack ();
             }
         }
 

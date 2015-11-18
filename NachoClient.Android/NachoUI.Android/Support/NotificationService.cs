@@ -8,6 +8,8 @@ using NachoCore.Model;
 using System.Linq;
 using System.Collections.Generic;
 using Android.Content;
+using Android.Support.V7.App;
+using Android.Graphics;
 
 namespace NachoClient.AndroidClient
 {
@@ -47,8 +49,8 @@ namespace NachoClient.AndroidClient
             // QuickSync is done.  There isn't a need to call it when each account's sync
             // completes.
             if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind) {
-                if(!LifecycleSpy.SharedInstance.IsForeground()) {
-                    BadgeNotifUpdate();
+                if (!LifecycleSpy.SharedInstance.IsForeground ()) {
+                    BadgeNotifUpdate ();
                 }
             }
         }
@@ -142,15 +144,31 @@ namespace NachoClient.AndroidClient
                 subjectString += String.Format ("[{0:N1}s]", latency);
             }
 
-            var nMgr = (NotificationManager)GetSystemService (NotificationService);
-            var notification = new Android.App.Notification( Resource.Drawable.notification, fromString);
-            notification.Flags |= NotificationFlags.AutoCancel;
+            DateTime UnixEpoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var largeIcon = BitmapFactory.DecodeResource (Resources, Resource.Drawable.Icon);
+            largeIcon = Bitmap.CreateScaledBitmap (largeIcon, dp2px (32), dp2px (32), true);
+
+            var builder = new NotificationCompat.Builder (this);
+            builder.SetSmallIcon (Resource.Drawable.Loginscreen_2);
+            builder.SetLargeIcon (largeIcon);
+            builder.SetContentTitle (fromString);
+            builder.SetContentText (subjectString);
+            builder.SetWhen ((long)((message.DateReceived - UnixEpoch).TotalMilliseconds));
+            builder.SetAutoCancel (true);
+
             var intent = NcTabBarActivity.HotListIntent (this);
             var pendingIntent = PendingIntent.GetActivity (this, 0, intent, 0);
-            notification.SetLatestEventInfo (this, fromString, subjectString, pendingIntent);
-            nMgr.Notify (0, notification);
+            builder.SetContentIntent (pendingIntent);
+
+            var nMgr = (NotificationManager)GetSystemService (NotificationService);
+            nMgr.Notify (0, builder.Build ());
 
             return true;
+        }
+
+        private int dp2px (int dp)
+        {
+            return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
         }
 
     }

@@ -34,6 +34,7 @@ namespace NachoCore.Utils
         public McCalendar RelatedCalendarItem;
         public EmailHelper.Action Kind = EmailHelper.Action.Send;
         public List<McAttachment> InitialAttachments;
+        public string InitialRecipient;
         public string InitialText;
         public NcEmailMessageBundle Bundle {
             get {
@@ -181,6 +182,9 @@ namespace NachoCore.Utils
             }
             var mailbox = new MailboxAddress (Pretty.UserNameForAccount (Account), Account.EmailAddr);
             Message.From = mailbox.ToString ();
+            if(!String.IsNullOrEmpty(InitialRecipient)) {
+                Message.To = InitialRecipient;
+            }
             Message.Insert ();
             EmailHelper.SaveEmailMessageInDrafts (Message);
             var body = McBody.InsertFile (Account.Id, McAbstrFileDesc.BodyTypeEnum.None, "");
@@ -494,7 +498,7 @@ namespace NachoCore.Utils
                 }
             }
             Mime = EmailHelper.CreateMessage (Account, toList, ccList, bccList);
-            Mime.Subject = Message.Subject ?? "";
+            Mime.Subject = EmailHelper.CreateSubjectWithIntent (Message.Subject ?? "", Message.Intent, Message.IntentDateType, Message.IntentDate);
             var doc = new HtmlDocument ();
             doc.LoadHtml (html);
             var serializer = new HtmlTextSerializer (doc);
@@ -516,7 +520,7 @@ namespace NachoCore.Utils
                         attachmentPart.FileName = attachment.DisplayName;
                         attachmentPart.IsAttachment = true;
                         attachmentPart.ContentTransferEncoding = ContentEncoding.Base64;
-                        var reader = new BinaryReader (new FileStream (attachment.GetFilePath (), FileMode.Open));
+                        var reader = new BinaryReader (new FileStream (attachment.GetFilePath (), FileMode.Open, FileAccess.Read));
                         OpenReaders.Add (reader);
                         attachmentPart.ContentObject = new ContentObject (reader.BaseStream);
                         mixed.Add (attachmentPart);
@@ -578,6 +582,9 @@ namespace NachoCore.Utils
                     if (node.Name.Equals ("img")) {
                         if (node.Attributes.Contains ("nacho-image-attachment")){
                             node.Attributes.Remove ("nacho-image-attachment");
+                        }
+                        if (node.Attributes.Contains ("nacho-resize")){
+                            node.Attributes.Remove ("nacho-resize");
                         }
                         if (node.Attributes.Contains ("nacho-bundle-entry")) {
                             var entryName = node.Attributes ["nacho-bundle-entry"].Value;
@@ -658,7 +665,7 @@ namespace NachoCore.Utils
                     using (var stream = new FileStream (tmpFilePath, FileMode.Create)) {
                         part.ContentObject.DecodeTo (stream);
                     }
-                    var tmpStream = new FileStream (tmpFilePath, FileMode.Open);
+                    var tmpStream = new FileStream (tmpFilePath, FileMode.Open, FileAccess.Read);
                     var image = Delegate.ImageForMessageComposerAttachment (this, tmpStream);
                     tmpStream.Dispose ();
                     if (image != null) {
@@ -667,7 +674,7 @@ namespace NachoCore.Utils
                         jpg.CopyTo (tmpStream);
                         tmpStream.Dispose ();
                         jpg.Dispose ();
-                        tmpStream = new FileStream (tmpFilePath, FileMode.Open);
+                        tmpStream = new FileStream (tmpFilePath, FileMode.Open, FileAccess.Read);
                         openStreams.Add (tmpStream);
                         part.ContentType.MediaSubtype = "jpeg";
                         part.ContentObject = new ContentObject (tmpStream);
@@ -728,12 +735,6 @@ namespace NachoCore.Utils
 
         public void Send ()
         {
-            var subjectWithoutIntent = Message.Subject;
-            Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
-                var message = record as McEmailMessage;
-                message.Subject = EmailHelper.CreateSubjectWithIntent (subjectWithoutIntent, Message.Intent, Message.IntentDateType, Message.IntentDate);
-                return true;
-            });
             if (ImageLengths != null) {
                 ResizeImages ();
             }
