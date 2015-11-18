@@ -255,27 +255,6 @@ namespace NachoPlatform
                 }
             }
 
-            public override void DidBecomeInvalid (NSUrlSession session, NSError error)
-            {
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: DidBecomeInvalid");
-            }
-
-            public override void DidFinishEventsForBackgroundSession (NSUrlSession session)
-            {
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: DidFinishEventsForBackgroundSession");
-            }
-
-            protected override void Dispose (bool disposing)
-            {
-                base.Dispose (disposing);
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: Dispose");
-            }
-
-            public override void DidResume (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long resumeFileOffset, long expectedTotalBytes)
-            {
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: DidResume");
-            }
-
             public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
             {
                 if (!string.IsNullOrEmpty (FilePath)) {
