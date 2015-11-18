@@ -11,6 +11,7 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
@@ -69,15 +70,15 @@ namespace NachoClient.AndroidClient
 
         void DeadlineView_Click (object sender, EventArgs e)
         {
-            var intent = new Intent ();
-            intent.SetClass (this.Activity, typeof(DeadlineActivity));
+            var folder = McFolder.GetDeadlineFakeFolder ();
+            var intent = DeadlineActivity.ShowDeadlineFolderIntent (this.Activity, folder);
             StartActivity (intent);  
         }
 
         void DeferredView_Click (object sender, EventArgs e)
         {
-            var intent = new Intent ();
-            intent.SetClass (this.Activity, typeof(DeferredActivity));
+            var folder = McFolder.GetDeferredFakeFolder ();
+            var intent = DeferredActivity.ShowDeferredFolderIntent (this.Activity, folder);
             StartActivity (intent); 
         }
 

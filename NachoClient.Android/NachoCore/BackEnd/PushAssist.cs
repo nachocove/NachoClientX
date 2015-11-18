@@ -50,6 +50,7 @@ namespace NachoCore
         public static int MaxTimeoutMsec = 10000;
         public static int DeferPeriodMsec = 30 * 1000;
         protected static string DeviceToken;
+        private static bool IsCertPolicyInstalled;
 
         protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
@@ -157,7 +158,7 @@ namespace NachoCore
             };
         }
 
-        public static void Initialize ()
+        public static void InstallCertPolicy ()
         {
             var identity = new ServerIdentity (new Uri ("https://" + BuildInfo.PingerHostname));
             var pem = System.Text.ASCIIEncoding.ASCII.GetBytes (BuildInfo.PingerCertPem);
@@ -168,6 +169,7 @@ namespace NachoCore
                 PinnedCert = rootCert,
             };
             ServerCertificatePeek.Instance.AddPolicy (identity, policy);
+            IsCertPolicyInstalled = true;
         }
 
         public static bool ValidatorHack (IHttpWebRequest sender, X509Certificate2 certificate, X509Chain chain, bool result)
@@ -254,6 +256,9 @@ namespace NachoCore
 
         public PushAssist (IPushAssistOwner owner)
         {
+            if (!IsCertPolicyInstalled) {
+                InstallCertPolicy ();
+            }
             LockObj = new object ();
             var handler = new NativeMessageHandler (false, true);
             Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
