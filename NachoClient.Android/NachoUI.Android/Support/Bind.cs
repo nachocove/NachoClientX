@@ -78,7 +78,7 @@ namespace NachoClient.AndroidClient
             senderView.Text = Pretty.SenderString (message.From);
             senderView.Visibility = ViewStates.Visible;
 
-            subjectView.Text = Pretty.SubjectString (message.Subject);
+            subjectView.Text = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
             subjectView.Visibility = ViewStates.Visible;
 
             dateView.Text = Pretty.MediumFullDateTime (message.DateReceived);

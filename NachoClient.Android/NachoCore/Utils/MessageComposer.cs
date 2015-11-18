@@ -498,7 +498,7 @@ namespace NachoCore.Utils
                 }
             }
             Mime = EmailHelper.CreateMessage (Account, toList, ccList, bccList);
-            Mime.Subject = Message.Subject ?? "";
+            Mime.Subject = EmailHelper.CreateSubjectWithIntent (Message.Subject ?? "", Message.Intent, Message.IntentDateType, Message.IntentDate);
             var doc = new HtmlDocument ();
             doc.LoadHtml (html);
             var serializer = new HtmlTextSerializer (doc);
@@ -735,12 +735,6 @@ namespace NachoCore.Utils
 
         public void Send ()
         {
-            var subjectWithoutIntent = Message.Subject;
-            Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
-                var message = record as McEmailMessage;
-                message.Subject = EmailHelper.CreateSubjectWithIntent (subjectWithoutIntent, Message.Intent, Message.IntentDateType, Message.IntentDate);
-                return true;
-            });
             if (ImageLengths != null) {
                 ResizeImages ();
             }
