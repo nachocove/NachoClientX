@@ -106,22 +106,26 @@ namespace NachoClient.AndroidClient
 
         public static void CallNumber(Context context, McContact contact, string alternatePhoneNumber)
         {
-            if (null != alternatePhoneNumber) {
-                var number = Android.Net.Uri.Parse (String.Format ("tel:{0}", alternatePhoneNumber));
-                context.StartActivity(new Intent(Intent.ActionDial, number));
-                return;
+            try {
+                if (null != alternatePhoneNumber) {
+                    var number = Android.Net.Uri.Parse (String.Format ("tel:{0}", alternatePhoneNumber));
+                    context.StartActivity (new Intent (Intent.ActionDial, number));
+                    return;
+                }
+                if (0 == contact.PhoneNumbers.Count) {
+                    NcAlertView.ShowMessage (context, "Cannot Call Contact", "This contact does not have a phone number.");
+                    return;
+                }
+                var phoneNumber = contact.GetDefaultOrSinglePhoneNumber ();
+                if (null == phoneNumber) {
+                    NcAlertView.ShowMessage (context, "Contact has multiple numbers", "Please select a number to call.");
+                    return;
+                }
+                var phoneUri = Android.Net.Uri.Parse (String.Format ("tel:{0}", phoneNumber));
+                context.StartActivity (new Intent (Intent.ActionDial, phoneUri));
+            } catch (ActivityNotFoundException) {
+                NcAlertView.ShowMessage (context, "Cannot Call", "This device does not support making phone calls.");
             }
-            if (0 == contact.PhoneNumbers.Count) {
-                NcAlertView.ShowMessage (context, "Cannot Call Contact", "This contact does not have a phone number.");
-                return;
-            }
-            var  phoneNumber = contact.GetDefaultOrSinglePhoneNumber ();
-            if (null == phoneNumber) {
-                NcAlertView.ShowMessage (context, "Contact has multiple numbers", "Please select a number to call.");
-                return;
-            }
-            var phoneUri = Android.Net.Uri.Parse (String.Format ("tel:{0}", alternatePhoneNumber));
-            context.StartActivity(new Intent(Intent.ActionDial, phoneUri));
         }
     }
 
