@@ -113,7 +113,11 @@ namespace NachoClient.AndroidClient
             return Resource.Drawable.UserColor0;
         }
 
-        // TODO: size text to 60% of circle size
+        protected override void OnLayout (bool changed, int l, int t, int r, int b)
+        {
+            base.OnLayout (changed, l, t, r, b);
+            InitialsView.SetTextSize (ComplexUnitType.Px, (float)(b - t) * 0.6f);
+        }
 
     }
 }
