@@ -72,7 +72,8 @@ namespace NachoPlatform
             cloned.SetReadTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
 
             var builder = new Request.Builder ()
-                .Url (new Java.Net.URL (request.RequestUri.ToString ()));
+                .Url (new Java.Net.URL (request.RequestUri.ToString ()))
+                .Tag (request.guid);
 
             RequestBody body = null;
             if (request.Method == HttpMethod.Post || request.Method == HttpMethod.Put) {
@@ -87,12 +88,8 @@ namespace NachoPlatform
                         var fileStream = request.Content as FileStream;
                         Java.IO.File file = new Java.IO.File (fileStream.Name);
                         body = RequestBody.Create (MediaType.Parse (request.ContentType), file);
-                    } else if (request.Content is MemoryStream) {
-                        // If this was passed in, we are not guaranteed to be able to call GetBuffer() so to be safe copy this.
-                        // FIXME: Is there a better way?
-                        var memStream = new MemoryStream ();
-                        request.Content.CopyTo (memStream);
-                        body = RequestBody.Create (MediaType.Parse (request.ContentType), memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ());
+                    } else if (request.Content is byte[]) {
+                        body = RequestBody.Create (MediaType.Parse (request.ContentType), request.Content as byte[]);
                     } else {
                         NcAssert.CaseError (string.Format ("request.Content is of unknown type {0}", request.Content.GetType ().Name));
                         return;
@@ -102,7 +99,7 @@ namespace NachoPlatform
                     body = default(RequestBody);
                 }
                 if (null != callbacks.ProgressAction) {
-                    body = new NcOkHttpProgressRequestBody (body, callbacks.ProgressAction);
+                    body = new NcOkHttpProgressRequestBody (body, callbacks.ProgressAction, request.guid);
                 }
             }
 
@@ -210,7 +207,11 @@ namespace NachoPlatform
                                 fileStream.Write (buffer, 0, n);
 
                                 if (ProgressAction != null) {
-                                    ProgressAction (false, n, received, -1);
+                                    string description = p0.Request ().Tag ().ToString ();
+                                    if (string.IsNullOrEmpty (description)) {
+                                        description = "<unknown>";
+                                    }
+                                    ProgressAction (false, description, n, received, -1);
                                 }
                             }
                         } while (n > 0);
@@ -365,10 +366,13 @@ namespace NachoPlatform
 
             NcOkHttpCountingSink countingSink { get; set; }
 
-            public NcOkHttpProgressRequestBody (RequestBody body, ProgressDelegate progress)
+            public string Description { get; set; }
+
+            public NcOkHttpProgressRequestBody (RequestBody body, ProgressDelegate progress, string description)
             {
                 ProgressAction = progress;
                 Body = body;
+                Description = description;
             }
 
             public override long ContentLength ()
@@ -408,7 +412,7 @@ namespace NachoPlatform
                 {
                     base.Write (p0, p1);
                     bytesWritten += p1;
-                    Owner.ProgressAction (true, bytesWritten, Owner.ContentLength (), -1);
+                    Owner.ProgressAction (true, Owner.Description, bytesWritten, Owner.ContentLength (), -1);
                 }
             }
         }
