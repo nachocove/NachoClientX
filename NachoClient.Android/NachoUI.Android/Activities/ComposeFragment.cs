@@ -38,7 +38,10 @@ namespace NachoClient.AndroidClient
 
         #region Properties
 
-        public readonly MessageComposer Composer;
+        public MessageComposer Composer {
+            get;
+            private set;
+        }
         MessageComposeHeaderView HeaderView;
         Android.Webkit.WebView WebView;
         Android.Widget.ImageView SendButton;
@@ -82,8 +85,6 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.ComposeFragment, container, false);
 
             buttonBar = new ButtonBar (view);
@@ -102,12 +103,29 @@ namespace NachoClient.AndroidClient
             WebView.AddJavascriptInterface (new NachoJavascriptMessenger(this, "nachoCompose"), "_android_messageHandlers_nachoCompose");
             WebView.SetWebViewClient (new NachoWebClient (this));
 
-            Composer.StartPreparingMessage ();
-
-            UpdateHeader ();
-            UpdateSendEnabled ();
+            if (MessageIsReady) {
+                Composer.StartPreparingMessage ();
+                UpdateHeader ();
+                UpdateSendEnabled ();
+            }
 
             return view;
+        }
+
+        private bool messageIsReady = true;
+        public bool MessageIsReady {
+            private get {
+                return messageIsReady;
+            }
+            set {
+                if (!messageIsReady && value) {
+                    Composer.Message = McEmailMessage.QueryById<McEmailMessage> (Composer.Message.Id);
+                    Composer.StartPreparingMessage ();
+                    UpdateHeader ();
+                    UpdateSendEnabled ();
+                }
+                messageIsReady = value;
+            }
         }
 
         #endregion
