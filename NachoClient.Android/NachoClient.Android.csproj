@@ -608,6 +608,7 @@
     <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
     <Compile Include="NachoPlatform.Android\RtfConverterAndroid.cs" />
+    <Compile Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -625,7 +626,6 @@
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
     <Folder Include="sqlite-net\" />
     <Folder Include="NachoCore\" />
@@ -1626,8 +1626,10 @@
     <AndroidResource Include="Resources\layout\AboutViewerFragment.axml" />
     <AndroidResource Include="Resources\layout\ContactSearchMenuItem.axml" />
     <AndroidResource Include="Resources\drawable-hdpi\notification.png" />
+    <AndroidResource Include="Resources\layout\AccountSettingsActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
   </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
 </Project>

@@ -26,6 +26,8 @@ namespace NachoClient.AndroidClient
         void AddAccount ();
 
         void AccountSelected (McAccount account);
+
+        void AccountShortcut (int destination);
     }
 
     public class SwitchAccountFragment : Fragment
@@ -59,6 +61,7 @@ namespace NachoClient.AndroidClient
 
             accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.AccountSwitcher);
             accountAdapter.AddAccount += AccountAdapter_AddAccount;
+            accountAdapter.AccountShortcut += AccountAdapter_AccountShortcut;
             accountAdapter.AccountSelected += AccountAdapter_AccountSelected;
 
             recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
@@ -87,6 +90,12 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.Account = account;
             var parent = (AccountListDelegate)Activity;
             parent.AccountSelected (account);
+        }
+
+        void AccountAdapter_AccountShortcut (object sender, int shortcut)
+        {
+            var parent = (AccountListDelegate)Activity;
+            parent.AccountShortcut (shortcut);
         }
 
         void AccountAdapter_AddAccount (object sender, EventArgs e)
@@ -121,6 +130,7 @@ namespace NachoClient.AndroidClient
         };
 
         public event EventHandler AddAccount;
+        public event EventHandler<int> AccountShortcut;
         public event EventHandler<McAccount> AccountSelected;
 
         public DisplayMode displayMode;
@@ -160,9 +170,20 @@ namespace NachoClient.AndroidClient
 
         class AccountHolder : RecyclerView.ViewHolder
         {
-            public AccountHolder (View view, Action<int> listener) : base (view)
+            public AccountHolder (View view, Action<int, int, int> listener, int viewType) : base (view)
             {
-                view.Click += (object sender, EventArgs e) => listener (AdapterPosition);
+                view.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, 0);
+
+                if (HEADER_TYPE == viewType) {
+                    var settingsButton = view.FindViewById<Android.Widget.Button> (Resource.Id.account_settings);
+                    settingsButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.account_settings);
+                    var inboxButton = view.FindViewById<View> (Resource.Id.go_to_inbox);
+                    inboxButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_inbox);
+                    var deferredButton = view.FindViewById<View> (Resource.Id.go_to_deferred);
+                    deferredButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_deferred);
+                    var deadlinesButton = view.FindViewById<View> (Resource.Id.go_to_deadlines);
+                    deadlinesButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_deadlines);
+                }
             }
         }
 
@@ -208,7 +229,7 @@ namespace NachoClient.AndroidClient
                 break;
             }
             var view = LayoutInflater.From (parent.Context).Inflate (resId, parent, false);
-            return new AccountHolder (view, OnClick);
+            return new AccountHolder (view, OnClick, viewType);
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
@@ -235,27 +256,35 @@ namespace NachoClient.AndroidClient
             email.Text = account.EmailAddr;
         }
 
-        void OnClick (int position)
+        void OnClick (int position, int viewType, int resourceId)
         {
-            // Switcher has a header
-            if (DisplayMode.AccountSwitcher == displayMode) {
-                if (0 == position) {
-                    return;
+            switch (viewType) {
+            case HEADER_TYPE:
+                switch (resourceId) {
+                case 0:
+                    break;
+                case Resource.Id.go_to_inbox:
+                case Resource.Id.go_to_deferred:
+                case Resource.Id.go_to_deadlines:
+                case Resource.Id.account_settings:
+                    if (null != AccountShortcut) {
+                        AccountShortcut (this, resourceId);
+                    }
+                    break;
                 }
-            }
-            // Everyone has a footer
-            if ((ItemCount - 1) == position) {
-                if (AddAccount != null) {
-                    AddAccount (this, null);
-                }
-            } else {
-                // Account selected, do we need to adjust position on account of the header?
+                break;
+            case ROW_TYPE:
                 int accountIndex = (DisplayMode.AccountSwitcher == displayMode ? position - 1 : position);
                 if (AccountSelected != null) {
                     AccountSelected (this, accounts [accountIndex]);
                 }
+                break;
+            case FOOTER_TYPE:
+                if (AddAccount != null) {
+                    AddAccount (this, null);
+                }
+                break;
             }
-
         }
     }
 }
