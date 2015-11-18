@@ -290,7 +290,6 @@ namespace NachoClient.iOS
                 StartCrashReporting ();
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartCrashReporting complete");
 
-                PushAssist.Initialize ();
                 ServerCertificatePeek.Initialize ();
                 StartUIMonitor ();
 
