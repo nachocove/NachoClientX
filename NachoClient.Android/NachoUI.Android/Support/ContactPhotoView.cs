@@ -63,6 +63,21 @@ namespace NachoClient.AndroidClient
             SetPortraitId (contact.PortraitId, initials, color);
         }
 
+        public void SetEmailAddress (int accountId, string address, string initials, int colorResource)
+        {
+            var portraitId = 0;
+            List<McContact> contacts = McContact.QueryByEmailAddress (accountId, address);
+            if (contacts != null) {
+                foreach (var contact in contacts) {
+                    if (contact.PortraitId != 0) {
+                        portraitId = contact.PortraitId;
+                        break;
+                    }
+                }
+            }
+            SetPortraitId (portraitId, initials, colorResource);
+        }
+
         public void SetPortraitId (int portraitId, string initials, int colorResource)
         {
             if (portraitId == 0) {
@@ -97,6 +112,8 @@ namespace NachoClient.AndroidClient
             }
             return Resource.Drawable.UserColor0;
         }
+
+        // TODO: size text to 60% of circle size
 
     }
 }

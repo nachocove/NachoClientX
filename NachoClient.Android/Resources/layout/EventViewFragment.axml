@@ -452,20 +452,17 @@
                     android:textStyle="normal"
                     android:text="@string/event_organizer"
                     android:paddingLeft="10dp" />
-                <TextView
+                <NachoClient.AndroidClient.ContactPhotoView
                     android:layout_toRightOf="@id/image"
                     android:layout_below="@id/label"
                     android:id="@+id/event_organizer_initials"
-                    android:textSize="24dp"
-                    android:textColor="@android:color/white"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
-                    android:gravity="center"
-                    android:background="@drawable/UserColor0" />
+                    android:gravity="center" />
                 <TextView
                     android:id="@+id/event_organizer_label"
                     android:layout_below="@id/label"
@@ -516,20 +513,17 @@
                     android:textStyle="normal"
                     android:text="@string/event_attendees"
                     android:paddingLeft="10dp" />
-                <TextView
+                <NachoClient.AndroidClient.ContactPhotoView
                     android:layout_toRightOf="@id/image"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_0"
-                    android:textSize="24dp"
-                    android:textColor="@android:color/white"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
-                    android:gravity="center"
-                    android:background="@drawable/UserColor5" />
+                    android:gravity="center" />
                 <TextView
                     android:layout_toRightOf="@id/image"
                     android:layout_below="@id/event_attendee_0"
@@ -540,20 +534,17 @@
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
                     android:gravity="center" />
-                <TextView
+                <NachoClient.AndroidClient.ContactPhotoView
                     android:layout_toRightOf="@id/event_attendee_0"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_1"
-                    android:textSize="24dp"
-                    android:textColor="@android:color/white"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
-                    android:gravity="center"
-                    android:background="@drawable/UserColor10" />
+                    android:gravity="center" />
                 <TextView
                     android:layout_toRightOf="@id/event_attendee_name_0"
                     android:layout_below="@id/event_attendee_1"
@@ -564,20 +555,17 @@
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
                     android:gravity="center" />
-                <TextView
+                <NachoClient.AndroidClient.ContactPhotoView
                     android:layout_toRightOf="@id/event_attendee_1"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_2"
-                    android:textSize="24dp"
-                    android:textColor="@android:color/white"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
-                    android:gravity="center"
-                    android:background="@drawable/UserColor15" />
+                    android:gravity="center" />
                 <TextView
                     android:layout_toRightOf="@id/event_attendee_name_1"
                     android:layout_below="@id/event_attendee_2"
@@ -588,20 +576,17 @@
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
                     android:gravity="center" />
-                <TextView
+                <NachoClient.AndroidClient.ContactPhotoView
                     android:layout_toRightOf="@id/event_attendee_2"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_3"
-                    android:textSize="24dp"
-                    android:textColor="@android:color/white"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
-                    android:gravity="center"
-                    android:background="@drawable/UserColor20" />
+                    android:gravity="center" />
                 <TextView
                     android:layout_toRightOf="@id/event_attendee_name_2"
                     android:layout_below="@id/event_attendee_3"
@@ -612,20 +597,17 @@
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
                     android:gravity="center" />
-                <TextView
+                <NachoClient.AndroidClient.ContactPhotoView
                     android:layout_toRightOf="@id/event_attendee_3"
                     android:layout_below="@id/label"
                     android:id="@+id/event_attendee_4"
-                    android:textSize="24dp"
-                    android:textColor="@android:color/white"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
                     android:layout_marginLeft="14dp"
                     android:layout_gravity="center"
-                    android:gravity="center"
-                    android:background="@drawable/UserColor25" />
+                    android:gravity="center" />
                 <TextView
                     android:layout_toRightOf="@id/event_attendee_name_3"
                     android:layout_below="@id/event_attendee_4"
