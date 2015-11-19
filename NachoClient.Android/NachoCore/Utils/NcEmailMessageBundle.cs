@@ -5,12 +5,12 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.Serialization;
-using System.Xml.Serialization;
 using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using HtmlAgilityPack;
 using NachoPlatform;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
@@ -20,36 +20,95 @@ namespace NachoCore.Utils
 
         #region Property Classes
 
-        [DataContract]
-        public class BundleManifest
+        public class BundleManifest : NcBundleStorageSerializable
         {
-            [DataContract]
             public class Entry
             {
-                [DataMember]
                 public string Path { get; set; }
-                [DataMember]
                 public string ContentType { get; set; }
 
                 public Entry ()
                 {
                 }
             }
-
-            [DataMember]
+                
             public int Version { get; set; }
-            [DataMember]
             public Dictionary<string, Entry> Entries { get; set; }
 
             public BundleManifest ()
             {
                 Version = 0;
+                Entries = new Dictionary<string, Entry> ();
             }
 
             public BundleManifest (int version)
             {
                 Version = version;
                 Entries = new Dictionary<string, Entry> ();
+            }
+
+            public byte[] SerializeForBundleStorage ()
+            {
+                var lines = new List<string> ();
+                lines.Add ("Version");
+                lines.Add (Version.ToString ());
+                lines.Add ("Entries");
+                lines.Add (Entries.Count.ToString ());
+                foreach (var k in Entries.Keys) {
+                    var entry = Entries [k];
+                    if (entry.Path != null) {
+                        lines.Add ("Path");
+                        lines.Add (entry.Path);
+                    }
+                    if (entry.ContentType != null) {
+                        lines.Add ("ContentType");
+                        lines.Add (entry.ContentType);
+                    }
+                    lines.Add ("key");
+                    lines.Add (k);
+                }
+                var stringContents = String.Join ("\n", lines);
+                var encoding = new System.Text.UTF8Encoding (false, false);
+                var encodedContents = encoding.GetBytes (stringContents);
+                return encodedContents;
+            }
+
+            public void DeserializeFromBundleStorage (byte[] contents)
+            {
+                var encoding = new System.Text.UTF8Encoding (false, false);
+                var stringContents = encoding.GetString (contents);
+                var lines = new List<string>(stringContents.Split ('\n'));
+                var remainingEntries = 0;
+                Entry entry = null;
+                while (lines.Count > 0) {
+                    var k = lines [0];
+                    lines.RemoveAt (0);
+                    if (lines.Count > 0) {
+                        var v = lines [0];
+                        lines.RemoveAt (0);
+                        if (remainingEntries == 0) {
+                            if (k == "Version") {
+                                Version = Int32.Parse (v);
+                            } else if (k == "Entries") {
+                                remainingEntries = Int32.Parse (v);
+                            }
+                        } else {
+                            if (entry == null) {
+                                entry = new Entry ();
+                            }
+                            if (k == "key") {
+                                Entries [v] = entry;
+                                remainingEntries -= 1;
+                                entry = null;
+                            } else if (k == "Path") {
+                                entry.Path = v;
+                            } else if (k == "ContentType") {
+                                entry.ContentType = v;
+                            }
+                        }
+                    }
+                }
+
             }
 
         }
@@ -132,7 +191,7 @@ namespace NachoCore.Utils
         private BundleManifest Manifest;
         private int SubmessageCount = 0;
 
-        private static int LastestVersion = 2;
+        private static int LastestVersion = 3;
 
         private static string FullTextEntryName = "full-text";
         private static string TopTextEntryName = "top-text";
@@ -141,7 +200,7 @@ namespace NachoCore.Utils
         private static string FullLightlyStyledEntryName = "full-simple";
         private static string TopLightlyStyledEntryName = "top-simple";
 
-        private static string ManifestPath = "manifest.xml";
+        private static string ManifestPath = "manifest.nacho";
         private static string FullTextPath = "full.txt";
         private static string TopTextPath = "top.txt";
         private static string FullHtmlPath = "full.html";
