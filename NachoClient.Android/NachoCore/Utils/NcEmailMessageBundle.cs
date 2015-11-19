@@ -151,6 +151,8 @@ namespace NachoCore.Utils
 
         ParseResult parsed;
 
+        private static object UpdateLock = new object ();
+
         #endregion
 
         public static string FileStoragePathForBodyId (int accountId, int bodyId)
@@ -366,8 +368,13 @@ namespace NachoCore.Utils
 
         public void Update ()
         {
-            ParseMessage ();
-            CompleteBundleAfterParse ();
+            lock (UpdateLock) {
+                ReadManifest ();
+                if (NeedsUpdate) {
+                    ParseMessage ();
+                    CompleteBundleAfterParse ();
+                }
+            }
         }
 
         public void Invalidate ()
