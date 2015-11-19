@@ -23,11 +23,19 @@ namespace NachoPlatform
             NcAssert.True (dnsClass == NsClass.INET);
             NcAssert.True (validTypes.Contains (dnsType));
 
-            foreach (var server in DnDns.Tools.DiscoverUnixDnsServerAddresses()) {
+            bool foundv4 = false;
+            foreach (var server in DnDns.Tools.DiscoverUnixDnsServerAddresses ()) {
                 IPAddress[] ipas = Dns.GetHostAddresses (server);
                 foreach (var addr in ipas) {
                     Log.Info (Log.LOG_DNS, "ResQuery DNS server {0} addr: Family={1} addr_len={2} addr={3}", server, addr.AddressFamily, addr.GetAddressBytes ().Length, addr.ToString ());
+                    if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) {
+                        foundv4 = true;
+                    }
                 }
+            }
+            if (!foundv4) {
+                Log.Error (Log.LOG_DNS, "No IPv4 DNS server found. Skipping resolve.");
+                return null;
             }
 
             var DnsQuery = new DnsQueryRequest ();

@@ -45,7 +45,7 @@ namespace NachoClient.AndroidClient
             var SwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
             SwipeRefreshLayout.Enabled = false;
 
-            folderListAdapter = new FolderListAdapter (NcApplication.Instance.Account);
+            folderListAdapter = new FolderListAdapter (NcApplication.Instance.Account, hideFakeFolders: false);
             var layoutManager = new LinearLayoutManager (Activity);
 
             var recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
@@ -113,17 +113,19 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        bool hideFakeFolders;
         FolderLists folderLists;
 
-        public FolderListAdapter (McAccount account)
+        public FolderListAdapter (McAccount account, bool hideFakeFolders)
         {
             HasStableIds = true;
-            folderLists = new FolderLists (account);
+            this.hideFakeFolders = hideFakeFolders;
+            folderLists = new FolderLists (account, hideFakeFolders);
         }
 
         public void SwitchAccount (McAccount account)
         {
-            folderLists = new FolderLists (account);
+            folderLists = new FolderLists (account, hideFakeFolders);
             NotifyDataSetChanged ();
         }
 
