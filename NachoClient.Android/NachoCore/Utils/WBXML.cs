@@ -46,11 +46,9 @@ namespace NachoCore.Wbxml
             return XmlDoc.ToString (SaveOptions.DisableFormatting);
         }
 
-        public void LoadBytes (int accountId, byte[] rawBytes, Boolean? doFiltering = null)
+        NcXmlFilterState LoadBytesInit (Boolean? doFiltering = null)
         {
             XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
-            int level = 0;
-
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
                 filter = new NcXmlFilterState (AsXmlFilterSet.Responses, CToken);
@@ -58,15 +56,30 @@ namespace NachoCore.Wbxml
                 filter = new NcXmlFilterState (null, CToken);
             }
             filter.Start ();
+            return filter;
+        }
+        public void LoadBytes (int accountId, FileStream stream, Boolean? doFiltering = null)
+        {
+            var filter = LoadBytesInit (doFiltering);
+            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (stream, filter.WbxmlBuffer);
+            LoadBytesProcess (accountId, filter, bytes, doFiltering);
+        }
 
+        public void LoadBytes (int accountId, byte[] rawBytes, Boolean? doFiltering = null)
+        {
+            var filter = LoadBytesInit (doFiltering);
             ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (rawBytes, filter.WbxmlBuffer);
+            LoadBytesProcess (accountId, filter, bytes, doFiltering);
+        }
 
+        void LoadBytesProcess (int accountId, NcXmlFilterState filter, ASWBXMLByteQueue bytes, Boolean? doFiltering = null)
+        {
+            int level = 0;
             // Version is ignored
             byte version = bytes.Dequeue ();
             if (versionByte != version) {
                 Log.Warn (Log.LOG_AS, "Unexpected version {0}", (int)version);
             }
-
 
             // Public Identifier is ignored
             bytes.DequeueMultibyteInt ();

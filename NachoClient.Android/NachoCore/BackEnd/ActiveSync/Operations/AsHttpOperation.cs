@@ -92,7 +92,6 @@ namespace NachoCore.ActiveSync
         private Uri ServerUri;
         private string RedactedServerUri;
         private bool ServerUriBeingTested;
-        private byte[] ContentData;
         private string ContentType;
         private uint ConsecThrottlePriorDelaySecs;
         private bool ExtraRetry451Consumed;
@@ -442,19 +441,12 @@ namespace NachoCore.ActiveSync
                 }
             }
             ContentType = (null == cType || null == cType.MediaType) ? null : cType.MediaType.ToLower ();
-            MemoryStream memContent = response.Content as MemoryStream;
-            if (null == memContent) {
-                // FIXME: Should not convert to mem. Use the stream directly.
-                memContent = new MemoryStream ();
-                response.Content.CopyTo (memContent);
-            }
-            if (null == memContent) {
+            if (null == response.Content || !(response.Content is FileStream)) {
                 CancelTimeoutTimer ("response.Content");
                 Log.Error (Log.LOG_HTTP, "Unable to get response: {0}, response.Content: {1}", response.Content, response.ContentType);
                 HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNRC2");
                 return;
             }
-            ContentData = memContent.GetBuffer ().Take ((int)memContent.Length).ToArray ();
             CancelTimeoutTimer ("Success");
             try {
                 sw.Reset ();
@@ -528,11 +520,13 @@ namespace NachoCore.ActiveSync
 
         private Event ProcessHttpResponse (NcHttpResponse response, CancellationToken cToken)
         {
+            var ContentData = response.Content as FileStream;
+            NcAssert.NotNull (ContentData);
             if (!Is2xx (response.StatusCode) && ContentTypeHtml == ContentType) {
                 // There is a chance that the non-OK status comes with an HTML explaination.
                 // If so, then dump it.
                 // TODO: find some way to make cancellation token work here.
-                var possibleMessage = Encoding.UTF8.GetString (ContentData);
+                var possibleMessage = File.ReadAllText (ContentData.Name);
                 Log.Info (Log.LOG_HTTP, "HTML response: {0}", possibleMessage);
             }
             Event preProcessEvent = Owner.PreProcessResponse (this, response);
@@ -674,7 +668,7 @@ namespace NachoCore.ActiveSync
                         NcAssert.True (false, "ContentTypeWbxmlMultipart unimplemented.");
                         return null;
                     case ContentTypeXml:
-                        responseDoc = XDocument.Parse (Encoding.UTF8.GetString (ContentData));
+                        responseDoc = XDocument.Load (ContentData.Name);
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));
                     default:
@@ -685,7 +679,7 @@ namespace NachoCore.ActiveSync
                         }
                         // Just *try* to see if it will parse as XML. Could be poorly configured auto-d.
                         try {
-                            responseDoc = XDocument.Parse (Encoding.UTF8.GetString (ContentData));
+                            responseDoc = XDocument.Load (ContentData.Name);
                         } catch {
                         }
                         if (null == responseDoc) {

@@ -6,6 +6,9 @@ using DnDns.Enums;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using System.Net;
+using NachoClient.AndroidClient;
+using Android.Net;
+using Android.Content;
 
 namespace NachoPlatform
 {
@@ -20,9 +23,11 @@ namespace NachoPlatform
             NcAssert.True (dnsClass == NsClass.INET);
             NcAssert.True (validTypes.Contains (dnsType));
 
-            IPAddress[] ipas = Dns.GetHostAddresses (DnDns.Tools.DiscoverUnixDnsServerAddress());
-            foreach (var addr in ipas) {
-                Log.Info (Log.LOG_DNS, "ResQuery DNS server addr: Family={0} addr_len={1} addr={2}", addr.AddressFamily, addr.GetAddressBytes ().Length, addr.ToString ());
+            foreach (var server in DnDns.Tools.DiscoverUnixDnsServerAddresses()) {
+                IPAddress[] ipas = Dns.GetHostAddresses (server);
+                foreach (var addr in ipas) {
+                    Log.Info (Log.LOG_DNS, "ResQuery DNS server {0} addr: Family={1} addr_len={2} addr={3}", server, addr.AddressFamily, addr.GetAddressBytes ().Length, addr.ToString ());
+                }
             }
 
             var DnsQuery = new DnsQueryRequest ();

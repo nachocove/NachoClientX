@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using NachoCore.Utils;
+using System.IO.MemoryMappedFiles;
 
 namespace NachoCore.Wbxml
 {
@@ -19,30 +20,101 @@ namespace NachoCore.Wbxml
 
     class ASWBXMLByteQueue
     {
-        private byte[] Bytes;
-        private GatedMemoryStream RedactedCopy;
-        private long Pos;
+        protected byte[] buffer;
+        protected long bufferPos;
+        protected long bufferEnd;
+        protected GatedMemoryStream RedactedCopy;
+        protected FileStream dataStream;
+        protected long Pos;
 
-        public ASWBXMLByteQueue (byte[] bytes, GatedMemoryStream redactedCopy = null)
+        private ASWBXMLByteQueue (FileStream data, byte[] bytes, GatedMemoryStream redactedCopy = null)
         {
-            Bytes = bytes;
             RedactedCopy = redactedCopy;
+            dataStream = data;
+            if (null == bytes) {
+                buffer = new byte[bufferSize(data)];
+                fillBuffer ();
+            } else {
+                buffer = bytes;
+            }
+        }
+
+        /// <summary>
+        /// Maximum size of the read buffer. 10K. Anything less than that will be read fully into the buffer/memory.
+        /// </summary>
+        const int MaxBufferSize = 1024*10;
+
+        int bufferSize (FileStream data)
+        {
+            if (data.Length >= MaxBufferSize) {
+                return MaxBufferSize;
+            } else {
+                return (int)data.Length;
+            }
+        }
+
+        public ASWBXMLByteQueue (byte[] bytes, GatedMemoryStream redactedCopy = null) : this (null, bytes, redactedCopy)
+        {
+        }
+
+        public ASWBXMLByteQueue (FileStream data, GatedMemoryStream redactedCopy = null) : this (data, null, redactedCopy)
+        {
+        }
+
+        bool endOfBuffer {
+            get {
+                return bufferPos == bufferEnd;
+            }
+        }
+
+        bool streamEOF {
+            get {
+                return Pos == dataStream.Length;
+            }
+        }
+
+        bool EOF {
+            get {
+                if (null != dataStream) {
+                    return streamEOF;
+                } else {
+                    return endOfBuffer;
+                }
+            }
+        }
+
+        void fillBuffer ()
+        {
+            if (null == dataStream) {
+                return;
+            }
+            bufferEnd = dataStream.Read (buffer, 0, buffer.Length);
+            Log.Info (Log.LOG_SYS, "WBXML buffer: read {0} into buffer", bufferEnd);
+            bufferPos = 0;
         }
 
         public int Peek ()
         {
-            if (Pos == Bytes.Length) {
+            if (EOF) {
                 return -1;
             }
-            return Bytes [Pos];
+            if (endOfBuffer) {
+                fillBuffer ();
+            }
+            return buffer [bufferPos];
         }
 
         public byte Dequeue ()
         {
-            if (Pos == Bytes.Length) {
+            if (EOF) {
                 throw new WBXMLReadPastEndException (Pos);
             }
-            var retval = Bytes [Pos++];
+            if (endOfBuffer) {
+                fillBuffer ();
+            }
+            var retval = buffer [bufferPos++];
+            Pos++;
+
             // We currently redact (telemetry) anything big, so stop copying bytes when something gets big.
             // The alternative is to rewrite the logic so we know what is redacted before we start keeping bytes.
             // We were ballooning attachment downloads in memory here.
