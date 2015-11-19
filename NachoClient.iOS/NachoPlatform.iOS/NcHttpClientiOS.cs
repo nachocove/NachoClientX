@@ -110,7 +110,7 @@ namespace NachoPlatform
                     task.Cancel ();
                 }, "NcHttpClient.iOS.Cancel");
             });
-            Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task {0} for {1}", task.TaskDescription, req.Url);
+            Log.Debug (Log.LOG_HTTP, "NcHttpClient: Starting task {0} for {1}", task.TaskDescription, req.Url);
             task.Resume ();
         }
 
@@ -205,7 +205,7 @@ namespace NachoPlatform
                 try {
                     long sent = task.BytesSent;
                     long received = task.BytesReceived;
-                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", task.TaskDescription, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
+                    Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", task.TaskDescription, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
                         error != null ? string.Format(" (Error: {0})", error) : "");
 
                     if (Token.IsCancellationRequested) {
@@ -250,11 +250,12 @@ namespace NachoPlatform
 
             public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
             {
-                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection", task.TaskDescription);
                 try {
                     if (Owner.AllowAutoRedirect) {
+                        Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection", task.TaskDescription);
                         completionHandler (newRequest);
                     } else {
+                        Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection disallowed", task.TaskDescription);
                         completionHandler (null);
                     }
                 } catch (Exception ex) {
@@ -304,7 +305,6 @@ namespace NachoPlatform
                 HandleCredentialsRequest (cred, challenge, completionHandler);
             } else {
                 if (ServicePointManager.ServerCertificateValidationCallback == null) {
-                    Log.Warn (Log.LOG_HTTP, "NcHttpClient({0}): No ServerCertificateValidationCallback!", task.TaskDescription);  // FIXME This is probably OK. Need to see.
                     completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
                 } else {
                     CertValidation (task.OriginalRequest.Url, challenge, completionHandler);

@@ -356,9 +356,7 @@ namespace NachoCore.ActiveSync
                     // Xamarin bug: this prints out the wrong decl, which breaks autodiscovery. Revert to SO
                     // Method once bug is fixed.
                     var xmlText = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + doc.ToString ();
-                    Log.Info (Log.LOG_HTTP, "Length of string: {0}", xmlText.Length);
                     byte[] data = Encoding.UTF8.GetBytes (xmlText);
-                    Log.Info (Log.LOG_HTTP, "Length of data: {0}", data.Length);
                     request.SetContent (data, ContentTypeXml);
                 }
             }
@@ -413,16 +411,11 @@ namespace NachoCore.ActiveSync
 
             ServicePointManager.FindServicePoint (request.RequestUri).ConnectionLimit = 25;
             Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
-            sw.Start ();
             NcHttpClient.Instance.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, AttemptHttpProgress, cToken);
         }
-        PlatformStopwatch sw = new PlatformStopwatch ();
 
         void AttemptHttpSuccess (NcHttpResponse response, CancellationToken token)
         {
-            sw.Stop ();
-            Log.Info (Log.LOG_HTTP, "Request took {0}ms ({1} bytes down)", sw.ElapsedMilliseconds, response.ContentLength);
-
             // FIXME: Should we do this much processing in the Callback? Or should we save things here, and process
             // outside of the response callback? This would mean we need a post-request callback or signal.
 
@@ -449,11 +442,7 @@ namespace NachoCore.ActiveSync
             }
             CancelTimeoutTimer ("Success");
             try {
-                sw.Reset ();
-                sw.Start ();
                 var evt = ProcessHttpResponse (response, token);
-                sw.Stop ();
-                Log.Info (Log.LOG_HTTP, "Processing request took {0}ms ({1} bytes down)", sw.ElapsedMilliseconds, response.ContentLength);
                 if (token.IsCancellationRequested) {
                     Log.Info (Log.LOG_HTTP, "AttemptHttp: Dropping event because of cancellation: {0}/{1}", evt.EventCode, evt.Mnemonic);
                 } else {
@@ -510,7 +499,7 @@ namespace NachoCore.ActiveSync
 
         void AttemptHttpProgress (bool isRequest, string taskDescription, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
         {
-            Log.Info (Log.LOG_HTTP, "HTTP-Progress({0}): {1} Progress: {2}:{3}:{4}", taskDescription, isRequest ? "Request" : "Response", bytesSent, totalBytesSent, totalBytesExpectedToSend);
+            Log.Debug (Log.LOG_HTTP, "HTTP-Progress({0}): {1} Progress: {2}:{3}:{4}", taskDescription, isRequest ? "Request" : "Response", bytesSent, totalBytesSent, totalBytesExpectedToSend);
         }
 
         private bool Is2xx (HttpStatusCode statusCode)

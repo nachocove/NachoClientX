@@ -180,7 +180,7 @@ namespace NachoPlatform
             void LogCompletion (long sent, long received)
             {
                 sw.Stop ();
-                Log.Info (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
+                Log.Debug (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
             }
 
             #region ICallback implementation
