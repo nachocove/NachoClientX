@@ -457,20 +457,20 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        void AttemptHttpError (Exception ex, CancellationToken token)
+        void AttemptHttpError (Exception ex, CancellationToken cToken)
         {
             NcTask.Run (() => {
                 if (ex is OperationCanceledException) {
                     Log.Info (Log.LOG_HTTP, "AttemptHttp OperationCanceledException {0}: exception {1}", RedactedServerUri, ex.Message);
                     CancelTimeoutTimer ("OperationCanceledException");
-                    if (!token.IsCancellationRequested) {
+                    if (!cToken.IsCancellationRequested) {
                         // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
                         ReportCommResult (ServerUri.Host, true);
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                     }
                 } else if (ex is WebException) {
                     Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", RedactedServerUri, ex.Message);
-                    if (!token.IsCancellationRequested) {
+                    if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("WebException");
                         ReportCommResult (ServerUri.Host, true);
                         // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
@@ -480,13 +480,13 @@ namespace NachoCore.ActiveSync
                 } else if (ex is NullReferenceException) {
                     Log.Info (Log.LOG_HTTP, "AttemptHttp NullReferenceException {0}: exception {1}", RedactedServerUri, ex.Message);
                     // As best I can tell, this may be driven by bug(s) in the Mono stack.
-                    if (!token.IsCancellationRequested) {
+                    if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("NullReferenceException");
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                     }
                 } else {
                     // We've seen HttpClient barf due to Cancel().
-                    if (!token.IsCancellationRequested) {
+                    if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("Exception");
                         Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", RedactedServerUri));
