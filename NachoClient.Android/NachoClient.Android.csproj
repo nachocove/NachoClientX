@@ -1629,6 +1629,7 @@
     <AndroidResource Include="Resources\layout\ContactSearchMenuItem.axml" />
     <AndroidResource Include="Resources\drawable-hdpi\notification.png" />
     <AndroidResource Include="Resources\layout\AccountSettingsActivity.axml" />
+    <AndroidResource Include="Resources\layout\EventInMessageLayout.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

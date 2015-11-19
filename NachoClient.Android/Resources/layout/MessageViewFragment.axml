@@ -28,6 +28,8 @@
                 android:background="@color/NachoBackgroundGray" />
             <include
                 layout="@layout/AttachmentListView" />
+            <include
+                layout="@layout/EventInMessageLayout" />
             <android.webkit.WebView
                 android:id="@+id/webview"
                 android:layout_width="fill_parent"
