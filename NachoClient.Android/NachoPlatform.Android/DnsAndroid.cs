@@ -6,9 +6,6 @@ using DnDns.Enums;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using System.Net;
-using NachoClient.AndroidClient;
-using Android.Net;
-using Android.Content;
 
 namespace NachoPlatform
 {
