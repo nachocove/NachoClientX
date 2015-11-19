@@ -248,13 +248,15 @@ namespace NachoClient.AndroidClient
                 }
                 var organizerEmailLabel = view.FindViewById<TextView> (Resource.Id.event_organizer_email_label);
                 organizerEmailLabel.Text = detail.SeriesItem.OrganizerEmail;
-                var initialsView = view.FindViewById<TextView> (Resource.Id.event_organizer_initials);
+                var imageView = view.FindViewById<ContactPhotoView> (Resource.Id.event_organizer_initials);
+                var initials = "";
                 if (String.IsNullOrEmpty (detail.SeriesItem.OrganizerName)) {
-                    initialsView.Text = ContactsHelper.NameToLetters (detail.SeriesItem.OrganizerName);
+                    initials = ContactsHelper.NameToLetters (detail.SeriesItem.OrganizerName);
                 } else {
-                    initialsView.Text = ContactsHelper.NameToLetters (detail.SeriesItem.OrganizerEmail);
+                    initials = ContactsHelper.NameToLetters (detail.SeriesItem.OrganizerEmail);
                 }
-                initialsView.SetBackgroundResource (Util.ColorResourceForEmail (detail.SeriesItem.OrganizerEmail));
+                var color = Util.ColorResourceForEmail (detail.SeriesItem.OrganizerEmail);
+                imageView.SetEmailAddress (detail.Account.Id, detail.SeriesItem.OrganizerEmail, initials, color);
             }
 
             var attendees = detail.SpecificItem.attendees;
@@ -262,17 +264,20 @@ namespace NachoClient.AndroidClient
                 view.FindViewById<View> (Resource.Id.event_attendee_view).Visibility = ViewStates.Gone;
             } else {
                 for (int a = 0; a < 5; ++a) {
+                    var attendeePhotoView = AttendeeInitialsView (view, a);
+                    var attendeeNameView = AttendeeNameView (view, a);
                     if (4 == a && 5 < attendees.Count) {
-                        AttendeeInitialsView (view, a).Text = string.Format ("+{0}", attendees.Count - a);
-                        AttendeeNameView (view, a).Text = "";
+                        attendeePhotoView.SetPortraitId (0, string.Format ("+{0}", attendees.Count - a), Resource.Drawable.UserColor0);
+                        attendeeNameView.Text = "";
                     } else if (a < attendees.Count) {
                         var attendee = attendees [a];
-                        AttendeeInitialsView (view, a).Text = ContactsHelper.NameToLetters (attendee.DisplayName);
-                        AttendeeInitialsView (view, a).SetBackgroundResource (Util.ColorResourceForEmail (attendee.Email));
-                        AttendeeNameView (view, a).Text = GetFirstName (attendee.DisplayName);
+                        var initials = ContactsHelper.NameToLetters (attendee.DisplayName);
+                        var color = Util.ColorResourceForEmail (attendee.Email);
+                        attendeePhotoView.SetEmailAddress (attendee.AccountId, attendee.Email, initials, color);
+                        attendeeNameView.Text = GetFirstName (attendee.DisplayName);
                     } else {
-                        AttendeeInitialsView (view, a).Visibility = ViewStates.Gone;
-                        AttendeeNameView (view, a).Visibility = ViewStates.Gone;
+                        attendeePhotoView.Visibility = ViewStates.Gone;
+                        attendeeNameView.Visibility = ViewStates.Gone;
                     }
                 }
             }
@@ -341,7 +346,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        private TextView AttendeeInitialsView (View parent, int attendeeIndex)
+        private ContactPhotoView AttendeeInitialsView (View parent, int attendeeIndex)
         {
             int id;
             switch (attendeeIndex) {
@@ -364,7 +369,7 @@ namespace NachoClient.AndroidClient
                 NcAssert.CaseError (string.Format ("Attendee index {0} is out of range. It must be [0..4]", attendeeIndex));
                 return null;
             }
-            return parent.FindViewById<TextView> (id);
+            return parent.FindViewById<ContactPhotoView> (id);
         }
 
         private TextView AttendeeNameView (View parent, int attendeeIndex)

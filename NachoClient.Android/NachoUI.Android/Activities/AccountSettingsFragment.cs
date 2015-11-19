@@ -18,6 +18,11 @@ using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
+    public interface IAccountSettingsFragmentOwner
+    {
+        McAccount AccountToView { get; }
+    }
+
     public class AccountSettingsFragment : Fragment
     {
         McAccount account;
@@ -68,23 +73,11 @@ namespace NachoClient.AndroidClient
 
         View deleteAccountView;
 
-        public static AccountSettingsFragment newInstance (McAccount account)
-        {
-            var fragment = new AccountSettingsFragment ();
-            fragment.account = account;
-            return fragment;
-        }
-
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            account = ((IAccountSettingsFragmentOwner)this.Activity).AccountToView;
             if (null != savedInstanceState) {
-                if (null == account) {
-                    int accountId = savedInstanceState.GetInt (SAVED_ACCOUNT_ID_KEY, 0);
-                    if (0 != accountId) {
-                        account = McAccount.QueryById<McAccount> (accountId);
-                    }
-                }
                 var daysToSyncFragment = FragmentManager.FindFragmentByTag<DaysToSyncChooserFragment> (DAYS_TO_SYNC_FRAGMENT_TAG);
                 if (null != daysToSyncFragment) {
                     daysToSyncFragment.OnDaysToSyncChanged += DaysToSyncFragment_OnDaysToSyncChanged;

@@ -58,28 +58,39 @@ namespace NachoClient.AndroidClient
 
         public void SetContact (McContact contact)
         {
-            if (contact.PortraitId == 0) {
-                InitialsView.SetBackgroundResource(GetContactColor (contact));
-                InitialsView.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
+            var initials = NachoCore.Utils.ContactsHelper.GetInitials (contact);
+            var color = GetContactColor (contact);
+            SetPortraitId (contact.PortraitId, initials, color);
+        }
+
+        public void SetEmailAddress (int accountId, string address, string initials, int colorResource)
+        {
+            var portraitId = 0;
+            List<McContact> contacts = McContact.QueryByEmailAddress (accountId, address);
+            if (contacts != null) {
+                foreach (var contact in contacts) {
+                    if (contact.PortraitId != 0) {
+                        portraitId = contact.PortraitId;
+                        break;
+                    }
+                }
+            }
+            SetPortraitId (portraitId, initials, colorResource);
+        }
+
+        public void SetPortraitId (int portraitId, string initials, int colorResource)
+        {
+            if (portraitId == 0) {
+                InitialsView.SetBackgroundResource(colorResource);
+                InitialsView.Text = initials;
                 InitialsView.Visibility = ViewStates.Visible;
                 PhotoView.Visibility = ViewStates.Gone;
             } else {
-                var image = ContactToPortraitImage (contact);
+                var image = PortraitToImage (portraitId);
                 PhotoView.SetImageBitmap (image);
                 PhotoView.Visibility = ViewStates.Visible;
                 InitialsView.Visibility = ViewStates.Gone;
             }
-        }
-
-        public static Bitmap ContactToPortraitImage (McContact contact)
-        {
-            if (null == contact) {
-                return null;
-            }
-            if (0 == contact.PortraitId) {
-                return null;
-            }
-            return PortraitToImage (contact.PortraitId);
         }
 
         public static Bitmap PortraitToImage (int portraitId)
@@ -100,6 +111,12 @@ namespace NachoClient.AndroidClient
                 return Bind.ColorForUser (contact.CircleColor);
             }
             return Resource.Drawable.UserColor0;
+        }
+
+        protected override void OnLayout (bool changed, int l, int t, int r, int b)
+        {
+            base.OnLayout (changed, l, t, r, b);
+            InitialsView.SetTextSize (ComplexUnitType.Px, (float)(b - t) * 0.6f);
         }
 
     }

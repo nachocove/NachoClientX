@@ -113,7 +113,7 @@ namespace NachoClient.AndroidClient
             // Max 3 recents
             var recents = McFolder.QueryByMostRecentlyAccessedVisibleFolders (account.Id);
             foreach (var folder in recents) {
-                recentsList.Add (new DisplayElement (new Node ().Copy (folder), 1));
+                recentsList.Add (new DisplayElement (new Node ().Copy (folder), 0));
                 if (3 == recentsList.Count) {
                     break;
                 }

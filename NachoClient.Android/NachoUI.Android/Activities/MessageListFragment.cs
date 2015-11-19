@@ -132,33 +132,35 @@ namespace NachoClient.AndroidClient
             listView.ItemClick += ListView_ItemClick;
 
             listView.setMenuCreator ((menu) => {
-                SwipeMenuItem deferItem = new SwipeMenuItem (Activity.ApplicationContext);
-                deferItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDefer));
-                deferItem.setWidth (dp2px (90));
-                deferItem.setTitle ("Defer");
-                deferItem.setTitleSize (14);
-                deferItem.setTitleColor (A.Color_White);
-                deferItem.setIcon (A.Id_NachoSwipeEmailDefer);
-                deferItem.setId (DEFER_TAG);
-                menu.addMenuItem (deferItem, SwipeMenu.SwipeSide.LEFT);
-                SwipeMenuItem moveItem = new SwipeMenuItem (Activity.ApplicationContext);
-                moveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailMove));
-                moveItem.setWidth (dp2px (90));
-                moveItem.setTitle ("Move");
-                moveItem.setTitleSize (14);
-                moveItem.setTitleColor (A.Color_White);
-                moveItem.setIcon (A.Id_NachoSwipeEmailMove);
-                moveItem.setId (SAVE_TAG);
-                menu.addMenuItem (moveItem, SwipeMenu.SwipeSide.LEFT);
-                SwipeMenuItem archiveItem = new SwipeMenuItem (Activity.ApplicationContext);
-                archiveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailArchive));
-                archiveItem.setWidth (dp2px (90));
-                archiveItem.setTitle ("Archive");
-                archiveItem.setTitleSize (14);
-                archiveItem.setTitleColor (A.Color_White);
-                archiveItem.setIcon (A.Id_NachoSwipeEmailArchive);
-                archiveItem.setId (ARCHIVE_TAG);
-                menu.addMenuItem (archiveItem, SwipeMenu.SwipeSide.RIGHT);
+                if (!(messages.HasDraftsSemantics () || messages.HasOutboxSemantics ())) {
+                    SwipeMenuItem deferItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    deferItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDefer));
+                    deferItem.setWidth (dp2px (90));
+                    deferItem.setTitle ("Defer");
+                    deferItem.setTitleSize (14);
+                    deferItem.setTitleColor (A.Color_White);
+                    deferItem.setIcon (A.Id_NachoSwipeEmailDefer);
+                    deferItem.setId (DEFER_TAG);
+                    menu.addMenuItem (deferItem, SwipeMenu.SwipeSide.LEFT);
+                    SwipeMenuItem moveItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    moveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailMove));
+                    moveItem.setWidth (dp2px (90));
+                    moveItem.setTitle ("Move");
+                    moveItem.setTitleSize (14);
+                    moveItem.setTitleColor (A.Color_White);
+                    moveItem.setIcon (A.Id_NachoSwipeEmailMove);
+                    moveItem.setId (SAVE_TAG);
+                    menu.addMenuItem (moveItem, SwipeMenu.SwipeSide.LEFT);
+                    SwipeMenuItem archiveItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    archiveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailArchive));
+                    archiveItem.setWidth (dp2px (90));
+                    archiveItem.setTitle ("Archive");
+                    archiveItem.setTitleSize (14);
+                    archiveItem.setTitleColor (A.Color_White);
+                    archiveItem.setIcon (A.Id_NachoSwipeEmailArchive);
+                    archiveItem.setId (ARCHIVE_TAG);
+                    menu.addMenuItem (archiveItem, SwipeMenu.SwipeSide.RIGHT);
+                }
                 SwipeMenuItem deleteItem = new SwipeMenuItem (Activity.ApplicationContext);
                 deleteItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDelete));
                 deleteItem.setWidth (dp2px (90));
@@ -423,14 +425,23 @@ namespace NachoClient.AndroidClient
         {
             if (multiSelectActive) {
                 listView.EnableSwipe (false);
-                leftButton1.SetImageResource (Resource.Drawable.gen_close);
-                leftButton1.Visibility = ViewStates.Visible;
-                rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
-                rightButton1.Visibility = ViewStates.Visible;
-                rightButton2.SetImageResource (Resource.Drawable.folder_move);
-                rightButton2.Visibility = ViewStates.Visible;
-                rightButton3.SetImageResource (Resource.Drawable.gen_archive);
-                rightButton3.Visibility = ViewStates.Visible;
+                if (messages.HasDraftsSemantics () || messages.HasOutboxSemantics ()) {
+                    leftButton1.SetImageResource (Resource.Drawable.gen_close);
+                    leftButton1.Visibility = ViewStates.Visible;
+                    rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
+                    rightButton1.Visibility = ViewStates.Visible;
+                    rightButton2.Visibility = ViewStates.Invisible;
+                    rightButton3.Visibility = ViewStates.Invisible;
+                } else {
+                    leftButton1.SetImageResource (Resource.Drawable.gen_close);
+                    leftButton1.Visibility = ViewStates.Visible;
+                    rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
+                    rightButton1.Visibility = ViewStates.Visible;
+                    rightButton2.SetImageResource (Resource.Drawable.folder_move);
+                    rightButton2.Visibility = ViewStates.Visible;
+                    rightButton3.SetImageResource (Resource.Drawable.gen_archive);
+                    rightButton3.Visibility = ViewStates.Visible;
+                }
             } else {
                 listView.EnableSwipe (true);
                 leftButton1.SetImageResource (Resource.Drawable.nav_search);
@@ -942,7 +953,8 @@ namespace NachoClient.AndroidClient
                 thread = owner.messages.GetEmailThread (position);
                 message = owner.GetCachedMessage (position);
             }
-            Bind.BindMessageHeader (thread, message, view);
+            var isDraft = owner.messages.HasDraftsSemantics () || owner.messages.HasOutboxSemantics ();
+            Bind.BindMessageHeader (thread, message, view, isDraft);
 
             NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
 

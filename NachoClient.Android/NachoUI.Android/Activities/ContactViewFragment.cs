@@ -241,9 +241,8 @@ namespace NachoClient.AndroidClient
                 subtitle1.Text = GetTitleFromContact ();
             }
 
-            var userInitials = view.FindViewById<Android.Widget.TextView> (Resource.Id.user_initials);
-            userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
-            userInitials.SetBackgroundResource (Bind.ColorForUser (contact.CircleColor));
+            var userPhotoView = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
+            userPhotoView.SetContact (contact);
 
             var vipView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.vip);
             BindContactVip (contact, vipView);

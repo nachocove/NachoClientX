@@ -254,8 +254,12 @@ namespace NachoCore.Utils
             if (File.Exists(filePath)){
                 using (Stream contents = new FileStream(filePath, FileMode.Open, FileAccess.Read)) {
                     DataContractSerializer serializer = new DataContractSerializer (t);
-                    var o = serializer.ReadObject (contents);
-                    return o;
+                    try {
+                        var o = serializer.ReadObject (contents);
+                        return o;
+                    } catch (System.Xml.XmlException){
+                        return null;
+                    }
                 }
             }
             return null;

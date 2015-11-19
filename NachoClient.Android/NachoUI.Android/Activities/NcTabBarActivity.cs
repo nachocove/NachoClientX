@@ -82,9 +82,9 @@ namespace NachoClient.AndroidClient
         public static Intent HotListIntent (Context context)
         {
             if (LoginHelpers.ShowHotCards ()) {
-                return new Intent(context, typeof(NowActivity));
+                return new Intent (context, typeof(NowActivity));
             } else {
-                return new Intent(context, typeof(NowListActivity));
+                return new Intent (context, typeof(NowListActivity));
             }
         }
 
@@ -183,6 +183,46 @@ namespace NachoClient.AndroidClient
             } 
         }
 
+        public void AccountShortcut (int shortcut)
+        {
+            if (Resource.Id.account_settings == shortcut) {
+                StartActivity (AccountSettingsActivity.ShowAccountSettingsIntent (this, NcApplication.Instance.Account));
+                return;
+            }
+            // Pop the switcher if the activity hasn't already done it.
+            var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is SwitchAccountFragment) {
+                FragmentManager.PopBackStack ();
+            }
+            switch (shortcut) {
+            case Resource.Id.go_to_inbox:
+                {
+                    if (this is InboxActivity) {
+                        return;
+                    } 
+                    var intent = new Intent ();
+                    intent.SetClass (this, typeof(InboxActivity));
+                    intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+                    StartActivity (intent);
+                }
+                break;
+            case Resource.Id.go_to_deferred:
+                {
+                    var folder = McFolder.GetDeferredFakeFolder ();
+                    var intent = DeferredActivity.ShowDeferredFolderIntent (this, folder);
+                    StartActivity (intent); 
+                }
+                break;
+            case Resource.Id.go_to_deadlines:
+                {
+                    var folder = McFolder.GetDeadlineFakeFolder ();
+                    var intent = DeadlineActivity.ShowDeadlineFolderIntent (this, folder);
+                    StartActivity (intent);
+                }
+                break;
+            }
+        }
+
         public override void OnBackPressed ()
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
@@ -207,7 +247,7 @@ namespace NachoClient.AndroidClient
                 this.FragmentManager.PopBackStack ();
                 return;
             }
-            if(MoreFragment.moreTabActivities.Contains(this.GetType())) {
+            if (MoreFragment.moreTabActivities.Contains (this.GetType ())) {
                 base.OnBackPressed ();
             }
         }
