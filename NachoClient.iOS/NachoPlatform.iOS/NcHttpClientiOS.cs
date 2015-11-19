@@ -212,7 +212,7 @@ namespace NachoPlatform
                         return;
                     }
                     if (null != error && null != ErrorAction) {
-                        ErrorAction (createExceptionForNSError (error));
+                        ErrorAction (createExceptionForNSError (error), Token);
                     }
                     session.FinishTasksAndInvalidate ();
                 } catch (Exception ex) {

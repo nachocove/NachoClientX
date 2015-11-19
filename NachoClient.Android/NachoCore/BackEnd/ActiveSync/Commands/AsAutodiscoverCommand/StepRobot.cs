@@ -703,10 +703,10 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            void GetServerCertError (Exception exception)
+            void GetServerCertError (Exception exception, CancellationToken token)
             {
                 Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", exception.ToString ());
-                GetServerCertSuccess (null, Cts.Token);
+                GetServerCertSuccess (null, token);
             }
 
             private void DoRobotGotCert ()

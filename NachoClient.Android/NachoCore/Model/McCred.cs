@@ -256,7 +256,7 @@ namespace NachoCore.Model
                         string.IsNullOrEmpty (decodedResponse.refresh_token) ? GetRefreshToken () : decodedResponse.refresh_token,
                         uint.Parse (decodedResponse.expires_in));
                     onSuccess (this);
-                }), ((ex) => {
+                }), ((ex, token) => {
                     Log.Error (Log.LOG_SYS, "OAUTH2 Exception {0}", ex.ToString ());
                     onFailure (this);
                 }), Token);

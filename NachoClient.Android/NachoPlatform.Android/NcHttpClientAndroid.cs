@@ -193,7 +193,7 @@ namespace NachoPlatform
                 LogCompletion (SentBytesFromRequestBody(p0), -1);
 
                 if (ErrorAction != null) {
-                    ErrorAction (createExceptionForJavaIOException (p1));
+                    ErrorAction (createExceptionForJavaIOException (p1), Token);
                 }
             }
 

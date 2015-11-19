@@ -171,7 +171,7 @@ namespace NachoPlatform
     /// <summary>
     /// Error delegate. Called on error.
     /// </summary>
-    public delegate void ErrorDelegate (Exception exception);
+    public delegate void ErrorDelegate (Exception exception, CancellationToken token);
 
     public interface INcHttpClient
     {
