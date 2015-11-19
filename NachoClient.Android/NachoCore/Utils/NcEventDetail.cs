@@ -186,25 +186,7 @@ namespace NachoCore.Utils
 
         public string DurationString {
             get {
-                if (specific.AllDayEvent) {
-                    if ((specific.EndTime - specific.StartTime) > TimeSpan.FromDays(1)) {
-                        return string.Format ("All day from {0} through {1}",
-                            Pretty.MediumFullDate (specific.StartTime),
-                            Pretty.MediumFullDate (CalendarHelper.ReturnAllDayEventEndTime (specific.EndTime)));
-                    } else {
-                        return "All day event";
-                    }
-                } else {
-                    DateTime start = StartTime.ToLocalTime ();
-                    DateTime end = EndTime.ToLocalTime ();
-                    if (start.DayOfYear == end.DayOfYear) {
-                        return string.Format ("from {0} until {1}",
-                            Pretty.Time (StartTime), Pretty.Time (EndTime));
-                    } else {
-                        return string.Format ("from {0} until {1}",
-                            Pretty.Time (StartTime), Pretty.MediumFullDateTime (EndTime));
-                    }
-                }
+                return ComputeDurationString (specific, StartTime, EndTime);
             }
         }
 
@@ -234,6 +216,62 @@ namespace NachoCore.Utils
                     return string.Format ("{0} : {1}", accountName, folderName);
                 }
             }
+        }
+
+        private static string ComputeDurationString (McAbstrCalendarRoot cal, DateTime startTime, DateTime endTime)
+        {
+            if (cal.AllDayEvent) {
+                if ((cal.EndTime - cal.StartTime) > TimeSpan.FromDays (1)) {
+                    return string.Format ("All day from {0} through {1}",
+                        Pretty.MediumFullDate (GetStartTime (cal)),
+                        Pretty.MediumFullDate (CalendarHelper.ReturnAllDayEventEndTime (GetEndTime (cal))));
+                } else {
+                    return "All day event";
+                }
+            } else {
+                if (startTime.ToLocalTime ().Date == endTime.ToLocalTime ().Date) {
+                    return string.Format ("from {0} until {1}",
+                        Pretty.Time (startTime), Pretty.Time (endTime));
+                } else {
+                    return string.Format ("from {0} until {1}",
+                        Pretty.Time (startTime), Pretty.MediumFullDateTime (endTime));
+                }
+            }
+        }
+
+        public static DateTime GetStartTime (McAbstrCalendarRoot cal)
+        {
+            if (!cal.AllDayEvent) {
+                return cal.StartTime;
+            }
+            return DateTime.SpecifyKind (
+                CalendarHelper.ConvertTimeFromUtc (cal.StartTime, new AsTimeZone (cal.TimeZone).ConvertToSystemTimeZone ()).Date,
+                DateTimeKind.Local).ToUniversalTime ();
+        }
+
+        public static DateTime GetEndTime (McAbstrCalendarRoot cal)
+        {
+            if (!cal.AllDayEvent) {
+                return cal.EndTime;
+            }
+            return DateTime.SpecifyKind (
+                CalendarHelper.ConvertTimeFromUtc (cal.EndTime, new AsTimeZone (cal.TimeZone).ConvertToSystemTimeZone ()).Date,
+                DateTimeKind.Local).ToUniversalTime ();
+        }
+
+        public static string GetDateString (McAbstrCalendarRoot cal)
+        {
+            return Pretty.LongFullDate (GetStartTime (cal));
+        }
+
+        public static string GetDurationString (McAbstrCalendarRoot cal)
+        {
+            return ComputeDurationString (cal, GetStartTime (cal), GetEndTime (cal));
+        }
+
+        public static string GetRecurrenceString (McMeetingRequest cal)
+        {
+            return Pretty.MakeRecurrenceString (cal.recurrences);
         }
     }
 }
