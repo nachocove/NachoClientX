@@ -660,7 +660,7 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
             var folderFragment = ChooseFolderFragment.newInstance (messageThread);
-            folderFragment.setOnFolderSelected (OnFolderSelected);
+            folderFragment.SetOnFolderSelected (OnFolderSelected);
             folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }
 

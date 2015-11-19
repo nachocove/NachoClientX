@@ -16,17 +16,17 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
 using NachoCore;
+using Android.Support.V7.Widget;
 
 namespace NachoClient.AndroidClient
 {
     public class ChooseFolderFragment : DialogFragment
     {
-        FolderAdapter folderAdapter;
-        McEmailMessageThread messageThread;
-
         public delegate void OnFolderSelectedListener (McFolder folder, McEmailMessageThread messageThread);
 
-        OnFolderSelectedListener mOnFolderSelected;
+        McEmailMessageThread messageThread;
+        FolderListAdapter folderListAdapter;
+        OnFolderSelectedListener OnFolderSelected;
 
         // Null is ok; messageThread is just a cookie
         public static ChooseFolderFragment newInstance (McEmailMessageThread messageThread)
@@ -53,13 +53,30 @@ namespace NachoClient.AndroidClient
 
             var view = inflater.Inflate (Resource.Layout.ChooseFolderFragment, container, false);
 
-            var listview = view.FindViewById<ListView> (Resource.Id.listview);
-            folderAdapter = new FolderAdapter (view.Context);
-            folderAdapter.setOnFolderSelected (OnFolderSelected);
+            folderListAdapter = new FolderListAdapter (NcApplication.Instance.Account, hideFakeFolders: true);
+            var layoutManager = new LinearLayoutManager (Activity);
 
-            listview.Adapter = folderAdapter;
+            var recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
+            recyclerView.SetAdapter (folderListAdapter);
+            recyclerView.SetLayoutManager (layoutManager);
+
+            folderListAdapter.OnFolderSelected += FolderListAdapter_OnFolderSelected;
 
             return view;
+        }
+
+        public void SetOnFolderSelected (OnFolderSelectedListener OnFolderSelected)
+        {
+            this.OnFolderSelected = OnFolderSelected;
+        }
+
+        void FolderListAdapter_OnFolderSelected (object sender, McFolder folder)
+        {
+            Dismiss ();
+            if (null != OnFolderSelected) {
+                OnFolderSelected (folder, this.messageThread);
+                folder.UpdateSet_LastAccessed (DateTime.UtcNow);
+            }
         }
 
         public override void OnPause ()
@@ -71,82 +88,7 @@ namespace NachoClient.AndroidClient
             Dismiss ();
         }
 
-        public void setOnFolderSelected (OnFolderSelectedListener onFolderSelected)
-        {
-            mOnFolderSelected = onFolderSelected;
-        }
-
-        void OnFolderSelected (McFolder folder, McEmailMessageThread thisIsNull)
-        {
-            Dismiss ();
-            if (null != mOnFolderSelected) {
-                mOnFolderSelected (folder, this.messageThread);
-            }
-
-        }
     }
 
-    public class FolderAdapter : BaseAdapter
-    {
-        Context context;
-        LayoutInflater inflater;
-
-        NachoCore.NachoFolders Folders;
-
-        ChooseFolderFragment.OnFolderSelectedListener mOnFolderSelected;
-
-        public FolderAdapter (Context c)
-        {
-            context = c;
-            inflater = (LayoutInflater)context.GetSystemService (Context.LayoutInflaterService);
-            Folders = new NachoFolders (NcApplication.Instance.Account.Id, NachoFolders.FilterForEmail);
-        }
-
-        public void setOnFolderSelected (ChooseFolderFragment.OnFolderSelectedListener onFolderSelected)
-        {
-            mOnFolderSelected = onFolderSelected;
-        }
-
-        public override int Count {
-            get { return Folders.Count (); }
-        }
-
-        public override Java.Lang.Object GetItem (int position)
-        {
-            return null;
-        }
-
-        public override long GetItemId (int position)
-        {
-            return 0;
-        }
-
-        public override View GetView (int position, View convertView, ViewGroup parent)
-        {
-            View view;
-            if (convertView == null) {
-                view = inflater.Inflate (Resource.Layout.ChooseFolderItem, null);
-            } else {
-                view = convertView;
-            }
-
-            var label = view.FindViewById<TextView> (Resource.Id.label);
-            label.Text = Folders.GetFolder (position).DisplayName;
-
-            view.Click += View_Click;
-            view.Tag = position;
-            return view;
-        }
-
-        void View_Click (object sender, EventArgs e)
-        {
-            var view = (View)sender;
-            var position = (int)view.Tag;
-
-            if (null != mOnFolderSelected) {
-                mOnFolderSelected (Folders.GetFolder (position), null);
-            }
-        }
-    }
 }
 
