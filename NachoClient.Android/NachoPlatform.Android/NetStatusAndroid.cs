@@ -85,7 +85,12 @@ namespace NachoPlatform
             {
                 // NOTE: This is called using the UI thread, so need to Task.Run here.
                 NcTask.Run (delegate {
-                    NetStatus.Instance.Fire ();
+                    var inst = NetStatus.Instance;
+                    if (null == inst) {
+                        Log.Error (Log.LOG_SYS, "NetStatusBroadcastReceiver: NetStatus.Instance is null! ");
+                    } else {
+                        inst.Fire ();
+                    }
                 }, "NetStatusBroadcastReceiver:OnReceive");
             }
         }
