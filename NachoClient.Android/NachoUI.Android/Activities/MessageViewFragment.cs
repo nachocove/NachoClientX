@@ -369,15 +369,15 @@ namespace NachoClient.AndroidClient
             switch (message.MeetingResponseValue) {
             case NcResponseType.Accepted:
                 iconResourceId = Resource.Drawable.event_attend_active;
-                messageFormat = "{0} has accepted the meeting.";
+                messageFormat = "{0} accepted the meeting.";
                 break;
             case NcResponseType.Tentative:
                 iconResourceId = Resource.Drawable.event_maybe_active;
-                messageFormat = "{0} has tentatively accepted the meeting.";
+                messageFormat = "{0} tentatively accepted the meeting.";
                 break;
             case NcResponseType.Declined:
                 iconResourceId = Resource.Drawable.event_decline_active;
-                messageFormat = "{0} has declined the meeting.";
+                messageFormat = "{0} declined the meeting.";
                 break;
             default:
                 Log.Warn (Log.LOG_CALENDAR, "Unknown meeting response status: {0}", message.MessageClass);
