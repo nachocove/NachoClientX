@@ -56,7 +56,7 @@ namespace NachoClient.AndroidClient
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, supportMessageFragment).AddToBackStack ("Message").Commit ();
         }
 
-        public void MessageSentCallback()
+        public void MessageSentCallback ()
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is SupportMessageFragment) {
