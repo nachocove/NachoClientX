@@ -94,7 +94,6 @@ namespace NachoCore
 
     public sealed class NcApplication : IBackEndOwner, IStatusIndEvent
     {
-        private const int KClass4EarlyShowSeconds = 5;
         private const int KClass4LateShowSeconds = 15;
         private const int KSafeModeMaxSeconds = 120;
         private const string KDataPathSegment = "Data";
@@ -117,6 +116,7 @@ namespace NachoCore
         private bool SafeModeStarted = false;
 
         private static string Documents;
+        private static string DataDir;
 
         public double UpTimeSec { 
             get {
@@ -127,14 +127,16 @@ namespace NachoCore
         public ExecutionContextEnum ExecutionContext {
             get { return _ExecutionContext; }
             private set { 
-                _ExecutionContext = value; 
-                Log.Info (Log.LOG_LIFECYCLE, "ExecutionContext => {0}", _ExecutionContext.ToString ());
-                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged);
-                result.Value = _ExecutionContext;
-                InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = result,
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
+                if (value != _ExecutionContext) {
+                    _ExecutionContext = value; 
+                    Log.Info (Log.LOG_LIFECYCLE, "ExecutionContext => {0}", _ExecutionContext.ToString ());
+                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged);
+                    result.Value = _ExecutionContext;
+                    InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        Status = result,
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    });
+                }
             }
         }
 
@@ -177,9 +179,13 @@ namespace NachoCore
         // This string needs to be filled out by platform-dependent code when the app is first launched.
         public string CrashFolder { get; set; }
 
+        private string _StartupLog;
         public string StartupLog {
             get {
-                return Path.Combine (NcModel.Instance.GetDataDirPath (), "startup.log");
+                if (null == _StartupLog) {
+                    _StartupLog = Path.Combine (GetDataDirPath (), "startup.log");
+                }
+                return _StartupLog;
             }
         }
 
@@ -419,11 +425,9 @@ namespace NachoCore
         private static volatile NcApplication instance;
         private static object syncRoot = new Object ();
         private NcTimer MonitorTimer;
-        private NcTimer Class4EarlyShowTimer;
         private NcTimer Class4LateShowTimer;
         private NcTimer StartupUnmarkTimer;
 
-        public event EventHandler Class4EarlyShowEvent;
         public event EventHandler Class4LateShowEvent;
         public event EventHandler MonitorEvent;
 
@@ -467,7 +471,7 @@ namespace NachoCore
             ExecutionContext = _PlatformIndication; 
             ContinueOnActivation ();
             // load products from app store
-            StoreHandler.Instance.Start (); 
+            StoreHandler.Instance.Start ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion exited.");
         }
 
@@ -582,7 +586,7 @@ namespace NachoCore
 
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
         public void StartClass4Services ()
-        {
+        { 
             // Make sure the scheduled notifications are up to date.
             LocalNotificationManager.ScheduleNotifications ();
 
@@ -595,13 +599,6 @@ namespace NachoCore
             if (0 < BuildInfo.Source.Length) {
                 Log.Info (Log.LOG_LIFECYCLE, "Source Info: {0}", BuildInfo.Source);
             }
-            Class4EarlyShowTimer = new NcTimer ("NcApplication:Class4EarlyShowTimer", (state) => {
-                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer called.");
-                if (null != Class4EarlyShowEvent) {
-                    Class4EarlyShowEvent (this, EventArgs.Empty);
-                }
-                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer exited.");
-            }, null, new TimeSpan (0, 0, KClass4EarlyShowSeconds + (SafeMode ? KSafeModeMaxSeconds : 0)), TimeSpan.Zero);
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
                 NcModel.Instance.Info ();
@@ -619,10 +616,6 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
             MonitorStop ();
             CrlMonitor.StopService ();
-            if ((null != Class4EarlyShowTimer) && Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
-                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
-            }
-
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
                 NcCapture.PauseAll ();
@@ -934,7 +927,6 @@ namespace NachoCore
 
         private bool ShouldEnterSafeMode ()
         {
-            var startupLog = StartupLog;
             if (Debugger.IsAttached) {
                 return false;
             }
@@ -944,22 +936,10 @@ namespace NachoCore
             if (!File.Exists (StartupLog)) {
                 return false;
             }
-            var bytes = new byte[128];
-            int numBytes = 0;
-            using (var fileStream = File.Open (startupLog, FileMode.Open, FileAccess.Read)) {
-                numBytes = fileStream.Read (bytes, 0, bytes.Length);
+            if (new FileInfo(StartupLog).Length > 2) {
+                Telemetry.JsonFileTable.FinalizeAll (); // close of all JSON files
+                return true;
             }
-            int numTimestamps = 0;
-            for (int n = 0; n < numBytes; n++) {
-                if ('\n' == bytes [n]) {
-                    numTimestamps += 1;
-                    if (numTimestamps > 2) {
-                        Telemetry.JsonFileTable.FinalizeAll (); // close of all JSON files
-                        return true;
-                    }
-                }
-            }
-
             return false;
         }
 
@@ -1024,9 +1004,6 @@ namespace NachoCore
             }
             if (KSafeModeMaxSeconds > UpTimeSec) {
                 // Safe mode does not use up all allowed time. Reschedule class 4 timer to an earlier time.
-                if ((null != Class4EarlyShowTimer) && !Class4EarlyShowTimer.IsExpired ()) {
-                    Class4EarlyShowTimer.Change (new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);
-                }
                 if ((null != Class4LateShowTimer) && !Class4LateShowTimer.IsExpired ()) {
                     Class4LateShowTimer.Change (new TimeSpan (0, 0, KClass4LateShowSeconds), TimeSpan.Zero);
                 }
@@ -1045,20 +1022,17 @@ namespace NachoCore
                     UnmarkStartup ();
                 }, null, 20 * 1000, 0);
             using (var fileStream = File.Open (StartupLog, FileMode.OpenOrCreate | FileMode.Append)) {
-                var timestamp = String.Format ("{0}\n", DateTime.UtcNow);
-                var bytes = Encoding.ASCII.GetBytes (timestamp);
-                fileStream.Write (bytes, 0, bytes.Length);
+                fileStream.WriteByte ((byte)0);
             }
         }
 
         public void UnmarkStartup ()
         {
-            var startupLog = StartupLog;
-            if (File.Exists (startupLog)) {
+            if (File.Exists (StartupLog)) {
                 try {
-                    File.Delete (startupLog);
+                    File.Delete (StartupLog);
                 } catch (Exception e) {
-                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete startup log (file={0}, exception={1})", startupLog, e.Message);
+                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete startup log (file={0}, exception={1})", StartupLog, e.Message);
                 }
             }
         }
@@ -1097,14 +1071,13 @@ namespace NachoCore
 
         public static string GetDataDirPath ()
         {
-            if (Documents == null) {
-                GetDocumentsPath ();
+            if (DataDir == null) {
+                DataDir = Path.Combine (GetDocumentsPath (), KDataPathSegment);
+                if (!Directory.Exists (DataDir)) {
+                    Directory.CreateDirectory (DataDir);
+                }
             }
-            string dataDirPath = Path.Combine (Documents, KDataPathSegment);
-            if (!Directory.Exists (dataDirPath)) {
-                Directory.CreateDirectory (dataDirPath);
-            }
-            return dataDirPath;
+            return DataDir;
         }
 
         public static string GetVersionString ()
