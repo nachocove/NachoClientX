@@ -134,14 +134,10 @@ namespace NachoClient.AndroidClient
             base.OnSaveInstanceState (outState);
         }
 
-        public override void SwitchAccount (McAccount account)
+        public override void MaybeSwitchAccount ()
         {
-            base.SwitchAccount (account);
-            MaybeSwitchAccount ();
-        }
+            base.MaybeSwitchAccount ();
 
-        void MaybeSwitchAccount ()
-        {
             if ((null != account) && (NcApplication.Instance.Account.Id == account.Id)) {
                 return;
             }

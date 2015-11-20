@@ -74,9 +74,9 @@ namespace NachoClient.AndroidClient
             base.OnSaveInstanceState (outState);
         }
 
-        public override void SwitchAccount (McAccount account)
+        public override void MaybeSwitchAccount ()
         {
-            base.SwitchAccount (account);
+            base.MaybeSwitchAccount ();
 
             if (null != folderListFragment) {
                 folderListFragment.SwitchAccount ();
