@@ -335,24 +335,31 @@ namespace NachoPlatform
                         String phoneNo = GetField (pCur, ContactsContract.CommonDataKinds.Phone.Number);
                         PhoneDataKind type = (PhoneDataKind)GetFieldInt (pCur, ContactsContract.CommonDataKinds.Phone.InterfaceConsts.Type);
                         String phLabel = GetField (pCur, ContactsContract.CommonDataKinds.Phone.InterfaceConsts.Label);
-                        string phoneType = ContactsContract.CommonDataKinds.Phone.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, phLabel).ToLowerInvariant ();
+                        string phoneType = ContactsContract.CommonDataKinds.Phone.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, phLabel);
                         string name;
                         string label;
-                        if (phoneType == "home") {
-                            name = Xml.Contacts.HomePhoneNumber;
-                            label = "Home";
-                        } else if (phoneType == "work") {
-                            name = Xml.Contacts.BusinessPhoneNumber;
-                            label = "Work";
-                        } else if (phoneType == "mobile") {
-                            name = Xml.Contacts.MobilePhoneNumber;
-                            label = null;
-                        } else if (phoneType == "home fax") {
-                            name = Xml.Contacts.HomeFaxNumber;
-                            label = null;
-                        } else if (phoneType == "work fax") {
-                            name = Xml.Contacts.BusinessFaxNumber;
-                            label = null;
+                        if (!string.IsNullOrEmpty (phoneType)) {
+                            phoneType = phoneType.ToLowerInvariant ();
+                            if (phoneType == "home") {
+                                name = Xml.Contacts.HomePhoneNumber;
+                                label = "Home";
+                            } else if (phoneType == "work") {
+                                name = Xml.Contacts.BusinessPhoneNumber;
+                                label = "Work";
+                            } else if (phoneType == "mobile") {
+                                name = Xml.Contacts.MobilePhoneNumber;
+                                label = null;
+                            } else if (phoneType == "home fax") {
+                                name = Xml.Contacts.HomeFaxNumber;
+                                label = null;
+                            } else if (phoneType == "work fax") {
+                                name = Xml.Contacts.BusinessFaxNumber;
+                                label = null;
+                            } else {
+                                // assume mobile
+                                name = Xml.Contacts.MobilePhoneNumber;
+                                label = null;
+                            }
                         } else {
                             // assume mobile
                             name = Xml.Contacts.MobilePhoneNumber;
