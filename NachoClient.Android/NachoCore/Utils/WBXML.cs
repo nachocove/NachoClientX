@@ -61,15 +61,17 @@ namespace NachoCore.Wbxml
         public void LoadBytes (int accountId, FileStream stream, Boolean? doFiltering = null)
         {
             var filter = LoadBytesInit (doFiltering);
-            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (stream, filter.WbxmlBuffer);
-            LoadBytesProcess (accountId, filter, bytes, doFiltering);
+            using (ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (stream, filter.WbxmlBuffer)) {
+                LoadBytesProcess (accountId, filter, bytes, doFiltering);
+            }
         }
 
         public void LoadBytes (int accountId, byte[] rawBytes, Boolean? doFiltering = null)
         {
             var filter = LoadBytesInit (doFiltering);
-            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (rawBytes, filter.WbxmlBuffer);
-            LoadBytesProcess (accountId, filter, bytes, doFiltering);
+            using (ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (rawBytes, filter.WbxmlBuffer)) {
+                LoadBytesProcess (accountId, filter, bytes, doFiltering);
+            }
         }
 
         void LoadBytesProcess (int accountId, NcXmlFilterState filter, ASWBXMLByteQueue bytes, Boolean? doFiltering = null)

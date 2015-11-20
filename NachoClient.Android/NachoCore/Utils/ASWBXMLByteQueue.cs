@@ -18,31 +18,56 @@ namespace NachoCore.Wbxml
         }
     }
 
-    class ASWBXMLByteQueue
+    class WBXMLWritePastEndException : Exception
+    {
+    }
+
+    class ASWBXMLByteQueue : IDisposable
     {
         protected byte[] buffer;
         protected long bufferPos;
         protected long bufferEnd;
         protected GatedMemoryStream RedactedCopy;
+        protected byte[]RedactedCopyBuffer;
+        protected int RedactedCopyBufferPos;
         protected FileStream dataStream;
         protected long Pos;
 
         private ASWBXMLByteQueue (FileStream data, byte[] bytes, GatedMemoryStream redactedCopy = null)
         {
             RedactedCopy = redactedCopy;
+            if (null != RedactedCopy) {
+                RedactedCopyBuffer = new byte[4096];
+                RedactedCopyBufferPos = 0;
+            }
             dataStream = data;
             if (null == bytes) {
                 buffer = new byte[bufferSize(data)];
                 fillBuffer ();
             } else {
                 buffer = bytes;
+                bufferPos = 0;
+                bufferEnd = bytes.Length;
             }
         }
 
+        #region IDisposable implementation
+
+        public void Dispose ()
+        {
+            if (RedactedCopyBufferPos > 0) {
+                RedactedCopy.Write (RedactedCopyBuffer, 0, RedactedCopyBufferPos);
+                RedactedCopyBufferPos = 0;
+            }
+            RedactedCopy.Flush ();
+        }
+
+        #endregion
+
         /// <summary>
-        /// Maximum size of the read buffer. 10K. Anything less than that will be read fully into the buffer/memory.
+        /// Maximum size of the read buffer. 1M. Anything less than that will be read fully into the buffer/memory.
         /// </summary>
-        const int MaxBufferSize = 1024*10;
+        const int MaxBufferSize = 1024*1024;
 
         int bufferSize (FileStream data)
         {
@@ -89,7 +114,6 @@ namespace NachoCore.Wbxml
                 return;
             }
             bufferEnd = dataStream.Read (buffer, 0, buffer.Length);
-            Log.Info (Log.LOG_SYS, "WBXML buffer: read {0} into buffer", bufferEnd);
             bufferPos = 0;
         }
 
@@ -119,7 +143,11 @@ namespace NachoCore.Wbxml
             // The alternative is to rewrite the logic so we know what is redacted before we start keeping bytes.
             // We were ballooning attachment downloads in memory here.
             if (null != RedactedCopy && 1024 >= RedactedCopy.Length) {
-                RedactedCopy.WriteByte (retval);
+                RedactedCopyBuffer [RedactedCopyBufferPos++] = retval;
+                if (RedactedCopyBufferPos == RedactedCopyBuffer.Length) {
+                    RedactedCopy.Write (RedactedCopyBuffer, 0, RedactedCopyBufferPos);
+                    RedactedCopyBufferPos = 0;
+                }
             }
             return retval;
         }
@@ -149,6 +177,8 @@ namespace NachoCore.Wbxml
         {
             var decoder = new NcBase64 ();
             byte currentByte = 0x00;
+            byte[] lbuffer = new byte[1024*10]; // 10K buffer
+            int lbufferPos = 0;
             do {
                 if (cToken.IsCancellationRequested) {
                     throw new OperationCanceledException ();
@@ -158,13 +188,20 @@ namespace NachoCore.Wbxml
                     if (base64Decode) {
                         var decoded = decoder.Next (currentByte);
                         if (0 <= decoded) {
-                            stream.WriteByte ((byte)decoded);
+                            lbuffer[lbufferPos++] = (byte)decoded;
                         }
                     } else {
-                        stream.WriteByte (currentByte);
+                        lbuffer[lbufferPos++] = currentByte;
+                    }
+                    if (lbufferPos == lbuffer.Length) {
+                        stream.Write (lbuffer, 0, lbuffer.Length);
+                        lbufferPos = 0;
                     }
                 }
             } while (currentByte != 0x00);
+            if (lbufferPos > 0) {
+                stream.Write (lbuffer, 0, lbufferPos);
+            }
             stream.Flush ();
         }
 
@@ -196,20 +233,21 @@ namespace NachoCore.Wbxml
 
         public byte[] DequeueOpaque (int length, CancellationToken cToken)
         {
-            MemoryStream bStream = new MemoryStream ();
-
-            byte currentByte;
+            byte[] lbuffer = new byte[length];
+            int lbufferPos = 0;
             for (int i = 0; i < length; i++) {
                 // TODO: Improve this handling. We are technically UTF-8, meaning
                 // that characters could be more than one byte long. This will fail if we have
                 // characters outside of the US-ASCII range
-                currentByte = this.Dequeue ();
-                bStream.WriteByte (currentByte);
+                lbuffer[lbufferPos++] = this.Dequeue ();
+                if (lbufferPos > length) {
+                    throw new WBXMLWritePastEndException ();
+                }
                 if (cToken.IsCancellationRequested) {
                     throw new OperationCanceledException ();
                 }
             }
-            return bStream.ToArray ();
+            return lbuffer;
         }
     }
 }
