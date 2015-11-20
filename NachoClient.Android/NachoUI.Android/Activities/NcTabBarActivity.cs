@@ -25,6 +25,13 @@ namespace NachoClient.AndroidClient
             SetContentView (layoutId);
         }
 
+        protected override void OnResume ()
+        {
+            base.OnResume ();
+            this.MaybeSwitchAccount ();
+            this.SetSwitchAccountButtonImage (Window.FindViewById (Resource.Id.content));
+        }
+
         public void HookNavigationToolbar (Android.Views.View view)
         {
             var hotButton = view.FindViewById<Android.Views.View> (Resource.Id.hot);
@@ -130,10 +137,10 @@ namespace NachoClient.AndroidClient
 
         public void AddAccount ()
         {
-            StartActivity (new Intent(this, typeof(AddAccountActivity)));
+            StartActivity (new Intent (this, typeof(AddAccountActivity)));
         }
 
-        public virtual void SwitchAccount (McAccount account)
+        public virtual void MaybeSwitchAccount ()
         {
         }
 
@@ -141,7 +148,7 @@ namespace NachoClient.AndroidClient
         public void AccountSelected (McAccount account)
         {
             Log.Info (Log.LOG_UI, "NcActivity account selected {0}", account.DisplayName);
-            SwitchAccount (account);
+            MaybeSwitchAccount ();
             LoginHelpers.SetSwitchToTime (account);
 
             // Pop the switcher if the activity hasn't already done it.
