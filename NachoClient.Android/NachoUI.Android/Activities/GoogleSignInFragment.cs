@@ -20,11 +20,15 @@ namespace NachoClient.AndroidClient
 {
     public class GoogleSignInFragment : Fragment
     {
+        private const int SIGNIN_REQUEST_CODE = 1;
+
         private const string ACCOUNT_ID_KEY = "accountId";
         private const string SERVICE_KEY = "service";
 
         McAccount Account;
         McAccount.AccountServiceEnum Service;
+
+        bool finished = false;
 
         GoogleOAuth2Authenticator Authenticator;
 
@@ -58,10 +62,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnStart ();
 
-            var account = McAccount.GetAccountBeingConfigured ();
-            if ((null != account) && (McAccount.ConfigurationInProgressEnum.CredentialsValidated == account.ConfigurationInProgress)) {
-                var parent = (CredentialsFragmentDelegate)Activity;
-                parent.CredentialsValidated (account);
+            if (ValidationIsFinished ()) {
                 return;
             }
 
@@ -108,7 +109,33 @@ namespace NachoClient.AndroidClient
             Authenticator.Completed += AuthCompleted;
             Authenticator.Error += AuthError;
             var vc = Authenticator.GetUI (Activity);
-            StartActivity (vc);
+            StartActivityForResult (vc, SIGNIN_REQUEST_CODE);
+        }
+
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult (requestCode, resultCode, data);
+
+            switch (requestCode) {
+            case SIGNIN_REQUEST_CODE:
+                if (Result.Ok == resultCode) {
+                    ValidationIsFinished ();
+                }
+                break;
+            }
+        }
+
+        bool ValidationIsFinished()
+        {
+            if (!finished) {
+                var account = McAccount.GetAccountBeingConfigured ();
+                if ((null != account) && (McAccount.ConfigurationInProgressEnum.CredentialsValidated == account.ConfigurationInProgress)) {
+                    finished = true;
+                    var parent = (CredentialsFragmentDelegate)Activity;
+                    parent.CredentialsValidated (account);
+                }
+            }
+            return finished;
         }
 
         public void AuthCompleted (object sender, AuthenticatorCompletedEventArgs e)

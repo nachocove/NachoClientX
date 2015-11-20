@@ -24,42 +24,29 @@ namespace NachoClient.AndroidClient
 
     public class GettingStartedFragment : Fragment
     {
-        private const string WELCOME_KEY = "GettingStarted.welcomeId";
-
-        int welcomeId;
-
-        // Just shows "Welcome to NachoMail"
-        public static GettingStartedFragment newInstance (McAccount account)
+        // Just shows "Welcome to Nacho Mail"
+        public static GettingStartedFragment newInstance ()
         {
             var fragment = new GettingStartedFragment ();
-            fragment.welcomeId = (null == account ? Resource.String.gettingstarted : Resource.String.welcome_back);
             return fragment;
-        }
-
-        public override void OnCreate (Bundle savedInstanceState)
-        {
-            base.OnCreate (savedInstanceState);
-            if (null != savedInstanceState) {
-                welcomeId = savedInstanceState.GetInt (WELCOME_KEY, Resource.String.gettingstarted);
-            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             var view = inflater.Inflate (Resource.Layout.GettingStartedFragment, container, false);
-
-            var textView = view.FindViewById<TextView> (Resource.Id.welcome);
-            textView.SetText (welcomeId);
-
             var submitButton = view.FindViewById<Button> (Resource.Id.submit);
             submitButton.Click += SubmitButton_Click;
             return view;
         }
 
-        public override void OnSaveInstanceState (Bundle outState)
+        public override void OnResume ()
         {
-            base.OnSaveInstanceState (outState);
-            outState.PutInt (WELCOME_KEY, welcomeId);
+            base.OnResume ();
+
+            var account = McAccount.GetAccountBeingConfigured ();
+            var welcomeId = (null == account ? Resource.String.gettingstarted : Resource.String.welcome_back);
+            var textView = View.FindViewById<TextView> (Resource.Id.welcome);
+            textView.SetText (welcomeId);
         }
 
         void SubmitButton_Click (object sender, EventArgs e)
