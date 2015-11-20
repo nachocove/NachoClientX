@@ -223,7 +223,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-//            base.OnBackPressed ();
+            base.OnBackPressed ();
         }
 
         protected override void OnSaveInstanceState (Bundle outState)

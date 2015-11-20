@@ -15,7 +15,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public class NcTabBarActivity : NcActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate, AccountListDelegate
+    public class NcTabBarActivity : NcActivity, AccountListDelegate
     {
         SwitchAccountFragment switchAccountFragment = new SwitchAccountFragment ();
 
@@ -130,39 +130,7 @@ namespace NachoClient.AndroidClient
 
         public void AddAccount ()
         {
-            var chooseProviderFragment = ChooseProviderFragment.newInstance ();
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, chooseProviderFragment).AddToBackStack ("ChooseProvider").Commit ();
-        }
-
-        public void ChooseProviderFinished (McAccount.AccountServiceEnum service)
-        {
-            switch (service) {
-            case McAccount.AccountServiceEnum.GoogleDefault:
-                var googleSignInFragment = GoogleSignInFragment.newInstance (service, null);
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, googleSignInFragment).AddToBackStack ("GoogleSignIn").Commit ();
-                break;
-            default:
-                var credentialsFragment = CredentialsFragment.newInstance (service, null);
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, credentialsFragment).AddToBackStack ("Credentials").Commit ();
-                break;
-            }
-        }
-
-        // Credentials have been verified
-        public void CredentialsValidated (McAccount account)
-        {
-            var waitingFragment = WaitingFragment.newInstance (account);
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, waitingFragment).AddToBackStack ("Waiting").Commit ();
-        }
-
-        public void WaitingFinished (McAccount account)
-        {
-            Log.Info (Log.LOG_UI, "NcActivity syncing complete");
-            if (null != account) {
-                NcApplication.Instance.Account = account;
-                LoginHelpers.SetSwitchToTime (account);
-            }
-            FragmentManager.PopBackStack ("ChooseProvider", PopBackStackFlags.Inclusive);
+            StartActivity (new Intent(this, typeof(AddAccountActivity)));
         }
 
         public virtual void SwitchAccount (McAccount account)
@@ -227,23 +195,6 @@ namespace NachoClient.AndroidClient
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is SwitchAccountFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
-            if (f is ChooseProviderFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
-            if (f is CredentialsFragment) {
-                ((CredentialsFragment)f).OnBackPressed ();
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
-            if (f is GoogleSignInFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
-            if (f is WaitingFragment) {
                 this.FragmentManager.PopBackStack ();
                 return;
             }
