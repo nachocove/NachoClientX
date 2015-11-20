@@ -35,11 +35,11 @@ namespace NachoClient.AndroidClient
                 return;
             }
 
-            if ((bundle != null) && (null != FragmentManager.FindFragmentByTag<ChooseProviderFragment> (CREDENTIALS_FRAGMENT_TAG))) {
+            if ((bundle != null) && (null != FragmentManager.FindFragmentByTag<CredentialsFragment> (CREDENTIALS_FRAGMENT_TAG))) {
                 return;
             }
 
-            if ((bundle != null) && (null != FragmentManager.FindFragmentByTag<ChooseProviderFragment> (WAITING_FRAGMENT_TAG))) {
+            if ((bundle != null) && (null != FragmentManager.FindFragmentByTag<WaitingFragment> (WAITING_FRAGMENT_TAG))) {
                 return;
             }
                 
@@ -65,7 +65,7 @@ namespace NachoClient.AndroidClient
             }
             var ft = FragmentManager.BeginTransaction ();
             ft.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
-            ft.Add (Resource.Id.content, fragment).AddToBackStack (CREDENTIALS_FRAGMENT_TAG).Commit ();
+            ft.Add (Resource.Id.content, fragment, CREDENTIALS_FRAGMENT_TAG).AddToBackStack (CREDENTIALS_FRAGMENT_TAG).Commit ();
         }
 
         public void CredentialsValidated (McAccount account)
@@ -73,7 +73,7 @@ namespace NachoClient.AndroidClient
             var waitingFragment = WaitingFragment.newInstance (account);
             var ft = FragmentManager.BeginTransaction ();
             ft.SetCustomAnimations (Resource.Animation.fade_in, Resource.Animation.fade_out, Resource.Animation.fade_in, Resource.Animation.fade_out);
-            ft.Add (Resource.Id.content, waitingFragment).AddToBackStack (WAITING_FRAGMENT_TAG).Commit ();
+            ft.Add (Resource.Id.content, waitingFragment, WAITING_FRAGMENT_TAG).AddToBackStack (WAITING_FRAGMENT_TAG).Commit ();
         }
 
         public void WaitingFinished (McAccount account)
