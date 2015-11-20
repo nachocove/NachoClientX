@@ -31,6 +31,7 @@ namespace NachoClient.iOS
 
         protected NSTimer sendMessageTimer;
         protected bool hasDisplayedStatusMessage = false;
+        protected bool problemWasChanged = false;
 
         public SupportMessageViewController (IntPtr handle) : base (handle)
         {
@@ -127,7 +128,7 @@ namespace NachoClient.iOS
             UITextView sectionTwoTextView = new UITextView (new CGRect (INDENT - 4, sectionTwoHR.Frame.Bottom + 8, sectionTwoView.Frame.Width - INDENT, sectionTwoView.Frame.Height - CELL_HEIGHT - 8));
             sectionTwoTextView.Font = A.Font_AvenirNextMedium14;
             sectionTwoTextView.TextColor = UIColor.LightGray;
-            sectionTwoTextView.Text = "Briefly describe what's going on";
+            sectionTwoTextView.Text = "Briefly describe what's going on.";
             sectionTwoTextView.Tag = MESSAGEBODY_VIEW_TAG;
             sectionTwoTextView.BackgroundColor = UIColor.White;
             sectionTwoTextView.ScrollEnabled = true;
@@ -148,6 +149,7 @@ namespace NachoClient.iOS
                 if (textView.TextColor == UIColor.LightGray) {
                     textView.Text = "";
                     textView.TextColor = A.Color_NachoBlack;
+                    problemWasChanged = true;
                 }
                 return true;
             });
@@ -155,7 +157,8 @@ namespace NachoClient.iOS
             sectionTwoTextView.ShouldEndEditing += ((textView) => {
                 if (0 == textView.Text.Trim ().Length) {
                     sectionTwoTextView.TextColor = UIColor.LightGray;
-                    sectionTwoTextView.Text = "Briefly describe what's going on...";
+                    sectionTwoTextView.Text = "Briefly describe what's going on.";
+                    problemWasChanged = false;
                 }
                 textView.ResignFirstResponder ();
                 return true;
@@ -222,6 +225,12 @@ namespace NachoClient.iOS
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
                 NcAlertView.ShowMessage (this, "Network Error",
                     "A networking issue prevents this message from being sent. Please try again when you have a network connection.");
+            } else if (string.IsNullOrEmpty (contactInfoTextField.Text)) {
+                NcAlertView.ShowMessage (this, "Missing Contact Info",
+                    "Please provide contact information, such as an email address.");
+            } else if (!problemWasChanged || string.IsNullOrEmpty(messageInfoTextView.Text)) {
+                NcAlertView.ShowMessage (this, "No Description",
+                    "Please describe your reason for contacting Nacho Cove support, such as the problem that you encountered.");
             } else {
                 sendMessageTimer = NSTimer.CreateScheduledTimer (WAIT_TIMER_LENGTH, delegate {
                     MessageReceived (false);
@@ -237,7 +246,7 @@ namespace NachoClient.iOS
                 // Close all JSON files so they can be immediately uploaded while the user enters the
                 Telemetry.JsonFileTable.FinalizeAll ();
                 Telemetry.RecordSupport (supportInfo, () => {
-                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                         Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived),
                         Account = ConstMcAccount.NotAccountSpecific,
                     });
