@@ -45,6 +45,11 @@ namespace NachoClient.AndroidClient
             activityIndicatorView = view.FindViewById<ProgressBar> (Resource.Id.spinner);
             activityIndicatorView.Visibility = ViewStates.Invisible;
 
+            if (null != NcApplication.Instance.Account) {
+                var contactInfoTextField = view.FindViewById<EditText> (Resource.Id.reach);
+                contactInfoTextField.Text = NcApplication.Instance.Account.EmailAddr;
+            }
+
             return view;
         }
 
@@ -65,14 +70,20 @@ namespace NachoClient.AndroidClient
             InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
             imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
 
+            var contactInfoTextField = View.FindViewById<EditText> (Resource.Id.reach);
+            var messageInfoTextView = View.FindViewById<EditText> (Resource.Id.assist);
+
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
                 NcAlertView.ShowMessage (Activity, "Network Error",
                     "A networking issue prevents this message from being sent. Please try again when you have a network connection.");
+            } else if (string.IsNullOrEmpty(contactInfoTextField.Text)) {
+                NcAlertView.ShowMessage (Activity, "Missing Contact Info",
+                    "Please provide contact information, such as an email address.");
+            } else if (string.IsNullOrEmpty (messageInfoTextView.Text)) {
+                NcAlertView.ShowMessage (Activity, "No Description",
+                    "Please describe the reason for contacting Nacho Cove support, such as the problem that you encountered.");
             } else {
                 sendMessageTimer = new NcTimer ("support", MessageSendTimeout, null, 12 * 1000, 0); 
-
-                var contactInfoTextField = View.FindViewById<EditText> (Resource.Id.reach);
-                var messageInfoTextView = View.FindViewById<EditText> (Resource.Id.assist);
 
                 Dictionary<string,string> supportInfo = new Dictionary<string, string> ();
                 supportInfo.Add ("ContactInfo", contactInfoTextField.Text);
@@ -131,18 +142,23 @@ namespace NachoClient.AndroidClient
                     sendMessageTimer = null;
                 }
 
-                if (didSend) {
-                    NcAlertView.Show (Activity, "Message Sent",
-                        "We have received your message and will respond shortly. Thank you for your feedback.",
-                        () => {
-                            MessageSent ();
-                        });
-                } else {
-                    NcAlertView.Show (Activity, "Message Not Sent",
-                        "There was a delay while sending the message. We will continue trying to send the message in the background.",
-                        () => {
-                            MessageSent ();
-                        });
+                // The user may have already hit the back button, in which case the fragment has been
+                // detached and trying to show the dialog will crash the app.  Skip the dialog when
+                // that happens.
+                if (null != this.Activity) {
+                    if (didSend) {
+                        NcAlertView.Show (Activity, "Message Sent",
+                            "We have received your message and will respond shortly. Thank you for your feedback.",
+                            () => {
+                                MessageSent ();
+                            });
+                    } else {
+                        NcAlertView.Show (Activity, "Message Not Sent",
+                            "There was a delay while sending the message. We will continue trying to send the message in the background.",
+                            () => {
+                                MessageSent ();
+                            });
+                    }
                 }
             }
         }
