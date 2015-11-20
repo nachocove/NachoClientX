@@ -52,7 +52,7 @@
                     android:layout_height="match_parent"
                     android:paddingLeft="10dp"
                     android:gravity="left|center_vertical"
-                    android:textSize="14dp"
+                    android:textSize="17dp"
                     android:textStyle="normal"
                     android:textColor="@android:color/black"
                     android:background="@android:color/white" />
@@ -87,7 +87,7 @@
                         android:layout_height="match_parent"
                         android:paddingLeft="10dp"
                         android:gravity="left|center_vertical"
-                        android:textSize="14dp"
+                        android:textSize="17dp"
                         android:textStyle="normal"
                         android:textColor="@android:color/black"
                         android:background="@android:color/white" />
@@ -114,7 +114,7 @@
                         android:layout_height="match_parent"
                         android:paddingLeft="10dp"
                         android:gravity="left|center_vertical"
-                        android:textSize="14dp"
+                        android:textSize="17dp"
                         android:textStyle="normal"
                         android:textColor="@android:color/black"
                         android:background="@android:color/white" />
@@ -141,7 +141,7 @@
                         android:layout_height="match_parent"
                         android:paddingLeft="10dp"
                         android:gravity="left|center_vertical"
-                        android:textSize="14dp"
+                        android:textSize="17dp"
                         android:textStyle="normal"
                         android:textColor="@android:color/black"
                         android:background="@android:color/white" />
@@ -169,7 +169,7 @@
                     android:layout_height="match_parent"
                     android:paddingLeft="10dp"
                     android:gravity="left|center_vertical"
-                    android:textSize="14dp"
+                    android:textSize="17dp"
                     android:textStyle="normal"
                     android:textColor="@android:color/black"
                     android:background="@android:color/white" />
@@ -196,7 +196,7 @@
                     android:layout_height="match_parent"
                     android:paddingLeft="10dp"
                     android:gravity="left|center_vertical"
-                    android:textSize="14dp"
+                    android:textSize="17dp"
                     android:textStyle="normal"
                     android:textColor="@android:color/black"
                     android:background="@android:color/white" />

@@ -322,6 +322,51 @@ namespace NachoCore.Model
 
         /// Attachments are separate
 
+        [Ignore]
+        public bool IsMeetingRelated {
+            get {
+                return null != MessageClass && MessageClass.StartsWith ("IPM.Schedule.Meeting.");
+            }
+        }
+
+        [Ignore]
+        public bool IsMeetingRequest {
+            get {
+                return "IPM.Schedule.Meeting.Request" == MessageClass;
+            }
+        }
+
+        [Ignore]
+        public bool IsMeetingCancelation {
+            get {
+                return "IPM.Schedule.Meeting.Canceled" == MessageClass;
+            }
+        }
+
+        [Ignore]
+        public bool IsMeetingResponse {
+            get {
+                return null != MessageClass && MessageClass.StartsWith ("IPM.Schedule.Meeting.Resp.");
+            }
+        }
+
+        [Ignore]
+        public NcResponseType MeetingResponseValue {
+            get {
+                if (IsMeetingResponse) {
+                    switch (MessageClass) {
+                    case "IPM.Schedule.Meeting.Resp.Pos":
+                        return NcResponseType.Accepted;
+                    case "IPM.Schedule.Meeting.Resp.Tent":
+                        return NcResponseType.Tentative;
+                    case "IPM.Schedule.Meeting.Resp.Neg":
+                        return NcResponseType.Declined;
+                    }
+                }
+                return NcResponseType.None;
+            }
+        }
+
         /// TODO: Support other types besides mime!
         public FileStream ToMime (out long length)
         {

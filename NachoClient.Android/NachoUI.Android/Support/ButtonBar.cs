@@ -187,6 +187,20 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public void ClearAllListeners ()
+        {
+            foreach (var buttonInfo in buttons.Values) {
+                if (null != buttonInfo.clickHandler) {
+                    if (ButtonState.Icon == buttonInfo.state) {
+                        buttonInfo.iconView.Click -= buttonInfo.clickHandler;
+                    } else if (ButtonState.Text == buttonInfo.state) {
+                        buttonInfo.textView.Click -= buttonInfo.clickHandler;
+                    }
+                    buttonInfo.clickHandler = null;
+                }
+            }
+        }
+
         private enum ButtonState
         {
             Gone, Placeholder, Icon, Text

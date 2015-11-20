@@ -71,13 +71,18 @@ def main():
     for thread in threads:
         thread.start()
 
-    error = False
+    failed_repos = []
     for thread in threads:
         rc = thread.join()
         if rc != 0:
-            error = True
+            failed_repos.append(thread)
+
+    if failed_repos:
+        print
+        for failed in failed_repos:
+            print "ERROR: Update/fetch failed for: %s" % failed.repo
     print 'Total runtime: %.2f sec' % (time.time() - start)
-    sys.exit(0 if not error else 1)
+    sys.exit(0 if not failed_repos else 1)
 
 if __name__ == '__main__':
     main()
