@@ -113,8 +113,19 @@ namespace NachoCore.Wbxml
             if (null == dataStream) {
                 return;
             }
-            bufferEnd = dataStream.Read (buffer, 0, buffer.Length);
+            int toRead = buffer.Length;
+            int pos = 0;
+            while (toRead > 0) {
+                int n = dataStream.Read (buffer, pos, toRead);
+                if (n == 0) {
+                    break;
+                }
+                NcTimeStamp.Add (string.Format ("Read {0} bytes", n));
+                toRead -= n;
+                pos += n;
+            }
             bufferPos = 0;
+            bufferEnd = pos;
         }
 
         public int Peek ()
