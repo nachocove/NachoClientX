@@ -411,7 +411,7 @@ namespace NachoCore.ActiveSync
 
             ServicePointManager.FindServicePoint (request.RequestUri).ConnectionLimit = 25;
             Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
-            NcHttpClient.Instance.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, AttemptHttpProgress, cToken);
+            NcHttpClient.Instance.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, cToken);
         }
 
         void AttemptHttpSuccess (NcHttpResponse response, CancellationToken token)
@@ -495,11 +495,6 @@ namespace NachoCore.ActiveSync
                     }
                 }
             }, "AttemptHttpError");
-        }
-
-        void AttemptHttpProgress (bool isRequest, string taskDescription, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
-        {
-            Log.Debug (Log.LOG_HTTP, "HTTP-Progress({0}): {1} Progress: {2}:{3}:{4}", taskDescription, isRequest ? "Request" : "Response", bytesSent, totalBytesSent, totalBytesExpectedToSend);
         }
 
         private bool Is2xx (HttpStatusCode statusCode)
