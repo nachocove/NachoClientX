@@ -613,6 +613,7 @@
     <Compile Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\AddAccountActivity.cs" />
     <Compile Include="NachoCore\Utils\SimpleTaskScheduler.cs" />
+    <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1633,6 +1634,7 @@
     <AndroidResource Include="Resources\layout\AccountSettingsActivity.axml" />
     <AndroidResource Include="Resources\layout\EventInMessageLayout.axml" />
     <AndroidResource Include="Resources\layout\AddAccountActivity.axml" />
+    <AndroidResource Include="Resources\layout\NotificationActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
