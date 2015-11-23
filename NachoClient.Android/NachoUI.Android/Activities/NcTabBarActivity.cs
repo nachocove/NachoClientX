@@ -102,15 +102,20 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
+        public static Intent InboxIntent (Context context)
+        {
+            var intent = new Intent ();
+            intent.SetClass (context, typeof(InboxActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+            return intent;
+        }
+
         void InboxButton_Click (object sender, EventArgs e)
         {
             if (this is InboxActivity) {
                 return;
             } 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(InboxActivity));
-            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
-            StartActivity (intent);
+            StartActivity (InboxIntent(this));
         }
 
         void ContactsButton_Click (object sender, EventArgs e)
