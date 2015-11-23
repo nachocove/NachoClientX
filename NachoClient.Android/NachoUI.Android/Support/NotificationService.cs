@@ -64,7 +64,7 @@ namespace NachoClient.AndroidClient
             var since = DateTime.Parse (datestring);
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
 
-            unreadAndHot.RemoveAll(x => String.IsNullOrEmpty (x.From));
+            unreadAndHot.RemoveAll (x => String.IsNullOrEmpty (x.From));
 
             if (1 == unreadAndHot.Count) {
                 ExpandedNotification (0, unreadAndHot.ElementAt (0));
@@ -101,15 +101,16 @@ namespace NachoClient.AndroidClient
             builder.SetLargeIcon (largeIcon);
             builder.SetContentTitle (fromString);
             builder.SetContentText (subjectString);
-            var UnixEpoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            builder.SetWhen ((long)((message.DateReceived - UnixEpoch).TotalMilliseconds));
+            builder.SetWhen (message.DateReceived.MillisecondsSinceEpoch ());
             builder.SetAutoCancel (true);
 
-            if (!String.IsNullOrEmpty (message.BodyPreview)) {
+            var preview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
+
+            if (!String.IsNullOrEmpty (preview)) {
                 var expanded = new NotificationCompat.BigTextStyle ();
                 expanded.SetBigContentTitle (fromString);
                 expanded.SetSummaryText (subjectString);
-                expanded.BigText (message.BodyPreview);
+                expanded.BigText (preview);
                 builder.SetStyle (expanded);
             }
            
@@ -160,7 +161,7 @@ namespace NachoClient.AndroidClient
 
             builder.SetStyle (inbox);
 
-            var intent = NotificationActivity.ShowMessageIntent (this, messages.ElementAt(0));
+            var intent = NotificationActivity.ShowMessageIntent (this, messages.ElementAt (0));
             var pendingIntent = PendingIntent.GetActivity (this, 0, intent, 0);
             builder.SetContentIntent (pendingIntent);
 

@@ -41,6 +41,7 @@ namespace NachoClient.AndroidClient
 
             if (null == message) {
                 StartActivity (inboxIntent);
+                Finish ();
                 return;
             }
 
