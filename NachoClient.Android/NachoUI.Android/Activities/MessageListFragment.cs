@@ -317,11 +317,13 @@ namespace NachoClient.AndroidClient
             switch (e.ScrollState) {
             case ScrollState.TouchScroll:
             case ScrollState.Fling:
+                listView.EnableSwipe (false);
                 if (!NcApplication.Instance.IsBackgroundAbateRequired) {
                     NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment ScrollStateChanged");
                 }
                 break;
             case ScrollState.Idle:
+                listView.EnableSwipe (true);
                 if (NcApplication.Instance.IsBackgroundAbateRequired) {
                     NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment ScrollStateChanged");
                 }
