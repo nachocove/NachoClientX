@@ -25,6 +25,13 @@ namespace NachoClient.AndroidClient
             SetContentView (layoutId);
         }
 
+        protected override void OnResume ()
+        {
+            base.OnResume ();
+            this.MaybeSwitchAccount ();
+            this.SetSwitchAccountButtonImage (Window.FindViewById (Resource.Id.content));
+        }
+
         public void HookNavigationToolbar (Android.Views.View view)
         {
             var hotButton = view.FindViewById<Android.Views.View> (Resource.Id.hot);
@@ -95,15 +102,20 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
+        public static Intent InboxIntent (Context context)
+        {
+            var intent = new Intent ();
+            intent.SetClass (context, typeof(InboxActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+            return intent;
+        }
+
         void InboxButton_Click (object sender, EventArgs e)
         {
             if (this is InboxActivity) {
                 return;
             } 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(InboxActivity));
-            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
-            StartActivity (intent);
+            StartActivity (InboxIntent(this));
         }
 
         void ContactsButton_Click (object sender, EventArgs e)
@@ -117,23 +129,28 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
+        public static Intent CalendarIntent (Context context)
+        {
+            var intent = new Intent ();
+            intent.SetClass (context, typeof(CalendarActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+            return intent;
+        }
+
         void CalendarButton_Click (object sender, EventArgs e)
         {
             if (this is CalendarActivity) {
                 return;
             } 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(CalendarActivity));
-            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
-            StartActivity (intent);
+            StartActivity (CalendarIntent (this));
         }
 
         public void AddAccount ()
         {
-            StartActivity (new Intent(this, typeof(AddAccountActivity)));
+            StartActivity (new Intent (this, typeof(AddAccountActivity)));
         }
 
-        public virtual void SwitchAccount (McAccount account)
+        public virtual void MaybeSwitchAccount ()
         {
         }
 
@@ -141,7 +158,7 @@ namespace NachoClient.AndroidClient
         public void AccountSelected (McAccount account)
         {
             Log.Info (Log.LOG_UI, "NcActivity account selected {0}", account.DisplayName);
-            SwitchAccount (account);
+            MaybeSwitchAccount ();
             LoginHelpers.SetSwitchToTime (account);
 
             // Pop the switcher if the activity hasn't already done it.

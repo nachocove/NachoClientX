@@ -33,6 +33,18 @@
             android:textColor="@android:color/white"
             android:background="@color/NachoGreen" />
     </RelativeLayout>
+    <TextView
+        android:id="@+id/no_messages"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.1"
+        android:gravity="center_horizontal"
+        android:paddingTop="48dp"
+        android:textColor="@android:color/black"
+        android:textSize="14dp"
+        android:text="@string/no_messages"
+        android:visibility="gone"
+        android:background="@color/NachoLightGray" />
     <include
         layout="@layout/HotEvent" />
     <android.support.v4.widget.SwipeRefreshLayout

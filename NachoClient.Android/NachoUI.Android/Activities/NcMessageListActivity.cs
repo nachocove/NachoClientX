@@ -68,11 +68,6 @@ namespace NachoClient.AndroidClient
             messageListFragment.Initialize (messages, MessageListFragment_onEventClick, MessageListFragment_onThreadClick, MessageListFragment_onMessageClick);
         }
 
-        protected override void OnResume ()
-        {
-            base.OnResume ();
-        }
-
         void MessageListFragment_onEventClick (object sender, McEvent ev)
         {
             StartActivity (EventViewActivity.ShowEventIntent (this, ev));
@@ -139,14 +134,10 @@ namespace NachoClient.AndroidClient
             base.OnSaveInstanceState (outState);
         }
 
-        public override void SwitchAccount (McAccount account)
+        public override void MaybeSwitchAccount ()
         {
-            base.SwitchAccount (account);
-            MaybeSwitchAccount ();
-        }
+            base.MaybeSwitchAccount ();
 
-        void MaybeSwitchAccount ()
-        {
             if ((null != account) && (NcApplication.Instance.Account.Id == account.Id)) {
                 return;
             }

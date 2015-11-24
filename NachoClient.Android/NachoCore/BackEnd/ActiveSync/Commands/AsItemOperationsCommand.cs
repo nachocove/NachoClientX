@@ -274,7 +274,11 @@ namespace NachoCore.ActiveSync
                             switch (op) {
                             case McPending.Operations.EmailBodyDownload:
                                 item = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, serverId);
-                                successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
+                                if (item == null) {
+                                    successInd = NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed;
+                                } else {
+                                    successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
+                                }
                                 if (null != pending) {
                                     Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) {1}/{2} for email {3}", item.AccountId, pending.Id, pending.Token, item.Id);
                                 } else {
@@ -311,6 +315,10 @@ namespace NachoCore.ActiveSync
                                         item.ApplyAsXmlBody (xmlBody);
                                         return true;
                                     });
+                                    if (item.BodyId == 0) {
+                                        Log.Error (Log.LOG_AS, "ItemOperations: BodyId == 0 after message body download");
+                                        successInd = NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed;
+                                    }
                                 } else {
                                     item.ApplyAsXmlBody (xmlBody);
                                     item.Update ();

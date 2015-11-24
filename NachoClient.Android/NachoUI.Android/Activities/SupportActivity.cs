@@ -45,18 +45,13 @@ namespace NachoClient.AndroidClient
             base.OnSaveInstanceState (outState);
         }
 
-        public override void SwitchAccount (McAccount account)
-        {
-            base.SwitchAccount (account);
-        }
-
         public void EmailSupportClick ()
         {
             var supportMessageFragment = SupportMessageFragment.newInstance ();
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, supportMessageFragment).AddToBackStack ("Message").Commit ();
         }
 
-        public void MessageSentCallback()
+        public void MessageSentCallback ()
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is SupportMessageFragment) {

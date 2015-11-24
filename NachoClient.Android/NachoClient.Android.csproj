@@ -619,6 +619,8 @@
     <Compile Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\AddAccountActivity.cs" />
     <Compile Include="NachoCore\Utils\SimpleTaskScheduler.cs" />
+    <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1640,6 +1642,16 @@
     <AndroidResource Include="Resources\layout\AccountSettingsActivity.axml" />
     <AndroidResource Include="Resources\layout\EventInMessageLayout.axml" />
     <AndroidResource Include="Resources\layout\AddAccountActivity.axml" />
+    <AndroidResource Include="Resources\layout\NotificationActivity.axml" />
+    <AndroidResource Include="Resources\layout\HotSummaryFragment.axml" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_nacholeft.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_nachoright.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_nacholeft.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_nachoright.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_nacholeft.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_nachoright.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_nacholeft.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_nachoright.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

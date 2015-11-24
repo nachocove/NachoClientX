@@ -89,9 +89,9 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public override void SwitchAccount (McAccount account)
+        public override void MaybeSwitchAccount ()
         {
-            base.SwitchAccount (account);
+            base.MaybeSwitchAccount ();
 
             FragmentManager.PopBackStackImmediate ("Now", PopBackStackFlags.None);
             if (null != nowFragment) {

@@ -205,7 +205,7 @@ namespace NachoClient.AndroidClient
             }
 
             if (!message.IsMeetingRequest) {
-                view.FindViewById<View>(Resource.Id.event_attendee_view).Visibility = ViewStates.Gone;
+                view.FindViewById<View> (Resource.Id.event_attendee_view).Visibility = ViewStates.Gone;
             } else {
                 var attendeesFromMessage = NcEmailAddress.ParseAddressListString (Pretty.Join (message.To, message.Cc, ", "));
                 for (int a = 0; a < 5; ++a) {
@@ -228,7 +228,7 @@ namespace NachoClient.AndroidClient
             }
 
             // The Hot view cards never use the Attend/Maybe/Decline buttons.  They always use the message instead.
-            view.FindViewById(Resource.Id.event_rsvp_view).Visibility = ViewStates.Gone;
+            view.FindViewById (Resource.Id.event_rsvp_view).Visibility = ViewStates.Gone;
             view.FindViewById (Resource.Id.event_message_view).Visibility = ViewStates.Visible;
             if (message.IsMeetingResponse) {
                 ShowAttendeeResponseBar (view);
@@ -384,6 +384,7 @@ namespace NachoClient.AndroidClient
             }
             return names [0].ToUpper ();
         }
+
         public void MessageDownloadDidFinish (MessageDownloader downloader)
         {
             bundle = downloader.Bundle;
@@ -478,6 +479,82 @@ namespace NachoClient.AndroidClient
                 onMessageClick (this, thread);
             }
         }
+    }
+
+
+    public class PriorityInboxPagerAdaptor : Android.Support.V13.App.FragmentStatePagerAdapter
+    {
+        public event EventHandler<INachoEmailMessages> onThreadClick;
+        public event EventHandler<McEmailMessageThread> onMessageClick;
+
+        int baseId;
+
+        INachoEmailMessages messages = NcEmailSingleton.PrioritySingleton (NcApplication.Instance.Account.Id);
+
+        public PriorityInboxPagerAdaptor (Android.App.FragmentManager fm) : base (fm)
+        {
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override int Count {
+            get { return messages.Count () + 1; }
+        }
+
+        public override int GetItemPosition (Java.Lang.Object objectValue)
+        {
+            return PositionNone;
+        }
+
+        public override Android.App.Fragment GetItem (int position)
+        {
+            if ((Count - 1) == position) {
+                return HotSummaryFragment.newInstance ();
+            } else {
+                var thread = messages.GetEmailThread (position);
+                var hotMessageFragment = HotMessageFragment.newInstance (thread);
+                hotMessageFragment.onMessageClick += HotMessageFragment_onMessageClick;
+                return hotMessageFragment;
+            }
+        }
+
+        void HotMessageFragment_onMessageClick (object sender, McEmailMessageThread thread)
+        {
+            if (1 == thread.MessageCount) {
+                if (null != onMessageClick) {
+                    onMessageClick (this, thread);
+                }
+            } else {
+                var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
+                if (null != onThreadClick) {
+                    onThreadClick (this, threadMessages);
+                }
+            }
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                RefreshPriorityInboxIfVisible ();
+                break;
+            }
+        }
+
+        void RefreshPriorityInboxIfVisible ()
+        {
+            List<int> adds;
+            List<int> deletes;
+            if (messages.Refresh (out adds, out deletes)) {
+                this.NotifyDataSetChanged ();
+            }
+        }
+
     }
 }
 
