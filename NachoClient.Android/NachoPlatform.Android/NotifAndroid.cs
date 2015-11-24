@@ -126,6 +126,7 @@ namespace NachoClient.AndroidClient
             builder.SetSmallIcon (Resource.Drawable.Loginscreen_2);
             builder.SetPriority (NotificationCompat.PriorityHigh);
             builder.SetCategory (NotificationCompat.CategoryEvent);
+            builder.SetVibrate (new long[] { 0, 100 }); // Vibration or sound needs to be set to trigger a heads-up notification.
             builder.SetContentTitle ("Nacho Mail");
             builder.SetContentText (message);
             builder.SetAutoCancel (true);
