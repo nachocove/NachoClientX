@@ -107,7 +107,9 @@ namespace NachoClient.AndroidClient
                 letterbox.Click += Letterbox_Click;
             }
 
-            contactsListAdapter = new ContactsListAdapter ();
+            contactsListAdapter = new ContactsListAdapter (this);
+
+            MaybeDisplayNoContactsView (view);
 
             listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = contactsListAdapter;
@@ -329,6 +331,16 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public void MaybeDisplayNoContactsView (View view)
+        {
+            if (null != view) {
+                if (null != contactsListAdapter) {
+                    var showEmpty = !searching && (0 == contactsListAdapter.Count);
+                    view.FindViewById<Android.Widget.TextView> (Resource.Id.no_contacts).Visibility = (showEmpty ? ViewStates.Visible : ViewStates.Gone);
+                }
+            }
+        }
+
         private int dp2px (int dp)
         {
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
@@ -349,8 +361,12 @@ namespace NachoClient.AndroidClient
 
         Dictionary<int,int> viewTypeMap;
 
-        public ContactsListAdapter ()
+        ContactsListFragment parent;
+
+        public ContactsListAdapter (ContactsListFragment parent)
         {
+            this.parent = parent;
+
             RefreshContactsIfVisible ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -430,6 +446,9 @@ namespace NachoClient.AndroidClient
                 sections = ContactsBinningHelper.BinningContacts (ref contacts);
             }
             NotifyDataSetChanged ();
+            if (null != parent) {
+                parent.MaybeDisplayNoContactsView (parent.View);
+            }
         }
 
         public override long GetItemId (int position)

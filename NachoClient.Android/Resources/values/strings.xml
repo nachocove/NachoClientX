@@ -161,5 +161,9 @@
     <string name="license_agreement">License Agreement</string>
     <string name="open_source">Open Source Contributions</string>
     <string name="download_error">Error downloading infomation.  Please try again.</string>
+    <string name="no_messages">No messages</string>
+    <string name="no_contacts">No contacts</string>
+    <string name="no_hot_messages">You do not have any Hot messages.</string>
+    <string name="add_hot_messages">You can add Hot messages by tapping on the chili icon in your mail.</string>
 
 </resources>

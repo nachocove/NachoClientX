@@ -207,6 +207,8 @@ namespace NachoClient.AndroidClient
         public event EventHandler<INachoEmailMessages> onThreadClick;
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
+        int baseId;
+
         INachoEmailMessages messages = NcEmailSingleton.PrioritySingleton (NcApplication.Instance.Account.Id);
 
         public PriorityInboxPagerAdaptor (Android.App.FragmentManager fm) : base (fm)
@@ -215,9 +217,9 @@ namespace NachoClient.AndroidClient
         }
 
         public override int Count {
-            get { return messages.Count (); }
+            get { return messages.Count () + 1; }
         }
-
+            
         public override int GetItemPosition (Java.Lang.Object objectValue)
         {
             return PositionNone;
@@ -225,10 +227,14 @@ namespace NachoClient.AndroidClient
 
         public override Android.App.Fragment GetItem (int position)
         {
-            var thread = messages.GetEmailThread (position);
-            var hotMessageFragment = HotMessageFragment.newInstance (thread);
-            hotMessageFragment.onMessageClick += HotMessageFragment_onMessageClick;
-            return hotMessageFragment;
+            if ((Count - 1) == position) {
+                return HotSummaryFragment.newInstance ();
+            } else {
+                var thread = messages.GetEmailThread (position);
+                var hotMessageFragment = HotMessageFragment.newInstance (thread);
+                hotMessageFragment.onMessageClick += HotMessageFragment_onMessageClick;
+                return hotMessageFragment;
+            }
         }
 
         void HotMessageFragment_onMessageClick (object sender, McEmailMessageThread thread)
