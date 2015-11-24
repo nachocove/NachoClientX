@@ -26,9 +26,9 @@ namespace NachoCore.Model
 
         public static McMigration QueryLatestMigration ()
         {
-            return NcModel.Instance.Db.Table<McMigration> ()
-                .OrderBy (x => x.Version)
-                .LastOrDefault ();
+            return NcModel.Instance.Db.Query<McMigration> (
+                "SELECT * FROM McMigration ORDER BY Version DESC LIMIT 1" 
+            ).SingleOrDefault ();
         }
 
         public static McMigration QueryByVersion (int version)

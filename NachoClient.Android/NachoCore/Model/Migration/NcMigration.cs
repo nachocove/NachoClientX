@@ -122,11 +122,10 @@ namespace NachoCore.Model
 
             _migrations = new List<NcMigration> ();
             // Find all derived classes.
-            var subclasses = (from assembly in AppDomain.CurrentDomain.GetAssemblies ()
-                                       from type_ in assembly.GetTypes ()
-                                       where type_.IsSubclassOf (typeof(NcMigration))
-                                       select type_
-                             );
+            var subclasses = (from type_ in Assembly.GetExecutingAssembly ().GetTypes ()
+                where type_.Name.StartsWith ("NcMigration") && type_.IsSubclassOf (typeof(NcMigration))
+                select type_
+            ).ToArray ();
 
             // Find the latest version
             var latestMigration = McMigration.QueryLatestMigration ();
@@ -145,9 +144,11 @@ namespace NachoCore.Model
 
             // Filter out all migration versions that we have already finished.
             foreach (var subclass in subclasses) {
-                NcMigration migration = (NcMigration)Activator.CreateInstance (subclass, false);
-                var version = migration.Version ();
+                var className = subclass.Name;
+                string versionString = className.Substring (11);
+                var version = Convert.ToInt32 (versionString);
                 if (version > LastMigration) {
+                    NcMigration migration = (NcMigration)Activator.CreateInstance (subclass, false);
                     _migrations.Add (migration);
                 }
             }
