@@ -34,25 +34,14 @@ namespace NachoCore.Wbxml
         protected FileStream dataStream;
         protected long Pos;
         protected long dataStreamLen;
-        protected PlatformStopwatch fillSw;
-        protected PlatformStopwatch extraSw;
-        protected PlatformStopwatch redactedSw;
-        protected PlatformStopwatch readBuffer;
 
         private ASWBXMLByteQueue (FileStream data, byte[] bytes, GatedMemoryStream redactedCopy = null)
         {
-            fillSw = new PlatformStopwatch ();
-            extraSw = new PlatformStopwatch ();
-            redactedSw = new PlatformStopwatch ();
-            readBuffer = new PlatformStopwatch ();
-
             RedactedCopy = redactedCopy;
             if (null != RedactedCopy) {
-                redactedSw.Start ();
                 RedactedCopyLen = 4096;
                 RedactedCopyBuffer = new byte[RedactedCopyLen];
                 RedactedCopyBufferPos = 0;
-                redactedSw.Stop ();
             }
             dataStream = data;
             if (null == bytes) {
@@ -70,13 +59,10 @@ namespace NachoCore.Wbxml
         public void Dispose ()
         {
             if (RedactedCopyBufferPos > 0) {
-                redactedSw.Start ();
                 RedactedCopy.Write (RedactedCopyBuffer, 0, (int)RedactedCopyBufferPos);
                 RedactedCopyBufferPos = 0;
-                redactedSw.Stop ();
             }
             RedactedCopy.Flush ();
-            Log.Info (Log.LOG_SYS, "filling buffer {0}ms, redaction {1}, incidentals {2} readbuffer {3}", fillSw.ElapsedMilliseconds, redactedSw.ElapsedMilliseconds, extraSw.ElapsedMilliseconds, readBuffer.ElapsedMilliseconds);
         }
 
         #endregion
@@ -106,7 +92,6 @@ namespace NachoCore.Wbxml
 
         void fillBuffer ()
         {
-            fillSw.Start ();
             if (null == dataStream) {
                 return;
             }
@@ -122,43 +107,31 @@ namespace NachoCore.Wbxml
             }
             bufferPos = 0;
             bufferEnd = pos;
-            fillSw.Stop ();
         }
 
         public int Peek ()
         {
-            extraSw.Start ();
             if ((null != dataStream && Pos >= dataStreamLen) || (null == dataStream && bufferPos >= bufferEnd)) {
                 return -1;
             }
             if (null != dataStream && bufferPos >= bufferEnd) {
-                extraSw.Stop ();
                 fillBuffer ();
-            } else {
-                extraSw.Stop ();
             }
             return buffer [bufferPos];
         }
 
         public byte Dequeue ()
         {
-            extraSw.Start ();
             if ((null != dataStream && Pos >= dataStreamLen) || (null == dataStream && bufferPos >= bufferEnd)) {
                 throw new WBXMLReadPastEndException (Pos);
             }
             if (null != dataStream && bufferPos >= bufferEnd) {
-                extraSw.Stop ();
                 fillBuffer ();
-            } else {
-                extraSw.Stop ();
             }
-            readBuffer.Start ();
             var retval = buffer [bufferPos];
             bufferPos++;
             Pos++;
-            readBuffer.Stop ();
 
-            redactedSw.Start ();
             // We currently redact (telemetry) anything big, so stop copying bytes when something gets big.
             // The alternative is to rewrite the logic so we know what is redacted before we start keeping bytes.
             // We were ballooning attachment downloads in memory here.
@@ -169,7 +142,6 @@ namespace NachoCore.Wbxml
                     RedactedCopyBufferPos = 0;
                 }
             }
-            redactedSw.Stop ();
             return retval;
         }
 
