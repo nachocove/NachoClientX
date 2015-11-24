@@ -1,5 +1,6 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
+using SQLite;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -20,8 +21,10 @@ namespace NachoCore.Model
          */
 
         // Use a class name as the Module name to avoid conflict.
+        [Indexed]
         public string Module { set; get; }
 
+        [Indexed]
         public string Key { set; get; }
 
         public string Value { set; get; }
@@ -87,10 +90,12 @@ namespace NachoCore.Model
 
         public static string Get (int accountId, string module, string key)
         {
-            var exists = NcModel.Instance.Db.Table<McMutables> ().Where (x =>
-                x.AccountId == accountId &&
-                         x.Key == key &&
-                         x.Module == module).SingleOrDefault ();
+            var exists = NcModel.Instance.Db.Query<McMutables> (
+                             "SELECT * FROM McMutables WHERE " +
+                             " likelihood (AccountId = ?, 0.8) AND " +
+                             " likelihood (Module = ?, 0.1) AND " +
+                             " likelihood (Key = ?, 0.05) ",
+                             accountId, module, key).SingleOrDefault ();
             if (null == exists) {
                 return null;
             }
