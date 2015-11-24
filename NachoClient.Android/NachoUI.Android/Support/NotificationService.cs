@@ -18,6 +18,8 @@ namespace NachoClient.AndroidClient
     public class NotificationService : Service
     {
 
+        const int EMAIL_NOTIFICATION_ID = 0;
+
         public override void OnCreate ()
         {
             base.OnCreate ();
@@ -55,6 +57,16 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public static void OnForeground ()
+        {
+            // All messages are consider 'notified' once we are in foreground
+            NcTask.Run (NcApplication.Instance.CheckNotified, "CheckNotified");  // FIXME, don't always call, call on a delay
+
+            // Cancel any notifications that we've issued while in background
+            var nMgr = (NotificationManager)MainApplication.Instance.GetSystemService (NotificationService);
+            nMgr.Cancel (EMAIL_NOTIFICATION_ID);
+        }
+
         // It is okay if this function is called more than it needs to be.
         private void ShowNotifications ()
         {
@@ -67,13 +79,13 @@ namespace NachoClient.AndroidClient
             unreadAndHot.RemoveAll (x => String.IsNullOrEmpty (x.From));
 
             if (1 == unreadAndHot.Count) {
-                ExpandedNotification (0, unreadAndHot.ElementAt (0));
+                ExpandedNotification (EMAIL_NOTIFICATION_ID, unreadAndHot.ElementAt (0));
             } else if (1 < unreadAndHot.Count) {
-                InboxNotification (0, unreadAndHot);
+                InboxNotification (EMAIL_NOTIFICATION_ID, unreadAndHot);
             }
         }
 
-        private bool ExpandedNotification (int accountId, McEmailMessage message)
+        private bool ExpandedNotification (int notificationId, McEmailMessage message)
         {
             if (String.IsNullOrEmpty (message.From)) {
                 // Don't notify or count in badge number from-me messages.
@@ -119,12 +131,12 @@ namespace NachoClient.AndroidClient
             builder.SetContentIntent (pendingIntent);
 
             var nMgr = (NotificationManager)GetSystemService (NotificationService);
-            nMgr.Notify (accountId, builder.Build ());
+            nMgr.Notify (notificationId, builder.Build ());
 
             return true;
         }
 
-        private bool InboxNotification (int accountId, List<McEmailMessage> messages)
+        private bool InboxNotification (int notificationId, List<McEmailMessage> messages)
         {
             var countString = String.Format ("{0} new messages", messages.Count);
 
@@ -166,7 +178,7 @@ namespace NachoClient.AndroidClient
             builder.SetContentIntent (pendingIntent);
 
             var nMgr = (NotificationManager)GetSystemService (NotificationService);
-            nMgr.Notify (accountId, builder.Build ());
+            nMgr.Notify (notificationId, builder.Build ());
 
             return true;
         }
