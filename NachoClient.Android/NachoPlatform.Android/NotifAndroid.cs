@@ -124,6 +124,8 @@ namespace NachoClient.AndroidClient
             builder.SetLargeIcon (largeIcon);
 
             builder.SetSmallIcon (Resource.Drawable.Loginscreen_2);
+            builder.SetPriority (NotificationCompat.PriorityHigh);
+            builder.SetCategory (NotificationCompat.CategoryEvent);
             builder.SetContentTitle ("Nacho Mail");
             builder.SetContentText (message);
             builder.SetAutoCancel (true);
