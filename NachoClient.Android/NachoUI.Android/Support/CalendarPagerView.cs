@@ -79,9 +79,11 @@ namespace NachoClient.AndroidClient
             set {
                 if (value == 0) {
                     DisplayMode = PagerDisplayMode.Months;
+                    MonthLabelTransition = PagerMonthLabelTransition.Page;
                     Rows = 6;
                 } else {
                     DisplayMode = PagerDisplayMode.Weeks;
+                    MonthLabelTransition = PagerMonthLabelTransition.Fade;
                     Rows = value;
                 }
             }
@@ -127,8 +129,7 @@ namespace NachoClient.AndroidClient
         void Initialize ()
         {
             PageViews = new List<PageView> (2 * BufferedPageCount + 1);
-            Weeks = 0;
-            MonthLabelTransition = PagerMonthLabelTransition.Fade;
+            Weeks = 1;
             PageTransitionProgress = 0.0f;
             Calendar = new GregorianCalendar ();
 
@@ -143,14 +144,58 @@ namespace NachoClient.AndroidClient
             MonthLabelA.Gravity = GravityFlags.Center;
             MonthLabelB.TextAlignment = TextAlignment.Center;
             MonthLabelB.Gravity = GravityFlags.Center;
-            MonthLabelA.Text = "Month A";
-            MonthLabelB.Text = "Month B";
 
             AddView (MonthLabelA);
             AddView (MonthLabelB);
 
             FocusDate = DateTime.Now.Date;
             ConfigurePageViews ();
+        }
+
+        void UpdateMonthLabels (int transitionPage)
+        {
+            if (DisplayMode == PagerDisplayMode.Months) {
+                MonthLabelA.Text = LabelStringForMonth (FocusMonth);
+                var month = Calendar.AddMonths (FocusMonth, transitionPage);
+                MonthLabelB.Text = LabelStringForMonth (month);
+            } else {
+                MonthLabelA.Text = LabelStringForSpan (VisibleStartDate, VisibleEndDate);
+                var pageView = PageViews [BufferedPageCount + transitionPage];
+                MonthLabelB.Text = LabelStringForSpan (pageView.StartDate, pageView.EndDate);
+            }
+        }
+
+        string LabelStringForMonth (DateTime month)
+        {
+            var now = DateTime.Now;
+            if (FocusMonth.Year == now.Year) {
+                return FocusMonth.ToString ("MMMM");
+            } else {
+                return FocusMonth.ToString ("MMMM yyyy");
+            }
+        }
+
+        string LabelStringForSpan (DateTime start, DateTime end)
+        {
+            var now = DateTime.Now;
+            end = Calendar.AddDays (end, -1);
+            if (start.Month == end.Month) {
+                if (start.Year == now.Year) {
+                    return start.ToString ("MMMM");
+                } else {
+                    return start.ToString ("MMMM yyyy");
+                }
+            } else {
+                if (start.Year == end.Year) {
+                    if (start.Year == now.Year) {
+                        return String.Format ("{0}/{1}", start.ToString ("MMMM"), end.ToString ("MMMM"));
+                    } else {
+                        return String.Format ("{0}/{1}", start.ToString ("MMMM"), end.ToString ("MMMM yyyy"));
+                    }
+                } else {
+                    return String.Format ("{0}/{1}", start.ToString ("MMMM yyyy"), end.ToString ("MMMM yyyy"));
+                }
+            }
         }
 
         public override bool OnInterceptTouchEvent (MotionEvent ev)
@@ -185,7 +230,13 @@ namespace NachoClient.AndroidClient
             var absY = Math.Abs (totalDistanceY);
             if (IsScrollingHorizontally || absX >= absY) {
                 IsScrollingHorizontally = true;
-                PageTransitionProgress = totalDistanceX / (float)Width;
+                var newProgress = totalDistanceX / (float)Width;
+                if (newProgress > 0.0f && PageTransitionProgress <= 0.0f) {
+                    UpdateMonthLabels (-1);
+                } else if (newProgress < 0.0f && PageTransitionProgress >= 0.0f) {
+                    UpdateMonthLabels (1);
+                }
+                PageTransitionProgress = newProgress;
                 RequestLayout ();
             } else {
                 if (absY > MinScrollY) {
@@ -280,6 +331,7 @@ namespace NachoClient.AndroidClient
                     date = Calendar.AddWeeks (date, Rows);
                 }
             }
+            UpdateMonthLabels (1);
         }
 
         public void SetFocusDate (DateTime date)
@@ -295,6 +347,7 @@ namespace NachoClient.AndroidClient
                             while (pages < BufferedPageCount && date < Calendar.AddMonths (FocusMonth, -pages)) {
                                 ++pages;
                             }
+                            UpdateMonthLabels (-pages);
                             FocusDate = date;
                             PageViewsPrevious (0.0f, pages);
                         }
@@ -307,6 +360,7 @@ namespace NachoClient.AndroidClient
                             while (pages < BufferedPageCount && date >= Calendar.AddMonths (FocusMonth, pages + 1)) {
                                 ++pages;
                             }
+                            UpdateMonthLabels (pages);
                             FocusDate = date;
                             PageViewsNext (0.0f, pages);
                         }
@@ -318,18 +372,20 @@ namespace NachoClient.AndroidClient
                 if (date >= VisibleStartDate && date < VisibleEndDate) {
                     FocusDate = date;
                 } else if (date >= BufferedStartDate && date < VisibleStartDate) {
-                    FocusDate = date;
                     int pages = 1;
                     while (pages < BufferedPageCount && date < PageViews[BufferedPageCount - pages].StartDate) {
                         ++pages;
                     }
+                    FocusDate = date;
+                    UpdateMonthLabels (-pages);
                     PageViewsPrevious (0.0f, pages);
                 } else if (date >= VisibleEndDate && date < BufferedEndDate) {
-                    FocusDate = date;
                     int pages = 1;
                     while (pages < BufferedPageCount && date >= PageViews[BufferedPageCount + pages].EndDate) {
                         ++pages;
                     }
+                    UpdateMonthLabels (pages);
+                    FocusDate = date;
                     PageViewsNext (0.0f, pages);
                 } else {
                     FocusDate = date;
@@ -385,6 +441,7 @@ namespace NachoClient.AndroidClient
                         }
                         --remaining;
                     }
+                    UpdateMonthLabels (1);
                     RequestLayout ();
                 };
                 animator.Start ();
@@ -420,6 +477,7 @@ namespace NachoClient.AndroidClient
                         }
                         --remaining;
                     }
+                    UpdateMonthLabels (1);
                     RequestLayout ();
                 };
                 animator.Start ();
@@ -491,7 +549,7 @@ namespace NachoClient.AndroidClient
             var x = pagesOffset;
             var y = 0;
             if (MonthLabelTransition == PagerMonthLabelTransition.Fade) {
-                x = pagesOffset + bufferWidth;
+                x = 0;
                 MonthLabelA.Layout (x, y, x + w, y + MonthLabelA.MeasuredHeight);
                 MonthLabelB.Layout (x, y, x + w, y + MonthLabelB.MeasuredHeight);
                 MonthLabelA.Alpha = 1.0f - Math.Abs(PageTransitionProgress);
