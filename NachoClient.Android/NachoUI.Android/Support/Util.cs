@@ -58,9 +58,17 @@ namespace NachoClient.AndroidClient
 
         #region Date/time conversions and other methods
 
+        private static readonly DateTime UnixEpoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         public static long MillisecondsSinceEpoch (this DateTime dateTime)
         {
-            return (dateTime.ToUniversalTime () - new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Ticks / TimeSpan.TicksPerMillisecond;
+            // DateTime.ToUniversalTime() assumes than unspecified times are local.  But we want unspecified
+            // times to be UTC, since the database code loads DateTimes as unspecified and we don't have a
+            // good place to change them all to UTC.
+            if (DateTimeKind.Unspecified == dateTime.Kind) {
+                dateTime = DateTime.SpecifyKind (dateTime, DateTimeKind.Utc);
+            }
+            return (long)((dateTime.ToUniversalTime () - UnixEpoch).TotalMilliseconds);
         }
 
         public static Java.Util.Date ToJavaDate (this DateTime dateTime)
@@ -70,7 +78,12 @@ namespace NachoClient.AndroidClient
 
         public static DateTime ToDateTime (this Java.Util.Date javaDate)
         {
-            return new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) + TimeSpan.FromMilliseconds (javaDate.Time);
+            return javaDate.Time.JavaMsToDateTime ();
+        }
+
+        public static DateTime JavaMsToDateTime (this long javaMs)
+        {
+            return UnixEpoch + TimeSpan.FromMilliseconds (javaMs);
         }
 
         #endregion
