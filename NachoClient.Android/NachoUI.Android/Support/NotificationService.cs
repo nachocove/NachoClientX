@@ -27,7 +27,7 @@ namespace NachoClient.AndroidClient
         public override void OnDestroy ()
         {
             base.OnDestroy ();
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         public override StartCommandResult OnStartCommand (Android.Content.Intent intent, StartCommandFlags flags, int startId)
@@ -50,7 +50,11 @@ namespace NachoClient.AndroidClient
             // completes.
             if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind) {
                 if (!LifecycleSpy.SharedInstance.IsForeground ()) {
-                    ShowNotifications ();
+                    try {
+                        ShowNotifications ();
+                    } catch (Exception ex) {
+                        Log.Error (Log.LOG_EMAIL, "NotificationService: {0}", ex);
+                    }
                 }
             }
         }
