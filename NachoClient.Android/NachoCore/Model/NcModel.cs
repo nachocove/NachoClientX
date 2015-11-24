@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
+using NachoClient.Build;
 using NachoCore.Utils;
 using NachoPlatform;
 
@@ -255,6 +256,8 @@ namespace NachoCore.Model
 
         private void ConfigureDb (SQLiteConnection db)
         {
+            // everything except synchronous seems to persist across re-launch.
+            // TODO we can remove the checking to speed up launch.
             NcAssert.NotNull (db);
             var auto_vacuum = db.ExecuteScalar<int> ("PRAGMA auto_vacuum");
             QueueLogInfo (string.Format ("PRAGMA auto_vacuum: {0}", auto_vacuum));
@@ -291,6 +294,17 @@ namespace NachoCore.Model
             }
         }
 
+        private McBuildInfo _StoredBuildInfo = null;
+        public McBuildInfo StoredBuildInfo {
+            get {
+                if (null == _StoredBuildInfo) {
+                    Db.CreateTable<McBuildInfo> ();
+                    _StoredBuildInfo = Db.Table<McBuildInfo> ().FirstOrDefault ();
+                }
+                return _StoredBuildInfo;
+            }
+        }
+
         private void InitializeDb ()
         {
             RateLimiter = new NcRateLimter (16, 0.250);
@@ -299,49 +313,61 @@ namespace NachoCore.Model
             AutoVacuum = AutoVacuumEnum.NONE;
             var watch = Stopwatch.StartNew ();
             // Use the SQLite.NET "raw" version of RunInTransaction while initializing NcModel.
-            Db.RunInTransaction (() => {
-                Db.CreateTable<McAccount> ();
-                Db.CreateTable<McConference> ();
-                Db.CreateTable<McCred> ();
-                Db.CreateTable<McMapFolderFolderEntry> ();
-                Db.CreateTable<McFolder> ();
-                Db.CreateTable<McEmailAddress> ();
-                Db.CreateTable<McEmailMessage> ();
-                Db.CreateTable<McEmailMessageCategory> ();
-                Db.CreateTable<McEmailMessageDependency> ();
-                Db.CreateTable<McMeetingRequest> ();
-                Db.CreateTable<McAttachment> ();
-                Db.CreateTable<McMapAttachmentItem> ();
-                Db.CreateTable<McContact> ();
-                Db.CreateTable<McContactDateAttribute> ();
-                Db.CreateTable<McContactStringAttribute> ();
-                Db.CreateTable<McContactAddressAttribute> ();
-                Db.CreateTable<McContactEmailAddressAttribute> ();
-                Db.CreateTable<McPolicy> ();
-                Db.CreateTable<McProtocolState> ();
-                Db.CreateTable<McServer> ();
-                Db.CreateTable<McPending> ();
-                Db.CreateTable<McPendDep> ();
-                Db.CreateTable<McCalendar> ();
-                Db.CreateTable<McException> ();
-                Db.CreateTable<McAttendee> ();
-                Db.CreateTable<McCalendarCategory> ();
-                Db.CreateTable<McRecurrence> ();
-                Db.CreateTable<McEvent> ();
-                Db.CreateTable<McTask> ();
-                Db.CreateTable<McBody> ();
-                Db.CreateTable<McDocument> ();
-                Db.CreateTable<McMutables> ();
-                Db.CreateTable<McPath> ();
-                Db.CreateTable<McNote> ();
-                Db.CreateTable<McPortrait> ();
-                Db.CreateTable<McMapEmailAddressEntry> ();
-                Db.CreateTable<McMigration> ();
-                Db.CreateTable<McLicenseInformation> ();
-                Db.CreateTable<McBrainEvent> ();
-                Db.CreateTable<McEmailAddressScore> ();
-                Db.CreateTable<McEmailMessageScore> ();
-            });
+            var storedBuildInfo = StoredBuildInfo;
+            if (null == storedBuildInfo ||
+                storedBuildInfo.BuildNumber != BuildInfo.BuildNumber ||
+                storedBuildInfo.Time != BuildInfo.Time ||
+                storedBuildInfo.Version != BuildInfo.Version) {
+                Db.RunInTransaction (() => {
+                    Db.CreateTable<McAccount> ();
+                    Db.CreateTable<McConference> ();
+                    Db.CreateTable<McCred> ();
+                    Db.CreateTable<McMapFolderFolderEntry> ();
+                    Db.CreateTable<McFolder> ();
+                    Db.CreateTable<McEmailAddress> ();
+                    Db.CreateTable<McEmailMessage> ();
+                    Db.CreateTable<McEmailMessageCategory> ();
+                    Db.CreateTable<McEmailMessageDependency> ();
+                    Db.CreateTable<McMeetingRequest> ();
+                    Db.CreateTable<McAttachment> ();
+                    Db.CreateTable<McMapAttachmentItem> ();
+                    Db.CreateTable<McContact> ();
+                    Db.CreateTable<McContactDateAttribute> ();
+                    Db.CreateTable<McContactStringAttribute> ();
+                    Db.CreateTable<McContactAddressAttribute> ();
+                    Db.CreateTable<McContactEmailAddressAttribute> ();
+                    Db.CreateTable<McPolicy> ();
+                    Db.CreateTable<McProtocolState> ();
+                    Db.CreateTable<McServer> ();
+                    Db.CreateTable<McPending> ();
+                    Db.CreateTable<McPendDep> ();
+                    Db.CreateTable<McCalendar> ();
+                    Db.CreateTable<McException> ();
+                    Db.CreateTable<McAttendee> ();
+                    Db.CreateTable<McCalendarCategory> ();
+                    Db.CreateTable<McRecurrence> ();
+                    Db.CreateTable<McEvent> ();
+                    Db.CreateTable<McTask> ();
+                    Db.CreateTable<McBody> ();
+                    Db.CreateTable<McDocument> ();
+                    Db.CreateTable<McMutables> ();
+                    Db.CreateTable<McPath> ();
+                    Db.CreateTable<McNote> ();
+                    Db.CreateTable<McPortrait> ();
+                    Db.CreateTable<McMapEmailAddressEntry> ();
+                    Db.CreateTable<McMigration> ();
+                    Db.CreateTable<McLicenseInformation> ();
+                    Db.CreateTable<McBrainEvent> ();
+                    Db.CreateTable<McEmailAddressScore> ();
+                    Db.CreateTable<McEmailMessageScore> ();
+                });
+                var current = new McBuildInfo () {
+                    Version = BuildInfo.Version,
+                    BuildNumber = BuildInfo.BuildNumber,
+                    Time = BuildInfo.Time,
+                };
+                NcAssert.AreEqual (1, Db.InsertOrReplace (current));
+            }
             watch.Stop ();
             QueueLogInfo (string.Format ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds));
             ConfigureDb (Db);
@@ -693,6 +719,7 @@ namespace NachoCore.Model
             */
         }
 
+        // Test use only.
         public void Reset (string dbFileName)
         {
             DbFileName = dbFileName;
