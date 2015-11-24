@@ -614,6 +614,7 @@
     <Compile Include="NachoUI.Android\Activities\AddAccountActivity.cs" />
     <Compile Include="NachoCore\Utils\SimpleTaskScheduler.cs" />
     <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
+    <Compile Include="NachoUI.Android\Support\CalendarPagerView.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
