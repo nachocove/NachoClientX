@@ -11,11 +11,12 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
 using Android.Support.V4.View;
 using Android.Animation;
+
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -28,7 +29,7 @@ namespace NachoClient.AndroidClient
         List<PageView> PageViews;
         TextView MonthLabelA;
         TextView MonthLabelB;
-        CalendarDateSelected DateSelected;
+        public CalendarDateSelected DateSelected;
         Calendar Calendar;
         DateTime FocusDate;
         DateTime VisibleStartDate {
@@ -53,17 +54,19 @@ namespace NachoClient.AndroidClient
         }
         DateTime FocusMonth {
             get {
-                return new DateTime (FocusDate.Year, FocusDate.Month, 1);
+                return new DateTime (FocusDate.Year, FocusDate.Month, 1, 0, 0, 0, FocusDate.Kind);
             }
         }
         DateTime BufferedStartMonth {
             get {
-                return Calendar.AddMonths (FocusMonth, -BufferedPageCount);
+                var date = Calendar.AddMonths (FocusMonth, -BufferedPageCount);
+                return DateTime.SpecifyKind (date, FocusMonth.Kind);
             }
         }
         DateTime BufferedEndMonth {
             get {
-                return Calendar.AddMonths (FocusMonth, BufferedPageCount + 1);
+                var date = Calendar.AddMonths (FocusMonth, BufferedPageCount + 1);
+                return DateTime.SpecifyKind (date, FocusMonth.Kind);
             }
         }
 //        ImageView SelectionIndicatorA;
@@ -114,13 +117,13 @@ namespace NachoClient.AndroidClient
             Initialize ();
         }
 
-        public CalendarPagerView (Context context, IAttributeSet attrs) :
+        public CalendarPagerView (Context context, Android.Util.IAttributeSet attrs) :
             base (context, attrs)
         {
             Initialize ();
         }
 
-        public CalendarPagerView (Context context, IAttributeSet attrs, int defStyle) :
+        public CalendarPagerView (Context context, Android.Util.IAttributeSet attrs, int defStyle) :
             base (context, attrs, defStyle)
         {
             Initialize ();
@@ -148,7 +151,7 @@ namespace NachoClient.AndroidClient
             AddView (MonthLabelA);
             AddView (MonthLabelB);
 
-            FocusDate = DateTime.Now.Date;
+            FocusDate = DateTime.Now.ToLocalTime ().Date;
             ConfigurePageViews ();
         }
 
@@ -156,7 +159,7 @@ namespace NachoClient.AndroidClient
         {
             if (DisplayMode == PagerDisplayMode.Months) {
                 MonthLabelA.Text = LabelStringForMonth (FocusMonth);
-                var month = Calendar.AddMonths (FocusMonth, transitionPage);
+                var month = DateTime.SpecifyKind (Calendar.AddMonths (FocusMonth, transitionPage), FocusMonth.Kind);
                 MonthLabelB.Text = LabelStringForMonth (month);
             } else {
                 MonthLabelA.Text = LabelStringForSpan (VisibleStartDate, VisibleEndDate);
@@ -167,7 +170,7 @@ namespace NachoClient.AndroidClient
 
         string LabelStringForMonth (DateTime month)
         {
-            var now = DateTime.Now;
+            var now = DateTime.Now.ToLocalTime ();
             if (FocusMonth.Year == now.Year) {
                 return FocusMonth.ToString ("MMMM");
             } else {
@@ -177,8 +180,8 @@ namespace NachoClient.AndroidClient
 
         string LabelStringForSpan (DateTime start, DateTime end)
         {
-            var now = DateTime.Now;
-            end = Calendar.AddDays (end, -1);
+            var now = DateTime.Now.ToLocalTime ();
+            end = DateTime.SpecifyKind (Calendar.AddDays (end, -1), end.Kind);
             if (start.Month == end.Month) {
                 if (start.Year == now.Year) {
                     return start.ToString ("MMMM");
@@ -200,8 +203,8 @@ namespace NachoClient.AndroidClient
 
         public override bool OnInterceptTouchEvent (MotionEvent ev)
         {
-            var isGuesture = GestureDetector.OnTouchEvent (ev);
-            if (!isGuesture) {
+            var isGesture = GestureDetector.OnTouchEvent (ev);
+            if (!isGesture) {
                 if (IsScrollingHorizontally && ev.Action == MotionEventActions.Up) {
                     IsScrollingHorizontally = false;
                     if (PageTransitionProgress < 0.0f) {
@@ -238,32 +241,16 @@ namespace NachoClient.AndroidClient
                 }
                 PageTransitionProgress = newProgress;
                 RequestLayout ();
+                return true;
             } else {
-                if (absY > MinScrollY) {
-                    if (totalDistanceY < 0.0f && DisplayMode == PagerDisplayMode.Months) {
-                        // TODO: start transitioning to weeks
-                        return true;
-                    } else if (totalDistanceY > 0.0f && DisplayMode == PagerDisplayMode.Weeks) {
-                        // TODO: start transitioning to months
-                        return true;
-                    }
-                }
+                return false;
             }
-            return false;
         }
 
         public bool OnFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
         {
             if (IsScrollingHorizontally) {
-                IsScrollingHorizontally = false;
-                if (PageTransitionProgress < 0) {
-                    PageFocusDateNext ();
-                    PageViewsNext (-velocityX);
-                } else if (PageTransitionProgress > 0){
-                    PageFocusDatePrevious ();
-                    PageViewsPrevious (velocityX);
-                }
-                return true;
+                return false;
             } else {
                 if (velocityY < 0.0f && DisplayMode == PagerDisplayMode.Months) {
                     // TODO: animate to weeks
@@ -306,6 +293,7 @@ namespace NachoClient.AndroidClient
                     pageView = PageViews [i];
                 } else {
                     pageView = new PageView (Context);
+                    pageView.DateSelected = PageViewDateSelected;
                     PageViews.Add (pageView);
                     PagesContainer.AddView (pageView);
                 }
@@ -316,21 +304,21 @@ namespace NachoClient.AndroidClient
                 PageViews.RemoveAt (j);
             }
             if (DisplayMode == PagerDisplayMode.Months) {
-                var focusMonth = new DateTime (FocusDate.Year, FocusDate.Month, 1);
-                var month = Calendar.AddMonths (focusMonth, -BufferedPageCount);
+                var focusMonth = new DateTime (FocusDate.Year, FocusDate.Month, 1, 0, 0, 0, DateTimeKind.Local);
+                var month = DateTime.SpecifyKind (Calendar.AddMonths (focusMonth, -BufferedPageCount), focusMonth.Kind);
                 for (i = 0; i < pages; ++i) {
                     pageView = PageViews [i];
                     date = StartOfWeek (month);
                     pageView.SetStartDate (date, Calendar, Rows);
-                    month = Calendar.AddMonths (month, 1);
+                    month = DateTime.SpecifyKind (Calendar.AddMonths (month, 1), month.Kind);
                 }
             } else {
                 date = StartOfWeek (FocusDate);
-                date = Calendar.AddWeeks (date, -BufferedPageCount);
+                date = DateTime.SpecifyKind (Calendar.AddWeeks (date, -BufferedPageCount), date.Kind);
                 for (i = 0; i < pages; ++i) {
                     pageView = PageViews [i];
                     pageView.SetStartDate (date, Calendar, Rows);
-                    date = Calendar.AddWeeks (date, Rows);
+                    date = DateTime.SpecifyKind (Calendar.AddWeeks (date, Rows), date.Kind);
                 }
             }
             UpdateMonthLabels (1);
@@ -346,7 +334,7 @@ namespace NachoClient.AndroidClient
                             ConfigurePageViews ();
                         } else {
                             int pages = 1;
-                            while (pages < BufferedPageCount && date < Calendar.AddMonths (FocusMonth, -pages)) {
+                            while (pages < BufferedPageCount && date < DateTime.SpecifyKind (Calendar.AddMonths (FocusMonth, -pages), FocusMonth.Kind)) {
                                 ++pages;
                             }
                             UpdateMonthLabels (-pages);
@@ -359,7 +347,7 @@ namespace NachoClient.AndroidClient
                             ConfigurePageViews ();
                         } else {
                             int pages = 1;
-                            while (pages < BufferedPageCount && date >= Calendar.AddMonths (FocusMonth, pages + 1)) {
+                            while (pages < BufferedPageCount && date >= DateTime.SpecifyKind (Calendar.AddMonths (FocusMonth, pages + 1), FocusMonth.Kind)) {
                                 ++pages;
                             }
                             UpdateMonthLabels (pages);
@@ -399,18 +387,18 @@ namespace NachoClient.AndroidClient
         void PageFocusDatePrevious (int pages = 1)
         {
             if (DisplayMode == PagerDisplayMode.Months) {
-                FocusDate = Calendar.AddMonths (FocusDate, -pages);
+                FocusDate = DateTime.SpecifyKind (Calendar.AddMonths (FocusDate, -pages), FocusDate.Kind);
             } else {
-                FocusDate = Calendar.AddWeeks (FocusDate, -pages * Rows);
+                FocusDate = DateTime.SpecifyKind (Calendar.AddWeeks (FocusDate, -pages * Rows), FocusDate.Kind);
             }
         }
 
         void PageFocusDateNext (int pages = 1)
         {
             if (DisplayMode == PagerDisplayMode.Months) {
-                FocusDate = Calendar.AddMonths (FocusDate, pages);
+                FocusDate = DateTime.SpecifyKind (Calendar.AddMonths (FocusDate, pages), FocusDate.Kind);
             } else {
-                FocusDate = Calendar.AddWeeks (FocusDate, pages * Rows);
+                FocusDate = DateTime.SpecifyKind (Calendar.AddWeeks (FocusDate, pages * Rows), FocusDate.Kind);
             }
         }
 
@@ -429,14 +417,14 @@ namespace NachoClient.AndroidClient
                     PageTransitionProgress = 0.0f;
                     var remaining = pages;
                     while (remaining > 0) {
-                        var startDate = Calendar.AddWeeks (BufferedStartDate, -Rows);
+                        var startDate = DateTime.SpecifyKind (Calendar.AddWeeks (BufferedStartDate, -Rows), BufferedStartDate.Kind);
                         var lastPageView = PageViews [PageViews.Count - 1];
                         PageViews.RemoveAt (PageViews.Count - 1);
                         PageViews.Insert (0, lastPageView);
                         PagesContainer.RemoveView (lastPageView);
                         PagesContainer.AddView (lastPageView, 0);
                         if (DisplayMode == PagerDisplayMode.Months) {
-                            var month = Calendar.AddMonths(FocusMonth, -BufferedPageCount + remaining - 1);
+                            var month = DateTime.SpecifyKind (Calendar.AddMonths(FocusMonth, -BufferedPageCount + remaining - 1), FocusMonth.Kind);
                             lastPageView.SetStartDate (StartOfWeek (month), Calendar, Rows);
                         } else {
                             lastPageView.SetStartDate (startDate, Calendar, Rows);
@@ -472,7 +460,7 @@ namespace NachoClient.AndroidClient
                         PagesContainer.RemoveView (firstPageView);
                         PagesContainer.AddView (firstPageView);
                         if (DisplayMode == PagerDisplayMode.Months) {
-                            var month = Calendar.AddMonths(FocusMonth, BufferedPageCount - remaining + 1);
+                            var month = DateTime.SpecifyKind (Calendar.AddMonths(FocusMonth, BufferedPageCount - remaining + 1), FocusMonth.Kind);
                             firstPageView.SetStartDate (StartOfWeek (month), Calendar, Rows);
                         } else {
                             firstPageView.SetStartDate (startDate, Calendar, Rows);
@@ -492,9 +480,9 @@ namespace NachoClient.AndroidClient
         {
             var dow = (int)Calendar.GetDayOfWeek (date);
             if (dow >= FirstDayOfWeek) {
-                return Calendar.AddDays (date, FirstDayOfWeek - dow);
+                return DateTime.SpecifyKind (Calendar.AddDays (date, FirstDayOfWeek - dow), date.Kind);
             }
-            return Calendar.AddDays (date, FirstDayOfWeek - dow - 7);
+            return DateTime.SpecifyKind (Calendar.AddDays (date, FirstDayOfWeek - dow - 7), date.Kind);
         }
 
         void PageViewDateSelected (DateTime date)
@@ -650,11 +638,12 @@ namespace NachoClient.AndroidClient
                         weekView = WeekViews [i];
                     } else {
                         weekView = new WeekView (Context);
+                        weekView.DateSelected = WeekViewDateSelected;
                         WeekViews.Add (weekView);
                         AddView (weekView);
                     }
                     weekView.SetStartDate (date, calendar);
-                    date = calendar.AddWeeks (date, 1);
+                    date = DateTime.SpecifyKind (calendar.AddWeeks (date, 1), date.Kind);
                 }
                 EndDate = date;
                 for (int j = rows - 1; j >= i; --j) {
@@ -670,7 +659,7 @@ namespace NachoClient.AndroidClient
                 var date = StartDate;
                 foreach (var label in WeekdayLabels) {
                     label.Text = date.ToString ("dddd").Substring (0, 1);
-                    date = Calendar.AddDays (date, 1);
+                    date = DateTime.SpecifyKind (Calendar.AddDays (date, 1), date.Kind);
                 }
             }
 
@@ -740,7 +729,7 @@ namespace NachoClient.AndroidClient
                 StartDate = date;
                 foreach (var dayView in DayViews) {
                     dayView.SetDate (date);
-                    date = calendar.AddDays (date, 1);
+                    date = DateTime.SpecifyKind (calendar.AddDays (date, 1), date.Kind);
                 }
             }
 
