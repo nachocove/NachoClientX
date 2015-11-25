@@ -254,15 +254,12 @@ namespace NachoClient.AndroidClient
 
         public bool OnFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
         {
-            IsScrollingHorizontally = false;
-            var absX = Math.Abs (velocityX);
-            var absY = Math.Abs (velocityY);
-            NachoCore.Utils.Log.Info(NachoCore.Utils.Log.LOG_UI, "Gesture Fling {0},{1}", velocityX, velocityY);
-            if (absX >= absY) {
-                if (velocityX < 0) {
+            if (IsScrollingHorizontally) {
+                IsScrollingHorizontally = false;
+                if (PageTransitionProgress < 0) {
                     PageFocusDateNext ();
                     PageViewsNext (-velocityX);
-                } else {
+                } else if (PageTransitionProgress > 0){
                     PageFocusDatePrevious ();
                     PageViewsPrevious (velocityX);
                 }
@@ -270,9 +267,15 @@ namespace NachoClient.AndroidClient
             } else {
                 if (velocityY < 0.0f && DisplayMode == PagerDisplayMode.Months) {
                     // TODO: animate to weeks
+                    Weeks = 1;
+                    ConfigurePageViews ();
+                    RequestLayout ();
                     return true;
                 } else if (velocityY > 0.0f && DisplayMode == PagerDisplayMode.Weeks) {
                     // TODO: animate to months
+                    Weeks = 0;
+                    ConfigurePageViews ();
+                    RequestLayout ();
                     return true;
                 }
             }
@@ -289,7 +292,6 @@ namespace NachoClient.AndroidClient
 
         public bool OnSingleTapUp(MotionEvent e)
         {
-            NachoCore.Utils.Log.Info(NachoCore.Utils.Log.LOG_UI, "Gesture Single Tap Up");
             return false;
         }
 
