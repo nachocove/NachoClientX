@@ -46,11 +46,38 @@ namespace NachoClient.AndroidClient
 
         private bool jumpToToday = false;
 
+        private class EventsObserver : Android.Database.DataSetObserver
+        {
+
+            Action Callback;
+
+            public EventsObserver (Action callback)
+            {
+                Callback = callback;
+            }
+
+            public override void OnChanged ()
+            {
+                Callback ();
+            }
+
+        }
+
+        EventsObserver observer;
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
+            observer = new EventsObserver (DataSetChanged);
             eventListAdapter = new EventListAdapter (CreateEventOnDate);
+            eventListAdapter.RegisterDataSetObserver (observer);
+        }
+
+        void DataSetChanged ()
+        {
+            if (calendarPager != null) {
+                calendarPager.Update ();
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -79,6 +106,7 @@ namespace NachoClient.AndroidClient
 
             calendarPager = view.FindViewById<CalendarPagerView> (Resource.Id.calendar_pager);
             calendarPager.DateSelected = PagerSelectedDate;
+            calendarPager.HasEvents = PagerHasEvents;
 
             // Highlight the tab bar icon of this activity
             var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.calendar_image);
@@ -171,6 +199,11 @@ namespace NachoClient.AndroidClient
         {
             var position = eventListAdapter.PositionForDate (date);
             listView.SmoothScrollToPositionFromTop (position, offset: 0, duration: 200);
+        }
+
+        bool PagerHasEvents (DateTime date)
+        {
+            return eventListAdapter.HasEvents (date);
         }
 
         void TodayButton_Click (object sender, EventArgs e)
@@ -363,6 +396,18 @@ namespace NachoClient.AndroidClient
         public DateTime DateForPosition (int position)
         {
             return eventCalendarMap.GetDateUsingDayIndex (position);
+        }
+
+        public bool HasEvents (DateTime date)
+        {
+            if ((date.Month >= DateTime.UtcNow.Month && date.Year == DateTime.UtcNow.Year) || date.Year > DateTime.UtcNow.Year) {
+                var index = eventCalendarMap.IndexOfDate (date);
+                if ((eventCalendarMap.NumberOfDays () - 1) >= index) {
+                    return eventCalendarMap.NumberOfItemsForDay (index) > 0;
+                }
+                return false;
+            }
+            return false;
         }
     }
 }

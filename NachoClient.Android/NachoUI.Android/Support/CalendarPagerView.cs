@@ -21,6 +21,7 @@ using NachoCore.Utils;
 namespace NachoClient.AndroidClient
 {
     public delegate void CalendarDateSelected (DateTime date);
+    public delegate bool CalendarHasEvents (DateTime date);
 
     public class CalendarPagerView : ViewGroup, GestureDetector.IOnGestureListener
     {
@@ -30,6 +31,7 @@ namespace NachoClient.AndroidClient
         TextView MonthLabelA;
         TextView MonthLabelB;
         public CalendarDateSelected DateSelected;
+        public CalendarHasEvents HasEvents;
         Calendar Calendar;
         DateTime FocusDate;
         DateTime VisibleStartDate {
@@ -156,6 +158,14 @@ namespace NachoClient.AndroidClient
 
             FocusDate = DateTime.Now.ToLocalTime ().Date;
             ConfigurePageViews ();
+        }
+
+        public void Update ()
+        {
+            UpdateMonthLabels (1);
+            foreach (var pageView in PageViews) {
+                pageView.Update ();
+            }
         }
 
         void UpdateMonthLabels (int transitionPage)
@@ -324,13 +334,14 @@ namespace NachoClient.AndroidClient
                     pageView = PageViews [i];
                 } else {
                     pageView = new PageView (Context);
-                    pageView.DateSelected = PageViewDateSelected;
+                    pageView.CalendarView = this;
                     PageViews.Add (pageView);
                     PagesContainer.AddView (pageView);
                 }
             }
             for (int j = pages - 1; j >= i; --j) {
                 pageView = PageViews [j];
+                pageView.CalendarView = null;
                 PagesContainer.RemoveView (pageView);
                 PageViews.RemoveAt (j);
             }
@@ -516,7 +527,7 @@ namespace NachoClient.AndroidClient
             return DateTime.SpecifyKind (Calendar.AddDays (date, FirstDayOfWeek - dow - 7), date.Kind);
         }
 
-        void PageViewDateSelected (DateTime date)
+        public void DateClicked (DateTime date)
         {
             SetFocusDate (date);
             if (DateSelected != null) {
@@ -629,10 +640,10 @@ namespace NachoClient.AndroidClient
         {
             public DateTime StartDate { get; private set; }
             public DateTime EndDate { get; private set; }
+            public CalendarPagerView CalendarView;
             LinearLayout WeekdayLabelsContainer;
             List<TextView> WeekdayLabels;
             List<WeekView> WeekViews;
-            public CalendarDateSelected DateSelected;
             Calendar Calendar;
 
             public PageView (Context context) : base (context)
@@ -671,7 +682,7 @@ namespace NachoClient.AndroidClient
                         weekView = WeekViews [i];
                     } else {
                         weekView = new WeekView (Context);
-                        weekView.DateSelected = WeekViewDateSelected;
+                        weekView.PageView = this;
                         WeekViews.Add (weekView);
                         AddView (weekView);
                     }
@@ -681,13 +692,14 @@ namespace NachoClient.AndroidClient
                 EndDate = date;
                 for (int j = rows - 1; j >= i; --j) {
                     weekView = WeekViews [j];
+                    weekView.PageView = null;
                     RemoveView (weekView);
                     WeekViews.RemoveAt (j);
                 }
-                Update ();
+                UpdateWeekdayLabels ();
             }
 
-            void Update ()
+            void UpdateWeekdayLabels ()
             {
                 var date = StartDate;
                 foreach (var label in WeekdayLabels) {
@@ -696,10 +708,11 @@ namespace NachoClient.AndroidClient
                 }
             }
 
-            void WeekViewDateSelected (DateTime date)
+            public void Update ()
             {
-                if (DateSelected != null) {
-                    DateSelected (date);
+                UpdateWeekdayLabels ();
+                foreach (var weekView in WeekViews) {
+                    weekView.Update ();
                 }
             }
 
@@ -735,8 +748,8 @@ namespace NachoClient.AndroidClient
 
         private class WeekView : LinearLayout
         {
+            public PageView PageView;
             List<DayView> DayViews;
-            public CalendarDateSelected DateSelected;
 
             public WeekView (Context context) : base (context)
             {
@@ -750,7 +763,7 @@ namespace NachoClient.AndroidClient
                 Orientation = Orientation.Horizontal;
                 for (var i = 0; i < 7; ++i) {
                     var dayView = new DayView (Context);
-                    dayView.DateSelected = DayViewDateSelected;
+                    dayView.WeekView = this;
                     DayViews.Add (dayView);
                     AddView (dayView);
                 }
@@ -765,10 +778,10 @@ namespace NachoClient.AndroidClient
                 }
             }
 
-            void DayViewDateSelected (DateTime date)
+            public void Update ()
             {
-                if (DateSelected != null) {
-                    DateSelected (date);
+                foreach (var dayView in DayViews) {
+                    dayView.Update ();
                 }
             }
         }
@@ -778,7 +791,7 @@ namespace NachoClient.AndroidClient
             DateTime Date;
             TextView DateLabel;
             ImageView EventIndicator;
-            public CalendarDateSelected DateSelected;
+            public WeekView WeekView;
             bool IsAlt;
 
             public DayView (Context context) : base (context)
@@ -797,7 +810,6 @@ namespace NachoClient.AndroidClient
                 DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackground);
                 EventIndicator = new ImageView (Context);
                 EventIndicator.SetBackgroundResource (Resource.Drawable.CalendarPagerEventIndicator);
-                // TODO: conditionally show indicator
                 EventIndicator.Visibility = ViewStates.Invisible;
                 AddView (DateLabel);
                 AddView (EventIndicator);
@@ -811,7 +823,7 @@ namespace NachoClient.AndroidClient
                 Update ();
             }
 
-            void Update ()
+            public void Update ()
             {
                 DateLabel.Text = Date.Day.ToString ();
                 if (IsAlt) {
@@ -821,13 +833,20 @@ namespace NachoClient.AndroidClient
                     DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackground);
                     DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoBlack));
                 }
+                if (this.WeekView.PageView.CalendarView.HasEvents != null) {
+                    if (this.WeekView.PageView.CalendarView.HasEvents (Date)) {
+                        EventIndicator.Visibility = ViewStates.Visible;
+                    } else {
+                        EventIndicator.Visibility = ViewStates.Invisible;
+                    }
+                } else {
+                    EventIndicator.Visibility = ViewStates.Invisible;
+                }
             }
 
             void Clicked (object sender, EventArgs e)
             {
-                if (DateSelected != null) {
-                    DateSelected (this.Date);
-                }
+                WeekView.PageView.CalendarView.DateClicked (this.Date);
             }
 
             protected override void Dispose (bool disposing)
