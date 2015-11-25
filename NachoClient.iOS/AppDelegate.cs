@@ -843,25 +843,14 @@ namespace NachoClient.iOS
                 if ((0 == emailMutables.Count) && (0 == eventMutables.Count)) {
                     // Now we know that the app was already running.  In this case,
                     // we notify the user of the upcoming event with an alert view.
-                    if (null != eventNotification) {
-                        var eventId = eventNotification.ToMcModelIndex ();
-                        var eventItem = McEvent.QueryById<McEvent> (eventId);
-                        if (null != eventItem) {
-                            var calendarItem = McCalendar.QueryById<McCalendar> (eventItem.CalendarId);
-                            if (null != calendarItem) {
-                                var subject = Pretty.SubjectString (calendarItem.Subject);
-                                if (!String.IsNullOrEmpty (subject)) {
-                                    subject += " ";
-                                } else {
-                                    subject = "Event at ";
-                                }
-                                var msg = subject + Pretty.MediumFullDateTime (eventItem.GetStartTimeUtc ());
-                                UIAlertView alert = new UIAlertView ("Reminder", msg, null, "OK", null);
-
-                                alert.Show ();
-                            }
-                        }
+                    string title = notification.AlertTitle;
+                    string body = notification.AlertBody;
+                    if (string.IsNullOrEmpty (title)) {
+                        title = "Reminder";
+                    } else if (body.StartsWith (title + ": ")) {
+                        body = body.Substring (title.Length + 2);
                     }
+                    new UIAlertView (title, body, null, "OK").Show ();
                     return;
                 }
             }
