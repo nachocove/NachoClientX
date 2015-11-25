@@ -41,6 +41,11 @@ namespace NachoClient.AndroidClient
             return false;
         }
 
+        public virtual int ShowListStyle()
+        {
+            return MessageListAdapter.LISTVIEW_STYLE;
+        }
+
         public virtual void SetActiveImage (View view)
         {
             // Highlight the tab bar icon of this activity
@@ -137,6 +142,10 @@ namespace NachoClient.AndroidClient
         public override void MaybeSwitchAccount ()
         {
             base.MaybeSwitchAccount ();
+
+            if (null != messageListFragment) {
+                messageListFragment.MaybeSwitchStyle (ShowListStyle ());
+            }
 
             if ((null != account) && (NcApplication.Instance.Account.Id == account.Id)) {
                 return;

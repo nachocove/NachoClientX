@@ -615,6 +615,7 @@
     <Compile Include="NachoCore\Utils\SimpleTaskScheduler.cs" />
     <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\HotEventAdapter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1645,6 +1646,7 @@
     <AndroidResource Include="Resources\drawable-mdpi\gen_nachoright.png" />
     <AndroidResource Include="Resources\drawable-hdpi\gen_nacholeft.png" />
     <AndroidResource Include="Resources\drawable-hdpi\gen_nachoright.png" />
+    <AndroidResource Include="Resources\layout\MessageCard.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
