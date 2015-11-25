@@ -25,8 +25,10 @@ namespace NachoPlatform
             get {
                 if (instance == null) {
                     lock (syncRoot) {
-                        if (instance == null)
+                        if (instance == null) {
                             instance = new NetStatus ();
+                            NcAssert.NotNull (instance);
+                        }
                     }
                 }
                 return instance;
@@ -84,8 +86,13 @@ namespace NachoPlatform
             public override void OnReceive (Context context, Intent intent)
             {
                 // NOTE: This is called using the UI thread, so need to Task.Run here.
-                NcTask.Run (delegate {
-                    NetStatus.Instance.Fire ();
+                NcTask.Run (() => {
+                    var netInst = NetStatus.Instance;
+                    if (null != netInst) {
+                        netInst.Fire ();
+                    } else {
+                        Log.Error (Log.LOG_SYS, "NetStatusBroadcastReceiver:OnReceive: No NetStatus.Instance");
+                    }
                 }, "NetStatusBroadcastReceiver:OnReceive");
             }
         }

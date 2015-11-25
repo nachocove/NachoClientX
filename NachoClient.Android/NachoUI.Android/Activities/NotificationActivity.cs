@@ -37,26 +37,20 @@ namespace NachoClient.AndroidClient
             var messageId = Intent.GetIntExtra (EXTRA_MESSAGE, 0);
             var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
 
-            var inboxIntent =  NcTabBarActivity.InboxIntent (this);
-
             if (null == message) {
+                var inboxIntent =  NcTabBarActivity.InboxIntent (this);
                 StartActivity (inboxIntent);
                 Finish ();
                 return;
             }
-
-            // Switch to message account
-            NcApplication.Instance.Account = McAccount.QueryById<McAccount> (message.AccountId);
 
             // Create show message intent
             var thread = new McEmailMessageThread ();
             thread.FirstMessageId = message.Id;
             thread.MessageCount = 1;
             var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
-
-            // Start inbox & view message activities
-            StartActivities (new Intent[] { inboxIntent, intent });
+            intent.SetFlags ( ActivityFlags.NoAnimation);
+            StartActivity (intent);
             Finish ();
         }
 

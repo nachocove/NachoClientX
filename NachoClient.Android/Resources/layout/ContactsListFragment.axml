@@ -51,6 +51,18 @@
         android:layout_height="1dp"
         android:background="@color/NachoLightGray"
         android:layout_below="@id/cancel" />
+    <TextView
+        android:id="@+id/no_contacts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.1"
+        android:gravity="center_horizontal"
+        android:paddingTop="48dp"
+        android:textColor="@android:color/black"
+        android:textSize="14dp"
+        android:text="@string/no_contacts"
+        android:visibility="gone"
+        android:background="@color/NachoLightGray" />
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"

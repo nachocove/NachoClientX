@@ -301,6 +301,8 @@ namespace NachoClient.AndroidClient
             ConfigureButtons ();
             parent.SetActiveImage (view);
 
+            MaybeDisplayNoMessagesView (view);
+
             return view;
         }
 
@@ -315,11 +317,13 @@ namespace NachoClient.AndroidClient
             switch (e.ScrollState) {
             case ScrollState.TouchScroll:
             case ScrollState.Fling:
+                listView.EnableSwipe (false);
                 if (!NcApplication.Instance.IsBackgroundAbateRequired) {
                     NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment ScrollStateChanged");
                 }
                 break;
             case ScrollState.Idle:
+                listView.EnableSwipe (true);
                 if (NcApplication.Instance.IsBackgroundAbateRequired) {
                     NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment ScrollStateChanged");
                 }
@@ -500,7 +504,9 @@ namespace NachoClient.AndroidClient
 
         void SearchButton_Click (object sender, EventArgs e)
         {
-            StartSearching ();
+            if (0 != messages.Count ()) {
+                StartSearching ();
+            }
         }
 
 
@@ -687,6 +693,7 @@ namespace NachoClient.AndroidClient
                 messageListAdapter = new MessageListAdapter (this);
                 listView.Adapter = messageListAdapter;
             }
+            MaybeDisplayNoMessagesView (View);
         }
 
         void RefreshVisibleMessageCells ()
@@ -758,6 +765,7 @@ namespace NachoClient.AndroidClient
             if (0 == messages.Count ()) {
                 ((MessageListDelegate)Activity).ListIsEmpty ();
             }
+            MaybeDisplayNoMessagesView (View);
         }
 
         public void RefreshIfNeeded ()
@@ -775,6 +783,7 @@ namespace NachoClient.AndroidClient
             if (0 == messages.Count ()) {
                 ((MessageListDelegate)Activity).ListIsEmpty ();
             }
+            MaybeDisplayNoMessagesView (View);
         }
 
         int[] first = new int[3];
@@ -868,6 +877,12 @@ namespace NachoClient.AndroidClient
             return false;
         }
 
+        void MaybeDisplayNoMessagesView (View view)
+        {
+            if (null != view) {
+                view.FindViewById<TextView> (Resource.Id.no_messages).Visibility = (0 == messages.Count () ? ViewStates.Visible : ViewStates.Gone);
+            }
+        }
     }
 
     public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>

@@ -342,7 +342,8 @@ namespace NachoClient.AndroidClient
             var s = (StatusIndEventArgs)e;
 
             switch (s.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_CalendarSetChanged:
+            case NcResult.SubKindEnum.Info_EventSetChanged:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 Refresh ();
                 break;
             }

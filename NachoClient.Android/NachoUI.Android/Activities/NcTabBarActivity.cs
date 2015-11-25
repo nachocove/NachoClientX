@@ -129,15 +129,20 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
+        public static Intent CalendarIntent (Context context)
+        {
+            var intent = new Intent ();
+            intent.SetClass (context, typeof(CalendarActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+            return intent;
+        }
+
         void CalendarButton_Click (object sender, EventArgs e)
         {
             if (this is CalendarActivity) {
                 return;
             } 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(CalendarActivity));
-            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
-            StartActivity (intent);
+            StartActivity (CalendarIntent (this));
         }
 
         public void AddAccount ()
