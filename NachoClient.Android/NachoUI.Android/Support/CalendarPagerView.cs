@@ -95,7 +95,6 @@ namespace NachoClient.AndroidClient
         int Rows;
         int BufferedPageCount = 1;
         float PageTransitionProgress;
-        float MinScrollY = 5.0f;
         int FirstDayOfWeek = 0;
         bool IsScrollingHorizontally;
         enum PagerDisplayMode {
@@ -147,6 +146,10 @@ namespace NachoClient.AndroidClient
             MonthLabelA.Gravity = GravityFlags.Center;
             MonthLabelB.TextAlignment = TextAlignment.Center;
             MonthLabelB.Gravity = GravityFlags.Center;
+            MonthLabelA.SetTextSize (Android.Util.ComplexUnitType.Dip, 11.0f);
+            MonthLabelB.SetTextSize (Android.Util.ComplexUnitType.Dip, 11.0f);
+            MonthLabelA.SetTextColor (Resources.GetColor(Resource.Color.NachoTextGray));
+            MonthLabelB.SetTextColor (Resources.GetColor(Resource.Color.NachoTextGray));
 
             AddView (MonthLabelA);
             AddView (MonthLabelB);
@@ -649,6 +652,8 @@ namespace NachoClient.AndroidClient
                     label.LayoutParameters = new LinearLayout.LayoutParams (0, LayoutParams.WrapContent, 1);
                     label.TextAlignment = TextAlignment.Center;
                     label.Gravity = GravityFlags.Center;
+                    label.SetTextSize (Android.Util.ComplexUnitType.Dip, 11.0f);
+                    label.SetTextColor (Resources.GetColor(Resource.Color.NachoTextGray));
                     WeekdayLabels.Add (label);
                     WeekdayLabelsContainer.AddView (label);
                 }
@@ -730,7 +735,6 @@ namespace NachoClient.AndroidClient
 
         private class WeekView : LinearLayout
         {
-            DateTime StartDate;
             List<DayView> DayViews;
             public CalendarDateSelected DateSelected;
 
@@ -754,7 +758,6 @@ namespace NachoClient.AndroidClient
 
             public void SetStartDate (DateTime date, Calendar calendar)
             {
-                StartDate = date;
                 foreach (var dayView in DayViews) {
                     dayView.SetDate (date);
                     date = DateTime.SpecifyKind (calendar.AddDays (date, 1), date.Kind);
@@ -769,7 +772,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        private class DayView : LinearLayout
+        private class DayView : ViewGroup
         {
             DateTime Date;
             TextView DateLabel;
@@ -783,17 +786,16 @@ namespace NachoClient.AndroidClient
 
             void Initialize ()
             {
-//                var r = new Random ();
-//                var x = r.Next (192, 255);
-//                SetBackgroundColor (Android.Graphics.Color.Rgb (x, x, x));
-                LayoutParameters = new LayoutParams (0, LayoutParams.MatchParent, 1);
-                Orientation = Orientation.Vertical;
+                LayoutParameters = new LinearLayout.LayoutParams (0, LayoutParams.MatchParent, 1);
                 DateLabel = new TextView (Context);
-                DateLabel.LayoutParameters = new LayoutParams (LayoutParams.MatchParent, 0, 1);
                 DateLabel.TextAlignment = TextAlignment.Center;
                 DateLabel.Gravity = GravityFlags.Center;
+                DateLabel.SetTypeface (null, Android.Graphics.TypefaceStyle.Bold);
+                DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackgound);
                 EventIndicator = new ImageView (Context);
-                EventIndicator.LayoutParameters = new LayoutParams (LayoutParams.MatchParent, 16);
+                EventIndicator.SetBackgroundResource (Resource.Drawable.CalendarPagerEventIndicator);
+                // TODO: conditionally show indicator
+                EventIndicator.Visibility = ViewStates.Invisible;
                 AddView (DateLabel);
                 AddView (EventIndicator);
                 Click += Clicked;
@@ -821,6 +823,34 @@ namespace NachoClient.AndroidClient
             {
                 Click -= Clicked;
                 base.Dispose (disposing);
+            }
+
+            protected override void OnMeasure (int widthMeasureSpec, int heightMeasureSpec)
+            {
+                var w = MeasureSpec.GetSize (widthMeasureSpec);
+                var h = MeasureSpec.GetSize (heightMeasureSpec);
+                var indicatorSpace = h / 3;
+                var indicatorSize = indicatorSpace / 3;
+                var labelSize = h - indicatorSpace;
+                DateLabel.Measure (MeasureSpec.MakeMeasureSpec (labelSize, MeasureSpecMode.Exactly), MeasureSpec.MakeMeasureSpec (labelSize, MeasureSpecMode.Exactly));
+                EventIndicator.Measure (MeasureSpec.MakeMeasureSpec (indicatorSize, MeasureSpecMode.Exactly), MeasureSpec.MakeMeasureSpec (indicatorSize, MeasureSpecMode.Exactly));
+                SetMeasuredDimension (w, h);
+            }
+
+            protected override void OnLayout (bool changed, int l, int t, int r, int b)
+            {
+                var w = r - l;
+                var h = b - t;
+                var indicatorSpace = h / 3;
+                var indicatorSize = indicatorSpace / 3;
+                var labelSize = h - indicatorSpace;
+                var y = 0;
+                var x = (w - labelSize) / 2;
+                DateLabel.Layout (x, y, x + labelSize, y + labelSize);
+                y += labelSize;
+                x = (w - indicatorSize) / 2;
+                y += (indicatorSpace - indicatorSize) / 2;
+                EventIndicator.Layout (x, y, x + indicatorSize, y + indicatorSize);
             }
         }
     }
