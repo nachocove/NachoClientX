@@ -203,21 +203,49 @@ namespace NachoClient.AndroidClient
 
         public override bool OnInterceptTouchEvent (MotionEvent ev)
         {
-            var isGesture = GestureDetector.OnTouchEvent (ev);
-            if (!isGesture) {
-                if (IsScrollingHorizontally && ev.Action == MotionEventActions.Up) {
-                    IsScrollingHorizontally = false;
-                    if (PageTransitionProgress < 0.0f) {
-                        PageFocusDateNext ();
-                        PageViewsNext ();
-                    } else if (PageTransitionProgress > 0.0f) {
-                        PageFocusDatePrevious ();
-                        PageViewsPrevious ();
-                    }
-                    return true;
-                }
+            if (IsScrollingHorizontally) {
+                // If we're scrolling, we want all the events so nothing gets to child click listeners
+                return true;
             }
-            return false;
+            if (ev.Action == MotionEventActions.Down) {
+                // If it's a down event (and we're not scrolling), our GestureDetector needs to know about it,
+                // but we need to let the event reach child click listeners because a down starts a click.
+                // Since a child view may or may not handle the event, we may or may not get an OnTouchEvent call.
+                // Since we may not get an OnTouchEvent call, we have to let our GestureDetector look at the event now.
+                GestureDetector.OnTouchEvent (ev);
+                return false;
+            }
+            if (ev.Action == MotionEventActions.Up) {
+                // If it's an up event (and we're not scrolling), we need to let the event reach click click listeners
+                // because the click happens on up after a down.
+                return false;
+            }
+            // If it's some other event like a move, we'll take it becaue no children care about these other events.
+            return true;
+        }
+
+        public override bool OnTouchEvent (MotionEvent e)
+        {
+            if (IsScrollingHorizontally && e.Action == MotionEventActions.Up) {
+                // If we're scrolling and there's an up, the scroll is finished and we need to snap to a page boundary
+                IsScrollingHorizontally = false;
+                if (PageTransitionProgress < 0.0f) {
+                    PageFocusDateNext ();
+                    PageViewsNext ();
+                } else if (PageTransitionProgress > 0.0f) {
+                    PageFocusDatePrevious ();
+                    PageViewsPrevious ();
+                }
+                return true;
+            }
+            if (e.Action == MotionEventActions.Down) {
+                // If there's a down event, we've already told our GestureDetector about it in OnInterceptTouchEvent,
+                // so we don't need to tell it again, but we do want to return true so the subsequent move events will
+                // be sent.
+                return true;
+            }
+            // If it's any other event, have our GestureDetector handle it
+            return GestureDetector.OnTouchEvent (e);
         }
 
         public bool OnDown(MotionEvent e)
