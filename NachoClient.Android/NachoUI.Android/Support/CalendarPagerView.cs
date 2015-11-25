@@ -340,7 +340,7 @@ namespace NachoClient.AndroidClient
                 for (i = 0; i < pages; ++i) {
                     pageView = PageViews [i];
                     date = StartOfWeek (month);
-                    pageView.SetStartDate (date, Calendar, Rows);
+                    pageView.SetStartDate (date, Calendar, Rows, month);
                     month = DateTime.SpecifyKind (Calendar.AddMonths (month, 1), month.Kind);
                 }
             } else {
@@ -348,7 +348,7 @@ namespace NachoClient.AndroidClient
                 date = DateTime.SpecifyKind (Calendar.AddWeeks (date, -BufferedPageCount), date.Kind);
                 for (i = 0; i < pages; ++i) {
                     pageView = PageViews [i];
-                    pageView.SetStartDate (date, Calendar, Rows);
+                    pageView.SetStartDate (date, Calendar, Rows, null);
                     date = DateTime.SpecifyKind (Calendar.AddWeeks (date, Rows), date.Kind);
                 }
             }
@@ -456,9 +456,9 @@ namespace NachoClient.AndroidClient
                         PagesContainer.AddView (lastPageView, 0);
                         if (DisplayMode == PagerDisplayMode.Months) {
                             var month = DateTime.SpecifyKind (Calendar.AddMonths(FocusMonth, -BufferedPageCount + remaining - 1), FocusMonth.Kind);
-                            lastPageView.SetStartDate (StartOfWeek (month), Calendar, Rows);
+                            lastPageView.SetStartDate (StartOfWeek (month), Calendar, Rows, month);
                         } else {
-                            lastPageView.SetStartDate (startDate, Calendar, Rows);
+                            lastPageView.SetStartDate (startDate, Calendar, Rows, null);
                         }
                         --remaining;
                     }
@@ -492,9 +492,9 @@ namespace NachoClient.AndroidClient
                         PagesContainer.AddView (firstPageView);
                         if (DisplayMode == PagerDisplayMode.Months) {
                             var month = DateTime.SpecifyKind (Calendar.AddMonths(FocusMonth, BufferedPageCount - remaining + 1), FocusMonth.Kind);
-                            firstPageView.SetStartDate (StartOfWeek (month), Calendar, Rows);
+                            firstPageView.SetStartDate (StartOfWeek (month), Calendar, Rows, month);
                         } else {
-                            firstPageView.SetStartDate (startDate, Calendar, Rows);
+                            firstPageView.SetStartDate (startDate, Calendar, Rows, null);
                         }
                         --remaining;
                     }
@@ -660,7 +660,7 @@ namespace NachoClient.AndroidClient
                 AddView (WeekdayLabelsContainer);
             }
 
-            public void SetStartDate (DateTime date, Calendar calendar, int rows)
+            public void SetStartDate (DateTime date, Calendar calendar, int rows, DateTime? focusMonth)
             {
                 StartDate = date;
                 Calendar = calendar;
@@ -675,7 +675,7 @@ namespace NachoClient.AndroidClient
                         WeekViews.Add (weekView);
                         AddView (weekView);
                     }
-                    weekView.SetStartDate (date, calendar);
+                    weekView.SetStartDate (date, calendar, focusMonth);
                     date = DateTime.SpecifyKind (calendar.AddWeeks (date, 1), date.Kind);
                 }
                 EndDate = date;
@@ -756,10 +756,11 @@ namespace NachoClient.AndroidClient
                 }
             }
 
-            public void SetStartDate (DateTime date, Calendar calendar)
+            public void SetStartDate (DateTime date, Calendar calendar, DateTime? focusMonth)
             {
                 foreach (var dayView in DayViews) {
-                    dayView.SetDate (date);
+                    bool isAlt = focusMonth.HasValue && date.Month != focusMonth.Value.Month;
+                    dayView.SetDate (date, isAlt);
                     date = DateTime.SpecifyKind (calendar.AddDays (date, 1), date.Kind);
                 }
             }
@@ -778,6 +779,7 @@ namespace NachoClient.AndroidClient
             TextView DateLabel;
             ImageView EventIndicator;
             public CalendarDateSelected DateSelected;
+            bool IsAlt;
 
             public DayView (Context context) : base (context)
             {
@@ -791,7 +793,8 @@ namespace NachoClient.AndroidClient
                 DateLabel.TextAlignment = TextAlignment.Center;
                 DateLabel.Gravity = GravityFlags.Center;
                 DateLabel.SetTypeface (null, Android.Graphics.TypefaceStyle.Bold);
-                DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackgound);
+                DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoBlack));
+                DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackground);
                 EventIndicator = new ImageView (Context);
                 EventIndicator.SetBackgroundResource (Resource.Drawable.CalendarPagerEventIndicator);
                 // TODO: conditionally show indicator
@@ -801,15 +804,23 @@ namespace NachoClient.AndroidClient
                 Click += Clicked;
             }
 
-            public void SetDate (DateTime date)
+            public void SetDate (DateTime date, bool isAlt)
             {
                 Date = date;
+                IsAlt = isAlt;
                 Update ();
             }
 
             void Update ()
             {
                 DateLabel.Text = Date.Day.ToString ();
+                if (IsAlt) {
+                    DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackgroundAlt);
+                    DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoTextGray));
+                } else {
+                    DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackground);
+                    DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoBlack));
+                }
             }
 
             void Clicked (object sender, EventArgs e)

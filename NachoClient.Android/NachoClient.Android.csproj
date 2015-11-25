@@ -1636,8 +1636,9 @@
     <AndroidResource Include="Resources\layout\EventInMessageLayout.axml" />
     <AndroidResource Include="Resources\layout\AddAccountActivity.axml" />
     <AndroidResource Include="Resources\layout\NotificationActivity.axml" />
-    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgound.xml" />
     <AndroidResource Include="Resources\drawable\CalendarPagerEventIndicator.xml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundAlt.xml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackground.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
