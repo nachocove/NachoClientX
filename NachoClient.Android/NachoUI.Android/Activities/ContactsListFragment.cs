@@ -35,6 +35,7 @@ namespace NachoClient.AndroidClient
         private const string SAVED_SEARCHING_KEY = "ContactsListFragment.searching";
 
         bool searching;
+        string searchToken;
         Android.Widget.EditText searchEditText;
         View letterBar;
         SwipeMenuListView listView;
@@ -251,6 +252,7 @@ namespace NachoClient.AndroidClient
         void CancelSearch ()
         {
             searching = false;
+            searchToken = null;
             contactsListAdapter.CancelSearch ();
 
             searchEditText.ClearFocus ();
@@ -269,7 +271,19 @@ namespace NachoClient.AndroidClient
 
         void SearchString_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
         {
-            contactsListAdapter.Search (searchEditText.Text);
+            var searchString = searchEditText.Text;
+            if (TestMode.Instance.Process (searchString)) {
+                return;
+            }
+            contactsListAdapter.Search (searchString);
+            var accountForSearchAPI = NcApplication.Instance.Account;
+            if ((null != accountForSearchAPI) && accountForSearchAPI.HasCapability (McAccount.AccountCapabilityEnum.ContactReader)) {
+                if (String.IsNullOrEmpty (searchToken)) {
+                    searchToken = BackEnd.Instance.StartSearchContactsReq (accountForSearchAPI.Id, searchString, null).GetValue<string> ();
+                } else {
+                    BackEnd.Instance.SearchContactsReq (accountForSearchAPI.Id, searchString, null, searchToken);
+                }
+            }
         }
 
         public void OnBackPressed ()
@@ -317,6 +331,9 @@ namespace NachoClient.AndroidClient
             switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_ContactChanged:
                 RefreshVisibleContactCells ();
+                break;
+            case NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded:
+                contactsListAdapter.Search (searchEditText.Text);
                 break;
             }
         }
