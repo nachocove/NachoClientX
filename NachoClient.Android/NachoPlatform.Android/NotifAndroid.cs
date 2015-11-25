@@ -40,38 +40,52 @@ namespace NachoPlatform
             }
         }
 
-        public void ImmediateNotification (int handle, string message)
+        public void ImmediateNotification (McEvent ev)
         {
-            var context = MainApplication.Instance.ApplicationContext;
-            var notificationManager = (NotificationManager)context.GetSystemService (Context.NotificationService);
-            notificationManager.Notify (handle, EventReminderNotificationPublisher.BuildNotification (context, handle, message));
+            // Use the regular ScheduleNotification(), so that the notification cancelation is properly
+            // scheduled.  Alarms in the past are delivered immediately, so the notification will appear
+            // right away.
+            ScheduleNotification (ev);
         }
 
-        public void ScheduleNotification (int handle, DateTime when, string message)
+        public void ScheduleNotification (McEvent ev)
         {
+            string title;
+            string body;
+            Pretty.EventNotification (ev, out title, out body);
             var context = MainApplication.Instance.ApplicationContext;
             var alarmManager = (AlarmManager)context.GetSystemService (Context.AlarmService);
-            alarmManager.SetExact (AlarmType.RtcWakeup, when.MillisecondsSinceEpoch (),
-                EventReminderNotificationPublisher.CreatePendingIntent (context, handle, message));
+            // One alarm creates the notification at the event's reminder time.  A second alarm cancels
+            // the notification when the event is over.  The first alarm should be exact and should wake
+            // up the device.  The second alarm can safely be delayed and should not wake up the device.
+            // The second alarm should be at lest fifteen minutes after the first, so the user has plenty
+            // of time to see the notification.
+            var createTime = ev.ReminderTime;
+            var cancelTime = ev.GetEndTimeUtc ();
+            if ((cancelTime - createTime) < TimeSpan.FromMinutes (15)) {
+                cancelTime = createTime + TimeSpan.FromMinutes (15);
+            }
+            alarmManager.SetExact (AlarmType.RtcWakeup, createTime.MillisecondsSinceEpoch (),
+                EventReminderNotificationPublisher.CreateNotificationIntent (context, ev.Id, title, body));
+            alarmManager.Set (AlarmType.Rtc, cancelTime.MillisecondsSinceEpoch (),
+                EventReminderNotificationPublisher.CancelNotificationIntent (context, ev.Id));
         }
 
-        public void ScheduleNotification (NotificationInfo notification)
+        public void ScheduleNotifications (List<McEvent> events)
         {
-            ScheduleNotification (notification.Handle, notification.When, notification.Message);
-        }
-
-        public void ScheduleNotifications (List<NotificationInfo> notifications)
-        {
-            foreach (var notification in notifications) {
-                ScheduleNotification (notification);
+            foreach (var ev in events) {
+                ScheduleNotification (ev);
             }
         }
 
-        public void CancelNotification (int handle)
+        public void CancelNotification (int eventId)
         {
             var context = MainApplication.Instance.ApplicationContext;
             var alarmManager = (AlarmManager)context.GetSystemService (Context.AlarmService);
-            alarmManager.Cancel (EventReminderNotificationPublisher.CreatePendingIntent (context, handle, ""));
+            alarmManager.Cancel (EventReminderNotificationPublisher.CreateNotificationIntent (context, eventId, "", ""));
+            alarmManager.Cancel (EventReminderNotificationPublisher.CancelNotificationIntent (context, eventId));
+            var notificationManager = (NotificationManager)context.GetSystemService (Context.NotificationService);
+            notificationManager.Cancel (EventReminderNotificationPublisher.NOTIFICATION_TAG, eventId);
         }
 
         public static void DumpNotifications ()
@@ -87,35 +101,56 @@ namespace NachoClient.AndroidClient
     /// The broadcast receiver class that runs when an alarm fires.  It creates the notification.
     /// </summary>
     [BroadcastReceiver (Enabled = true)]
-    [IntentFilter (new[] { "com.nachocove.nachomail.ACTION_EVENT_ALARM" })]
+    [IntentFilter (new[] { EventReminderNotificationPublisher.ACTION_CREATE_NOTIFICATION, EventReminderNotificationPublisher.ACTION_CANCEL_NOTIFICATION })]
     public class EventReminderNotificationPublisher : BroadcastReceiver
     {
+        private const string ACTION_CREATE_NOTIFICATION = "com.nachocove.nachomail.ACTION_CREATE_NOTIFICATION";
+        private const string ACTION_CANCEL_NOTIFICATION = "com.nachocove.nachomail.ACTION_CANCEL_NOTIFICATION";
+
         private const string EXTRA_EVENT_ID = "com.nachocove.nachomail.EXTRA_EVENT_ID";
+        private const string EXTRA_TITLE = "com.nachocove.nachomail.EXTRA_TITLE";
         private const string EXTRA_MESSAGE = "com.nachocove.nachomail.EXTRA_MESSAGE";
 
-        public static PendingIntent CreatePendingIntent (Context context, int eventId, string message)
+        public const string NOTIFICATION_TAG = "event";
+
+        private static Intent BasicIntent (Context context, int eventId)
         {
-            // The event ID is duplicated in the intent data and in the extra properties.  It is in the extra
-            // properties because that is the easiest way to extract it when processing the intent.  It is in
-            // the data because PendingIntents need to be unique, and the extra properties are not considered
-            // when comparing PendingIntents.
             var intent = new Intent (context, typeof(EventReminderNotificationPublisher));
-            intent.SetAction ("com.nachocove.nachomail.ACTION_EVENT_ALARM");
             intent.SetDataAndType (Android.Net.Uri.Parse (string.Format ("content://eventId/{0}", eventId)), "application/nachomailevent");
             intent.PutExtra (EXTRA_EVENT_ID, eventId);
+            return intent;
+        }
+
+        public static PendingIntent CreateNotificationIntent (Context context, int eventId, string title, string message)
+        {
+            var intent = BasicIntent (context, eventId);
+            intent.SetAction (ACTION_CREATE_NOTIFICATION);
+            intent.PutExtra (EXTRA_TITLE, title);
             intent.PutExtra (EXTRA_MESSAGE, message);
+            return PendingIntent.GetBroadcast (context, 0, intent, 0);
+        }
+
+        public static PendingIntent CancelNotificationIntent (Context context, int eventId)
+        {
+            var intent = BasicIntent (context, eventId);
+            intent.SetAction (ACTION_CANCEL_NOTIFICATION);
             return PendingIntent.GetBroadcast (context, 0, intent, 0);
         }
 
         public override void OnReceive (Context context, Intent intent)
         {
             int eventId = intent.GetIntExtra (EXTRA_EVENT_ID, 0);
-
             var notificationManager = (NotificationManager)context.GetSystemService (Context.NotificationService);
-            notificationManager.Notify (eventId, BuildNotification (context, eventId, intent.GetStringExtra (EXTRA_MESSAGE)));
+
+            if (ACTION_CREATE_NOTIFICATION == intent.Action) {
+                notificationManager.Notify (NOTIFICATION_TAG, eventId,
+                    BuildNotification (context, eventId, intent.GetStringExtra (EXTRA_TITLE), intent.GetStringExtra (EXTRA_MESSAGE)));
+            } else {
+                notificationManager.Cancel (NOTIFICATION_TAG, eventId);
+            }
         }
 
-        public static Notification BuildNotification (Context context, int eventId, string message)
+        public static Notification BuildNotification (Context context, int eventId, string title, string body)
         {
             var builder = new NotificationCompat.Builder (context);
 
@@ -127,8 +162,8 @@ namespace NachoClient.AndroidClient
             builder.SetPriority (NotificationCompat.PriorityHigh);
             builder.SetCategory (NotificationCompat.CategoryEvent);
             builder.SetVibrate (new long[] { 0, 100 }); // Vibration or sound needs to be set to trigger a heads-up notification.
-            builder.SetContentTitle ("Nacho Mail");
-            builder.SetContentText (message);
+            builder.SetContentTitle (title);
+            builder.SetContentText (body);
             builder.SetAutoCancel (true);
             builder.SetContentIntent (EventNotificationActivity.ShowEventIntent (context, eventId));
 
