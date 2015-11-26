@@ -614,6 +614,7 @@
     <Compile Include="NachoUI.Android\Activities\AddAccountActivity.cs" />
     <Compile Include="NachoCore\Utils\SimpleTaskScheduler.cs" />
     <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
+    <Compile Include="NachoUI.Android\Support\CalendarPagerView.cs" />
     <Compile Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />
     <Compile Include="NachoUI.Android\Support\HotEventAdapter.cs" />
   </ItemGroup>
@@ -1637,6 +1638,9 @@
     <AndroidResource Include="Resources\layout\EventInMessageLayout.axml" />
     <AndroidResource Include="Resources\layout\AddAccountActivity.axml" />
     <AndroidResource Include="Resources\layout\NotificationActivity.axml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerEventIndicator.xml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundAlt.xml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackground.xml" />
     <AndroidResource Include="Resources\layout\HotSummaryFragment.axml" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_nacholeft.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_nachoright.png" />
