@@ -1,11 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using NachoCore.Utils;
-using System.IO.MemoryMappedFiles;
 
 namespace NachoCore.Wbxml
 {
@@ -128,8 +125,7 @@ namespace NachoCore.Wbxml
             if (null != dataStream && bufferPos >= bufferEnd) {
                 fillBuffer ();
             }
-            var retval = buffer [bufferPos];
-            bufferPos++;
+            var retval = buffer [bufferPos++];
             Pos++;
 
             // We currently redact (telemetry) anything big, so stop copying bytes when something gets big.
@@ -172,22 +168,15 @@ namespace NachoCore.Wbxml
             byte currentByte = 0x00;
             byte[] lbuffer = new byte[1024*10]; // 10K buffer
             int lbufferPos = 0;
-            var b64sw = new PlatformStopwatch ();
-            var buffersw = new PlatformStopwatch ();
-            var dequetesw = new PlatformStopwatch ();
 
             do {
                 if (cToken.IsCancellationRequested) {
                     throw new OperationCanceledException ();
                 }
-                dequetesw.Start ();
                 currentByte = Dequeue ();
-                dequetesw.Stop ();
                 if (currentByte != 0x00) {
                     if (base64Decode) {
-                        b64sw.Start ();
                         var decoded = decoder.Next (currentByte);
-                        b64sw.Stop ();
                         if (0 <= decoded) {
                             lbuffer[lbufferPos++] = (byte)decoded;
                         }
@@ -195,20 +184,15 @@ namespace NachoCore.Wbxml
                         lbuffer[lbufferPos++] = currentByte;
                     }
                     if (lbufferPos == lbuffer.Length) {
-                        buffersw.Start ();
                         stream.Write (lbuffer, 0, lbuffer.Length);
                         lbufferPos = 0;
-                        buffersw.Stop ();
                     }
                 }
             } while (currentByte != 0x00);
             if (lbufferPos > 0) {
-                buffersw.Start ();
                 stream.Write (lbuffer, 0, lbufferPos);
-                buffersw.Stop ();
             }
             stream.Flush ();
-            Log.Info (Log.LOG_SYS, "DequeueStringToStream finished (pos={0}) (dequeue {1}ms) (b64 {2}ms) (buffer writes {3}ms)", Pos, dequetesw.ElapsedMilliseconds, b64sw.ElapsedMilliseconds, buffersw.ElapsedMilliseconds);
         }
 
         public string DequeueString (CancellationToken cToken)
