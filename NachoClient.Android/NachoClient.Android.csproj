@@ -62,7 +62,7 @@
     <AndroidSupportedAbis>armeabi-v7a;x86</AndroidSupportedAbis>
     <MandroidI18n>cjk;mideast;other;rare;west</MandroidI18n>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <DebugSymbols>true</DebugSymbols>
+    <AotAssemblies>true</AotAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
