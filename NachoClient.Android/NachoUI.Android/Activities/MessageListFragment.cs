@@ -25,6 +25,7 @@ using NachoCore.Brain;
 using NachoPlatform;
 using Android.Widget;
 using Android.Views.InputMethods;
+using Android.Webkit;
 
 namespace NachoClient.AndroidClient
 {
@@ -33,6 +34,8 @@ namespace NachoClient.AndroidClient
         void ListIsEmpty ();
 
         bool ShowHotEvent ();
+
+        int ShowListStyle ();
 
         void SetActiveImage (View view);
     }
@@ -94,6 +97,7 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
+            var parent = (MessageListDelegate)Activity;
             var view = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
 
             if (Activity is NcTabBarActivity) {
@@ -124,12 +128,121 @@ namespace NachoClient.AndroidClient
             var cancelButton = view.FindViewById (Resource.Id.cancel);
             cancelButton.Click += CancelButton_Click;
 
-            messageListAdapter = new MessageListAdapter (this);
-
             listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
-            listView.Adapter = messageListAdapter;
-
+            listView.ScrollStateChanged += ListView_ScrollStateChanged;
             listView.ItemClick += ListView_ItemClick;
+
+            listView.DividerHeight = 0;
+
+            SetupMessageListAdapter (view);
+
+            searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
+            searchEditText.TextChanged += SearchString_TextChanged;
+
+            searchResultsMessages = new NachoMessageSearchResults (NcApplication.Instance.Account.Id);
+
+            searcher = new SearchHelper ("MessageListViewController", (searchString) => {
+                if (String.IsNullOrEmpty (searchString)) {
+                    searchResultsMessages.UpdateMatches (null);
+                    searchResultsMessages.UpdateServerMatches (null);
+                    messageListAdapter.RefreshSearchMatches ();
+                    return; 
+                }
+                // On-device index
+                var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
+                var index = new NachoCore.Index.NcIndex (indexPath);
+                int maxResults = 1000;
+                if (4 > searchString.Length) {
+                    maxResults = 20;
+                }
+                var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
+
+                // Cull low scores
+                var maxScore = 0f;
+                foreach (var m in matches) {
+                    maxScore = Math.Max (maxScore, m.Score);
+                }
+                matches.RemoveAll (x => x.Score < (maxScore / 2));
+
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    searchResultsMessages.UpdateMatches (matches);
+                    messageListAdapter.RefreshSearchMatches ();
+                });
+            });
+                
+            var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
+
+            if (parent.ShowHotEvent ()) {
+                hotEvent.Visibility = ViewStates.Visible;
+                var hoteventListView = view.FindViewById<SwipeMenuListView> (Resource.Id.hotevent_listView);
+                hotEventAdapter = new HotEventAdapter ();
+                hoteventListView.Adapter = hotEventAdapter;
+                var hoteventEmptyView = view.FindViewById<View> (Resource.Id.hot_event_empty);
+                hoteventListView.EmptyView = hoteventEmptyView;
+
+                hoteventListView.ItemClick += HoteventListView_ItemClick;
+
+                hoteventListView.setMenuCreator ((menu) => {
+                    SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                    lateItem.setWidth (dp2px (90));
+                    lateItem.setTitle ("I'm Late");
+                    lateItem.setTitleSize (14);
+                    lateItem.setTitleColor (A.Color_White);
+                    lateItem.setIcon (A.Id_NachoSwipeCalendarLate);
+                    lateItem.setId (LATE_TAG);
+                    menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
+
+                    SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                    forwardItem.setWidth (dp2px (90));
+                    forwardItem.setTitle ("Forward");
+                    forwardItem.setTitleSize (14);
+                    forwardItem.setTitleColor (A.Color_White);
+                    forwardItem.setIcon (A.Id_NachoSwipeCalendarForward);
+                    forwardItem.setId (FORWARD_TAG);
+                    menu.addMenuItem (forwardItem, SwipeMenu.SwipeSide.RIGHT);
+                });
+
+                hoteventListView.setOnMenuItemClickListener (( position, menu, index) => {
+                    var cal = CalendarHelper.GetMcCalendarRootForEvent (hotEventAdapter [position].Id);
+                    switch (index) {
+                    case LATE_TAG:
+                        if (null != cal) {
+                            var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Re: " + cal.GetSubject ());
+                            outgoingMessage.To = cal.OrganizerEmail;
+                            StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, outgoingMessage, "Running late."));
+                        }
+                        break;
+                    case FORWARD_TAG:
+                        if (null != cal) {
+                            StartActivity (MessageComposeActivity.ForwardCalendarIntent (
+                                this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + cal.GetSubject ())));
+                        }
+                        break;
+                    default:
+                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
+                    }
+                    return false;
+                });
+            } else {
+                hotEvent.Visibility = ViewStates.Gone;
+            }
+                
+            ConfigureButtons ();
+            parent.SetActiveImage (view);
+
+            MaybeDisplayNoMessagesView (view);
+
+            return view;
+        }
+
+        void SetupMessageListAdapter (View view)
+        {
+            var parent = (MessageListDelegate)Activity;
+            messageListAdapter = new MessageListAdapter (this, parent.ShowListStyle ());
+
+            listView.Adapter = messageListAdapter;
 
             listView.setMenuCreator ((menu) => {
                 if (!(messages.HasDraftsSemantics () || messages.HasOutboxSemantics ())) {
@@ -201,109 +314,6 @@ namespace NachoClient.AndroidClient
             listView.setOnSwipeEndListener ((position) => {
                 mSwipeRefreshLayout.Enabled = true;
             });
-
-            listView.ScrollStateChanged += ListView_ScrollStateChanged;
-
-            searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
-            searchEditText.TextChanged += SearchString_TextChanged;
-
-            searchResultsMessages = new NachoMessageSearchResults (NcApplication.Instance.Account.Id);
-
-            searcher = new SearchHelper ("MessageListViewController", (searchString) => {
-                if (String.IsNullOrEmpty (searchString)) {
-                    searchResultsMessages.UpdateMatches (null);
-                    searchResultsMessages.UpdateServerMatches (null);
-                    messageListAdapter.RefreshSearchMatches ();
-                    return; 
-                }
-                // On-device index
-                var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
-                var index = new NachoCore.Index.NcIndex (indexPath);
-                int maxResults = 1000;
-                if (4 > searchString.Length) {
-                    maxResults = 20;
-                }
-                var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
-
-                // Cull low scores
-                var maxScore = 0f;
-                foreach (var m in matches) {
-                    maxScore = Math.Max (maxScore, m.Score);
-                }
-                matches.RemoveAll (x => x.Score < (maxScore / 2));
-
-                InvokeOnUIThread.Instance.Invoke (() => {
-                    searchResultsMessages.UpdateMatches (matches);
-                    messageListAdapter.RefreshSearchMatches ();
-                });
-            });
-                
-            var parent = (MessageListDelegate)Activity;
-            var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
-
-            if (parent.ShowHotEvent ()) {
-                hotEvent.Visibility = ViewStates.Visible;
-                var hoteventListView = view.FindViewById<SwipeMenuListView> (Resource.Id.hotevent_listView);
-                hotEventAdapter = new HotEventAdapter ();
-                hoteventListView.Adapter = hotEventAdapter;
-                var hoteventEmptyView = view.FindViewById<View> (Resource.Id.hot_event_empty);
-                hoteventListView.EmptyView = hoteventEmptyView;
-
-                hoteventListView.ItemClick += HoteventListView_ItemClick;
-
-                hoteventListView.setMenuCreator ((menu) => {
-                    SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
-                    lateItem.setWidth (dp2px (90));
-                    lateItem.setTitle ("I'm Late");
-                    lateItem.setTitleSize (14);
-                    lateItem.setTitleColor (A.Color_White);
-                    lateItem.setIcon (A.Id_NachoSwipeCalendarLate);
-                    lateItem.setId (LATE_TAG);
-                    menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
-
-                    SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
-                    forwardItem.setWidth (dp2px (90));
-                    forwardItem.setTitle ("Forward");
-                    forwardItem.setTitleSize (14);
-                    forwardItem.setTitleColor (A.Color_White);
-                    forwardItem.setIcon (A.Id_NachoSwipeCalendarForward);
-                    forwardItem.setId (FORWARD_TAG);
-                    menu.addMenuItem (forwardItem, SwipeMenu.SwipeSide.RIGHT);
-                });
-
-                hoteventListView.setOnMenuItemClickListener (( position, menu, index) => {
-                    var cal = CalendarHelper.GetMcCalendarRootForEvent (hotEventAdapter [position].Id);
-                    switch (index) {
-                    case LATE_TAG:
-                        if (null != cal) {
-                            var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Re: " + cal.GetSubject ());
-                            outgoingMessage.To = cal.OrganizerEmail;
-                            StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, outgoingMessage, "Running late."));
-                        }
-                        break;
-                    case FORWARD_TAG:
-                        if (null != cal) {
-                            StartActivity (MessageComposeActivity.ForwardCalendarIntent (
-                                this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + cal.GetSubject ())));
-                        }
-                        break;
-                    default:
-                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
-                    }
-                    return false;
-                });
-            } else {
-                hotEvent.Visibility = ViewStates.Gone;
-            }
-
-            ConfigureButtons ();
-            parent.SetActiveImage (view);
-
-            MaybeDisplayNoMessagesView (view);
-
-            return view;
         }
 
         void SwipeRefreshLayout_Refresh (object sender, EventArgs e)
@@ -685,13 +695,19 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public void MaybeSwitchStyle (int style)
+        {
+            if (style != messageListAdapter.currentStyle) {
+                SwitchAccount (messages);
+            }
+        }
+
         public void SwitchAccount (INachoEmailMessages newMessages)
         {
             ClearCache ();
             messages = newMessages;
             if (null != listView) {
-                messageListAdapter = new MessageListAdapter (this);
-                listView.Adapter = messageListAdapter;
+                SetupMessageListAdapter (View);
             }
             MaybeDisplayNoMessagesView (View);
         }
@@ -885,16 +901,20 @@ namespace NachoClient.AndroidClient
         }
     }
 
-    public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
+    public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>, MessageDownloadDelegate
     {
+        public const int LISTVIEW_STYLE = 0;
+        public const int CARDVIEW_STYLE = 1;
+
+        public int currentStyle;
         MessageListFragment owner;
 
         bool searching;
 
-        public MessageListAdapter (MessageListFragment owner)
+        public MessageListAdapter (MessageListFragment owner, int style)
         {
             this.owner = owner;
-
+            currentStyle = style;
         }
 
         public void StartSearch ()
@@ -914,6 +934,17 @@ namespace NachoClient.AndroidClient
         public void RefreshSearchMatches ()
         {
             NotifyDataSetChanged ();
+        }
+
+        public override int ViewTypeCount {
+            get {
+                return 2;
+            }
+        }
+
+        public override int GetItemViewType (int position)
+        {
+            return currentStyle;
         }
 
         public override bool HasStableIds {
@@ -952,6 +983,18 @@ namespace NachoClient.AndroidClient
         }
 
         public override View GetView (int position, View convertView, ViewGroup parent)
+        {
+            switch (currentStyle) {
+            case LISTVIEW_STYLE:
+                return GetListView (position, convertView, parent);
+            case CARDVIEW_STYLE:
+                return GetCardView (position, convertView, parent);
+            default:
+                return null;
+            }
+        }
+
+        View GetListView (int position, View convertView, ViewGroup parent)
         {
             View view = convertView; // re-use an existing view, if one is available
             if (view == null) {
@@ -1000,112 +1043,458 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
-        void ChiliView_Click (object sender, EventArgs e)
+        void MessageFromSender (object sender, out McEmailMessageThread thread, out McEmailMessage message)
         {
-            var chiliView = (Android.Widget.ImageView)sender;
-            var position = (int)chiliView.Tag;
-            McEmailMessageThread thread;
+            var view = (View)sender;
+            var position = (int)view.Tag;
             if (searching) {
                 thread = owner.searchResultsMessages.GetEmailThread (position);
             } else {
                 thread = owner.messages.GetEmailThread (position);
             }
-            var message = thread.FirstMessageSpecialCase ();
+            message = thread.FirstMessageSpecialCase ();
+        }
+
+        void ChiliView_Click (object sender, EventArgs e)
+        {
+            McEmailMessage message;
+            McEmailMessageThread thread;
+            var chiliView = (Android.Widget.ImageView)sender;
+            MessageFromSender (sender, out thread, out message);
             NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
             Bind.BindMessageChili (thread, message, chiliView);
         }
 
-    }
-
-    public class HotEventAdapter : Android.Widget.BaseAdapter<McEvent>
-    {
-        protected McEvent currentEvent;
-        protected NcTimer eventEndTimer = null;
-
-        public HotEventAdapter ()
+        class MessageDownloaderWithWebView : MessageDownloader
         {
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            Configure ();
+            public WebView webView;
         }
 
-        public void Configure ()
-        {
-            DateTime timerFireTime;
-            currentEvent = CalendarHelper.CurrentOrNextEvent (out timerFireTime);
-
-            if (null != eventEndTimer) {
-                eventEndTimer.Dispose ();
-                eventEndTimer = null;
-            }
-
-            // Set a timer to fire at the end of the currently displayed event, so the view can
-            // be reconfigured to show the next event.
-            if (null != currentEvent) {
-                TimeSpan timerDuration = timerFireTime - DateTime.UtcNow;
-                if (timerDuration < TimeSpan.Zero) {
-                    // The time to reevaluate the current event was in the very near future, and that time was reached in between
-                    // CurrentOrNextEvent() and now.  Configure the timer to fire immediately.
-                    timerDuration = TimeSpan.Zero;
-                }
-                eventEndTimer = new NcTimer ("HotEventView", (state) => {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        Configure ();
-                    });
-                }, null, timerDuration, TimeSpan.Zero);
-            }
-        }
-
-        public override long GetItemId (int position)
-        {
-            return 1;
-        }
-
-        public override int Count {
-            get {
-                return (null == currentEvent ? 0 : 1);
-            }
-        }
-
-        public override McEvent this [int position] {  
-            get { return currentEvent; }
-        }
-
-        public override View GetView (int position, View convertView, ViewGroup parent)
+        View GetCardView (int position, View convertView, ViewGroup parent)
         {
             View view = convertView; // re-use an existing view, if one is available
             if (view == null) {
-                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.HotEventCell, parent, false);
+                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCard, parent, false);
+                var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+                AttachListeners (view);
+                chiliView.Click += ChiliView_Click;
             }
-            Bind.BindHotEvent (currentEvent, view);
+                
+            var thread = owner.messages.GetEmailThread (position);
+            var message = owner.GetCachedMessage (position);
 
+            var webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
+ 
+            webView.Clickable = false;
+            webView.LongClickable = false;
+            webView.Focusable = false;
+            webView.FocusableInTouchMode = false;
+            webView.SetOnTouchListener (new IgnoreTouchListener ());
+
+            BindValues (view, thread, message);
+
+            view.FindViewById (Resource.Id.chili).Tag = position;
+            view.FindViewById (Resource.Id.reply).Tag = position;
+            view.FindViewById (Resource.Id.reply_all).Tag = position;
+            view.FindViewById (Resource.Id.forward).Tag = position;
+            view.FindViewById (Resource.Id.archive).Tag = position;
+            view.FindViewById (Resource.Id.delete).Tag = position;
+
+            view.SetMinimumHeight (parent.MeasuredHeight);
+            view.LayoutParameters.Height = parent.MeasuredHeight;
             return view;
         }
 
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
+        public class IgnoreTouchListener : Java.Lang.Object, View.IOnTouchListener
         {
-            var statusEvent = (StatusIndEventArgs)e;
+            public bool OnTouch (View v, MotionEvent e)
+            {
+                return false;
+            }
+        }
 
-            switch (statusEvent.Status.SubKind) {
+        void AttachListeners (View view)
+        {
+            var replyButton = view.FindViewById (Resource.Id.reply);
+            replyButton.Click += ReplyButton_Click;
 
-            case NcResult.SubKindEnum.Info_EventSetChanged:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                Configure ();
-                NotifyDataSetChanged ();
-                break;
+            var replyAllButton = view.FindViewById (Resource.Id.reply_all);
+            replyAllButton.Click += ReplyAllButton_Click;
 
-            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
-                // When the app goes into the background, eventEndTimer might get cancelled, but ViewWillAppear
-                // won't get called when the app returns to the foreground.  That might leave the view displaying
-                // an old event.  Watch for foreground events and refresh the view.
-                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
-                    Configure ();
-                    NotifyDataSetChanged ();
+            var forwardButton = view.FindViewById (Resource.Id.forward);
+            forwardButton.Click += ForwardButton_Click;
+
+            var archiveButton = view.FindViewById (Resource.Id.archive);
+            archiveButton.Click += ArchiveButton_Click;
+
+            var deleteButton = view.FindViewById (Resource.Id.delete);
+            deleteButton.Click += DeleteButton_Click;
+        }
+
+        void DetachListeners (View view)
+        {
+            var replyButton = view.FindViewById (Resource.Id.reply);
+            replyButton.Click -= ReplyButton_Click;
+
+            var replyAllButton = view.FindViewById (Resource.Id.reply_all);
+            replyAllButton.Click -= ReplyAllButton_Click;
+
+            var forwardButton = view.FindViewById (Resource.Id.forward);
+            forwardButton.Click -= ForwardButton_Click;
+
+            var archiveButton = view.FindViewById (Resource.Id.archive);
+            archiveButton.Click -= ArchiveButton_Click;
+
+            var deleteButton = view.FindViewById (Resource.Id.delete);
+            deleteButton.Click -= DeleteButton_Click;
+        }
+
+        void BindValues (View view, McEmailMessageThread thread, McEmailMessage message)
+        {
+            Bind.BindMessageHeader (thread, message, view);
+            view.FindViewById<TextView> (Resource.Id.subject).SetMaxLines (100);
+            BindMeetingRequest (view, message);
+            var webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
+            NcEmailMessageBundle bundle;
+            if (message.BodyId != 0) {
+                bundle = new NcEmailMessageBundle (message);
+            } else {
+                bundle = null;
+            }
+            if (bundle == null || bundle.NeedsUpdate) {
+                var messageDownloader = new MessageDownloaderWithWebView ();
+                messageDownloader.webView = webView;
+                messageDownloader.Bundle = bundle;
+                messageDownloader.Delegate = this;
+                messageDownloader.Download (message);
+            } else {
+                RenderBody (webView, bundle);
+            }
+        }
+
+        void BindMeetingRequest (View view, McEmailMessage message)
+        {
+            var meeting = message.MeetingRequest;
+
+            if (null == meeting) {
+                view.FindViewById<View> (Resource.Id.event_in_message).Visibility = ViewStates.Gone;
+                return;
+            }
+
+            var calendarItem = McCalendar.QueryByUID (message.AccountId, meeting.GetUID ());
+
+            var whenView = view.FindViewById<TextView> (Resource.Id.event_when_label);
+            whenView.Text = NcEventDetail.GetDateString (meeting);
+
+            var durationView = view.FindViewById<TextView> (Resource.Id.event_duration_label);
+            durationView.Text = NcEventDetail.GetDurationString (meeting);
+
+            var recurrenceView = view.FindViewById<TextView> (Resource.Id.event_recurrence_label);
+            if (0 == meeting.recurrences.Count) {
+                recurrenceView.Visibility = ViewStates.Gone;
+            } else {
+                recurrenceView.Text = NcEventDetail.GetRecurrenceString (meeting);
+            }
+
+            string location = meeting.GetLocation ();
+            if (string.IsNullOrEmpty (location)) {
+                view.FindViewById<View> (Resource.Id.location_view).Visibility = ViewStates.Gone;
+            } else {
+                view.FindViewById<TextView> (Resource.Id.event_location_label).Text = location;
+            }
+
+            var organizerAddress = NcEmailAddress.ParseMailboxAddressString (meeting.Organizer);
+            if (!message.IsMeetingResponse && null != organizerAddress && null != organizerAddress.Address) {
+                string email = organizerAddress.Address;
+                string name = organizerAddress.Name;
+                var organizerEmailLabel = view.FindViewById<TextView> (Resource.Id.event_organizer_email_label);
+                organizerEmailLabel.Text = email;
+                if (string.IsNullOrEmpty (name)) {
+                    foreach (var contact in McContact.QueryByEmailAddress (meeting.AccountId, email)) {
+                        if (!string.IsNullOrEmpty (contact.DisplayName)) {
+                            name = contact.DisplayName;
+                            break;
+                        }
+                    }
                 }
+                string initials;
+                if (!string.IsNullOrEmpty (name)) {
+                    var organizerNameLabel = view.FindViewById<TextView> (Resource.Id.event_organizer_label);
+                    organizerNameLabel.Text = name;
+                    initials = ContactsHelper.NameToLetters (name);
+                } else {
+                    initials = ContactsHelper.NameToLetters (email);
+                }
+                var color = Util.ColorResourceForEmail (email);
+                var imageView = view.FindViewById<ContactPhotoView> (Resource.Id.event_organizer_initials);
+                imageView.SetEmailAddress (meeting.AccountId, email, initials, color);
+            } else {
+                view.FindViewById<View> (Resource.Id.event_organizer_view).Visibility = ViewStates.Gone;
+            }
+
+            if (!message.IsMeetingRequest) {
+                view.FindViewById<View> (Resource.Id.event_attendee_view).Visibility = ViewStates.Gone;
+            } else {
+                var attendeesFromMessage = NcEmailAddress.ParseAddressListString (Pretty.Join (message.To, message.Cc, ", "));
+                for (int a = 0; a < 5; ++a) {
+                    var attendeePhotoView = AttendeeInitialsView (view, a);
+                    var attendeeNameView = AttendeeNameView (view, a);
+                    if (4 == a && 5 < attendeesFromMessage.Count) {
+                        attendeePhotoView.SetPortraitId (0, string.Format ("+{0}", attendeesFromMessage.Count - a), Resource.Drawable.UserColor0);
+                        attendeeNameView.Text = "";
+                    } else if (a < attendeesFromMessage.Count) {
+                        var attendee = attendeesFromMessage [a] as MimeKit.MailboxAddress;
+                        var initials = ContactsHelper.NameToLetters (attendee.Name);
+                        var color = Util.ColorResourceForEmail (attendee.Address);
+                        attendeePhotoView.SetEmailAddress (message.AccountId, attendee.Address, initials, color);
+                        attendeeNameView.Text = GetFirstName (attendee.Name);
+                    } else {
+                        attendeePhotoView.Visibility = ViewStates.Gone;
+                        attendeeNameView.Visibility = ViewStates.Gone;
+                    }
+                }
+            }
+
+            // The Hot view cards never use the Attend/Maybe/Decline buttons.  They always use the message instead.
+            view.FindViewById (Resource.Id.event_rsvp_view).Visibility = ViewStates.Gone;
+            view.FindViewById (Resource.Id.event_message_view).Visibility = ViewStates.Visible;
+            if (message.IsMeetingResponse) {
+                ShowAttendeeResponseBar (view, message);
+            } else if (message.IsMeetingCancelation) {
+                ShowCancellationBar (view);
+            } else {
+                ShowRequestChoicesBar (view, calendarItem);
+            }
+        }
+
+        void ShowRequestChoicesBar (View view, McCalendar calendarItem)
+        {
+            var iconView = view.FindViewById<ImageView> (Resource.Id.event_message_icon);
+            var textView = view.FindViewById<TextView> (Resource.Id.event_message_text);
+
+            NcResponseType status = NcResponseType.None;
+            if (null != calendarItem && calendarItem.ResponseTypeIsSet) {
+                status = calendarItem.ResponseType;
+            }
+            switch (status) {
+            case NcResponseType.Accepted:
+                iconView.SetImageResource (Resource.Drawable.event_attend_active);
+                textView.Text = "You accepted the meeting.";
+                break;
+            case NcResponseType.Tentative:
+                iconView.SetImageResource (Resource.Drawable.event_maybe_active);
+                textView.Text = "You tentatively accepted the meeting.";
+                break;
+            case NcResponseType.Declined:
+                iconView.SetImageResource (Resource.Drawable.event_decline_active);
+                textView.Text = "You declined the meeting.";
+                break;
+            default:
+                iconView.Visibility = ViewStates.Gone;
+                textView.Text = "You have not yet responded to the meeting.";
                 break;
             }
         }
 
+        void ShowCancellationBar (View view)
+        {
+            var iconView = view.FindViewById<ImageView> (Resource.Id.event_message_icon);
+            var textView = view.FindViewById<TextView> (Resource.Id.event_message_text);
+
+            iconView.Visibility = ViewStates.Gone;
+            textView.Text = "The meeting has been canceled.";
+        }
+
+        void ShowAttendeeResponseBar (View view, McEmailMessage message)
+        {
+            int iconResourceId;
+            string messageFormat;
+            switch (message.MeetingResponseValue) {
+            case NcResponseType.Accepted:
+                iconResourceId = Resource.Drawable.event_attend_active;
+                messageFormat = "{0} accepted the meeting.";
+                break;
+            case NcResponseType.Tentative:
+                iconResourceId = Resource.Drawable.event_maybe_active;
+                messageFormat = "{0} tentatively accepted the meeting.";
+                break;
+            case NcResponseType.Declined:
+                iconResourceId = Resource.Drawable.event_decline_active;
+                messageFormat = "{0} declined the meeting.";
+                break;
+            default:
+                Log.Warn (Log.LOG_CALENDAR, "Unknown meeting response status: {0}", message.MessageClass);
+                iconResourceId = 0;
+                messageFormat = "The status of {0} is unknown.";
+                break;
+            }
+
+            string displayName;
+            var responder = NcEmailAddress.ParseMailboxAddressString (message.From);
+            if (null == responder) {
+                displayName = message.From;
+            } else if (!string.IsNullOrEmpty (responder.Name)) {
+                displayName = responder.Name;
+            } else {
+                displayName = responder.Address;
+            }
+
+            var icon = view.FindViewById<ImageView> (Resource.Id.event_message_icon);
+            if (0 == iconResourceId) {
+                icon.Visibility = ViewStates.Gone;
+            } else {
+                icon.SetImageResource (iconResourceId);
+            }
+            var text = view.FindViewById<TextView> (Resource.Id.event_message_text);
+            text.Text = string.Format (messageFormat, displayName);
+        }
+
+        private ContactPhotoView AttendeeInitialsView (View parent, int attendeeIndex)
+        {
+            int id;
+            switch (attendeeIndex) {
+            case 0:
+                id = Resource.Id.event_attendee_0;
+                break;
+            case 1:
+                id = Resource.Id.event_attendee_1;
+                break;
+            case 2:
+                id = Resource.Id.event_attendee_2;
+                break;
+            case 3:
+                id = Resource.Id.event_attendee_3;
+                break;
+            case 4:
+                id = Resource.Id.event_attendee_4;
+                break;
+            default:
+                NcAssert.CaseError (string.Format ("Attendee index {0} is out of range. It must be [0..4]", attendeeIndex));
+                return null;
+            }
+            return parent.FindViewById<ContactPhotoView> (id);
+        }
+
+        private TextView AttendeeNameView (View parent, int attendeeIndex)
+        {
+            int id;
+            switch (attendeeIndex) {
+            case 0:
+                id = Resource.Id.event_attendee_name_0;
+                break;
+            case 1:
+                id = Resource.Id.event_attendee_name_1;
+                break;
+            case 2:
+                id = Resource.Id.event_attendee_name_2;
+                break;
+            case 3:
+                id = Resource.Id.event_attendee_name_3;
+                break;
+            case 4:
+                id = Resource.Id.event_attendee_name_4;
+                break;
+            default:
+                NcAssert.CaseError (string.Format ("Attendee index {0} is out of range. It must be [0..4]", attendeeIndex));
+                return null;
+            }
+            return parent.FindViewById<TextView> (id);
+        }
+
+        private static string GetFirstName (string displayName)
+        {
+            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (names [0] == null) {
+                return "";
+            }
+            if (names [0].Length > 1) {
+                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
+            }
+            return names [0].ToUpper ();
+        }
+
+        public void MessageDownloadDidFinish (MessageDownloader downloader)
+        {
+            var bundle = downloader.Bundle;
+            var downloaderWithWebView = (MessageDownloaderWithWebView)downloader;
+            RenderBody (downloaderWithWebView.webView, bundle);
+        }
+
+        public void MessageDownloadDidFail (MessageDownloader downloader, NcResult result)
+        {
+            // TODO: show this inline, possibly with message preview (if available)
+        }
+
+        void RenderBody (Android.Webkit.WebView webView, NcEmailMessageBundle bundle)
+        {
+            if (bundle != null) {
+                if (bundle.FullHtmlUrl != null) {
+                    webView.LoadUrl (bundle.FullHtmlUrl.AbsoluteUri);
+                } else {
+                    var html = bundle.FullHtml;
+                    webView.LoadDataWithBaseURL (bundle.BaseUrl.AbsoluteUri, html, "text/html", "utf-8", null);
+                }
+            }
+        }
+
+        void DoneWithMessage ()
+        {
+        }
+
+        void ArchiveButton_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "ArchiveButton_Click");
+            McEmailMessage message;
+            McEmailMessageThread thread;
+            MessageFromSender (sender, out thread, out message);
+            NcEmailArchiver.Archive (message);
+            DoneWithMessage ();
+        }
+
+        void DeleteButton_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "DeleteButton_Click");
+            McEmailMessage message;
+            McEmailMessageThread thread;
+            MessageFromSender (sender, out thread, out message);
+            NcEmailArchiver.Delete (message);
+            DoneWithMessage ();
+        }
+
+        void ForwardButton_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "ForwardButton_Click");
+            McEmailMessage message;
+            McEmailMessageThread thread;
+            MessageFromSender (sender, out thread, out message);
+            StartComposeActivity (EmailHelper.Action.Forward, thread, message);
+        }
+
+        void ReplyButton_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "ReplyButton_Click");
+            McEmailMessage message;
+            McEmailMessageThread thread;
+            MessageFromSender (sender, out thread, out message);
+            StartComposeActivity (EmailHelper.Action.Reply, thread, message);
+        }
+
+        void ReplyAllButton_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "ReplyAllButton_Click");
+            McEmailMessage message;
+            McEmailMessageThread thread;
+            MessageFromSender (sender, out thread, out message);
+            StartComposeActivity (EmailHelper.Action.ReplyAll, thread, message);
+        }
+
+        void StartComposeActivity (EmailHelper.Action action, McEmailMessageThread thread, McEmailMessage message)
+        {
+            var activity = owner.Activity;
+            owner.StartActivity (MessageComposeActivity.RespondIntent (activity, action, thread.FirstMessageId));
+        }
+
     }
+
 }
 

@@ -88,11 +88,7 @@ namespace NachoClient.AndroidClient
 
         public static Intent HotListIntent (Context context)
         {
-            if (LoginHelpers.ShowHotCards ()) {
-                return new Intent (context, typeof(NowActivity));
-            } else {
-                return new Intent (context, typeof(NowListActivity));
-            }
+            return new Intent (context, typeof(NowListActivity));
         }
 
         void HotButton_Click (object sender, EventArgs e)
@@ -115,7 +111,7 @@ namespace NachoClient.AndroidClient
             if (this is InboxActivity) {
                 return;
             } 
-            StartActivity (InboxIntent(this));
+            StartActivity (InboxIntent (this));
         }
 
         void ContactsButton_Click (object sender, EventArgs e)
