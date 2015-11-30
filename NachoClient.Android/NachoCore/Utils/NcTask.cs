@@ -109,6 +109,7 @@ namespace NachoCore.Utils
 
         public static Task Run (Action action, string name, bool stfu, bool isUnique, TaskCreationOptions option = TaskCreationOptions.None)
         {
+            NcAssert.NotNull (TaskMap);
             string dummy = null;
             var taskId = Interlocked.Increment (ref TaskId);
             var taskName = name + taskId.ToString ();
