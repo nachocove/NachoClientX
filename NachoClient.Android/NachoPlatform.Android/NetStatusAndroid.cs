@@ -12,13 +12,15 @@ using NachoCore.Utils;
 
 namespace NachoPlatform
 {
-    public sealed class NetStatus : IPlatformNetStatus
+    public sealed class NetStatus : BroadcastReceiver, IPlatformNetStatus
     {
         private static volatile NetStatus instance;
         private static object syncRoot = new Object ();
 
         private NetStatus ()
         {
+            IntentFilter filter = new IntentFilter ("android.net.conn.CONNECTIVITY_CHANGE");
+            MainApplication.Instance.ApplicationContext.RegisterReceiver (this, filter);
         }
 
         public static NetStatus Instance {
@@ -79,22 +81,17 @@ namespace NachoPlatform
             }
         }
 
-        [BroadcastReceiver (Permission = "android.permission.ACCESS_NETWORK_STATE")]
-        [IntentFilter (new string[] { "android.net.conn.CONNECTIVITY_CHANGE" })]
-        public class NetStatusBroadcastReceiver : BroadcastReceiver
+        public override void OnReceive (Context context, Intent intent)
         {
-            public override void OnReceive (Context context, Intent intent)
-            {
-                // NOTE: This is called using the UI thread, so need to Task.Run here.
-                NcTask.Run (() => {
-                    var netInst = NetStatus.Instance;
-                    if (null != netInst) {
-                        netInst.Fire ();
-                    } else {
-                        Log.Error (Log.LOG_SYS, "NetStatusBroadcastReceiver:OnReceive: No NetStatus.Instance");
-                    }
-                }, "NetStatusBroadcastReceiver:OnReceive");
-            }
+            // NOTE: This is called using the UI thread, so need to Task.Run here.
+            NcTask.Run (() => {
+                var netInst = NetStatus.Instance;
+                if (null != netInst) {
+                    netInst.Fire ();
+                } else {
+                    Log.Error (Log.LOG_SYS, "NetStatusBroadcastReceiver:OnReceive: No NetStatus.Instance");
+                }
+            }, "NetStatusBroadcastReceiver:OnReceive");
         }
     }
 }
