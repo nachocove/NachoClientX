@@ -7,6 +7,10 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using ModernHttpClient;
+using Org.BouncyCastle.X509;
+using System.IO;
+using Org.BouncyCastle.Security.Certificates;
+using Org.BouncyCastle.Security;
 
 namespace NachoCore.Utils
 {
@@ -171,17 +175,8 @@ namespace NachoCore.Utils
                     }
 
                     LastUpdated = DateTime.UtcNow;
-                    var revoked = new HashSet<string> ();
                     // FIXME - Need a different signing scheme so we can present the signing cert to verify the CRL.
-                    var snList = NachoPlatformBinding.Crypto.CrlGetRevoked (Crl);
-                    if (null != snList) {
-                        foreach (var sn in snList) {
-                            revoked.Add (sn);
-                        }
-                        Revoked = revoked;
-                    } else {
-                        Log.Error (Log.LOG_PUSH, "Unable to parse CRL for {0}", Url);
-                    }
+                    Revoked = CrlGetRevoked (Crl);
                     Log.Info (Log.LOG_PUSH, "CRL pull response: statusCode={0}, content={1}", response.StatusCode, Crl);
                     return;
                 } else {
@@ -204,6 +199,70 @@ namespace NachoCore.Utils
                 Timer.Change (RetryInterval, PollingPeriod);
             }
         }
+
+        #region CRLParsing
+
+        public class InvalidCrl : Exception
+        {
+            public InvalidCrl (string message) : base(message)
+            {}
+        }
+
+        public static HashSet<string> CrlGetRevoked (string crl, string signingCert)
+        {
+            var sigCert = ParseX509Pem (signingCert);
+            var theCrl = ParseX509CrlPem (crl);
+            return CrlGetRevoked (theCrl, sigCert);
+        }
+
+        public static HashSet<string> CrlGetRevoked (string crl)
+        {
+            var theCrl = ParseX509CrlPem (crl);
+            return CrlGetRevoked (theCrl, null);
+        }
+
+        protected static HashSet<string> CrlGetRevoked (X509Crl crl, X509Certificate signingCert)
+        {
+            if (signingCert != null) {
+                try {
+                    crl.Verify (signingCert.GetPublicKey ());
+                } catch (CrlException ex) {
+                    throw new InvalidCrl (ex.ToString ());
+                } catch (SignatureException ex) {
+                    throw new InvalidCrl (ex.ToString ());
+                }
+            }
+            var ret = new HashSet<string> ();
+            var revokedList = crl.GetRevokedCertificates ();
+            if (revokedList != null) {
+                foreach (X509CrlEntry revoked in revokedList) {
+                    ret.Add (revoked.SerialNumber.ToString ());
+                }
+            }
+            return ret;
+        }
+
+        static X509Certificate ParseX509Pem (string cert)
+        {
+            X509CertificateParser x509Parser = new X509CertificateParser ();
+            var theCert = x509Parser.ReadCertificate (new MemoryStream (Encoding.ASCII.GetBytes (cert)));
+            if (theCert == null) {
+                throw new ArgumentException ("Could not convert signingCert");
+            }
+            return theCert;
+        }
+
+        static X509Crl ParseX509CrlPem (string crl)
+        {
+            X509CrlParser parser = new X509CrlParser (true);
+            var theCrl = parser.ReadCrl (new MemoryStream(Encoding.ASCII.GetBytes(crl)));
+            if (theCrl == null) {
+                throw new ArgumentException ("Could not convert crl");
+            }
+            return theCrl;
+        }
+
+        #endregion
     }
 }
 
