@@ -9,6 +9,8 @@ using Android.Widget;
 using NachoCore.Brain;
 using NachoCore;
 using Android.Support.V7.Widget;
+using Android.Content;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -17,6 +19,7 @@ namespace NachoClient.AndroidClient
     {
         public const int LISTVIEW_STYLE = 0;
         public const int CARDVIEW_STYLE = 1;
+        const int SUMMARY_STYLE = 2;
 
         public event EventHandler<int> onMessageClick;
 
@@ -51,9 +54,23 @@ namespace NachoClient.AndroidClient
             NotifyDataSetChanged ();
         }
 
+        public bool IsFooterPosition (int position)
+        {
+            if (!searching) {
+                if (CARDVIEW_STYLE == currentStyle) {
+                    return (ItemCount == (position + 1));
+                }
+            }
+            return false;
+        }
+
         public override int GetItemViewType (int position)
         {
-            return currentStyle;
+            if (IsFooterPosition (position)) {
+                return SUMMARY_STYLE;
+            } else {
+                return currentStyle;
+            }
         }
 
         public class MessageViewHolder : RecyclerView.ViewHolder
@@ -61,6 +78,28 @@ namespace NachoClient.AndroidClient
             public MessageViewHolder (View itemView, Action<int> click) : base (itemView)
             {
                 itemView.Click += (object sender, EventArgs e) => click (AdapterPosition);
+            }
+        }
+
+        public class SummaryViewHolder : RecyclerView.ViewHolder
+        {
+            public TextView inboxMessageCountView;
+            public TextView deferredMessageCountView;
+            public TextView deadlinesMessageCountView;
+
+            public SummaryViewHolder (View itemView, Action inboxClick, Action deferredClick, Action deadlinesClick) : base (itemView)
+            {
+                var inboxView = itemView.FindViewById<View> (Resource.Id.go_to_inbox);
+                var deferredView = itemView.FindViewById<View> (Resource.Id.go_to_deferred);
+                var deadlinesView = itemView.FindViewById<View> (Resource.Id.go_to_deadlines);
+
+                inboxView.Click += (object sender, EventArgs e) => inboxClick ();
+                deferredView.Click += (object sender, EventArgs e) => deferredClick ();
+                deadlinesView.Click += (object sender, EventArgs e) => deadlinesClick ();
+
+                inboxMessageCountView = itemView.FindViewById<TextView> (Resource.Id.inbox_message_count);
+                deferredMessageCountView = itemView.FindViewById<TextView> (Resource.Id.deferred_message_count);
+                deadlinesMessageCountView = itemView.FindViewById<TextView> (Resource.Id.deadlines_message_count);
             }
         }
 
@@ -76,6 +115,9 @@ namespace NachoClient.AndroidClient
 
         public override long GetItemId (int position)
         {
+            if (IsFooterPosition (position)) {
+                return 0; // No item has 0 Id
+            }
             if (searching) {
                 return owner.searchResultsMessages.GetEmailThread (position).FirstMessageId;
             } else {
@@ -88,21 +130,33 @@ namespace NachoClient.AndroidClient
                 if (searching) {
                     return owner.searchResultsMessages.Count ();
                 } else {
-                    return owner.messages.Count ();
+                    if (CARDVIEW_STYLE == currentStyle) { // !searching
+                        return owner.messages.Count () + 1; // for footer
+                    } else {
+                        return owner.messages.Count ();
+                    }
                 }
             }
         }
 
         public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
         {
-            switch (currentStyle) {
+            switch (viewType) {
             case LISTVIEW_STYLE:
                 return CreateListViewHolder (parent);
             case CARDVIEW_STYLE:
                 return CreateCardViewHolder (parent);
+            case SUMMARY_STYLE:
+                return CreateSummaryViewHolder (parent);
             default:
                 return null;
             }
+        }
+
+        RecyclerView.ViewHolder CreateSummaryViewHolder (ViewGroup parent)
+        {
+            var itemView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.HotSummaryFragment, parent, false);
+            return new SummaryViewHolder (itemView, InboxView_Click, DeferredView_Click, DeadlinesView_Click);
         }
 
         RecyclerView.ViewHolder CreateListViewHolder (ViewGroup parent)
@@ -130,27 +184,28 @@ namespace NachoClient.AndroidClient
             itemView.LayoutParameters.Height = parent.MeasuredHeight;
             return new MessageViewHolder (itemView, ItemView_Click);
         }
-            
+
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
         {
-            var messageViewHolder = (MessageViewHolder)holder;
-            BindMessageViewHolder (messageViewHolder, position);
+            BindMessageViewHolder (holder, position);
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position, System.Collections.Generic.IList<Java.Lang.Object> payloads)
         {
-            var messageViewHolder = (MessageViewHolder)holder;
-            BindMessageViewHolder (messageViewHolder, position);
+            BindMessageViewHolder (holder, position);
         }
 
-        void BindMessageViewHolder (MessageViewHolder holder, int position)
+        void BindMessageViewHolder (RecyclerView.ViewHolder holder, int position)
         {
-            switch (GetItemViewType(position)) {
+            switch (GetItemViewType (position)) {
             case LISTVIEW_STYLE:
                 BindListView (holder.ItemView, position);
                 break;
             case CARDVIEW_STYLE:
                 BindCardView (holder.ItemView, position);
+                break;
+            case SUMMARY_STYLE:
+                BindSummaryViewHolder (holder);
                 break;
             default:
                 NcAssert.CaseError ();
@@ -624,6 +679,47 @@ namespace NachoClient.AndroidClient
         {
             var activity = owner.Activity;
             owner.StartActivity (MessageComposeActivity.RespondIntent (activity, action, thread.FirstMessageId));
+        }
+
+        void DeadlinesView_Click ()
+        {
+            var folder = McFolder.GetDeadlineFakeFolder ();
+            var intent = DeadlineActivity.ShowDeadlineFolderIntent (owner.Activity, folder);
+            owner.StartActivity (intent);
+        }
+
+        void DeferredView_Click ()
+        {
+            var folder = McFolder.GetDeferredFakeFolder ();
+            var intent = DeferredActivity.ShowDeferredFolderIntent (owner.Activity, folder);
+            owner.StartActivity (intent); 
+        }
+
+        void InboxView_Click ()
+        {
+            var intent = new Intent ();
+            intent.SetClass (owner.Activity, typeof(InboxActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+            owner.StartActivity (intent);
+        }
+
+        void BindSummaryViewHolder (RecyclerView.ViewHolder holder)
+        {
+            var summaryViewHolder = (SummaryViewHolder)holder;
+ 
+            NcTask.Run (() => {
+                int unreadMessageCount;
+                int likelyMessageCount;
+                int deferredMessageCount;
+                int deadlineMessageCount;
+                EmailHelper.GetMessageCounts (NcApplication.Instance.Account, out unreadMessageCount, out deferredMessageCount, out deadlineMessageCount, out likelyMessageCount);
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    summaryViewHolder.inboxMessageCountView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadMessageCount);
+                    summaryViewHolder.deferredMessageCountView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredMessageCount);
+                    summaryViewHolder.deadlinesMessageCountView.Text = String.Format ("Go to Deadlines ({0:N0})", deadlineMessageCount);
+                    // FIMXE LTR.
+                });
+            }, "UpdateUnreadMessageView");
         }
 
     }

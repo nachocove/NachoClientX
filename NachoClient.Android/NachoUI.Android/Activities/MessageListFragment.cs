@@ -907,7 +907,9 @@ namespace NachoClient.AndroidClient
         void MaybeDisplayNoMessagesView (View view)
         {
             if (null != view) {
-                view.FindViewById<TextView> (Resource.Id.no_messages).Visibility = (0 == messages.Count () ? ViewStates.Visible : ViewStates.Gone);
+                if (MessageListAdapter.LISTVIEW_STYLE == messageListAdapter.currentStyle) {
+                    view.FindViewById<TextView> (Resource.Id.no_messages).Visibility = (0 == messages.Count () ? ViewStates.Visible : ViewStates.Gone);
+                }
             }
         }
     }
