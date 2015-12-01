@@ -148,6 +148,16 @@ namespace NachoCore.Model
         }
 
         /// <summary>
+        /// All events where at least part of the event is within the given range.  The events are returned in random order.
+        /// </summary>
+        public static List<McEvent> QueryEventsInRange (DateTime start, DateTime end)
+        {
+            start = start.ToUniversalTime ();
+            end = end.ToUniversalTime ();
+            return NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= start || x.StartTime < end).ToList ();
+        }
+
+        /// <summary>
         /// All events that have a reminder time within the given range, ordered by reminder time.
         /// </summary>
         public static IEnumerable<McEvent> QueryEventsWithRemindersInRange (DateTime start, DateTime end)

@@ -17,6 +17,7 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.ActiveSync;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -322,17 +323,25 @@ namespace NachoClient.AndroidClient
 
         public static Intent NewEventIntent (Context context)
         {
-            var intent = new Intent (context, typeof(EventEditActivity));
-            intent.SetAction (Intent.ActionCreateDocument);
-            return intent;
+            if (NcApplication.Instance.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                var intent = new Intent (context, typeof(EventEditActivity));
+                intent.SetAction (Intent.ActionCreateDocument);
+                return intent;
+            } else {
+                return AndroidCalendars.NewEventIntent ();
+            }
         }
 
         public static Intent NewEventOnDayIntent (Context context, DateTime day)
         {
-            var intent = new Intent (context, typeof(EventEditActivity));
-            intent.SetAction (Intent.ActionCreateDocument);
-            intent.PutExtra (EXTRA_START_DATE, day.ToString ("O"));
-            return intent;
+            if (NcApplication.Instance.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                var intent = new Intent (context, typeof(EventEditActivity));
+                intent.SetAction (Intent.ActionCreateDocument);
+                intent.PutExtra (EXTRA_START_DATE, day.ToString ("O"));
+                return intent;
+            } else {
+                return AndroidCalendars.NewEventOnDayIntent (day);
+            }
         }
 
         public static Intent EditEventIntent (Context context, McEvent ev)
