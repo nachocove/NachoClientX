@@ -13,25 +13,23 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
-                android:id="@+id/reply"
                 android:src="@drawable/toolbar_icn_reply"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
-                android:layout_gravity="left"
-                android:background="@android:color/white" />
+                android:layout_gravity="left" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/reply_all"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
                 android:src="@drawable/toolbar_icn_reply_all"
@@ -41,15 +39,14 @@
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
                 android:layout_gravity="left"
-                android:padding="3dp"
-                android:background="@android:color/white" />
+                android:padding="3dp" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/forward"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
                 android:src="@drawable/toolbar_icn_fwd"
@@ -59,15 +56,14 @@
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
                 android:layout_gravity="left"
-                android:padding="3dp"
-                android:background="@android:color/white" />
+                android:padding="3dp" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/archive"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
                 android:src="@drawable/email_archive_gray"
@@ -77,15 +73,14 @@
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
                 android:layout_gravity="right"
-                android:padding="3dp"
-                android:background="@android:color/white" />
+                android:padding="3dp" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/delete"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
                 android:src="@drawable/email_delete"
@@ -95,8 +90,7 @@
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
                 android:layout_gravity="right"
-                android:padding="3dp"
-                android:background="@android:color/white" />
+                android:padding="3dp" />
         </LinearLayout>
     </LinearLayout>
 </merge>

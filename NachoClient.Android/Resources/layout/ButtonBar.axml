@@ -14,7 +14,8 @@
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="10dp"
         android:scaleType="fitXY"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <TextView
         android:id="@+id/left_text_button1"
         android:layout_width="wrap_content"
@@ -23,7 +24,8 @@
         android:layout_marginLeft="10dp"
         android:textSize="17dp"
         android:textColor="@color/NachoBlue"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <ImageView
         android:id="@+id/left_button2"
         android:layout_width="24dp"
@@ -33,7 +35,8 @@
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="10dp"
         android:scaleType="fitXY"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <TextView
         android:id="@+id/left_text_button2"
         android:layout_width="wrap_content"
@@ -42,7 +45,8 @@
         android:layout_marginLeft="10dp"
         android:textSize="17dp"
         android:textColor="@color/NachoBlue"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <ImageView
         android:id="@+id/left_button3"
         android:layout_width="24dp"
@@ -52,7 +56,8 @@
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="10dp"
         android:scaleType="fitXY"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <TextView
         android:id="@+id/left_text_button3"
         android:layout_width="wrap_content"
@@ -61,7 +66,8 @@
         android:layout_marginLeft="10dp"
         android:textSize="17dp"
         android:textColor="@color/NachoBlue"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <TextView
         android:id="@+id/title"
         android:layout_width="wrap_content"
@@ -76,7 +82,8 @@
         android:textColor="@android:color/white"
         android:maxLines="2"
         android:ellipsize="end"
-        android:visibility="invisible" />
+        android:visibility="invisible"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <ImageView
         android:id="@+id/right_button3"
         android:layout_width="24dp"
@@ -86,7 +93,8 @@
         android:layout_marginBottom="4dp"
         android:layout_marginRight="10dp"
         android:scaleType="fitXY"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <TextView
         android:id="@+id/right_text_button3"
         android:layout_width="wrap_content"
@@ -95,7 +103,8 @@
         android:layout_marginRight="10dp"
         android:textSize="17dp"
         android:textColor="@color/NachoBlue"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <ImageView
         android:id="@+id/right_button2"
         android:layout_width="24dp"
@@ -105,7 +114,8 @@
         android:layout_marginBottom="4dp"
         android:layout_marginRight="10dp"
         android:scaleType="fitXY"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <TextView
         android:id="@+id/right_text_button2"
         android:layout_width="wrap_content"
@@ -114,7 +124,8 @@
         android:layout_marginRight="10dp"
         android:textSize="17dp"
         android:textColor="@color/NachoBlue"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <ImageView
         android:id="@+id/right_button1"
         android:layout_width="24dp"
@@ -124,7 +135,8 @@
         android:layout_marginBottom="4dp"
         android:layout_marginRight="10dp"
         android:scaleType="fitXY"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
     <TextView
         android:id="@+id/right_text_button1"
         android:layout_width="wrap_content"
@@ -133,5 +145,6 @@
         android:layout_marginRight="10dp"
         android:textSize="17dp"
         android:textColor="@color/NachoBlue"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless" />
 </LinearLayout>
