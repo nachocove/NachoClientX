@@ -810,14 +810,36 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        void NotifyChanges(List<int> adds, List<int> deletes)
+        {
+            ClearCache ();
+            if (null == adds && null == deletes) {
+                messageListAdapter.NotifyDataSetChanged ();
+                return;
+            }
+            NcAssert.False (null != adds && null != deletes);
+
+            var list = (null == adds) ? deletes : adds;
+            list.Sort ();
+            list.Reverse ();
+
+            foreach (var position in list) {
+                if (null == adds) {
+                    messageListAdapter.NotifyItemRemoved (position);
+                } else {
+                    messageListAdapter.NotifyItemInserted (position);
+                }
+            }
+               
+        }
+
         public void RefreshIfVisible ()
         {
             List<int> adds;
             List<int> deletes;
             NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfVisible");
             if (messages.Refresh (out adds, out deletes)) {
-                ClearCache ();
-                messageListAdapter.NotifyDataSetChanged ();
+                NotifyChanges (adds, deletes);
             }
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfVisible");
             if (0 == messages.Count ()) {
@@ -832,8 +854,7 @@ namespace NachoClient.AndroidClient
             List<int> deletes;
             NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfNeeded");
             if (NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes)) {
-                ClearCache ();
-                messageListAdapter.NotifyDataSetChanged ();
+                NotifyChanges (adds, deletes);
             } else {
                 RefreshVisibleMessageCells ();
             }
