@@ -19,7 +19,7 @@ namespace NachoClient.AndroidClient
     {
         public const int LISTVIEW_STYLE = 0;
         public const int CARDVIEW_STYLE = 1;
-        const int SUMMARY_STYLE = 2;
+        public const int SUMMARY_STYLE = 2;
 
         public event EventHandler<int> onMessageClick;
 
