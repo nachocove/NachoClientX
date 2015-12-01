@@ -623,6 +623,9 @@
     <Compile Include="NachoUI.Android\Support\CalendarPagerView.cs" />
     <Compile Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />
     <Compile Include="NachoUI.Android\Support\HotEventAdapter.cs" />
+    <Compile Include="NachoUI.Android\Support\SwipeMenuRecyclerView.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageListAdapter.cs" />
+    <Compile Include="NachoUI.Android\Support\WrapperRecyclerAdapter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

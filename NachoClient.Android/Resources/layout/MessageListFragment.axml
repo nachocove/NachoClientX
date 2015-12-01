@@ -33,6 +33,8 @@
             android:textColor="@android:color/white"
             android:background="@color/NachoGreen" />
     </RelativeLayout>
+    <include
+        layout="@layout/HotEvent" />
     <TextView
         android:id="@+id/no_messages"
         android:layout_width="match_parent"
@@ -45,15 +47,13 @@
         android:text="@string/no_messages"
         android:visibility="gone"
         android:background="@color/NachoLightGray" />
-    <include
-        layout="@layout/HotEvent" />
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
-        <NachoClient.AndroidClient.SwipeMenuListView
-            android:id="@+id/listView"
+        <NachoClient.AndroidClient.SwipeMenuRecyclerView
+            android:id="@+id/recyclerView"
             android:scrollbars="vertical"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
