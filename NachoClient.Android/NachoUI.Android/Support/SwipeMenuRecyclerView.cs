@@ -361,6 +361,7 @@ namespace NachoClient.AndroidClient
 
             // Create a whole new SwipeMenuLayout object.
             var menu = new SwipeMenu (mContext);
+            menu.setViewType (viewType);
             if (null != mMenuCreator) {
                 mMenuCreator (menu);
             }

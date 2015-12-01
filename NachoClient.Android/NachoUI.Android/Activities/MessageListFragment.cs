@@ -252,6 +252,9 @@ namespace NachoClient.AndroidClient
             recyclerView.SetAdapter (messageListAdapter);
 
             recyclerView.setMenuCreator ((menu) => {
+                if(MessageListAdapter.SUMMARY_STYLE == menu.getViewType()) {
+                    return;
+                }
                 if (!(messages.HasDraftsSemantics () || messages.HasOutboxSemantics ())) {
                     SwipeMenuItem deferItem = new SwipeMenuItem (Activity.ApplicationContext);
                     deferItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDefer));
