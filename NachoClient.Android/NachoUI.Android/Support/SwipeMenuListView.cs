@@ -563,6 +563,18 @@ namespace NachoClient.AndroidClient
             PostInvalidate ();
         }
 
+        public bool touchingMenu (float touchX)
+        {
+            mBaseX = mContentView.Left;
+            if (0 < mBaseX) {
+                // Swiped right
+                return (touchX < mLeftMenuView.GetMenuWidth ());
+            } else {
+                // Swiped left
+                return (touchX > (Width - mRightMenuView.GetMenuWidth ()));
+            }
+        }
+
         public void closeMenu ()
         {
             if (mCloseScroller.ComputeScrollOffset ()) {
@@ -673,13 +685,6 @@ namespace NachoClient.AndroidClient
             MAX_Y = dp2px (MAX_Y);
             mTouchState = TOUCH_STATE_NONE;
         }
-
-//        public override void SetAdapter (IListAdapter adapter)
-//        {
-//            var a = new SwipeMenuAdapter (this.Context, adapter);
-//            a.setOnMenuItemClickListener (MenuItemClickListener);
-//            base.Adapter = a;
-//        }
 
         public override IListAdapter Adapter {
             set {
