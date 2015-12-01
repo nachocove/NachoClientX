@@ -105,5 +105,10 @@ namespace NachoClient.AndroidClient
                 throw new NotImplementedException ();
             }
         }
+
+        public RecyclerView.Adapter GetWrappedAdapter()
+        {
+            return mAdapter;
+        }
     }
 }

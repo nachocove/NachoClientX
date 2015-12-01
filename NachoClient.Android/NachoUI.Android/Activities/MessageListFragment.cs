@@ -334,6 +334,8 @@ namespace NachoClient.AndroidClient
 
         class MessageListScrollListener : RecyclerView.OnScrollListener
         {
+            int lastDy; // Positive means pushing up
+
             public override void OnScrollStateChanged (RecyclerView recyclerView, int newState)
             {
                 var swipeMenuRecyclerView = (SwipeMenuRecyclerView)recyclerView;
@@ -352,6 +354,32 @@ namespace NachoClient.AndroidClient
                     }
                     break;
                 }
+
+                if ((RecyclerView.ScrollStateSettling != newState) && (RecyclerView.ScrollStateIdle != newState)) {
+                    return;
+                }
+                var adapter = (WrapperRecyclerAdapter)swipeMenuRecyclerView.GetAdapter ();
+                var messageListAdapter = (MessageListAdapter)adapter.GetWrappedAdapter();
+                if (MessageListAdapter.CARDVIEW_STYLE != messageListAdapter.currentStyle) {
+                    return;
+                }
+                var layoutManager = (LinearLayoutManager)swipeMenuRecyclerView.GetLayoutManager ();
+
+                int scrollToPosition;
+
+                if (0 < lastDy) {
+                    scrollToPosition = layoutManager.FindLastVisibleItemPosition ();
+                } else {
+                    scrollToPosition = layoutManager.FindFirstVisibleItemPosition ();
+                }
+                if (RecyclerView.NoPosition != scrollToPosition) {
+                    recyclerView.SmoothScrollToPosition (scrollToPosition);
+                }
+            }
+
+            public override void OnScrolled (RecyclerView recyclerView, int dx, int dy)
+            {
+                lastDy = dy;
             }
         }
 
