@@ -134,22 +134,24 @@ namespace NachoClient.AndroidClient
                 var handled = base.OnInterceptTouchEvent (ev);
                 mTouchState = TOUCH_STATE_NONE;
                 var view = FindChildViewUnder (ev.GetX (), ev.GetY ());
-                var layoutManager = this.GetLayoutManager ();
-                mTouchPosition = layoutManager.GetPosition (view);
-                if ((null == mTouchView) && (view is SwipeMenuLayout)) {
-                    mTouchView = (SwipeMenuLayout)view;
-                }
-                if (mTouchView != null && mTouchView.isOpen ()) {
-                    if ((mTouchView == view) && mTouchView.touchingMenu (ev.GetX ())) {
-                        return false;
+                if (null != view) {
+                    var layoutManager = this.GetLayoutManager ();
+                    mTouchPosition = layoutManager.GetPosition (view);
+                    if ((null == mTouchView) && (view is SwipeMenuLayout)) {
+                        mTouchView = (SwipeMenuLayout)view;
                     }
-                    handled = true;
-                }
-                if ((mTouchView == null) || !mTouchView.isOpen ()) {
-                    mTouchView = (SwipeMenuLayout)view;
-                }
-                if (mTouchView != null) {
-                    mTouchView.OnSwipe (ev);
+                    if (mTouchView != null && mTouchView.isOpen ()) {
+                        if ((mTouchView == view) && mTouchView.touchingMenu (ev.GetX ())) {
+                            return false;
+                        }
+                        handled = true;
+                    }
+                    if ((mTouchView == null) || !mTouchView.isOpen ()) {
+                        mTouchView = (SwipeMenuLayout)view;
+                    }
+                    if (mTouchView != null) {
+                        mTouchView.OnSwipe (ev);
+                    }
                 }
                 return handled;
             case MotionEventActions.Move:
@@ -179,27 +181,28 @@ namespace NachoClient.AndroidClient
                 mTouchState = TOUCH_STATE_NONE;
 
                 var view = FindChildViewUnder (ev.GetX (), ev.GetY ());
-                var layoutManager = this.GetLayoutManager ();
-                mTouchPosition = layoutManager.GetPosition (view);
-
-                if (mTouchView != null && mTouchView.isOpen ()) {
-                    mTouchView.smoothCloseMenu ();
-                    mTouchView = null;
-                    // return super.onTouchEvent(ev);
-                    // try to cancel the touch event
-                    MotionEvent cancelEvent = MotionEvent.Obtain (ev);
-                    cancelEvent.Action = MotionEventActions.Cancel;
-                    OnTouchEvent (cancelEvent);
-                    if (mOnMenuCloseListener != null) {
-                        mOnMenuCloseListener (oldPos);
+                if (null != view) {
+                    var layoutManager = this.GetLayoutManager ();
+                    mTouchPosition = layoutManager.GetPosition (view);
+                    if (mTouchView != null && mTouchView.isOpen ()) {
+                        mTouchView.smoothCloseMenu ();
+                        mTouchView = null;
+                        // return super.onTouchEvent(ev);
+                        // try to cancel the touch event
+                        MotionEvent cancelEvent = MotionEvent.Obtain (ev);
+                        cancelEvent.Action = MotionEventActions.Cancel;
+                        OnTouchEvent (cancelEvent);
+                        if (mOnMenuCloseListener != null) {
+                            mOnMenuCloseListener (oldPos);
+                        }
+                        return true;
                     }
-                    return true;
-                }
-                if (view is SwipeMenuLayout) {
-                    mTouchView = (SwipeMenuLayout)view;
-                }
-                if (mTouchView != null) {
-                    mTouchView.OnSwipe (ev);
+                    if (view is SwipeMenuLayout) {
+                        mTouchView = (SwipeMenuLayout)view;
+                    }
+                    if (mTouchView != null) {
+                        mTouchView.OnSwipe (ev);
+                    }
                 }
                 break;
             case MotionEventActions.Move:
@@ -319,7 +322,7 @@ namespace NachoClient.AndroidClient
 
         private SwipeMenuCreator mMenuCreator;
 
-        public SwipeMenuRecyclerAdapter (Context context, RecyclerView.Adapter adapter) : base(adapter)
+        public SwipeMenuRecyclerAdapter (Context context, RecyclerView.Adapter adapter) : base (adapter)
         {
             mAdapter = adapter;
             mContext = context;
