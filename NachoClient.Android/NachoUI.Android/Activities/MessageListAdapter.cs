@@ -156,6 +156,8 @@ namespace NachoClient.AndroidClient
         RecyclerView.ViewHolder CreateSummaryViewHolder (ViewGroup parent)
         {
             var itemView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.HotSummaryFragment, parent, false);
+            itemView.SetMinimumHeight (parent.MeasuredHeight);
+            itemView.LayoutParameters.Height = parent.MeasuredHeight;
             return new SummaryViewHolder (itemView, InboxView_Click, DeferredView_Click, DeadlinesView_Click);
         }
 
