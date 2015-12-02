@@ -10,6 +10,7 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using Android.Support.V4.View;
 
 using NachoCore;
 using NachoCore.Model;
@@ -21,6 +22,115 @@ using NachoCore.Brain;
 
 namespace NachoClient.AndroidClient
 {
+
+    public class MessageScrollView : ScrollView, GestureDetector.IOnGestureListener
+    {
+
+        GestureDetectorCompat GestureDetector;
+        public Android.Webkit.WebView WebView;
+        bool IsScrolling;
+        
+        public MessageScrollView (Context context) : base (context)
+        {
+            Initialize ();
+        }
+
+        public MessageScrollView (Context context, Android.Util.IAttributeSet attrs) : base (context, attrs)
+        {
+            Initialize ();
+        }
+
+        public MessageScrollView (Context context, Android.Util.IAttributeSet attrs, int defStyle) : base (context, attrs, defStyle)
+        {
+            Initialize ();
+        }
+
+        void Initialize ()
+        {
+            GestureDetector = new GestureDetectorCompat (Context, this);
+        }
+
+        public override bool OnInterceptTouchEvent (MotionEvent ev)
+        {
+            if (ev.PointerCount > 1) {
+                IsScrolling = false;
+                return false;
+            }
+            if (IsScrolling) {
+                // If we're scrolling, we want all the events so nothing gets to child click listeners
+                return true;
+            }
+            if (ev.Action == MotionEventActions.Down) {
+                // If it's a down event (and we're not scrolling), our GestureDetector needs to know about it,
+                // but we need to let the event reach child click listeners because a down starts a click.
+                // Since a child view may or may not handle the event, we may or may not get an OnTouchEvent call.
+                // Since we may not get an OnTouchEvent call, we have to let our GestureDetector look at the event now.
+                GestureDetector.OnTouchEvent (ev);
+                return false;
+            }
+            if (ev.Action == MotionEventActions.Up) {
+                // If it's an up event (and we're not scrolling), we need to let the event reach click click listeners
+                // because the click happens on up after a down.
+                return false;
+            }
+            // If it's some other event like a move, we'll take it becaue no children care about these other events.
+            return true;
+        }
+
+        public override bool OnTouchEvent (MotionEvent e)
+        {
+            if (e.PointerCount > 1) {
+                return WebView.OnTouchEvent (e);
+            } else {
+                if (IsScrolling && e.Action == MotionEventActions.Up) {
+                    IsScrolling = false;
+                }
+                if (e.Action == MotionEventActions.Down) {
+                    // If there's a down event, we've already told our GestureDetector about it in OnInterceptTouchEvent,
+                    // so we don't need to tell it again, but we do want to return true so the subsequent move events will
+                    // be sent.
+                    return true;
+                }
+                return GestureDetector.OnTouchEvent (e);
+            }
+        }
+
+        public bool OnDown(MotionEvent e)
+        {
+            return false;
+        }
+
+        public bool OnScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY)
+        {
+            IsScrolling = true;
+            ScrollBy (0, (int)distanceY);
+            WebView.ScrollBy ((int)distanceX, 0);
+            return true;
+        }
+
+        public bool OnFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
+        {
+            IsScrolling = false;
+            Fling (-(int)velocityY);
+            WebView.FlingScroll (-(int)velocityX, 0);
+            return true;
+        }
+
+        public void OnLongPress(MotionEvent e)
+        {
+        }
+
+        public void OnShowPress(MotionEvent e)
+        {
+        }
+
+        public bool OnSingleTapUp(MotionEvent e)
+        {
+            return false;
+        }
+
+    }
+
     public interface IMessageViewFragmentOwner
     {
         void DoneWithMessage ();
@@ -45,6 +155,7 @@ namespace NachoClient.AndroidClient
 
         MessageDownloader messageDownloader;
 
+        MessageScrollView scrollView;
         Android.Webkit.WebView webView;
         NachoWebViewClient webViewClient;
 
@@ -64,9 +175,12 @@ namespace NachoClient.AndroidClient
 
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.folder_move, SaveButton_Click);
 
+            scrollView = view.FindViewById<MessageScrollView> (Resource.Id.message_scrollview);
             webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
             webViewClient = new NachoWebViewClient ();
             webView.SetWebViewClient (webViewClient);
+            webView.Settings.BuiltInZoomControls = true;
+            scrollView.WebView = webView;
 
             AttachListeners (view);
 
