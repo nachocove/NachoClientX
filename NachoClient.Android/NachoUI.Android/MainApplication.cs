@@ -42,9 +42,8 @@ namespace NachoClient.AndroidClient
         }
 
         // Start everthing after we have some UI
-        public static void OneTimeStartup ()
+        public static void OneTimeStartup (string caller)
         {
-
             if (startupCalled) {
                 return;
             }
@@ -53,13 +52,15 @@ namespace NachoClient.AndroidClient
             // This creates the NcApplication object
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
 
-            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: StartBasalServices");
+            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: {0}", caller);
+
+            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: StartBasalServices");
             NcApplication.Instance.StartBasalServices ();
 
-            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: AppStartupTasks");
+            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: AppStartupTasks");
             NcApplication.Instance.AppStartupTasks ();
 
-            Log.Info (Log.LOG_LIFECYCLE, "MainActivity: OnStart finished");
+            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: OnStart finished");
 
             MainApplication.Instance.StartService(new Intent(MainApplication.Instance, typeof(NotificationService)));
 

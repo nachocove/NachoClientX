@@ -43,7 +43,7 @@ namespace NachoClient.AndroidClient
 
             SetupHockeyAppUpdateManager ();
 
-            MainApplication.OneTimeStartup ();
+            MainApplication.OneTimeStartup ("MainActivity");
 
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.Main);
