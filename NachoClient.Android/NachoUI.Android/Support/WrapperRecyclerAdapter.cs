@@ -33,27 +33,26 @@ namespace NachoClient.AndroidClient
             return mAdapter.GetItemViewType (position);
         }
 
-        //        public override void OnViewRecycled (Object holder)
-        //        {
-        //            mAdapter.OnViewRecycled (holder);
-        //        }
-        //
-        //        public override void OnViewAttachedToWindow (object holder)
-        //        {
-        //            mAdapter.OnViewAttachedToWindow (holder);
-        //        }
-        //
-        //        public override void OnViewDetachedFromWindow (object holder)
-        //        {
-        //            mAdapter.OnViewDetachedFromWindow (holder);
-        //        }
+        public override void OnViewRecycled (Java.Lang.Object holder)
+        {
+            mAdapter.OnViewRecycled (holder);
+        }
+
+        public override void OnViewAttachedToWindow (Java.Lang.Object holder)
+        {
+            mAdapter.OnViewAttachedToWindow (holder);
+        }
+
+        public override void OnViewDetachedFromWindow (Java.Lang.Object holder)
+        {
+            mAdapter.OnViewDetachedFromWindow (holder);
+        }
 
         public override void OnAttachedToRecyclerView (RecyclerView recyclerView)
         {
             mAdapter.OnAttachedToRecyclerView (recyclerView);
         }
 
-            
         public override void OnDetachedFromRecyclerView (RecyclerView recyclerView)
         {
             mAdapter.OnDetachedFromRecyclerView (recyclerView);
@@ -81,21 +80,25 @@ namespace NachoClient.AndroidClient
 
             public override void OnChanged ()
             {
+                base.OnChanged ();
                 parent.NotifyDataSetChanged ();
             }
 
             public override void OnItemRangeChanged (int positionStart, int itemCount)
             {
+                base.OnItemRangeChanged (positionStart, itemCount);
                 parent.NotifyItemRangeChanged (positionStart, itemCount);
             }
 
             public override void OnItemRangeInserted (int positionStart, int itemCount)
             {
+                base.OnItemRangeInserted (positionStart, itemCount);
                 parent.NotifyItemRangeInserted (positionStart, itemCount);
             }
 
             public override void OnItemRangeRemoved (int positionStart, int itemCount)
             {
+                base.OnItemRangeRemoved (positionStart, itemCount);
                 parent.NotifyItemRangeRemoved (positionStart, itemCount);
             }
 
@@ -106,7 +109,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public RecyclerView.Adapter GetWrappedAdapter()
+        public RecyclerView.Adapter GetWrappedAdapter ()
         {
             return mAdapter;
         }
