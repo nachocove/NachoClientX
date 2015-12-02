@@ -820,23 +820,26 @@ namespace NachoClient.AndroidClient
         void NotifyChanges (List<int> adds, List<int> deletes)
         {
             ClearCache ();
-            if (null == adds && null == deletes) {
-                messageListAdapter.NotifyDataSetChanged ();
-                return;
-            }
-            NcAssert.False (null != adds && null != deletes);
+            messageListAdapter.NotifyDataSetChanged ();
 
-            var list = (null == adds) ? deletes : adds;
-            list.Sort ();
-            list.Reverse ();
-
-            foreach (var position in list) {
-                if (null == adds) {
-                    messageListAdapter.NotifyItemRemoved (position);
-                } else {
-                    messageListAdapter.NotifyItemInserted (position);
-                }
-            }
+//            ClearCache ();
+//            if (null == adds && null == deletes) {
+//                messageListAdapter.NotifyDataSetChanged ();
+//                return;
+//            }
+//            NcAssert.False (null != adds && null != deletes);
+//
+//            var list = (null == adds) ? deletes : adds;
+//            list.Sort ();
+//            list.Reverse ();
+//
+//            foreach (var position in list) {
+//                if (null == adds) {
+//                    messageListAdapter.NotifyItemRemoved (position);
+//                } else {
+//                    messageListAdapter.NotifyItemInserted (position);
+//                }
+//            }
                
         }
 
