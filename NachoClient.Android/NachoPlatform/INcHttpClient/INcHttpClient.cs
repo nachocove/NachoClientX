@@ -187,7 +187,20 @@ namespace NachoPlatform
 
         public Stream Content { get; protected set; }
 
-        public string ContentType { get; protected set; }
+        public string ContentType {
+            get {
+                IEnumerable<string> values;
+                if (Headers.TryGetValues ("Content-Type", out values)) {
+                    return values.First ();
+                }
+                return null;
+            }
+            protected set {
+                if (!Headers.Contains ("Content-Type")) {
+                    Headers.Add ("Content-Type", value);
+                }
+            }
+        }
 
         public HttpStatusCode StatusCode { get; protected set; }
 
@@ -230,10 +243,10 @@ namespace NachoPlatform
                 stream = new FileStream(tempFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
             }
             NcAssert.True (stream is FileStream);
+            Headers = headers ?? new NcHttpHeaders ();
             StatusCode = status;
             Content = stream;
             ContentType = contentType;
-            Headers = headers ?? new NcHttpHeaders ();
         }
 
         ~NcHttpResponse ()
@@ -259,7 +272,7 @@ namespace NachoPlatform
             if (content is FileStream) {
                 var mem = new MemoryStream ();
                 (content as FileStream).CopyTo (mem);
-                return mem.GetBuffer ();
+                return mem.GetBuffer ().Take ((int)mem.Length).ToArray ();
             }
             NcAssert.CaseError ("unknown type of content");
             return null;
