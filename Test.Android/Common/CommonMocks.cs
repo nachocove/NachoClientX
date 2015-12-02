@@ -166,45 +166,6 @@ namespace Test.iOS
         }
 
         #endregion
-
-//        public Task<HttpResponseMessage> GetAsync (Uri uri)
-//        {
-//            // provide validated certificate
-//            var webRequest = WebRequest.Create (CommonMockData.RedirectionUrl);
-//
-//            var hasCert = true;
-//            if (null != HasServerCertificate) {
-//                hasCert = HasServerCertificate ();
-//            }
-//
-//            // cert is under resources in Test.iOS and Test.Android
-//            X509Certificate mockCert = new X509Certificate ("utopiasystems.cer");
-//
-//            if (hasCert) {
-//                ServerCertificatePeek.CertificateValidationCallback (webRequest, mockCert, new X509Chain (), new SslPolicyErrors ());
-//            }
-//
-//            // Create and return a mock response
-//            var mockResponse = new HttpResponseMessage () { };
-//            return Task.Run<HttpResponseMessage> (delegate {
-//                return mockResponse;
-//            });
-//        }
-//
-//        public Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
-//                                                    HttpCompletionOption completionOption,
-//                                                    CancellationToken cancellationToken)
-//        {
-//            AsyncCalledCount++;
-//
-//            if (null != ExamineHttpRequestMessage) {
-//                ExamineHttpRequestMessage (request);
-//            }
-//
-//            return Task.Run<HttpResponseMessage> (delegate {
-//                return ProvideHttpResponseMessage (request);
-//            });
-//        }
     }
 
     public class MockContext : IBEContext
