@@ -1071,6 +1071,9 @@ namespace NachoCore
             }
 
             ResetTimeout (timeoutAction);
+            if (null == Cts || Cts.IsCancellationRequested) {
+                return;
+            }
             HttpClient.SendRequest (request, (int)(MaxTimeoutMsec/1000), PushAssistSuccess, PushAssistError, Cts.Token);
             return;
         }
@@ -1104,7 +1107,6 @@ namespace NachoCore
         void PushAssistFinish ()
         {
             DisposeTimeoutTimer ();
-            DisposeCts ();
         }
 
         private void DeviceTokenLost ()
@@ -1159,17 +1161,14 @@ namespace NachoCore
         private void DisposeCts ()
         {
             lock (LockObj) {
-                if (null != Cts) {
-                    Cts.Dispose ();
-                    Cts = null;
-                }
+                Cts.Dispose ();
+                Cts = null;
             }
         }
 
         private void ResetTimeout (Action timeout)
         {
             DisposeTimeoutTimer ();
-            DisposeCts ();
             TimeoutTimer = new NcTimer ("PATimeout", (state) => {
                 MayCancelHttpRequest ();
                 timeout ();
