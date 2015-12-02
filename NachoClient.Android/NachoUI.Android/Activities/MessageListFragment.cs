@@ -252,7 +252,7 @@ namespace NachoClient.AndroidClient
             recyclerView.SetAdapter (messageListAdapter);
 
             recyclerView.setMenuCreator ((menu) => {
-                if(MessageListAdapter.SUMMARY_STYLE == menu.getViewType()) {
+                if (MessageListAdapter.SUMMARY_STYLE == menu.getViewType ()) {
                     return;
                 }
                 if (!(messages.HasDraftsSemantics () || messages.HasOutboxSemantics ())) {
@@ -334,7 +334,9 @@ namespace NachoClient.AndroidClient
 
         class MessageListScrollListener : RecyclerView.OnScrollListener
         {
-            int lastDy; // Positive means pushing up
+            // Positive means pushing up
+            int lastDy;
+            bool userInitiated;
 
             public override void OnScrollStateChanged (RecyclerView recyclerView, int newState)
             {
@@ -343,6 +345,7 @@ namespace NachoClient.AndroidClient
                 case RecyclerView.ScrollStateDragging:
                 case RecyclerView.ScrollStateSettling:
                     swipeMenuRecyclerView.EnableSwipe (false);
+                    userInitiated |= (RecyclerView.ScrollStateDragging == newState);
                     if (!NcApplication.Instance.IsBackgroundAbateRequired) {
                         NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment ScrollStateChanged");
                     }
@@ -354,12 +357,16 @@ namespace NachoClient.AndroidClient
                     }
                     break;
                 }
-
                 if ((RecyclerView.ScrollStateSettling != newState) && (RecyclerView.ScrollStateIdle != newState)) {
                     return;
                 }
+                if (!userInitiated) {
+                    return; // Prevent jitter
+                }
+                userInitiated = false;
+
                 var adapter = (WrapperRecyclerAdapter)swipeMenuRecyclerView.GetAdapter ();
-                var messageListAdapter = (MessageListAdapter)adapter.GetWrappedAdapter();
+                var messageListAdapter = (MessageListAdapter)adapter.GetWrappedAdapter ();
                 if (MessageListAdapter.CARDVIEW_STYLE != messageListAdapter.currentStyle) {
                     return;
                 }
@@ -810,7 +817,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void NotifyChanges(List<int> adds, List<int> deletes)
+        void NotifyChanges (List<int> adds, List<int> deletes)
         {
             ClearCache ();
             if (null == adds && null == deletes) {
