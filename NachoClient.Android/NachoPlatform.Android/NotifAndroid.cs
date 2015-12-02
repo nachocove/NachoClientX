@@ -98,7 +98,7 @@ namespace NachoPlatform
 namespace NachoClient.AndroidClient
 {
     /// <summary>
-    /// The broadcast receiver class that runs when an alarm fires.  It creates the notification.
+    /// The broadcast receiver class that runs when an alarm fires.  It creates the notification or cancels an existing notification.
     /// </summary>
     [BroadcastReceiver (Enabled = true)]
     [IntentFilter (new[] { EventReminderNotificationPublisher.ACTION_CREATE_NOTIFICATION, EventReminderNotificationPublisher.ACTION_CANCEL_NOTIFICATION })]
@@ -199,6 +199,8 @@ namespace NachoClient.AndroidClient
 
         protected override void OnCreate (Android.OS.Bundle savedInstanceState)
         {
+            MainApplication.OneTimeStartup ("EventNotificationActivity");
+
             base.OnCreate (savedInstanceState);
 
             int eventId = Intent.GetIntExtra (EXTRA_EVENT_ID, 0);
