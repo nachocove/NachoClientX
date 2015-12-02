@@ -3,24 +3,19 @@
 
 using System;
 using System.Linq;
-using System.Net.Http;
 using NachoCore.Utils;
-using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 using NachoCore.ActiveSync;
 using NachoCore;
 using NachoCore.Model;
 using NachoPlatform;
 using System.Xml.Linq;
-using SQLite;
-using System.Text;
 using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
-using System.Net;
 using NUnit.Framework;
 using System.Collections.Generic;
-using ModernHttpClient;
+using System.Net;
+using System.Net.Security;
+
 
 
 namespace Test.iOS
@@ -70,15 +65,15 @@ namespace Test.iOS
         public const string AutodPhony601Response = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Autodiscover\nxmlns:autodiscover=\"http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006\">\n   <autodiscover:Response>\n      <autodiscover:Error Time=\"16:56:32.6164027\" Id=\"1054084152\">\n          <autodiscover:ErrorCode>601</autodiscover:ErrorCode>\n          <autodiscover:Message>Requested schema version not supported</autodiscover:Message>\n          <autodiscover:DebugData />\n      </autodiscover:Error>\n   </autodiscover:Response>\n</Autodiscover>";
     }
 
-    public class MockHttpClient : IHttpClient
+    public class MockHttpClient : INcHttpClient
     {
         // TODO: do we need to go the factory route and get rid of the statics?
-        public delegate void ExamineHttpRequestMessageDelegate (HttpRequestMessage request);
+        public delegate void ExamineHttpRequestMessageDelegate (NcHttpRequest request);
 
         public static ExamineHttpRequestMessageDelegate ExamineHttpRequestMessage { set; get; }
 
         // Provide the request message so that the type of auto-d can be checked
-        public delegate HttpResponseMessage ProvideHttpResponseMessageDelegate (HttpRequestMessage request);
+        public delegate NcHttpResponse ProvideHttpResponseMessageDelegate (NcHttpRequest request);
 
         public static ProvideHttpResponseMessageDelegate ProvideHttpResponseMessage { set; get; }
 
@@ -91,27 +86,43 @@ namespace Test.iOS
 
         public TimeSpan Timeout { get; set; }
 
-        public MockHttpClient (NativeMessageHandler handler)
+        private MockHttpClient ()
         {
+            
         }
 
-        public MockHttpClient (NativeMessageHandler handler, bool doDispose)
-        {
+        private static object LockObj = new object ();
+        static MockHttpClient _Instance { get; set; }
+        public static MockHttpClient Instance {
+            get {
+                if (_Instance == null) {
+                    lock (LockObj) {
+                        if (_Instance == null) {
+                            _Instance = new MockHttpClient ();
+                        }
+                    }
+                }
+                return _Instance;
+            }
         }
 
-        public MockHttpClient (HttpClientHandler handler)
+        void doRequest (NcHttpRequest request, NcHttpResponse response, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
+            if (response != null) {
+                success (response, cancellationToken);
+            } else {
+                error (new Exception ("FOO"), cancellationToken);
+            }
         }
 
-        public MockHttpClient (HttpClientHandler handler, bool doDispose)
+        #region INcHttpClient implementation
+
+        public void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken)
         {
+            GetRequest (request, timeout, success, error, null, cancellationToken);
         }
 
-        public void Dispose ()
-        {
-        }
-
-        public Task<HttpResponseMessage> GetAsync (Uri uri)
+        public void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             // provide validated certificate
             var webRequest = WebRequest.Create (CommonMockData.RedirectionUrl);
@@ -128,27 +139,66 @@ namespace Test.iOS
                 ServerCertificatePeek.CertificateValidationCallback (webRequest, mockCert, new X509Chain (), new SslPolicyErrors ());
             }
 
-            // Create and return a mock response
-            var mockResponse = new HttpResponseMessage () { };
-            return Task.Run<HttpResponseMessage> (delegate {
-                return mockResponse;
-            });
+            var response = new NcHttpResponse (HttpStatusCode.OK);
+            NcTask.Run (() => doRequest (request, response, timeout, success, error, progress, cancellationToken), "MockHttpClient.GetRequest");
         }
 
-        public Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
-                                                    HttpCompletionOption completionOption,
-                                                    CancellationToken cancellationToken)
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken)
+        {
+            SendRequest (request, timeout, success, error, null, cancellationToken);
+        }
+
+        public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             AsyncCalledCount++;
 
             if (null != ExamineHttpRequestMessage) {
                 ExamineHttpRequestMessage (request);
             }
-
-            return Task.Run<HttpResponseMessage> (delegate {
-                return ProvideHttpResponseMessage (request);
-            });
+            var response = ProvideHttpResponseMessage (request);
+            NcTask.Run (() => doRequest (request, response, timeout, success, error, progress, cancellationToken), "MockHttpClient.SendRequest");
         }
+
+        #endregion
+
+//        public Task<HttpResponseMessage> GetAsync (Uri uri)
+//        {
+//            // provide validated certificate
+//            var webRequest = WebRequest.Create (CommonMockData.RedirectionUrl);
+//
+//            var hasCert = true;
+//            if (null != HasServerCertificate) {
+//                hasCert = HasServerCertificate ();
+//            }
+//
+//            // cert is under resources in Test.iOS and Test.Android
+//            X509Certificate mockCert = new X509Certificate ("utopiasystems.cer");
+//
+//            if (hasCert) {
+//                ServerCertificatePeek.CertificateValidationCallback (webRequest, mockCert, new X509Chain (), new SslPolicyErrors ());
+//            }
+//
+//            // Create and return a mock response
+//            var mockResponse = new HttpResponseMessage () { };
+//            return Task.Run<HttpResponseMessage> (delegate {
+//                return mockResponse;
+//            });
+//        }
+//
+//        public Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
+//                                                    HttpCompletionOption completionOption,
+//                                                    CancellationToken cancellationToken)
+//        {
+//            AsyncCalledCount++;
+//
+//            if (null != ExamineHttpRequestMessage) {
+//                ExamineHttpRequestMessage (request);
+//            }
+//
+//            return Task.Run<HttpResponseMessage> (delegate {
+//                return ProvideHttpResponseMessage (request);
+//            });
+//        }
     }
 
     public class MockContext : IBEContext

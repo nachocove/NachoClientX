@@ -55,7 +55,7 @@ namespace Test.iOS
             public static AsFolderSyncCommand CreateFolderSyncCmd (MockContext context)
             {
                 var folderCmd = new AsFolderSyncCommand (context);
-                AsHttpOperation.HttpClientType = typeof(MockHttpClient);
+                AsHttpOperation.TestHttpClient = MockHttpClient.Instance;
                 return folderCmd;
             }
 

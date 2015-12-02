@@ -375,7 +375,18 @@ namespace NachoCore.ActiveSync
             return true;
         }
 
-        private void AttemptHttp ()
+        static public INcHttpClient TestHttpClient { get; set; }
+        public INcHttpClient HttpClient {
+            get {
+                if (TestHttpClient != null) {
+                    return TestHttpClient;
+                } else {
+                    return NcHttpClient.Instance;
+                }
+            }
+        }
+
+        void AttemptHttp ()
         {
             var cToken = Cts.Token;
             McCred cred = null;
@@ -411,7 +422,7 @@ namespace NachoCore.ActiveSync
 
             ServicePointManager.FindServicePoint (request.RequestUri).ConnectionLimit = 25;
             Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
-            NcHttpClient.Instance.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, cToken);
+            HttpClient.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, cToken);
         }
 
         void AttemptHttpSuccess (NcHttpResponse response, CancellationToken token)

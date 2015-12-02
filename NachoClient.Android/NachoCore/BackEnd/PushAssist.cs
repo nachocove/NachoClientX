@@ -28,6 +28,7 @@ using NachoClient.Build;
  * JEFF_TODO - exactly how to we "cancel" rather than hold-off the pinger? (let it die).
  */
 using NachoPlatform;
+using System.Text;
 
 namespace NachoCore
 {
@@ -35,7 +36,7 @@ namespace NachoCore
 
     public class PushAssistHttpResult
     {
-        public HttpResponseMessage Response;
+        public NcHttpResponse Response;
         public Exception Exception;
         // Content of the response if it exists
         public string Content;
@@ -43,7 +44,6 @@ namespace NachoCore
 
     public class PushAssist : IDisposable
     {
-        public static Type HttpClientType = typeof(MockableHttpClient);
         public static int IncrementalDelayMsec = 500;
         public static int MinDelayMsec = 5000;
         public static int MaxDelayMsec = 15000;
@@ -54,9 +54,9 @@ namespace NachoCore
 
         protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
-        protected IHttpClient Client;
 
         private int _AccountId;
+
         private int AccountId {
             get {
                 if (_AccountId == 0) {
@@ -260,11 +260,11 @@ namespace NachoCore
                 InstallCertPolicy ();
             }
             LockObj = new object ();
-            var handler = new NativeMessageHandler (false, true);
-            Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
             Owner = owner;
             var account = McAccount.QueryById<McAccount> (AccountId);
             ClientContext = GetClientContext (account);
+            Cts = new CancellationTokenSource ();
+
             // This entry is never freed even if the account is deleted. If the account is
             // recreated, the existing entry will be overwritten. If the account is just 
             // deleted, this entry is orphaned. I am assuming account deletion is rare
@@ -521,7 +521,6 @@ namespace NachoCore
                 DisposeTimeoutTimer ();
                 DisposeDeferTimer ();
                 DisposeCts ();
-                Client.Dispose ();
             }
         }
 
@@ -759,18 +758,11 @@ namespace NachoCore
             account.LogHashedPassword (Log.LOG_PUSH, "PushAssist->DoStartSession", cred);
             FillOutIdentInfo (jsonRequest);
 
-            NcTask.Run (() => {
-                var result =
-                    DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token,
-                        () => {
-                            NumRetries++;
-                            ScheduleRetry ((uint)SmEvt.E.Launch, "START_TIMEOUT");
-                        });
-                if (null == result) {
-                    return;
-                }
-                ProcessStartSessionResult (result);
-            }, "PushAssistStartSession");
+            DoHttpRequest (StartSessionUrl, jsonRequest,
+                () => {
+                    NumRetries++;
+                    ScheduleRetry ((uint)SmEvt.E.Launch, "START_TIMEOUT");
+                });
         }
 
         private void ProcessStartSessionResult (PushAssistHttpResult result)
@@ -851,18 +843,11 @@ namespace NachoCore
             };
             FillOutIdentInfo (jsonRequest);
 
-            NcTask.Run (() => {
-                var result =
-                    DoHttpRequest (DeferSessionUrl, jsonRequest, NcTask.Cts.Token,
-                        () => {
-                            NumRetries++;
-                            ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_TIMEOUT");
-                        });
-                if (null == result) {
-                    return;
-                }
-                ProcessDeferSessionResult (result);
-            }, "PushAssistDeferSession");
+            DoHttpRequest (DeferSessionUrl, jsonRequest,
+                () => {
+                    NumRetries++;
+                    ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_TIMEOUT");
+                });
         }
 
         private void ProcessDeferSessionResult (PushAssistHttpResult result)
@@ -933,18 +918,11 @@ namespace NachoCore
             };
             FillOutIdentInfo (jsonRequest);
 
-            NcTask.Run (() => {
-                var result =
-                    DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token,
-                        () => {
-                            NumRetries++;
-                            PostTempFail ("STOP_TIMEOUT");
-                        });
-                if (null == result) {
-                    return;
-                }
-                ProcessStopSessionResult (result);
-            }, "PushAssistStopSession");
+            DoHttpRequest (StopSessionUrl, jsonRequest,
+                () => {
+                    NumRetries++;
+                    PostTempFail ("STOP_TIMEOUT");
+                });
         }
 
         private void ProcessStopSessionResult (PushAssistHttpResult result)
@@ -1049,9 +1027,6 @@ namespace NachoCore
                     DisposeRetryTimer ();
                     result.Exception = e;
                     Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
-                } else if (Cts.Token.IsCancellationRequested) {
-                    result.Exception = new TimeoutException ("HTTP operation timed out");
-                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: timed out");
                 } else {
                     result.Exception = e;
                 }
@@ -1064,67 +1039,72 @@ namespace NachoCore
             }
         }
 
-        protected PushAssistHttpResult DoHttpRequest (string url, object jsonRequest, CancellationToken cToken, Action timeoutAction)
+        protected virtual INcHttpClient HttpClient {
+            get {
+                return NcHttpClient.Instance;
+            }
+        }
+
+        protected void DoHttpRequest (string url, object jsonRequest, Action timeoutAction)
         {
             if (String.IsNullOrEmpty (url)) {
                 Log.Error (Log.LOG_PUSH, "null URL");
-                return null;
+                return;
             }
             if (null == jsonRequest) {
                 Log.Error (Log.LOG_PUSH, "null json request");
-                return null;
+                return;
             }
 
             // Set up the request
-            HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, url);
+            var request = new NcHttpRequest (HttpMethod.Post, url);
             Log.Info (Log.LOG_PUSH, "PA request ({4}): scheme={0}, url={1}, port={2}, method={3}",
                 request.RequestUri.Scheme, request.RequestUri.AbsoluteUri, request.RequestUri.Port, request.Method, ClientContext);
 
             // Set up the POST content
             try {
                 var content = JsonConvert.SerializeObject (jsonRequest);
-                request.Content = new StringContent (content);
-                request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue ("application/json");
-                request.Content.Headers.ContentLength = content.Length;
+                request.SetContent (Encoding.UTF8.GetBytes (content), "application/json");
             } catch (Exception e) {
                 Log.Error (Log.LOG_PUSH, "fail to encode push JSON - {0}", e);
-                return null;
+                return;
             }
 
-            // Make the request
-            var result = new PushAssistHttpResult ();
             ResetTimeout (timeoutAction);
-            // If we were Dispose()d, then Cts would be null. Don't crash, and follow the existing cancellation code path.
-            if (null == Cts) {
-                Cts = new CancellationTokenSource ();
-                Cts.Cancel ();
+            HttpClient.SendRequest (request, (int)(MaxTimeoutMsec/1000), PushAssistSuccess, PushAssistError, Cts.Token);
+            return;
+        }
+
+        void PushAssistSuccess (NcHttpResponse response, CancellationToken token)
+        {
+            byte[] contentBytes = response.GetContent ();
+            string content = null != contentBytes ? Encoding.UTF8.GetString (contentBytes) : null;
+            if (HttpStatusCode.OK == response.StatusCode) {
+                Log.Info (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, content);
+            } else {
+                Log.Warn (Log.LOG_PUSH, "PA response ({0}): statusCode={1}", ClientContext, response.StatusCode);
             }
-            using (var joinCts = CancellationTokenSource.CreateLinkedTokenSource (cToken, Cts.Token)) {
-                try {
-                    var sendTask = Client.SendAsync (request, HttpCompletionOption.ResponseContentRead, joinCts.Token);
-                    sendTask.Wait (joinCts.Token);
-                    var response = sendTask.Result;
-                    if (null != response.Content) {
-                        var readTask = response.Content.ReadAsStringAsync ();
-                        readTask.Wait (joinCts.Token);
-                        result.Content = readTask.Result;
-                    }
-                    if (HttpStatusCode.OK == response.StatusCode) {
-                        Log.Info (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, result.Content);
-                    } else {
-                        Log.Warn (Log.LOG_PUSH, "PA response ({0}): statusCode={1}", ClientContext, response.StatusCode);
-                    }
-                    result.Response = response;
-                } catch (AggregateException e) {
-                    HandleHttpRequestException (e.InnerException, cToken, ref result);
-                } catch (Exception e) {
-                    HandleHttpRequestException (e, cToken, ref result);
-                }
-            }
+            var result = new PushAssistHttpResult () {
+                Response = response,
+                Exception = null,
+                Content = content,
+            };
+            ProcessStartSessionResult (result);
+            PushAssistFinish ();
+        }
+
+        void PushAssistError (Exception ex, CancellationToken cToken)
+        {
+            var result = new PushAssistHttpResult ();
+            HandleHttpRequestException (ex, cToken, ref result);
+            ProcessStartSessionResult (result);
+            PushAssistFinish ();
+        }
+
+        void PushAssistFinish ()
+        {
             DisposeTimeoutTimer ();
             DisposeCts ();
-
-            return result;
         }
 
         private void DeviceTokenLost ()
@@ -1190,7 +1170,6 @@ namespace NachoCore
         {
             DisposeTimeoutTimer ();
             DisposeCts ();
-            Cts = new CancellationTokenSource ();
             TimeoutTimer = new NcTimer ("PATimeout", (state) => {
                 MayCancelHttpRequest ();
                 timeout ();

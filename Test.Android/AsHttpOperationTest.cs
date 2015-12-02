@@ -14,13 +14,8 @@ using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoPlatform;
-
-
-/*
- * Use a mock HttpClient.
- * BEContext?
- */
 using System.Net;
+using System.Text;
 
 
 namespace Test.iOS
@@ -184,38 +179,39 @@ namespace Test.iOS
         {
             // header settings
             string contentType = WBXMLContentType;
-            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
-            string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
+            byte[] mockRequest = CommonMockData.MockRequestXml.ToWbxml ();
+            string mockRequestLength = mockRequest.Length.ToString ();
+            byte[] mockResponse = CommonMockData.Wbxml;
 
-            PerformHttpOperationWithSettings (sm => {
-
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Headers.Add ("Content-Length", mockResponseLength);
-                response.Headers.Add ("Content-Type", contentType);
-            }, request => {
-                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
-                Assert.AreEqual (contentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => NcHttpResponseWithDefaults (HttpStatusCode.OK, mockResponse, contentType),
+                (request) => {
+                    Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
+                    Assert.AreEqual (contentType, request.Headers.GetValues ("Content-Type").First (), "request Content-Type should match expected");
+                }
+            );
         }
 
         [Test]
         public void BasicPhonyPingAccept ()
         {
             // header settings
-            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
-            string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
+            string contentType = WBXMLContentType;
+            byte[] mockRequest = CommonMockData.MockRequestXml.ToWbxml ();
+            string mockRequestLength = mockRequest.Length.ToString ();
+            byte[] mockResponse = CommonMockData.Wbxml;
 
-            PerformHttpOperationWithSettings (sm => {
-
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.Accepted;
-                response.Headers.Add ("Content-Length", mockResponseLength);
-                response.Headers.Add ("Content-Type", WBXMLContentType);
-            }, request => {
-                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
-                Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => NcHttpResponseWithDefaults (HttpStatusCode.Accepted, mockResponse, contentType),
+                (request) => {
+                    Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
+                    Assert.AreEqual (contentType, request.Headers.GetValues ("Content-Type").First (), "request Content-Type should match expected");
+                }
+            );
         }
 
         private const string HeaderXMsCredentialsExpire = "X-MS-Credentials-Expire";
@@ -228,8 +224,10 @@ namespace Test.iOS
             Tuple<int,Uri> value = null;
             const string match = "http://nacho.com/";
 
-            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
-            string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
+            string contentType = WBXMLContentType;
+            byte[] mockRequest = CommonMockData.MockRequestXml.ToWbxml ();
+            string mockRequestLength = mockRequest.Length.ToString ();
+            byte[] mockResponse = CommonMockData.Wbxml;
 
             BaseMockOwner.StatusIndCallback += (result) => {
                 if (result.SubKind == NcResult.SubKindEnum.Error_PasswordWillExpire) {
@@ -238,16 +236,18 @@ namespace Test.iOS
                 }
             };
 
-            PerformHttpOperationWithSettings (sm => {
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Headers.Add ("Content-Length", mockResponseLength);
-                response.Headers.Add ("Content-Type", WBXMLContentType);
-                response.Headers.Add (HeaderXMsCredentialServiceUrl, match);
-            }, request => {
-                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
-                Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => {
+                    var ret = NcHttpResponseWithDefaults (HttpStatusCode.OK, mockResponse, contentType);
+                    ret.Headers.Add (HeaderXMsCredentialServiceUrl, match);
+                    return ret;
+                },
+                (request) => {
+                    Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
+                    Assert.AreEqual (contentType, request.Headers.GetValues ("Content-Type").First (), "request Content-Type should match expected");
+                });
             Context.Cred = McCred.QueryById<McCred> (Context.Cred.Id);
             Assert.True (isExpiryNotified);
             Assert.NotNull (value);
@@ -264,8 +264,10 @@ namespace Test.iOS
             bool isExpiryNotified = false;
             Tuple<int,Uri> value = null;
 
-            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
-            string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
+            string contentType = WBXMLContentType;
+            byte[] mockRequest = CommonMockData.MockRequestXml.ToWbxml ();
+            string mockRequestLength = mockRequest.Length.ToString ();
+            byte[] mockResponse = CommonMockData.Wbxml;
 
             BaseMockOwner.StatusIndCallback += (result) => {
                 if (result.SubKind == NcResult.SubKindEnum.Error_PasswordWillExpire) {
@@ -274,16 +276,18 @@ namespace Test.iOS
                 }
             };
 
-            PerformHttpOperationWithSettings (sm => {
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Headers.Add ("Content-Length", mockResponseLength);
-                response.Headers.Add ("Content-Type", WBXMLContentType);
-                response.Headers.Add (HeaderXMsCredentialsExpire, "2");
-            }, request => {
-                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
-                Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => {
+                    var ret = NcHttpResponseWithDefaults (HttpStatusCode.OK, mockResponse, contentType);
+                    ret.Headers.Add (HeaderXMsCredentialsExpire, "2");
+                    return ret;
+                },
+                (request) => {
+                    Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
+                    Assert.AreEqual (contentType, request.Headers.GetValues ("Content-Type").First (), "request Content-Type should match expected");
+                });
             
             Context.Cred = McCred.QueryById<McCred> (Context.Cred.Id);
             Assert.True (isExpiryNotified);
@@ -296,73 +300,73 @@ namespace Test.iOS
 
         // TODO Set timeout values to fix this test
 //        [Test]
-        public void NegativeContentLength ()
-        {
-            // use this to test timeout values once they can be set
-            string mockResponseLength = "-15";
-
-            PerformHttpOperationWithSettings (sm => {
-
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Headers.Add ("Content-Length", mockResponseLength);
-                response.Headers.Add ("Content-Type", WBXMLContentType);
-            }, request => {
-            });
-        }
+//        public void NegativeContentLength ()
+//        {
+//            // use this to test timeout values once they can be set
+//            string mockResponseLength = "-15";
+//
+//            PerformHttpOperationWithSettings (sm => {
+//
+//            }, response => {
+//                response.StatusCode = System.Net.HttpStatusCode.OK;
+//                response.Headers.Add ("Content-Length", mockResponseLength);
+//                response.Headers.Add ("Content-Type", WBXMLContentType);
+//            }, request => {
+//            });
+//        }
 
         // TODO finish this test -- not sure where the commresult method should be called in the exceptions
 //        [Test]
-        public void BadWbxmlShouldFailCommResult ()
-        {
-            // use this to test timeout values once they can be set
-            string mockResponseLength = 10.ToString ();
-
-            PerformHttpOperationWithSettings (sm => {
-
-            }, response => {
-                string badWbxml = "wbxml bad wbxml";
-                byte[] bytes = new byte[badWbxml.Length * sizeof(char)];
-                System.Buffer.BlockCopy(badWbxml.ToCharArray(), 0, bytes, 0, bytes.Length);
-                response.Content = new MemoryStream(bytes);  
-
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Headers.Add ("Content-Length", mockResponseLength);
-                response.Headers.Add ("Content-Type", WBXMLContentType);
-            }, request => {
-            });
-
-            DoReportCommResultWithFailureType (() => {
-                return true;
-            });
-        }
-
+//        public void BadWbxmlShouldFailCommResult ()
+//        {
+//            // use this to test timeout values once they can be set
+//            string mockResponseLength = 10.ToString ();
+//
+//            PerformHttpOperationWithSettings (sm => {
+//
+//            }, response => {
+//                string badWbxml = "wbxml bad wbxml";
+//                byte[] bytes = new byte[badWbxml.Length * sizeof(char)];
+//                System.Buffer.BlockCopy(badWbxml.ToCharArray(), 0, bytes, 0, bytes.Length);
+//                response.Content = new MemoryStream(bytes);  
+//
+//                response.StatusCode = System.Net.HttpStatusCode.OK;
+//                response.Headers.Add ("Content-Length", mockResponseLength);
+//                response.Headers.Add ("Content-Type", WBXMLContentType);
+//            }, request => {
+//            });
+//
+//            DoReportCommResultWithFailureType (() => {
+//                return true;
+//            });
+//        }
+//
 //        [Test]
         // TODO Ask Jeff about this
-        public void BadXmlShouldFailCommResult ()
-        {
-            // use this to test timeout values once they can be set
-            string contentType = "text/xml";
-            string mockResponseLength = 10.ToString ();
-
-            PerformHttpOperationWithSettings (sm => {
-
-            }, response => {
-                string badXml = "xml bad xml";
-                byte[] bytes = new byte[badXml.Length * sizeof(char)];
-                System.Buffer.BlockCopy(badXml.ToCharArray(), 0, bytes, 0, bytes.Length);
-                response.Content = new MemoryStream(bytes);  
-
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Headers.Add ("Content-Length", mockResponseLength);
-                response.Headers.Add ("Content-Type", contentType);
-            }, request => {
-            });
-
-            DoReportCommResultWithFailureType (() => {
-                return true;
-            });
-        }
+//        public void BadXmlShouldFailCommResult ()
+//        {
+//            // use this to test timeout values once they can be set
+//            string contentType = "text/xml";
+//            string mockResponseLength = 10.ToString ();
+//
+//            PerformHttpOperationWithSettings (sm => {
+//
+//            }, response => {
+//                string badXml = "xml bad xml";
+//                byte[] bytes = new byte[badXml.Length * sizeof(char)];
+//                System.Buffer.BlockCopy(badXml.ToCharArray(), 0, bytes, 0, bytes.Length);
+//                response.Content = new MemoryStream(bytes);  
+//
+//                response.StatusCode = System.Net.HttpStatusCode.OK;
+//                response.Headers.Add ("Content-Length", mockResponseLength);
+//                response.Headers.Add ("Content-Type", contentType);
+//            }, request => {
+//            });
+//
+//            DoReportCommResultWithFailureType (() => {
+//                return true;
+//            });
+//        }
 
         [Test]
         public void GoodXmlShouldReportSuccessfulCommResult ()
@@ -370,24 +374,22 @@ namespace Test.iOS
             // use this to test timeout values once they can be set
             string contentType = "text/xml";
             string mockResponseLength = 10.ToString ();
+            string goodXml = CommonMockData.BasicPhonyPingRequestXml;
+            byte[] mockResponse = new byte[goodXml.Length * sizeof(char)];
+            System.Buffer.BlockCopy(goodXml.ToCharArray(), 0, mockResponse, 0, mockResponse.Length);
 
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                string goodXml = CommonMockData.BasicPhonyPingRequestXml;
-                byte[] bytes = new byte[goodXml.Length * sizeof(char)];
-                System.Buffer.BlockCopy(goodXml.ToCharArray(), 0, bytes, 0, bytes.Length);
-                response.Content = new MemoryStream(bytes);  
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+                (request) => {
+                    var response = NcHttpResponseWithDefaults (HttpStatusCode.OK, mockResponse, contentType);
+                    response.Headers.Add ("Content-Length", mockResponseLength);
+                    return response;
+                },
+                request => {
+                }
+            );
 
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Headers.Add ("Content-Length", mockResponseLength);
-                response.Headers.Add ("Content-Type", contentType);
-            }, request => {
-            });
-
-            DoReportCommResultWithFailureType (() => {
-                return false;
-            });
+            DoReportCommResultWithFailureType (() => false);
         }
 
         [Test]
@@ -414,16 +416,22 @@ namespace Test.iOS
         private void PerformHttpOperationWithResponseLength (string responseLength)
         {
             string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            byte[] mockRequest = CommonMockData.Wbxml;
 
-            PerformHttpOperationWithSettings (sm => {
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Headers.Add ("Content-Length", responseLength);
-                response.Headers.Add ("Content-Type", WBXMLContentType);
-            }, request => {
-                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
-                Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => {
+                    var ret = NcHttpResponseWithDefaults(HttpStatusCode.OK, mockRequest, WBXMLContentType);
+                    ret.Headers.Remove ("Content-Length");
+                    ret.Headers.Add ("Content-Length", responseLength);
+                    return ret;
+                },
+                (request) => {
+                    Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
+                    Assert.AreEqual (WBXMLContentType, request.Headers.GetValues ("Content-Type").First (), "request Content-Type should match expected");
+                }
+            );
         }
 
         // Content-Type is not required if Content-Length is missing or zero
@@ -435,33 +443,41 @@ namespace Test.iOS
             string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = 0.ToString ();
 
-            PerformHttpOperationWithSettings (sm => {
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Headers.Add ("Content-Length", mockResponseLength);
-            }, request => {
-                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => {
+                    var ret = NcHttpResponseWithDefaults(HttpStatusCode.OK);
+                    ret.Headers.Add ("Content-Length", mockResponseLength);
+                    return ret;
+                },
+                (request) => {
+                    Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
+                }
+            );
 
             /* Content-Length is missing --> must not require content type */
-            PerformHttpOperationWithSettings (sm => {
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-            }, request => {
-                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => NcHttpResponseWithDefaults (HttpStatusCode.OK),
+                (request) => {
+                    Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
+                }
+            );
         }
 
         [Test]
         public void StatusCodeFound ()
         {
             // Status Code -- Found (302)
-            PerformHttpOperationWithSettings (sm => {
-
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.Found;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => NcHttpResponseWithDefaults (HttpStatusCode.Found),
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithNonGeneralFailure ();
         }
@@ -470,12 +486,12 @@ namespace Test.iOS
         public void StatusCodeBadRequest ()
         {
             // Status Code -- Bad Request (400)
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.BadRequest;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+                (request) => NcHttpResponseWithDefaults (HttpStatusCode.BadRequest),
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithNonGeneralFailure ();
         }
@@ -485,11 +501,13 @@ namespace Test.iOS
         public void StatusCodeUnauthorized ()
         {
             // Status Code -- Unauthorized (401)
-            PerformHttpOperationWithSettings (sm => {
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.Unauthorized;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => NcHttpResponseWithDefaults (HttpStatusCode.Unauthorized),
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithNonGeneralFailure ();
         }
@@ -498,12 +516,12 @@ namespace Test.iOS
         public void StatusCodeForbidden ()
         {
             // Status Code -- Forbidden (403)
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.Forbidden;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+                (request) => NcHttpResponseWithDefaults (HttpStatusCode.Forbidden),
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithNonGeneralFailure ();
         }
@@ -512,12 +530,12 @@ namespace Test.iOS
         public void StatusCodeNotFound ()
         {
             // Status Code -- NotFound (404)
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.NotFound;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+                (request) => NcHttpResponseWithDefaults (HttpStatusCode.NotFound),
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithNonGeneralFailure ();
         }
@@ -526,11 +544,13 @@ namespace Test.iOS
         public void StatusCode449 ()
         {
             // Status Code -- Retry With Status Code (449)
-            PerformHttpOperationWithSettings (sm => {
-            }, response => {
-                response.StatusCode = (System.Net.HttpStatusCode)449;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => NcHttpResponseWithDefaults ((HttpStatusCode)449),
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithNonGeneralFailure ();
         }
@@ -539,11 +559,13 @@ namespace Test.iOS
         public void StatusCodeInternalServerError ()
         {
             // Status Code -- Internal Server Error (500)
-            PerformHttpOperationWithSettings (sm => {
-            }, response => {
-                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => {
+                },
+                (request) => NcHttpResponseWithDefaults (HttpStatusCode.InternalServerError),
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithNonGeneralFailure ();
         }
@@ -552,12 +574,12 @@ namespace Test.iOS
         public void StatusCode501 ()
         {
             // Status Code -- Command Not Implemented (501)
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                response.StatusCode = (System.Net.HttpStatusCode)501;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+                (request) => NcHttpResponseWithDefaults ((HttpStatusCode)501),
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithNonGeneralFailure ();
         }
@@ -581,12 +603,15 @@ namespace Test.iOS
             McMutables.Set (2, "HTTP", "MaxDelaySeconds", (3).ToString ());
 
             uint retryCount = 0;
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                retryCount = AssertRetry (retryCount);
-                response.StatusCode = System.Net.HttpStatusCode.ServiceUnavailable;
-            }, request => {});
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+                (request) => {
+                    retryCount = AssertRetry (retryCount);
+                    return NcHttpResponseWithDefaults (HttpStatusCode.ServiceUnavailable);
+                },
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithDateTime ();
         }
@@ -612,23 +637,28 @@ namespace Test.iOS
             bool hasBeenThrottled = false;
             uint retryCount = 0;
             var stopwatch = new System.Diagnostics.Stopwatch ();
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                if (!hasBeenThrottled) {
-                    response.Headers.Add (HeaderRetryAfter, retryAfterSecs);
-                    response.Headers.Add (HeaderXMsThrottle, "UnknownReason");
-                    hasBeenThrottled = true;
-                    stopwatch.Start ();
-                } else {
-                    stopwatch.Stop ();
-                    Assert.True (stopwatch.ElapsedMilliseconds >= 1000, "Should not retry until at least retry after time");
-                    Assert.AreEqual (McProtocolState.AsThrottleReasons.Unknown, Context.ProtocolState.AsThrottleReason, "Should set throttle reason");
-                    Assert.True (isThrottlingSet, "Should send throttling message to StatusInd");
-                    retryCount = AssertRetry (retryCount);
+
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+                (request) => {
+                    var response = NcHttpResponseWithDefaults (HttpStatusCode.ServiceUnavailable);
+                    if (!hasBeenThrottled) {
+                        response.Headers.Add (HeaderRetryAfter, retryAfterSecs);
+                        response.Headers.Add (HeaderXMsThrottle, "UnknownReason");
+                        hasBeenThrottled = true;
+                        stopwatch.Start ();
+                    } else {
+                        stopwatch.Stop ();
+                        Assert.True (stopwatch.ElapsedMilliseconds >= 1000, "Should not retry until at least retry after time");
+                        Assert.AreEqual (McProtocolState.AsThrottleReasons.Unknown, Context.ProtocolState.AsThrottleReason, "Should set throttle reason");
+                        Assert.True (isThrottlingSet, "Should send throttling message to StatusInd");
+                        retryCount = AssertRetry (retryCount);
+                    }
+                    return response;
+                },
+                (request) => {
                 }
-                response.StatusCode = System.Net.HttpStatusCode.ServiceUnavailable;
-            }, request => {});
+            );
 
             DoReportCommResultWithDateTime ();
         }
@@ -651,19 +681,23 @@ namespace Test.iOS
 
             uint retryCount = 0;
             bool hasBeenThrottled = false;
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                if (!hasBeenThrottled) {
-                    response.Headers.Add (HeaderXMsThrottle, "UnknownReason");
-                    hasBeenThrottled = true;
-                } else {
-                    Assert.AreEqual (McProtocolState.AsThrottleReasons.Unknown, Context.ProtocolState.AsThrottleReason, "Should set throttle reason");
-                    Assert.True (isThrottlingSet, "Should send throttling message to StatusInd");
-                    retryCount = AssertRetry (retryCount);
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+                (request) => {
+                    var response = NcHttpResponseWithDefaults (HttpStatusCode.ServiceUnavailable);
+                    if (!hasBeenThrottled) {
+                        response.Headers.Add (HeaderXMsThrottle, "UnknownReason");
+                        hasBeenThrottled = true;
+                    } else {
+                        Assert.AreEqual (McProtocolState.AsThrottleReasons.Unknown, Context.ProtocolState.AsThrottleReason, "Should set throttle reason");
+                        Assert.True (isThrottlingSet, "Should send throttling message to StatusInd");
+                        retryCount = AssertRetry (retryCount);
+                    }
+                    return response;
+                },
+                (request) => {
                 }
-                response.StatusCode = System.Net.HttpStatusCode.ServiceUnavailable;
-            }, request => {});
+            );
 
             DoReportCommResultWithDateTime ();
         }
@@ -672,12 +706,12 @@ namespace Test.iOS
         public void StatusCode507 ()
         {
             // Status Code -- Server out of Space (507)
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                response.StatusCode = (System.Net.HttpStatusCode)507;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+                (request) => NcHttpResponseWithDefaults ((HttpStatusCode)507),
+                (request) => {
+                }
+            );
 
             DoReportCommResultWithNonGeneralFailure ();
         }
@@ -686,12 +720,12 @@ namespace Test.iOS
         public void StatusCodeUnknown ()
         {
             // Unknown status code
-            PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
-            }, response => {
-                response.StatusCode = (System.Net.HttpStatusCode)8035;
-            }, request => {
-            });
+            PerformHttpOperationWithSettings (
+                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"), 
+                (request) => NcHttpResponseWithDefaults ((HttpStatusCode)8035),
+                request => {
+                }
+            );
 
             DoReportCommResultWithFailureType (() => {
                 return true;
@@ -723,7 +757,21 @@ namespace Test.iOS
             Assert.AreEqual (CommonMockData.Host, mockCommStatus.Host);
         }
 
-        private void PerformHttpOperationWithSettings (Action<NcStateMachine> provideSm, Action<NcHttpResponse> provideResponse, Action<HttpRequestMessage> provideRequest)
+        private NcHttpResponse NcHttpResponseWithDefaults (HttpStatusCode status, byte[] data = null, string contentType = null)
+        {
+            if (data == null) {
+                data = CommonMockData.Wbxml;
+            }
+            if (contentType == null) {
+                contentType = WBXMLContentType;
+            }
+            return new NcHttpResponse (status, new MemoryStream (data), contentType);
+        }
+
+        delegate NcHttpResponse ProvideResponseDelegate (NcHttpRequest request);
+        delegate void ValidateRequestDeletegate (NcHttpRequest request);
+
+        private void PerformHttpOperationWithSettings (Action<NcStateMachine> provideSm, ProvideResponseDelegate provideResponse, ValidateRequestDeletegate validateRequest)
         {
             var autoResetEvent = new AutoResetEvent(false);
             string errorString = null;
@@ -740,17 +788,13 @@ namespace Test.iOS
             provideSm (sm);
 
             // do some common assertions
-            ExamineRequestMessageOnMockClient (CommonMockData.MockUri, request => {
-                provideRequest (request);
-            });
+            ExamineRequestMessageOnMockClient (CommonMockData.MockUri, validateRequest);
 
             // provides the mock response
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 // create the response, then allow caller to set headers,
                 // then return response and assign to mockResponse
-                return CreateMockResponse (CommonMockData.Wbxml, response => {
-                    provideResponse (response);   
-                });
+                return provideResponse(request);
             };
 
             McServer server = new McServer () {
@@ -762,6 +806,7 @@ namespace Test.iOS
             // provides the mock owner
             BaseMockOwner owner = CreateMockOwner (CommonMockData.MockUri, CommonMockData.MockRequestXml);
 
+            AsHttpOperation.TestHttpClient = MockHttpClient.Instance;
             var op = new AsHttpOperation ("Ping", owner, Context);
 
             var mockCommStatusInstance = MockNcCommStatus.Instance;
@@ -907,17 +952,7 @@ namespace Test.iOS
             return owner;
         }
 
-        private NcHttpResponse CreateMockResponse (byte[] wbxml, Action<NcHttpResponse> provideResponse)
-        {
-            var mockResponse = new NcHttpResponse (HttpStatusCode.Accepted, new MemoryStream (wbxml), "", null);
-     
-            // allow the caller to modify the mockResponse object (esp. headers and StatusCode)
-            provideResponse (mockResponse);
-
-            return mockResponse;
-        }
-
-        private void ExamineRequestMessageOnMockClient (Uri mockUri, Action<HttpRequestMessage> requestAction)
+        private void ExamineRequestMessageOnMockClient (Uri mockUri, ValidateRequestDeletegate requestAction)
         {
             MockHttpClient.ExamineHttpRequestMessage = (request) => {
                 Assert.AreEqual (mockUri, request.RequestUri, "Uri's should match");
@@ -926,8 +961,10 @@ namespace Test.iOS
                 /* TODO Check appropriate headers. */
 
                 // test that user agent is correct
-                Assert.AreEqual (Device.Instance.UserAgent ().ToString (), request.Headers.UserAgent.ToString (), 
-                    "request User-Agent should be set to correct UserAgent");
+                NcAssert.NotNull (request.Headers);
+                Assert.True (request.Headers.Contains ("User-Agent"));
+                Assert.AreEqual (Device.Instance.UserAgent (), request.Headers.GetValues ("User-Agent").First (),
+                        "request User-Agent should be set to correct UserAgent");
 
                 // test that the protocol version is correctly set
                 McProtocolState protocol = new McProtocolState ();
@@ -942,6 +979,5 @@ namespace Test.iOS
                 // TODO Check correct WBXML.
             };
         }
-    
     }
 }

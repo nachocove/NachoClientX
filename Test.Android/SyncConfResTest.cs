@@ -91,7 +91,7 @@ namespace Test.iOS
             public static AsSyncCommand CreateSyncCmd (MockContext context)
             {
                 var syncCmd = new AsSyncCommand (context, ((AsProtoControl)context.ProtoControl).Strategy.GenSyncKit (context.ProtocolState));
-                AsHttpOperation.HttpClientType = typeof(MockHttpClient);
+                AsHttpOperation.TestHttpClient = MockHttpClient.Instance;
                 return syncCmd;
             }
 

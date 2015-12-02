@@ -12,6 +12,8 @@ using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using System.Threading;
 using System.Net.Http;
 using System.Text;
+using System.IO;
+using NachoPlatform;
 
 namespace Test.iOS
 {
@@ -132,11 +134,7 @@ namespace Test.iOS
             });
 
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
-                var mockResponse = new HttpResponseMessage () {
-                    Content = new StringContent (responseXml, Encoding.UTF8, "text/xml"),
-                };
-
-                return mockResponse;
+                return new NcHttpResponse (System.Net.HttpStatusCode.OK, new MemoryStream(Encoding.UTF8.GetBytes (responseXml)), "text/xml", new NcHttpHeaders());
             };
 
             cmd.Execute (sm);

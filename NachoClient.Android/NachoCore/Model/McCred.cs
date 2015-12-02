@@ -207,8 +207,6 @@ namespace NachoCore.Model
             }
         }
 
-        public static Type HttpClientType = typeof(MockableHttpClient);
-
         private class OAuth2RefreshRespose
         {
             public string access_token { get; set; }

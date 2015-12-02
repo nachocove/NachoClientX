@@ -26,9 +26,31 @@ namespace NachoPlatform
     {
         public NcHttpHeaders Headers { get; protected set; }
 
-        public long? ContentLength { get; protected set; }
+        public long? ContentLength {
+            get {
+                IEnumerable<string> values;
+                if (Headers.TryGetValues ("Content-Length", out values)) {
+                    long len;
+                    var lenStr = values.First ();
+                    if (long.TryParse (lenStr, out len)) {
+                        return len;
+                    } else {
+                        Log.Info (Log.LOG_HTTP, "Could not parse Content-Length header value {0}", lenStr);
+                    }
+                }
+                return null;
+            }
+        }
 
-        public string ContentType { get; protected set; }
+        public string ContentType {
+            get {
+                IEnumerable<string> values;
+                if (Headers.TryGetValues ("Content-Type", out values)) {
+                    return values.First ();
+                }
+                return null;
+            }
+        }
 
         public Uri RequestUri { get; protected set; }
 
@@ -92,14 +114,12 @@ namespace NachoPlatform
 
         public void SetContent (FileStream stream, string contentType)
         {
-            SetContent (stream, null, contentType);
+            SetContent (stream, null, null, contentType);
         }
 
         public void SetContent (FileStream stream, long? contentLength, string contentType)
         {
-            ContentStream = stream;
-            ContentType = contentType;
-            ContentLength = contentLength;
+            SetContent (stream, null, contentLength, contentType);
         }
 
         public void SetContent (byte[] data, string contentType)
@@ -109,9 +129,49 @@ namespace NachoPlatform
 
         public void SetContent (byte[] data, long? contentLength, string contentType)
         {
+            SetContent (null, data, contentLength, contentType);
+        }
+
+        void SetContent (FileStream stream, byte[] data, long? contentLength, string contentType)
+        {
+            ContentStream = stream;
             ContentData = data;
-            ContentLength = contentLength;
-            ContentType = contentType;
+            if (!Headers.Contains ("Content-Type")) {
+                Headers.Add ("Content-Type", contentType);
+            }
+            if (!Headers.Contains ("Content-Length")) {
+                long? len = null;
+                if (contentLength.HasValue) {
+                    len = contentLength.Value;
+                } else if (ContentData != null) {
+                    len = ContentData.Length;
+                } else if (ContentStream != null) {
+                    len = ContentStream.Length;
+                }
+                if (len.HasValue) {
+                    Headers.Add ("Content-Length", len.Value.ToString ());
+                }
+            }
+        }
+
+
+        public byte[] GetContent ()
+        {
+            var content = Content;
+            if (content == null) {
+                return null;
+            }
+
+            if (content is FileStream) {
+                var mem = new MemoryStream ();
+                (content as FileStream).CopyTo (mem);
+                return mem.GetBuffer ();
+            }
+            if (content is byte[]) {
+                return content as byte[];
+            }
+            NcAssert.CaseError ("unknown type of content");
+            return null;
         }
 
         public override string ToString ()
@@ -131,15 +191,21 @@ namespace NachoPlatform
 
         public HttpStatusCode StatusCode { get; protected set; }
 
-        public long ContentLength { get {
+        public long ContentLength {
+            get {
+                // need to check the headers first, so that unit tests can set bogus values.
+                IEnumerable<string> values;
+                if (Headers.TryGetValues ("Content-Length", out values)) {
+                    long len;
+                    var lenStr = values.First ();
+                    if (long.TryParse (lenStr, out len)) {
+                        return len;
+                    } else {
+                        Log.Info (Log.LOG_HTTP, "Could not parse Content-Length header value {0}", lenStr);
+                    }
+                }
                 if (null != Content) {
                     return Content.Length;
-                }
-                if (Headers.Contains ("Content-Length")) {
-                    long len;
-                    if (long.TryParse (Headers.GetValues ("Content-Length").First (), out len)) {
-                        return len;
-                    }
                 }
                 return -1;
             }
@@ -151,12 +217,52 @@ namespace NachoPlatform
             }
         }
 
-        public NcHttpResponse (HttpStatusCode status, Stream stream, string contentType, NcHttpHeaders headers)
+        string tempFileName { get; set; }
+
+        public NcHttpResponse (HttpStatusCode status, Stream stream, string contentType, NcHttpHeaders headers = null)
         {
+            if (!(stream is FileStream)) {
+                Log.Warn (Log.LOG_HTTP, "Creating NcHttpResponse with non-FileStream stream: {0}. Should only be used for unit tests", stream.GetType ().Name);
+                tempFileName = Path.GetTempFileName ();
+                using (var fs = new FileStream (tempFileName, FileMode.OpenOrCreate, FileAccess.Write)) {
+                    stream.CopyTo (fs);
+                }
+                stream = new FileStream(tempFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            }
+            NcAssert.True (stream is FileStream);
             StatusCode = status;
             Content = stream;
             ContentType = contentType;
-            Headers = headers;
+            Headers = headers ?? new NcHttpHeaders ();
+        }
+
+        ~NcHttpResponse ()
+        {
+            if (!string.IsNullOrEmpty (tempFileName)) {
+                File.Delete (tempFileName);
+            }
+        }
+
+        public NcHttpResponse (HttpStatusCode status)
+        {
+            StatusCode = status;
+            Headers = new NcHttpHeaders ();
+        }
+
+        public byte[] GetContent ()
+        {
+            var content = Content;
+            if (content == null) {
+                return null;
+            }
+
+            if (content is FileStream) {
+                var mem = new MemoryStream ();
+                (content as FileStream).CopyTo (mem);
+                return mem.GetBuffer ();
+            }
+            NcAssert.CaseError ("unknown type of content");
+            return null;
         }
     }
 
