@@ -37,6 +37,9 @@ namespace NachoClient.AndroidClient
             var messageId = Intent.GetIntExtra (EXTRA_MESSAGE, 0);
             var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
 
+            // In case notification started the app
+            MainApplication.OneTimeStartup("NotificationActivity");
+
             if (null == message) {
                 var inboxIntent =  NcTabBarActivity.InboxIntent (this);
                 StartActivity (inboxIntent);

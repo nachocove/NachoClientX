@@ -23,6 +23,9 @@ namespace NachoClient.AndroidClient
         public override void OnCreate ()
         {
             base.OnCreate ();
+
+            MainApplication.OneTimeStartup ("NotificationService");
+
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
