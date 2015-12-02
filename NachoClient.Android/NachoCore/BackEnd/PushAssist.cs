@@ -34,14 +34,6 @@ namespace NachoCore
 {
     public delegate void NotificationFetchFunc (int accountId);
 
-    public class PushAssistHttpResult
-    {
-        public NcHttpResponse Response;
-        public Exception Exception;
-        // Content of the response if it exists
-        public string Content;
-    }
-
     public class PushAssist : IDisposable
     {
         public static int IncrementalDelayMsec = 500;
@@ -630,8 +622,14 @@ namespace NachoCore
             return valueList [0];
         }
 
-        private static PingerResponse ParsePingerResponse (string jsonResponse)
+        private static PingerResponse ParsePingerResponse (NcHttpResponse httpResponse)
         {
+            NcAssert.NotNull (httpResponse);
+            byte[] contentBytes = httpResponse.GetContent ();
+            string jsonResponse = (null != contentBytes && contentBytes.Length > 0) ? Encoding.UTF8.GetString (contentBytes) : null;
+            if (string.IsNullOrEmpty (jsonResponse)) {
+                return null;
+            }
             try {
                 var response = JsonConvert.DeserializeObject<PingerResponse> (jsonResponse);
                 switch (response.Status) {
@@ -652,7 +650,7 @@ namespace NachoCore
                 }
                 return response;
             } catch (Exception e) {
-                Log.Error (Log.LOG_PUSH, "ParsePingerResponse: Fail to parse JSON response (jsonResponse={0}, exception={1})", jsonResponse, e);
+                Log.Error (Log.LOG_PUSH, "ParsePingerResponse: Failed to parse JSON response (jsonResponse={0}, exception={1})", jsonResponse, e);
                 return null;
             }
         }
@@ -762,13 +760,13 @@ namespace NachoCore
                 () => {
                     NumRetries++;
                     ScheduleRetry ((uint)SmEvt.E.Launch, "START_TIMEOUT");
-                });
+                },
+                ProcessStartSessionResult);
         }
 
-        private void ProcessStartSessionResult (PushAssistHttpResult result)
+        private void ProcessStartSessionResult (NcHttpResponse httpResponse, Exception ex, CancellationToken token)
         {
-            if (null != result.Exception) {
-                var ex = result.Exception;
+            if (null != ex) {
                 if (ex is TimeoutException) {
                     // Retry is handled by TimeoutTimer's callback.
                     Log.Info (Log.LOG_PUSH, "PushAssistStartSession task timed out");
@@ -788,7 +786,8 @@ namespace NachoCore
                 ScheduleRetry ((uint)SmEvt.E.Launch, mnemonic);
                 return;
             }
-            var httpResponse = result.Response;
+
+            NcAssert.NotNull (httpResponse);
             if (HttpStatusCode.OK != httpResponse.StatusCode) {
                 Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0})",
                     httpResponse.StatusCode);
@@ -796,9 +795,8 @@ namespace NachoCore
                 ScheduleRetry ((uint)SmEvt.E.Launch, "START_HTTP_RETRY");
                 return;
             }
-            var jsonResponse = result.Content;
-            var response = ParsePingerResponse (jsonResponse);
-            if (!response.IsOkOrWarn () || String.IsNullOrEmpty (response.Token)) {
+            PingerResponse response = ParsePingerResponse (httpResponse);
+            if (null == response || !response.IsOkOrWarn () || String.IsNullOrEmpty (response.Token)) {
                 NumRetries++;
                 ScheduleRetry ((uint)SmEvt.E.Launch, "START_SESS_RETRY");
             } else {
@@ -847,13 +845,13 @@ namespace NachoCore
                 () => {
                     NumRetries++;
                     ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_TIMEOUT");
-                });
+                },
+                ProcessDeferSessionResult);
         }
 
-        private void ProcessDeferSessionResult (PushAssistHttpResult result)
+        private void ProcessDeferSessionResult (NcHttpResponse httpResponse, Exception ex, CancellationToken token)
         {
-            if (null != result.Exception) {
-                var ex = result.Exception;
+            if (null != ex) {
                 if (ex is TimeoutException) {
                     // Retry is handled by TimeoutTimer's callback.
                     Log.Info (Log.LOG_PUSH, "PushAssistDeferSession task timed out");
@@ -873,7 +871,6 @@ namespace NachoCore
                 ScheduleRetry ((uint)PAEvt.E.Defer, mnemonic);
                 return;
             }
-            var httpResponse = result.Response;
             NcAssert.True (null != httpResponse);
             if (HttpStatusCode.OK != httpResponse.StatusCode) {
                 Log.Warn (Log.LOG_PUSH, "DoDeferSession: HTTP failure (statusCode={0})",
@@ -883,20 +880,24 @@ namespace NachoCore
                 return;
             }
 
-            var jsonResponse = result.Content;
-            var response = ParsePingerResponse (jsonResponse);
-            if (response.IsOk ()) {
-                ClearRetry ();
-                Log.Info (Log.LOG_PUSH, "[PA] defer session ends: client_id={0}, context={1}, token={2}",
-                    NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
-                ResetDefer ();
-            } else if (response.IsWarn ()) {
-                NumRetries++;
-                ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_SESS_RETRY");
-            } else {
-                NcAssert.True (response.IsError ());
+            PingerResponse response = ParsePingerResponse (httpResponse);
+            if (null == response) {
                 ClearRetry ();
                 ScheduleRetry ((uint)SmEvt.E.HardFail, "DEFER_SESS_ERROR");
+            } else {
+                if (response.IsOk ()) {
+                    ClearRetry ();
+                    Log.Info (Log.LOG_PUSH, "[PA] defer session ends: client_id={0}, context={1}, token={2}",
+                        NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
+                    ResetDefer ();
+                } else if (response.IsWarn ()) {
+                    NumRetries++;
+                    ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_SESS_RETRY");
+                } else {
+                    NcAssert.True (response.IsError ());
+                    ClearRetry ();
+                    ScheduleRetry ((uint)SmEvt.E.HardFail, "DEFER_SESS_ERROR");
+                }
             }
         }
 
@@ -922,13 +923,13 @@ namespace NachoCore
                 () => {
                     NumRetries++;
                     PostTempFail ("STOP_TIMEOUT");
-                });
+                },
+                ProcessStopSessionResult);
         }
 
-        private void ProcessStopSessionResult (PushAssistHttpResult result)
+        private void ProcessStopSessionResult (NcHttpResponse httpResponse, Exception ex, CancellationToken token)
         {
-            if (null != result.Exception) {
-                var ex = result.Exception;
+            if (null != ex) {
                 if (ex is TimeoutException) {
                     // Retry is handled by TimeoutTimer's callback.
                     Log.Info (Log.LOG_PUSH, "PushAssistStopSession task timed out");
@@ -944,8 +945,6 @@ namespace NachoCore
                 }
                 return;
             }
-            var httpResponse = result.Response;
-            NcAssert.True (null != result.Response);
             if (HttpStatusCode.OK != httpResponse.StatusCode) {
                 Log.Warn (Log.LOG_PUSH, "DoStopSession: HTTP failure (statusCode={0})",
                     httpResponse.StatusCode);
@@ -953,9 +952,8 @@ namespace NachoCore
                 return;
             }
 
-            var jsonResponse = result.Content;
-            var response = ParsePingerResponse (jsonResponse);
-            if (!response.IsOk ()) {
+            PingerResponse response = ParsePingerResponse (httpResponse);
+            if (null != response && !response.IsOk ()) {
                 PostTempFail ("STOP_SESS_ERROR");
             } else {
                 ClearRetry ();
@@ -1019,33 +1017,15 @@ namespace NachoCore
             return null;
         }
 
-        protected void HandleHttpRequestException (Exception e, CancellationToken cToken, ref PushAssistHttpResult result)
-        {
-            if (e is OperationCanceledException) {
-                if (cToken.IsCancellationRequested) {
-                    DisposeTimeoutTimer ();
-                    DisposeRetryTimer ();
-                    result.Exception = e;
-                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
-                } else {
-                    result.Exception = e;
-                }
-            } else if (e is WebException) {
-                result.Exception = e;
-                Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught network exception - {0}", e);
-            } else {
-                result.Exception = e;
-                Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught unexpected http exception - {0}", e);
-            }
-        }
-
         protected virtual INcHttpClient HttpClient {
             get {
                 return NcHttpClient.Instance;
             }
         }
 
-        protected void DoHttpRequest (string url, object jsonRequest, Action timeoutAction)
+        protected delegate void ProcessResultDelegate (NcHttpResponse httpResponse, Exception ex, CancellationToken token);
+
+        protected void DoHttpRequest (string url, object jsonRequest, Action timeoutAction, ProcessResultDelegate resultProcessing)
         {
             if (String.IsNullOrEmpty (url)) {
                 Log.Error (Log.LOG_PUSH, "null URL");
@@ -1071,37 +1051,42 @@ namespace NachoCore
             }
 
             ResetTimeout (timeoutAction);
-            if (null == Cts || Cts.IsCancellationRequested) {
-                return;
+            if (null == Cts) {
+                Cts = new CancellationTokenSource ();
             }
-            HttpClient.SendRequest (request, (int)(MaxTimeoutMsec/1000), PushAssistSuccess, PushAssistError, Cts.Token);
-            return;
+            HttpClient.SendRequest (request, (int)(MaxTimeoutMsec / 1000),
+                (response, token) => {
+                    byte[] contentBytes = response.GetContent ();
+                    string content = null != contentBytes ? Encoding.UTF8.GetString (contentBytes) : null;
+                    if (HttpStatusCode.OK == response.StatusCode) {
+                        Log.Info (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, content);
+                    } else {
+                        Log.Warn (Log.LOG_PUSH, "PA response ({0}): statusCode={1}", ClientContext, response.StatusCode);
+                    }
+                    resultProcessing (response, null, token);
+                    PushAssistFinish ();
+                },
+                (ex, token) => {
+                    HandleHttpRequestException (ex, token);
+                    resultProcessing (null, ex, token);
+                    PushAssistFinish ();
+                },
+                Cts.Token);
         }
 
-        void PushAssistSuccess (NcHttpResponse response, CancellationToken token)
+        protected void HandleHttpRequestException (Exception e, CancellationToken cToken)
         {
-            byte[] contentBytes = response.GetContent ();
-            string content = null != contentBytes ? Encoding.UTF8.GetString (contentBytes) : null;
-            if (HttpStatusCode.OK == response.StatusCode) {
-                Log.Info (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, content);
+            if (e is OperationCanceledException) {
+                if (cToken.IsCancellationRequested) {
+                    DisposeTimeoutTimer ();
+                    DisposeRetryTimer ();
+                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
+                }
+            } else if (e is WebException) {
+                Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught network exception - {0}", e);
             } else {
-                Log.Warn (Log.LOG_PUSH, "PA response ({0}): statusCode={1}", ClientContext, response.StatusCode);
+                Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught unexpected http exception - {0}", e);
             }
-            var result = new PushAssistHttpResult () {
-                Response = response,
-                Exception = null,
-                Content = content,
-            };
-            ProcessStartSessionResult (result);
-            PushAssistFinish ();
-        }
-
-        void PushAssistError (Exception ex, CancellationToken cToken)
-        {
-            var result = new PushAssistHttpResult ();
-            HandleHttpRequestException (ex, cToken, ref result);
-            ProcessStartSessionResult (result);
-            PushAssistFinish ();
         }
 
         void PushAssistFinish ()
@@ -1161,8 +1146,10 @@ namespace NachoCore
         private void DisposeCts ()
         {
             lock (LockObj) {
-                Cts.Dispose ();
-                Cts = null;
+                if (null != Cts) {
+                    Cts.Dispose ();
+                    Cts = null;
+                }
             }
         }
 

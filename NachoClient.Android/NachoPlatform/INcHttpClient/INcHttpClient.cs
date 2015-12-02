@@ -270,8 +270,10 @@ namespace NachoPlatform
             }
 
             if (content is FileStream) {
+                var fs = content as FileStream;
                 var mem = new MemoryStream ();
-                (content as FileStream).CopyTo (mem);
+                fs.CopyTo (mem);
+                fs.Seek (0, SeekOrigin.Begin);
                 return mem.GetBuffer ().Take ((int)mem.Length).ToArray ();
             }
             NcAssert.CaseError ("unknown type of content");

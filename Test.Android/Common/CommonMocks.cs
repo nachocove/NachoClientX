@@ -155,8 +155,14 @@ namespace Test.iOS
             if (null != ExamineHttpRequestMessage) {
                 ExamineHttpRequestMessage (request);
             }
-            var response = ProvideHttpResponseMessage (request);
-            NcTask.Run (() => doRequest (request, response, timeout, success, error, progress, cancellationToken), "MockHttpClient.SendRequest");
+            NcTask.Run (() => {
+                try {
+                    var response = ProvideHttpResponseMessage (request);
+                    doRequest (request, response, timeout, success, error, progress, cancellationToken);
+                } catch (Exception ex) {
+                    error (ex, cancellationToken);
+                }
+            }, "MockHttpClient.SendRequest");
         }
 
         #endregion
