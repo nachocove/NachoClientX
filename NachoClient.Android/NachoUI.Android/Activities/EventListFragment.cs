@@ -23,6 +23,7 @@ using NachoCore.Utils;
 using Android.Graphics.Drawables;
 using NachoCore.Brain;
 using Android.Widget;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -173,14 +174,26 @@ namespace NachoClient.AndroidClient
 
             listView.Scroll += ListView_Scroll;
 
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            NachoPlatform.Calendars.Instance.ChangeIndicator += PlatformCalendarChangeCallback;
+
             if (jumpToToday) {
                 jumpToToday = false;
                 eventListAdapter.Refresh (() => {
                     listView.SetSelection (eventListAdapter.PositionForToday);
                 });
+            } else {
+                eventListAdapter.Refresh ();
             }
 
             return view;
+        }
+
+        public override void OnDestroyView ()
+        {
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            NachoPlatform.Calendars.Instance.ChangeIndicator -= PlatformCalendarChangeCallback;
+            base.OnDestroyView ();
         }
 
         void ListView_Scroll (object sender, AbsListView.ScrollEventArgs e)
@@ -214,7 +227,12 @@ namespace NachoClient.AndroidClient
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
-            StartActivity (EventViewActivity.ShowEventIntent (Activity, eventListAdapter [e.Position]));
+            var ev = eventListAdapter [e.Position];
+            if (0 < ev.CalendarId) {
+                StartActivity (EventViewActivity.ShowEventIntent (Activity, ev));
+            } else {
+                StartActivity (AndroidCalendars.ViewEventIntent (ev));
+            }
         }
 
         void AddButton_Click (object sender, EventArgs e)
@@ -263,7 +281,22 @@ namespace NachoClient.AndroidClient
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
         }
 
-      
+        void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_EventSetChanged:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                eventListAdapter.Refresh ();
+                break;
+            }
+        }
+
+        void PlatformCalendarChangeCallback (object sender, EventArgs e)
+        {
+            eventListAdapter.Refresh ();
+        }
     }
 
     public class EventListAdapter : Android.Widget.BaseAdapter<McEvent>
@@ -275,11 +308,10 @@ namespace NachoClient.AndroidClient
 
         public EventListAdapter (CreateEventOnDateDelegate callback)
         {
-            eventCalendarMap = new NcAllEventsCalendarMap ();
+            eventCalendarMap = new AndroidEventsCalendarMap (DateTime.UtcNow.AddDays (-31), DateTime.UtcNow.AddYears (1));
             eventCalendarMap.Refresh (() => {
                 NotifyDataSetChanged ();
             });
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             createEventOnDateCallback = callback;
         }
 
@@ -370,18 +402,6 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-
-            switch (s.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_EventSetChanged:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                Refresh ();
-                break;
-            }
-        }
-
         private void AddButton_Click (object sender, EventArgs e)
         {
             DateTime date = ((JavaObjectWrapper<DateTime>)(((ImageView)sender).GetTag (Resource.Id.event_date_add))).Item;
@@ -408,6 +428,33 @@ namespace NachoClient.AndroidClient
                 return false;
             }
             return false;
+        }
+
+        private class AndroidEventsCalendarMap : NcEventsCalendarMapCommon
+        {
+            private DateTime startRange;
+            private DateTime endRange;
+
+            public AndroidEventsCalendarMap (DateTime startRange, DateTime endRange)
+            {
+                this.startRange = startRange;
+                this.endRange = endRange;
+            }
+
+            protected override List<McEvent> GetEventsWithDuplicates ()
+            {
+                var appEvents = McEvent.QueryEventsInRange (startRange, endRange);
+                var deviceEvents = AndroidCalendars.GetDeviceEvents (startRange, endRange);
+
+                var result = new List<McEvent> (appEvents.Count + deviceEvents.Count);
+                result.AddRange (appEvents);
+                result.AddRange (deviceEvents);
+                result.Sort ((x, y) => {
+                    return DateTime.Compare (x.StartTime, y.StartTime);
+                });
+
+                return result;
+            }
         }
     }
 }

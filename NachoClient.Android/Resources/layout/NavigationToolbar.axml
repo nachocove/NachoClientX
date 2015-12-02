@@ -11,7 +11,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
                 android:id="@+id/hot_image"
@@ -20,8 +20,7 @@
                 android:layout_height="20dp"
                 android:layout_marginTop="8dp"
                 android:scaleType="fitXY"
-                android:layout_gravity="center"
-                android:background="@android:color/white" />
+                android:layout_gravity="center" />
             <TextView
                 android:text="@string/hot"
                 android:layout_width="fill_parent"
@@ -30,15 +29,14 @@
                 android:padding="2dp"
                 android:textSize="12dp"
                 android:textStyle="normal"
-                android:textColor="@color/NachoTextGray"
-                android:background="@android:color/white" />
+                android:textColor="@color/NachoTextGray" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/inbox"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
                 android:id="@+id/inbox_image"
@@ -47,8 +45,7 @@
                 android:layout_height="20dp"
                 android:layout_marginTop="8dp"
                 android:scaleType="fitXY"
-                android:layout_gravity="center"
-                android:background="@android:color/white" />
+                android:layout_gravity="center" />
             <TextView
                 android:text="@string/inbox"
                 android:layout_width="fill_parent"
@@ -57,15 +54,14 @@
                 android:padding="2dp"
                 android:textSize="12dp"
                 android:textStyle="normal"
-                android:textColor="@color/NachoTextGray"
-                android:background="@android:color/white" />
+                android:textColor="@color/NachoTextGray" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/calendar"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
                 android:id="@+id/calendar_image"
@@ -74,8 +70,7 @@
                 android:layout_height="20dp"
                 android:layout_marginTop="8dp"
                 android:scaleType="fitXY"
-                android:layout_gravity="center"
-                android:background="@android:color/white" />
+                android:layout_gravity="center" />
             <TextView
                 android:text="@string/calendar"
                 android:layout_width="fill_parent"
@@ -84,15 +79,14 @@
                 android:padding="2dp"
                 android:textSize="12dp"
                 android:textStyle="normal"
-                android:textColor="@color/NachoTextGray"
-                android:background="@android:color/white" />
+                android:textColor="@color/NachoTextGray" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/contacts"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
                 android:id="@+id/contacts_image"
@@ -101,8 +95,7 @@
                 android:layout_height="20dp"
                 android:layout_marginTop="8dp"
                 android:scaleType="fitXY"
-                android:layout_gravity="center"
-                android:background="@android:color/white" />
+                android:layout_gravity="center" />
             <TextView
                 android:text="@string/contacts"
                 android:layout_width="fill_parent"
@@ -111,15 +104,14 @@
                 android:padding="2dp"
                 android:textSize="12dp"
                 android:textStyle="normal"
-                android:textColor="@color/NachoTextGray"
-                android:background="@android:color/white" />
+                android:textColor="@color/NachoTextGray" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/more"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/white"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
             <ImageView
                 android:id="@+id/more_image"
@@ -128,8 +120,7 @@
                 android:layout_height="20dp"
                 android:layout_marginTop="8dp"
                 android:scaleType="fitXY"
-                android:layout_gravity="center"
-                android:background="@android:color/white" />
+                android:layout_gravity="center" />
             <TextView
                 android:text="@string/more"
                 android:layout_width="fill_parent"
@@ -138,8 +129,7 @@
                 android:padding="2dp"
                 android:textSize="12dp"
                 android:textStyle="normal"
-                android:textColor="@color/NachoTextGray"
-                android:background="@android:color/white" />
+                android:textColor="@color/NachoTextGray" />
         </LinearLayout>
     </LinearLayout>
 </merge>

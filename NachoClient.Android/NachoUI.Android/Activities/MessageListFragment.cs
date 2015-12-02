@@ -252,7 +252,7 @@ namespace NachoClient.AndroidClient
             recyclerView.SetAdapter (messageListAdapter);
 
             recyclerView.setMenuCreator ((menu) => {
-                if(MessageListAdapter.SUMMARY_STYLE == menu.getViewType()) {
+                if (MessageListAdapter.SUMMARY_STYLE == menu.getViewType ()) {
                     return;
                 }
                 if (!(messages.HasDraftsSemantics () || messages.HasOutboxSemantics ())) {
@@ -334,6 +334,10 @@ namespace NachoClient.AndroidClient
 
         class MessageListScrollListener : RecyclerView.OnScrollListener
         {
+            // Positive means pushing up
+            int lastDy;
+            bool userInitiated;
+
             public override void OnScrollStateChanged (RecyclerView recyclerView, int newState)
             {
                 var swipeMenuRecyclerView = (SwipeMenuRecyclerView)recyclerView;
@@ -341,6 +345,7 @@ namespace NachoClient.AndroidClient
                 case RecyclerView.ScrollStateDragging:
                 case RecyclerView.ScrollStateSettling:
                     swipeMenuRecyclerView.EnableSwipe (false);
+                    userInitiated |= (RecyclerView.ScrollStateDragging == newState);
                     if (!NcApplication.Instance.IsBackgroundAbateRequired) {
                         NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment ScrollStateChanged");
                     }
@@ -352,6 +357,36 @@ namespace NachoClient.AndroidClient
                     }
                     break;
                 }
+                if ((RecyclerView.ScrollStateSettling != newState) && (RecyclerView.ScrollStateIdle != newState)) {
+                    return;
+                }
+                if (!userInitiated) {
+                    return; // Prevent jitter
+                }
+                userInitiated = false;
+
+                var adapter = (WrapperRecyclerAdapter)swipeMenuRecyclerView.GetAdapter ();
+                var messageListAdapter = (MessageListAdapter)adapter.GetWrappedAdapter ();
+                if (MessageListAdapter.CARDVIEW_STYLE != messageListAdapter.currentStyle) {
+                    return;
+                }
+                var layoutManager = (LinearLayoutManager)swipeMenuRecyclerView.GetLayoutManager ();
+
+                int scrollToPosition;
+
+                if (0 < lastDy) {
+                    scrollToPosition = layoutManager.FindLastVisibleItemPosition ();
+                } else {
+                    scrollToPosition = layoutManager.FindFirstVisibleItemPosition ();
+                }
+                if (RecyclerView.NoPosition != scrollToPosition) {
+                    recyclerView.SmoothScrollToPosition (scrollToPosition);
+                }
+            }
+
+            public override void OnScrolled (RecyclerView recyclerView, int dx, int dy)
+            {
+                lastDy = dy;
             }
         }
 
@@ -782,14 +817,41 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        void NotifyChanges (List<int> adds, List<int> deletes)
+        {
+            ClearCache ();
+            if (null == adds && null == deletes) {
+                messageListAdapter.NotifyDataSetChanged ();
+                return;
+            }
+            NcAssert.False (null != adds && null != deletes);
+
+            var list = (null == adds) ? deletes : adds;
+            var firstIndex = list [0];
+
+            list.Sort ();
+            list.Reverse ();
+
+            foreach (var position in list) {
+                if (null == adds) {
+                    messageListAdapter.NotifyItemRemoved (position);
+                } else {
+                    messageListAdapter.NotifyItemInserted (position);
+                }
+            }
+            // Force re-bind to update menu swipe 'position' field
+            var range = messageListAdapter.ItemCount - firstIndex;
+            messageListAdapter.NotifyItemRangeChanged (firstIndex, range);
+               
+        }
+
         public void RefreshIfVisible ()
         {
             List<int> adds;
             List<int> deletes;
             NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfVisible");
             if (messages.Refresh (out adds, out deletes)) {
-                ClearCache ();
-                messageListAdapter.NotifyDataSetChanged ();
+                NotifyChanges (adds, deletes);
             }
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfVisible");
             if (0 == messages.Count ()) {
@@ -804,8 +866,7 @@ namespace NachoClient.AndroidClient
             List<int> deletes;
             NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfNeeded");
             if (NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes)) {
-                ClearCache ();
-                messageListAdapter.NotifyDataSetChanged ();
+                NotifyChanges (adds, deletes);
             } else {
                 RefreshVisibleMessageCells ();
             }

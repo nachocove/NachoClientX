@@ -918,17 +918,19 @@ namespace NachoClient.iOS
             } else {
                 switch (controllerType) {
                 case ControllerType.Edit:
-                    SaveNotesText ();
-                    contact.DeleteAncillary ();
-                    contact.Addresses.Clear ();
-                    contact.Categories.Clear ();
-                    contact.EmailAddresses.Clear ();
-                    contact.Relationships.Clear ();
-                    contact.PhoneNumbers.Clear ();
-                    contact.IMAddresses.Clear ();
-                    contact.Dates.Clear ();
-                    ContactsHelper.CopyContact (contactCopy, ref contact);
-                    contact.Update ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        SaveNotesText ();
+                        contact.DeleteAncillary ();
+                        contact.Addresses.Clear ();
+                        contact.Categories.Clear ();
+                        contact.EmailAddresses.Clear ();
+                        contact.Relationships.Clear ();
+                        contact.PhoneNumbers.Clear ();
+                        contact.IMAddresses.Clear ();
+                        contact.Dates.Clear ();
+                        ContactsHelper.CopyContact (contactCopy, ref contact);
+                        contact.Update ();
+                    });
                     NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
                     break;
                 case ControllerType.Add:

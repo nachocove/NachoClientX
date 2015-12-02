@@ -75,9 +75,36 @@ namespace NachoClient.AndroidClient
 
         public class MessageViewHolder : RecyclerView.ViewHolder
         {
-            public MessageViewHolder (View itemView, Action<int> click) : base (itemView)
+            ImageView chiliView;
+
+            public MessageViewHolder (View itemView, Action<int> click, Action<int,ImageView> chiliClick,
+                                      Action<int> replyClick, Action<int> replyAllClick, Action<int> forwardClick, Action<int> archiveClick, Action<int> deleteClick) : base (itemView)
             {
                 itemView.Click += (object sender, EventArgs e) => click (AdapterPosition);
+
+                chiliView = itemView.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+                chiliView.Click += (object sender, EventArgs e) => chiliClick (AdapterPosition, chiliView);
+
+                if (null != replyClick) {
+                    var replyButton = itemView.FindViewById (Resource.Id.reply);
+                    replyButton.Click += (object sender, EventArgs e) => replyClick (AdapterPosition);
+                }
+                if (null != replyAllClick) {
+                    var replyAllButton = itemView.FindViewById (Resource.Id.reply_all);
+                    replyAllButton.Click += (object sender, EventArgs e) => replyAllClick (AdapterPosition);
+                }
+                if (null != forwardClick) {
+                    var forwardButton = itemView.FindViewById (Resource.Id.forward);
+                    forwardButton.Click += (object sender, EventArgs e) => forwardClick (AdapterPosition);
+                }
+                if (null != archiveClick) {
+                    var archiveButton = itemView.FindViewById (Resource.Id.archive);
+                    archiveButton.Click += (object sender, EventArgs e) => archiveClick (AdapterPosition);
+                }
+                if (null != deleteClick) {
+                    var deleteButton = itemView.FindViewById (Resource.Id.delete);
+                    deleteButton.Click += (object sender, EventArgs e) => deleteClick (AdapterPosition);
+                }
             }
         }
 
@@ -156,24 +183,22 @@ namespace NachoClient.AndroidClient
         RecyclerView.ViewHolder CreateSummaryViewHolder (ViewGroup parent)
         {
             var itemView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.HotSummaryFragment, parent, false);
+            itemView.SetMinimumHeight (parent.MeasuredHeight);
+            itemView.LayoutParameters.Height = parent.MeasuredHeight;
             return new SummaryViewHolder (itemView, InboxView_Click, DeferredView_Click, DeadlinesView_Click);
         }
 
         RecyclerView.ViewHolder CreateListViewHolder (ViewGroup parent)
         {
             var itemView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCell, parent, false);
-            var chiliView = itemView.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
-            chiliView.Click += ChiliView_Click;
-            return new MessageViewHolder (itemView, ItemView_Click);
+            return new MessageViewHolder (itemView, ItemView_Click, ChiliView_Click, null, null, null, null, null);
         }
 
         RecyclerView.ViewHolder CreateCardViewHolder (ViewGroup parent)
         {
             var itemView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCard, parent, false);
-            AttachCardListeners (itemView);
 
             var webView = itemView.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
-
             webView.Clickable = false;
             webView.LongClickable = false;
             webView.Focusable = false;
@@ -182,7 +207,8 @@ namespace NachoClient.AndroidClient
 
             itemView.SetMinimumHeight (parent.MeasuredHeight);
             itemView.LayoutParameters.Height = parent.MeasuredHeight;
-            return new MessageViewHolder (itemView, ItemView_Click);
+
+            return new MessageViewHolder (itemView, ItemView_Click, ChiliView_Click, ReplyButton_Click, ReplyAllButton_Click, ForwardButton_Click, ArchiveButton_Click, DeleteButton_Click);
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
@@ -250,16 +276,11 @@ namespace NachoClient.AndroidClient
                 multiSelectView.Visibility = ViewStates.Invisible;
             }
 
-            var chiliTagView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
-            chiliTagView.Tag = position;
-
             return view;
         }
 
-        void MessageFromSender (object sender, out McEmailMessageThread thread, out McEmailMessage message)
+        void MessageFromPosition (int position, out McEmailMessageThread thread, out McEmailMessage message)
         {
-            var view = (View)sender;
-            var position = (int)view.Tag;
             if (searching) {
                 thread = owner.searchResultsMessages.GetEmailThread (position);
             } else {
@@ -275,12 +296,11 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void ChiliView_Click (object sender, EventArgs e)
+        void ChiliView_Click (int position, ImageView chiliView)
         {
             McEmailMessage message;
             McEmailMessageThread thread;
-            var chiliView = (Android.Widget.ImageView)sender;
-            MessageFromSender (sender, out thread, out message);
+            MessageFromPosition (position, out thread, out message);
             NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
             Bind.BindMessageChili (thread, message, chiliView);
         }
@@ -292,18 +312,10 @@ namespace NachoClient.AndroidClient
 
         View BindCardView (View view, int position)
         {
-            var thread = owner.messages.GetEmailThread (position);
-            var message = owner.GetCachedMessage (position);
-
+            McEmailMessage message;
+            McEmailMessageThread thread;
+            MessageFromPosition (position, out thread, out message);
             BindValues (view, thread, message);
-
-            view.FindViewById (Resource.Id.chili).Tag = position;
-            view.FindViewById (Resource.Id.reply).Tag = position;
-            view.FindViewById (Resource.Id.reply_all).Tag = position;
-            view.FindViewById (Resource.Id.forward).Tag = position;
-            view.FindViewById (Resource.Id.archive).Tag = position;
-            view.FindViewById (Resource.Id.delete).Tag = position;
-
             return view;
         }
 
@@ -313,27 +325,6 @@ namespace NachoClient.AndroidClient
             {
                 return false;
             }
-        }
-
-        void AttachCardListeners (View view)
-        {
-            var replyButton = view.FindViewById (Resource.Id.reply);
-            replyButton.Click += ReplyButton_Click;
-
-            var replyAllButton = view.FindViewById (Resource.Id.reply_all);
-            replyAllButton.Click += ReplyAllButton_Click;
-
-            var forwardButton = view.FindViewById (Resource.Id.forward);
-            forwardButton.Click += ForwardButton_Click;
-
-            var archiveButton = view.FindViewById (Resource.Id.archive);
-            archiveButton.Click += ArchiveButton_Click;
-
-            var deleteButton = view.FindViewById (Resource.Id.delete);
-            deleteButton.Click += DeleteButton_Click;
-
-            var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
-            chiliView.Click += ChiliView_Click;
         }
 
         void BindValues (View view, McEmailMessageThread thread, McEmailMessage message)
@@ -628,50 +619,50 @@ namespace NachoClient.AndroidClient
         {
         }
 
-        void ArchiveButton_Click (object sender, EventArgs e)
+        void ArchiveButton_Click (int position)
         {
             Log.Info (Log.LOG_UI, "ArchiveButton_Click");
             McEmailMessage message;
             McEmailMessageThread thread;
-            MessageFromSender (sender, out thread, out message);
+            MessageFromPosition (position, out thread, out message);
             NcEmailArchiver.Archive (message);
             DoneWithMessage ();
         }
 
-        void DeleteButton_Click (object sender, EventArgs e)
+        void DeleteButton_Click (int position)
         {
             Log.Info (Log.LOG_UI, "DeleteButton_Click");
             McEmailMessage message;
             McEmailMessageThread thread;
-            MessageFromSender (sender, out thread, out message);
+            MessageFromPosition (position, out thread, out message);
             NcEmailArchiver.Delete (message);
             DoneWithMessage ();
         }
 
-        void ForwardButton_Click (object sender, EventArgs e)
+        void ForwardButton_Click (int position)
         {
             Log.Info (Log.LOG_UI, "ForwardButton_Click");
             McEmailMessage message;
             McEmailMessageThread thread;
-            MessageFromSender (sender, out thread, out message);
+            MessageFromPosition (position, out thread, out message);
             StartComposeActivity (EmailHelper.Action.Forward, thread, message);
         }
 
-        void ReplyButton_Click (object sender, EventArgs e)
+        void ReplyButton_Click (int position)
         {
             Log.Info (Log.LOG_UI, "ReplyButton_Click");
             McEmailMessage message;
             McEmailMessageThread thread;
-            MessageFromSender (sender, out thread, out message);
+            MessageFromPosition (position, out thread, out message);
             StartComposeActivity (EmailHelper.Action.Reply, thread, message);
         }
 
-        void ReplyAllButton_Click (object sender, EventArgs e)
+        void ReplyAllButton_Click (int position)
         {
             Log.Info (Log.LOG_UI, "ReplyAllButton_Click");
             McEmailMessage message;
             McEmailMessageThread thread;
-            MessageFromSender (sender, out thread, out message);
+            MessageFromPosition (position, out thread, out message);
             StartComposeActivity (EmailHelper.Action.ReplyAll, thread, message);
         }
 
