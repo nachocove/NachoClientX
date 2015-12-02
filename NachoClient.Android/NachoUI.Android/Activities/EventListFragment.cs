@@ -46,6 +46,7 @@ namespace NachoClient.AndroidClient
         ImageView todayButton;
 
         private bool jumpToToday = false;
+        bool isTouchScrolling;
 
         private class EventsObserver : Android.Database.DataSetObserver
         {
@@ -172,7 +173,7 @@ namespace NachoClient.AndroidClient
                 mSwipeRefreshLayout.Enabled = true;
             });
 
-            listView.Scroll += ListView_Scroll;
+            listView.ScrollStateChanged += ListView_ScrollStateChanged;
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             NachoPlatform.Calendars.Instance.ChangeIndicator += PlatformCalendarChangeCallback;
@@ -196,11 +197,21 @@ namespace NachoClient.AndroidClient
             base.OnDestroyView ();
         }
 
+        void ListView_ScrollStateChanged (object sender, AbsListView.ScrollStateChangedEventArgs e)
+        {
+            if (e.ScrollState == ScrollState.TouchScroll) {
+                isTouchScrolling = true;
+                listView.Scroll += ListView_Scroll;
+            } else if (isTouchScrolling && e.ScrollState == ScrollState.Idle) {
+                listView.Scroll -= ListView_Scroll;
+            }
+        }
+
         void ListView_Scroll (object sender, AbsListView.ScrollEventArgs e)
         {
-            var position = listView.FirstVisiblePosition;
+            var position = listView.FirstVisiblePosition - 2;
             var date = eventListAdapter.DateForPosition (position);
-//            calendarPager.SetHighlightedDate (date);
+            calendarPager.SetHighlightedDate (date);
         }
 
         public void StartAtToday ()

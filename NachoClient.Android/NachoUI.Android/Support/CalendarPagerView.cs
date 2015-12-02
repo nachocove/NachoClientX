@@ -35,6 +35,7 @@ namespace NachoClient.AndroidClient
         Calendar Calendar;
         DateTime FocusDate;
         DateTime HighlightedDate;
+        DateTime? QueuedHighlightDate;
         DateTime VisibleStartDate {
             get {
                 return PageViews [BufferedPageCount].StartDate;
@@ -100,6 +101,7 @@ namespace NachoClient.AndroidClient
         float PageTransitionProgress;
         int FirstDayOfWeek = 0;
         bool IsScrollingHorizontally;
+        bool IsPaging;
         enum PagerDisplayMode {
             Weeks,
             Months
@@ -370,6 +372,13 @@ namespace NachoClient.AndroidClient
 
         public void SetHighlightedDate (DateTime date)
         {
+            if (date == HighlightedDate) {
+                return;
+            }
+            if (IsPaging) {
+                QueuedHighlightDate = date;
+                return;
+            }
             HighlightedDate = date;
             if (DisplayMode == PagerDisplayMode.Months) {
                 if (date.Year != FocusDate.Year || date.Month != FocusDate.Month) {
@@ -451,6 +460,10 @@ namespace NachoClient.AndroidClient
 
         void PageViewsPrevious (float velocity = 0.0f, int pages = 1)
         {
+            if (IsPaging) {
+                return;
+            }
+            IsPaging = true;
             if (pages <= BufferedPageCount) {
                 var duration = 0.2f;
                 velocity = Math.Max (velocity, (float)Width / duration);
@@ -480,6 +493,11 @@ namespace NachoClient.AndroidClient
                     }
                     Update ();
                     RequestLayout ();
+                    IsPaging = false;
+                    if (QueuedHighlightDate.HasValue && QueuedHighlightDate.Value != HighlightedDate){
+                        SetHighlightedDate(QueuedHighlightDate.Value);
+                        QueuedHighlightDate = null;
+                    }
                 };
                 animator.Start ();
             } else {
@@ -489,6 +507,10 @@ namespace NachoClient.AndroidClient
 
         void PageViewsNext (float velocity = 0.0f, int pages = 1)
         {
+            if (IsPaging) {
+                return;
+            }
+            IsPaging = true;
             if (pages <= BufferedPageCount) {
                 velocity = Math.Max (velocity, (float)Width * 5.0f);
                 var animator = ValueAnimator.OfFloat (PageTransitionProgress, (float)(-pages));
@@ -516,6 +538,11 @@ namespace NachoClient.AndroidClient
                     }
                     Update ();
                     RequestLayout ();
+                    IsPaging = false;
+                    if (QueuedHighlightDate.HasValue && QueuedHighlightDate.Value != HighlightedDate){
+                        SetHighlightedDate(QueuedHighlightDate.Value);
+                        QueuedHighlightDate = null;
+                    }
                 };
                 animator.Start ();
             } else {
