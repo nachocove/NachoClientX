@@ -41,7 +41,7 @@ namespace NachoCore
         /// Get the events that should be displayed.  The list of events must be in chronological
         /// order.
         /// </summary>
-        protected abstract List<McEvent> GetEvents ();
+        protected abstract List<McEvent> GetEventsWithDuplicates ();
 
         protected NcEventsCalendarMapCommon ()
         {
@@ -274,30 +274,12 @@ namespace NachoCore
             }, "NcEventsCalendarMapCommonRefresh");
         }
 
-        /// <summary>
-        /// Return the midnight that is the same or later than the given date/time
-        /// </summary>
-        private DateTime NextMidnight (DateTime time)
-        {
-            DateTime midnight = time.ToLocalTime ().Date;
-            if (midnight != time) {
-                midnight = midnight.AddDays (1);
-            }
-            return midnight;
-        }
-    }
-
-    /// <summary>
-    /// A mapping between events and days on a calendar where all events are displayed.
-    /// </summary>
-    public class NcAllEventsCalendarMap : NcEventsCalendarMapCommon
-    {
-        protected override List<McEvent> GetEvents ()
+        private List<McEvent> GetEvents ()
         {
             var deviceAccount = McAccount.GetDeviceAccount ().Id;
             var currentAccount = NcApplication.Instance.Account.Id;
 
-            var result = McEvent.QueryAllEventsInOrder ();
+            var result = GetEventsWithDuplicates ();
 
             // Go through the list of events, removing duplicates.  In the initial pass, set any duplicate events
             // to null.  Then remove any null events in a single call to RemoveAll().  This two pass approach
@@ -332,6 +314,29 @@ namespace NachoCore
             });
 
             return result;
+        }
+
+        /// <summary>
+        /// Return the midnight that is the same or later than the given date/time
+        /// </summary>
+        private DateTime NextMidnight (DateTime time)
+        {
+            DateTime midnight = time.ToLocalTime ().Date;
+            if (midnight != time) {
+                midnight = midnight.AddDays (1);
+            }
+            return midnight;
+        }
+    }
+
+    /// <summary>
+    /// A mapping between events and days on a calendar where all events are displayed.
+    /// </summary>
+    public class NcAllEventsCalendarMap : NcEventsCalendarMapCommon
+    {
+        protected override List<McEvent> GetEventsWithDuplicates ()
+        {
+            return McEvent.QueryAllEventsInOrder ();
         }
     }
 }

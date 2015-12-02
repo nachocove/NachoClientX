@@ -66,6 +66,10 @@ namespace NachoClient.AndroidClient
             base.OnActivityCreated (savedInstanceState);
             this.ev = ((IEventViewFragmentOwner)Activity).EventToView;
             this.detail = new NcEventDetail (ev);
+            if (!detail.IsValid) {
+                EventWasDeleted ();
+                return;
+            }
             userResponse = detail.SpecificItem.HasResponseType () ? detail.SpecificItem.GetResponseType () : NcResponseType.None;
             BindEventView ();
             if (null != savedInstanceState) {
