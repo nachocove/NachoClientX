@@ -130,21 +130,12 @@ namespace NachoCore.Utils
                 option = TaskCreationOptions.LongRunning;
             }
 
-            TaskFactory factory;
-
-            #if __ANDROID__
-            var proxyTaskScheduler = new SimpleTaskScheduler ();
-            factory = new TaskFactory (proxyTaskScheduler);
-            #else
-            factory = new TaskFactory (TaskScheduler.Current);
-            #endif
-
             var tracer = new tracer ();
             tracer.parent = 0;
             tracer.child = 0;
 
             var spawningId = Thread.CurrentThread.ManagedThreadId;
-            var task = factory.StartNew (delegate {
+            var task = Task.Factory.StartNew (delegate {
                 #if __ANDROID__
                 if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
                     Log.Error (Log.LOG_UTILS, "StartNew running on main thread.");
