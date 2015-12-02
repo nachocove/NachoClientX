@@ -1654,6 +1654,8 @@
     <AndroidResource Include="Resources\drawable-hdpi\gen_nacholeft.png" />
     <AndroidResource Include="Resources\drawable-hdpi\gen_nachoright.png" />
     <AndroidResource Include="Resources\layout\MessageCard.axml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundToday.xml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundHighlighted.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

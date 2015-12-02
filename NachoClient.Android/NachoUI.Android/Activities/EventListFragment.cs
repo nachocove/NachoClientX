@@ -200,7 +200,7 @@ namespace NachoClient.AndroidClient
         {
             var position = listView.FirstVisiblePosition;
             var date = eventListAdapter.DateForPosition (position);
-            //calendarPager.SetFocusDate (date);
+//            calendarPager.SetHighlightedDate (date);
         }
 
         public void StartAtToday ()
@@ -221,7 +221,7 @@ namespace NachoClient.AndroidClient
 
         void TodayButton_Click (object sender, EventArgs e)
         {
-            calendarPager.SetFocusDate (DateTime.Today);
+            calendarPager.SetHighlightedDate (DateTime.Today);
             listView.SmoothScrollToPositionFromTop (eventListAdapter.PositionForToday, offset: 0, duration: 200);
         }
 

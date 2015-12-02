@@ -34,6 +34,7 @@ namespace NachoClient.AndroidClient
         public CalendarHasEvents HasEvents;
         Calendar Calendar;
         DateTime FocusDate;
+        DateTime HighlightedDate;
         DateTime VisibleStartDate {
             get {
                 return PageViews [BufferedPageCount].StartDate;
@@ -157,6 +158,7 @@ namespace NachoClient.AndroidClient
             AddView (MonthLabelB);
 
             FocusDate = DateTime.Now.ToLocalTime ().Date;
+            HighlightedDate = FocusDate;
             ConfigurePageViews ();
         }
 
@@ -366,8 +368,9 @@ namespace NachoClient.AndroidClient
             UpdateMonthLabels (1);
         }
 
-        public void SetFocusDate (DateTime date)
+        public void SetHighlightedDate (DateTime date)
         {
+            HighlightedDate = date;
             if (DisplayMode == PagerDisplayMode.Months) {
                 if (date.Year != FocusDate.Year || date.Month != FocusDate.Month) {
                     if (date < FocusDate) {
@@ -399,10 +402,12 @@ namespace NachoClient.AndroidClient
                     }
                 } else {
                     FocusDate = date;
+                    Update ();
                 }
             } else {
                 if (date >= VisibleStartDate && date < VisibleEndDate) {
                     FocusDate = date;
+                    Update ();
                 } else if (date >= BufferedStartDate && date < VisibleStartDate) {
                     int pages = 1;
                     while (pages < BufferedPageCount && date < PageViews[BufferedPageCount - pages].StartDate) {
@@ -473,7 +478,7 @@ namespace NachoClient.AndroidClient
                         }
                         --remaining;
                     }
-                    UpdateMonthLabels (1);
+                    Update ();
                     RequestLayout ();
                 };
                 animator.Start ();
@@ -509,7 +514,7 @@ namespace NachoClient.AndroidClient
                         }
                         --remaining;
                     }
-                    UpdateMonthLabels (1);
+                    Update ();
                     RequestLayout ();
                 };
                 animator.Start ();
@@ -529,7 +534,7 @@ namespace NachoClient.AndroidClient
 
         public void DateClicked (DateTime date)
         {
-            SetFocusDate (date);
+            SetHighlightedDate (date);
             if (DateSelected != null) {
                 DateSelected (date);
             }
@@ -793,6 +798,8 @@ namespace NachoClient.AndroidClient
             ImageView EventIndicator;
             public WeekView WeekView;
             bool IsAlt;
+            bool IsToday;
+            bool IsHighlighted;
 
             public DayView (Context context) : base (context)
             {
@@ -825,9 +832,17 @@ namespace NachoClient.AndroidClient
 
             public void Update ()
             {
+                IsToday = Date == DateTime.Now.ToLocalTime ().Date;
+                IsHighlighted = Date == WeekView.PageView.CalendarView.HighlightedDate;
                 DateLabel.Text = Date.Day.ToString ();
                 if (IsAlt) {
                     DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackgroundAlt);
+                    DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoTextGray));
+                } else if (IsHighlighted) {
+                    DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackgroundHighlighted);
+                    DateLabel.SetTextColor (Resources.GetColor (Android.Resource.Color.White));
+                } else if (IsToday) {
+                    DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackgroundToday);
                     DateLabel.SetTextColor (Resources.GetColor (Resource.Color.NachoTextGray));
                 } else {
                     DateLabel.SetBackgroundResource (Resource.Drawable.CalendarPagerDateBackground);
