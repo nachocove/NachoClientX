@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/quick_reply"
+        android:icon="@drawable/contact_quickemail"
+        android:title="@string/menu_quick_reply" />
+    <item
+        android:id="@+id/create_deadline"
+        android:icon="@drawable/email_calendartime"
+        android:title="@string/menu_create_deadline" />
+    <item
+        android:id="@+id/create_event"
+        android:icon="@drawable/cal_add"
+        android:title="@string/menu_create_event" />
+</menu>

@@ -39,6 +39,7 @@ namespace NachoClient.AndroidClient
         public const string EXTRA_MESSAGE = "com.nachocove.nachomail.message";
         public const string EXTRA_INITIAL_TEXT = "com.nachocove.nachomail.initialText";
         public const string EXTRA_INITIAL_RECIPIENT = "com.nachocove.nachomail.initialRecipient";
+        public const string EXTRA_INITIAL_QUICK_REPLY = "com.nachocove.nachomail.initialQuickReply";
 
         private const string COMPOSE_FRAGMENT_TAG = "ComposeFragment";
 
@@ -96,6 +97,9 @@ namespace NachoClient.AndroidClient
                     var to = Intent.GetStringExtra (EXTRA_INITIAL_RECIPIENT);
                     composeFragment.Composer.InitialRecipient = to;
                 }
+                if (Intent.HasExtra (EXTRA_INITIAL_QUICK_REPLY)) {
+                    composeFragment.Composer.InitialQuickReply = Intent.GetBooleanExtra (EXTRA_INITIAL_QUICK_REPLY, false);
+                }
                 savedMessageInfo = new MessageComposeActivityData ();
                 RetainedData = savedMessageInfo;
             }
@@ -122,12 +126,13 @@ namespace NachoClient.AndroidClient
             return intent;
         }
 
-        public static Intent RespondIntent (Context context, EmailHelper.Action action, int relatedMessageId)
+        public static Intent RespondIntent (Context context, EmailHelper.Action action, int relatedMessageId, bool quickReply = false)
         {
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_ACTION, (int)action);
             intent.PutExtra (EXTRA_RELATED_MESSAGE_ID, relatedMessageId);
+            intent.PutExtra (EXTRA_INITIAL_QUICK_REPLY, quickReply);
             return intent;
         }
 

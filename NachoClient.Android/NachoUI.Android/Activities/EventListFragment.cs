@@ -8,6 +8,7 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
+using Android.Graphics;
 
 //using Android.Util;
 using Android.Views;
@@ -46,6 +47,7 @@ namespace NachoClient.AndroidClient
         ImageView todayButton;
 
         private bool jumpToToday = false;
+        bool isTouchScrolling;
 
         private class EventsObserver : Android.Database.DataSetObserver
         {
@@ -101,9 +103,9 @@ namespace NachoClient.AndroidClient
             addButton.Click += AddButton_Click;
 
             todayButton = view.FindViewById<ImageView> (Resource.Id.right_button2);
-            todayButton.SetImageResource (Resource.Drawable.calendar_empty_cal_alt);
             todayButton.Visibility = ViewStates.Visible;
             todayButton.Click += TodayButton_Click;
+            DrawTodayButton ();
 
             calendarPager = view.FindViewById<CalendarPagerView> (Resource.Id.calendar_pager);
             calendarPager.DateSelected = PagerSelectedDate;
@@ -172,7 +174,7 @@ namespace NachoClient.AndroidClient
                 mSwipeRefreshLayout.Enabled = true;
             });
 
-            listView.Scroll += ListView_Scroll;
+            listView.ScrollStateChanged += ListView_ScrollStateChanged;
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             NachoPlatform.Calendars.Instance.ChangeIndicator += PlatformCalendarChangeCallback;
@@ -196,11 +198,39 @@ namespace NachoClient.AndroidClient
             base.OnDestroyView ();
         }
 
+        void DrawTodayButton ()
+        {
+            var date = DateTime.Now.ToLocalTime ().ToString(" d").Trim();
+            var opts = new BitmapFactory.Options ();
+            opts.InMutable = true;
+            var image = BitmapFactory.DecodeResource (Resources, Resource.Drawable.calendar_empty_cal_alt, opts);
+            var canvas = new Canvas (image);
+            var paint = new Paint ();
+            paint.TextSize = image.Height / 2.0f;
+            paint.Color = Resources.GetColor(Resource.Color.NachoTeal);
+            var bounds = new Rect ();
+            paint.GetTextBounds (date, 0, date.Length, bounds);
+            paint.TextAlign = Paint.Align.Center;
+            canvas.DrawText (date, (int)(image.Width / 2.0f), (int)((image.Height + bounds.Height()) / 2.0f), paint);
+            todayButton.SetImageBitmap (image);
+        }
+
+        void ListView_ScrollStateChanged (object sender, AbsListView.ScrollStateChangedEventArgs e)
+        {
+            if (e.ScrollState == ScrollState.TouchScroll) {
+                isTouchScrolling = true;
+                listView.Scroll += ListView_Scroll;
+            } else if (isTouchScrolling && e.ScrollState == ScrollState.Idle) {
+                listView.Scroll -= ListView_Scroll;
+                isTouchScrolling = false;
+            }
+        }
+
         void ListView_Scroll (object sender, AbsListView.ScrollEventArgs e)
         {
             var position = listView.FirstVisiblePosition;
             var date = eventListAdapter.DateForPosition (position);
-            //calendarPager.SetFocusDate (date);
+            calendarPager.SetHighlightedDate (date);
         }
 
         public void StartAtToday ()
@@ -211,6 +241,19 @@ namespace NachoClient.AndroidClient
         void PagerSelectedDate (DateTime date)
         {
             var position = eventListAdapter.PositionForDate (date);
+            ScrollToPosition (position);
+        }
+
+        void ScrollToPosition (int position)
+        {
+            // The internet says that we might not always get a ScrollState.Idle event in ListView_ScrollStateChanged,
+            // so protect against that case by making sure we're not listening for scroll before starting a smooth scroll.
+            // Since we call this function when we've already set the pager to a specific date, we don't want our scroll
+            // listener running and animating the pager away from and then back to the date it's already showing
+            if (isTouchScrolling) {
+                listView.Scroll -= ListView_Scroll;
+                isTouchScrolling = false;
+            }
             listView.SmoothScrollToPositionFromTop (position, offset: 0, duration: 200);
         }
 
@@ -221,8 +264,8 @@ namespace NachoClient.AndroidClient
 
         void TodayButton_Click (object sender, EventArgs e)
         {
-            calendarPager.SetFocusDate (DateTime.Today);
-            listView.SmoothScrollToPositionFromTop (eventListAdapter.PositionForToday, offset: 0, duration: 200);
+            calendarPager.SetHighlightedDate (DateTime.Today);
+            ScrollToPosition (eventListAdapter.PositionForToday);
         }
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
@@ -289,6 +332,13 @@ namespace NachoClient.AndroidClient
             case NcResult.SubKindEnum.Info_EventSetChanged:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 eventListAdapter.Refresh ();
+                break;
+
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                    DrawTodayButton ();
+                    calendarPager.Update ();
+                }
                 break;
             }
         }
@@ -416,7 +466,10 @@ namespace NachoClient.AndroidClient
 
         public DateTime DateForPosition (int position)
         {
-            return eventCalendarMap.GetDateUsingDayIndex (position);
+            int day;
+            int item;
+            eventCalendarMap.IndexToDayItem (position, out day, out item);
+            return eventCalendarMap.GetDateUsingDayIndex (day);
         }
 
         public bool HasEvents (DateTime date)
