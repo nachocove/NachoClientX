@@ -721,6 +721,14 @@ namespace NachoCore.Utils
 
         protected override void VisitMultipartRelated (MultipartRelated related)
         {
+            if (related == null) {
+                Log.Warn (Log.LOG_UTILS, "NcEmailMessageBundle got null related part");
+                return;
+            }
+            if (related.Root == null) {
+                Log.Warn (Log.LOG_UTILS, "NcEmailMessageBundle got null related.Root");
+                return;
+            }
             parsed.RelatedStack.Add (related);
             related.Root.Accept (this);
             parsed.RelatedStack.RemoveAt (parsed.RelatedStack.Count - 1);
