@@ -143,7 +143,7 @@ namespace NachoCore.Utils
             }, null, duration, PollingPeriod);
         }
 
-        protected NcHttpClient HttpClient {
+        public virtual INcHttpClient HttpClient {
             get {
                 return NcHttpClient.Instance;
             }

@@ -781,7 +781,7 @@ namespace Test.iOS
                 return hasCert;
             };
 
-            AsHttpOperation.TestHttpClient = MockHttpClient.Instance;
+            NcProtoControl.TestHttpClient = MockHttpClient.Instance;
             var autod = new AsAutodiscoverCommand (mockContext);
 
             autodCommand = autod;

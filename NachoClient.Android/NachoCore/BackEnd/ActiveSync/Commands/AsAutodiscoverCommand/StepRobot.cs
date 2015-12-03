@@ -16,7 +16,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using ModernHttpClient;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -686,7 +685,7 @@ namespace NachoCore.ActiveSync
                     var request = new NcHttpRequest (HttpMethod.Get, ReDirUri);
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     LastUri = ReDirUri;
-                    NcHttpClient.Instance.GetRequest (request, CertTimeout.Milliseconds, GetServerCertSuccess, GetServerCertError, Cts.Token);
+                    Command.ProtoControl.HttpClient.GetRequest (request, CertTimeout.Milliseconds, GetServerCertSuccess, GetServerCertError, Cts.Token);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRGSC3");
                     return;

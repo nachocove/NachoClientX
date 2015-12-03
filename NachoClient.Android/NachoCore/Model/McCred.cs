@@ -218,6 +218,17 @@ namespace NachoCore.Model
             public string refresh_token { get; set; }
         }
 
+        static public INcHttpClient TestHttpClient { get; set; }
+        public INcHttpClient HttpClient {
+            get {
+                if (TestHttpClient != null) {
+                    return TestHttpClient;
+                } else {
+                    return NcHttpClient.Instance;
+                }
+            }
+        }
+
         public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
         {
             var account = McAccount.QueryById<McAccount> (AccountId);
@@ -231,7 +242,7 @@ namespace NachoCore.Model
                 var request = new NcHttpRequest (HttpMethod.Post, requestUri);
                 int timeoutSecs = 30;
 
-                NcHttpClient.Instance.SendRequest (request, timeoutSecs, ((response, token) => {
+                HttpClient.SendRequest (request, timeoutSecs, ((response, token) => {
                     if (response.StatusCode != System.Net.HttpStatusCode.OK) {
                         Log.Error (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", response.StatusCode.ToString ());
                         onFailure (this);

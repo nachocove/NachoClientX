@@ -2,6 +2,10 @@
 //
 using System;
 using NUnit.Framework;
+using NachoCore.Utils;
+using NachoPlatform;
+using Test.iOS;
+using System.Linq;
 
 namespace Test.Common
 {
@@ -36,14 +40,29 @@ WcBGtev/8VsUijyjsM072C6Ut5TwNyrrthb952+eKlmxLNgT0o5hVYxjXhtwLQsL
 7QZhrypAM1DLYqQjkiDI7hlvt7QuDGTJ
 -----END X509 CRL-----
 ";
-            var snList = NachoPlatformBinding.Crypto.CrlGetRevoked (crl);
+            
+            var snList = WrappedCrlMonitor.CrlGetRevoked (crl).ToArray ();
             Assert.AreEqual (5, snList.Length);
+            Console.WriteLine ("SN List: {0}", string.Join (", ", snList));
             Assert.AreEqual ("147947", snList [0]);
             Assert.AreEqual ("147948", snList [1]);
             Assert.AreEqual ("147949", snList [2]);
             Assert.AreEqual ("14794A", snList [3]);
             Assert.AreEqual ("14794B", snList [4]);
         }
+    }
+
+    public class WrappedCrlMonitor : CrlMonitor
+    {
+        public WrappedCrlMonitor (string url) : base (url)
+        {}
+
+        public override INcHttpClient HttpClient {
+            get {
+                return MockHttpClient.Instance;
+            }
+        }
+
     }
 }
 

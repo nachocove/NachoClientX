@@ -111,6 +111,17 @@ namespace NachoCore
             Cts = new CancellationTokenSource ();
         }
 
+        static public INcHttpClient TestHttpClient { get; set; }
+        public INcHttpClient HttpClient {
+            get {
+                if (TestHttpClient != null) {
+                    return TestHttpClient;
+                } else {
+                    return NcHttpClient.Instance;
+                }
+            }
+        }
+
         protected void SetupAccount ()
         {
             // Hang our records off Account.

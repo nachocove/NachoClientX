@@ -806,7 +806,7 @@ namespace Test.iOS
             // provides the mock owner
             BaseMockOwner owner = CreateMockOwner (CommonMockData.MockUri, CommonMockData.MockRequestXml);
 
-            AsHttpOperation.TestHttpClient = MockHttpClient.Instance;
+            NcProtoControl.TestHttpClient = MockHttpClient.Instance;
             var op = new AsHttpOperation ("Ping", owner, Context);
 
             var mockCommStatusInstance = MockNcCommStatus.Instance;
