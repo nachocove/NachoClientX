@@ -41,14 +41,14 @@ WcBGtev/8VsUijyjsM072C6Ut5TwNyrrthb952+eKlmxLNgT0o5hVYxjXhtwLQsL
 -----END X509 CRL-----
 ";
             
-            var snList = WrappedCrlMonitor.CrlGetRevoked (crl).ToArray ();
-            Assert.AreEqual (5, snList.Length);
-            Console.WriteLine ("SN List: {0}", string.Join (", ", snList));
-            Assert.AreEqual ("147947", snList [0]);
-            Assert.AreEqual ("147948", snList [1]);
-            Assert.AreEqual ("147949", snList [2]);
-            Assert.AreEqual ("14794A", snList [3]);
-            Assert.AreEqual ("14794B", snList [4]);
+            var snList = WrappedCrlMonitor.CrlGetRevoked (crl);
+            Assert.AreEqual (5, snList.Count);
+            //SN List: 14794A, 147947, 147948, 147949, 14794B
+            Assert.IsTrue (snList.Contains ("14794A"));
+            Assert.IsTrue (snList.Contains ("147947"));
+            Assert.IsTrue (snList.Contains ("147948"));
+            Assert.IsTrue (snList.Contains ("147949"));
+            Assert.IsTrue (snList.Contains ("14794B"));
         }
     }
 
