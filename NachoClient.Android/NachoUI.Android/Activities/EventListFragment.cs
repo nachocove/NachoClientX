@@ -222,6 +222,7 @@ namespace NachoClient.AndroidClient
                 listView.Scroll += ListView_Scroll;
             } else if (isTouchScrolling && e.ScrollState == ScrollState.Idle) {
                 listView.Scroll -= ListView_Scroll;
+                isTouchScrolling = false;
             }
         }
 
@@ -240,6 +241,19 @@ namespace NachoClient.AndroidClient
         void PagerSelectedDate (DateTime date)
         {
             var position = eventListAdapter.PositionForDate (date);
+            ScrollToPosition (position);
+        }
+
+        void ScrollToPosition (int position)
+        {
+            // The internet says that we might not always get a ScrollState.Idle event in ListView_ScrollStateChanged,
+            // so protect against that case by making sure we're not listening for scroll before starting a smooth scroll.
+            // Since we call this function when we've already set the pager to a specific date, we don't want our scroll
+            // listener running and animating the pager away from and then back to the date it's already showing
+            if (isTouchScrolling) {
+                listView.Scroll -= ListView_Scroll;
+                isTouchScrolling = false;
+            }
             listView.SmoothScrollToPositionFromTop (position, offset: 0, duration: 200);
         }
 
@@ -251,7 +265,7 @@ namespace NachoClient.AndroidClient
         void TodayButton_Click (object sender, EventArgs e)
         {
             calendarPager.SetHighlightedDate (DateTime.Today);
-            listView.SmoothScrollToPositionFromTop (eventListAdapter.PositionForToday, offset: 0, duration: 200);
+            ScrollToPosition (eventListAdapter.PositionForToday);
         }
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
