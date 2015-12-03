@@ -1281,7 +1281,7 @@ namespace NachoCore.ActiveSync
                         } else { // use Sync
                             Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Sync");
                             SyncKit syncKit = GenSyncKitFromPingKit (protocolState, rlPingKit);
-                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync,
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
                                 new AsSyncCommand (BEContext, syncKit));
                         }
                     }
@@ -1344,7 +1344,7 @@ namespace NachoCore.ActiveSync
                     } else { // use Sync
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping using EAS Sync");
                         SyncKit syncKit = GenSyncKitFromPingKit (protocolState, pingKit);
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync,
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
                             new AsSyncCommand (BEContext, syncKit));
                     }
                 }
