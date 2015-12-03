@@ -240,7 +240,7 @@ namespace NachoCore.Utils
             var revokedList = crl.GetRevokedCertificates ();
             if (revokedList != null) {
                 foreach (X509CrlEntry revoked in revokedList) {
-                    ret.Add (revoked.SerialNumber.ToString ());
+                    ret.Add (revoked.SerialNumber.LongValue.ToString ("X"));
                 }
             }
             return ret;
