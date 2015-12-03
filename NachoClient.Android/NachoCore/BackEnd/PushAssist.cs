@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using ModernHttpClient;
 using Newtonsoft.Json;
 using NachoCore.Utils;
 using NachoCore.Model;

@@ -9,7 +9,6 @@ all:
 	make -C ../NachoUIMonitorBinding
 	make -C ../DnDns/SourceCode/DnDns -f ../../../NachoClientX/DnDns.mk
 	make -C ../DDay-iCal-Xamarin
-	make -C ../ModernHttpClient
 	make -C ../MailKit SOLUTION=MailKit.Mobile.sln
 	make -C native.iOS
 	make -C native.Android
@@ -24,7 +23,6 @@ clean:
 	make -C ../NachoUIMonitorBinding clean
 	make -C ../DnDns/SourceCode/DnDns -f ../../../NachoClientX/DnDns.mk clean
 	make -C ../DDay-iCal-Xamarin clean
-	make -C ../ModernHttpClient clean
 	make -C ../MailKit SOLUTION=MailKit.Mobile.sln clean
 	make -C native.iOS clean
 	make -C native.Android clean

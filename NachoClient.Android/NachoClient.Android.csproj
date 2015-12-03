@@ -104,9 +104,6 @@
       <HintPath>..\packages\Xamarin.Android.Support.Design.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.Design.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Android.Export" />
-    <Reference Include="OkHttp">
-      <HintPath>..\..\ModernHttpClient-demo\vendor\okhttp\OkHttp.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -784,10 +781,6 @@
       <Project>{628CA4C5-0D38-416C-8E46-D8E4BD3CE0FB}</Project>
       <Name>JetBlack.Caching.Android</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\ModernHttpClient-demo\src\ModernHttpClient\ModernHttpClient.Android.csproj">
-      <Project>{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}</Project>
-      <Name>ModernHttpClient.Android</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\TokenAutoCompleteBinding\TokenAutoCompleteBinding\TokenAutoCompleteBinding.csproj">
       <Project>{17E3A80E-B371-4138-AB0F-7176BF026EAF}</Project>
       <Name>TokenAutoCompleteBinding</Name>
@@ -795,6 +788,10 @@
     <ProjectReference Include="..\..\rtfparserkitBinding\rtfparserkitBinding\rtfparserkitBinding.csproj">
       <Project>{40A75D1C-1C71-41F5-9B84-A3884CD1EE81}</Project>
       <Name>rtfparserkitBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\OkHttp-Xamarin\OkHttp\OkHttp.csproj">
+      <Project>{133270E5-3A11-4A4A-A4AD-1D89FC9DBAAF}</Project>
+      <Name>OkHttp</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

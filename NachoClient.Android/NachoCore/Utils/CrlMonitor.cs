@@ -6,7 +6,6 @@ using System.Threading;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using ModernHttpClient;
 using Org.BouncyCastle.X509;
 using System.IO;
 using Org.BouncyCastle.Security.Certificates;

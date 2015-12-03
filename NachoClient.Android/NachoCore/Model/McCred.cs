@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using SQLite;
-using ModernHttpClient;
 using Newtonsoft.Json;
 using NachoCore.Utils;
 using NachoClient.Build;

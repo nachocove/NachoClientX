@@ -17,8 +17,6 @@ repos = (
     'CSharp-Name-Parser',
     'Telemetry',
     'aws-sdk-xamarin',
-    'ModernHttpClient',
-    'ModernHttpClient-demo',
     'lucene.net-3.0.3',
     'MobileHtmlAgilityPack',
     'Google.iOS',
@@ -29,6 +27,7 @@ repos = (
     'TokenAutoCompleteBinding',
     'rtfparserkit',
     'rtfparserkitBinding',
+    'OkHttp-Xamarin',
     # This is always the last one
     'NachoClientX'
 )
@@ -38,9 +37,6 @@ branch_exceptions = {
         # bc-csharp is fixed to this branch no matter what
         'fixed-branch': 'visual-studio-2010'
     },
-    'ModernHttpClient-demo': {
-        'fixed-branch': 'demo'
-    }
 }
 
 # You can run this script:
