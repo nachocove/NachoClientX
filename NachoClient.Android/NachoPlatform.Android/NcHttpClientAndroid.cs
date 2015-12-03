@@ -403,7 +403,7 @@ namespace NachoPlatform
                 return Body.ContentType ();
             }
 
-            public override void WriteTo (OkHttp.Okio.IBufferedSink p0)
+            public override void WriteTo (IBufferedSink p0)
             {
                 IBufferedSink bufferedSink;
 
