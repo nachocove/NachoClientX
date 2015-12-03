@@ -41,6 +41,9 @@ namespace NachoCore.Wbxml
                 RedactedCopyBufferPos = 0;
             }
             dataStream = data;
+            if (dataStream != null) {
+                dataStreamLen = dataStream.Length;
+            }
             if (null == bytes) {
                 buffer = new byte[bufferSize(data)];
                 fillBuffer ();

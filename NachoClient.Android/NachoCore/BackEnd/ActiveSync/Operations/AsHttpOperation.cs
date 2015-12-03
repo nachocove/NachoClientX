@@ -583,9 +583,6 @@ namespace NachoCore.ActiveSync
                             var isWedged = false;
                             int timeoutInSeconds = response.ContentLength >= 100000 ? 60 : 20;
                             long loadBytesDuration;
-                            // FIXME: Figure out why the loop over the bytes read internal from the FileStream is so slow.
-                            // until then, read it all into memory (ugh)
-                            byte[] data = File.ReadAllBytes (ContentData.Name);
                             using (var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper",
                                 (state) => {
                                     if (!cToken.IsCancellationRequested) {
@@ -597,7 +594,7 @@ namespace NachoCore.ActiveSync
                                 },
                                 cToken, timeoutInSeconds * 1000, System.Threading.Timeout.Infinite)) {
                                 using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
-                                    decoder.LoadBytes (AccountId, data);
+                                    decoder.LoadBytes (AccountId, ContentData);
                                     loadBytesDuration = capture.ElapsedMilliseconds;
                                 }
                                 // There is a small race we are living with. The diaper callback could be 
