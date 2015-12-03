@@ -228,7 +228,7 @@ namespace NachoClient.AndroidClient
 
         void ListView_Scroll (object sender, AbsListView.ScrollEventArgs e)
         {
-            var position = listView.FirstVisiblePosition - 2;
+            var position = listView.FirstVisiblePosition;
             var date = eventListAdapter.DateForPosition (position);
             calendarPager.SetHighlightedDate (date);
         }
@@ -465,7 +465,10 @@ namespace NachoClient.AndroidClient
 
         public DateTime DateForPosition (int position)
         {
-            return eventCalendarMap.GetDateUsingDayIndex (position);
+            int day;
+            int item;
+            eventCalendarMap.IndexToDayItem (position, out day, out item);
+            return eventCalendarMap.GetDateUsingDayIndex (day);
         }
 
         public bool HasEvents (DateTime date)
