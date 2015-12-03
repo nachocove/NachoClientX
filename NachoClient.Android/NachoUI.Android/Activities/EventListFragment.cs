@@ -121,7 +121,7 @@ namespace NachoClient.AndroidClient
             listView.setMenuCreator ((menu) => {
                 if (EVENT_CELL_TYPE == menu.getViewType ()) {
                     SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                    lateItem.setBackground (A.Drawable_NachoSwipeCalendarLate (this.Activity));
                     lateItem.setWidth (dp2px (90));
                     lateItem.setTitle ("I'm Late");
                     lateItem.setTitleSize (14);
@@ -131,7 +131,7 @@ namespace NachoClient.AndroidClient
                     menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
 
                     SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                    forwardItem.setBackground (A.Drawable_NachoSwipeCalendarForward (this.Activity));
                     forwardItem.setWidth (dp2px (90));
                     forwardItem.setTitle ("Forward");
                     forwardItem.setTitleSize (14);
@@ -407,8 +407,9 @@ namespace NachoClient.AndroidClient
             DateTime date = ((JavaObjectWrapper<DateTime>)(((ImageView)sender).GetTag (Resource.Id.event_date_add))).Item;
             createEventOnDateCallback (date);
         }
-            
-        public int PositionForDate (DateTime date) {
+
+        public int PositionForDate (DateTime date)
+        {
             var day = eventCalendarMap.IndexOfDate (date);
             return eventCalendarMap.IndexFromDayItem (day, -1);
         }

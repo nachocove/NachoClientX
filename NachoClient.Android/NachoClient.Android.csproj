@@ -1654,6 +1654,19 @@
     <AndroidResource Include="Resources\drawable-hdpi\gen_nacholeft.png" />
     <AndroidResource Include="Resources\drawable-hdpi\gen_nachoright.png" />
     <AndroidResource Include="Resources\layout\MessageCard.axml" />
+    <AndroidResource Include="Resources\menu\message_view.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeAttendeeOptional.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeAttendeeRemove.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeAttendeeRequired.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeAttendeeResend.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeCalendarForward.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeCalendarLate.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeContactCall.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeContactEmail.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeEmailArchive.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeEmailDefer.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeEmailDelete.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeEmailMove.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

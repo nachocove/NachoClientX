@@ -86,7 +86,7 @@ namespace NachoClient.AndroidClient
 
             hoteventListView.setMenuCreator ((menu) => {
                 SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
-                lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                lateItem.setBackground (A.Drawable_NachoSwipeCalendarLate(Activity));
                 lateItem.setWidth (dp2px (90));
                 lateItem.setTitle ("I'm Late");
                 lateItem.setTitleSize (14);
@@ -96,7 +96,7 @@ namespace NachoClient.AndroidClient
                 menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
 
                 SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
-                forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                forwardItem.setBackground (A.Drawable_NachoSwipeCalendarForward(Activity));
                 forwardItem.setWidth (dp2px (90));
                 forwardItem.setTitle ("Forward");
                 forwardItem.setTitleSize (14);

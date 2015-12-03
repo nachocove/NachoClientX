@@ -189,7 +189,7 @@ namespace NachoClient.AndroidClient
 
                 hoteventListView.setMenuCreator ((menu) => {
                     SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                    lateItem.setBackground (A.Drawable_NachoSwipeCalendarLate (Activity));
                     lateItem.setWidth (dp2px (90));
                     lateItem.setTitle ("I'm Late");
                     lateItem.setTitleSize (14);
@@ -199,7 +199,7 @@ namespace NachoClient.AndroidClient
                     menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
 
                     SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                    forwardItem.setBackground (A.Drawable_NachoSwipeCalendarForward (Activity));
                     forwardItem.setWidth (dp2px (90));
                     forwardItem.setTitle ("Forward");
                     forwardItem.setTitleSize (14);
@@ -257,7 +257,7 @@ namespace NachoClient.AndroidClient
                 }
                 if (!(messages.HasDraftsSemantics () || messages.HasOutboxSemantics ())) {
                     SwipeMenuItem deferItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    deferItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDefer));
+                    deferItem.setBackground (A.Drawable_NachoSwipeEmailDefer (Activity));
                     deferItem.setWidth (dp2px (90));
                     deferItem.setTitle ("Defer");
                     deferItem.setTitleSize (14);
@@ -266,7 +266,7 @@ namespace NachoClient.AndroidClient
                     deferItem.setId (DEFER_TAG);
                     menu.addMenuItem (deferItem, SwipeMenu.SwipeSide.LEFT);
                     SwipeMenuItem moveItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    moveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailMove));
+                    moveItem.setBackground (A.Drawable_NachoSwipeEmailMove (Activity));
                     moveItem.setWidth (dp2px (90));
                     moveItem.setTitle ("Move");
                     moveItem.setTitleSize (14);
@@ -275,7 +275,7 @@ namespace NachoClient.AndroidClient
                     moveItem.setId (SAVE_TAG);
                     menu.addMenuItem (moveItem, SwipeMenu.SwipeSide.LEFT);
                     SwipeMenuItem archiveItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    archiveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailArchive));
+                    archiveItem.setBackground (A.Drawable_NachoSwipeEmailArchive (Activity));
                     archiveItem.setWidth (dp2px (90));
                     archiveItem.setTitle ("Archive");
                     archiveItem.setTitleSize (14);
@@ -285,7 +285,7 @@ namespace NachoClient.AndroidClient
                     menu.addMenuItem (archiveItem, SwipeMenu.SwipeSide.RIGHT);
                 }
                 SwipeMenuItem deleteItem = new SwipeMenuItem (Activity.ApplicationContext);
-                deleteItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDelete));
+                deleteItem.setBackground (A.Drawable_NachoSwipeEmailDelete (Activity));
                 deleteItem.setWidth (dp2px (90));
                 deleteItem.setTitle ("Delete");
                 deleteItem.setTitleSize (14);
