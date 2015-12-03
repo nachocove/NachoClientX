@@ -347,9 +347,21 @@ namespace NachoCore.ActiveSync
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
+                    var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
+                        (state) => {
+                            if (!cToken.IsCancellationRequested) {
+                                Log.Error (Log.LOG_HTTP, "AsHttpOperation:ToWbxmlStream wedged (#1313)");
+                            }
+                        },
+                        cToken, 
+                        // We only want to see this Error if truly wedged.
+                        // This timer doesn't perform any recovery action.
+                        60 * 1000, 
+                        System.Threading.Timeout.Infinite);
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (AccountId, cToken);
                     capture.Stop ();
+                    diaper.Dispose ();
                     request.SetContent (stream, ContentTypeWbxml);
                 } else {
                     // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
@@ -580,34 +592,14 @@ namespace NachoCore.ActiveSync
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
                         try {
-                            var isWedged = false;
-                            int timeoutInSeconds = response.ContentLength >= 100000 ? 60 : 20;
                             long loadBytesDuration;
-                            using (var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper",
-                                (state) => {
-                                    if (!cToken.IsCancellationRequested) {
-                                        Log.Error (Log.LOG_HTTP, "LoadBytes timed out after {0:n0}s trying to process {1:n0} bytes for command {2}",
-                                            timeoutInSeconds, response.ContentLength, CommandName);
-                                        isWedged = true;
-                                        TimeoutTimerCallback (state);
-                                    }
-                                },
-                                cToken, timeoutInSeconds * 1000, System.Threading.Timeout.Infinite)) {
-                                using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
-                                    decoder.LoadBytes (AccountId, ContentData);
-                                    loadBytesDuration = capture.ElapsedMilliseconds;
-                                }
-                                // There is a small race we are living with. The diaper callback could be 
-                                // executing while this code is executing, resulting in two contradictory events
-                                // hitting the HTTP OP SM.
+                            using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
+                                decoder.LoadBytes (AccountId, ContentData);
+                                loadBytesDuration = capture.ElapsedMilliseconds;
                             }
                             if (1000 < loadBytesDuration) {
                                 Log.Warn (Log.LOG_HTTP, "LoadBytes took {0:n0}ms for {1:n0} bytes for command {2}",
                                     loadBytesDuration, response.ContentLength, CommandName);
-                            }
-                            if (isWedged) {
-                                // If not cancelled, we've already done the right thing and sent a timeout event.
-                                return Final ((uint)SmEvt.E.HardFail, "LOADBYTESHANG");
                             }
                             cToken.ThrowIfCancellationRequested ();
                         } catch (OperationCanceledException) {
