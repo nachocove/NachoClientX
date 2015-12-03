@@ -368,29 +368,32 @@ namespace Test.iOS
 //            });
 //        }
 
-        [Test]
-        public void GoodXmlShouldReportSuccessfulCommResult ()
-        {
-            // use this to test timeout values once they can be set
-            string contentType = "text/xml";
-            string mockResponseLength = 10.ToString ();
-            string goodXml = CommonMockData.BasicPhonyPingRequestXml;
-            byte[] mockResponse = new byte[goodXml.Length * sizeof(char)];
-            System.Buffer.BlockCopy(goodXml.ToCharArray(), 0, mockResponse, 0, mockResponse.Length);
-
-            PerformHttpOperationWithSettings (
-                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
-                (request) => {
-                    var response = NcHttpResponseWithDefaults (HttpStatusCode.OK, mockResponse, contentType);
-                    response.Headers.Add ("Content-Length", mockResponseLength);
-                    return response;
-                },
-                request => {
-                }
-            );
-
-            DoReportCommResultWithFailureType (() => false);
-        }
+        // If I understand what this test is meant to test (timeout, reading the xml-stream, i.e. setting mockResponseLength to 10,
+        // when BasicPhonyPingRequestXml is much longer), then this can't happen in the current code, since we read the XML
+        // using .Load() (from file) instead of reading from stream.
+//        [Test]
+//        public void GoodXmlShouldReportSuccessfulCommResult ()
+//        {
+//            // use this to test timeout values once they can be set
+//            string contentType = "text/xml";
+//            string mockResponseLength = 10.ToString ();
+//            string goodXml = CommonMockData.BasicPhonyPingRequestXml;
+//            byte[] mockResponse = new byte[goodXml.Length * sizeof(char)];
+//            System.Buffer.BlockCopy(goodXml.ToCharArray(), 0, mockResponse, 0, mockResponse.Length);
+//
+//            PerformHttpOperationWithSettings (
+//                sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
+//                (request) => {
+//                    var response = NcHttpResponseWithDefaults (HttpStatusCode.OK, mockResponse, contentType);
+//                    response.Headers.Add ("Content-Length", mockResponseLength);
+//                    return response;
+//                },
+//                request => {
+//                }
+//            );
+//
+//            DoReportCommResultWithFailureType (() => false);
+//        }
 
         [Test]
         public void MismatchHeaderSizeValues ()
