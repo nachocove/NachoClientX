@@ -1,9 +1,6 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
-using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
-using NachoPlatform;
+using NachoCore.Utils;
 
 namespace NachoCore
 {

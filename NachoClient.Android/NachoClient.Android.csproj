@@ -598,8 +598,6 @@
     <Compile Include="NachoUI.Android\Activities\MoreActivity.cs" />
     <Compile Include="NachoCore\Utils\NcBase64.cs" />
     <Compile Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
-    <Compile Include="NachoPlatform\INcHttpClient\INcHttpClient.cs" />
-    <Compile Include="NachoPlatform\INcHttpClient\INcHttpClientUtils.cs" />
     <Compile Include="NachoUI.Android\Activities\MoreFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
@@ -623,6 +621,7 @@
     <Compile Include="NachoUI.Android\Support\SwipeMenuRecyclerView.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageListAdapter.cs" />
     <Compile Include="NachoUI.Android\Support\WrapperRecyclerAdapter.cs" />
+    <Compile Include="NachoCore\Utils\NcHttpUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -687,7 +686,6 @@
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
     <Folder Include="NachoCore\Model\McEmailAddress\" />
     <Folder Include="Resources\anim\" />
-    <Folder Include="NachoPlatform\INcHttpClient\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Text.RegularExpressions;
-using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {

@@ -6,6 +6,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using DnDns.Query;
 using DnDns.Enums;
+using System.Threading;
 
 namespace NachoPlatform
 {
@@ -352,4 +353,32 @@ namespace NachoPlatform
     {
         DnsQueryResponse ResQuery (IDnsLockObject op, string host, NsClass dnsClass, NsType dnsType);
     }
+
+    #region INcHttpClient
+
+    /// <summary>
+    /// Progress delegate. Note that the totalBytesExpected is frequently wrong. -1 means 'unknown'.
+    /// </summary>
+    public delegate void ProgressDelegate (bool isRequest, string taskDescription, long bytes, long totalBytes, long totalBytesExpected);
+    /// <summary>
+    /// Success delete. Called when the request (and response) are done.
+    /// </summary>
+    public delegate void SuccessDelegate (NcHttpResponse response, CancellationToken token);
+    /// <summary>
+    /// Error delegate. Called on error.
+    /// </summary>
+    public delegate void ErrorDelegate (Exception exception, CancellationToken token);
+
+    public interface INcHttpClient
+    {
+        void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken);
+
+        void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
+
+        void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, CancellationToken cancellationToken);
+
+        void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken);
+    }
+
+    #endregion
 }

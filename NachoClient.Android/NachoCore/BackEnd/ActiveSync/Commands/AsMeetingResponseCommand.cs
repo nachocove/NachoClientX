@@ -1,12 +1,10 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Net.Http;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
-using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {

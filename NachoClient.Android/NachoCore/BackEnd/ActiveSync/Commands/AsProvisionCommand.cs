@@ -3,16 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Xml.Linq;
-using System.Xml.Serialization;
 using NachoCore.Model;
 using NachoCore.Utils;
-using NachoPlatform;
 
 // Reference: http://msdn.microsoft.com/en-us/library/hh531590(v=exchg.140).aspx
 namespace NachoCore.ActiveSync

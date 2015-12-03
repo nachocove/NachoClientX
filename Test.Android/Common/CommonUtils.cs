@@ -10,10 +10,8 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using System.Threading;
-using System.Net.Http;
 using System.Text;
 using System.IO;
-using NachoPlatform;
 
 namespace Test.iOS
 {

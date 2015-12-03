@@ -7,7 +7,6 @@ using System.Threading;
 using System.Net.Http;
 using System.Xml.Linq;
 using NachoCore.Utils;
-using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {

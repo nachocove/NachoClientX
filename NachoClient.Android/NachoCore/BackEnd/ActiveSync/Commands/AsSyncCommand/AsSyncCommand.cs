@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Wbxml;
-using System.IO;
-using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {

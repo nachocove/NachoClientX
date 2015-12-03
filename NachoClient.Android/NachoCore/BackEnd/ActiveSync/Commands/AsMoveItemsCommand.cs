@@ -2,13 +2,11 @@
 //
 using System;
 using System.Linq;
-using System.Net.Http;
 using System.Xml.Linq;
 using System.Threading;
 using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using NachoCore.Model;
-using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {

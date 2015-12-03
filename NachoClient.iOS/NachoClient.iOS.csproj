@@ -238,7 +238,6 @@
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
     <Folder Include="NachoCore\Model\McEmailAddress\" />
-    <Folder Include="NachoPlatform\INcHttpClient\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1719,14 +1718,11 @@
       <Link>NachoCore\Utils\NcTimeStamp.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\NcHttpClientiOS.cs" />
-    <Compile Include="..\NachoClient.Android\NachoPlatform\INcHttpClient\INcHttpClient.cs">
-      <Link>NachoPlatform\INcHttpClient\INcHttpClient.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoPlatform\INcHttpClient\INcHttpClientUtils.cs">
-      <Link>NachoPlatform\INcHttpClient\INcHttpClientUtils.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcBase64.cs">
       <Link>NachoCore\Utils\NcBase64.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcHttpUtils.cs">
+      <Link>NachoCore\Utils\NcHttpUtils.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -5,7 +5,6 @@ using NUnit.Framework;
 using NachoCore.Utils;
 using NachoPlatform;
 using Test.iOS;
-using System.Linq;
 
 namespace Test.Common
 {

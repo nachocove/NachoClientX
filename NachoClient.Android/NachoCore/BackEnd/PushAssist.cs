@@ -14,6 +14,8 @@ using Newtonsoft.Json;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoClient.Build;
+using NachoPlatform;
+using System.Text;
 
 /* INTEGRATION NOTES (JAN/HENRY)
  * PushAssist.cs is to be platform-independent and protocol-independent (AS or IMAP or ...)
@@ -26,8 +28,6 @@ using NachoClient.Build;
  * JEFF_TODO - really want to enable/disable based on narrow-ping. how to do that?
  * JEFF_TODO - exactly how to we "cancel" rather than hold-off the pinger? (let it die).
  */
-using NachoPlatform;
-using System.Text;
 
 namespace NachoCore
 {
