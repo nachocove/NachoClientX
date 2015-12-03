@@ -69,7 +69,7 @@ namespace NachoClient.AndroidClient
         private void SwipeMenu_Create (SwipeMenu menu)
         {
             var emailItem = new SwipeMenuItem (this.Activity.ApplicationContext);
-            emailItem.setBackground (new ColorDrawable (A.Color_NachoSwipeContactEmail));
+            emailItem.setBackground (A.Drawable_NachoSwipeContactEmail (Activity));
             emailItem.setWidth (dp2px (90));
             emailItem.setTitle ("Email");
             emailItem.setTitleSize (14);
@@ -79,7 +79,7 @@ namespace NachoClient.AndroidClient
             menu.addMenuItem (emailItem, SwipeMenu.SwipeSide.RIGHT);
 
             var dialItem = new SwipeMenuItem (this.Activity.ApplicationContext);
-            dialItem.setBackground (new ColorDrawable (A.Color_NachoSwipeContactCall));
+            dialItem.setBackground (A.Drawable_NachoSwipeContactCall (Activity));
             dialItem.setWidth (dp2px (90));
             dialItem.setTitle ("Dial");
             dialItem.setTitleSize (14);
