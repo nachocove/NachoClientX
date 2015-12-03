@@ -29,7 +29,7 @@ namespace NachoClient.AndroidClient
         GestureDetectorCompat GestureDetector;
         public Android.Webkit.WebView WebView;
         bool IsScrolling;
-        
+
         public MessageScrollView (Context context) : base (context)
         {
             Initialize ();
@@ -95,12 +95,12 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public bool OnDown(MotionEvent e)
+        public bool OnDown (MotionEvent e)
         {
             return false;
         }
 
-        public bool OnScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY)
+        public bool OnScroll (MotionEvent e1, MotionEvent e2, float distanceX, float distanceY)
         {
             IsScrolling = true;
             ScrollBy (0, (int)distanceY);
@@ -108,7 +108,7 @@ namespace NachoClient.AndroidClient
             return true;
         }
 
-        public bool OnFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
+        public bool OnFling (MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
         {
             IsScrolling = false;
             Fling (-(int)velocityY);
@@ -116,15 +116,15 @@ namespace NachoClient.AndroidClient
             return true;
         }
 
-        public void OnLongPress(MotionEvent e)
+        public void OnLongPress (MotionEvent e)
         {
         }
 
-        public void OnShowPress(MotionEvent e)
+        public void OnShowPress (MotionEvent e)
         {
         }
 
-        public bool OnSingleTapUp(MotionEvent e)
+        public bool OnSingleTapUp (MotionEvent e)
         {
             return false;
         }
@@ -140,7 +140,7 @@ namespace NachoClient.AndroidClient
         McEmailMessageThread ThreadToView { get; }
     }
 
-    public class MessageViewFragment : Fragment, MessageDownloadDelegate
+    public class MessageViewFragment : Fragment, MessageDownloadDelegate, Android.Widget.PopupMenu.IOnMenuItemClickListener
     {
         McEmailMessage message;
         McEmailMessageThread thread;
@@ -173,7 +173,9 @@ namespace NachoClient.AndroidClient
 
             buttonBar = new ButtonBar (view);
 
-            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.folder_move, SaveButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.gen_more, MenuButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.email_defer, DeferButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right3, Resource.Drawable.folder_move, SaveButton_Click);
 
             scrollView = view.FindViewById<MessageScrollView> (Resource.Id.message_scrollview);
             webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
@@ -195,7 +197,7 @@ namespace NachoClient.AndroidClient
             message = ((IMessageViewFragmentOwner)Activity).MessageToView;
 
             // Refresh message to make sure it's still around
-            message = McEmailMessage.QueryById<McEmailMessage>(message.Id);
+            message = McEmailMessage.QueryById<McEmailMessage> (message.Id);
             if (null == message) {
                 Finish ();
                 return;
@@ -399,7 +401,7 @@ namespace NachoClient.AndroidClient
             }
 
             if (!message.IsMeetingRequest) {
-                View.FindViewById<View>(Resource.Id.event_attendee_view).Visibility = ViewStates.Gone;
+                View.FindViewById<View> (Resource.Id.event_attendee_view).Visibility = ViewStates.Gone;
             } else {
                 var attendeesFromMessage = NcEmailAddress.ParseAddressListString (Pretty.Join (message.To, message.Cc, ", "));
                 for (int a = 0; a < 5; ++a) {
@@ -593,7 +595,7 @@ namespace NachoClient.AndroidClient
                 var iCalPart = CalendarHelper.MimeResponseFromEmail (meeting, status, message.Subject, meeting.RecurrenceId);
                 var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
                 CalendarHelper.SendMeetingResponse (
-                    McAccount.QueryById<McAccount>(message.AccountId), organizerAddress, message.Subject, null, mimeBody, status);
+                    McAccount.QueryById<McAccount> (message.AccountId), organizerAddress, message.Subject, null, mimeBody, status);
             }
         }
 
@@ -614,9 +616,9 @@ namespace NachoClient.AndroidClient
         {
             if (bundle != null) {
                 if (bundle.FullHtmlUrl != null) {
-                    Log.Info (Log.LOG_UI, "{0} LoadUrl called", DateTime.Now.MillisecondsSinceEpoch());
+                    Log.Info (Log.LOG_UI, "{0} LoadUrl called", DateTime.Now.MillisecondsSinceEpoch ());
                     webView.LoadUrl (bundle.FullHtmlUrl.AbsoluteUri);
-                    Log.Info (Log.LOG_UI, "{0} LoadUrl returned", DateTime.Now.MillisecondsSinceEpoch());
+                    Log.Info (Log.LOG_UI, "{0} LoadUrl returned", DateTime.Now.MillisecondsSinceEpoch ());
                 } else {
                     var html = bundle.FullHtml;
                     webView.LoadDataWithBaseURL (bundle.BaseUrl.AbsoluteUri, html, "text/html", "utf-8", null);
@@ -628,6 +630,39 @@ namespace NachoClient.AndroidClient
         void Finish ()
         {
             ((IMessageViewFragmentOwner)Activity).DoneWithMessage ();
+        }
+
+        void MenuButton_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "MenuButton_Click");
+            var view = View.FindViewById (Resource.Id.right_button1);
+            var popup = new PopupMenu (Activity, view);
+            popup.SetOnMenuItemClickListener (this);
+            popup.Inflate (Resource.Menu.message_view);
+            popup.Show ();
+        }
+
+        bool Android.Widget.PopupMenu.IOnMenuItemClickListener.OnMenuItemClick (IMenuItem item)
+        {
+            switch (item.ItemId) {
+            case Resource.Id.quick_reply:
+                QuickReply_Click ();
+                return true;
+            case Resource.Id.create_deadline:
+                CreateDeadline_Click ();
+                return true;
+            case Resource.Id.create_event:
+                CreateEvent_Click ();
+                return true;
+            default:
+                return false;
+            }
+        }
+
+        void DeferButton_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "DeferButton_Click");
+            ShowDeferralChooser ();
         }
 
         void SaveButton_Click (object sender, EventArgs e)
@@ -721,7 +756,7 @@ namespace NachoClient.AndroidClient
                     attendees.Add (new McAttendee (message.AccountId, attendee.Name, ((MailboxAddress)attendee).Address, NcAttendeeType.Required));
                 }
             }
-            if (!string.IsNullOrEmpty(message.Cc)) {
+            if (!string.IsNullOrEmpty (message.Cc)) {
                 foreach (var attendee in NcEmailAddress.ParseAddressListString(message.Cc)) {
                     attendees.Add (new McAttendee (message.AccountId, attendee.Name, ((MailboxAddress)attendee).Address, NcAttendeeType.Optional));
                 }
@@ -729,9 +764,27 @@ namespace NachoClient.AndroidClient
             StartActivity (AttendeeViewActivity.AttendeeViewIntent (this.Activity, message.AccountId, attendees));
         }
 
-        void StartComposeActivity (EmailHelper.Action action)
+        void QuickReply_Click ()
         {
-            StartActivity (MessageComposeActivity.RespondIntent (this.Activity, action, message.Id));
+            Log.Info (Log.LOG_UI, "QuickReply_Click");
+            StartComposeActivity (EmailHelper.Action.Reply, quickReply: true);
+        }
+
+        void CreateDeadline_Click ()
+        {
+            Log.Info (Log.LOG_UI, "CreateDeadline_Click");
+            ShowDeadlineChooser ();
+        }
+
+        void CreateEvent_Click ()
+        {
+            Log.Info (Log.LOG_UI, "CreateEvent_Click");
+            StartActivity (EventEditActivity.MeetingFromMessageIntent (Activity, message));
+        }
+
+        void StartComposeActivity (EmailHelper.Action action, bool quickReply = false)
+        {
+            StartActivity (MessageComposeActivity.RespondIntent (this.Activity, action, message.Id, quickReply));
         }
 
         public void ShowFolderChooser ()
@@ -746,6 +799,38 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "OnFolderSelected: {0}", message);
             NcEmailArchiver.Move (message, folder);
+            Finish ();
+        }
+
+        public void ShowDeferralChooser ()
+        {
+            Log.Info (Log.LOG_UI, "ShowDeferralChooser: {0}", thread);
+            var deferralFragment = ChooseDeferralFragment.newInstance (thread);
+            deferralFragment.setOnDeferralSelected (OnDeferralSelected);
+            deferralFragment.Show (FragmentManager, "ChooseDeferralFragment");
+        }
+
+        public void OnDeferralSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            Log.Info (Log.LOG_UI, "OnDeferralSelected: {0}", message);
+            NcMessageDeferral.DateSelected (NcMessageDeferral.MessageDateType.Defer, thread, request, selectedDate);
+            Finish ();
+        }
+
+
+        public void ShowDeadlineChooser ()
+        {
+            Log.Info (Log.LOG_UI, "ShowDeadlineChooser: {0}", thread);
+            var deferralFragment = ChooseDeferralFragment.newInstance (thread);
+            deferralFragment.type = NcMessageDeferral.MessageDateType.Deadline;
+            deferralFragment.setOnDeferralSelected (OnDeadlineSelected);
+            deferralFragment.Show (FragmentManager, "ChooseDeferralFragment");
+        }
+
+        public void OnDeadlineSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            Log.Info (Log.LOG_UI, "OnDeferralSelected: {0}", message);
+            NcMessageDeferral.DateSelected (NcMessageDeferral.MessageDateType.Deadline, thread, request, selectedDate);
             Finish ();
         }
 
@@ -806,7 +891,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnPageFinished (Android.Webkit.WebView view, string url)
         {
-            Log.Info (Log.LOG_UI, "{0} OnPageFinished", DateTime.Now.MillisecondsSinceEpoch());
+            Log.Info (Log.LOG_UI, "{0} OnPageFinished", DateTime.Now.MillisecondsSinceEpoch ());
         }
 
         public override bool ShouldOverrideUrlLoading (Android.Webkit.WebView view, string url)
