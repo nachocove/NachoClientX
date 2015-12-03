@@ -8,6 +8,7 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
+using Android.Graphics;
 
 //using Android.Util;
 using Android.Views;
@@ -102,9 +103,9 @@ namespace NachoClient.AndroidClient
             addButton.Click += AddButton_Click;
 
             todayButton = view.FindViewById<ImageView> (Resource.Id.right_button2);
-            todayButton.SetImageResource (Resource.Drawable.calendar_empty_cal_alt);
             todayButton.Visibility = ViewStates.Visible;
             todayButton.Click += TodayButton_Click;
+            DrawTodayButton ();
 
             calendarPager = view.FindViewById<CalendarPagerView> (Resource.Id.calendar_pager);
             calendarPager.DateSelected = PagerSelectedDate;
@@ -195,6 +196,23 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             NachoPlatform.Calendars.Instance.ChangeIndicator -= PlatformCalendarChangeCallback;
             base.OnDestroyView ();
+        }
+
+        void DrawTodayButton ()
+        {
+            var date = DateTime.Now.ToLocalTime ().ToString(" d").Trim();
+            var opts = new BitmapFactory.Options ();
+            opts.InMutable = true;
+            var image = BitmapFactory.DecodeResource (Resources, Resource.Drawable.calendar_empty_cal_alt, opts);
+            var canvas = new Canvas (image);
+            var paint = new Paint ();
+            paint.TextSize = image.Height / 2.0f;
+            paint.Color = Resources.GetColor(Resource.Color.NachoTeal);
+            var bounds = new Rect ();
+            paint.GetTextBounds (date, 0, date.Length, bounds);
+            paint.TextAlign = Paint.Align.Center;
+            canvas.DrawText (date, (int)(image.Width / 2.0f), (int)((image.Height + bounds.Height()) / 2.0f), paint);
+            todayButton.SetImageBitmap (image);
         }
 
         void ListView_ScrollStateChanged (object sender, AbsListView.ScrollStateChangedEventArgs e)
@@ -300,6 +318,13 @@ namespace NachoClient.AndroidClient
             case NcResult.SubKindEnum.Info_EventSetChanged:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 eventListAdapter.Refresh ();
+                break;
+
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                    DrawTodayButton ();
+                    calendarPager.Update ();
+                }
                 break;
             }
         }
