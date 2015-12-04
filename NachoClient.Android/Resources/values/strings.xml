@@ -171,4 +171,5 @@
     <string name="quick_response_title">Quick Messages</string>
     <string name="intent_title">Message Intent</string>
     <string name="attachment_picker_title">Add Attachment</string>
+    <string name="file_picker_title">Attach File</string>
 </resources>
