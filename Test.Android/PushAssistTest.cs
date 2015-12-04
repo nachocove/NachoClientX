@@ -286,9 +286,7 @@ namespace Test.Common
                 Token = token,
             };
             var jsonContent = Encoding.UTF8.GetBytes (JsonConvert.SerializeObject (jsonResponse));
-            var content = new MemoryStream (jsonContent);
-
-            return new NcHttpResponse (System.Net.HttpStatusCode.OK, content, "application/json");
+            return new NcHttpResponse (HttpStatusCode.OK, jsonContent, "application/json");
         }
 
         private NcHttpResponse StartSessionOkResponse (NcHttpRequest httpRequest)

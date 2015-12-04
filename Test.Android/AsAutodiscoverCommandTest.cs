@@ -770,7 +770,7 @@ namespace Test.iOS
 
                 // create the response, then allow caller to set headers,
                 // then return response and assign to mockResponse
-                var mockResponse = new NcHttpResponse (HttpStatusCode.OK, new MemoryStream(Encoding.UTF8.GetBytes (xml)), "text/xml");
+                var mockResponse = new NcHttpResponse (HttpStatusCode.OK, Encoding.UTF8.GetBytes (xml), "text/xml");
               
                 // check for the type of request and respond with appropriate response (redir, error, pass)
                 // allow the caller to modify the mockResponse object (esp. headers and StatusCode)

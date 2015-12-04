@@ -132,7 +132,7 @@ namespace Test.iOS
             });
 
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
-                return new NcHttpResponse (System.Net.HttpStatusCode.OK, new MemoryStream(Encoding.UTF8.GetBytes (responseXml)), "text/xml", new NcHttpHeaders());
+                return new NcHttpResponse (System.Net.HttpStatusCode.OK, Encoding.UTF8.GetBytes (responseXml), "text/xml", new NcHttpHeaders());
             };
 
             cmd.Execute (sm);

@@ -765,7 +765,7 @@ namespace Test.iOS
             if (contentType == null) {
                 contentType = WBXMLContentType;
             }
-            return new NcHttpResponse (status, new MemoryStream (data), contentType);
+            return new NcHttpResponse (status, data, contentType);
         }
 
         delegate NcHttpResponse ProvideResponseDelegate (NcHttpRequest request);

@@ -63,7 +63,7 @@ namespace NachoCore.Utils
             get { return _Cred; }
             set {
                 if (value != null) {
-                    NcAssert.True (RequestUri.IsHttps());
+                    NcAssert.True (RequestUri.IsHttps ());
                 }
                 _Cred = value;
             }
@@ -151,7 +151,6 @@ namespace NachoCore.Utils
             }
         }
 
-
         public byte[] GetContent ()
         {
             var content = Content;
@@ -160,9 +159,11 @@ namespace NachoCore.Utils
             }
 
             if (content is FileStream) {
-                var mem = new MemoryStream ();
-                (content as FileStream).CopyTo (mem);
-                return mem.GetBuffer ();
+                var fs = content as FileStream;
+                var buf = new byte[fs.Length];
+                fs.Read (buf, 0, buf.Length);
+                fs.Seek (0, SeekOrigin.Begin);
+                return buf;
             }
             if (content is byte[]) {
                 return content as byte[];
@@ -182,7 +183,7 @@ namespace NachoCore.Utils
     {
         public NcHttpHeaders Headers { get; protected set; }
 
-        public Stream Content { get; protected set; }
+        public FileStream Content { get; protected set; }
 
         public string ContentType {
             get {
@@ -227,19 +228,24 @@ namespace NachoCore.Utils
             }
         }
 
-        string tempFileName { get; set; }
-
-        public NcHttpResponse (HttpStatusCode status, Stream stream, string contentType, NcHttpHeaders headers = null)
+        public NcHttpResponse (HttpStatusCode status, FileStream stream, string contentType, NcHttpHeaders headers = null)
         {
-            if (!(stream is FileStream)) {
-                Log.Warn (Log.LOG_HTTP, "Creating NcHttpResponse with non-FileStream stream: {0}. Should only be used for unit tests", stream.GetType ().Name);
-                tempFileName = Path.GetTempFileName ();
-                using (var fs = new FileStream (tempFileName, FileMode.OpenOrCreate, FileAccess.Write)) {
-                    stream.CopyTo (fs);
-                }
-                stream = new FileStream(tempFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            initMe (status, stream, contentType, headers);
+        }
+
+        string tempFileName { get; set; }
+        public NcHttpResponse (HttpStatusCode status, byte[] data, string contentType, NcHttpHeaders headers = null)
+        {
+            tempFileName = Path.GetTempFileName ();
+            using (var fs = new FileStream (tempFileName, FileMode.OpenOrCreate, FileAccess.Write)) {
+                fs.Write (data, 0, data.Length);
             }
-            NcAssert.True (stream is FileStream);
+            var stream = new FileStream (tempFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            initMe (status, stream, contentType, headers);
+        }
+
+        void initMe (HttpStatusCode status, FileStream stream, string contentType, NcHttpHeaders headers = null)
+        {
             Headers = headers ?? new NcHttpHeaders ();
             StatusCode = status;
             Content = stream;
@@ -268,10 +274,10 @@ namespace NachoCore.Utils
 
             if (content is FileStream) {
                 var fs = content as FileStream;
-                var mem = new MemoryStream ();
-                fs.CopyTo (mem);
+                var buf = new byte[fs.Length];
+                fs.Read (buf, 0, buf.Length);
                 fs.Seek (0, SeekOrigin.Begin);
-                return mem.GetBuffer ().Take ((int)mem.Length).ToArray ();
+                return buf;
             }
             NcAssert.CaseError ("unknown type of content");
             return null;

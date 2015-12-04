@@ -243,9 +243,7 @@ namespace NachoCore.Model
                         onFailure (this);
                         return;
                     }
-                    var memStream = new MemoryStream ();
-                    response.Content.CopyTo (memStream);
-                    var jsonResponse = memStream.GetBuffer ().Take ((int)memStream.Length).ToArray ();
+                    var jsonResponse = response.GetContent ();
                     var decodedResponse = JsonConvert.DeserializeObject<OAuth2RefreshRespose> (Encoding.UTF8.GetString (jsonResponse));
                     if ("Bearer" != decodedResponse.token_type) {
                         Log.Error (Log.LOG_SYS, "Unknown OAUTH2 token_type {0}", decodedResponse.token_type);
