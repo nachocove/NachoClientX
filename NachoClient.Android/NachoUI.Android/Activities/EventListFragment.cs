@@ -271,11 +271,7 @@ namespace NachoClient.AndroidClient
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
             var ev = eventListAdapter [e.Position];
-            if (0 < ev.CalendarId) {
-                StartActivity (EventViewActivity.ShowEventIntent (Activity, ev));
-            } else {
-                StartActivity (AndroidCalendars.ViewEventIntent (ev));
-            }
+            StartActivity (EventViewActivity.ShowEventIntent (Activity, ev));
         }
 
         void AddButton_Click (object sender, EventArgs e)
