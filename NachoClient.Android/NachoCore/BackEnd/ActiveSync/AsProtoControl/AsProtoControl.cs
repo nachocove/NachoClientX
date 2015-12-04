@@ -1087,9 +1087,21 @@ namespace NachoCore.ActiveSync
             ExecuteCmd ();
         }
 
+        static bool isPingCommand (AsCommand cmd)
+        {
+            if (cmd is AsPingCommand) {
+                return true;
+            }
+            var sync = cmd as AsSyncCommand;
+            if (null != sync) {
+                return sync.IsPinging;
+            }
+            return false;
+        }
+
         private void SetAndExecute (AsCommand cmd)
         {
-            if (null != cmd as AsPingCommand && null != PushAssist) {
+            if (isPingCommand(cmd) && null != PushAssist) {
                 PushAssist.Execute ();
             }
             SetCmd (cmd);
