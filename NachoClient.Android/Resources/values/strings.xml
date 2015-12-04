@@ -170,4 +170,5 @@
     <string name="menu_create_event">Create Event</string>
     <string name="quick_response_title">Quick Messages</string>
     <string name="intent_title">Message Intent</string>
+    <string name="attachment_picker_title">Add Attachment</string>
 </resources>
