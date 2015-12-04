@@ -461,6 +461,7 @@
     <Compile Include="NachoUI.Android\Activities\PriorityFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\RecoveryFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\StartupFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\TutorialActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\SwitchAccountFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\WaitingFragment.cs" />
     <Compile Include="NachoUI.Android\Support\RoundedImageView.cs" />
@@ -582,7 +583,6 @@
     <Compile Include="NachoUI.Android\Activities\ContactViewActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactEmailChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactEmailChooserActivity.cs" />
-    <Compile Include="NachoUI.Android\Activities\TutorialActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\FilePickerFragment.cs" />
     <Compile Include="NachoCore\Utils\AttachmentDownloader.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration49.cs" />
