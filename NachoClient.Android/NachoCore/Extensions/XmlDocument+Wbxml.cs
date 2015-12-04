@@ -24,9 +24,7 @@ namespace NachoCore.Utils
             var tmp = NcModel.Instance.TmpPath (accountId);
             var fileStream = new FileStream (tmp, FileMode.Create);
             var writer = new BinaryWriter (fileStream);
-            Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitToStream(L) (#1313)");
             encoder.EmitToStream (writer);
-            Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitToStream(L) done (#1313)");
             writer.Close ();
             return new FileStream (tmp, FileMode.Open, FileAccess.Read);
         }
