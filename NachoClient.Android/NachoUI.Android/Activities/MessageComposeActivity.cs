@@ -1,30 +1,50 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Android.App;
 using Android.Content;
-using Android.Runtime;
 using Android.OS;
+using Android.Runtime;
+using Android.Support.Design.Widget;
 using Android.Support.V4.View;
 using Android.Support.V4.Widget;
 using Android.Support.V7.App;
-using Android.Support.Design.Widget;
 
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
-using NachoCore;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "MessageComposeActivity")]            
-    public class MessageComposeActivity : NcActivityWithData<McEmailMessage>
+    public class MessageComposeActivityData
     {
+        public int MessageId;
+        public bool MessageSaved;
+        public List<Action> MessageSavedEvents = new List<Action> ();
+        public void FireEvent ()
+        {
+            foreach (var action in MessageSavedEvents) {
+                action ();
+            }
+            MessageSavedEvents.Clear ();
+        }
+    }
 
-        public static readonly string EXTRA_ACTION = "com.nachocove.nachomail.action";
-        public static readonly string EXTRA_RELATED_MESSAGE_ID = "com.nachocove.nachomail.relatedMessageId";
-        public static readonly string EXTRA_RELATED_CALENDAR_ID = "com.nachocove.nachomail.relatedCalendarId";
-        public static readonly string EXTRA_MESSAGE = "com.nachocove.nachomail.message";
-        public static readonly string EXTRA_INITIAL_TEXT = "com.nachocove.nachomail.initialText";
-        public static readonly string EXTRA_INITIAL_RECIPIENT = "com.nachocove.nachomail.initialRecipient";
+    [Activity (Label = "MessageComposeActivity")]            
+    public class MessageComposeActivity : NcActivityWithData<MessageComposeActivityData>
+    {
+        public const string EXTRA_ACTION = "com.nachocove.nachomail.action";
+        public const string EXTRA_RELATED_MESSAGE_ID = "com.nachocove.nachomail.relatedMessageId";
+        public const string EXTRA_RELATED_CALENDAR_ID = "com.nachocove.nachomail.relatedCalendarId";
+        public const string EXTRA_MESSAGE = "com.nachocove.nachomail.message";
+        public const string EXTRA_INITIAL_TEXT = "com.nachocove.nachomail.initialText";
+        public const string EXTRA_INITIAL_RECIPIENT = "com.nachocove.nachomail.initialRecipient";
+        public const string EXTRA_INITIAL_QUICK_REPLY = "com.nachocove.nachomail.initialQuickReply";
+
+        private const string COMPOSE_FRAGMENT_TAG = "ComposeFragment";
+
+        private ComposeFragment composeFragment;
+        private MessageComposeActivityData savedMessageInfo;
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -32,39 +52,68 @@ namespace NachoClient.AndroidClient
 
             SetContentView (Resource.Layout.MessageComposeActivity);
 
-            var composeFragment = new ComposeFragment ();
+            composeFragment = null;
+            if (null != bundle) {
+                composeFragment = FragmentManager.FindFragmentByTag<ComposeFragment> (COMPOSE_FRAGMENT_TAG);
+            }
+            if (null == composeFragment) {
+                composeFragment = new ComposeFragment ();
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, composeFragment, COMPOSE_FRAGMENT_TAG).Commit ();
+            }
+
             if (Intent.HasExtra (EXTRA_ACTION)) {
                 composeFragment.Composer.Kind = (NachoCore.Utils.EmailHelper.Action)Intent.GetIntExtra (EXTRA_ACTION, 0);
-            }
-            if (Intent.HasExtra (EXTRA_RELATED_MESSAGE_ID)) {
-                var relatedThread = new McEmailMessageThread ();
-                relatedThread.FirstMessageId = Intent.GetIntExtra (EXTRA_RELATED_MESSAGE_ID, 0);
-                relatedThread.MessageCount = 1;
-                composeFragment.Composer.RelatedThread = relatedThread;
             }
             if (Intent.HasExtra (EXTRA_RELATED_CALENDAR_ID)) {
                 var relatedCalendarItem = McCalendar.QueryById<McCalendar> (Intent.GetIntExtra (EXTRA_RELATED_CALENDAR_ID, 0));
                 composeFragment.Composer.RelatedCalendarItem = relatedCalendarItem;
             }
-            if (Intent.HasExtra(EXTRA_MESSAGE)) {
-                var message = RetainedData;
-                if (null == message) {
-                    message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
-                    RetainedData = message;
-                }
-                composeFragment.Composer.Message = message;
-            }
-            if (Intent.HasExtra (EXTRA_INITIAL_TEXT)) {
-                var text = Intent.GetStringExtra (EXTRA_INITIAL_TEXT);
-                composeFragment.Composer.InitialText = text;
-            }
-            if (Intent.HasExtra (EXTRA_INITIAL_RECIPIENT)) {
-                var to = Intent.GetStringExtra (EXTRA_INITIAL_RECIPIENT);
-                composeFragment.Composer.InitialRecipient = to;
-            }
 
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, composeFragment).AddToBackStack("Now").Commit ();
-           
+            if (null != RetainedData) {
+                savedMessageInfo = RetainedData;
+                composeFragment.Composer.Message = McEmailMessage.QueryById<McEmailMessage> (savedMessageInfo.MessageId);
+                if (!savedMessageInfo.MessageSaved) {
+                    composeFragment.MessageIsReady = false;
+                    savedMessageInfo.MessageSavedEvents.Add (() => {
+                        composeFragment.MessageIsReady = true;
+                    });
+                }
+            } else {
+                if (Intent.HasExtra (EXTRA_RELATED_MESSAGE_ID)) {
+                    var relatedThread = new McEmailMessageThread ();
+                    relatedThread.FirstMessageId = Intent.GetIntExtra (EXTRA_RELATED_MESSAGE_ID, 0);
+                    relatedThread.MessageCount = 1;
+                    composeFragment.Composer.RelatedThread = relatedThread;
+                }
+                if (Intent.HasExtra(EXTRA_MESSAGE)) {
+                    var message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
+                    composeFragment.Composer.Message = message;
+                }
+                if (Intent.HasExtra (EXTRA_INITIAL_TEXT)) {
+                    var text = Intent.GetStringExtra (EXTRA_INITIAL_TEXT);
+                    composeFragment.Composer.InitialText = text;
+                }
+                if (Intent.HasExtra (EXTRA_INITIAL_RECIPIENT)) {
+                    var to = Intent.GetStringExtra (EXTRA_INITIAL_RECIPIENT);
+                    composeFragment.Composer.InitialRecipient = to;
+                }
+                if (Intent.HasExtra (EXTRA_INITIAL_QUICK_REPLY)) {
+                    composeFragment.Composer.InitialQuickReply = Intent.GetBooleanExtra (EXTRA_INITIAL_QUICK_REPLY, false);
+                }
+                savedMessageInfo = new MessageComposeActivityData ();
+                RetainedData = savedMessageInfo;
+            }
+        }
+
+        protected override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            savedMessageInfo.MessageId = composeFragment.Composer.Message.Id;
+            savedMessageInfo.MessageSaved = false;
+            composeFragment.Save (() => {
+                savedMessageInfo.MessageSaved = true;
+                savedMessageInfo.FireEvent ();
+            });
         }
 
         public static Intent NewMessageIntent (Context context, string recipient = null)
@@ -77,12 +126,13 @@ namespace NachoClient.AndroidClient
             return intent;
         }
 
-        public static Intent RespondIntent (Context context, EmailHelper.Action action, int relatedMessageId)
+        public static Intent RespondIntent (Context context, EmailHelper.Action action, int relatedMessageId, bool quickReply = false)
         {
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_ACTION, (int)action);
             intent.PutExtra (EXTRA_RELATED_MESSAGE_ID, relatedMessageId);
+            intent.PutExtra (EXTRA_INITIAL_QUICK_REPLY, quickReply);
             return intent;
         }
 
@@ -101,6 +151,14 @@ namespace NachoClient.AndroidClient
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_ACTION, (int)EmailHelper.Action.Forward);
             intent.PutExtra (EXTRA_RELATED_CALENDAR_ID, calendarId);
+            intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
+            return intent;
+        }
+
+        public static Intent DraftIntent (Context context, McEmailMessage message)
+        {
+            var intent = new Intent (context, typeof(MessageComposeActivity));
+            intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
             return intent;
         }

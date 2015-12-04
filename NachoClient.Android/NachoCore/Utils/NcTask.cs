@@ -103,6 +103,7 @@ namespace NachoCore.Utils
 
         public static Task Run (Action action, string name, bool stfu, bool isUnique, TaskCreationOptions option = TaskCreationOptions.None)
         {
+            NcAssert.NotNull (TaskMap);
             string dummy = null;
             var taskId = Interlocked.Increment (ref TaskId);
             var taskName = name + taskId.ToString ();
@@ -129,6 +130,11 @@ namespace NachoCore.Utils
 
             var spawningId = Thread.CurrentThread.ManagedThreadId;
             var task = Task.Factory.StartNew (delegate {
+                #if __ANDROID__
+                if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
+                    Log.Error (Log.LOG_UTILS, "StartNew running on main thread.");
+                }
+                #endif
                 DateTime startTime = DateTime.UtcNow;
                 double latency = (startTime - spawnTime).TotalMilliseconds;
                 if (200 < latency) {

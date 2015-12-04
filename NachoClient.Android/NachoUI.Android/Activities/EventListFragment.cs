@@ -8,6 +8,7 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
+using Android.Graphics;
 
 //using Android.Util;
 using Android.Views;
@@ -23,6 +24,7 @@ using NachoCore.Utils;
 using Android.Graphics.Drawables;
 using NachoCore.Brain;
 using Android.Widget;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -37,6 +39,7 @@ namespace NachoClient.AndroidClient
 
         SwipeMenuListView listView;
         EventListAdapter eventListAdapter;
+        CalendarPagerView calendarPager;
 
         SwipeRefreshLayout mSwipeRefreshLayout;
 
@@ -44,12 +47,40 @@ namespace NachoClient.AndroidClient
         ImageView todayButton;
 
         private bool jumpToToday = false;
+        bool isTouchScrolling;
+
+        private class EventsObserver : Android.Database.DataSetObserver
+        {
+
+            Action Callback;
+
+            public EventsObserver (Action callback)
+            {
+                Callback = callback;
+            }
+
+            public override void OnChanged ()
+            {
+                Callback ();
+            }
+
+        }
+
+        EventsObserver observer;
 
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
+            observer = new EventsObserver (DataSetChanged);
             eventListAdapter = new EventListAdapter (CreateEventOnDate);
+            eventListAdapter.RegisterDataSetObserver (observer);
+        }
+
+        void DataSetChanged ()
+        {
+            if (calendarPager != null) {
+                calendarPager.Update ();
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -72,9 +103,13 @@ namespace NachoClient.AndroidClient
             addButton.Click += AddButton_Click;
 
             todayButton = view.FindViewById<ImageView> (Resource.Id.right_button2);
-            todayButton.SetImageResource (Resource.Drawable.calendar_empty_cal_alt);
             todayButton.Visibility = ViewStates.Visible;
             todayButton.Click += TodayButton_Click;
+            DrawTodayButton ();
+
+            calendarPager = view.FindViewById<CalendarPagerView> (Resource.Id.calendar_pager);
+            calendarPager.DateSelected = PagerSelectedDate;
+            calendarPager.HasEvents = PagerHasEvents;
 
             // Highlight the tab bar icon of this activity
             var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.calendar_image);
@@ -88,7 +123,7 @@ namespace NachoClient.AndroidClient
             listView.setMenuCreator ((menu) => {
                 if (EVENT_CELL_TYPE == menu.getViewType ()) {
                     SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                    lateItem.setBackground (A.Drawable_NachoSwipeCalendarLate (this.Activity));
                     lateItem.setWidth (dp2px (90));
                     lateItem.setTitle ("I'm Late");
                     lateItem.setTitleSize (14);
@@ -98,7 +133,7 @@ namespace NachoClient.AndroidClient
                     menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
 
                     SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                    forwardItem.setBackground (A.Drawable_NachoSwipeCalendarForward (this.Activity));
                     forwardItem.setWidth (dp2px (90));
                     forwardItem.setTitle ("Forward");
                     forwardItem.setTitleSize (14);
@@ -139,14 +174,63 @@ namespace NachoClient.AndroidClient
                 mSwipeRefreshLayout.Enabled = true;
             });
 
+            listView.ScrollStateChanged += ListView_ScrollStateChanged;
+
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            NachoPlatform.Calendars.Instance.ChangeIndicator += PlatformCalendarChangeCallback;
+
             if (jumpToToday) {
                 jumpToToday = false;
                 eventListAdapter.Refresh (() => {
                     listView.SetSelection (eventListAdapter.PositionForToday);
                 });
+            } else {
+                eventListAdapter.Refresh ();
             }
 
             return view;
+        }
+
+        public override void OnDestroyView ()
+        {
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            NachoPlatform.Calendars.Instance.ChangeIndicator -= PlatformCalendarChangeCallback;
+            base.OnDestroyView ();
+        }
+
+        void DrawTodayButton ()
+        {
+            var date = DateTime.Now.ToLocalTime ().ToString(" d").Trim();
+            var opts = new BitmapFactory.Options ();
+            opts.InMutable = true;
+            var image = BitmapFactory.DecodeResource (Resources, Resource.Drawable.calendar_empty_cal_alt, opts);
+            var canvas = new Canvas (image);
+            var paint = new Paint ();
+            paint.TextSize = image.Height / 2.0f;
+            paint.Color = Resources.GetColor(Resource.Color.NachoTeal);
+            var bounds = new Rect ();
+            paint.GetTextBounds (date, 0, date.Length, bounds);
+            paint.TextAlign = Paint.Align.Center;
+            canvas.DrawText (date, (int)(image.Width / 2.0f), (int)((image.Height + bounds.Height()) / 2.0f), paint);
+            todayButton.SetImageBitmap (image);
+        }
+
+        void ListView_ScrollStateChanged (object sender, AbsListView.ScrollStateChangedEventArgs e)
+        {
+            if (e.ScrollState == ScrollState.TouchScroll) {
+                isTouchScrolling = true;
+                listView.Scroll += ListView_Scroll;
+            } else if (isTouchScrolling && e.ScrollState == ScrollState.Idle) {
+                listView.Scroll -= ListView_Scroll;
+                isTouchScrolling = false;
+            }
+        }
+
+        void ListView_Scroll (object sender, AbsListView.ScrollEventArgs e)
+        {
+            var position = listView.FirstVisiblePosition;
+            var date = eventListAdapter.DateForPosition (position);
+            calendarPager.SetHighlightedDate (date);
         }
 
         public void StartAtToday ()
@@ -154,14 +238,44 @@ namespace NachoClient.AndroidClient
             jumpToToday = true;
         }
 
+        void PagerSelectedDate (DateTime date)
+        {
+            var position = eventListAdapter.PositionForDate (date);
+            ScrollToPosition (position);
+        }
+
+        void ScrollToPosition (int position)
+        {
+            // The internet says that we might not always get a ScrollState.Idle event in ListView_ScrollStateChanged,
+            // so protect against that case by making sure we're not listening for scroll before starting a smooth scroll.
+            // Since we call this function when we've already set the pager to a specific date, we don't want our scroll
+            // listener running and animating the pager away from and then back to the date it's already showing
+            if (isTouchScrolling) {
+                listView.Scroll -= ListView_Scroll;
+                isTouchScrolling = false;
+            }
+            listView.SmoothScrollToPositionFromTop (position, offset: 0, duration: 200);
+        }
+
+        bool PagerHasEvents (DateTime date)
+        {
+            return eventListAdapter.HasEvents (date);
+        }
+
         void TodayButton_Click (object sender, EventArgs e)
         {
-            listView.SmoothScrollToPositionFromTop (eventListAdapter.PositionForToday, offset: 0, duration: 200);
+            calendarPager.SetHighlightedDate (DateTime.Today);
+            ScrollToPosition (eventListAdapter.PositionForToday);
         }
 
         void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
         {
-            StartActivity (EventViewActivity.ShowEventIntent (Activity, eventListAdapter [e.Position]));
+            var ev = eventListAdapter [e.Position];
+            if (0 < ev.CalendarId) {
+                StartActivity (EventViewActivity.ShowEventIntent (Activity, ev));
+            } else {
+                StartActivity (AndroidCalendars.ViewEventIntent (ev));
+            }
         }
 
         void AddButton_Click (object sender, EventArgs e)
@@ -210,7 +324,29 @@ namespace NachoClient.AndroidClient
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
         }
 
-      
+        void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_EventSetChanged:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                eventListAdapter.Refresh ();
+                break;
+
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                    DrawTodayButton ();
+                    calendarPager.Update ();
+                }
+                break;
+            }
+        }
+
+        void PlatformCalendarChangeCallback (object sender, EventArgs e)
+        {
+            eventListAdapter.Refresh ();
+        }
     }
 
     public class EventListAdapter : Android.Widget.BaseAdapter<McEvent>
@@ -222,11 +358,10 @@ namespace NachoClient.AndroidClient
 
         public EventListAdapter (CreateEventOnDateDelegate callback)
         {
-            eventCalendarMap = new NcAllEventsCalendarMap ();
+            eventCalendarMap = new AndroidEventsCalendarMap (DateTime.UtcNow.AddDays (-31), DateTime.UtcNow.AddYears (1));
             eventCalendarMap.Refresh (() => {
                 NotifyDataSetChanged ();
             });
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             createEventOnDateCallback = callback;
         }
 
@@ -242,7 +377,7 @@ namespace NachoClient.AndroidClient
 
         public int PositionForToday {
             get {
-                return eventCalendarMap.IndexFromDayItem (eventCalendarMap.IndexOfDate (DateTime.Today), -1);
+                return PositionForDate (DateTime.Today);
             }
         }
 
@@ -317,21 +452,63 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-
-            switch (s.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_CalendarSetChanged:
-                Refresh ();
-                break;
-            }
-        }
-
         private void AddButton_Click (object sender, EventArgs e)
         {
             DateTime date = ((JavaObjectWrapper<DateTime>)(((ImageView)sender).GetTag (Resource.Id.event_date_add))).Item;
             createEventOnDateCallback (date);
+        }
+
+        public int PositionForDate (DateTime date)
+        {
+            var day = eventCalendarMap.IndexOfDate (date);
+            return eventCalendarMap.IndexFromDayItem (day, -1);
+        }
+
+        public DateTime DateForPosition (int position)
+        {
+            int day;
+            int item;
+            eventCalendarMap.IndexToDayItem (position, out day, out item);
+            return eventCalendarMap.GetDateUsingDayIndex (day);
+        }
+
+        public bool HasEvents (DateTime date)
+        {
+            if ((date.Month >= DateTime.UtcNow.Month && date.Year == DateTime.UtcNow.Year) || date.Year > DateTime.UtcNow.Year) {
+                var index = eventCalendarMap.IndexOfDate (date);
+                if ((eventCalendarMap.NumberOfDays () - 1) >= index) {
+                    return eventCalendarMap.NumberOfItemsForDay (index) > 0;
+                }
+                return false;
+            }
+            return false;
+        }
+
+        private class AndroidEventsCalendarMap : NcEventsCalendarMapCommon
+        {
+            private DateTime startRange;
+            private DateTime endRange;
+
+            public AndroidEventsCalendarMap (DateTime startRange, DateTime endRange)
+            {
+                this.startRange = startRange;
+                this.endRange = endRange;
+            }
+
+            protected override List<McEvent> GetEventsWithDuplicates ()
+            {
+                var appEvents = McEvent.QueryEventsInRange (startRange, endRange);
+                var deviceEvents = AndroidCalendars.GetDeviceEvents (startRange, endRange);
+
+                var result = new List<McEvent> (appEvents.Count + deviceEvents.Count);
+                result.AddRange (appEvents);
+                result.AddRange (deviceEvents);
+                result.Sort ((x, y) => {
+                    return DateTime.Compare (x.StartTime, y.StartTime);
+                });
+
+                return result;
+            }
         }
     }
 }

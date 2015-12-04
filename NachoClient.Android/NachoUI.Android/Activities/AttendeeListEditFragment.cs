@@ -84,9 +84,9 @@ namespace NachoClient.AndroidClient
 
         private void SwipeMenu_Create (SwipeMenu menu)
         {
-            if (REQUIRED_CELL_TYPE == menu.getViewType()) {
+            if (REQUIRED_CELL_TYPE == menu.getViewType ()) {
                 var optional = new SwipeMenuItem (this.Activity.ApplicationContext);
-                optional.setBackground (new ColorDrawable (A.Color_NachoSwipeAteendeeOptional));
+                optional.setBackground (A.Drawable_NachoSwipeAttendeeOptional (this.Activity));
                 optional.setWidth (dp2px (90));
                 optional.setTitle ("Optional");
                 optional.setTitleSize (14);
@@ -96,7 +96,7 @@ namespace NachoClient.AndroidClient
                 menu.addMenuItem (optional, SwipeMenu.SwipeSide.RIGHT);
             } else {
                 var required = new SwipeMenuItem (this.Activity.ApplicationContext);
-                required.setBackground (new ColorDrawable (A.Color_NachoSwipeAttendeeRequired));
+                required.setBackground (A.Drawable_NachoSwipeAttendeeRequired (this.Activity));
                 required.setWidth (dp2px (90));
                 required.setTitle ("Required");
                 required.setTitleSize (14);
@@ -107,7 +107,7 @@ namespace NachoClient.AndroidClient
             }
 
             var remove = new SwipeMenuItem (this.Activity.ApplicationContext);
-            remove.setBackground (new ColorDrawable (A.Color_NachoSwipeAttendeeRemove));
+            remove.setBackground (A.Drawable_NachoSwipeAttendeeRemove (this.Activity));
             remove.setWidth (dp2px (90));
             remove.setTitle ("Remove");
             remove.setTitleSize (14);
@@ -117,7 +117,7 @@ namespace NachoClient.AndroidClient
             menu.addMenuItem (remove, SwipeMenu.SwipeSide.RIGHT);
 
             var send = new SwipeMenuItem (this.Activity.ApplicationContext);
-            send.setBackground (new ColorDrawable (A.Color_NachoSwipeAttendeeResend));
+            send.setBackground (A.Drawable_NachoSwipeAttendeeResend (this.Activity));
             send.setWidth (dp2px (90));
             send.setTitle ("Send invite");
             send.setTitleSize (14);

@@ -41,6 +41,11 @@ namespace NachoClient.AndroidClient
             return false;
         }
 
+        public virtual int ShowListStyle()
+        {
+            return MessageListAdapter.LISTVIEW_STYLE;
+        }
+
         public virtual void SetActiveImage (View view)
         {
             // Highlight the tab bar icon of this activity
@@ -68,11 +73,6 @@ namespace NachoClient.AndroidClient
             messageListFragment.Initialize (messages, MessageListFragment_onEventClick, MessageListFragment_onThreadClick, MessageListFragment_onMessageClick);
         }
 
-        protected override void OnResume ()
-        {
-            base.OnResume ();
-        }
-
         void MessageListFragment_onEventClick (object sender, McEvent ev)
         {
             StartActivity (EventViewActivity.ShowEventIntent (this, ev));
@@ -86,9 +86,47 @@ namespace NachoClient.AndroidClient
 
         void MessageListFragment_onMessageClick (object sender, McEmailMessageThread thread)
         {
-            var message = thread.FirstMessageSpecialCase ();
-            var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-            StartActivity (intent);
+            if ((null != thread.Source) && thread.Source.HasDraftsSemantics ()) {
+                var message = thread.SingleMessageSpecialCase ();
+                ComposeDraft (message);
+            } else if ((null != thread.Source) && thread.Source.HasOutboxSemantics ()) {
+                DealWithThreadInOutbox (thread);
+            } else {
+                var message = thread.FirstMessageSpecialCase ();
+                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
+                StartActivity (intent);
+            }
+        }
+
+        public void DealWithThreadInOutbox (McEmailMessageThread messageThread)
+        {
+            var message = messageThread.SingleMessageSpecialCase ();
+            if (null == message) {
+                return;
+            }
+
+            var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
+            if ((null == pending) || (NcResult.KindEnum.Error != pending.ResultKind)) {
+                var copy = EmailHelper.MoveFromOutboxToDrafts (message);
+                ComposeDraft (copy);
+                return;
+            }
+
+            string errorString;
+            if (!ErrorHelper.ErrorStringForSubkind (pending.ResultSubKind, out errorString)) {
+                errorString = String.Format ("(ErrorCode={0}", pending.ResultSubKind);
+            }
+            var messageString = "There was a problem sending this message.  You can resend this message or open it in the drafts folder.";
+            var alertString = String.Format ("{0}\n{1}", messageString, errorString);
+            NcAlertView.Show (this, "Edit Message", alertString, () => {
+                var copy = EmailHelper.MoveFromOutboxToDrafts (message);
+                ComposeDraft (copy);
+            });
+        }
+
+        void ComposeDraft (McEmailMessage message)
+        {
+            StartActivity (MessageComposeActivity.DraftIntent (this, message));
         }
 
         public override void OnBackPressed ()
@@ -101,14 +139,14 @@ namespace NachoClient.AndroidClient
             base.OnSaveInstanceState (outState);
         }
 
-        public override void SwitchAccount (McAccount account)
+        public override void MaybeSwitchAccount ()
         {
-            base.SwitchAccount (account);
-            MaybeSwitchAccount ();
-        }
+            base.MaybeSwitchAccount ();
 
-        void MaybeSwitchAccount ()
-        {
+            if (null != messageListFragment) {
+                messageListFragment.MaybeSwitchStyle (ShowListStyle ());
+            }
+
             if ((null != account) && (NcApplication.Instance.Account.Id == account.Id)) {
                 return;
             }

@@ -44,13 +44,22 @@ namespace NachoClient.AndroidClient
             nowFragment.onMessageClick += NowFragment_onMessageClick;
         }
 
-        public void ListIsEmpty()
+        public void ListIsEmpty ()
         {
         }
 
         public bool ShowHotEvent ()
         {
             return false;
+        }
+
+        public int ShowListStyle ()
+        {
+            if (LoginHelpers.ShowHotCards ()) {
+                return MessageListAdapter.CARDVIEW_STYLE;
+            } else {
+                return MessageListAdapter.LISTVIEW_STYLE;
+            }
         }
 
         public void SetActiveImage (Android.Views.View view)
@@ -89,9 +98,9 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public override void SwitchAccount (McAccount account)
+        public override void MaybeSwitchAccount ()
         {
-            base.SwitchAccount (account);
+            base.MaybeSwitchAccount ();
 
             FragmentManager.PopBackStackImmediate ("Now", PopBackStackFlags.None);
             if (null != nowFragment) {

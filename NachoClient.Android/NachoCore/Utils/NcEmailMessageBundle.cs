@@ -5,12 +5,12 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.Serialization;
-using System.Xml.Serialization;
 using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using HtmlAgilityPack;
 using NachoPlatform;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
@@ -20,36 +20,95 @@ namespace NachoCore.Utils
 
         #region Property Classes
 
-        [DataContract]
-        public class BundleManifest
+        public class BundleManifest : NcBundleStorageSerializable
         {
-            [DataContract]
             public class Entry
             {
-                [DataMember]
                 public string Path { get; set; }
-                [DataMember]
                 public string ContentType { get; set; }
 
                 public Entry ()
                 {
                 }
             }
-
-            [DataMember]
+                
             public int Version { get; set; }
-            [DataMember]
             public Dictionary<string, Entry> Entries { get; set; }
 
             public BundleManifest ()
             {
                 Version = 0;
+                Entries = new Dictionary<string, Entry> ();
             }
 
             public BundleManifest (int version)
             {
                 Version = version;
                 Entries = new Dictionary<string, Entry> ();
+            }
+
+            public byte[] SerializeForBundleStorage ()
+            {
+                var lines = new List<string> ();
+                lines.Add ("Version");
+                lines.Add (Version.ToString ());
+                lines.Add ("Entries");
+                lines.Add (Entries.Count.ToString ());
+                foreach (var k in Entries.Keys) {
+                    var entry = Entries [k];
+                    if (entry.Path != null) {
+                        lines.Add ("Path");
+                        lines.Add (entry.Path);
+                    }
+                    if (entry.ContentType != null) {
+                        lines.Add ("ContentType");
+                        lines.Add (entry.ContentType);
+                    }
+                    lines.Add ("key");
+                    lines.Add (k);
+                }
+                var stringContents = String.Join ("\n", lines);
+                var encoding = new System.Text.UTF8Encoding (false, false);
+                var encodedContents = encoding.GetBytes (stringContents);
+                return encodedContents;
+            }
+
+            public void DeserializeFromBundleStorage (byte[] contents)
+            {
+                var encoding = new System.Text.UTF8Encoding (false, false);
+                var stringContents = encoding.GetString (contents);
+                var lines = new List<string>(stringContents.Split ('\n'));
+                var remainingEntries = 0;
+                Entry entry = null;
+                while (lines.Count > 0) {
+                    var k = lines [0];
+                    lines.RemoveAt (0);
+                    if (lines.Count > 0) {
+                        var v = lines [0];
+                        lines.RemoveAt (0);
+                        if (remainingEntries == 0) {
+                            if (k == "Version") {
+                                Version = Int32.Parse (v);
+                            } else if (k == "Entries") {
+                                remainingEntries = Int32.Parse (v);
+                            }
+                        } else {
+                            if (entry == null) {
+                                entry = new Entry ();
+                            }
+                            if (k == "key") {
+                                Entries [v] = entry;
+                                remainingEntries -= 1;
+                                entry = null;
+                            } else if (k == "Path") {
+                                entry.Path = v;
+                            } else if (k == "ContentType") {
+                                entry.ContentType = v;
+                            }
+                        }
+                    }
+                }
+
             }
 
         }
@@ -132,7 +191,7 @@ namespace NachoCore.Utils
         private BundleManifest Manifest;
         private int SubmessageCount = 0;
 
-        private static int LastestVersion = 2;
+        private static int LastestVersion = 3;
 
         private static string FullTextEntryName = "full-text";
         private static string TopTextEntryName = "top-text";
@@ -141,7 +200,7 @@ namespace NachoCore.Utils
         private static string FullLightlyStyledEntryName = "full-simple";
         private static string TopLightlyStyledEntryName = "top-simple";
 
-        private static string ManifestPath = "manifest.xml";
+        private static string ManifestPath = "manifest.nacho";
         private static string FullTextPath = "full.txt";
         private static string TopTextPath = "top.txt";
         private static string FullHtmlPath = "full.html";
@@ -150,6 +209,8 @@ namespace NachoCore.Utils
         private static string TopLightlyStyledPath = "top.rtf";
 
         ParseResult parsed;
+
+        private static object UpdateLock = new object ();
 
         #endregion
 
@@ -366,8 +427,13 @@ namespace NachoCore.Utils
 
         public void Update ()
         {
-            ParseMessage ();
-            CompleteBundleAfterParse ();
+            lock (UpdateLock) {
+                ReadManifest ();
+                if (NeedsUpdate) {
+                    ParseMessage ();
+                    CompleteBundleAfterParse ();
+                }
+            }
         }
 
         public void Invalidate ()
@@ -403,6 +469,7 @@ namespace NachoCore.Utils
 
         private void ParseMessage ()
         {
+            RtfConverter = new NachoPlatform.RtfConverter ();
             parsed = new ParseResult ();
 
             if (Message != null) {
@@ -654,6 +721,14 @@ namespace NachoCore.Utils
 
         protected override void VisitMultipartRelated (MultipartRelated related)
         {
+            if (related == null) {
+                Log.Warn (Log.LOG_UTILS, "NcEmailMessageBundle got null related part");
+                return;
+            }
+            if (related.Root == null) {
+                Log.Warn (Log.LOG_UTILS, "NcEmailMessageBundle got null related.Root");
+                return;
+            }
             parsed.RelatedStack.Add (related);
             related.Root.Accept (this);
             parsed.RelatedStack.RemoveAt (parsed.RelatedStack.Count - 1);
@@ -703,12 +778,17 @@ namespace NachoCore.Utils
                     // even though it's not an inline image, go ahead and include in message
                     VisitImagePart (entity);
                 }
+            } else {
+                var tnef = entity as MimeKit.Tnef.TnefPart;
+                if (tnef != null) {
+                    VisitTnefPart (tnef);
+                }
             }
         }
 
         protected override void VisitMessagePart (MessagePart entity)
         {
-            VisitMessage (entity.Message);
+            VisitMessage (entity.Message, true);
         }
 
         protected override void VisitTnefPart (MimeKit.Tnef.TnefPart entity)
@@ -720,7 +800,7 @@ namespace NachoCore.Utils
             } catch {
             }
             if (message != null) {
-                VisitMessage (message);
+                VisitMessage (message, false);
             }
         }
 
@@ -753,7 +833,7 @@ namespace NachoCore.Utils
             }
         }
 
-        protected void VisitMessage (MimeMessage message)
+        protected void VisitMessage (MimeMessage message, bool includeHeaders = true)
         {
             ++SubmessageCount;
             string substorageRoot = null;
@@ -765,21 +845,23 @@ namespace NachoCore.Utils
             var bundle = new NcEmailMessageBundle (message, substorageRoot);
             bundle.Update ();
             if (parsed.PopulateText) {
-                IncludeText ("\n\n--------------------------------\n");
-                if (message.From.Count > 0) {
-                    IncludeText (String.Format ("From: {0}\n", message.From.ToString ()));
+                if (includeHeaders) {
+                    IncludeText ("\n\n--------------------------------\n");
+                    if (message.From.Count > 0) {
+                        IncludeText (String.Format ("From: {0}\n", message.From.ToString ()));
+                    }
+                    if (message.To.Count > 0) {
+                        IncludeText (String.Format ("To: {0}\n", message.To.ToString ()));
+                    }
+                    if (message.Cc.Count > 0) {
+                        IncludeText (String.Format ("Cc: {0}\n", message.Cc.ToString ()));
+                    }
+                    IncludeText (String.Format ("Sent: {0}\n", message.Date.ToString ()));
+                    if (!String.IsNullOrEmpty (message.Subject)) {
+                        IncludeText (String.Format ("Subject: {0}\n", message.Subject));
+                    }
+                    IncludeText ("\n");
                 }
-                if (message.To.Count > 0) {
-                    IncludeText (String.Format ("To: {0}\n", message.To.ToString ()));
-                }
-                if (message.Cc.Count > 0) {
-                    IncludeText (String.Format ("Cc: {0}\n", message.Cc.ToString ()));
-                }
-                IncludeText (String.Format ("Sent: {0}\n", message.Date.ToString ()));
-                if (!String.IsNullOrEmpty (message.Subject)) {
-                    IncludeText (String.Format ("Subject: {0}\n", message.Subject));
-                }
-                IncludeText ("\n");
                 IncludeText (bundle.FullText);
             }
             if (parsed.PopulateHtml) {
@@ -791,35 +873,38 @@ namespace NachoCore.Utils
                 doc.LoadHtml (bundle.FullHtml);
                 var body = doc.DocumentNode.Element ("html").Element ("body");
                 var messageElement = doc.CreateElement ("div");
-                messageElement.AppendChild (doc.CreateElement ("br"));
-                messageElement.AppendChild (doc.CreateElement ("hr"));
                 messageElement.SetAttributeValue ("nacho-message-attachment", "true");
-                var headersElement = doc.CreateElement ("div");
-                headersElement.SetAttributeValue ("nacho-message-headers", "true");
-                if (message.From.Count > 0) {
-                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "From", message.From.ToString ()));
+                if (includeHeaders) {
+                    messageElement.AppendChild (doc.CreateElement ("br"));
+                    messageElement.AppendChild (doc.CreateElement ("hr"));
+                    var headersElement = doc.CreateElement ("div");
+                    headersElement.SetAttributeValue ("nacho-message-headers", "true");
+                    if (message.From.Count > 0) {
+                        headersElement.AppendChild (SimpleMessageHeaderNode (doc, "From", message.From.ToString ()));
+                    }
+                    if (message.To.Count > 0) {
+                        headersElement.AppendChild (SimpleMessageHeaderNode (doc, "To", message.To.ToString ()));
+                    }
+                    if (message.Cc.Count > 0) {
+                        headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Cc", message.Cc.ToString ()));
+                    }
+                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Date", message.Date.ToString ()));
+                    if (!String.IsNullOrEmpty (message.Subject)) {
+                        headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Subject", message.Subject));
+                    }
+                    headersElement.AppendChild (doc.CreateElement ("br"));
+                    messageElement.AppendChild (headersElement);
                 }
-                if (message.To.Count > 0) {
-                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "To", message.To.ToString ()));
-                }
-                if (message.Cc.Count > 0) {
-                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Cc", message.Cc.ToString ()));
-                }
-                headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Date", message.Date.ToString ()));
-                if (!String.IsNullOrEmpty (message.Subject)) {
-                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Subject", message.Subject));
-                }
-                headersElement.AppendChild (doc.CreateElement ("br"));
                 var bodyElement = doc.CreateElement ("div");
                 bodyElement.SetAttributeValue ("nacho-message-body", "true");
-                messageElement.AppendChild (headersElement);
                 messageElement.AppendChild (bodyElement);
                 for (var i = body.ChildNodes.Count - 1; i >= 0; --i) {
-                    body.ChildNodes [i].Remove ();
+                    var child = body.ChildNodes [i];
+                    child.Remove ();
                     if (bodyElement.FirstChild == null) {
-                        bodyElement.AppendChild (body.ChildNodes [i]);
+                        bodyElement.AppendChild (child);
                     } else {
-                        bodyElement.InsertBefore (body.ChildNodes [i], bodyElement.FirstChild);
+                        bodyElement.InsertBefore (child, bodyElement.FirstChild);
                     }
                 }
                 body.AppendChild (messageElement);

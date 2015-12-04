@@ -27,6 +27,8 @@ repos = (
     'JetBlack.Caching',
     'TokenAutoComplete',
     'TokenAutoCompleteBinding',
+    'rtfparserkit',
+    'rtfparserkitBinding',
     # This is always the last one
     'NachoClientX'
 )

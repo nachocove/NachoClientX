@@ -3,6 +3,7 @@
 using System;
 using Android.Graphics;
 using Android.Graphics.Drawables;
+using Android.Content;
 
 namespace NachoClient.AndroidClient
 {
@@ -18,36 +19,85 @@ namespace NachoClient.AndroidClient
         public static Color Color_NachoLightText = Color.Rgb (0x99, 0x99, 0x99);
         public static Color Color_NachoTextGray = Color.Rgb (0x77, 0x77, 0x77);
 
-        // Email swipe items
-        public static Color Color_NachoSwipeEmailArchive = Color.Rgb (0x2b, 0xd9, 0xb2);
-        public static Color Color_NachoSwipeEmailDelete = Color.Rgb (0xff, 0x3f, 0x20);
-        public static Color Color_NachoSwipeEmailDefer = Color.Rgb (0xff, 0xbb, 0x33);
-        public static Color Color_NachoSwipeEmailMove = Color.Rgb (0x90, 0x90, 0x90);
+        // Email swipe icons
         public static int Id_NachoSwipeEmailArchive = Resource.Drawable.email_archive_swipe;
         public static int Id_NachoSwipeEmailDelete = Resource.Drawable.email_delete_swipe;
         public static int Id_NachoSwipeEmailDefer = Resource.Drawable.email_defer_swipe;
         public static int Id_NachoSwipeEmailMove = Resource.Drawable.email_move_swipe;
 
-        // Contact swipe items
-        public static Color Color_NachoSwipeContactCall = Color.Rgb (245, 152, 39);
-        public static Color Color_NachoSwipeContactEmail = Color.Rgb (79, 100, 109);
+        // Contact swipe icons
         public static int Id_NachoSwipeContactCall = Resource.Drawable.contacts_call_swipe;
         public static int Id_NachoSwipeContactEmail = Resource.Drawable.contacts_email_swipe;
 
-        // Calendar swipe items
-        public static Color Color_NachoSwipeCalendarLate = Color.Rgb (0xff, 0x47, 0x47);
-        public static Color Color_NachoSwipeCalendarForward = Color.Rgb (0x00, 0xBA, 0xD7);
+        // Calendar swipe icons
         public static int Id_NachoSwipeCalendarLate = Resource.Drawable.calendar_late_swipe;
         public static int Id_NachoSwipeCalendarForward = Resource.Drawable.calendar_forward_swipe;
 
         // Attendee list swipe items
-        public static Color Color_NachoSwipeAttendeeRemove = Color.Rgb(232, 61, 14);
-        public static Color Color_NachoSwipeAttendeeResend = Color.Rgb (0x00, 0xBA, 0xD7);
-        public static Color Color_NachoSwipeAttendeeRequired = Color.Rgb (0xff, 0x9b, 0x12);
-        public static Color Color_NachoSwipeAteendeeOptional = Color.Rgb (0x90, 0x90, 0x90);
         public static int Id_NachoSwipeAttendeeRemove = Resource.Drawable.email_delete_swipe;
         public static int Id_NachoSwipeAttendeeResend = Resource.Drawable.files_forward_swipe;
         public static int Id_NachoSwipeAttendeeRequired = Resource.Drawable.calendar_attendee_required_swipe;
         public static int Id_NachoSwipeAttendeeOptional = Resource.Drawable.calendar_attendee_optional_swipe;
+
+        public static Drawable Drawable_NachoSwipeAttendeeOptional (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeAttendeeOptional);
+        }
+
+        public static Drawable Drawable_NachoSwipeAttendeeRemove (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeAttendeeRemove);
+        }
+
+        public static Drawable Drawable_NachoSwipeAttendeeRequired (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeAttendeeRequired);
+        }
+
+        public static Drawable Drawable_NachoSwipeAttendeeResend (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeAttendeeResend);
+        }
+
+        public static Drawable Drawable_NachoSwipeCalendarForward (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeCalendarForward);
+        }
+
+        public static Drawable Drawable_NachoSwipeCalendarLate (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeCalendarLate);
+        }
+
+        public static Drawable Drawable_NachoSwipeContactCall (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeContactCall);
+        }
+
+        public static Drawable Drawable_NachoSwipeContactEmail (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeContactEmail);
+        }
+
+        public static Drawable Drawable_NachoSwipeEmailArchive (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeEmailArchive);
+        }
+
+        public static Drawable Drawable_NachoSwipeEmailDefer (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeEmailDefer);
+        }
+
+        public static Drawable Drawable_NachoSwipeEmailDelete (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeEmailDelete);
+        }
+
+        public static Drawable Drawable_NachoSwipeEmailMove (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeEmailMove);
+        }
+
     }
 }

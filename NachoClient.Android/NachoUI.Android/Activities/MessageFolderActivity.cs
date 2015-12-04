@@ -50,7 +50,12 @@ namespace NachoClient.AndroidClient
 
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
-            var messages = new NachoEmailMessages (Folder);
+            INachoEmailMessages messages;
+            if (Folder.IsClientOwnedDraftsFolder () || Folder.IsClientOwnedOutboxFolder ()) {
+                messages = new NachoDraftMessages (Folder);
+            } else {
+                messages = new NachoEmailMessages (Folder);
+            }
             messages.Refresh (out adds, out deletes);
             return messages;
         }

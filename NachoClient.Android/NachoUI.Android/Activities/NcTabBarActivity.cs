@@ -15,7 +15,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public class NcTabBarActivity : NcActivity, ChooseProviderDelegate, CredentialsFragmentDelegate, WaitingFragmentDelegate, AccountListDelegate
+    public class NcTabBarActivity : NcActivity, AccountListDelegate
     {
         SwitchAccountFragment switchAccountFragment = new SwitchAccountFragment ();
 
@@ -23,6 +23,13 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle);
             SetContentView (layoutId);
+        }
+
+        protected override void OnResume ()
+        {
+            base.OnResume ();
+            this.MaybeSwitchAccount ();
+            this.SetSwitchAccountButtonImage (Window.FindViewById (Resource.Id.content));
         }
 
         public void HookNavigationToolbar (Android.Views.View view)
@@ -81,11 +88,7 @@ namespace NachoClient.AndroidClient
 
         public static Intent HotListIntent (Context context)
         {
-            if (LoginHelpers.ShowHotCards ()) {
-                return new Intent(context, typeof(NowActivity));
-            } else {
-                return new Intent(context, typeof(NowListActivity));
-            }
+            return new Intent (context, typeof(NowListActivity));
         }
 
         void HotButton_Click (object sender, EventArgs e)
@@ -95,15 +98,20 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
+        public static Intent InboxIntent (Context context)
+        {
+            var intent = new Intent ();
+            intent.SetClass (context, typeof(InboxActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+            return intent;
+        }
+
         void InboxButton_Click (object sender, EventArgs e)
         {
             if (this is InboxActivity) {
                 return;
             } 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(InboxActivity));
-            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
-            StartActivity (intent);
+            StartActivity (InboxIntent (this));
         }
 
         void ContactsButton_Click (object sender, EventArgs e)
@@ -117,55 +125,28 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
+        public static Intent CalendarIntent (Context context)
+        {
+            var intent = new Intent ();
+            intent.SetClass (context, typeof(CalendarActivity));
+            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+            return intent;
+        }
+
         void CalendarButton_Click (object sender, EventArgs e)
         {
             if (this is CalendarActivity) {
                 return;
             } 
-            var intent = new Intent ();
-            intent.SetClass (this, typeof(CalendarActivity));
-            intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
-            StartActivity (intent);
+            StartActivity (CalendarIntent (this));
         }
 
         public void AddAccount ()
         {
-            var chooseProviderFragment = ChooseProviderFragment.newInstance ();
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, chooseProviderFragment).AddToBackStack ("ChooseProvider").Commit ();
+            StartActivity (new Intent (this, typeof(AddAccountActivity)));
         }
 
-        public void ChooseProviderFinished (McAccount.AccountServiceEnum service)
-        {
-            switch (service) {
-            case McAccount.AccountServiceEnum.GoogleDefault:
-                var googleSignInFragment = GoogleSignInFragment.newInstance (service, null);
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, googleSignInFragment).AddToBackStack ("GoogleSignIn").Commit ();
-                break;
-            default:
-                var credentialsFragment = CredentialsFragment.newInstance (service, null);
-                FragmentManager.BeginTransaction ().Add (Resource.Id.content, credentialsFragment).AddToBackStack ("Credentials").Commit ();
-                break;
-            }
-        }
-
-        // Credentials have been verified
-        public void CredentialsValidated (McAccount account)
-        {
-            var waitingFragment = WaitingFragment.newInstance (account);
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, waitingFragment).AddToBackStack ("Waiting").Commit ();
-        }
-
-        public void WaitingFinished (McAccount account)
-        {
-            Log.Info (Log.LOG_UI, "NcActivity syncing complete");
-            if (null != account) {
-                NcApplication.Instance.Account = account;
-                LoginHelpers.SetSwitchToTime (account);
-            }
-            FragmentManager.PopBackStack ("ChooseProvider", PopBackStackFlags.Inclusive);
-        }
-
-        public virtual void SwitchAccount (McAccount account)
+        public virtual void MaybeSwitchAccount ()
         {
         }
 
@@ -173,7 +154,7 @@ namespace NachoClient.AndroidClient
         public void AccountSelected (McAccount account)
         {
             Log.Info (Log.LOG_UI, "NcActivity account selected {0}", account.DisplayName);
-            SwitchAccount (account);
+            MaybeSwitchAccount ();
             LoginHelpers.SetSwitchToTime (account);
 
             // Pop the switcher if the activity hasn't already done it.
@@ -183,6 +164,46 @@ namespace NachoClient.AndroidClient
             } 
         }
 
+        public void AccountShortcut (int shortcut)
+        {
+            if (Resource.Id.account_settings == shortcut) {
+                StartActivity (AccountSettingsActivity.ShowAccountSettingsIntent (this, NcApplication.Instance.Account));
+                return;
+            }
+            // Pop the switcher if the activity hasn't already done it.
+            var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is SwitchAccountFragment) {
+                FragmentManager.PopBackStack ();
+            }
+            switch (shortcut) {
+            case Resource.Id.go_to_inbox:
+                {
+                    if (this is InboxActivity) {
+                        return;
+                    } 
+                    var intent = new Intent ();
+                    intent.SetClass (this, typeof(InboxActivity));
+                    intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
+                    StartActivity (intent);
+                }
+                break;
+            case Resource.Id.go_to_deferred:
+                {
+                    var folder = McFolder.GetDeferredFakeFolder ();
+                    var intent = DeferredActivity.ShowDeferredFolderIntent (this, folder);
+                    StartActivity (intent); 
+                }
+                break;
+            case Resource.Id.go_to_deadlines:
+                {
+                    var folder = McFolder.GetDeadlineFakeFolder ();
+                    var intent = DeadlineActivity.ShowDeadlineFolderIntent (this, folder);
+                    StartActivity (intent);
+                }
+                break;
+            }
+        }
+
         public override void OnBackPressed ()
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
@@ -190,24 +211,7 @@ namespace NachoClient.AndroidClient
                 this.FragmentManager.PopBackStack ();
                 return;
             }
-            if (f is ChooseProviderFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
-            if (f is CredentialsFragment) {
-                ((CredentialsFragment)f).OnBackPressed ();
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
-            if (f is GoogleSignInFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
-            if (f is WaitingFragment) {
-                this.FragmentManager.PopBackStack ();
-                return;
-            }
-            if(MoreFragment.moreTabActivities.Contains(this.GetType())) {
+            if (MoreFragment.moreTabActivities.Contains (this.GetType ())) {
                 base.OnBackPressed ();
             }
         }

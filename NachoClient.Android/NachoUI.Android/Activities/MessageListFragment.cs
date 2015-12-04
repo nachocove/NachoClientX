@@ -25,6 +25,7 @@ using NachoCore.Brain;
 using NachoPlatform;
 using Android.Widget;
 using Android.Views.InputMethods;
+using Android.Webkit;
 
 namespace NachoClient.AndroidClient
 {
@@ -33,6 +34,8 @@ namespace NachoClient.AndroidClient
         void ListIsEmpty ();
 
         bool ShowHotEvent ();
+
+        int ShowListStyle ();
 
         void SetActiveImage (View view);
     }
@@ -47,7 +50,8 @@ namespace NachoClient.AndroidClient
         private const int LATE_TAG = 1;
         private const int FORWARD_TAG = 2;
 
-        SwipeMenuListView listView;
+        LinearLayoutManager layoutManager;
+        SwipeMenuRecyclerView recyclerView;
         MessageListAdapter messageListAdapter;
         HotEventAdapter hotEventAdapter;
 
@@ -94,6 +98,7 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
+            var parent = (MessageListDelegate)Activity;
             var view = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
 
             if (Activity is NcTabBarActivity) {
@@ -124,83 +129,15 @@ namespace NachoClient.AndroidClient
             var cancelButton = view.FindViewById (Resource.Id.cancel);
             cancelButton.Click += CancelButton_Click;
 
-            messageListAdapter = new MessageListAdapter (this);
+            recyclerView = view.FindViewById<SwipeMenuRecyclerView> (Resource.Id.recyclerView);
 
-            listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
-            listView.Adapter = messageListAdapter;
+            layoutManager = new LinearLayoutManager (Activity);
+            recyclerView.SetLayoutManager (layoutManager);
 
-            listView.ItemClick += ListView_ItemClick;
+            recyclerView.AddOnScrollListener (new MessageListScrollListener ());
 
-            listView.setMenuCreator ((menu) => {
-                SwipeMenuItem deferItem = new SwipeMenuItem (Activity.ApplicationContext);
-                deferItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDefer));
-                deferItem.setWidth (dp2px (90));
-                deferItem.setTitle ("Defer");
-                deferItem.setTitleSize (14);
-                deferItem.setTitleColor (A.Color_White);
-                deferItem.setIcon (A.Id_NachoSwipeEmailDefer);
-                deferItem.setId (DEFER_TAG);
-                menu.addMenuItem (deferItem, SwipeMenu.SwipeSide.LEFT);
-                SwipeMenuItem moveItem = new SwipeMenuItem (Activity.ApplicationContext);
-                moveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailMove));
-                moveItem.setWidth (dp2px (90));
-                moveItem.setTitle ("Move");
-                moveItem.setTitleSize (14);
-                moveItem.setTitleColor (A.Color_White);
-                moveItem.setIcon (A.Id_NachoSwipeEmailMove);
-                moveItem.setId (SAVE_TAG);
-                menu.addMenuItem (moveItem, SwipeMenu.SwipeSide.LEFT);
-                SwipeMenuItem archiveItem = new SwipeMenuItem (Activity.ApplicationContext);
-                archiveItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailArchive));
-                archiveItem.setWidth (dp2px (90));
-                archiveItem.setTitle ("Archive");
-                archiveItem.setTitleSize (14);
-                archiveItem.setTitleColor (A.Color_White);
-                archiveItem.setIcon (A.Id_NachoSwipeEmailArchive);
-                archiveItem.setId (ARCHIVE_TAG);
-                menu.addMenuItem (archiveItem, SwipeMenu.SwipeSide.RIGHT);
-                SwipeMenuItem deleteItem = new SwipeMenuItem (Activity.ApplicationContext);
-                deleteItem.setBackground (new ColorDrawable (A.Color_NachoSwipeEmailDelete));
-                deleteItem.setWidth (dp2px (90));
-                deleteItem.setTitle ("Delete");
-                deleteItem.setTitleSize (14);
-                deleteItem.setTitleColor (A.Color_White);
-                deleteItem.setIcon (A.Id_NachoSwipeEmailDelete);
-                deleteItem.setId (DELETE_TAG);
-                menu.addMenuItem (deleteItem, SwipeMenu.SwipeSide.RIGHT);
-            }
-            );
-
-            listView.setOnMenuItemClickListener (( position, menu, index) => {
-                var messageThread = messages.GetEmailThread (position);
-                switch (index) {
-                case SAVE_TAG:
-                    ShowFolderChooser (messageThread);
-                    break;
-                case DEFER_TAG:
-                    ShowPriorityChooser (messageThread);
-                    break;
-                case ARCHIVE_TAG:
-                    ArchiveThisMessage (messageThread);
-                    break;
-                case DELETE_TAG:
-                    DeleteThisMessage (messageThread);
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
-                }
-                return false;
-            });
-
-            listView.setOnSwipeStartListener ((position) => {
-                mSwipeRefreshLayout.Enabled = false;
-            });
-
-            listView.setOnSwipeEndListener ((position) => {
-                mSwipeRefreshLayout.Enabled = true;
-            });
-
-            listView.ScrollStateChanged += ListView_ScrollStateChanged;
+            ClearCache ();
+            SetupMessageListAdapter (view);
 
             searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
             searchEditText.TextChanged += SearchString_TextChanged;
@@ -209,9 +146,11 @@ namespace NachoClient.AndroidClient
 
             searcher = new SearchHelper ("MessageListViewController", (searchString) => {
                 if (String.IsNullOrEmpty (searchString)) {
-                    searchResultsMessages.UpdateMatches (null);
-                    searchResultsMessages.UpdateServerMatches (null);
-                    messageListAdapter.RefreshSearchMatches ();
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        searchResultsMessages.UpdateMatches (null);
+                        searchResultsMessages.UpdateServerMatches (null);
+                        messageListAdapter.RefreshSearchMatches ();
+                    });
                     return; 
                 }
                 // On-device index
@@ -236,7 +175,6 @@ namespace NachoClient.AndroidClient
                 });
             });
                 
-            var parent = (MessageListDelegate)Activity;
             var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
 
             if (parent.ShowHotEvent ()) {
@@ -251,7 +189,7 @@ namespace NachoClient.AndroidClient
 
                 hoteventListView.setMenuCreator ((menu) => {
                     SwipeMenuItem lateItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    lateItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarLate));
+                    lateItem.setBackground (A.Drawable_NachoSwipeCalendarLate (Activity));
                     lateItem.setWidth (dp2px (90));
                     lateItem.setTitle ("I'm Late");
                     lateItem.setTitleSize (14);
@@ -261,7 +199,7 @@ namespace NachoClient.AndroidClient
                     menu.addMenuItem (lateItem, SwipeMenu.SwipeSide.LEFT);
 
                     SwipeMenuItem forwardItem = new SwipeMenuItem (Activity.ApplicationContext);
-                    forwardItem.setBackground (new ColorDrawable (A.Color_NachoSwipeCalendarForward));
+                    forwardItem.setBackground (A.Drawable_NachoSwipeCalendarForward (Activity));
                     forwardItem.setWidth (dp2px (90));
                     forwardItem.setTitle ("Forward");
                     forwardItem.setTitleSize (14);
@@ -295,11 +233,97 @@ namespace NachoClient.AndroidClient
             } else {
                 hotEvent.Visibility = ViewStates.Gone;
             }
-
+                
             ConfigureButtons ();
             parent.SetActiveImage (view);
 
+            MaybeDisplayNoMessagesView (view);
+
             return view;
+        }
+
+        void SetupMessageListAdapter (View view)
+        {
+            var parent = (MessageListDelegate)Activity;
+            messageListAdapter = new MessageListAdapter (this, parent.ShowListStyle ());
+
+            messageListAdapter.onMessageClick += MessageListAdapter_OnMessageClick;
+
+            recyclerView.SetAdapter (messageListAdapter);
+
+            recyclerView.setMenuCreator ((menu) => {
+                if (MessageListAdapter.SUMMARY_STYLE == menu.getViewType ()) {
+                    return;
+                }
+                if (!(messages.HasDraftsSemantics () || messages.HasOutboxSemantics ())) {
+                    SwipeMenuItem deferItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    deferItem.setBackground (A.Drawable_NachoSwipeEmailDefer (Activity));
+                    deferItem.setWidth (dp2px (90));
+                    deferItem.setTitle ("Defer");
+                    deferItem.setTitleSize (14);
+                    deferItem.setTitleColor (A.Color_White);
+                    deferItem.setIcon (A.Id_NachoSwipeEmailDefer);
+                    deferItem.setId (DEFER_TAG);
+                    menu.addMenuItem (deferItem, SwipeMenu.SwipeSide.LEFT);
+                    SwipeMenuItem moveItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    moveItem.setBackground (A.Drawable_NachoSwipeEmailMove (Activity));
+                    moveItem.setWidth (dp2px (90));
+                    moveItem.setTitle ("Move");
+                    moveItem.setTitleSize (14);
+                    moveItem.setTitleColor (A.Color_White);
+                    moveItem.setIcon (A.Id_NachoSwipeEmailMove);
+                    moveItem.setId (SAVE_TAG);
+                    menu.addMenuItem (moveItem, SwipeMenu.SwipeSide.LEFT);
+                    SwipeMenuItem archiveItem = new SwipeMenuItem (Activity.ApplicationContext);
+                    archiveItem.setBackground (A.Drawable_NachoSwipeEmailArchive (Activity));
+                    archiveItem.setWidth (dp2px (90));
+                    archiveItem.setTitle ("Archive");
+                    archiveItem.setTitleSize (14);
+                    archiveItem.setTitleColor (A.Color_White);
+                    archiveItem.setIcon (A.Id_NachoSwipeEmailArchive);
+                    archiveItem.setId (ARCHIVE_TAG);
+                    menu.addMenuItem (archiveItem, SwipeMenu.SwipeSide.RIGHT);
+                }
+                SwipeMenuItem deleteItem = new SwipeMenuItem (Activity.ApplicationContext);
+                deleteItem.setBackground (A.Drawable_NachoSwipeEmailDelete (Activity));
+                deleteItem.setWidth (dp2px (90));
+                deleteItem.setTitle ("Delete");
+                deleteItem.setTitleSize (14);
+                deleteItem.setTitleColor (A.Color_White);
+                deleteItem.setIcon (A.Id_NachoSwipeEmailDelete);
+                deleteItem.setId (DELETE_TAG);
+                menu.addMenuItem (deleteItem, SwipeMenu.SwipeSide.RIGHT);
+            }
+            );
+
+            recyclerView.setOnMenuItemClickListener (( position, menu, index) => {
+                var messageThread = messages.GetEmailThread (position);
+                switch (index) {
+                case SAVE_TAG:
+                    ShowFolderChooser (messageThread);
+                    break;
+                case DEFER_TAG:
+                    ShowPriorityChooser (messageThread);
+                    break;
+                case ARCHIVE_TAG:
+                    ArchiveThisMessage (messageThread);
+                    break;
+                case DELETE_TAG:
+                    DeleteThisMessage (messageThread);
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
+                }
+                return false;
+            });
+
+            recyclerView.setOnSwipeStartListener ((position) => {
+                mSwipeRefreshLayout.Enabled = false;
+            });
+
+            recyclerView.setOnSwipeEndListener ((position) => {
+                mSwipeRefreshLayout.Enabled = true;
+            });
         }
 
         void SwipeRefreshLayout_Refresh (object sender, EventArgs e)
@@ -308,20 +332,61 @@ namespace NachoClient.AndroidClient
             rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
         }
 
-        void ListView_ScrollStateChanged (object sender, AbsListView.ScrollStateChangedEventArgs e)
+        class MessageListScrollListener : RecyclerView.OnScrollListener
         {
-            switch (e.ScrollState) {
-            case ScrollState.TouchScroll:
-            case ScrollState.Fling:
-                if (!NcApplication.Instance.IsBackgroundAbateRequired) {
-                    NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment ScrollStateChanged");
+            // Positive means pushing up
+            int lastDy;
+            bool userInitiated;
+
+            public override void OnScrollStateChanged (RecyclerView recyclerView, int newState)
+            {
+                var swipeMenuRecyclerView = (SwipeMenuRecyclerView)recyclerView;
+                switch (newState) {
+                case RecyclerView.ScrollStateDragging:
+                case RecyclerView.ScrollStateSettling:
+                    swipeMenuRecyclerView.EnableSwipe (false);
+                    userInitiated |= (RecyclerView.ScrollStateDragging == newState);
+                    if (!NcApplication.Instance.IsBackgroundAbateRequired) {
+                        NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment ScrollStateChanged");
+                    }
+                    break;
+                case RecyclerView.ScrollStateIdle:
+                    swipeMenuRecyclerView.EnableSwipe (true);
+                    if (NcApplication.Instance.IsBackgroundAbateRequired) {
+                        NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment ScrollStateChanged");
+                    }
+                    break;
                 }
-                break;
-            case ScrollState.Idle:
-                if (NcApplication.Instance.IsBackgroundAbateRequired) {
-                    NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment ScrollStateChanged");
+                if ((RecyclerView.ScrollStateSettling != newState) && (RecyclerView.ScrollStateIdle != newState)) {
+                    return;
                 }
-                break;
+                if (!userInitiated) {
+                    return; // Prevent jitter
+                }
+                userInitiated = false;
+
+                var adapter = (WrapperRecyclerAdapter)swipeMenuRecyclerView.GetAdapter ();
+                var messageListAdapter = (MessageListAdapter)adapter.GetWrappedAdapter ();
+                if (MessageListAdapter.CARDVIEW_STYLE != messageListAdapter.currentStyle) {
+                    return;
+                }
+                var layoutManager = (LinearLayoutManager)swipeMenuRecyclerView.GetLayoutManager ();
+
+                int scrollToPosition;
+
+                if (0 < lastDy) {
+                    scrollToPosition = layoutManager.FindLastVisibleItemPosition ();
+                } else {
+                    scrollToPosition = layoutManager.FindFirstVisibleItemPosition ();
+                }
+                if (RecyclerView.NoPosition != scrollToPosition) {
+                    recyclerView.SmoothScrollToPosition (scrollToPosition);
+                }
+            }
+
+            public override void OnScrolled (RecyclerView recyclerView, int dx, int dy)
+            {
+                lastDy = dy;
             }
         }
 
@@ -350,21 +415,21 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void ListView_ItemClick (object sender, Android.Widget.AdapterView.ItemClickEventArgs e)
+        void MessageListAdapter_OnMessageClick (object sender, int position)
         {
             InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
             imm.HideSoftInputFromWindow (searchEditText.WindowToken, HideSoftInputFlags.NotAlways);
             if (multiSelectActive) {
-                if (MultiSelectSet.Contains (e.Position)) {
-                    MultiSelectSet.Remove (e.Position);
+                if (MultiSelectSet.Contains (position)) {
+                    MultiSelectSet.Remove (position);
                 } else {
-                    MultiSelectSet.Add (e.Position);
+                    MultiSelectSet.Add (position);
                 }
                 RefreshVisibleMessageCells ();
                 return;
             }
 
-            var thread = messageListAdapter [e.Position];
+            var thread = messageListAdapter [position];
 
             if (1 == thread.MessageCount) {
                 if (null != onMessageClick) {
@@ -377,7 +442,6 @@ namespace NachoClient.AndroidClient
                 }
             }
         }
-
 
         // Search or disable multi-select (multi-select)
         void LeftButton1_Click (object sender, EventArgs e)
@@ -422,17 +486,26 @@ namespace NachoClient.AndroidClient
         void ConfigureButtons ()
         {
             if (multiSelectActive) {
-                listView.EnableSwipe (false);
-                leftButton1.SetImageResource (Resource.Drawable.gen_close);
-                leftButton1.Visibility = ViewStates.Visible;
-                rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
-                rightButton1.Visibility = ViewStates.Visible;
-                rightButton2.SetImageResource (Resource.Drawable.folder_move);
-                rightButton2.Visibility = ViewStates.Visible;
-                rightButton3.SetImageResource (Resource.Drawable.gen_archive);
-                rightButton3.Visibility = ViewStates.Visible;
+                recyclerView.EnableSwipe (false);
+                if (messages.HasDraftsSemantics () || messages.HasOutboxSemantics ()) {
+                    leftButton1.SetImageResource (Resource.Drawable.gen_close);
+                    leftButton1.Visibility = ViewStates.Visible;
+                    rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
+                    rightButton1.Visibility = ViewStates.Visible;
+                    rightButton2.Visibility = ViewStates.Invisible;
+                    rightButton3.Visibility = ViewStates.Invisible;
+                } else {
+                    leftButton1.SetImageResource (Resource.Drawable.gen_close);
+                    leftButton1.Visibility = ViewStates.Visible;
+                    rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
+                    rightButton1.Visibility = ViewStates.Visible;
+                    rightButton2.SetImageResource (Resource.Drawable.folder_move);
+                    rightButton2.Visibility = ViewStates.Visible;
+                    rightButton3.SetImageResource (Resource.Drawable.gen_archive);
+                    rightButton3.Visibility = ViewStates.Visible;
+                }
             } else {
-                listView.EnableSwipe (true);
+                recyclerView.EnableSwipe (true);
                 leftButton1.SetImageResource (Resource.Drawable.nav_search);
                 leftButton1.Visibility = ViewStates.Visible;
                 rightButton1.SetImageResource (Resource.Drawable.contact_newemail);
@@ -489,7 +562,9 @@ namespace NachoClient.AndroidClient
 
         void SearchButton_Click (object sender, EventArgs e)
         {
-            StartSearching ();
+            if (0 != messages.Count ()) {
+                StartSearching ();
+            }
         }
 
 
@@ -555,14 +630,16 @@ namespace NachoClient.AndroidClient
 
         void SearchString_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
         {
-            var searchString = searchEditText.Text;
-            if (String.IsNullOrEmpty (searchString)) {
-                searchResultsMessages.UpdateServerMatches (null);
-                messageListAdapter.RefreshSearchMatches ();
-            } else if (4 > searchString.Length) {
-                KickoffSearchApi (0, searchString);
+            if (searching) {
+                var searchString = searchEditText.Text;
+                if (String.IsNullOrEmpty (searchString)) {
+                    searchResultsMessages.UpdateServerMatches (null);
+                    messageListAdapter.RefreshSearchMatches ();
+                } else if (4 > searchString.Length) {
+                    KickoffSearchApi (0, searchString);
+                }
+                searcher.Search (searchString);
             }
-            searcher.Search (searchString);
         }
 
         // Ask the server
@@ -649,7 +726,7 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
             var folderFragment = ChooseFolderFragment.newInstance (messageThread);
-            folderFragment.setOnFolderSelected (OnFolderSelected);
+            folderFragment.SetOnFolderSelected (OnFolderSelected);
             folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }
 
@@ -668,24 +745,30 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public void MaybeSwitchStyle (int style)
+        {
+            if (style != messageListAdapter.currentStyle) {
+                SwitchAccount (messages);
+            }
+        }
+
         public void SwitchAccount (INachoEmailMessages newMessages)
         {
             ClearCache ();
             messages = newMessages;
-            if (null != listView) {
-                messageListAdapter = new MessageListAdapter (this);
-                listView.Adapter = messageListAdapter;
+            if (null != recyclerView) {
+                SetupMessageListAdapter (View);
             }
+            MaybeDisplayNoMessagesView (View);
         }
 
         void RefreshVisibleMessageCells ()
         {
             ClearCache ();
-            for (var i = listView.FirstVisiblePosition; i <= listView.LastVisiblePosition; i++) {
-                var cell = listView.GetChildAt (i - listView.FirstVisiblePosition);
-                if (null != cell) {
-                    messageListAdapter.GetView (i, cell, listView);
-                }
+            var a = layoutManager.FindFirstVisibleItemPosition ();
+            if (RecyclerView.NoPosition != a) {
+                var z = layoutManager.FindLastVisibleItemPosition ();
+                messageListAdapter.NotifyItemRangeChanged (a, 1 + z - a);
             }
         }
 
@@ -734,19 +817,47 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        void NotifyChanges (List<int> adds, List<int> deletes)
+        {
+            ClearCache ();
+            if (null == adds && null == deletes) {
+                messageListAdapter.NotifyDataSetChanged ();
+                return;
+            }
+            NcAssert.False (null != adds && null != deletes);
+
+            var list = (null == adds) ? deletes : adds;
+            var firstIndex = list [0];
+
+            list.Sort ();
+            list.Reverse ();
+
+            foreach (var position in list) {
+                if (null == adds) {
+                    messageListAdapter.NotifyItemRemoved (position);
+                } else {
+                    messageListAdapter.NotifyItemInserted (position);
+                }
+            }
+            // Force re-bind to update menu swipe 'position' field
+            var range = messageListAdapter.ItemCount - firstIndex;
+            messageListAdapter.NotifyItemRangeChanged (firstIndex, range);
+               
+        }
+
         public void RefreshIfVisible ()
         {
             List<int> adds;
             List<int> deletes;
             NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfVisible");
             if (messages.Refresh (out adds, out deletes)) {
-                ClearCache ();
-                messageListAdapter.NotifyDataSetChanged ();
+                NotifyChanges (adds, deletes);
             }
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfVisible");
             if (0 == messages.Count ()) {
                 ((MessageListDelegate)Activity).ListIsEmpty ();
             }
+            MaybeDisplayNoMessagesView (View);
         }
 
         public void RefreshIfNeeded ()
@@ -755,8 +866,7 @@ namespace NachoClient.AndroidClient
             List<int> deletes;
             NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfNeeded");
             if (NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes)) {
-                ClearCache ();
-                messageListAdapter.NotifyDataSetChanged ();
+                NotifyChanges (adds, deletes);
             } else {
                 RefreshVisibleMessageCells ();
             }
@@ -764,6 +874,7 @@ namespace NachoClient.AndroidClient
             if (0 == messages.Count ()) {
                 ((MessageListDelegate)Activity).ListIsEmpty ();
             }
+            MaybeDisplayNoMessagesView (View);
         }
 
         int[] first = new int[3];
@@ -857,228 +968,14 @@ namespace NachoClient.AndroidClient
             return false;
         }
 
-    }
-
-    public class MessageListAdapter : Android.Widget.BaseAdapter<McEmailMessageThread>
-    {
-        MessageListFragment owner;
-
-        bool searching;
-
-        public MessageListAdapter (MessageListFragment owner)
+        void MaybeDisplayNoMessagesView (View view)
         {
-            this.owner = owner;
-
-        }
-
-        public void StartSearch ()
-        {
-            searching = true;
-            NotifyDataSetChanged ();
-        }
-
-        public void CancelSearch ()
-        {
-            if (searching) {
-                searching = false;
-                NotifyDataSetChanged ();
-            }
-        }
-
-        public void RefreshSearchMatches ()
-        {
-            NotifyDataSetChanged ();
-        }
-
-        public override bool HasStableIds {
-            get {
-                return true;
-            }
-        }
-
-        public override long GetItemId (int position)
-        {
-            if (searching) {
-                return owner.searchResultsMessages.GetEmailThread (position).FirstMessageId;
-            } else {
-                return owner.messages.GetEmailThread (position).FirstMessageId;
-            }
-        }
-
-        public override int Count {
-            get {
-                if (searching) {
-                    return owner.searchResultsMessages.Count ();
-                } else {
-                    return owner.messages.Count ();
+            if (null != view) {
+                if (MessageListAdapter.LISTVIEW_STYLE == messageListAdapter.currentStyle) {
+                    view.FindViewById<TextView> (Resource.Id.no_messages).Visibility = (0 == messages.Count () ? ViewStates.Visible : ViewStates.Gone);
                 }
             }
         }
-
-        public override McEmailMessageThread this [int position] {  
-            get { 
-                if (searching) {
-                    return owner.searchResultsMessages.GetEmailThread (position);
-                } else {
-                    return owner.messages.GetEmailThread (position);
-                }
-            }
-        }
-
-        public override View GetView (int position, View convertView, ViewGroup parent)
-        {
-            View view = convertView; // re-use an existing view, if one is available
-            if (view == null) {
-                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCell, parent, false);
-                var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
-                chiliView.Click += ChiliView_Click;
-            }
-            McEmailMessageThread thread;
-            McEmailMessage message;
-            if (searching) {
-                thread = owner.searchResultsMessages.GetEmailThread (position);
-                message = thread.FirstMessageSpecialCase ();
-            } else {
-                thread = owner.messages.GetEmailThread (position);
-                message = owner.GetCachedMessage (position);
-            }
-            Bind.BindMessageHeader (thread, message, view);
-
-            NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
-
-            // Preview label view                
-            var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
-            if (null == message) {
-                previewView.Text = "";
-            } else {
-                var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
-                previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
-            }
-
-            var multiSelectView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.selected);
-            if (owner.multiSelectActive) {
-                multiSelectView.Visibility = ViewStates.Visible;
-                if (owner.MultiSelectSet.Contains (position)) {
-                    multiSelectView.SetImageResource (Resource.Drawable.gen_checkbox_checked);
-                } else {
-                    multiSelectView.SetImageResource (Resource.Drawable.gen_checkbox);
-                }
-            } else {
-                multiSelectView.Visibility = ViewStates.Invisible;
-            }
-
-            var chiliTagView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
-            chiliTagView.Tag = position;
-
-            return view;
-        }
-
-        void ChiliView_Click (object sender, EventArgs e)
-        {
-            var chiliView = (Android.Widget.ImageView)sender;
-            var position = (int)chiliView.Tag;
-            McEmailMessageThread thread;
-            if (searching) {
-                thread = owner.searchResultsMessages.GetEmailThread (position);
-            } else {
-                thread = owner.messages.GetEmailThread (position);
-            }
-            var message = thread.FirstMessageSpecialCase ();
-            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
-            Bind.BindMessageChili (thread, message, chiliView);
-        }
-
-    }
-
-    public class HotEventAdapter : Android.Widget.BaseAdapter<McEvent>
-    {
-        protected McEvent currentEvent;
-        protected NcTimer eventEndTimer = null;
-
-        public HotEventAdapter ()
-        {
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            Configure ();
-        }
-
-        public void Configure ()
-        {
-            DateTime timerFireTime;
-            currentEvent = CalendarHelper.CurrentOrNextEvent (out timerFireTime);
-
-            if (null != eventEndTimer) {
-                eventEndTimer.Dispose ();
-                eventEndTimer = null;
-            }
-
-            // Set a timer to fire at the end of the currently displayed event, so the view can
-            // be reconfigured to show the next event.
-            if (null != currentEvent) {
-                TimeSpan timerDuration = timerFireTime - DateTime.UtcNow;
-                if (timerDuration < TimeSpan.Zero) {
-                    // The time to reevaluate the current event was in the very near future, and that time was reached in between
-                    // CurrentOrNextEvent() and now.  Configure the timer to fire immediately.
-                    timerDuration = TimeSpan.Zero;
-                }
-                eventEndTimer = new NcTimer ("HotEventView", (state) => {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        Configure ();
-                    });
-                }, null, timerDuration, TimeSpan.Zero);
-            }
-        }
-
-        public override long GetItemId (int position)
-        {
-            return 1;
-        }
-
-        public override int Count {
-            get {
-                return (null == currentEvent ? 0 : 1);
-            }
-        }
-
-        public override McEvent this [int position] {  
-            get { return currentEvent; }
-        }
-
-        public override View GetView (int position, View convertView, ViewGroup parent)
-        {
-            View view = convertView; // re-use an existing view, if one is available
-            if (view == null) {
-                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.HotEventCell, parent, false);
-            }
-            Bind.BindHotEvent (currentEvent, view);
-
-            return view;
-        }
-
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var statusEvent = (StatusIndEventArgs)e;
-
-            switch (statusEvent.Status.SubKind) {
-
-            case NcResult.SubKindEnum.Info_EventSetChanged:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                Configure ();
-                NotifyDataSetChanged ();
-                break;
-
-            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
-                // When the app goes into the background, eventEndTimer might get cancelled, but ViewWillAppear
-                // won't get called when the app returns to the foreground.  That might leave the view displaying
-                // an old event.  Watch for foreground events and refresh the view.
-                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
-                    Configure ();
-                    NotifyDataSetChanged ();
-                }
-                break;
-            }
-        }
-
     }
 }
 

@@ -63,14 +63,15 @@
             android:background="@android:color/white" />
         <Button
             android:id="@+id/dismiss"
-            android:textSize="17dp"
+            android:textSize="14dp"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:layout_marginRight="10dp"
+            android:paddingRight="10dp"
+            android:paddingLeft="10dp"
             android:layout_centerVertical="true"
             android:layout_alignParentRight="true"
             android:text="@string/dismiss"
             android:textColor="@android:color/black"
-            android:background="@android:color/white" />
+            android:background="?attr/selectableItemBackground" />
     </RelativeLayout>
 </LinearLayout>

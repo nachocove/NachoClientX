@@ -46,6 +46,7 @@
                 android:textColor="@android:color/black"
                 android:background="@android:color/white" />
             <Button
+                android:id="@+id/account_settings"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:paddingLeft="20dp"
@@ -53,7 +54,6 @@
                 android:text="@string/account_settings"
                 android:textSize="17dp"
                 android:textStyle="bold"
-                android:id="@+id/account_settings"
                 android:textColor="@android:color/white"
                 android:background="@color/NachoSubmitButton"
                 android:minHeight="40dp"
@@ -71,7 +71,7 @@
         android:paddingBottom="5dp"
         android:paddingLeft="15dp"
         android:orientation="horizontal"
-        android:background="@android:color/white"
+        android:background="?attr/selectableItemBackground"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
         <ImageView
@@ -97,12 +97,12 @@
         android:layout_height="2dp"
         android:background="@color/NachoLightGray" />
     <LinearLayout
-        android:id="@+id/support"
+        android:id="@+id/go_to_deadlines"
         android:paddingTop="5dp"
         android:paddingBottom="5dp"
         android:paddingLeft="15dp"
         android:orientation="horizontal"
-        android:background="@android:color/white"
+        android:background="?attr/selectableItemBackground"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
         <ImageView
@@ -128,12 +128,12 @@
         android:layout_height="2dp"
         android:background="@color/NachoLightGray" />
     <LinearLayout
-        android:id="@+id/about"
+        android:id="@+id/go_to_deferred"
         android:paddingTop="5dp"
         android:paddingBottom="5dp"
         android:paddingLeft="15dp"
         android:orientation="horizontal"
-        android:background="@android:color/white"
+        android:background="?attr/selectableItemBackground"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
         <ImageView

@@ -2,16 +2,16 @@
 //
 using System;
 using System.Collections.Generic;
-using NachoCore.Model;
-using NachoCore.Utils;
+using System.IO;
+using Android.Content;
+using Android.Graphics;
+using Android.OS;
 using Android.Provider;
 using NachoClient.AndroidClient;
-using Android.Content;
-using NachoPlatform;
-using System.IO;
-using Android.Graphics;
 using NachoCore.ActiveSync;
-using Android.OS;
+using NachoCore.Model;
+using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoPlatform
 {
@@ -76,7 +76,7 @@ namespace NachoPlatform
                     long id = GetFieldLong (cur, ContactsContract.Contacts.InterfaceConsts.Id);
 
                     String lastUpdateString = GetField (cur, ContactsContract.Contacts.InterfaceConsts.ContactLastUpdatedTimestamp);
-                    var lastUpdate = FromUnixTimeMilliseconds (lastUpdateString);
+                    var lastUpdate = FromUnixTimeMilliseconds (lastUpdateString, DateTime.UtcNow);
                     //bool HasPhoneNumber = int.Parse (GetField (cur, ContactsContract.Contacts.InterfaceConsts.HasPhoneNumber)) > 0;
                     var entry = new PlatformContactRecordAndroid (deviceAccount, id, lastUpdate);
                     retval.Add (entry);
@@ -129,11 +129,13 @@ namespace NachoPlatform
             return cur.GetLong (cur.GetColumnIndex (Column));
         }
 
-        public static DateTime FromUnixTimeMilliseconds (string unixTimeStr)
+        public static DateTime FromUnixTimeMilliseconds (string unixTimeStr, DateTime defaultValue)
         {
-            long unixTime = long.Parse (unixTimeStr);
-            var d = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            return d.AddMilliseconds (unixTime);
+            try {
+                return long.Parse (unixTimeStr).JavaMsToDateTime ();
+            } catch (Exception) {
+                return defaultValue;
+            }
         }
 
         #endregion
@@ -335,24 +337,31 @@ namespace NachoPlatform
                         String phoneNo = GetField (pCur, ContactsContract.CommonDataKinds.Phone.Number);
                         PhoneDataKind type = (PhoneDataKind)GetFieldInt (pCur, ContactsContract.CommonDataKinds.Phone.InterfaceConsts.Type);
                         String phLabel = GetField (pCur, ContactsContract.CommonDataKinds.Phone.InterfaceConsts.Label);
-                        string phoneType = ContactsContract.CommonDataKinds.Phone.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, phLabel).ToLowerInvariant ();
+                        string phoneType = ContactsContract.CommonDataKinds.Phone.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, phLabel);
                         string name;
                         string label;
-                        if (phoneType == "home") {
-                            name = Xml.Contacts.HomePhoneNumber;
-                            label = "Home";
-                        } else if (phoneType == "work") {
-                            name = Xml.Contacts.BusinessPhoneNumber;
-                            label = "Work";
-                        } else if (phoneType == "mobile") {
-                            name = Xml.Contacts.MobilePhoneNumber;
-                            label = null;
-                        } else if (phoneType == "home fax") {
-                            name = Xml.Contacts.HomeFaxNumber;
-                            label = null;
-                        } else if (phoneType == "work fax") {
-                            name = Xml.Contacts.BusinessFaxNumber;
-                            label = null;
+                        if (!string.IsNullOrEmpty (phoneType)) {
+                            phoneType = phoneType.ToLowerInvariant ();
+                            if (phoneType == "home") {
+                                name = Xml.Contacts.HomePhoneNumber;
+                                label = "Home";
+                            } else if (phoneType == "work") {
+                                name = Xml.Contacts.BusinessPhoneNumber;
+                                label = "Work";
+                            } else if (phoneType == "mobile") {
+                                name = Xml.Contacts.MobilePhoneNumber;
+                                label = null;
+                            } else if (phoneType == "home fax") {
+                                name = Xml.Contacts.HomeFaxNumber;
+                                label = null;
+                            } else if (phoneType == "work fax") {
+                                name = Xml.Contacts.BusinessFaxNumber;
+                                label = null;
+                            } else {
+                                // assume mobile
+                                name = Xml.Contacts.MobilePhoneNumber;
+                                label = null;
+                            }
                         } else {
                             // assume mobile
                             name = Xml.Contacts.MobilePhoneNumber;

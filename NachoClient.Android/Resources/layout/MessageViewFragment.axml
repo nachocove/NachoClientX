@@ -6,7 +6,8 @@
     android:background="@android:color/white">
     <include
         layout="@layout/ButtonBar" />
-    <ScrollView
+    <NachoClient.AndroidClient.MessageScrollView
+        android:id="@+id/message_scrollview"
         android:layout_above="@+id/footer"
         android:layout_below="@id/button_bar"
         android:orientation="vertical"
@@ -28,13 +29,15 @@
                 android:background="@color/NachoBackgroundGray" />
             <include
                 layout="@layout/AttachmentListView" />
+            <include
+                layout="@layout/EventInMessageLayout" />
             <android.webkit.WebView
                 android:id="@+id/webview"
                 android:layout_width="fill_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1" />
         </LinearLayout>
-    </ScrollView>
+    </NachoClient.AndroidClient.MessageScrollView>
     <LinearLayout
         android:id="@+id/footer"
         android:layout_alignParentBottom="true"

@@ -479,6 +479,27 @@ namespace NachoCore.Utils
             return string.Format ("in {0}:{1:D2}", minutes / 60, minutes % 60);
         }
 
+        public static void EventNotification (McEvent ev, out string title, out string body)
+        {
+            var calendarItem = ev.GetCalendarItemforEvent ();
+            if (null == calendarItem) {
+                title = "Event";
+            } else {
+                title = Pretty.SubjectString (calendarItem.GetSubject ());
+            }
+            if (ev.AllDayEvent) {
+                body = string.Format ("{0} all day", Pretty.MediumFullDate (ev.GetStartTimeLocal ()));
+            } else {
+                body = string.Format ("{0} - {1}", Pretty.Time (ev.GetStartTimeLocal ()), Pretty.Time (ev.GetEndTimeLocal ()));
+            }
+            if (null != calendarItem) {
+                var location = calendarItem.GetLocation ();
+                if (!string.IsNullOrEmpty (location)) {
+                    body += ": " + location;
+                }
+            }
+        }
+
         public static string PrettyFileSize (long fileSize)
         {
             NcAssert.True (0 <= fileSize);

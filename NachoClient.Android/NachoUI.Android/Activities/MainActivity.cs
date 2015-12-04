@@ -43,7 +43,7 @@ namespace NachoClient.AndroidClient
 
             SetupHockeyAppUpdateManager ();
 
-            MainApplication.OneTimeStartup ();
+            MainApplication.OneTimeStartup ("MainActivity");
 
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.Main);
@@ -223,7 +223,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-//            base.OnBackPressed ();
+            base.OnBackPressed ();
         }
 
         protected override void OnSaveInstanceState (Bundle outState)
@@ -283,6 +283,9 @@ namespace NachoClient.AndroidClient
 
         private void SetupHockeyAppCrashManager ()
         {
+            if (BuildInfoHelper.IsDev) {
+                return;
+            }
             var myListener = new MyCustomCrashManagerListener ();
             // Register the crash manager before Initializing the trace writer
             HockeyApp.CrashManager.Register (this, BuildInfo.HockeyAppAppId, myListener); 
@@ -330,6 +333,9 @@ namespace NachoClient.AndroidClient
 
         private void SetupHockeyAppUpdateManager ()
         {
+            if (BuildInfoHelper.IsDev) {
+                return;
+            }
             //Register to with the Update Manager
             HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener(), true);
         }

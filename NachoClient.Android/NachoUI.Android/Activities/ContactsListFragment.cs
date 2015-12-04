@@ -35,6 +35,7 @@ namespace NachoClient.AndroidClient
         private const string SAVED_SEARCHING_KEY = "ContactsListFragment.searching";
 
         bool searching;
+        string searchToken;
         Android.Widget.EditText searchEditText;
         View letterBar;
         SwipeMenuListView listView;
@@ -107,7 +108,9 @@ namespace NachoClient.AndroidClient
                 letterbox.Click += Letterbox_Click;
             }
 
-            contactsListAdapter = new ContactsListAdapter ();
+            contactsListAdapter = new ContactsListAdapter (this);
+
+            MaybeDisplayNoContactsView (view);
 
             listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = contactsListAdapter;
@@ -116,7 +119,7 @@ namespace NachoClient.AndroidClient
 
             listView.setMenuCreator ((menu) => {
                 SwipeMenuItem dialItem = new SwipeMenuItem (Activity.ApplicationContext);
-                dialItem.setBackground (new ColorDrawable (A.Color_NachoSwipeContactCall));
+                dialItem.setBackground (A.Drawable_NachoSwipeContactCall (Activity));
                 dialItem.setWidth (dp2px (90));
                 dialItem.setTitle ("Dial");
                 dialItem.setTitleSize (14);
@@ -125,7 +128,7 @@ namespace NachoClient.AndroidClient
                 dialItem.setId (CALL_TAG);
                 menu.addMenuItem (dialItem, SwipeMenu.SwipeSide.LEFT);
                 SwipeMenuItem emailItem = new SwipeMenuItem (Activity.ApplicationContext);
-                emailItem.setBackground (new ColorDrawable (A.Color_NachoSwipeContactEmail));
+                emailItem.setBackground (A.Drawable_NachoSwipeContactEmail (Activity));
                 emailItem.setWidth (dp2px (90));
                 emailItem.setTitle ("Email");
                 emailItem.setTitleSize (14);
@@ -249,6 +252,7 @@ namespace NachoClient.AndroidClient
         void CancelSearch ()
         {
             searching = false;
+            searchToken = null;
             contactsListAdapter.CancelSearch ();
 
             searchEditText.ClearFocus ();
@@ -267,7 +271,19 @@ namespace NachoClient.AndroidClient
 
         void SearchString_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
         {
-            contactsListAdapter.Search (searchEditText.Text);
+            var searchString = searchEditText.Text;
+            if (TestMode.Instance.Process (searchString)) {
+                return;
+            }
+            contactsListAdapter.Search (searchString);
+            var accountForSearchAPI = NcApplication.Instance.Account;
+            if ((null != accountForSearchAPI) && accountForSearchAPI.HasCapability (McAccount.AccountCapabilityEnum.ContactReader)) {
+                if (String.IsNullOrEmpty (searchToken)) {
+                    searchToken = BackEnd.Instance.StartSearchContactsReq (accountForSearchAPI.Id, searchString, null).GetValue<string> ();
+                } else {
+                    BackEnd.Instance.SearchContactsReq (accountForSearchAPI.Id, searchString, null, searchToken);
+                }
+            }
         }
 
         public void OnBackPressed ()
@@ -316,6 +332,9 @@ namespace NachoClient.AndroidClient
             case NcResult.SubKindEnum.Info_ContactChanged:
                 RefreshVisibleContactCells ();
                 break;
+            case NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded:
+                contactsListAdapter.Search (searchEditText.Text);
+                break;
             }
         }
 
@@ -325,6 +344,16 @@ namespace NachoClient.AndroidClient
                 var cell = listView.GetChildAt (i - listView.FirstVisiblePosition);
                 if (null != cell) {
                     contactsListAdapter.GetView (i, cell, listView);
+                }
+            }
+        }
+
+        public void MaybeDisplayNoContactsView (View view)
+        {
+            if (null != view) {
+                if (null != contactsListAdapter) {
+                    var showEmpty = !searching && (0 == contactsListAdapter.Count);
+                    view.FindViewById<Android.Widget.TextView> (Resource.Id.no_contacts).Visibility = (showEmpty ? ViewStates.Visible : ViewStates.Gone);
                 }
             }
         }
@@ -349,8 +378,12 @@ namespace NachoClient.AndroidClient
 
         Dictionary<int,int> viewTypeMap;
 
-        public ContactsListAdapter ()
+        ContactsListFragment parent;
+
+        public ContactsListAdapter (ContactsListFragment parent)
         {
+            this.parent = parent;
+
             RefreshContactsIfVisible ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -430,6 +463,9 @@ namespace NachoClient.AndroidClient
                 sections = ContactsBinningHelper.BinningContacts (ref contacts);
             }
             NotifyDataSetChanged ();
+            if (null != parent) {
+                parent.MaybeDisplayNoContactsView (parent.View);
+            }
         }
 
         public override long GetItemId (int position)

@@ -295,11 +295,12 @@ namespace NachoClient.AndroidClient
                 cell = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.AttendeeListCell, parent, false);
             }
             var attendee = this [position];
-            var initialsView = cell.FindViewById<TextView> (Resource.Id.user_image);
+            var initialsView = cell.FindViewById<ContactPhotoView> (Resource.Id.user_image);
             var nameView = cell.FindViewById<TextView> (Resource.Id.attendee_name);
             var emailView = cell.FindViewById<TextView> (Resource.Id.attendee_email);
-            initialsView.SetBackgroundResource (Util.ColorResourceForEmail (attendee.Email));
-            initialsView.Text = ContactsHelper.NameToLetters (attendee.DisplayName);
+            var initials = ContactsHelper.NameToLetters (attendee.DisplayName);
+            var color = Util.ColorResourceForEmail (attendee.Email);
+            initialsView.SetEmailAddress (attendee.AccountId, attendee.Email, initials, color);
             nameView.Text = attendee.DisplayName;
             emailView.Text = attendee.Email;
             return cell;

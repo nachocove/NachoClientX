@@ -33,27 +33,12 @@ namespace NachoClient.AndroidClient
 
         public void AccountSettingsSelected (McAccount account)
         {
-            var accountSettingsFragment = AccountSettingsFragment.newInstance (account);
-            this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, accountSettingsFragment).AddToBackStack ("AccountSettings").Commit ();
-        }
-            
-        public override void OnBackPressed ()
-        {
-            if (0 < FragmentManager.BackStackEntryCount) {
-                FragmentManager.PopBackStack ();
-            } else {
-                base.OnBackPressed ();
-            }
+            StartActivity (AccountSettingsActivity.ShowAccountSettingsIntent (this, account)); 
         }
 
         protected override void OnSaveInstanceState (Bundle outState)
         {
             base.OnSaveInstanceState (outState);
-        }
-
-        public override void SwitchAccount (McAccount account)
-        {
-            base.SwitchAccount (account);
         }
 
     }

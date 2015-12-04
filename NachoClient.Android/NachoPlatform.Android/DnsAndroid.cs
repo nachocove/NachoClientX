@@ -20,11 +20,6 @@ namespace NachoPlatform
             NcAssert.True (dnsClass == NsClass.INET);
             NcAssert.True (validTypes.Contains (dnsType));
 
-            IPAddress[] ipas = Dns.GetHostAddresses (DnDns.Tools.DiscoverUnixDnsServerAddress());
-            foreach (var addr in ipas) {
-                Log.Info (Log.LOG_DNS, "ResQuery DNS server addr: Family={0} addr_len={1} addr={2}", addr.AddressFamily, addr.GetAddressBytes ().Length, addr.ToString ());
-            }
-
             var DnsQuery = new DnsQueryRequest ();
             DnsQueryResponse response = null;
             try {

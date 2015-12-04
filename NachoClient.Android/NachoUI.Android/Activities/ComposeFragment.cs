@@ -38,11 +38,13 @@ namespace NachoClient.AndroidClient
 
         #region Properties
 
-        public readonly MessageComposer Composer;
+        public MessageComposer Composer {
+            get;
+            private set;
+        }
         MessageComposeHeaderView HeaderView;
         Android.Webkit.WebView WebView;
         Android.Widget.ImageView SendButton;
-        Android.Widget.ImageView QuickResponseButton;
         bool IsWebViewLoaded;
         bool FocusWebViewOnLoad;
         List<Tuple<string, JavascriptCallback>> JavaScriptQueue;
@@ -82,8 +84,6 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
             var view = inflater.Inflate (Resource.Layout.ComposeFragment, container, false);
 
             buttonBar = new ButtonBar (view);
@@ -91,7 +91,6 @@ namespace NachoClient.AndroidClient
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
             buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.contact_quickemail, QuickResponseButton_Click);
             SendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            QuickResponseButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button2);
 
             HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
             HeaderView.Delegate = this;
@@ -102,12 +101,31 @@ namespace NachoClient.AndroidClient
             WebView.AddJavascriptInterface (new NachoJavascriptMessenger(this, "nachoCompose"), "_android_messageHandlers_nachoCompose");
             WebView.SetWebViewClient (new NachoWebClient (this));
 
-            Composer.StartPreparingMessage ();
-
-            UpdateHeader ();
-            UpdateSendEnabled ();
+            if (MessageIsReady) {
+                Composer.StartPreparingMessage ();
+                UpdateHeader ();
+                UpdateSendEnabled ();
+                MaybeShowQuickResponses ();
+            }
 
             return view;
+        }
+
+        private bool messageIsReady = true;
+        public bool MessageIsReady {
+            private get {
+                return messageIsReady;
+            }
+            set {
+                if (!messageIsReady && value) {
+                    Composer.Message = McEmailMessage.QueryById<McEmailMessage> (Composer.Message.Id);
+                    Composer.StartPreparingMessage ();
+                    UpdateHeader ();
+                    UpdateSendEnabled ();
+                    MaybeShowQuickResponses ();
+                }
+                messageIsReady = value;
+            }
         }
 
         #endregion
@@ -465,6 +483,14 @@ namespace NachoClient.AndroidClient
         {
             var attachments = McAttachment.QueryByItem (Composer.Message);
             HeaderView.AttachmentsView.SetAttachments (attachments);
+        }
+
+        void MaybeShowQuickResponses()
+        {
+            if (Composer.InitialQuickReply) {
+                Composer.InitialQuickReply = false;
+                ShowQuickResponses ();
+            }
         }
 
         void ShowQuickResponses ()

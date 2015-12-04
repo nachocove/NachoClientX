@@ -72,6 +72,7 @@ namespace NachoClient.AndroidClient
             isPaused = true;
             isForeground = true;
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
+            NotificationService.OnForeground ();
         }
 
         void Application.IActivityLifecycleCallbacks.OnActivitySaveInstanceState (Activity activity, Bundle outState)

@@ -23,6 +23,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using Android.Graphics.Drawables;
 using Android.Widget;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -36,12 +37,12 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static void BindMessageHeader (McEmailMessageThread thread, McEmailMessage message, View view)
+        public static void BindMessageHeader (McEmailMessageThread thread, McEmailMessage message, View view, bool isDraft = false)
         {
             var isUnreadView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.message_read);
             isUnreadView.Visibility = ViewStates.Invisible;
 
-            var userImageView = view.FindViewById<Android.Widget.TextView> (Resource.Id.user_image);
+            var userImageView = view.FindViewById<ContactPhotoView> (Resource.Id.user_image);
             userImageView.Visibility = ViewStates.Invisible;
 
             var senderView = view.FindViewById<Android.Widget.TextView> (Resource.Id.sender);
@@ -66,19 +67,39 @@ namespace NachoClient.AndroidClient
 
             SetVisibility (ViewStates.Visible, userImageView, senderView, subjectView, dateView, chiliView);
 
-            if (!message.IsRead) {
+            if (!message.IsRead  && !isDraft) {
                 isUnreadView.Visibility = ViewStates.Visible;
             }
 
-            userImageView.Text = message.cachedFromLetters;
-            userImageView.SetBackgroundResource (ColorForUser (message.cachedFromColor));
+            if (isDraft) {
+                userImageView.Visibility = ViewStates.Invisible;
+            } else {
+                userImageView.Visibility = ViewStates.Visible;
+                var initials = message.cachedFromLetters;
+                var color = ColorForUser (message.cachedFromColor);
+                userImageView.SetPortraitId (message.cachedPortraitId, initials, color);
+            }
 
-            BindMessageChili (thread, message, chiliView);
+            if (isDraft) {
+                chiliView.Visibility = ViewStates.Invisible;
+            } else {
+                chiliView.Visibility = ViewStates.Visible;
+                BindMessageChili (thread, message, chiliView);
+            }
 
-            senderView.Text = Pretty.SenderString (message.From);
+            if (isDraft) {
+                senderView.Text = Pretty.RecipientString(message.To);
+            } else {
+                senderView.Text = Pretty.SenderString (message.From);
+            }
             senderView.Visibility = ViewStates.Visible;
 
-            subjectView.Text = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
+            var subjectString = message.Subject;
+            if (isDraft && String.IsNullOrEmpty (subjectString)) {
+                subjectString = Pretty.NoSubjectString ();
+            }
+
+            subjectView.Text = EmailHelper.CreateSubjectWithIntent (subjectString, message.Intent, message.IntentDateType, message.IntentDate);
             subjectView.Visibility = ViewStates.Visible;
 
             dateView.Text = Pretty.MediumFullDateTime (message.DateReceived);
@@ -157,9 +178,8 @@ namespace NachoClient.AndroidClient
             subtitle2Label.Text = displaySubtitle2;
             subtitle2Label.SetTextColor (displaySubtitle2Color);
 
-            var userInitials = view.FindViewById<Android.Widget.TextView> (Resource.Id.user_initials);
-            userInitials.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
-            userInitials.SetBackgroundResource (Bind.ColorForUser (contact.CircleColor));
+            var userPhotoView = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
+            userPhotoView.SetContact (contact);
 
             var vipView = view.FindViewById<ImageView> (Resource.Id.vip);
             BindContactVip (contact, vipView);
@@ -189,40 +209,79 @@ namespace NachoClient.AndroidClient
             var locationView = view.FindViewById<Android.Widget.TextView> (Resource.Id.event_location);
             var locationImageView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.event_location_image);
 
-            var detailView = new NcEventDetail (ev);
-
+            string title = null;
+            string location = null;
+            bool allDay = false;
+            DateTime startTime;
+            DateTime endTime;
             int colorIndex = 0;
-            var folder = McFolder.QueryByFolderEntryId<McCalendar> (detailView.Account.Id, detailView.SpecificItem.Id).FirstOrDefault ();
-            if (null != folder) {
-                colorIndex = folder.DisplayColor;
+
+            if (0 > ev.CalendarId) {
+
+                if (!AndroidCalendars.GetEventDetails (-ev.CalendarId, out title, out location, out colorIndex)) {
+                    BindEmptyEventCell (titleView, colorView, durationView, locationView, locationImageView);
+                    return;
+                }
+                allDay = ev.AllDayEvent;
+                startTime = ev.StartTime;
+                endTime = ev.EndTime;
+
+            } else {
+
+                var eventDetail = new NcEventDetail (ev);
+
+                if (!eventDetail.IsValid) {
+                    BindEmptyEventCell (titleView, colorView, durationView, locationView, locationImageView);
+                    return;
+                }
+
+                var folder = McFolder.QueryByFolderEntryId<McCalendar> (eventDetail.Account.Id, eventDetail.SpecificItem.Id).FirstOrDefault ();
+                if (null != folder) {
+                    colorIndex = folder.DisplayColor;
+                }
+
+                title = eventDetail.SpecificItem.GetSubject ();
+                location = eventDetail.SpecificItem.GetLocation ();
+                allDay = eventDetail.SpecificItem.AllDayEvent;
+                startTime = eventDetail.StartTime;
+                endTime = eventDetail.EndTime;
             }
+
+            colorView.Visibility = ViewStates.Visible;
             colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
 
-            titleView.Text = Pretty.SubjectString (detailView.SpecificItem.GetSubject ());
+            titleView.Text = Pretty.SubjectString (title);
 
             var startAndDuration = "";
-            if (detailView.SpecificItem.AllDayEvent) {
+            if (allDay) {
                 startAndDuration = "ALL DAY";
             } else {
-                var start = Pretty.Time (detailView.StartTime);
-                if (detailView.EndTime > detailView.StartTime) {
-                    var duration = Pretty.CompactDuration (detailView.StartTime, detailView.EndTime);
-                    startAndDuration = String.Join (" - ", new string[] { start, duration });
+                var startString = Pretty.Time (startTime);
+                if (endTime > startTime) {
+                    var duration = Pretty.CompactDuration (startTime, endTime);
+                    startAndDuration = string.Join (" - ", startString, duration);
                 } else {
-                    startAndDuration = start;
+                    startAndDuration = startString;
                 }
             }
             durationView.Text = startAndDuration;
 
-            var location = detailView.SpecificItem.GetLocation ();
-            if (String.IsNullOrEmpty (location)) {
+            if (string.IsNullOrEmpty (location)) {
                 locationView.Text = "";
                 locationImageView.Visibility = ViewStates.Invisible;
             } else {
                 locationView.Text = location;
                 locationImageView.Visibility = ViewStates.Visible;
             }
+        }
 
+        private static void BindEmptyEventCell (TextView title, View color, TextView duration, TextView location, View locationImage)
+        {
+            title.Text = "";
+            color.Visibility = ViewStates.Invisible;
+            duration.Text = "This event has been deleted.";
+            location.Text = "";
+            locationImage.Visibility = ViewStates.Invisible;
         }
 
         public static void BindEventDateCell (DateTime date, View view)

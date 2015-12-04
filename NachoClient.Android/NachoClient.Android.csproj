@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -41,10 +41,11 @@
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -58,9 +59,10 @@
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
-    <DebugSymbols>true</DebugSymbols>
     <AndroidSupportedAbis>armeabi-v7a;x86</AndroidSupportedAbis>
     <MandroidI18n>cjk;mideast;other;rare;west</MandroidI18n>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <AotAssemblies>true</AotAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -454,7 +456,6 @@
     <Compile Include="NachoUI.Android\Activities\MessageListFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MigrationFragment.cs" />
-    <Compile Include="NachoUI.Android\Activities\MoreFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\NowActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\NowFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\PriorityFragment.cs" />
@@ -597,6 +598,7 @@
     <Compile Include="NachoUI.Android\Activities\MoreActivity.cs" />
     <Compile Include="NachoCore\Utils\NcBase64.cs" />
     <Compile Include="NachoUI.Android\Activities\ReminderChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\MoreFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageThreadActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageFolderActivity.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration50.cs" />
@@ -608,6 +610,17 @@
     <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
     <Compile Include="NachoCore\Model\McBuildInfo.cs" />
+    <Compile Include="NachoPlatform.Android\RtfConverterAndroid.cs" />
+    <Compile Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AddAccountActivity.cs" />
+    <Compile Include="NachoCore\Utils\SimpleTaskScheduler.cs" />
+    <Compile Include="NachoUI.Android\Activities\NotificationActivity.cs" />
+    <Compile Include="NachoUI.Android\Support\CalendarPagerView.cs" />
+    <Compile Include="NachoUI.Android\Activities\HotSummaryFragment.cs" />
+    <Compile Include="NachoUI.Android\Support\HotEventAdapter.cs" />
+    <Compile Include="NachoUI.Android\Support\SwipeMenuRecyclerView.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageListAdapter.cs" />
+    <Compile Include="NachoUI.Android\Support\WrapperRecyclerAdapter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -772,6 +785,10 @@
     <ProjectReference Include="..\..\TokenAutoCompleteBinding\TokenAutoCompleteBinding\TokenAutoCompleteBinding.csproj">
       <Project>{17E3A80E-B371-4138-AB0F-7176BF026EAF}</Project>
       <Name>TokenAutoCompleteBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\rtfparserkitBinding\rtfparserkitBinding\rtfparserkitBinding.csproj">
+      <Project>{40A75D1C-1C71-41F5-9B84-A3884CD1EE81}</Project>
+      <Name>rtfparserkitBinding</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -1621,6 +1638,38 @@
     <AndroidResource Include="Resources\layout\AboutViewerFragment.axml" />
     <AndroidResource Include="Resources\layout\ContactSearchMenuItem.axml" />
     <AndroidResource Include="Resources\drawable-hdpi\notification.png" />
+    <AndroidResource Include="Resources\layout\AccountSettingsActivity.axml" />
+    <AndroidResource Include="Resources\layout\EventInMessageLayout.axml" />
+    <AndroidResource Include="Resources\layout\AddAccountActivity.axml" />
+    <AndroidResource Include="Resources\layout\NotificationActivity.axml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerEventIndicator.xml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundAlt.xml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackground.xml" />
+    <AndroidResource Include="Resources\layout\HotSummaryFragment.axml" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_nacholeft.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_nachoright.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_nacholeft.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_nachoright.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_nacholeft.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_nachoright.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_nacholeft.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_nachoright.png" />
+    <AndroidResource Include="Resources\layout\MessageCard.axml" />
+    <AndroidResource Include="Resources\menu\message_view.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeAttendeeOptional.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeAttendeeRemove.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeAttendeeRequired.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeAttendeeResend.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeCalendarForward.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeCalendarLate.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeContactCall.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeContactEmail.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeEmailArchive.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeEmailDefer.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeEmailDelete.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeEmailMove.xml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundToday.xml" />
+    <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundHighlighted.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

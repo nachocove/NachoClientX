@@ -36,6 +36,7 @@ namespace NachoCore.Utils
         public List<McAttachment> InitialAttachments;
         public string InitialRecipient;
         public string InitialText;
+        public bool InitialQuickReply;
         public NcEmailMessageBundle Bundle {
             get {
                 if (_Bundle == null) {
@@ -185,10 +186,10 @@ namespace NachoCore.Utils
             if(!String.IsNullOrEmpty(InitialRecipient)) {
                 Message.To = InitialRecipient;
             }
-            Message.Insert ();
-            EmailHelper.SaveEmailMessageInDrafts (Message);
             var body = McBody.InsertFile (Account.Id, McAbstrFileDesc.BodyTypeEnum.None, "");
             Message.BodyId = body.Id;
+            Message.Insert ();
+            EmailHelper.SaveEmailMessageInDrafts (Message);
 
             // Now we need to start building the initial message.  It could be blank, it
             // could inlude a quick reply, or it could be quoting another message.

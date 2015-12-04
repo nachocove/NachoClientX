@@ -17,6 +17,7 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.ActiveSync;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -322,17 +323,25 @@ namespace NachoClient.AndroidClient
 
         public static Intent NewEventIntent (Context context)
         {
-            var intent = new Intent (context, typeof(EventEditActivity));
-            intent.SetAction (Intent.ActionCreateDocument);
-            return intent;
+            if (NcApplication.Instance.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                var intent = new Intent (context, typeof(EventEditActivity));
+                intent.SetAction (Intent.ActionCreateDocument);
+                return intent;
+            } else {
+                return AndroidCalendars.NewEventIntent ();
+            }
         }
 
         public static Intent NewEventOnDayIntent (Context context, DateTime day)
         {
-            var intent = new Intent (context, typeof(EventEditActivity));
-            intent.SetAction (Intent.ActionCreateDocument);
-            intent.PutExtra (EXTRA_START_DATE, day.ToString ("O"));
-            return intent;
+            if (NcApplication.Instance.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                var intent = new Intent (context, typeof(EventEditActivity));
+                intent.SetAction (Intent.ActionCreateDocument);
+                intent.PutExtra (EXTRA_START_DATE, day.ToString ("O"));
+                return intent;
+            } else {
+                return AndroidCalendars.NewEventOnDayIntent (day);
+            }
         }
 
         public static Intent EditEventIntent (Context context, McEvent ev)
@@ -495,6 +504,30 @@ namespace NachoClient.AndroidClient
                 if (descriptionChanged) {
                     cal.SetDescription (descriptionField.Text, McBody.BodyTypeEnum.PlainText_1);
                 }
+
+                // The app does not keep track of the account owner's name. Use the e-mail address instead.
+                cal.OrganizerName = account.EmailAddr;
+                cal.OrganizerEmail = account.EmailAddr;
+                cal.MeetingStatusIsSet = true;
+                cal.ResponseRequestedIsSet = true;
+                if (0 == cal.attendees.Count) {
+                    cal.MeetingStatus = NcMeetingStatus.Appointment;
+                    cal.ResponseRequested = false;
+                } else {
+                    cal.MeetingStatus = NcMeetingStatus.MeetingOrganizer;
+                    cal.ResponseRequested = true;
+                }
+
+                // There is no UI for setting the BusyStatus.  For new events, set it to Free for
+                // all-day events and Busy for other events.  If the app doesn't explicitly set
+                // BusyStatus, some servers will treat it as if it were Free, while others will act
+                // as if it were Busy.
+                if (!cal.BusyStatusIsSet) {
+                    cal.BusyStatus = cal.AllDayEvent ? NcBusyStatus.Free : NcBusyStatus.Busy;
+                    cal.BusyStatusIsSet = true;
+                }
+
+                cal.DtStamp = DateTime.UtcNow;
 
                 if (Intent.ActionCreateDocument == Intent.Action) {
                     cal.Insert ();

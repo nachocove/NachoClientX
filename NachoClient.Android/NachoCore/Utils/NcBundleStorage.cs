@@ -3,13 +3,18 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
 
 namespace NachoCore.Utils
 {
 
     #region Base Storage Class
+
+    public interface NcBundleStorageSerializable {
+
+        byte[] SerializeForBundleStorage ();
+        void DeserializeFromBundleStorage (byte[] contents);
+
+    }
 
     public abstract class NcBundleStorage
     {
@@ -42,7 +47,7 @@ namespace NachoCore.Utils
         }
 
         public abstract object ObjectContentsForPath (string path, Type t);
-        public abstract void StoreObjectContentsForPath (object o, string path);
+        public abstract void StoreObjectContentsForPath (NcBundleStorageSerializable o, string path);
     }
 
     #endregion
@@ -140,7 +145,7 @@ namespace NachoCore.Utils
 
         public override void StoreStringContentsForPath (string stringContents, string path)
         {
-            StoreObjectContentsForPath(stringContents, path);
+            MemoryStorage [path] = stringContents;
         }
 
         public override object ObjectContentsForPath (string path, Type t)
@@ -152,7 +157,7 @@ namespace NachoCore.Utils
             return null;
         }
 
-        public override void StoreObjectContentsForPath (object o, string path)
+        public override void StoreObjectContentsForPath (NcBundleStorageSerializable o, string path)
         {
             MemoryStorage [path] = o;
         }
@@ -252,22 +257,23 @@ namespace NachoCore.Utils
         {
             var filePath = FullFilePathForLocalPath (path);
             if (File.Exists(filePath)){
-                using (Stream contents = new FileStream(filePath, FileMode.Open, FileAccess.Read)) {
-                    DataContractSerializer serializer = new DataContractSerializer (t);
-                    var o = serializer.ReadObject (contents);
+                var contents = File.ReadAllBytes (filePath);
+                var o = Activator.CreateInstance (t) as NcBundleStorageSerializable;
+                if (o != null) {
+                    o.DeserializeFromBundleStorage (contents);
                     return o;
                 }
             }
             return null;
         }
 
-        public override void StoreObjectContentsForPath (object o, string path)
+        public override void StoreObjectContentsForPath (NcBundleStorageSerializable o, string path)
         {
             var filePath = FullFilePathForLocalPath (path);
             using (var stream = new FileStream (filePath, FileMode.Create)) {
                 if (o != null) {
-                    DataContractSerializer serializer = new DataContractSerializer (o.GetType());
-                    serializer.WriteObject (stream, o);
+                    var contents = o.SerializeForBundleStorage ();
+                    stream.Write (contents, 0, contents.Length);
                 }
             }
         }

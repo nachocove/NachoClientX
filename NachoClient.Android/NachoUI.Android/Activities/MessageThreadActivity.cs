@@ -96,6 +96,11 @@ namespace NachoClient.AndroidClient
             return false;
         }
 
+        int MessageListDelegate.ShowListStyle()
+        {
+            return MessageListAdapter.LISTVIEW_STYLE;
+        }
+
         void MessageListDelegate.SetActiveImage (View view)
         {
             view.FindViewById<View> (Resource.Id.account).Visibility = ViewStates.Gone;

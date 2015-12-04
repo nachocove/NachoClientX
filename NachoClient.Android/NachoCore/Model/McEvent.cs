@@ -111,7 +111,7 @@ namespace NachoCore.Model
             // Don't set a reminder if the event came from a device calendar.  The device's calendar app should handle those notifications.
             // A notification from Nacho Mail would probably be a duplicate.
             if (AccountId != McAccount.GetDeviceAccount ().Id) {
-                ReminderTime = GetStartTimeUtc () - new TimeSpan (reminderMinutes * TimeSpan.TicksPerMinute);
+                ReminderTime = GetStartTimeUtc () - TimeSpan.FromMinutes (reminderMinutes);
                 Update ();
                 LocalNotificationManager.ScheduleNotification (this);
             }
@@ -145,6 +145,16 @@ namespace NachoCore.Model
         public static List<McEvent> QueryAllEventsInOrder ()
         {
             return NcModel.Instance.Db.Table<McEvent> ().OrderBy (v => v.StartTime).ToList ();
+        }
+
+        /// <summary>
+        /// All events where at least part of the event is within the given range.  The events are returned in random order.
+        /// </summary>
+        public static List<McEvent> QueryEventsInRange (DateTime start, DateTime end)
+        {
+            start = start.ToUniversalTime ();
+            end = end.ToUniversalTime ();
+            return NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= start || x.StartTime < end).ToList ();
         }
 
         /// <summary>

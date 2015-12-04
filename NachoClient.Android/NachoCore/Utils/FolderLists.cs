@@ -64,12 +64,12 @@ namespace NachoClient.AndroidClient
 
         HashSet<int> openList;
 
-        public FolderLists (McAccount account)
+        public FolderLists (McAccount account, bool hideFakeFolders)
         {
-            Create (account);
+            Create (account, hideFakeFolders);
         }
 
-        public void Create (McAccount account)
+        public void Create (McAccount account, bool hideFakeFolders)
         {
             // sort list of folders
             var folders = new NachoFolders (account.Id, NachoFolders.FilterForEmail);
@@ -104,16 +104,18 @@ namespace NachoClient.AndroidClient
             if (null != inbox) {
                 displayList.Add (new DisplayElement (new Node ().Copy (inbox), 0));
             }
-            displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetHotFakeFolder ()), 0));
-            displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetLtrFakeFolder ()), 0));
-            displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeferredFakeFolder ()), 0));
+            if (!hideFakeFolders) {
+                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetHotFakeFolder ()), 0));
+                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetLtrFakeFolder ()), 0));
+                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeferredFakeFolder ()), 0));
+            }
 
             displayList [displayList.Count - 1].lastInSection = true;
 
             // Max 3 recents
             var recents = McFolder.QueryByMostRecentlyAccessedVisibleFolders (account.Id);
             foreach (var folder in recents) {
-                recentsList.Add (new DisplayElement (new Node ().Copy (folder), 1));
+                recentsList.Add (new DisplayElement (new Node ().Copy (folder), 0));
                 if (3 == recentsList.Count) {
                     break;
                 }
