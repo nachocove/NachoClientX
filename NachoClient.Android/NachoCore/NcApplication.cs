@@ -461,13 +461,8 @@ namespace NachoCore
             NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
             EstablishService ();
-            NcModel.Instance.EngageRateLimiter ();
-            NcBrain.StartService ();
-            NcContactGleaner.Start ();
             EmailHelper.Setup ();
-            BackEnd.Instance.Owner = this;
-            BackEnd.Instance.CreateServices ();
-            BackEnd.Instance.Start ();
+            BackEnd.Instance.Enable (this);
             ExecutionContext = _PlatformIndication; 
             ContinueOnActivation ();
             // load products from app store
@@ -568,8 +563,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices called.");
             BackEnd.Instance.Stop ();
-            NcContactGleaner.Stop ();
-            NcBrain.StopService ();
+
             NcModel.Instance.Stop ();
             StoreHandler.Instance.Stop (); 
             CloudHandler.Instance.Stop (); 
@@ -602,6 +596,9 @@ namespace NachoCore
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
                 NcModel.Instance.Info ();
+                BackEnd.Instance.Start ();
+                NcBrain.StartService ();
+                NcContactGleaner.Start ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
                 if (null != Class4LateShowEvent) {
@@ -618,6 +615,8 @@ namespace NachoCore
             CrlMonitor.StopService ();
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
+                NcBrain.StopService ();
+                NcContactGleaner.Stop ();
                 NcCapture.PauseAll ();
                 NcTimeVariance.PauseAll ();
             }
