@@ -100,14 +100,17 @@ namespace NachoClient.iOS
             InsertAccountInfoIntoMoreTab ();
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            UpdateNotificationBadge ();
+        }
+
         // Fires only when app starts; not on all fg events
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
 
             View.BackgroundColor = A.Color_NachoGreen;
-
-            UpdateNotificationBadge ();
 
             var eventNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
             if (0 != eventNotifications.Count) {
@@ -345,7 +348,6 @@ namespace NachoClient.iOS
         // ViewDidAppear is not reliable
         protected void LayoutMoreTable ()
         {
-            UpdateNotificationBadge ();
             UpdateSwitchAccountButton ();
             var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
             if (null != tableView) {
