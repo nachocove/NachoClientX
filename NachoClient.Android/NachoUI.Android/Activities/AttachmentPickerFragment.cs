@@ -62,9 +62,10 @@ namespace NachoClient.AndroidClient
             });
             OptionsGridView.Adapter = new AttachmentOptionsAdapter (this, Options);
             OptionsGridView.ItemClick += OptionClicked;
-            builder.SetTitle ("Attach");
             builder.SetView (view);
-            return builder.Create ();
+            var dialog = builder.Create ();
+            dialog.Window.RequestFeature (WindowFeatures.NoTitle);
+            return dialog;
         }
 
         public override void OnAttach (Activity activity)

@@ -51,9 +51,10 @@ namespace NachoClient.AndroidClient
             SortSegmentByDate.Click += ClickDateSegment;
             SortSegmentByContact.Click += ClickContactSegment;
             HighlightTab (SortSegmentByName);
-            builder.SetTitle ("Pick a File");
             builder.SetView (view);
-            return builder.Create ();
+            var dialog = builder.Create ();
+            dialog.Window.RequestFeature (WindowFeatures.NoTitle);
+            return dialog;
         }
 
         void ClickContactSegment (object sender, EventArgs e)
