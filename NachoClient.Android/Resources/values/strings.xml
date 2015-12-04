@@ -168,4 +168,5 @@
     <string name="menu_quick_reply">Quick Reply</string>
     <string name="menu_create_deadline">Create Deadline</string>
     <string name="menu_create_event">Create Event</string>
+    <string name="quick_response_title">Quick Messages</string>
 </resources>
