@@ -55,11 +55,12 @@ namespace NachoClient.AndroidClient
             var inflater = Activity.LayoutInflater;
             var view = inflater.Inflate (Resource.Layout.AttachmentPickerFragment, null);
             OptionsGridView = view.FindViewById<GridView> (Resource.Id.attachment_options);
-            Options = new List<AttachmentOption> (new AttachmentOption[] {
-                new AttachmentOption ("Add Photo", Resource.Drawable.calendar_add_photo, AddPhoto),
-                new AttachmentOption ("Take Photo", Resource.Drawable.calendar_take_photo, TakePhoto),
-                new AttachmentOption ("Add File", Resource.Drawable.calendar_add_files, AddFile)
-            });
+            Options = new List<AttachmentOption> (3);
+            Options.Add (new AttachmentOption ("Add Photo", Resource.Drawable.calendar_add_photo, AddPhoto));
+            if (CanTakePhoto ()) {
+                Options.Add (new AttachmentOption ("Take Photo", Resource.Drawable.calendar_take_photo, TakePhoto));
+            }
+            Options.Add (new AttachmentOption ("Add File", Resource.Drawable.calendar_add_files, AddFile));
             OptionsGridView.Adapter = new AttachmentOptionsAdapter (this, Options);
             OptionsGridView.ItemClick += OptionClicked;
             builder.SetView (view);
@@ -121,6 +122,13 @@ namespace NachoClient.AndroidClient
             } else {
                 base.OnActivityResult (requestCode, resultCode, data);
             }
+        }
+
+        bool CanTakePhoto ()
+        {
+            Intent intent = new Intent (MediaStore.ActionImageCapture);
+            IList<Android.Content.PM.ResolveInfo> activities = Activity.PackageManager.QueryIntentActivities (intent, Android.Content.PM.PackageInfoFlags.MatchDefaultOnly);
+            return activities != null && activities.Count > 0;
         }
 
         void AddPhoto ()
