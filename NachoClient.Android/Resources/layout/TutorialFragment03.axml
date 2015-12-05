@@ -17,14 +17,55 @@
             android:src="@drawable/bg_s04left"
             android:scaleType="fitEnd"
             android:adjustViewBounds="true" />
-        <ImageView
-            android:layout_width="0dp"
+        <FrameLayout
             android:layout_weight=".6"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center|bottom"
-            android:scaleType="fitEnd"
-            android:adjustViewBounds="true"
-            android:src="@drawable/slide03bg" />
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|bottom"
+                android:scaleType="fitEnd"
+                android:adjustViewBounds="true"
+                android:src="@drawable/slide03bg" />
+            <ImageView
+                android:id="@+id/card02"
+                android:layout_margin="8dp"
+                android:paddingBottom="14dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|bottom"
+                android:scaleType="fitEnd"
+                android:adjustViewBounds="true"
+                android:src="@drawable/Slide03Card02" />
+            <ImageView
+                android:id="@+id/card01"
+                android:layout_margin="8dp"
+                android:paddingBottom="14dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|bottom"
+                android:scaleType="fitEnd"
+                android:adjustViewBounds="true"
+                android:src="@drawable/Slide03Card01" />
+            <ImageView
+                android:id="@+id/dot"
+                android:visibility="invisible"
+                android:paddingBottom="100dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|bottom"
+                android:scaleType="fitEnd"
+                android:adjustViewBounds="true"
+                android:src="@drawable/Slide02RedMarker" />
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|bottom"
+                android:scaleType="fitEnd"
+                android:adjustViewBounds="true"
+                android:src="@drawable/Slide03MidBG" />
+        </FrameLayout>
         <ImageView
             android:layout_width="0dp"
             android:layout_weight=".2"
