@@ -1669,6 +1669,8 @@
     <AndroidResource Include="Resources\drawable\SwipeEmailMove.xml" />
     <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundToday.xml" />
     <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundHighlighted.xml" />
+    <AndroidResource Include="Resources\anim\fast_fade_in.xml" />
+    <AndroidResource Include="Resources\anim\fast_fade_out.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
