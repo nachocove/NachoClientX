@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 using System.Globalization;
+using System.Collections;
 
 namespace NachoCore.Utils
 {
@@ -181,6 +182,8 @@ namespace NachoCore.Utils
 
     public class NcHttpResponse
     {
+        public HttpMethod Method { get; protected set; }
+
         public NcHttpHeaders Headers { get; protected set; }
 
         public FileStream Content { get; protected set; }
@@ -235,32 +238,70 @@ namespace NachoCore.Utils
 
         public bool HasBody {
             get {
-                return ContentLength > 0;
+                if (Method.Method == "HEAD") {
+                    return false;
+                }
+                if ((StatusCode < HttpStatusCode.Continue || StatusCode >= HttpStatusCode.OK) &&
+                    StatusCode != HttpStatusCode.NoContent && 
+                    StatusCode != HttpStatusCode.NotModified) {
+                    return true;
+                }
+
+                IEnumerable<string> values;
+                bool chunked = false;
+                if (Headers.TryGetValues ("Transfer-Encoding", out values)) {
+                    chunked = values.First ().ToLowerInvariant () == "chunked";
+                }
+                if (ContentLength != -1 || chunked) {
+                    return true;
+                }
+                return false;
             }
         }
 
-        public NcHttpResponse (HttpStatusCode status, FileStream stream, string contentType, NcHttpHeaders headers = null)
+        public NcHttpResponse (HttpMethod method, HttpStatusCode status, byte[] data, string contentType, NcHttpHeaders headers = null)
         {
-            initMe (status, stream, contentType, headers);
+            initMe (method, status, StreamFromByte(data), contentType, headers);
+        }
+
+
+        public NcHttpResponse (HttpMethod method, HttpStatusCode status, FileStream stream, string contentType, NcHttpHeaders headers = null)
+        {
+            initMe (method, status, stream, contentType, headers);
+        }
+
+        public NcHttpResponse (string method, HttpStatusCode status, FileStream stream, string contentType, NcHttpHeaders headers = null)
+        {
+            initMe (method, status, stream, contentType, headers);
         }
 
         string tempFileName { get; set; }
-        public NcHttpResponse (HttpStatusCode status, byte[] data, string contentType, NcHttpHeaders headers = null)
+        public NcHttpResponse (string method, HttpStatusCode status, byte[] data, string contentType, NcHttpHeaders headers = null)
+        {
+            initMe (method, status, StreamFromByte(data), contentType, headers);
+        }
+
+        void initMe (string method, HttpStatusCode status, FileStream stream, string contentType, NcHttpHeaders headers = null)
+        {
+            initMe (new HttpMethod (method), status, stream, contentType, headers);
+        }
+
+        void initMe (HttpMethod method, HttpStatusCode status, FileStream stream, string contentType, NcHttpHeaders headers = null)
+        {
+            Method = method;
+            Headers = headers ?? new NcHttpHeaders ();
+            StatusCode = status;
+            Content = stream;
+            ContentType = contentType;
+        }
+
+        FileStream StreamFromByte (byte[] data)
         {
             tempFileName = Path.GetTempFileName ();
             using (var fs = new FileStream (tempFileName, FileMode.OpenOrCreate, FileAccess.Write)) {
                 fs.Write (data, 0, data.Length);
             }
-            var stream = new FileStream (tempFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-            initMe (status, stream, contentType, headers);
-        }
-
-        void initMe (HttpStatusCode status, FileStream stream, string contentType, NcHttpHeaders headers = null)
-        {
-            Headers = headers ?? new NcHttpHeaders ();
-            StatusCode = status;
-            Content = stream;
-            ContentType = contentType;
+            return new FileStream (tempFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 
         ~NcHttpResponse ()
@@ -270,7 +311,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public NcHttpResponse (HttpStatusCode status)
+        public NcHttpResponse (HttpMethod method, HttpStatusCode status)
         {
             StatusCode = status;
             Headers = new NcHttpHeaders ();

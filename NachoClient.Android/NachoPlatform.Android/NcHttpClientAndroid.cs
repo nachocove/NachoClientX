@@ -241,8 +241,7 @@ namespace NachoPlatform
                     // reopen as read-only
                     using (var fileStream = new FileStream (filename, FileMode.Open, FileAccess.Read)) {
                         if (SuccessAction != null) {
-                            
-                            var response = new NcHttpResponse ((HttpStatusCode)p0.Code (), fileStream, ContentTypeFromResponseBody(p0), FromOkHttpHeaders (p0.Headers ()));
+                            var response = new NcHttpResponse (p0.Request ().Method (), (HttpStatusCode)p0.Code (), fileStream, ContentTypeFromResponseBody(p0), FromOkHttpHeaders (p0.Headers ()));
                             SuccessAction (response, Token);
                         }
                     }

@@ -114,7 +114,7 @@ namespace Test.iOS
                             status = AssignStatusCode (httpRequest, robotType, step);
                             headers.Add ("Content-Length", mockResponseLength);
                         }
-                        return new NcHttpResponse (status, httpResponse.Content, httpResponse.ContentType, headers);
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     }
                 );
             }
@@ -175,7 +175,7 @@ namespace Test.iOS
                             status = AssignStatusCode (httpRequest, robotType, step, isAuthFailFromBaseDomain: true);
                             headers.Add ("Content-Length", mockResponseLength);
                         }
-                        return new NcHttpResponse (status, httpResponse.Content, httpResponse.ContentType, headers);
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     }
                 );
             }
@@ -240,7 +240,7 @@ namespace Test.iOS
                             status = AssignStatusCode (httpRequest, robotType, step);
                             headers.Add ("Content-Length", mockResponseLength);
                         }
-                        return new NcHttpResponse (status, httpResponse.Content, httpResponse.ContentType, headers);
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     }
                 );
             }
@@ -296,7 +296,7 @@ namespace Test.iOS
                         MockSteps robotType = DetermineRobotType (httpRequest);
                         status = AssignStatusCode (httpRequest, robotType, step);
                         headers.Add ("Content-Length", mockResponseLength);
-                        return new NcHttpResponse (status, httpResponse.Content, httpResponse.ContentType, headers);
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     }
                 );
 
@@ -385,7 +385,7 @@ namespace Test.iOS
                             xstatus = AssignStatusCode (httpRequest, robotType, step);
                             headers.Add ("Content-Length", mockResponseLength);
                         }
-                        return new NcHttpResponse (xstatus, httpResponse.Content, httpResponse.ContentType, headers);
+                        return new NcHttpResponse (httpRequest.Method, xstatus, httpResponse.Content, httpResponse.ContentType, headers);
                     }
                 );
             }
@@ -448,7 +448,7 @@ namespace Test.iOS
                             status = AssignStatusCode (httpRequest, robotType, step);
                             headers.Add ("Content-Length", mockResponseLength);
                         }
-                        return new NcHttpResponse (status, httpResponse.Content, httpResponse.ContentType, headers);
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     }
                 );
             }
@@ -555,7 +555,7 @@ namespace Test.iOS
                             status = AssignStatusCode (httpRequest, robotType, step);
                             headers.Add ("Content-Length", mockResponseLength);
                         }
-                        return new NcHttpResponse (status, httpResponse.Content, httpResponse.ContentType, headers);
+                        return new NcHttpResponse (httpRequest.Method, status, httpResponse.Content, httpResponse.ContentType, headers);
                     });
             }
         }
@@ -770,7 +770,7 @@ namespace Test.iOS
 
                 // create the response, then allow caller to set headers,
                 // then return response and assign to mockResponse
-                var mockResponse = new NcHttpResponse (HttpStatusCode.OK, Encoding.UTF8.GetBytes (xml), "text/xml");
+                var mockResponse = new NcHttpResponse (request.Method, HttpStatusCode.OK, Encoding.UTF8.GetBytes (xml), "text/xml");
               
                 // check for the type of request and respond with appropriate response (redir, error, pass)
                 // allow the caller to modify the mockResponse object (esp. headers and StatusCode)

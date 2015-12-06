@@ -286,7 +286,7 @@ namespace Test.Common
                 Token = token,
             };
             var jsonContent = Encoding.UTF8.GetBytes (JsonConvert.SerializeObject (jsonResponse));
-            return new NcHttpResponse (HttpStatusCode.OK, jsonContent, "application/json");
+            return new NcHttpResponse (httpRequest.Method, HttpStatusCode.OK, jsonContent, "application/json");
         }
 
         private NcHttpResponse StartSessionOkResponse (NcHttpRequest httpRequest)
@@ -326,7 +326,7 @@ namespace Test.Common
 
         private NcHttpResponse HttpErrorPingerResponse (NcHttpRequest httpRequest)
         {
-            return new NcHttpResponse (HttpStatusCode.InternalServerError);
+            return new NcHttpResponse (httpRequest.Method, HttpStatusCode.InternalServerError);
         }
 
         private NcHttpResponse NetworkErrorPingerResponse (NcHttpRequest httpRequest)

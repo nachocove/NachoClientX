@@ -139,7 +139,7 @@ namespace Test.iOS
                 ServerCertificatePeek.CertificateValidationCallback (webRequest, mockCert, new X509Chain (), new SslPolicyErrors ());
             }
 
-            var response = new NcHttpResponse (HttpStatusCode.OK);
+            var response = new NcHttpResponse (request.Method, HttpStatusCode.OK);
             NcTask.Run (() => doRequest (request, response, timeout, success, error, progress, cancellationToken), "MockHttpClient.GetRequest");
         }
 

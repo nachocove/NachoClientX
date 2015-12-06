@@ -183,7 +183,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (
                 sm => {
                 },
-                (request) => NcHttpResponseWithDefaults (HttpStatusCode.OK, mockResponse, contentType),
+                (request) => NcHttpResponseWithDefaults ("POST", HttpStatusCode.OK, mockResponse, contentType),
                 (request) => {
                     Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
                     Assert.AreEqual (contentType, request.Headers.GetValues ("Content-Type").First (), "request Content-Type should match expected");
@@ -203,7 +203,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (
                 sm => {
                 },
-                (request) => NcHttpResponseWithDefaults (HttpStatusCode.Accepted, mockResponse, contentType),
+                (request) => NcHttpResponseWithDefaults ("POST", HttpStatusCode.Accepted, mockResponse, contentType),
                 (request) => {
                     Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
                     Assert.AreEqual (contentType, request.Headers.GetValues ("Content-Type").First (), "request Content-Type should match expected");
@@ -237,7 +237,7 @@ namespace Test.iOS
                 sm => {
                 },
                 (request) => {
-                    var ret = NcHttpResponseWithDefaults (HttpStatusCode.OK, mockResponse, contentType);
+                    var ret = NcHttpResponseWithDefaults ("POST", HttpStatusCode.OK, mockResponse, contentType);
                     ret.Headers.Add (HeaderXMsCredentialServiceUrl, match);
                     return ret;
                 },
@@ -277,7 +277,7 @@ namespace Test.iOS
                 sm => {
                 },
                 (request) => {
-                    var ret = NcHttpResponseWithDefaults (HttpStatusCode.OK, mockResponse, contentType);
+                    var ret = NcHttpResponseWithDefaults ("POST", HttpStatusCode.OK, mockResponse, contentType);
                     ret.Headers.Add (HeaderXMsCredentialsExpire, "2");
                     return ret;
                 },
@@ -422,7 +422,7 @@ namespace Test.iOS
                 sm => {
                 },
                 (request) => {
-                    var ret = NcHttpResponseWithDefaults(HttpStatusCode.OK, mockRequest, WBXMLContentType);
+                    var ret = NcHttpResponseWithDefaults("POST", HttpStatusCode.OK, mockRequest, WBXMLContentType);
                     ret.Headers.Remove ("Content-Length");
                     ret.Headers.Add ("Content-Length", responseLength);
                     return ret;
@@ -447,7 +447,7 @@ namespace Test.iOS
                 sm => {
                 },
                 (request) => {
-                    var ret = NcHttpResponseWithDefaults(HttpStatusCode.OK);
+                    var ret = NcHttpResponseWithDefaults ("POST", HttpStatusCode.OK);
                     ret.Headers.Add ("Content-Length", mockResponseLength);
                     return ret;
                 },
@@ -460,7 +460,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (
                 sm => {
                 },
-                (request) => NcHttpResponseWithDefaults (HttpStatusCode.OK),
+                (request) => NcHttpResponseWithDefaults ("POST", HttpStatusCode.OK),
                 (request) => {
                     Assert.AreEqual (mockRequestLength, request.Headers.GetValues ("Content-Length").First (), "request Content-Length should match expected");
                 }
@@ -474,7 +474,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (
                 sm => {
                 },
-                (request) => NcHttpResponseWithDefaults (HttpStatusCode.Found),
+                (request) => NcHttpResponseWithDefaults ("POST", HttpStatusCode.Found),
                 (request) => {
                 }
             );
@@ -488,7 +488,7 @@ namespace Test.iOS
             // Status Code -- Bad Request (400)
             PerformHttpOperationWithSettings (
                 sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
-                (request) => NcHttpResponseWithDefaults (HttpStatusCode.BadRequest),
+                (request) => NcHttpResponseWithDefaults ("POST", HttpStatusCode.BadRequest),
                 (request) => {
                 }
             );
@@ -504,7 +504,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (
                 sm => {
                 },
-                (request) => NcHttpResponseWithDefaults (HttpStatusCode.Unauthorized),
+                (request) => NcHttpResponseWithDefaults ("POST", HttpStatusCode.Unauthorized),
                 (request) => {
                 }
             );
@@ -518,7 +518,7 @@ namespace Test.iOS
             // Status Code -- Forbidden (403)
             PerformHttpOperationWithSettings (
                 sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
-                (request) => NcHttpResponseWithDefaults (HttpStatusCode.Forbidden),
+                (request) => NcHttpResponseWithDefaults ("POST", HttpStatusCode.Forbidden),
                 (request) => {
                 }
             );
@@ -532,7 +532,7 @@ namespace Test.iOS
             // Status Code -- NotFound (404)
             PerformHttpOperationWithSettings (
                 sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
-                (request) => NcHttpResponseWithDefaults (HttpStatusCode.NotFound),
+                (request) => NcHttpResponseWithDefaults ("POST", HttpStatusCode.NotFound),
                 (request) => {
                 }
             );
@@ -547,7 +547,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (
                 sm => {
                 },
-                (request) => NcHttpResponseWithDefaults ((HttpStatusCode)449),
+                (request) => NcHttpResponseWithDefaults ("POST", (HttpStatusCode)449),
                 (request) => {
                 }
             );
@@ -562,7 +562,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (
                 sm => {
                 },
-                (request) => NcHttpResponseWithDefaults (HttpStatusCode.InternalServerError),
+                (request) => NcHttpResponseWithDefaults ("POST", HttpStatusCode.InternalServerError),
                 (request) => {
                 }
             );
@@ -576,7 +576,7 @@ namespace Test.iOS
             // Status Code -- Command Not Implemented (501)
             PerformHttpOperationWithSettings (
                 sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
-                (request) => NcHttpResponseWithDefaults ((HttpStatusCode)501),
+                (request) => NcHttpResponseWithDefaults ("POST", (HttpStatusCode)501),
                 (request) => {
                 }
             );
@@ -607,7 +607,7 @@ namespace Test.iOS
                 sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
                 (request) => {
                     retryCount = AssertRetry (retryCount);
-                    return NcHttpResponseWithDefaults (HttpStatusCode.ServiceUnavailable);
+                    return NcHttpResponseWithDefaults ("POST", HttpStatusCode.ServiceUnavailable);
                 },
                 (request) => {
                 }
@@ -641,7 +641,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (
                 sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
                 (request) => {
-                    var response = NcHttpResponseWithDefaults (HttpStatusCode.ServiceUnavailable);
+                    var response = NcHttpResponseWithDefaults ("POST", HttpStatusCode.ServiceUnavailable);
                     if (!hasBeenThrottled) {
                         response.Headers.Add (HeaderRetryAfter, retryAfterSecs);
                         response.Headers.Add (HeaderXMsThrottle, "UnknownReason");
@@ -684,7 +684,7 @@ namespace Test.iOS
             PerformHttpOperationWithSettings (
                 sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
                 (request) => {
-                    var response = NcHttpResponseWithDefaults (HttpStatusCode.ServiceUnavailable);
+                    var response = NcHttpResponseWithDefaults ("POST", HttpStatusCode.ServiceUnavailable);
                     if (!hasBeenThrottled) {
                         response.Headers.Add (HeaderXMsThrottle, "UnknownReason");
                         hasBeenThrottled = true;
@@ -708,7 +708,7 @@ namespace Test.iOS
             // Status Code -- Server out of Space (507)
             PerformHttpOperationWithSettings (
                 sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"),
-                (request) => NcHttpResponseWithDefaults ((HttpStatusCode)507),
+                (request) => NcHttpResponseWithDefaults ("POST", (HttpStatusCode)507),
                 (request) => {
                 }
             );
@@ -722,7 +722,7 @@ namespace Test.iOS
             // Unknown status code
             PerformHttpOperationWithSettings (
                 sm => sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine"), 
-                (request) => NcHttpResponseWithDefaults ((HttpStatusCode)8035),
+                (request) => NcHttpResponseWithDefaults ("POST", (HttpStatusCode)8035),
                 request => {
                 }
             );
@@ -757,7 +757,7 @@ namespace Test.iOS
             Assert.AreEqual (CommonMockData.Host, mockCommStatus.Host);
         }
 
-        private NcHttpResponse NcHttpResponseWithDefaults (HttpStatusCode status, byte[] data = null, string contentType = null)
+        private NcHttpResponse NcHttpResponseWithDefaults (string method, HttpStatusCode status, byte[] data = null, string contentType = null)
         {
             if (data == null) {
                 data = CommonMockData.Wbxml;
@@ -765,7 +765,7 @@ namespace Test.iOS
             if (contentType == null) {
                 contentType = WBXMLContentType;
             }
-            return new NcHttpResponse (status, data, contentType);
+            return new NcHttpResponse (method, status, data, contentType);
         }
 
         delegate NcHttpResponse ProvideResponseDelegate (NcHttpRequest request);
