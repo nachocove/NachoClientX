@@ -92,9 +92,7 @@ namespace NachoCore.Wbxml
 
         void fillBuffer ()
         {
-            if (null == dataStream) {
-                return;
-            }
+            NcAssert.NotNull (dataStream);
             int toRead = buffer.Length;
             int pos = 0;
             while (toRead > 0) {
