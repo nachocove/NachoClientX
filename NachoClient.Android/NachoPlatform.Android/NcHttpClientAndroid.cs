@@ -36,6 +36,7 @@ namespace NachoPlatform
             _client.SetReadTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
             _client.FollowRedirects = AllowAutoRedirect;
             _client.SetFollowSslRedirects (AllowAutoRedirect);
+            _client.SetConnectionPool (ConnectionPool.Default); // see http://square.github.io/okhttp/2.x/okhttp/com/squareup/okhttp/ConnectionPool.html
         }
 
         private static object LockObj = new object ();
