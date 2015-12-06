@@ -144,7 +144,6 @@ namespace NachoCore.Model
             Prep ();
             using (var stream = File.OpenWrite (GetFilePath ())) {
                 writer (stream);
-                stream.Close ();
             }
             UpdateSaveFinish ();
         }
