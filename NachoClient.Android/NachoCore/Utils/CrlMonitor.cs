@@ -22,6 +22,8 @@ namespace NachoCore.Utils
 
         private static int NextId = 0;
 
+        private const int DefaultTimeoutSecs = 10;
+
         // Keep track of all registered monitors
         private static Dictionary<string, CrlMonitor> Monitors = new Dictionary<string, CrlMonitor> ();
 
@@ -151,7 +153,7 @@ namespace NachoCore.Utils
         public void Download (CancellationToken cToken)
         {
             var request = new NcHttpRequest (HttpMethod.Get, Url);
-            HttpClient.SendRequest (request, (int)10.0, DownloadSuccess, DownloadError, cToken);
+            HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, cToken);
         }
 
         void DownloadSuccess (NcHttpResponse response, CancellationToken token)
