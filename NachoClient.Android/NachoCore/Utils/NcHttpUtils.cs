@@ -172,12 +172,6 @@ namespace NachoCore.Utils
             NcAssert.CaseError ("unknown type of content");
             return null;
         }
-
-        public override string ToString ()
-        {
-            // TODO Remove this method or add redaction to the URL
-            return string.Format ("[NcHttpRequest({0}): {1}:{2} ContentLength={3}, ContentType={4}, Headers={5}]", guid, Method, RequestUri, ContentLength, ContentType, Headers);
-        }
     }
 
     public class NcHttpResponse
