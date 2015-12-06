@@ -428,9 +428,6 @@ namespace NachoCore.ActiveSync
 
         void AttemptHttpSuccess (NcHttpResponse response, CancellationToken token)
         {
-            // FIXME: Should we do this much processing in the Callback? Or should we save things here, and process
-            // outside of the response callback? This would mean we need a post-request callback or signal.
-
             if (token.IsCancellationRequested) {
                 return;
             }
@@ -461,42 +458,39 @@ namespace NachoCore.ActiveSync
 
         void AttemptHttpError (Exception ex, CancellationToken cToken)
         {
-            NcTask.Run (() => {
-                if (ex is OperationCanceledException) {
-                    Log.Info (Log.LOG_HTTP, "AttemptHttp OperationCanceledException {0}: exception {1}", RedactedServerUri, ex.Message);
-                    CancelTimeoutTimer ("OperationCanceledException");
-                    if (!cToken.IsCancellationRequested) {
-                        // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
-                        ReportCommResult (ServerUri.Host, true);
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
-                    }
-                } else if (ex is WebException) {
-                    Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", RedactedServerUri, ex.Message);
-                    if (!cToken.IsCancellationRequested) {
-                        CancelTimeoutTimer ("WebException");
-                        ReportCommResult (ServerUri.Host, true);
-                        // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
-                        // TODO: I have seen an expired server cert get us here. We need to catch that case specifically, and alert user/admin.
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, RedactedServerUri));
-                    }
-                } else if (ex is NullReferenceException) {
-                    Log.Info (Log.LOG_HTTP, "AttemptHttp NullReferenceException {0}: exception {1}", RedactedServerUri, ex.Message);
-                    // As best I can tell, this may be driven by bug(s) in the Mono stack.
-                    if (!cToken.IsCancellationRequested) {
-                        CancelTimeoutTimer ("NullReferenceException");
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
-                    }
-                } else {
-                    // We've seen HttpClient barf due to Cancel().
-                    if (!cToken.IsCancellationRequested) {
-                        CancelTimeoutTimer ("Exception");
-                        Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", RedactedServerUri));
-                    } else {
-                        Log.Error (Log.LOG_HTTP, "HTTPClient Exception due to cancellation! {0} {1}", RedactedServerUri, ex.Message);
-                    }
+            if (ex is OperationCanceledException) {
+                Log.Info (Log.LOG_HTTP, "AttemptHttp OperationCanceledException {0}: exception {1}", RedactedServerUri, ex.Message);
+                CancelTimeoutTimer ("OperationCanceledException");
+                if (!cToken.IsCancellationRequested) {
+                    // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
+                    ReportCommResult (ServerUri.Host, true);
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                 }
-            }, "AttemptHttpError");
+            } else if (ex is WebException) {
+                Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", RedactedServerUri, ex.Message);
+                if (!cToken.IsCancellationRequested) {
+                    CancelTimeoutTimer ("WebException");
+                    ReportCommResult (ServerUri.Host, true);
+                    // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
+                    // TODO: I have seen an expired server cert get us here. We need to catch that case specifically, and alert user/admin.
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, RedactedServerUri));
+                }
+            } else if (ex is NullReferenceException) {
+                Log.Info (Log.LOG_HTTP, "AttemptHttp NullReferenceException {0}: exception {1}", RedactedServerUri, ex.Message);
+                // As best I can tell, this may be driven by bug(s) in the Mono stack.
+                if (!cToken.IsCancellationRequested) {
+                    CancelTimeoutTimer ("NullReferenceException");
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
+                }
+            } else {
+                if (!cToken.IsCancellationRequested) {
+                    CancelTimeoutTimer ("Exception");
+                    Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", RedactedServerUri));
+                } else {
+                    Log.Error (Log.LOG_HTTP, "HTTPClient Exception due to cancellation! {0} {1}", RedactedServerUri, ex.Message);
+                }
+            }
         }
 
         private bool Is2xx (HttpStatusCode statusCode)
