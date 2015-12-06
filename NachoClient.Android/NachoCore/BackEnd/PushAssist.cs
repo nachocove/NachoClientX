@@ -1053,7 +1053,7 @@ namespace NachoCore
             if (null == Cts) {
                 Cts = new CancellationTokenSource ();
             }
-            HttpClient.SendRequest (request, (int)(MaxTimeoutMsec / 1000),
+            HttpClient.SendRequest (request, (MaxTimeoutMsec / 1000),
                 (response, token) => {
                     byte[] contentBytes = response.GetContent ();
                     string content = null != contentBytes ? Encoding.UTF8.GetString (contentBytes) : null;
