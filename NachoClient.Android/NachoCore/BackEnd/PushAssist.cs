@@ -254,7 +254,6 @@ namespace NachoCore
             Owner = owner;
             var account = McAccount.QueryById<McAccount> (AccountId);
             ClientContext = GetClientContext (account);
-            Cts = new CancellationTokenSource ();
 
             // This entry is never freed even if the account is deleted. If the account is
             // recreated, the existing entry will be overwritten. If the account is just 
@@ -1050,9 +1049,6 @@ namespace NachoCore
             }
 
             ResetTimeout (timeoutAction);
-            if (null == Cts) {
-                Cts = new CancellationTokenSource ();
-            }
             HttpClient.SendRequest (request, (MaxTimeoutMsec / 1000),
                 (response, token) => {
                     byte[] contentBytes = response.GetContent ();
@@ -1079,6 +1075,7 @@ namespace NachoCore
                 if (cToken.IsCancellationRequested) {
                     DisposeTimeoutTimer ();
                     DisposeRetryTimer ();
+                    DisposeCts ();
                     Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
                 }
             } else if (e is WebException) {
@@ -1155,6 +1152,8 @@ namespace NachoCore
         private void ResetTimeout (Action timeout)
         {
             DisposeTimeoutTimer ();
+            DisposeCts ();
+            Cts = new CancellationTokenSource ();
             TimeoutTimer = new NcTimer ("PATimeout", (state) => {
                 MayCancelHttpRequest ();
                 timeout ();
