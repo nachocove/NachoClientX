@@ -31,7 +31,7 @@ namespace NachoClient.AndroidClient
         private const string REMINDER_CHOOSER_TAG = "ReminderChooser";
 
         private McEvent ev;
-        private NcEventDetail detail;
+        private AndroidEventDetail detail;
 
         private View view;
         private ButtonBar buttonBar;
@@ -65,7 +65,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnActivityCreated (savedInstanceState);
             this.ev = ((IEventViewFragmentOwner)Activity).EventToView;
-            this.detail = new NcEventDetail (ev);
+            this.detail = new AndroidEventDetail (ev);
             if (!detail.IsValid) {
                 EventWasDeleted ();
                 return;
@@ -100,6 +100,7 @@ namespace NachoClient.AndroidClient
 
             case NOTE_REQUEST_CODE:
                 if (Result.Ok == resultCode) {
+                    NcAssert.True (detail.IsAppEvent);
                     string newNoteText = NoteActivity.ModifiedNoteText (data);
                     if (null != newNoteText) {
                         var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
@@ -186,7 +187,7 @@ namespace NachoClient.AndroidClient
                 buttonBar.ClearButton (ButtonBar.Button.Right1);
             }
 
-            ConfigureRsvpBar (detail, view);
+            ConfigureRsvpBar ();
 
             var titleView = view.FindViewById<TextView> (Resource.Id.event_title);
             titleView.Text = detail.SpecificItem.GetSubject ();
@@ -214,19 +215,29 @@ namespace NachoClient.AndroidClient
             webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.event_description_webview);
             var webClient = new NachoWebViewClient ();
             webView.SetWebViewClient (webClient);
-            var body = McBody.QueryById<McBody> (detail.SpecificItem.BodyId);
-            if (McBody.IsNontruncatedBodyComplete (body)) {
-                bodyMessageBundle = new NcEmailMessageBundle (body);
-                if (bodyMessageBundle.NeedsUpdate) {
-                    NcTask.Run (delegate {
-                        bodyMessageBundle.Update ();
-                        InvokeOnUIThread.Instance.Invoke (RenderBody);
-                    }, "MessageDownloader_UpdateBundle");
+            if (detail.IsAppEvent) {
+                var body = McBody.QueryById<McBody> (detail.SpecificItem.BodyId);
+                if (McBody.IsNontruncatedBodyComplete (body)) {
+                    bodyMessageBundle = new NcEmailMessageBundle (body);
+                    if (bodyMessageBundle.NeedsUpdate) {
+                        NcTask.Run (delegate {
+                            bodyMessageBundle.Update ();
+                            InvokeOnUIThread.Instance.Invoke (RenderBody);
+                        }, "MessageDownloader_UpdateBundle");
+                    } else {
+                        RenderBody ();
+                    }
                 } else {
-                    RenderBody ();
+                    webView.Visibility = ViewStates.Gone;
                 }
             } else {
-                webView.Visibility = ViewStates.Gone;
+                var messageWrapper = new MimeKit.MimeMessage ();
+                var part = new MimeKit.TextPart ("plain");
+                part.Text = detail.SpecificItem.Description;
+                messageWrapper.Body = part;
+                bodyMessageBundle = new NcEmailMessageBundle (messageWrapper);
+                bodyMessageBundle.Update ();
+                RenderBody ();
             }
 
             var reminderView = view.FindViewById<TextView> (Resource.Id.event_reminder_label);
@@ -286,12 +297,18 @@ namespace NachoClient.AndroidClient
                 }
             }
 
-            var notesLabel = view.FindViewById<TextView> (Resource.Id.event_notes_label);
-            var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
-            if (null == note) {
-                notesLabel.Text = "";
+            var notesSection = view.FindViewById<View> (Resource.Id.event_notes_section);
+            if (detail.IsAppEvent) {
+                notesSection.Visibility = ViewStates.Visible;
+                var notesLabel = view.FindViewById<TextView> (Resource.Id.event_notes_label);
+                var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
+                if (null == note) {
+                    notesLabel.Text = "";
+                } else {
+                    notesLabel.Text = note.noteContent;
+                }
             } else {
-                notesLabel.Text = note.noteContent;
+                notesSection.Visibility = ViewStates.Gone;
             }
 
             var calendarView = view.FindViewById<TextView> (Resource.Id.event_calendar_label);
@@ -314,7 +331,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public void ConfigureRsvpBar (NcEventDetail detail, View view)
+        public void ConfigureRsvpBar ()
         {
             var rsvpView = view.FindViewById<View> (Resource.Id.event_rsvp_view);
             var removeView = view.FindViewById<View> (Resource.Id.event_remove_view);
@@ -450,30 +467,32 @@ namespace NachoClient.AndroidClient
         private void MakeStatusUpdates (NcResponseType response, bool occurrenceOnly)
         {
             userResponse = response;
-            if (occurrenceOnly) {
-                DateTime occurrenceStartTime;
-                if (detail.SpecificItem is McException) {
-                    occurrenceStartTime = ((McException)detail.SpecificItem).ExceptionStartTime;
-                } else {
-                    occurrenceStartTime = detail.Occurrence.StartTime;
-                }
-                var cmdResult = BackEnd.Instance.RespondCalCmd (detail.Account.Id, detail.SeriesItem.Id, response, occurrenceStartTime);
-                if (cmdResult.isOK ()) {
-                    responseCmdToken = cmdResult.GetValue<string> ();
-                    if (detail.SeriesItem.ResponseRequestedIsSet && detail.SeriesItem.ResponseRequested) {
-                        var iCalPart = CalendarHelper.MimeResponseFromCalendar (detail.SeriesItem, response, occurrenceStartTime);
-                        var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
-                        CalendarHelper.SendMeetingResponse (detail.Account, detail.SeriesItem, mimeBody, response);
+            if (detail.IsAppEvent) {
+                if (occurrenceOnly) {
+                    DateTime occurrenceStartTime;
+                    if (detail.SpecificItem is McException) {
+                        occurrenceStartTime = ((McException)detail.SpecificItem).ExceptionStartTime;
+                    } else {
+                        occurrenceStartTime = detail.Occurrence.StartTime;
                     }
-                }
-            } else {
-                var cmdResult = BackEnd.Instance.RespondCalCmd (detail.Account.Id, detail.SeriesItem.Id, response);
-                if (cmdResult.isOK ()) {
-                    responseCmdToken = cmdResult.GetValue<string> ();
-                    if (detail.SeriesItem.ResponseRequestedIsSet && detail.SeriesItem.ResponseRequested) {
-                        var iCalPart = CalendarHelper.MimeResponseFromCalendar (detail.SeriesItem, response);
-                        var mimebody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
-                        CalendarHelper.SendMeetingResponse (detail.Account, detail.SeriesItem, mimebody, response);
+                    var cmdResult = BackEnd.Instance.RespondCalCmd (detail.Account.Id, detail.SeriesItem.Id, response, occurrenceStartTime);
+                    if (cmdResult.isOK ()) {
+                        responseCmdToken = cmdResult.GetValue<string> ();
+                        if (detail.SeriesItem.ResponseRequestedIsSet && detail.SeriesItem.ResponseRequested) {
+                            var iCalPart = CalendarHelper.MimeResponseFromCalendar (detail.SeriesItem, response, occurrenceStartTime);
+                            var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
+                            CalendarHelper.SendMeetingResponse (detail.Account, detail.SeriesItem, mimeBody, response);
+                        }
+                    }
+                } else {
+                    var cmdResult = BackEnd.Instance.RespondCalCmd (detail.Account.Id, detail.SeriesItem.Id, response);
+                    if (cmdResult.isOK ()) {
+                        responseCmdToken = cmdResult.GetValue<string> ();
+                        if (detail.SeriesItem.ResponseRequestedIsSet && detail.SeriesItem.ResponseRequested) {
+                            var iCalPart = CalendarHelper.MimeResponseFromCalendar (detail.SeriesItem, response);
+                            var mimebody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
+                            CalendarHelper.SendMeetingResponse (detail.Account, detail.SeriesItem, mimebody, response);
+                        }
                     }
                 }
             }
@@ -602,6 +621,7 @@ namespace NachoClient.AndroidClient
 
         private void NotesView_Click (object sender, EventArgs e)
         {
+            NcAssert.True (detail.IsAppEvent);
             string noteText = "";
             var note = McNote.QueryByTypeId (detail.SeriesItem.Id, McNote.NoteType.Event).FirstOrDefault ();
             if (null != note) {
@@ -632,5 +652,67 @@ namespace NachoClient.AndroidClient
             UpdateStatus (NcResponseType.Declined);
         }
     }
-}
 
+    public class AndroidEventDetail : NcEventDetail
+    {
+        bool isAppEvent;
+        string calendarName;
+
+        public AndroidEventDetail (McEvent occurrence)
+        {
+            isAppEvent = 0 < occurrence.CalendarId;
+            if (isAppEvent) {
+                base.Initialize (occurrence);
+            } else {
+                var calItem = AndroidCalendars.GetEventDetails (-occurrence.CalendarId, out calendarName);
+                base.Initialize (occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
+            }
+        }
+
+        public bool IsAppEvent {
+            get {
+                return isAppEvent;
+            }
+        }
+
+        public override void Refresh ()
+        {
+            if (isAppEvent) {
+                base.Refresh ();
+            } else {
+                var calItem = AndroidCalendars.GetEventDetails (-Occurrence.CalendarId, out calendarName);
+                base.Initialize (Occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
+            }
+        }
+
+        public override bool CanEdit {
+            get {
+                // TODO Allow editing of device events
+                return isAppEvent && base.CanEdit;
+            }
+        }
+
+        public override bool CanChangeReminder {
+            get {
+                // TODO Allow changing the reminder for device events
+                return isAppEvent && base.CanChangeReminder;
+            }
+        }
+
+        public override bool ShowCancelMeetingButton {
+            get {
+                return isAppEvent && base.ShowCancelMeetingButton;
+            }
+        }
+
+        public override string CalendarNameString {
+            get {
+                if (isAppEvent) {
+                    return base.CalendarNameString;
+                } else {
+                    return string.Format ("{0} : {1}", Account.DisplayName, calendarName);
+                }
+            }
+        }
+    }
+}

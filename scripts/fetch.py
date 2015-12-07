@@ -89,13 +89,17 @@ def main():
     else:
         repo_list = options.repo
 
+    failed_repos = []
+
     start = time.time()
     repos_dir = os.path.abspath('..')
     threads = [FetchThread(repo=repo, parent_dir=repos_dir, options=options) for repo in repo_list]
     for thread in threads:
         thread.start()
+        rc = thread.join()
+        if rc != 0:
+            failed_repos.append(thread)
 
-    failed_repos = []
     for thread in threads:
         rc = thread.join()
         if rc != 0:

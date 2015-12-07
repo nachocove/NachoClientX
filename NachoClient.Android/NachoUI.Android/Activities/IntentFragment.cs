@@ -35,9 +35,10 @@ namespace NachoClient.AndroidClient
             IntentListView = view.FindViewById<ListView> (Resource.Id.intent_list_view);
             IntentListView.ItemClick += OnListItemClick;
             SetupListView ();
-            builder.SetTitle ("Select Intent");
             builder.SetView (view);
-            return builder.Create ();
+            var dialog = builder.Create ();
+            dialog.Window.RequestFeature (WindowFeatures.NoTitle);
+            return dialog;
         }
 
         public override void OnPause ()

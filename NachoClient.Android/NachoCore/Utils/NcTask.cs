@@ -139,6 +139,8 @@ namespace NachoCore.Utils
                 #if __ANDROID__
                 if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
                     Log.Error (Log.LOG_UTILS, "StartNew running on main thread.");
+                    new NcTimer ("StartNew workaround", TryAgain, action, 100, 0);
+                    return;
                 }
                 #endif
                 DateTime startTime = DateTime.UtcNow;
@@ -191,6 +193,21 @@ namespace NachoCore.Utils
             });
 
         }
+
+        #if __ANDROID__
+        static void TryAgain (Object o)
+        {
+            if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
+                Log.Error (Log.LOG_UTILS, "TryAgain running on main thread.");
+            }
+            var action = (Action)o;
+            try {
+                action.Invoke ();
+            } catch (OperationCanceledException) {
+                Log.Info (Log.LOG_SYS, "NcTask cancelled in TryAgain.");
+            } 
+        }
+        #endif
 
         public static void StopService ()
         {

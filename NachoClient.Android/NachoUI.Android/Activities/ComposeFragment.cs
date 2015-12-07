@@ -45,7 +45,6 @@ namespace NachoClient.AndroidClient
         MessageComposeHeaderView HeaderView;
         Android.Webkit.WebView WebView;
         Android.Widget.ImageView SendButton;
-        Android.Widget.ImageView QuickResponseButton;
         bool IsWebViewLoaded;
         bool FocusWebViewOnLoad;
         List<Tuple<string, JavascriptCallback>> JavaScriptQueue;
@@ -92,7 +91,6 @@ namespace NachoClient.AndroidClient
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
             buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.contact_quickemail, QuickResponseButton_Click);
             SendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            QuickResponseButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button2);
 
             HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
             HeaderView.Delegate = this;
@@ -107,6 +105,7 @@ namespace NachoClient.AndroidClient
                 Composer.StartPreparingMessage ();
                 UpdateHeader ();
                 UpdateSendEnabled ();
+                MaybeShowQuickResponses ();
             }
 
             return view;
@@ -123,6 +122,7 @@ namespace NachoClient.AndroidClient
                     Composer.StartPreparingMessage ();
                     UpdateHeader ();
                     UpdateSendEnabled ();
+                    MaybeShowQuickResponses ();
                 }
                 messageIsReady = value;
             }
@@ -483,6 +483,14 @@ namespace NachoClient.AndroidClient
         {
             var attachments = McAttachment.QueryByItem (Composer.Message);
             HeaderView.AttachmentsView.SetAttachments (attachments);
+        }
+
+        void MaybeShowQuickResponses()
+        {
+            if (Composer.InitialQuickReply) {
+                Composer.InitialQuickReply = false;
+                ShowQuickResponses ();
+            }
         }
 
         void ShowQuickResponses ()

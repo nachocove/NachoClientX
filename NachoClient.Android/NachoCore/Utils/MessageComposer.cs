@@ -36,6 +36,7 @@ namespace NachoCore.Utils
         public List<McAttachment> InitialAttachments;
         public string InitialRecipient;
         public string InitialText;
+        public bool InitialQuickReply;
         public NcEmailMessageBundle Bundle {
             get {
                 if (_Bundle == null) {

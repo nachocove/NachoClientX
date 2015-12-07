@@ -19,12 +19,14 @@ using Android.Views.Animations;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "TutorialActivity")]            
+    [Activity (Label = "TutorialActivity", ScreenOrientation=Android.Content.PM.ScreenOrientation.Portrait)]            
     public class TutorialActivity : FragmentActivity
     {
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
+
+            RequestedOrientation = Android.Content.PM.ScreenOrientation.Portrait;
 
             SetContentView (Resource.Layout.TutorialActivity);
 
@@ -33,21 +35,9 @@ namespace NachoClient.AndroidClient
 
             adaptor.AddFragment (Tutorial1Fragment.new_instance ());
             adaptor.AddFragment (Tutorial2Fragment.new_instance ());
-
-
-            adaptor.AddFragmentView ((i, v, b) => {
-                var view = i.Inflate (Resource.Layout.TutorialFragment03, v, false);
-                return view;
-            }
-            );
-
+            adaptor.AddFragment (Tutorial3Fragment.new_instance ());
             adaptor.AddFragment (Tutorial4Fragment.new_instance ());
-
-            adaptor.AddFragmentView ((i, v, b) => {
-                var view = i.Inflate (Resource.Layout.TutorialFragment05, v, false);
-                return view;
-            }
-            );
+            adaptor.AddFragment (Tutorial5Fragment.new_instance ());
 
             pager.PageSelected += Pager_PageSelected;
 
@@ -220,7 +210,6 @@ namespace NachoClient.AndroidClient
         }
     }
 
-
     public class Tutorial2Fragment :  Android.Support.V4.App.Fragment
     {
         public static Tutorial2Fragment new_instance ()
@@ -278,6 +267,95 @@ namespace NachoClient.AndroidClient
         }
     }
 
+    public class Tutorial3Fragment :  Android.Support.V4.App.Fragment
+    {
+        public static Tutorial3Fragment new_instance ()
+        {
+            return new Tutorial3Fragment ();
+        }
+
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.TutorialFragment03, container, false);
+            return view;
+        }
+
+        bool didAnimation = false;
+
+        void Animation ()
+        {
+            if (didAnimation) {
+                return;
+            }
+            didAnimation = true;
+
+            var dotAnimation = new TranslateAnimation (
+                                   Dimension.RelativeToSelf, 0f,
+                                   Dimension.RelativeToSelf, 0f,
+                                   Dimension.RelativeToSelf, 0f,
+                                   Dimension.RelativeToSelf, -1f);
+            dotAnimation.Duration = 1000;
+            dotAnimation.StartOffset = 2000;
+
+            var dotAlphaAnimation = new AlphaAnimation (0f, 1f);
+            dotAlphaAnimation.Duration = 250;
+            dotAlphaAnimation.StartOffset = 1500;
+
+            var dotAnimationSet = new AnimationSet (true);
+            dotAnimationSet.AddAnimation (dotAlphaAnimation);
+            dotAnimationSet.AddAnimation (dotAnimation);
+
+            var card1Animation = new TranslateAnimation (
+                                     Dimension.RelativeToSelf, 0f,
+                                     Dimension.RelativeToSelf, 0f,
+                                     Dimension.RelativeToSelf, 0f,
+                                     Dimension.RelativeToSelf, -1f);
+            card1Animation.Duration = 1000;
+            card1Animation.StartOffset = 2000;
+
+            var card2Animation = new TranslateAnimation (
+                                     Dimension.RelativeToSelf, 0f,
+                                     Dimension.RelativeToSelf, 0f,
+                                     Dimension.RelativeToSelf, 1f,
+                                     Dimension.RelativeToSelf, 0f);
+            card2Animation.Duration = 1000;
+            card2Animation.StartOffset = 2000;
+
+            var dotView = View.FindViewById<View> (Resource.Id.dot);
+            var card1View = View.FindViewById<View> (Resource.Id.card01);
+            var card2View = View.FindViewById<View> (Resource.Id.card02);
+
+            dotAnimationSet.FillAfter = true;
+            card1Animation.FillAfter = true;
+            card2Animation.FillAfter = true;
+
+            dotView.Visibility = ViewStates.Visible;
+
+            dotView.StartAnimation (dotAnimationSet);
+            card1View.StartAnimation (card1Animation);
+            card2View.StartAnimation (card2Animation);
+        }
+
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            if (UserVisibleHint) {
+                Animation ();
+            }
+        }
+
+        public override bool UserVisibleHint {
+            get {
+                return base.UserVisibleHint;
+            }
+            set {
+                base.UserVisibleHint = value;
+                if (value && IsResumed) {
+                    Animation ();
+                }
+            }
+        }
+    }
 
     public class Tutorial4Fragment :  Android.Support.V4.App.Fragment
     {
@@ -313,6 +391,153 @@ namespace NachoClient.AndroidClient
             meeting_up.StartAnimation (animation);
             meeting_down.StartAnimation (animation);
 
+        }
+
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            if (UserVisibleHint) {
+                Animation ();
+            }
+        }
+
+        public override bool UserVisibleHint {
+            get {
+                return base.UserVisibleHint;
+            }
+            set {
+                base.UserVisibleHint = value;
+                if (value && IsResumed) {
+                    Animation ();
+                }
+            }
+        }
+    }
+
+    public class Tutorial5Fragment :  Android.Support.V4.App.Fragment
+    {
+        public static Tutorial5Fragment new_instance ()
+        {
+            return new Tutorial5Fragment ();
+        }
+
+        public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        {
+            var view = inflater.Inflate (Resource.Layout.TutorialFragment05, container, false);
+            return view;
+        }
+
+        bool didAnimation = false;
+
+        View dotView;
+        View messageView;
+        ImageView swipeLeftView;
+        ImageView swipeRightView;
+
+        TranslateAnimation XTranslation (float start, float finish, long duration, long startOffset)
+        {
+            var animation = new TranslateAnimation (
+                                Dimension.RelativeToParent, start,
+                                Dimension.RelativeToParent, finish,
+                                Dimension.RelativeToSelf, 0f,
+                                Dimension.RelativeToSelf, 0f);
+            animation.Duration = duration;
+            animation.StartOffset = startOffset;
+            return animation;
+        }
+
+        void Animation ()
+        {
+            if (didAnimation) {
+                return;
+            }
+            didAnimation = true;
+
+            dotView = View.FindViewById<View> (Resource.Id.dot);
+            messageView = View.FindViewById<View> (Resource.Id.message);
+            swipeLeftView = View.FindViewById<ImageView> (Resource.Id.swipeleft);
+            swipeRightView = View.FindViewById<ImageView> (Resource.Id.swiperight);
+
+            var dotAnimation = XTranslation (0f, -0.5f, 1000, 2000);
+
+            var dotAlphaAnimation = new AlphaAnimation (0f, 1f);
+            dotAlphaAnimation.Duration = 250;
+            dotAlphaAnimation.StartOffset = 1500;
+
+            var dotAnimationSet = new AnimationSet (true);
+            dotAnimationSet.AddAnimation (dotAlphaAnimation);
+            dotAnimationSet.AddAnimation (dotAnimation);
+
+            var messageAnimation = XTranslation (0f, -0.5f, 1000, 2000);
+            var swipeLeftAnimation = XTranslation (1f, 0.5f, 1000, 2000);
+
+            dotAnimationSet.FillAfter = true;
+            messageAnimation.FillAfter = true; 
+            swipeLeftAnimation.FillAfter = true;
+
+            dotView.Visibility = ViewStates.Visible;
+            swipeLeftView.Visibility = ViewStates.Visible;
+
+            dotView.StartAnimation (dotAnimationSet);
+            messageView.StartAnimation (messageAnimation);
+            swipeLeftView.StartAnimation (swipeLeftAnimation);
+
+            messageAnimation.AnimationEnd += MessageAnimation_AnimationEnd;
+        }
+
+        void MessageAnimation_AnimationEnd (object sender, Android.Views.Animations.Animation.AnimationEndEventArgs e)
+        {
+            var dotAnimation = XTranslation (-0.5f, 0.5f, 2000, 0);
+
+            var dotAnimationSet = new AnimationSet (true);
+            dotAnimationSet.AddAnimation (dotAnimation);
+
+            var messageAnimation = XTranslation (-0.5f, 0.5f, 2000, 0);
+            var swipeLeftAnimation = XTranslation (0.5f, 1.0f, 2000, 0);
+            var swipeRightAnimation = XTranslation (-1f, -0.25f, 2000, 0);
+
+            dotAnimationSet.FillAfter = true;
+            messageAnimation.FillAfter = true; 
+            swipeLeftAnimation.FillAfter = true;
+            swipeRightAnimation.FillAfter = true;
+
+            swipeRightView.Visibility = ViewStates.Visible;
+
+            dotView.StartAnimation (dotAnimationSet);
+            messageView.StartAnimation (messageAnimation);
+            swipeLeftView.StartAnimation (swipeLeftAnimation);
+            swipeRightView.StartAnimation (swipeRightAnimation);
+
+            swipeRightAnimation.AnimationEnd += MessageAnimation_AnimationEnd1;
+        }
+
+        void MessageAnimation_AnimationEnd1 (object sender, Android.Views.Animations.Animation.AnimationEndEventArgs e)
+        {
+            var dotAnimation = XTranslation (0.5f, 0f, 1000, 0);
+
+            var dotAnimationSet = new AnimationSet (true);
+            dotAnimationSet.AddAnimation (dotAnimation);
+
+            var messageAnimation = XTranslation (0.5f, 0f, 1000, 0);
+            var swipeRightAnimation = XTranslation (-0.25f, -1f, 1250, 0);
+
+            dotAnimationSet.FillAfter = false;
+            messageAnimation.FillAfter = true; 
+            swipeRightAnimation.FillAfter = true;
+
+            swipeLeftView.Visibility = ViewStates.Invisible;
+            swipeRightView.Visibility = ViewStates.Visible;
+
+            dotView.StartAnimation (dotAnimationSet);
+            messageView.StartAnimation (messageAnimation);
+            swipeRightView.StartAnimation (swipeRightAnimation);
+
+            swipeRightAnimation.AnimationEnd += MessageAnimation_AnimationEnd2;
+        }
+
+        void MessageAnimation_AnimationEnd2 (object sender, Android.Views.Animations.Animation.AnimationEndEventArgs e)
+        {
+            dotView.Visibility = ViewStates.Invisible;
         }
 
         public override void OnResume ()

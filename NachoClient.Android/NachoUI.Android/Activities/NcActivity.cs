@@ -102,35 +102,49 @@ namespace NachoClient.AndroidClient
     }
 
     /// <summary>
+    /// Store an object within a fragment.  This class cannot be generic, which means it cannot
+    /// be nested inside NcActivityWithData&lt;T&gt;, which is the only place that should use
+    /// this class.  (See https://developer.xamarin.com/guides/android/advanced_topics/limitations/
+    /// for an explatation.  In particular: "Instances of Generic types must not be created from
+    /// Java code. They can only safely be created from managed code.")
+    /// </summary>
+    public class DataFragment : Android.App.Fragment
+    {
+        public override void OnCreate (Bundle savedInstanceState)
+        {
+            base.OnCreate (savedInstanceState);
+            this.RetainInstance = true;
+        }
+
+        private object data = null;
+
+        public T GetData<T> () where T : class
+        {
+            return (T)data;
+        }
+
+        public void SetData<T> (T data) where T : class
+        {
+            this.data = data;
+        }
+    }
+
+    /// <summary>
     /// Activity base class on top of NcActivity that provides a way for activities to save data
     /// that must survive across a configuration change such as rotating the device.  Preserving
     /// the data is not automatic.  Derived classes must call RetainedData at the appropriate time.
     /// </summary>
-    public class NcActivityWithData<T> : NcActivity
+    public class NcActivityWithData<T> : NcActivity where T : class
     {
-        private class DataFragment : Android.App.Fragment
-        {
-            public T Data {
-                get;
-                set;
-            }
-
-            public override void OnCreate (Bundle savedInstanceState)
-            {
-                base.OnCreate (savedInstanceState);
-                this.RetainInstance = true;
-            }
-        }
-
         private const string DATA_FRAGMENT_TAG = "DataFragment";
 
         public T RetainedData {
             get {
                 var fragment = FragmentManager.FindFragmentByTag<DataFragment> (DATA_FRAGMENT_TAG);
                 if (null == fragment) {
-                    return default(T);
+                    return null;
                 }
-                return fragment.Data;
+                return fragment.GetData<T> ();
             }
             set {
                 var fragment = FragmentManager.FindFragmentByTag<DataFragment> (DATA_FRAGMENT_TAG);
@@ -138,9 +152,8 @@ namespace NachoClient.AndroidClient
                     fragment = new DataFragment ();
                     FragmentManager.BeginTransaction ().Add (fragment, DATA_FRAGMENT_TAG).Commit ();
                 }
-                fragment.Data = value;
+                fragment.SetData (value);
             }
         }
     }
 }
-

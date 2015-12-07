@@ -32,7 +32,7 @@ namespace NachoCore.ActiveSync
         public TimeSpan WaitInterval { get; set; }
 
         private bool IsNarrow;
-        private bool IsPinging;
+        public bool IsPinging { get; protected set; }
 
         public static XNamespace Ns = Xml.AirSync.Ns;
 
