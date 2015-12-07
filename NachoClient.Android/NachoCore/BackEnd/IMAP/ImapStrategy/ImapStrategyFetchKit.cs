@@ -271,6 +271,9 @@ namespace NachoCore.IMAP
         private static bool isExchangeATTAttachment (BodyPartBasic basic)
         {
             if (basic.IsAttachment && basic.ContentType.Matches ("text", "*")) {
+                if (null == basic.ContentDisposition || string.IsNullOrEmpty (basic.ContentDisposition.FileName)) {
+                    return false;
+                }
                 return MimeHelpers.isExchangeATTFilename (basic.ContentDisposition.FileName);
             }
             return false;      
