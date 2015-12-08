@@ -54,7 +54,7 @@ namespace NachoClient.iOS
                 if (!loadingComplete) {
                     NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
                 }
-                LoadHtmlString ("<html><body><p>&nbsp;</p></body></html>", null);
+                EvaluateJavascript ("document.body.innerHTML = ''");
                 OnLinkSelected = null;
                 sizeChangedCallback = null;
                 loadingComplete = false;
