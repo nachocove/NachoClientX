@@ -16,7 +16,9 @@ namespace NachoCore.Utils
     public interface MessageComposerDelegate
     {
         void MessageComposerDidCompletePreparation (MessageComposer composer);
+
         void MessageComposerDidFailToLoadMessage (MessageComposer composer);
+
         PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream);
     }
 
@@ -37,6 +39,7 @@ namespace NachoCore.Utils
         public string InitialRecipient;
         public string InitialText;
         public bool InitialQuickReply;
+
         public NcEmailMessageBundle Bundle {
             get {
                 if (_Bundle == null) {
@@ -47,6 +50,7 @@ namespace NachoCore.Utils
                 return _Bundle;
             }
         }
+
         public bool IsMessagePrepared {
             get {
                 return MessagePreparationState == MessagePreparationStatus.Done;
@@ -115,10 +119,12 @@ namespace NachoCore.Utils
             }
         }
 
-        enum MessagePreparationStatus {
+        enum MessagePreparationStatus
+        {
             NotStarted,
             Preparing,
-            Done
+            Done,
+
         };
 
         NcEmailMessageBundle _Bundle;
@@ -137,6 +143,7 @@ namespace NachoCore.Utils
         public MessageComposer (McAccount account)
         {
             Account = account;
+            InitialAttachments = new List<McAttachment> ();
         }
 
         #endregion
@@ -183,7 +190,7 @@ namespace NachoCore.Utils
             }
             var mailbox = new MailboxAddress (Pretty.UserNameForAccount (Account), Account.EmailAddr);
             Message.From = mailbox.ToString ();
-            if(!String.IsNullOrEmpty(InitialRecipient)) {
+            if (!String.IsNullOrEmpty (InitialRecipient)) {
                 Message.To = InitialRecipient;
             }
             var body = McBody.InsertFile (Account.Id, McAbstrFileDesc.BodyTypeEnum.None, "");
@@ -200,9 +207,7 @@ namespace NachoCore.Utils
                 DownloadRelatedMessage ();
             } else {
                 // There may be attachments we need to copy
-                if (InitialAttachments != null) {
-                    CopyAttachments (InitialAttachments);
-                }
+                CopyAttachments (InitialAttachments);
                 PrepareMessageBody ();
             }
         }
@@ -223,7 +228,7 @@ namespace NachoCore.Utils
 
         private void CopyAttachments (List<McAttachment> attachments)
         {
-            foreach (var attachment in attachments){
+            foreach (var attachment in attachments) {
                 CopyAttachment (attachment);
             }
         }
@@ -273,12 +278,12 @@ namespace NachoCore.Utils
             NcTask.Run (() => {
                 var doc = new HtmlDocument ();
                 doc.LoadHtml (relatedBundle.FullHtml);
-                if (EmailHelper.IsReplyAction(Kind)){
+                if (EmailHelper.IsReplyAction (Kind)) {
                     ReplaceInlineImages (doc);
                 } else {
                     StripAttachedImagesInlinedByBundle (doc);
                 }
-                if (Kind == EmailHelper.Action.Forward || EmailHelper.IsReplyAction(Kind)){
+                if (Kind == EmailHelper.Action.Forward || EmailHelper.IsReplyAction (Kind)) {
                     QuoteHtml (doc, RelatedMessage);
                     InsertInitialHtml (doc);
                 }
@@ -294,18 +299,18 @@ namespace NachoCore.Utils
             var body = doc.DocumentNode.Element ("html").Element ("body");
             var firstChildBeforeInserts = body.FirstChild;
             string messageText = "";
-            if (!String.IsNullOrWhiteSpace (InitialText)){
+            if (!String.IsNullOrWhiteSpace (InitialText)) {
                 messageText += InitialText;
             }
             messageText += SignatureText ();
-            if (!String.IsNullOrWhiteSpace (messageText)){
-                using (var reader = new StringReader (messageText)){
+            if (!String.IsNullOrWhiteSpace (messageText)) {
+                using (var reader = new StringReader (messageText)) {
                     var line = reader.ReadLine ();
                     while (line != null) {
                         var div = doc.CreateElement ("div");
-                        if (String.IsNullOrWhiteSpace (line)){
+                        if (String.IsNullOrWhiteSpace (line)) {
                             div.AppendChild (doc.CreateElement ("br"));
-                        }else{
+                        } else {
                             div.AppendChild (doc.CreateTextNodeWithEscaping (line));
                         }
                         if (firstChildBeforeInserts != null) {
@@ -378,6 +383,7 @@ namespace NachoCore.Utils
                 }
             }
         }
+
         void StripAttachedImagesInlinedByBundle (HtmlDocument doc)
         {
             HtmlNode node;
@@ -403,13 +409,13 @@ namespace NachoCore.Utils
         void PrepareMessageBody ()
         {
             string messageText = "";
-            if (!String.IsNullOrWhiteSpace(InitialText)) {
+            if (!String.IsNullOrWhiteSpace (InitialText)) {
                 messageText += InitialText;
             }
             messageText += SignatureText ();
             NcTask.Run (() => {
                 Bundle.SetFullText (messageText);
-                InvokeOnUIThread.Instance.Invoke(() => {
+                InvokeOnUIThread.Instance.Invoke (() => {
                     FinishPreparingMessage ();
                 });
             }, "MessageComposer_SetFullText");
@@ -433,7 +439,7 @@ namespace NachoCore.Utils
 
         #endregion
 
-        #region Save Message 
+        #region Save Message
 
         public void Save (string html)
         {
@@ -577,14 +583,14 @@ namespace NachoCore.Utils
                     if (node.Attributes.Contains ("nacho-tag")) {
                         node.Remove ();
                     }
-                    if (node.Attributes.Contains ("contenteditable")){
+                    if (node.Attributes.Contains ("contenteditable")) {
                         node.Attributes.Remove ("contenteditable");
                     }
                     if (node.Name.Equals ("img")) {
-                        if (node.Attributes.Contains ("nacho-image-attachment")){
+                        if (node.Attributes.Contains ("nacho-image-attachment")) {
                             node.Attributes.Remove ("nacho-image-attachment");
                         }
-                        if (node.Attributes.Contains ("nacho-resize")){
+                        if (node.Attributes.Contains ("nacho-resize")) {
                             node.Attributes.Remove ("nacho-resize");
                         }
                         if (node.Attributes.Contains ("nacho-bundle-entry")) {
@@ -704,15 +710,15 @@ namespace NachoCore.Utils
         void AdjustEstimatedSizesForImageWithProperties (long fileSize, Tuple<float, float> imageSize)
         {
             long encodedByteSize = (long)((float)fileSize * 4.0 / 3.0);
-                float smallRatio = RatioForSizedImage (imageSize, SmallImageLengths);
-                float mediumRatio = RatioForSizedImage (imageSize, MediumImageLengths);
-                float largeRatio = RatioForSizedImage (imageSize, LargeImageLengths);
-                long estimatedSmallEncodedSize = (long)((float)encodedByteSize * smallRatio * smallRatio);
-                long estimatedMediumEncodedSize = (long)((float)encodedByteSize * mediumRatio * mediumRatio);
-                long estimatedLargeEncodedSize = (long)((float)encodedByteSize * largeRatio * largeRatio);
-                _EstimatedSmallSizeDelta += encodedByteSize - estimatedSmallEncodedSize;
-                _EstimatedMediumSizeDelta += encodedByteSize - estimatedMediumEncodedSize;
-                _EstimatedLargeSizeDelta += encodedByteSize - estimatedLargeEncodedSize;
+            float smallRatio = RatioForSizedImage (imageSize, SmallImageLengths);
+            float mediumRatio = RatioForSizedImage (imageSize, MediumImageLengths);
+            float largeRatio = RatioForSizedImage (imageSize, LargeImageLengths);
+            long estimatedSmallEncodedSize = (long)((float)encodedByteSize * smallRatio * smallRatio);
+            long estimatedMediumEncodedSize = (long)((float)encodedByteSize * mediumRatio * mediumRatio);
+            long estimatedLargeEncodedSize = (long)((float)encodedByteSize * largeRatio * largeRatio);
+            _EstimatedSmallSizeDelta += encodedByteSize - estimatedSmallEncodedSize;
+            _EstimatedMediumSizeDelta += encodedByteSize - estimatedMediumEncodedSize;
+            _EstimatedLargeSizeDelta += encodedByteSize - estimatedLargeEncodedSize;
         }
 
         float RatioForSizedImage (Tuple<float, float> imageSize, Tuple<float, float> newSize)

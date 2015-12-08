@@ -100,6 +100,8 @@ namespace NachoClient.iOS
             BLOCK_MENU_TAG = 1000,
         }
 
+        private bool isAppearing;
+
         public MessageViewController (IntPtr handle)
             : base (handle)
         {
@@ -111,9 +113,17 @@ namespace NachoClient.iOS
             this.thread = thread;
         }
 
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            ConfigureAndLayout ();
+        }
+
         public override void ViewWillAppear (bool animated)
         {
+            isAppearing = true;
             base.ViewWillAppear (animated);
+            isAppearing = false;
 
             // When the app is re-started from a notification on a
             // different account, the tab bar and nacho now should
@@ -414,6 +424,12 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
+            if (isAppearing) {
+                // NcUIViewController will call ConfigureAndLayout on ViewWillAppear
+                // But in order to load the web view earlier, this controller calls ConfigureAndLayout in ViewDidLoad
+                // Therefore, we want to skip a duplicate call from base.ViewWillAppear
+                return;
+            }
             if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
                 this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;

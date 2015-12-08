@@ -619,6 +619,8 @@
     <Compile Include="NachoUI.Android\Activities\MessageListAdapter.cs" />
     <Compile Include="NachoUI.Android\Support\WrapperRecyclerAdapter.cs" />
     <Compile Include="NachoCore\Utils\NcHttpUtils.cs" />
+    <Compile Include="NachoUI.Android\Activities\FileListActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\FileListFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1670,6 +1672,10 @@
     <AndroidResource Include="Resources\drawable\CalendarPagerDateBackgroundHighlighted.xml" />
     <AndroidResource Include="Resources\anim\fast_fade_in.xml" />
     <AndroidResource Include="Resources\anim\fast_fade_out.xml" />
+    <AndroidResource Include="Resources\layout\FileListFragment.axml" />
+    <AndroidResource Include="Resources\layout\FileListActivity.axml" />
+    <AndroidResource Include="Resources\drawable\SwipeFileDelete.xml" />
+    <AndroidResource Include="Resources\drawable\SwipeFileForward.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

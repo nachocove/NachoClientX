@@ -45,6 +45,9 @@ namespace NachoClient.AndroidClient
             var deadlineView = view.FindViewById<View> (Resource.Id.deadline);
             deadlineView.Click += DeadlineView_Click;
 
+            var filesView = view.FindViewById<View> (Resource.Id.files);
+            filesView.Click += FilesView_Click;
+
             var settingsView = view.FindViewById<View> (Resource.Id.settings);
             settingsView.Click += SettingsView_Click;
 
@@ -66,6 +69,13 @@ namespace NachoClient.AndroidClient
             var intent = new Intent ();
             intent.SetClass (this.Activity, typeof(AboutActivity));
             StartActivity (intent);    
+        }
+
+        void FilesView_Click (object sender, EventArgs e)
+        {
+            var intent = new Intent ();
+            intent.SetClass (this.Activity, typeof(FileListActivity));
+            StartActivity (intent);
         }
 
         void DeadlineView_Click (object sender, EventArgs e)
