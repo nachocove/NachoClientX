@@ -132,4 +132,12 @@
         name="NachoSwipeEmailMove">#909090</color>
     <color
         name="NachoSwipeEmailMove_Pressed">#a0a090</color>
+    <color
+        name="NachoSwipeFileDelete">#ff3f20</color>
+    <color
+        name="NachoSwipeFileDelete_Pressed">#ef2f10</color>
+    <color
+        name="NachoSwipeFileForward">#00bad7</color>
+    <color
+        name="NachoSwipeFileForward_Pressed">#00aac7</color>
 </resources>

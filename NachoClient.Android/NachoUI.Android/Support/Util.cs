@@ -5,6 +5,7 @@ using NachoCore.Model;
 using Android.Widget;
 using NachoCore;
 using Android.Content;
+using Android.Content.PM;
 
 namespace NachoClient.AndroidClient
 {
@@ -138,6 +139,34 @@ namespace NachoClient.AndroidClient
                 context.StartActivity (new Intent (Intent.ActionDial, phoneUri));
             } catch (ActivityNotFoundException) {
                 NcAlertView.ShowMessage (context, "Cannot Call", "This device does not support making phone calls.");
+            }
+        }
+
+        public static void OpenAttachment(Context context, McAttachment attachment)
+        {
+            if (attachment.IsImageFile ()) {
+                var viewerIntent = ImageViewActivity.ImageViewIntent (context, attachment.GetFileDirectory (), attachment.GetFileName ());
+                context.StartActivity (viewerIntent);
+                return;
+            }
+                
+            try {
+                var myIntent = new Intent (Intent.ActionView);
+                var file = new Java.IO.File (attachment.GetFilePath ()); 
+                var extension = Android.Webkit.MimeTypeMap.GetFileExtensionFromUrl (Android.Net.Uri.FromFile (file).ToString ());
+                var mimetype = Android.Webkit.MimeTypeMap.Singleton.GetMimeTypeFromExtension (extension);
+                myIntent.SetDataAndType (Android.Net.Uri.FromFile (file), mimetype);
+                var packageManager = context.PackageManager;
+                var activities = packageManager.QueryIntentActivities (myIntent, PackageInfoFlags.MatchDefaultOnly);
+                var isIntentSafe = 0 < activities.Count;
+                if (isIntentSafe) {
+                    context.StartActivity (myIntent);
+                } else {
+                    NcAlertView.ShowMessage (context, "Attachment", "No application can open this attachment.");
+                }
+            } catch (Exception e) {
+                // TODO: handle exception
+                String data = e.Message;
             }
         }
     }
