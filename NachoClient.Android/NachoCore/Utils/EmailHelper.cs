@@ -8,6 +8,7 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using HtmlAgilityPack;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace NachoCore.Utils
 {
@@ -897,6 +898,23 @@ namespace NachoCore.Utils
                     BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
                 }
             }
+        }
+
+        public static McAttachment NoteToAttachment (McNote note)
+        {
+            var attachment = McAttachment.InsertFile (NcApplication.Instance.Account.Id, ((FileStream stream) => {
+                using (var noteStream = new MemoryStream ()) {
+                    using (var noteWriter = new StreamWriter (noteStream)) {
+                        noteWriter.Write (note.noteContent);
+                        noteWriter.Flush ();
+                        noteStream.Position = 0;
+                        noteStream.CopyTo (stream);
+                    }
+                }
+            }));
+            attachment.SetDisplayName (note.DisplayName + ".txt");
+            attachment.UpdateSaveFinish ();
+            return attachment;
         }
     }
 }

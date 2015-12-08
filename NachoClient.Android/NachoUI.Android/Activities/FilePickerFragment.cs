@@ -128,21 +128,11 @@ namespace NachoClient.AndroidClient
                 }
             } else if (file.FileType == 1) {
                 var note = McNote.QueryById<McNote> (file.Id);
-                var attachment = McAttachment.InsertFile (NcApplication.Instance.Account.Id, ((FileStream stream) => {
-                    using (var noteStream = new MemoryStream ()) {
-                        using (var noteWriter = new StreamWriter (noteStream)) {
-                            noteWriter.Write (note.noteContent);
-                            noteWriter.Flush ();
-                            noteStream.Position = 0;
-                            noteStream.CopyTo (stream);
-                        }
-                    }
-                }));
-                attachment.SetDisplayName (note.DisplayName + ".txt");
-                attachment.UpdateSaveFinish ();
-                if (Delegate != null) {
+                if ((null != note) && (null != Delegate)) {
+                    var attachment = EmailHelper.NoteToAttachment (note);
                     Delegate.FilePickerDidPickFile (this, attachment);
                 }
+
             } else {
                 NcAlertView.ShowMessage (Activity, "Cannot Attach", "Sorry, we cannot attach this item.");
             }
@@ -187,11 +177,11 @@ namespace NachoClient.AndroidClient
         {
             ShowContactHeaders = false;
             Files.Sort ((x, y) => {
-                if (x.DisplayName != null && y.DisplayName != null){
+                if (x.DisplayName != null && y.DisplayName != null) {
                     return x.DisplayName.CompareTo (y.DisplayName);
-                }else if (x.DisplayName != null){
+                } else if (x.DisplayName != null) {
                     return -1;
-                }else if (y.DisplayName != null){
+                } else if (y.DisplayName != null) {
                     return 1;
                 }
                 return x.Id - y.Id;
@@ -212,16 +202,16 @@ namespace NachoClient.AndroidClient
         {
             ShowContactHeaders = true;
             Files.Sort ((x, y) => {
-                if (x.Contact != null && y.Contact != null){
+                if (x.Contact != null && y.Contact != null) {
                     var result = x.Contact.CompareTo (y.Contact);
-                    if (result == 0){
+                    if (result == 0) {
                         return y.CreatedAt.CompareTo (x.CreatedAt);
-                    }else{
+                    } else {
                         return result;
                     }
-                }else if (x.Contact != null){
+                } else if (x.Contact != null) {
                     return -1;
-                }else if (y.Contact != null){
+                } else if (y.Contact != null) {
                     return 1;
                 }
                 return x.Id - y.Id;
@@ -235,7 +225,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public override NcFileIndex this[int index] {
+        public override NcFileIndex this [int index] {
             get {
                 return Files [index];
             }
@@ -244,6 +234,18 @@ namespace NachoClient.AndroidClient
         public override long GetItemId (int position)
         {
             return position;
+        }
+
+        public override int ViewTypeCount {
+            get {
+                return 3;
+            }
+        }
+
+        public override int GetItemViewType (int position)
+        {
+            var file = Files [position];
+            return file.FileType;
         }
 
         public override View GetView (int position, View convertView, ViewGroup parent)
@@ -301,7 +303,7 @@ namespace NachoClient.AndroidClient
             }
 
             var header = view.FindViewById<LinearLayout> (Resource.Id.file_contact_header);
-            if (ShowContactHeaders && !String.IsNullOrEmpty(file.Contact)) {
+            if (ShowContactHeaders && !String.IsNullOrEmpty (file.Contact)) {
                 if (position == 0 || !Files [position - 1].Contact.Equals (file.Contact)) {
                     header.Visibility = ViewStates.Visible;
                     var contactNameLabel = view.FindViewById<TextView> (Resource.Id.file_contact_name);
