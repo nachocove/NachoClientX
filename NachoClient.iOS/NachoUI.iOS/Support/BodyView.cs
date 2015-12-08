@@ -62,6 +62,8 @@ namespace NachoClient.iOS
         private bool statusIndicatorIsRegistered = false;
         private bool waitingForAppInForeground = false;
 
+        NcEmailMessageBundle Bundle;
+
         /// <summary>
         /// Create a BodyView that will be displayed in a fixed sized view. The BodyView
         /// will be cropped if it is too big for the parent view. The parent will not
@@ -164,23 +166,14 @@ namespace NachoClient.iOS
                 RenderCalendarPart ();
             }
 
-            switch (body.BodyType) {
-            case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
-                RenderTextString (body.GetContentsString ());
-                break;
-            case McAbstrFileDesc.BodyTypeEnum.HTML_2:
-                RenderHtmlString (body.GetContentsString ());
-                break;
-            case McAbstrFileDesc.BodyTypeEnum.RTF_3:
-                RenderRtfString (AsHelpers.Base64CompressedRtfToNormalRtf (body.GetContentsString ()));
-                break;
-            case McAbstrFileDesc.BodyTypeEnum.MIME_4:
-                RenderMime (body);
-                break;
-            default:
-                Log.Error (Log.LOG_UI, "Body {0} has an unknown body type {1}.", body.Id, (int)body.BodyType);
-                RenderTextString (body.GetContentsString ());
-                break;
+            Bundle = new NcEmailMessageBundle (body);
+            if (Bundle.NeedsUpdate) {
+                NcTask.Run (delegate {
+                    Bundle.Update ();
+                    InvokeOnUIThread.Instance.Invoke (RenderBundle);
+                }, "BodyView_UpdateBundle");
+            } else {
+                RenderBundle ();
             }
 
             LayoutQuietly ();
@@ -451,7 +444,7 @@ namespace NachoClient.iOS
             }
             RenderDownloadFailure (message, isUnrecoverableError);
             if (hasPreview) {
-                RenderTextString (preview);
+//                RenderTextString (preview);
             }
             LayoutAndNotifyParent ();
         }
@@ -530,70 +523,14 @@ namespace NachoClient.iOS
             owner.DismissView ();
         }
 
-        private void RenderTextString (string text)
+        void  RenderBundle ()
         {
-            if (string.IsNullOrWhiteSpace (text)) {
-                return;
-            }
-            var webView = new BodyPlainWebView (
-                              yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
-                              text, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
+            var webView = BodyWebView.ResuableWebView (yOffset, preferredWidth, visibleArea.Height);
+            webView.OnLinkSelected = onLinkSelected;
+            webView.LoadBundle (Bundle, LayoutAndNotifyParent);
             AddSubview (webView);
             childViews.Add (webView);
             yOffset += webView.ContentSize.Height;
-        }
-
-        private void RenderRtfString (string rtf)
-        {
-            if (string.IsNullOrEmpty (rtf)) {
-                return;
-            }
-            var webView = new BodyRtfWebView (
-                              yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
-                              rtf, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
-            AddSubview (webView);
-            childViews.Add (webView);
-            yOffset += webView.ContentSize.Height;
-        }
-
-        private void RenderHtmlString (string html)
-        {
-            var webView = new BodyHtmlWebView (
-                              yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
-                              html, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
-            AddSubview (webView);
-            childViews.Add (webView);
-            yOffset += webView.ContentSize.Height;
-        }
-
-        private void RenderTextPart (MimePart part)
-        {
-            RenderTextString ((part as TextPart).Text);
-        }
-
-        private void RenderRtfPart (MimePart part)
-        {
-            RenderRtfString ((part as TextPart).Text);
-        }
-
-        private void RenderHtmlPart (MimePart part)
-        {
-            RenderHtmlString ((part as TextPart).Text);
-        }
-
-        private void RenderImagePart (MimePart part)
-        {
-            using (var image = PlatformHelpers.RenderImage (part)) {
-                if (null == image) {
-                    Log.Error (Log.LOG_UI, "Unable to render image {0}", part.ContentType);
-                    RenderTextString ("[ Unable to display image ]");
-                } else {
-                    var imageView = new BodyImageView (yOffset, preferredWidth, image);
-                    AddSubview (imageView);
-                    childViews.Add (imageView);
-                    yOffset += imageView.Frame.Height;
-                }
-            }
         }
 
         private void RenderCalendarPart ()
@@ -602,40 +539,6 @@ namespace NachoClient.iOS
             AddSubview (calView);
             childViews.Add (calView);
             yOffset += calView.Frame.Height;
-        }
-
-        private void RenderMime (McBody body)
-        {
-            NcAssert.NotNull (body);
-
-            try {
-                var path = body.GetFilePath ();
-                using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
-                    var message = MimeMessage.Load (fileStream, true);
-                    var list = new List<MimeEntity> ();
-                    int nativeBodyType = 0;
-                    if (item is McEmailMessage) {
-                        nativeBodyType = ((McEmailMessage)item).NativeBodyType;
-                    } else if (item is McAbstrCalendarRoot) {
-                        nativeBodyType = ((McAbstrCalendarRoot)item).NativeBodyType;
-                    }
-                    MimeHelpers.MimeDisplayList (message, list, MimeHelpers.MimeTypeFromNativeBodyType (nativeBodyType));
-                    foreach (var entity in list) {
-                        var part = (MimePart)entity;
-                        if (part.ContentType.Matches ("text", "html")) {
-                            RenderHtmlPart (part);
-                        } else if (part.ContentType.Matches ("text", "rtf")) {
-                            RenderRtfPart (part);
-                        } else if (part.ContentType.Matches ("text", "*")) {
-                            RenderTextPart (part);
-                        } else if (part.ContentType.Matches ("image", "*")) {
-                            RenderImagePart (part);
-                        }
-                    }
-                }
-            } catch {
-                RenderTextString ("");
-            }
         }
 
         private void RenderDownloadFailure (string message, bool isUnrecoverableError)

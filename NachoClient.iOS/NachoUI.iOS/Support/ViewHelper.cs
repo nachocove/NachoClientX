@@ -247,6 +247,9 @@ namespace NachoClient.iOS
                             DisposeViewHierarchy(cell);
                         }
                     }
+                } else if (view is BodyWebView) {
+                    (view as BodyWebView).EnqueueAsReusable ();
+                    skipDispose = true;
                 } else if (view is UIWebView) {
                     var webView = view as UIWebView;
                     if (webView.IsLoading) {
