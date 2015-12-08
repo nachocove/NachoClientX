@@ -107,9 +107,13 @@ namespace NachoPlatform
             task.TaskDescription = request.guid;
             cancellationToken.Register (() => {
                 // make sure don't run on the UI thread.
-                NcTask.Run(() => {
+                if (NSThread.Current.IsMainThread) {
+                    NcTask.Run(() => {
+                        task.Cancel ();
+                    }, "NcHttpClient.iOS.Cancel");
+                } else {
                     task.Cancel ();
-                }, "NcHttpClient.iOS.Cancel");
+                }
             });
             Log.Debug (Log.LOG_HTTP, "NcHttpClient: Starting task {0} for {1}", task.TaskDescription, req.Url);
             task.Resume ();

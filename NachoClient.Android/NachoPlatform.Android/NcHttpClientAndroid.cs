@@ -140,14 +140,22 @@ namespace NachoPlatform
             var call = cloned.NewCall (rq);
             cancellationToken.Register (() => {
                 if (!call.IsCanceled) {
-                    // Must not run on main thread
-                    NcTask.Run (() => {
+                    if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
+                        // Must not run on main thread
+                        NcTask.Run (() => {
+                            try {
+                                call.Cancel ();
+                            } catch (Exception ex) {
+                                Log.Warn (Log.LOG_HTTP, "Could not cancel call: {0}", ex.Message);
+                            }
+                        }, "NcHttpClientAndroid.Cancel");
+                    } else {
                         try {
                             call.Cancel ();
                         } catch (Exception ex) {
                             Log.Warn (Log.LOG_HTTP, "Could not cancel call: {0}", ex.Message);
                         }
-                    }, "NcHttpClientAndroid.Cancel");
+                    }
                 }
             });
             call.Enqueue (callbacks);
