@@ -525,7 +525,9 @@ namespace NachoClient.iOS
 
         void  RenderBundle ()
         {
-            var webView = new BodyHtmlWebView (yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent, Bundle, onLinkSelected);
+            var webView = BodyWebView.ResuableWebView (yOffset, preferredWidth, visibleArea.Height);
+            webView.OnLinkSelected = onLinkSelected;
+            webView.LoadBundle (Bundle, LayoutAndNotifyParent);
             AddSubview (webView);
             childViews.Add (webView);
             yOffset += webView.ContentSize.Height;

@@ -7,7 +7,7 @@ using UIKit;
 using NachoCore.Utils;
 using NachoCore;
 using System.IO;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace NachoClient.iOS
 {
@@ -16,45 +16,96 @@ namespace NachoClient.iOS
     /// the UIWebView except for the actual data to be displayed.  The derived classes should be customized
     /// for specific formats for the data, such as HTML or RTF.
     /// </summary>
-    public abstract class BodyWebView : UIWebView, IBodyRender
+    public class BodyWebView : UIWebView, IBodyRender
     {
         public delegate void LinkSelectedCallback (NSUrl url);
 
         protected nfloat preferredWidth;
         private Action sizeChangedCallback;
         private bool loadingComplete;
-        private LinkSelectedCallback onLinkSelected;
+        public LinkSelectedCallback OnLinkSelected;
+        NcEmailMessageBundle Bundle;
 
-        public BodyWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, LinkSelectedCallback onLinkSelected)
-            : base (new CGRect(0, Y, preferredWidth, initialHeight))
+        private static ConcurrentStack<BodyWebView> ReusableViews = new ConcurrentStack<BodyWebView> ();
+
+        public static BodyWebView ResuableWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight)
         {
-            this.preferredWidth = preferredWidth;
-            this.sizeChangedCallback = sizeChangedCallback;
-            this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
-            this.onLinkSelected = onLinkSelected;
+            Log.Info (Log.LOG_UI, "ReusableWebView dequeue");
+            BodyWebView webView;
+            var frame = new CGRect (0, Y, preferredWidth, initialHeight);
+            if (!ReusableViews.TryPop (out webView)) {
+                webView = new BodyWebView (frame);
+            } else {
+                webView.Frame = frame;
+            }
+            webView.preferredWidth = preferredWidth;
+            webView.InitListeners ();
+            return webView;
+        }
 
+        public void EnqueueAsReusable ()
+        {
+            if (ReusableViews.Count < 3) {
+                if (base.IsLoading) {
+                    StopLoading ();
+                }
+                LoadFinished -= OnLoadFinished;
+                ShouldStartLoad -= OnShouldStartLoad;
+                if (!loadingComplete) {
+                    NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                }
+                LoadHtmlString ("<html><body><p>&nbsp;</p></body></html>", null);
+                OnLinkSelected = null;
+                sizeChangedCallback = null;
+                loadingComplete = false;
+                ReusableViews.Push (this);
+            } else {
+                Dispose ();
+            }
+        }
+
+        private BodyWebView (CGRect frame)
+            : base (frame)
+        {
+            Log.Info (Log.LOG_UI, "ReusableWebView constructor");
+            this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
             ScrollView.ScrollEnabled = false;
+            loadingComplete = false;
+            InitListeners ();
+        }
+
+        private void InitListeners ()
+        {
             LoadFinished += OnLoadFinished;
             ShouldStartLoad += OnShouldStartLoad;
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-
-            loadingComplete = false;
         }
 
-        /// <summary>
-        /// Have the UIWebView load the content to be displayed.
-        /// </summary>
-        protected abstract void LoadContent ();
+        public void LoadBundle (NcEmailMessageBundle bundle, Action onLoad)
+        {
+            Bundle = bundle;
+            sizeChangedCallback = onLoad;
+            LoadContent ();
+        }
 
-        /// <summary>
-        /// Make any necessary adjustments to the content or the layout after the initial loading is complete.
-        /// </summary>
-        protected abstract void PostLoadAdjustment ();
+        private void LoadContent ()
+        {
+            if (Bundle != null) {
+                if (Bundle.FullHtmlUrl == null) {
+                    var baseUrl = new NSUrl (Bundle.BaseUrl.ToString ());
+                    LoadHtmlString (Bundle.FullHtml, baseUrl);
+                } else {
+                    var url = new NSUrl (Bundle.FullHtmlUrl.ToString ());
+                    var request = new NSUrlRequest (url);
+                    LoadRequest (request);
+                }
+            }
+        }
 
         protected override void Dispose (bool disposing)
         {
             StopLoading ();
-            onLinkSelected = null;
+            OnLinkSelected = null;
             LoadFinished -= OnLoadFinished;
             ShouldStartLoad -= OnShouldStartLoad;
             if (!loadingComplete) {
@@ -96,7 +147,6 @@ namespace NachoClient.iOS
         {
             loadingComplete = true;
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            PostLoadAdjustment ();
             // Force a re-layout of this web view now that the JavaScript magic has been applied.
             // The ScrollView.ContentSize is never smaller than the frame size, so in order to
             // figure out how big the content really is, we have to set the frame height to a
@@ -116,8 +166,8 @@ namespace NachoClient.iOS
             UIWebViewNavigationType navigationType)
         {
             if (UIWebViewNavigationType.LinkClicked == navigationType) {
-                if (null != onLinkSelected) {
-                    onLinkSelected (request.Url);
+                if (null != OnLinkSelected) {
+                    OnLinkSelected (request.Url);
                 }
                 return false;
             }
@@ -143,41 +193,6 @@ namespace NachoClient.iOS
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Display HTML in a UIWebView.
-    /// </summary>
-    public class BodyHtmlWebView : BodyWebView
-    {
-
-        NcEmailMessageBundle Bundle;
-
-        public BodyHtmlWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, NcEmailMessageBundle bundle, BodyWebView.LinkSelectedCallback onLinkSelected)
-            : base (Y, preferredWidth, initialHeight, sizeChangedCallback, onLinkSelected)
-        {
-            Bundle = bundle;
-            if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
-                LoadContent ();
-            }
-        }
-
-        protected override void LoadContent ()
-        {
-            if (Bundle.FullHtmlUrl == null) {
-                var baseUrl = new NSUrl (Bundle.BaseUrl.ToString ());
-                LoadHtmlString (Bundle.FullHtml, baseUrl);
-            } else {
-                var url = new NSUrl (Bundle.FullHtmlUrl.ToString ());
-                var request = new NSUrlRequest (url);
-                LoadRequest (request);
-            }
-        }
-
-        protected override void PostLoadAdjustment ()
-        {
-        }
-
     }
 
 
