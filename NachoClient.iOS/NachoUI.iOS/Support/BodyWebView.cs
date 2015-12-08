@@ -30,7 +30,6 @@ namespace NachoClient.iOS
 
         public static BodyWebView ResuableWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight)
         {
-            Log.Info (Log.LOG_UI, "ReusableWebView dequeue");
             BodyWebView webView;
             var frame = new CGRect (0, Y, preferredWidth, initialHeight);
             if (!ReusableViews.TryPop (out webView)) {
@@ -67,7 +66,6 @@ namespace NachoClient.iOS
         private BodyWebView (CGRect frame)
             : base (frame)
         {
-            Log.Info (Log.LOG_UI, "ReusableWebView constructor");
             this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
             ScrollView.ScrollEnabled = false;
             loadingComplete = false;

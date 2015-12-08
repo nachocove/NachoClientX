@@ -248,7 +248,6 @@ namespace NachoClient.iOS
                         }
                     }
                 } else if (view is BodyWebView) {
-                    Log.Info (Log.LOG_UI, "ReusableWebView enqueue");
                     (view as BodyWebView).EnqueueAsReusable ();
                     skipDispose = true;
                 } else if (view is UIWebView) {
