@@ -151,16 +151,22 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-            base.ViewDidLoad ();
+            NcTimeStamp.Add ("ViewDidLoad:START");
+            // Not cool for all subclasses yet (eg GeneralSettingsViewController).
             CreateViewHierarchy ();
+            base.ViewDidLoad ();
+            NcTimeStamp.Add ("ConfigureAndLayout:START");
+            ConfigureAndLayout ();
+            NcTimeStamp.Add ("ViewDidLoad:DONE");
         }
 
         public override void ViewWillAppear (bool animated)
         {
+            NcTimeStamp.Add ("ViewWillAppear:START");
             base.ViewWillAppear (animated);
             // Force the view hierarchy to be created by accessing the View property.
             this.View.GetHashCode ();
-            ConfigureAndLayout ();
+            NcTimeStamp.Add ("ViewWillAppear:DONE");
         }
 
         public override void ViewDidDisappear (bool animated)

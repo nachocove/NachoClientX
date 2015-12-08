@@ -250,6 +250,7 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
+            NcTimeStamp.Add ("RowSelected:START");
             var cell = tableView.CellAt (indexPath);
             if (null != cell) {
                 cell.SetSelected (false, true);
@@ -277,6 +278,7 @@ namespace NachoClient.iOS
                 owner.MessageThreadSelected (messageThread);
                 DumpInfo (messageThread);
             }
+            NcTimeStamp.Add ("RowSelected:DONE");
         }
 
         protected const int SWIPE_TAG = 99100;
