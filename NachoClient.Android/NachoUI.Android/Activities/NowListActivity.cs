@@ -21,6 +21,7 @@ namespace NachoClient.AndroidClient
     {
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
+            NcAssert.NotNull (NcApplication.Instance.Account);
             var messages = NcEmailSingleton.PrioritySingleton (NcApplication.Instance.Account.Id);
             messages.Refresh (out adds, out deletes);
             return messages;
