@@ -73,38 +73,51 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public class MessageViewHolder : RecyclerView.ViewHolder
+        public class CellViewHolder : RecyclerView.ViewHolder
         {
-            ImageView chiliView;
+            public Bind.MessageHeaderViewHolder mvh;
+            public ImageView multiSelectView;
+            public TextView previewView;
 
-            public MessageViewHolder (View itemView, Action<int> click, Action<int,ImageView> chiliClick,
-                                      Action<int> replyClick, Action<int> replyAllClick, Action<int> forwardClick, Action<int> archiveClick, Action<int> deleteClick) : base (itemView)
+            public CellViewHolder (View itemView, Action<int> click, Action<int,ImageView> chiliClick) : base (itemView)
             {
+                mvh = new Bind.MessageHeaderViewHolder (itemView);
                 itemView.Click += (object sender, EventArgs e) => click (AdapterPosition);
+                mvh.chiliView.Click += (object sender, EventArgs e) => chiliClick (AdapterPosition, mvh.chiliView);
+                previewView = itemView.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
+                multiSelectView = itemView.FindViewById<Android.Widget.ImageView> (Resource.Id.selected);
+            }
+        }
 
-                chiliView = itemView.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
-                chiliView.Click += (object sender, EventArgs e) => chiliClick (AdapterPosition, chiliView);
+        public class CardViewHolder : RecyclerView.ViewHolder
+        {
+            public Bind.MessageHeaderViewHolder mvh;
+            public WebView webview;
 
-                if (null != replyClick) {
-                    var replyButton = itemView.FindViewById (Resource.Id.reply);
-                    replyButton.Click += (object sender, EventArgs e) => replyClick (AdapterPosition);
-                }
-                if (null != replyAllClick) {
-                    var replyAllButton = itemView.FindViewById (Resource.Id.reply_all);
-                    replyAllButton.Click += (object sender, EventArgs e) => replyAllClick (AdapterPosition);
-                }
-                if (null != forwardClick) {
-                    var forwardButton = itemView.FindViewById (Resource.Id.forward);
-                    forwardButton.Click += (object sender, EventArgs e) => forwardClick (AdapterPosition);
-                }
-                if (null != archiveClick) {
-                    var archiveButton = itemView.FindViewById (Resource.Id.archive);
-                    archiveButton.Click += (object sender, EventArgs e) => archiveClick (AdapterPosition);
-                }
-                if (null != deleteClick) {
-                    var deleteButton = itemView.FindViewById (Resource.Id.delete);
-                    deleteButton.Click += (object sender, EventArgs e) => deleteClick (AdapterPosition);
-                }
+            public CardViewHolder (View itemView, Action<int> click, Action<int,ImageView> chiliClick,
+                                   Action<int> replyClick, Action<int> replyAllClick, Action<int> forwardClick, Action<int> archiveClick, Action<int> deleteClick) : base (itemView)
+            {
+                mvh = new Bind.MessageHeaderViewHolder (itemView);
+
+                itemView.Click += (object sender, EventArgs e) => click (AdapterPosition);
+                mvh.chiliView.Click += (object sender, EventArgs e) => chiliClick (AdapterPosition, mvh.chiliView);
+
+                var replyButton = itemView.FindViewById (Resource.Id.reply);
+                replyButton.Click += (object sender, EventArgs e) => replyClick (AdapterPosition);
+
+                var replyAllButton = itemView.FindViewById (Resource.Id.reply_all);
+                replyAllButton.Click += (object sender, EventArgs e) => replyAllClick (AdapterPosition);
+
+                var forwardButton = itemView.FindViewById (Resource.Id.forward);
+                forwardButton.Click += (object sender, EventArgs e) => forwardClick (AdapterPosition);
+
+                var archiveButton = itemView.FindViewById (Resource.Id.archive);
+                archiveButton.Click += (object sender, EventArgs e) => archiveClick (AdapterPosition);
+
+                var deleteButton = itemView.FindViewById (Resource.Id.delete);
+                deleteButton.Click += (object sender, EventArgs e) => deleteClick (AdapterPosition);
+
+                webview = itemView.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
             }
         }
 
@@ -170,7 +183,7 @@ namespace NachoClient.AndroidClient
         {
             switch (viewType) {
             case LISTVIEW_STYLE:
-                return CreateListViewHolder (parent);
+                return CreateCellViewHolder (parent);
             case CARDVIEW_STYLE:
                 return CreateCardViewHolder (parent);
             case SUMMARY_STYLE:
@@ -188,10 +201,10 @@ namespace NachoClient.AndroidClient
             return new SummaryViewHolder (itemView, InboxView_Click, DeferredView_Click, DeadlinesView_Click);
         }
 
-        RecyclerView.ViewHolder CreateListViewHolder (ViewGroup parent)
+        RecyclerView.ViewHolder CreateCellViewHolder (ViewGroup parent)
         {
             var itemView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.MessageCell, parent, false);
-            return new MessageViewHolder (itemView, ItemView_Click, ChiliView_Click, null, null, null, null, null);
+            return new CellViewHolder (itemView, ItemView_Click, ChiliView_Click);
         }
 
         RecyclerView.ViewHolder CreateCardViewHolder (ViewGroup parent)
@@ -208,7 +221,7 @@ namespace NachoClient.AndroidClient
             itemView.SetMinimumHeight (parent.MeasuredHeight);
             itemView.LayoutParameters.Height = parent.MeasuredHeight;
 
-            return new MessageViewHolder (itemView, ItemView_Click, ChiliView_Click, ReplyButton_Click, ReplyAllButton_Click, ForwardButton_Click, ArchiveButton_Click, DeleteButton_Click);
+            return new CardViewHolder (itemView, ItemView_Click, ChiliView_Click, ReplyButton_Click, ReplyAllButton_Click, ForwardButton_Click, ArchiveButton_Click, DeleteButton_Click);
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
@@ -225,13 +238,13 @@ namespace NachoClient.AndroidClient
         {
             switch (GetItemViewType (position)) {
             case LISTVIEW_STYLE:
-                BindListView (holder.ItemView, position);
+                BindCellView ((CellViewHolder)holder, position);
                 break;
             case CARDVIEW_STYLE:
-                BindCardView (holder.ItemView, position);
+                BindCardView ((CardViewHolder)holder, position);
                 break;
             case SUMMARY_STYLE:
-                BindSummaryViewHolder (holder);
+                BindSummaryViewHolder ((SummaryViewHolder)holder);
                 break;
             default:
                 NcAssert.CaseError ();
@@ -239,7 +252,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        View BindListView (View view, int position)
+        void BindCellView (CellViewHolder vh, int position)
         {
             McEmailMessageThread thread;
             McEmailMessage message;
@@ -251,32 +264,28 @@ namespace NachoClient.AndroidClient
                 message = owner.GetCachedMessage (position);
             }
             var isDraft = owner.messages.HasDraftsSemantics () || owner.messages.HasOutboxSemantics ();
-            Bind.BindMessageHeader (thread, message, view, isDraft);
+            Bind.BindMessageHeader (thread, message, vh.mvh, isDraft);
 
             NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
 
             // Preview label view                
-            var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
             if (null == message) {
-                previewView.Text = "";
+                vh.previewView.Text = "";
             } else {
                 var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
-                previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+                vh.previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
             }
 
-            var multiSelectView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.selected);
             if (owner.multiSelectActive) {
-                multiSelectView.Visibility = ViewStates.Visible;
+                vh.multiSelectView.Visibility = ViewStates.Visible;
                 if (owner.MultiSelectSet.Contains (position)) {
-                    multiSelectView.SetImageResource (Resource.Drawable.gen_checkbox_checked);
+                    vh.multiSelectView.SetImageResource (Resource.Drawable.gen_checkbox_checked);
                 } else {
-                    multiSelectView.SetImageResource (Resource.Drawable.gen_checkbox);
+                    vh.multiSelectView.SetImageResource (Resource.Drawable.gen_checkbox);
                 }
             } else {
-                multiSelectView.Visibility = ViewStates.Invisible;
+                vh.multiSelectView.Visibility = ViewStates.Invisible;
             }
-
-            return view;
         }
 
         void MessageFromPosition (int position, out McEmailMessageThread thread, out McEmailMessage message)
@@ -310,15 +319,6 @@ namespace NachoClient.AndroidClient
             public WebView webView;
         }
 
-        View BindCardView (View view, int position)
-        {
-            McEmailMessage message;
-            McEmailMessageThread thread;
-            MessageFromPosition (position, out thread, out message);
-            BindValues (view, thread, message);
-            return view;
-        }
-
         public class IgnoreTouchListener : Java.Lang.Object, View.IOnTouchListener
         {
             public bool OnTouch (View v, MotionEvent e)
@@ -327,12 +327,15 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void BindValues (View view, McEmailMessageThread thread, McEmailMessage message)
+        void BindCardView (CardViewHolder vh, int position)
         {
-            Bind.BindMessageHeader (thread, message, view);
-            view.FindViewById<TextView> (Resource.Id.subject).SetMaxLines (100);
-            BindMeetingRequest (view, message);
-            var webView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
+            McEmailMessage message;
+            McEmailMessageThread thread;
+            MessageFromPosition (position, out thread, out message);
+
+            Bind.BindMessageHeader (thread, message, vh.mvh);
+            vh.mvh.subjectView.SetMaxLines (100);
+            BindMeetingRequest (vh.ItemView, message);
             NcEmailMessageBundle bundle;
             if (message.BodyId != 0) {
                 bundle = new NcEmailMessageBundle (message);
@@ -341,12 +344,12 @@ namespace NachoClient.AndroidClient
             }
             if (bundle == null || bundle.NeedsUpdate) {
                 var messageDownloader = new MessageDownloaderWithWebView ();
-                messageDownloader.webView = webView;
+                messageDownloader.webView = vh.webview;
                 messageDownloader.Bundle = bundle;
                 messageDownloader.Delegate = this;
                 messageDownloader.Download (message);
             } else {
-                RenderBody (webView, bundle);
+                RenderBody (vh.webview, bundle);
             }
         }
 
@@ -694,10 +697,8 @@ namespace NachoClient.AndroidClient
             owner.StartActivity (intent);
         }
 
-        void BindSummaryViewHolder (RecyclerView.ViewHolder holder)
+        void BindSummaryViewHolder (SummaryViewHolder summaryViewHolder)
         {
-            var summaryViewHolder = (SummaryViewHolder)holder;
- 
             NcTask.Run (() => {
                 int unreadMessageCount;
                 int likelyMessageCount;

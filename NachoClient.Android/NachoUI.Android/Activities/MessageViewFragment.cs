@@ -297,7 +297,8 @@ namespace NachoClient.AndroidClient
 
         void BindValues (View view)
         {
-            Bind.BindMessageHeader (null, message, view);
+            var mvh = new Bind.MessageHeaderViewHolder (view);
+            Bind.BindMessageHeader (null, message, mvh);
             // The header view is shared between the message list view and the message detail view.
             // In the list view, the subject should be truncated to a single line.  In the detail
             // view, the full subject needs to be shown.

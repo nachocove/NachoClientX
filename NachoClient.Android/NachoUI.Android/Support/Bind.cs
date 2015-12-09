@@ -37,78 +37,78 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static void BindMessageHeader (McEmailMessageThread thread, McEmailMessage message, View view, bool isDraft = false)
+        public class MessageHeaderViewHolder
         {
-            var isUnreadView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.message_read);
-            isUnreadView.Visibility = ViewStates.Invisible;
+            public ImageView isUnreadView;
+            public ContactPhotoView userImageView;
+            public TextView senderView;
+            public TextView subjectView;
+            public TextView dateView;
+            public ImageView chiliView;
+            public ImageView paperclipView;
 
-            var userImageView = view.FindViewById<ContactPhotoView> (Resource.Id.user_image);
-            userImageView.Visibility = ViewStates.Invisible;
+            public MessageHeaderViewHolder (View view)
+            {
+                isUnreadView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.message_read);
+                userImageView = view.FindViewById<ContactPhotoView> (Resource.Id.user_image);
+                senderView = view.FindViewById<Android.Widget.TextView> (Resource.Id.sender);
+                subjectView = view.FindViewById<Android.Widget.TextView> (Resource.Id.subject);
+                dateView = view.FindViewById<Android.Widget.TextView> (Resource.Id.date);
+                chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
+                paperclipView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.paperclip);
+            }
+        }
 
-            var senderView = view.FindViewById<Android.Widget.TextView> (Resource.Id.sender);
-            senderView.Visibility = ViewStates.Invisible;
-
-            var subjectView = view.FindViewById<Android.Widget.TextView> (Resource.Id.subject);
-            subjectView.Visibility = ViewStates.Invisible;
-
-            var dateView = view.FindViewById<Android.Widget.TextView> (Resource.Id.date);
-            dateView.Visibility = ViewStates.Invisible;
-
-            var chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
-            chiliView.Visibility = ViewStates.Invisible;
-
-            var paperclipView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.paperclip);
-            paperclipView.Visibility = ViewStates.Invisible;
-
+        public static void BindMessageHeader (McEmailMessageThread thread, McEmailMessage message, MessageHeaderViewHolder vh, bool isDraft = false)
+        {
             if (null == message) {
-                SetVisibility (ViewStates.Invisible, isUnreadView, userImageView, senderView, subjectView, dateView, chiliView);
+                SetVisibility (ViewStates.Invisible, vh.isUnreadView, vh.userImageView, vh.senderView, vh.subjectView, vh.dateView, vh.paperclipView, vh.chiliView);
                 return;
             }
 
-            SetVisibility (ViewStates.Visible, userImageView, senderView, subjectView, dateView, chiliView);
+            SetVisibility (ViewStates.Visible, vh.senderView, vh.subjectView, vh.dateView);
 
-            if (!message.IsRead  && !isDraft) {
-                isUnreadView.Visibility = ViewStates.Visible;
+            if (!message.IsRead && !isDraft) {
+                vh.isUnreadView.Visibility = ViewStates.Visible;
+            } else {
+                vh.isUnreadView.Visibility = ViewStates.Invisible;
             }
 
             if (isDraft) {
-                userImageView.Visibility = ViewStates.Invisible;
+                vh.userImageView.Visibility = ViewStates.Invisible;
             } else {
-                userImageView.Visibility = ViewStates.Visible;
+                vh.userImageView.Visibility = ViewStates.Visible;
                 var initials = message.cachedFromLetters;
                 var color = ColorForUser (message.cachedFromColor);
-                userImageView.SetPortraitId (message.cachedPortraitId, initials, color);
+                vh.userImageView.SetPortraitId (message.cachedPortraitId, initials, color);
             }
 
             if (isDraft) {
-                chiliView.Visibility = ViewStates.Invisible;
+                vh.chiliView.Visibility = ViewStates.Invisible;
             } else {
-                chiliView.Visibility = ViewStates.Visible;
-                BindMessageChili (thread, message, chiliView);
+                vh.chiliView.Visibility = ViewStates.Visible;
+                BindMessageChili (thread, message, vh.chiliView);
             }
 
             if (isDraft) {
-                senderView.Text = Pretty.RecipientString(message.To);
+                vh.senderView.Text = Pretty.RecipientString (message.To);
             } else {
-                senderView.Text = Pretty.SenderString (message.From);
+                vh.senderView.Text = Pretty.SenderString (message.From);
             }
-            senderView.Visibility = ViewStates.Visible;
 
             var subjectString = message.Subject;
             if (isDraft && String.IsNullOrEmpty (subjectString)) {
                 subjectString = Pretty.NoSubjectString ();
             }
 
-            subjectView.Text = EmailHelper.CreateSubjectWithIntent (subjectString, message.Intent, message.IntentDateType, message.IntentDate);
-            subjectView.Visibility = ViewStates.Visible;
+            vh.subjectView.Text = EmailHelper.CreateSubjectWithIntent (subjectString, message.Intent, message.IntentDateType, message.IntentDate);
 
-            dateView.Text = Pretty.MediumFullDateTime (message.DateReceived);
-            dateView.Visibility = ViewStates.Visible;
+            vh.dateView.Text = Pretty.MediumFullDateTime (message.DateReceived);
 
             if (message.cachedHasAttachments) {
-                paperclipView.Visibility = ViewStates.Visible;
+                vh.paperclipView.Visibility = ViewStates.Visible;
             } else {
-                paperclipView.Visibility = ViewStates.Invisible;
+                vh.paperclipView.Visibility = ViewStates.Invisible;
             }
                 
         }
@@ -195,7 +195,7 @@ namespace NachoClient.AndroidClient
             return viewType;
         }
 
-        public static void BindContactVip(McContact contact, ImageView vipView)
+        public static void BindContactVip (McContact contact, ImageView vipView)
         {
             vipView.SetImageResource (contact.IsVip ? Resource.Drawable.contacts_vip_checked : Resource.Drawable.contacts_vip);
             vipView.Tag = contact.Id;
