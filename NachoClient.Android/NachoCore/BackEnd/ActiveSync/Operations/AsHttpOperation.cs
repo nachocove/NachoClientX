@@ -628,6 +628,7 @@ namespace NachoCore.ActiveSync
                         NcAssert.True (false, "ContentTypeWbxmlMultipart unimplemented.");
                         return null;
                     case ContentTypeXml:
+                        Log.Info (Log.LOG_HTTP, "Attempting to use tempfile {0}", ContentData.Name);
                         responseDoc = XDocument.Load (ContentData.Name);
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));

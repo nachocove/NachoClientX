@@ -292,6 +292,7 @@ namespace NachoCore.Utils
         FileStream StreamFromByte (byte[] data)
         {
             tempFileName = Path.GetTempFileName ();
+            Log.Info (Log.LOG_HTTP, "Created tempfile {0}", tempFileName);
             using (var fs = new FileStream (tempFileName, FileMode.OpenOrCreate, FileAccess.Write)) {
                 fs.Write (data, 0, data.Length);
             }
@@ -302,6 +303,7 @@ namespace NachoCore.Utils
         {
             if (!string.IsNullOrEmpty (tempFileName)) {
                 File.Delete (tempFileName);
+                Log.Info (Log.LOG_HTTP, "Deleted tempfile {0}", tempFileName);
             }
         }
 
