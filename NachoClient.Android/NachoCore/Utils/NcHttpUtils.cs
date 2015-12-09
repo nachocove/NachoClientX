@@ -354,6 +354,20 @@ namespace NachoCore.Utils
                     errors = SslPolicyErrors.RemoteCertificateChainErrors;
                     goto sslErrorVerify;
                 }
+
+                // see 'Remarks' section here https://msdn.microsoft.com/en-us/library/System.Security.Cryptography.X509Certificates.X509Chain(v=vs.110).aspx
+                foreach (var status in chain.ChainStatus) {
+                    switch (status.Status) {
+                    case X509ChainStatusFlags.UntrustedRoot:
+                    case X509ChainStatusFlags.NoError:
+                        break;
+
+                    default:
+                        Log.Info (Log.LOG_HTTP, "Cert not validated: {0} (subject={1} issuer={2})", status.StatusInformation, cert.Subject, cert.Issuer);
+                        errors = SslPolicyErrors.RemoteCertificateChainErrors;
+                        goto sslErrorVerify;
+                    }
+                }
             } catch (System.Security.Cryptography.CryptographicException) {
                 // As best we can tell, a XAMMIT (spurious).
                 errors = SslPolicyErrors.RemoteCertificateChainErrors;
