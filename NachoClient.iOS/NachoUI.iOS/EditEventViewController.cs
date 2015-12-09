@@ -982,6 +982,9 @@ namespace NachoClient.iOS
 
         protected McFolder GetCalendarFolderForItem ()
         {
+            if (null == item) {
+                return McFolder.GetDeviceCalendarsFolder ();
+            }
             return McFolder.QueryByFolderEntryId<McCalendar> (item.AccountId, item.Id).FirstOrDefault ();
         }
 
