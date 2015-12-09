@@ -132,14 +132,16 @@ namespace NachoClient.AndroidClient
                         startDate = DateTime.Parse (Intent.GetStringExtra (EXTRA_START_DATE));
                     }
 
-                    cal = CalendarHelper.DefaultMeeting (startDate);
+                    if (Intent.HasExtra (EXTRA_MESSAGE_FOR_MEETING)) {
+                        cal = CalendarHelper.CreateMeeting (dataFromIntent.EmailMessage, startDate);
+                        titleField.Text = cal.Subject;
+                        descriptionField.Text = cal.Description;
+                    } else {
+                        cal = CalendarHelper.DefaultMeeting (startDate);
+                    }
+
                     startTime = cal.StartTime.ToLocalTime ();
                     endTime = cal.EndTime.ToLocalTime ();
-
-                    if (Intent.HasExtra (EXTRA_MESSAGE_FOR_MEETING)) {
-                        // Create a meeting based on the recipients and the body of an email message.
-                        // TODO Not yet implemented
-                    }
 
                     // Figure out the correct account for the new event.
                     account = NcApplication.Instance.Account;
