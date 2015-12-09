@@ -336,7 +336,7 @@ namespace NachoCore.Utils
 
         static readonly Regex cnRegex = new Regex (@"CN\s*=\s*([^,]*)", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
-        public static bool CertValidation (Uri Url, X509Certificate2 root, X509Chain chain, SslPolicyErrors errors)
+        public static bool CertValidation (Uri Url, X509Certificate2 cert, X509Chain chain, SslPolicyErrors errors)
         {
             if (errors != SslPolicyErrors.None) {
                 goto sslErrorVerify;
@@ -348,7 +348,7 @@ namespace NachoCore.Utils
             chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
 
             try {
-                if (!chain.Build (root)) {
+                if (!chain.Build (cert)) {
                     errors = SslPolicyErrors.RemoteCertificateChainErrors;
                     goto sslErrorVerify;
                 }
@@ -358,12 +358,12 @@ namespace NachoCore.Utils
                 goto sslErrorVerify;
             }
 
-            var subject = root.Subject;
+            var subject = cert.Subject;
             var subjectCn = cnRegex.Match (subject).Groups [1].Value;
 
             if (String.IsNullOrWhiteSpace (subjectCn) || !MatchHostnameToPattern (Url.Host, subjectCn)) {
                 bool found = false;
-                foreach (var ext in root.Extensions) {
+                foreach (var ext in cert.Extensions) {
                     if (ext.Oid.Value == SubjectAltNameOid) {
                         // TODO Quite the hack. Need to figure out how to get the raw data rather than string splitting
                         foreach (var line in ext.Format (true).Split (new [] {'\n'})) {
@@ -386,7 +386,7 @@ namespace NachoCore.Utils
             }
 
             sslErrorVerify:
-            return ServicePointManager.ServerCertificateValidationCallback (new HttpWebRequest (Url), root, chain, errors);
+            return ServicePointManager.ServerCertificateValidationCallback (new HttpWebRequest (Url), cert, chain, errors);
         }
 
         static bool MatchHostnameToPattern (string hostname, string pattern)

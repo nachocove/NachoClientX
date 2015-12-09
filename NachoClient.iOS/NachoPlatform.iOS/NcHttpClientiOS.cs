@@ -343,7 +343,7 @@ namespace NachoPlatform
             // chain from root certificate
             var serverCertChain = challenge.ProtectionSpace.ServerSecTrust;
             var chain = new X509Chain ();
-            X509Certificate2 root = null;
+            X509Certificate2 cert = null;
             SslPolicyErrors errors = SslPolicyErrors.None;
 
             if (serverCertChain == null || serverCertChain.Count == 0) { 
@@ -364,9 +364,9 @@ namespace NachoPlatform
                 chain.ChainPolicy.ExtraStore.Add (netCerts [i]);
             }
 
-            root = netCerts [0];
+            cert = netCerts [0];
             sslErrorVerify:
-            if (NcHttpCertificateValidation.CertValidation (new Uri (Url.ToString ()), root, chain, errors)) {
+            if (NcHttpCertificateValidation.CertValidation (new Uri (Url.ToString ()), cert, chain, errors)) {
                 completionHandler (
                     NSUrlSessionAuthChallengeDisposition.UseCredential,
                     NSUrlCredential.FromTrust (challenge.ProtectionSpace.ServerSecTrust));
