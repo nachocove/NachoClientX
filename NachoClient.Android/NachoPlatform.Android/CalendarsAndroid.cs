@@ -132,6 +132,7 @@ namespace NachoPlatform
             CalendarContract.EventsColumns.SelfAttendeeStatus,
             CalendarContract.EventsColumns.IsOrganizer,
             CalendarContract.EventsColumns.Status,
+            CalendarContract.EventsColumns.Rrule,
         };
         private const int EVENT_DETAIL_TITLE_INDEX = 0;
         private const int EVENT_DETAIL_LOCATION_INDEX = 1;
@@ -149,6 +150,7 @@ namespace NachoPlatform
         private const int EVENT_DETAIL_RESPONSE_TYPE_INDEX = 13;
         private const int EVENT_DETAIL_IS_ORGANIZER_INDEX = 14;
         private const int EVENT_DETAIL_MEETING_STATUS_INDEX = 15;
+        private const int EVENT_DETAIL_RRULE_INDEX = 16;
 
         private static string[] reminderProjection = new string[] {
             CalendarContract.RemindersColumns.Minutes,
@@ -267,6 +269,13 @@ namespace NachoPlatform
                 }
             }
 
+            var recurrence = ParseRecurrence (eventCursor.GetString (EVENT_DETAIL_RRULE_INDEX));
+            if (null != recurrence) {
+                var recurrences = new List<McRecurrence> (1);
+                recurrences.Add (recurrence);
+                result.recurrences = recurrences;
+            }
+
             bool isCancelled = (EventsStatus)eventCursor.GetInt (EVENT_DETAIL_MEETING_STATUS_INDEX) == EventsStatus.Canceled;
 
             result.MeetingStatusIsSet = true;
@@ -340,6 +349,96 @@ namespace NachoPlatform
                 return NcAttendeeStatus.ResponseUnknown;
             }
             return NcAttendeeStatus.ResponseUnknown;
+        }
+
+        static McRecurrence ParseRecurrence (string pattern)
+        {
+            if (string.IsNullOrEmpty(pattern)) {
+                return null;
+            }
+
+            var result = new McRecurrence ();
+            var rule = new DDay.iCal.RecurrencePattern (pattern);
+
+            result.IntervalIsSet = true;
+            result.Interval = rule.Interval;
+
+            switch (rule.Frequency) {
+
+            case DDay.iCal.FrequencyType.None:
+            case DDay.iCal.FrequencyType.Secondly:
+            case DDay.iCal.FrequencyType.Minutely:
+            case DDay.iCal.FrequencyType.Hourly:
+                Log.Error (Log.LOG_CALENDAR, "Unsupported recurrence type from Android device calendar item: {0}", rule.Frequency.ToString ());
+                result.Type = NcRecurrenceType.Daily;
+                result.Interval = 1;
+                break;
+
+            case DDay.iCal.FrequencyType.Daily:
+                result.Type = NcRecurrenceType.Daily;
+                break;
+
+            case DDay.iCal.FrequencyType.Weekly:
+                result.Type = NcRecurrenceType.Weekly;
+                result.DayOfWeekIsSet = true;
+                result.DayOfWeek = ToNcDayOfWeek (rule.ByDay);
+                result.FirstDayOfWeekIsSet = true;
+                result.FirstDayOfWeek = (int)rule.FirstDayOfWeek;
+                break;
+
+            case DDay.iCal.FrequencyType.Monthly:
+                if (0 < rule.ByMonthDay.Count) {
+                    result.Type = NcRecurrenceType.Monthly;
+                    result.DayOfMonth = rule.ByMonthDay [0];
+                } else if (0 < rule.ByDay.Count) {
+                    result.Type = NcRecurrenceType.MonthlyOnDay;
+                    int weekOfMonth = rule.ByDay [0].Offset;
+                    if (weekOfMonth < 1 || 5 < weekOfMonth) {
+                        weekOfMonth = 5;
+                    }
+                    result.WeekOfMonth = weekOfMonth;
+                    result.DayOfWeek = CalendarHelper.ToNcDayOfWeek (rule.ByDay [0].DayOfWeek);
+                } else {
+                    result.Type = NcRecurrenceType.Monthly;
+                    result.DayOfMonth = 1;
+                }
+                break;
+
+            case DDay.iCal.FrequencyType.Yearly:
+                if (0 < rule.ByMonth.Count && 0 < rule.ByMonthDay.Count) {
+                    result.Type = NcRecurrenceType.Yearly;
+                    result.MonthOfYear = rule.ByMonth [0];
+                    result.DayOfMonth = rule.ByMonthDay [0];
+                } else if (0 < rule.ByMonth.Count && 0 < rule.ByDay.Count) {
+                    result.Type = NcRecurrenceType.YearlyOnDay;
+                    result.MonthOfYear = rule.ByMonth [0];
+                    int weekOfMonth = rule.ByDay [0].Offset;
+                    if (weekOfMonth < 1 || 5 < weekOfMonth) {
+                        weekOfMonth = 5;
+                    }
+                    result.WeekOfMonth = weekOfMonth;
+                    result.DayOfWeek = CalendarHelper.ToNcDayOfWeek (rule.ByDay [0].DayOfWeek);
+                } else {
+                    result.Type = NcRecurrenceType.Yearly;
+                    result.MonthOfYear = 1;
+                    result.DayOfMonth = 1;
+                }
+                break;
+            }
+
+            return result;
+        }
+
+        static NcDayOfWeek ToNcDayOfWeek (IList<DDay.iCal.IWeekDay> icalDays)
+        {
+            var result = (NcDayOfWeek)0;
+            foreach (var icalDay in icalDays) {
+                result = result | CalendarHelper.ToNcDayOfWeek (icalDay.DayOfWeek);
+            }
+            if (0 == result) {
+                result = NcDayOfWeek.Sunday;
+            }
+            return result;
         }
 
         /// <summary>
