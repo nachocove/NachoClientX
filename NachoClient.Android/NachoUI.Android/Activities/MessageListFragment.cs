@@ -134,8 +134,6 @@ namespace NachoClient.AndroidClient
             layoutManager = new LinearLayoutManager (Activity);
             recyclerView.SetLayoutManager (layoutManager);
 
-            recyclerView.AddOnScrollListener (new MessageListScrollListener ());
-
             ClearCache ();
             SetupMessageListAdapter (view);
 
@@ -246,8 +244,11 @@ namespace NachoClient.AndroidClient
         {
             var parent = (MessageListDelegate)Activity;
             messageListAdapter = new MessageListAdapter (this, parent.ShowListStyle ());
-
             messageListAdapter.onMessageClick += MessageListAdapter_OnMessageClick;
+
+            if (MessageListAdapter.CARDVIEW_STYLE == parent.ShowListStyle ()) {
+                recyclerView.AddOnScrollListener (new MessageListScrollListener ());
+            }
 
             recyclerView.SetAdapter (messageListAdapter);
 
