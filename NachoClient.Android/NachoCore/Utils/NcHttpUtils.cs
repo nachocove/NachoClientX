@@ -174,7 +174,7 @@ namespace NachoCore.Utils
         }
     }
 
-    public class NcHttpResponse
+    public class NcHttpResponse : IDisposable
     {
         public HttpMethod Method { get; protected set; }
 
@@ -298,7 +298,7 @@ namespace NachoCore.Utils
             return new FileStream (tempFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 
-        ~NcHttpResponse ()
+        public void Dispose ()
         {
             if (!string.IsNullOrEmpty (tempFileName)) {
                 File.Delete (tempFileName);

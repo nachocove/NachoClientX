@@ -196,8 +196,9 @@ namespace NachoPlatform
                     using (var fileStream = new FileStream (location.Path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                         try {
                             int status = (int)resp.StatusCode;
-                            var response = new NcHttpResponse (downloadTask.CurrentRequest.HttpMethod, (HttpStatusCode)status, fileStream, resp.MimeType, FromNsHeaders (resp.AllHeaderFields));
-                            SuccessAction (response, Token);
+                            using (var response = new NcHttpResponse (downloadTask.CurrentRequest.HttpMethod, (HttpStatusCode)status, fileStream, resp.MimeType, FromNsHeaders (resp.AllHeaderFields))) {
+                                SuccessAction (response, Token);
+                            }
                         } catch (Exception ex) {
                             Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): Error running SuccessAction: {1}", downloadTask.TaskDescription, ex);
                         }
