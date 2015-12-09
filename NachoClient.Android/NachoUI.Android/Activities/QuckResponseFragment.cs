@@ -44,9 +44,10 @@ namespace NachoClient.AndroidClient
             ResponseListView = view.FindViewById<ListView> (Resource.Id.response_list_view);
             ResponseListView.ItemClick += OnListItemClick;
             SetupListView ();
-            builder.SetTitle ("Select Response");
             builder.SetView (view);
-            return builder.Create ();
+            var dialog = builder.Create ();
+            dialog.Window.RequestFeature (WindowFeatures.NoTitle);
+            return dialog;
         }
 
         public override void OnPause ()

@@ -237,32 +237,7 @@ namespace NachoClient.AndroidClient
 
         public void AttachmentSelectedCallback (McAttachment attachment)
         {
-            if (attachment.IsImageFile ()) {
-                var viewerIntent = ImageViewActivity.ImageViewIntent (this.Activity, attachment.GetFileDirectory (), attachment.GetFileName ());
-                StartActivity (viewerIntent);
-                return;
-            }
-
-            // Look for a handler on the system.
-
-            try {
-                var myIntent = new Intent (Intent.ActionView);
-                var file = new Java.IO.File (attachment.GetFilePath ()); 
-                var extension = Android.Webkit.MimeTypeMap.GetFileExtensionFromUrl (Android.Net.Uri.FromFile (file).ToString ());
-                var mimetype = Android.Webkit.MimeTypeMap.Singleton.GetMimeTypeFromExtension (extension);
-                myIntent.SetDataAndType (Android.Net.Uri.FromFile (file), mimetype);
-                var packageManager = this.Activity.PackageManager;
-                var activities = packageManager.QueryIntentActivities (myIntent, PackageInfoFlags.MatchDefaultOnly);
-                var isIntentSafe = 0 < activities.Count;
-                if (isIntentSafe) {
-                    StartActivity (myIntent);
-                } else {
-                    NcAlertView.ShowMessage (Activity, "Attachment", "No application can open this attachment.");
-                }
-            } catch (Exception e) {
-                // TODO: handle exception
-                String data = e.Message;
-            }
+            Util.OpenAttachment (Activity, attachment);
         }
 
         public  void AttachmentErrorCallback (McAttachment attachment, NcResult nr)

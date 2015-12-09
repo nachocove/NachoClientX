@@ -39,6 +39,10 @@ namespace NachoClient.AndroidClient
         public static int Id_NachoSwipeAttendeeRequired = Resource.Drawable.calendar_attendee_required_swipe;
         public static int Id_NachoSwipeAttendeeOptional = Resource.Drawable.calendar_attendee_optional_swipe;
 
+        // File list swipe items
+        public static int Id_NachoSwipeFileDelete = Resource.Drawable.email_delete_swipe;
+        public static int Id_NachoSwipeFileForward = Resource.Drawable.files_forward_swipe;
+
         public static Drawable Drawable_NachoSwipeAttendeeOptional (Context context)
         {
             return context.Resources.GetDrawable (Resource.Drawable.SwipeAttendeeOptional);
@@ -97,6 +101,16 @@ namespace NachoClient.AndroidClient
         public static Drawable Drawable_NachoSwipeEmailMove (Context context)
         {
             return context.Resources.GetDrawable (Resource.Drawable.SwipeEmailMove);
+        }
+
+        public static Drawable Drawable_NachoSwipeFileForward (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeFileForward);
+        }
+
+        public static Drawable Drawable_NachoSwipeFileDelete (Context context)
+        {
+            return context.Resources.GetDrawable (Resource.Drawable.SwipeFileDelete);
         }
 
     }

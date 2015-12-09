@@ -1,19 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
+    android:background="@android:color/white"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/NachoGreen">
-    <TextView
-        android:textSize="16dp"
-        android:textColor="@android:color/white"
-        android:textAlignment="center"
-        android:gravity="center"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textStyle="bold"
-        android:text="@string/file_picker_title"
-        android:padding="10dp" />
+    android:animateLayoutChanges="true">
+    <include
+        layout="@layout/NavigationBar" />
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
@@ -55,9 +48,22 @@
             android:textColor="@color/NachoBlack"
             android:background="@drawable/BlackBorder" />
     </LinearLayout>
-    <ListView
-        android:id="@+id/file_picker_list"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+        <NachoClient.AndroidClient.SwipeMenuListView
+            android:id="@+id/listView"
+            android:scrollbars="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:background="@android:color/white" />
+    </android.support.v4.widget.SwipeRefreshLayout>
+    <View
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:background="@android:color/white" />
+        android:layout_height="1dp"
+        android:background="@color/NachoLightGray" />
+    <include
+        layout="@layout/NavigationToolbar" />
 </LinearLayout>

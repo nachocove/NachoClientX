@@ -5,11 +5,11 @@
     android:layout_height="fill_parent"
     android:background="@color/NachoGreen">
     <ImageView
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:id="@+id/logo"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:src="@drawable/bootscreen_1"
-        android:layout_centerHorizontal="true"
-        android:layout_above="@+id/tutorial_swipe" />
+        android:layout_centerInParent="true" />
     <TextView
         android:id="@+id/tutorial_swipe"
         android:text="@string/tut1_swipe"
@@ -23,7 +23,7 @@
         android:textColor="@color/NachoYellow"
         android:background="@color/NachoGreen"
         android:visibility="visible"
-        android:layout_above="@+id/tutorial_chips" />
+        android:layout_below="@+id/logo" />
     <ImageView
         android:id="@+id/tutorial_chips"
         android:layout_width="fill_parent"

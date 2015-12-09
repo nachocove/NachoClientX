@@ -10,6 +10,7 @@ using NachoClient.AndroidClient;
 using Android.Provider;
 using Android.Content;
 using Android.Database;
+using NachoCore.ActiveSync;
 
 namespace NachoPlatform
 {
@@ -74,12 +75,12 @@ namespace NachoPlatform
             return result;
         }
 
-        private static string[] eventProjection = new string[] {
-            Android.Provider.CalendarContract.Events.InterfaceConsts.Title,
-            Android.Provider.CalendarContract.Events.InterfaceConsts.EventLocation,
+        private static string[] eventSummaryProjection = new string[] {
+            CalendarContract.EventsColumns.Title,
+            CalendarContract.EventsColumns.EventLocation,
         };
-        private const int EVENT_TITLE_INDEX = 0;
-        private const int EVENT_LOCATION_INDEX = 1;
+        private const int EVENT_SUMMARY_TITLE_INDEX = 0;
+        private const int EVENT_SUMMARY_LOCATION_INDEX = 1;
 
         /// <summary>
         /// Get some of the details for a particular event in the Android calendar database.
@@ -92,7 +93,12 @@ namespace NachoPlatform
             var resolver = MainApplication.Instance.ContentResolver;
             ICursor eventCursor;
             try {
-                eventCursor = resolver.Query(CalendarContract.Events.ContentUri,eventProjection,CalendarContract.Events.InterfaceConsts.Id + " = ?", new string[] { eventId.ToString() }, null, null);
+                eventCursor = resolver.Query (
+                    CalendarContract.Events.ContentUri,
+                    eventSummaryProjection,
+                    CalendarContract.Events.InterfaceConsts.Id + " = ?",
+                    new string[] { eventId.ToString () },
+                    null, null);
             } catch (Exception e) {
                 Log.Error (Log.LOG_SYS, "Looking up device details failed with {0}", e.ToString ());
                 return false;
@@ -100,13 +106,240 @@ namespace NachoPlatform
             if (!eventCursor.MoveToNext ()) {
                 return false;
             }
-            title = eventCursor.GetString (EVENT_TITLE_INDEX);
-            location = eventCursor.GetString (EVENT_LOCATION_INDEX);
+            title = eventCursor.GetString (EVENT_SUMMARY_TITLE_INDEX);
+            location = eventCursor.GetString (EVENT_SUMMARY_LOCATION_INDEX);
 
             // TODO Somehow get the color from the calendar that owns this event.
-            colorIndex = McFolder.GetDeviceCalendarsFolder().DisplayColor;
+            colorIndex = McFolder.GetDeviceCalendarsFolder ().DisplayColor;
 
             return true;
+        }
+
+        private static string[] eventDetailProjection = new string[] {
+            CalendarContract.EventsColumns.Title,
+            CalendarContract.EventsColumns.EventLocation,
+            CalendarContract.EventsColumns.Description,
+            CalendarContract.EventsColumns.Dtstart,
+            CalendarContract.EventsColumns.Dtend,
+            CalendarContract.EventsColumns.AllDay,
+            CalendarContract.EventsColumns.EventTimezone,
+            CalendarContract.EventsColumns.Uid2445,
+            CalendarContract.EventsColumns.HasAlarm,
+            CalendarContract.EventsColumns.HasAttendeeData,
+            CalendarContract.CalendarColumns.CalendarDisplayName,
+            CalendarContract.EventsColumns.Organizer,
+            CalendarContract.EventsColumns.Availability,
+            CalendarContract.EventsColumns.SelfAttendeeStatus,
+            CalendarContract.EventsColumns.IsOrganizer,
+            CalendarContract.EventsColumns.Status,
+        };
+        private const int EVENT_DETAIL_TITLE_INDEX = 0;
+        private const int EVENT_DETAIL_LOCATION_INDEX = 1;
+        private const int EVENT_DETAIL_DESCRIPTION_INDEX = 2;
+        private const int EVENT_DETAIL_START_INDEX = 3;
+        private const int EVENT_DETAIL_END_INDEX = 4;
+        private const int EVENT_DETAIL_ALL_DAY_INDEX = 5;
+        private const int EVENT_DETAIL_TIME_ZONE_INDEX = 6;
+        private const int EVENT_DETAIL_UID_INDEX = 7;
+        private const int EVENT_DETAIL_HAS_ALARM_INDEX = 8;
+        private const int EVENT_DETAIL_HAS_ATTENDEES_INDEX = 9;
+        private const int EVENT_DETAIL_CALENDAR_NAME_INDEX = 10;
+        private const int EVENT_DETAIL_ORGANIZER_INDEX = 11;
+        private const int EVENT_DETAIL_AVAILABILITY_INDEX = 12;
+        private const int EVENT_DETAIL_RESPONSE_TYPE_INDEX = 13;
+        private const int EVENT_DETAIL_IS_ORGANIZER_INDEX = 14;
+        private const int EVENT_DETAIL_MEETING_STATUS_INDEX = 15;
+
+        private static string[] reminderProjection = new string[] {
+            CalendarContract.RemindersColumns.Minutes,
+        };
+        private const int REMINDER_MINUTES_INDEX = 0;
+
+        private static string[] attendeeProjection = new string[] {
+            CalendarContract.AttendeesColumns.AttendeeEmail,
+            CalendarContract.AttendeesColumns.AttendeeName,
+            CalendarContract.AttendeesColumns.AttendeeRelationship,
+            CalendarContract.AttendeesColumns.AttendeeStatus,
+            CalendarContract.AttendeesColumns.AttendeeType,
+        };
+        private const int ATTENDEE_EMAIL_INDEX = 0;
+        private const int ATTENDEE_NAME_INDEX = 1;
+        private const int ATTENDEE_RELATIONSHIP_INDEX = 2;
+        private const int ATTENDEE_STATUS_INDEX = 3;
+        private const int ATTENDEE_TYPE_INDEX = 4;
+
+        public static McCalendar GetEventDetails (long eventid, out string calendarName)
+        {
+            calendarName = "[Unknown]";
+
+            var resolver = MainApplication.Instance.ContentResolver;
+            ICursor eventCursor;
+            try {
+                eventCursor = resolver.Query (
+                    CalendarContract.Events.ContentUri,
+                    eventDetailProjection,
+                    CalendarContract.Events.InterfaceConsts.Id + " = ?",
+                    new string[] { eventid.ToString () },
+                    null, null);
+            } catch (Exception e) {
+                Log.Error (Log.LOG_SYS, "Looking up device details failed with {0}", e.ToString ());
+                return null;
+            }
+            if (!eventCursor.MoveToNext ()) {
+                return null;
+            }
+
+            calendarName = eventCursor.GetString (EVENT_DETAIL_CALENDAR_NAME_INDEX);
+            if (null == calendarName) {
+                calendarName = "[Unknown]";
+            }
+
+            var result = new McCalendar ();
+
+            result.Subject = eventCursor.GetString (EVENT_DETAIL_TITLE_INDEX);
+            result.Location = eventCursor.GetString (EVENT_DETAIL_LOCATION_INDEX);
+            result.SetDescription (eventCursor.GetString (EVENT_DETAIL_DESCRIPTION_INDEX), McAbstrFileDesc.BodyTypeEnum.PlainText_1);
+            result.AllDayEvent = eventCursor.GetInt (EVENT_DETAIL_ALL_DAY_INDEX) != 0;
+            result.StartTime = eventCursor.GetLong (EVENT_DETAIL_START_INDEX).JavaMsToDateTime ();
+            result.EndTime = eventCursor.GetLong (EVENT_DETAIL_END_INDEX).JavaMsToDateTime ();
+            result.UID = eventCursor.GetString (EVENT_DETAIL_UID_INDEX);
+            result.OrganizerEmail = eventCursor.GetString (EVENT_DETAIL_ORGANIZER_INDEX);
+
+            bool isOrganizer = eventCursor.GetInt (EVENT_DETAIL_IS_ORGANIZER_INDEX) != 0;
+            var meetingResponse = (CalendarAttendeesStatus)eventCursor.GetInt (EVENT_DETAIL_RESPONSE_TYPE_INDEX);
+            result.ResponseTypeIsSet = true;
+            result.ResponseType = ResponseType (meetingResponse, isOrganizer);
+
+            string timeZoneName = eventCursor.GetString (EVENT_DETAIL_TIME_ZONE_INDEX);
+            TimeZoneInfo timeZone = TimeZoneInfo.Utc;
+            if (null != timeZoneName) {
+                try {
+                    timeZone = TimeZoneInfo.FindSystemTimeZoneById (eventCursor.GetString (EVENT_DETAIL_TIME_ZONE_INDEX));
+                } catch (Exception) {
+                    Log.Error (Log.LOG_SYS, "Could not find time zone {0}", timeZoneName);
+                }
+            }
+            result.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (timeZone), result.StartTime).toEncodedTimeZone ();
+
+            bool hasAlarm = eventCursor.GetInt (EVENT_DETAIL_HAS_ALARM_INDEX) != 0;
+            if (hasAlarm) {
+                ICursor reminderCursor = null;
+                try {
+                    reminderCursor = CalendarContract.Reminders.Query (resolver, eventid, reminderProjection);
+                } catch (Exception e) {
+                    Log.Error (Log.LOG_SYS, "Looking up reminders failed with {0}", e.ToString ());
+                }
+                if (null != reminderCursor) {
+                    // If there are multiple alarms, pick the one that goes off the earliest.
+                    int earliestReminder = 0;
+                    while (reminderCursor.MoveToNext ()) {
+                        int thisReminder = reminderCursor.GetInt (REMINDER_MINUTES_INDEX);
+                        earliestReminder = Math.Max (earliestReminder, thisReminder);
+                    }
+                    result.ReminderIsSet = true;
+                    result.Reminder = (uint)earliestReminder;
+                }
+            }
+
+            bool hasAttendees = eventCursor.GetInt (EVENT_DETAIL_HAS_ATTENDEES_INDEX) != 0;
+            if (hasAttendees) {
+                ICursor attendeeCursor = null;
+                try {
+                    attendeeCursor = CalendarContract.Attendees.Query (resolver, eventid, attendeeProjection);
+                } catch (Exception e) {
+                    Log.Error (Log.LOG_SYS, "Looking up attendees failed with {0}", e.ToString ());
+                }
+                if (null != attendeeCursor) {
+                    int deviceAccountId = McAccount.GetDeviceAccount ().Id;
+                    var attendees = new List<McAttendee> (attendeeCursor.Count);
+                    while (attendeeCursor.MoveToNext ()) {
+                        var relationship = (CalendarAttendeesRelationship)attendeeCursor.GetInt (ATTENDEE_RELATIONSHIP_INDEX);
+                        if (relationship != CalendarAttendeesRelationship.None && relationship != CalendarAttendeesRelationship.Organizer) {
+                            var attendee = new McAttendee (deviceAccountId,
+                                attendeeCursor.GetString (ATTENDEE_NAME_INDEX),
+                                attendeeCursor.GetString (ATTENDEE_EMAIL_INDEX),
+                                AttendeeType ((CalendarAttendeesColumn)attendeeCursor.GetInt (ATTENDEE_TYPE_INDEX)),
+                                AttendeeStatus ((CalendarAttendeesStatus)attendeeCursor.GetInt (ATTENDEE_STATUS_INDEX)));
+                            attendees.Add (attendee);
+                        }
+                    }
+                    result.attendees = attendees;
+                }
+            }
+
+            bool isCancelled = (EventsStatus)eventCursor.GetInt (EVENT_DETAIL_MEETING_STATUS_INDEX) == EventsStatus.Canceled;
+
+            result.MeetingStatusIsSet = true;
+            if (0 == result.attendees.Count) {
+                result.MeetingStatus = NcMeetingStatus.Appointment;
+            } else {
+                if (isOrganizer) {
+                    if (isCancelled) {
+                        result.MeetingStatus = NcMeetingStatus.MeetingOrganizerCancelled;
+                    } else {
+                        result.MeetingStatus = NcMeetingStatus.MeetingOrganizer;
+                    }
+                } else {
+                    if (isCancelled) {
+                        result.MeetingStatus = NcMeetingStatus.MeetingAttendeeCancelled;
+                    } else {
+                        result.MeetingStatus = NcMeetingStatus.MeetingAttendee;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        static NcResponseType ResponseType (CalendarAttendeesStatus response, bool isOrganizer)
+        {
+            if (isOrganizer) {
+                return NcResponseType.Organizer;
+            }
+            switch (response) {
+            case CalendarAttendeesStatus.Accepted:
+                return NcResponseType.Accepted;
+            case CalendarAttendeesStatus.Tentative:
+                return NcResponseType.Tentative;
+            case CalendarAttendeesStatus.Declined:
+                return NcResponseType.Declined;
+            case CalendarAttendeesStatus.Invited:
+                return NcResponseType.NotResponded;
+            case CalendarAttendeesStatus.None:
+                return NcResponseType.None;
+            }
+            return NcResponseType.None;
+        }
+
+        static NcAttendeeType AttendeeType (CalendarAttendeesColumn attendeeType)
+        {
+            switch (attendeeType) {
+            case CalendarAttendeesColumn.None:
+                return NcAttendeeType.Unknown;
+            case CalendarAttendeesColumn.Optional:
+                return NcAttendeeType.Optional;
+            case CalendarAttendeesColumn.Required:
+                return NcAttendeeType.Required;
+            case CalendarAttendeesColumn.Resource:
+                return NcAttendeeType.Resource;
+            }
+            return NcAttendeeType.Unknown;
+        }
+
+        static NcAttendeeStatus AttendeeStatus (CalendarAttendeesStatus attendeeStatus) {
+            switch (attendeeStatus) {
+            case CalendarAttendeesStatus.Accepted:
+                return NcAttendeeStatus.Accept;
+            case CalendarAttendeesStatus.Tentative:
+                return NcAttendeeStatus.Tentative;
+            case CalendarAttendeesStatus.Declined:
+                return NcAttendeeStatus.Decline;
+            case CalendarAttendeesStatus.Invited:
+                return NcAttendeeStatus.NotResponded;
+            case CalendarAttendeesStatus.None:
+                return NcAttendeeStatus.ResponseUnknown;
+            }
+            return NcAttendeeStatus.ResponseUnknown;
         }
 
         /// <summary>

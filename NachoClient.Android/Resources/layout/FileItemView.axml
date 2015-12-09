@@ -15,12 +15,14 @@
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:padding="5dp">
         <ImageView
             android:id="@+id/file_icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:padding="5dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="10dp"
             android:layout_gravity="center_vertical"
             android:scaleType="centerInside" />
         <LinearLayout
@@ -31,15 +33,19 @@
             <TextView
                 android:id="@+id/file_name"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:textColor="@color/NachoBlack"
+                android:textStyle="bold" />
             <TextView
                 android:id="@+id/file_info"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:textColor="@color/NachoTextGray" />
             <TextView
                 android:id="@+id/file_date"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:textColor="@color/NachoTextGray" />
         </LinearLayout>
         <ImageView
             android:id="@+id/file_download"

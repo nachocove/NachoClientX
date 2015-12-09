@@ -820,29 +820,30 @@ namespace NachoClient.AndroidClient
         void NotifyChanges (List<int> adds, List<int> deletes)
         {
             ClearCache ();
-            if (null == adds && null == deletes) {
-                messageListAdapter.NotifyDataSetChanged ();
-                return;
-            }
-            NcAssert.False (null != adds && null != deletes);
+            messageListAdapter.NotifyDataSetChanged ();
 
-            var list = (null == adds) ? deletes : adds;
-            var firstIndex = list [0];
-
-            list.Sort ();
-            list.Reverse ();
-
-            foreach (var position in list) {
-                if (null == adds) {
-                    messageListAdapter.NotifyItemRemoved (position);
-                } else {
-                    messageListAdapter.NotifyItemInserted (position);
-                }
-            }
-            // Force re-bind to update menu swipe 'position' field
-            var range = messageListAdapter.ItemCount - firstIndex;
-            messageListAdapter.NotifyItemRangeChanged (firstIndex, range);
-               
+//            if (null == adds && null == deletes) {
+//                messageListAdapter.NotifyDataSetChanged ();
+//                return;
+//            }
+//            NcAssert.False (null != adds && null != deletes);
+//
+//            var list = (null == adds) ? deletes : adds;
+//            var firstIndex = list [0];
+//
+//            list.Sort ();
+//            list.Reverse ();
+//
+//            foreach (var position in list) {
+//                if (null == adds) {
+//                    messageListAdapter.NotifyItemRemoved (position);
+//                } else {
+//                    messageListAdapter.NotifyItemInserted (position);
+//                }
+//            }
+//            // Force re-bind to update menu swipe 'position' field
+//            var range = messageListAdapter.ItemCount - firstIndex;
+//            messageListAdapter.NotifyItemRangeChanged (firstIndex, range);
         }
 
         public void RefreshIfVisible ()

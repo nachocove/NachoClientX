@@ -80,11 +80,7 @@ namespace NachoCore.Utils
             if (null == e) {
                 return null;  // may be deleted
             }
-            var c = McCalendar.QueryById<McCalendar> (e.CalendarId);
-            if (null == c) {
-                return null; // may be deleted
-            }
-            return c;
+            return McCalendar.QueryById<McCalendar> (e.CalendarId);
         }
 
         public static void CancelOccurrence (McCalendar cal, DateTime occurrence)

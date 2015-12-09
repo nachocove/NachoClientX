@@ -21,8 +21,8 @@
     <style
         name="WindowAnimationTransition">
         <item
-            name="android:windowEnterAnimation">@android:anim/fade_in</item>
+            name="android:windowEnterAnimation">@anim/fast_fade_in</item>
         <item
-            name="android:windowExitAnimation">@android:anim/fade_out</item>
+            name="android:windowExitAnimation">@anim/fast_fade_out</item>
     </style>
 </resources>

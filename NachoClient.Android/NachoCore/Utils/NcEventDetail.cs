@@ -18,13 +18,31 @@ namespace NachoCore.Utils
 
         public NcEventDetail (McEvent occurrence)
         {
+            Initialize (occurrence);
+        }
+
+        protected NcEventDetail ()
+        {
+        }
+
+        protected void Initialize (McEvent occurrence)
+        {
             ev = occurrence;
             account = McAccount.QueryById<McAccount> (occurrence.AccountId);
             hasBeenEdited = false;
             Refresh ();
         }
 
-        public void Refresh ()
+        protected void Initialize (McEvent occurrence, McAbstrCalendarRoot specific, McCalendar series, McAccount account)
+        {
+            this.ev = occurrence;
+            this.specific = specific;
+            this.series = series;
+            this.account = account;
+            hasBeenEdited = false;
+        }
+
+        public virtual void Refresh ()
         {
             series = McCalendar.QueryById<McCalendar> (ev.CalendarId);
             if (0 == ev.ExceptionId) {
@@ -34,7 +52,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public bool IsValid {
+        public virtual bool IsValid {
             get {
                 return null != ev && null != specific && null != series && null != account;
             }
@@ -112,7 +130,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Is the user allowed to edit this event?
         /// </summary>
-        public bool CanEdit {
+        public virtual bool CanEdit {
             get {
                 return IsOrganizer &&
                     !IsRecurring &&
@@ -125,7 +143,7 @@ namespace NachoCore.Utils
         /// Is the user allowed to change the reminder for the event?  (In some cases,
         /// the reminder can be changed even if the event cannot otherwise be edited.)
         /// </summary>
-        public bool CanChangeReminder {
+        public virtual bool CanChangeReminder {
             get {
                 return account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) &&
                     (McAccount.AccountTypeEnum.Device != account.AccountType || !IsRecurring);
@@ -135,7 +153,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Should the "Cancel Meeting" button be shown?
         /// </summary>
-        public bool ShowCancelMeetingButton {
+        public virtual bool ShowCancelMeetingButton {
             get {
                 return IsOrganizer &&
                     IsRecurring &&
@@ -145,7 +163,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public DateTime StartTime {
+        public virtual DateTime StartTime {
             get {
                 if (!hasBeenEdited || IsRecurring) {
                     return ev.GetStartTimeUtc ();
@@ -161,7 +179,7 @@ namespace NachoCore.Utils
                     DateTimeKind.Local).ToUniversalTime ();
             }
         }
-        public DateTime EndTime {
+        public virtual DateTime EndTime {
             get {
                 if (!hasBeenEdited || IsRecurring) {
                     return ev.GetEndTimeUtc ();
@@ -202,7 +220,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public string CalendarNameString {
+        public virtual string CalendarNameString {
             get {
                 string folderName = "(Unknown)";
                 var folder = McFolder.QueryByFolderEntryId<McCalendar> (series.AccountId, series.Id).FirstOrDefault ();
