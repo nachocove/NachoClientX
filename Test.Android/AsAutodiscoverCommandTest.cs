@@ -770,11 +770,11 @@ namespace Test.iOS
 
                 // create the response, then allow caller to set headers,
                 // then return response and assign to mockResponse
-                var mockResponse = new NcHttpResponse (request.Method, HttpStatusCode.OK, Encoding.UTF8.GetBytes (xml), "text/xml");
-              
-                // check for the type of request and respond with appropriate response (redir, error, pass)
-                // allow the caller to modify the mockResponse object (esp. headers and StatusCode)
-                return exposeHttpMessage (request, mockResponse);
+                using (var mockResponse = new NcHttpResponse (request.Method, HttpStatusCode.OK, Encoding.UTF8.GetBytes (xml), "text/xml")) {
+                    // check for the type of request and respond with appropriate response (redir, error, pass)
+                    // allow the caller to modify the mockResponse object (esp. headers and StatusCode)
+                    return exposeHttpMessage (request, mockResponse);
+                }
             };
 
             MockHttpClient.HasServerCertificate = () => {

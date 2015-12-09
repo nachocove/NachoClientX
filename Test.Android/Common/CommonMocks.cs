@@ -157,8 +157,9 @@ namespace Test.iOS
             }
             NcTask.Run (() => {
                 try {
-                    var response = ProvideHttpResponseMessage (request);
-                    doRequest (request, response, timeout, success, error, progress, cancellationToken);
+                    using (var response = ProvideHttpResponseMessage (request)) {
+                        doRequest (request, response, timeout, success, error, progress, cancellationToken);
+                    }
                 } catch (Exception ex) {
                     error (ex, cancellationToken);
                 }
