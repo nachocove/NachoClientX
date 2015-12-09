@@ -405,6 +405,12 @@ namespace NachoClient.iOS
             // to be in iOS-specific code.
             Log.Info (Log.LOG_LIFECYCLE, "Current time zone: {0}", NSTimeZone.LocalTimeZone.Description);
 
+            if (NcApplication.ReadyToStartUI ()) {
+                var mainStoryboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                var appViewController = (UITabBarController)mainStoryboard.InstantiateInitialViewController ();
+                Window.RootViewController = appViewController;
+            }
+
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
             return true;
