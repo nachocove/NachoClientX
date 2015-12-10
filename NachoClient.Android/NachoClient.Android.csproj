@@ -606,6 +606,7 @@
     <Compile Include="NachoUI.Android\Activities\AboutViewerFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\CalendarChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Support\ContactPhotoView.cs" />
+    <Compile Include="NachoCore\Model\McBuildInfo.cs" />
     <Compile Include="NachoPlatform.Android\RtfConverterAndroid.cs" />
     <Compile Include="NachoUI.Android\Activities\AccountSettingsActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\AddAccountActivity.cs" />

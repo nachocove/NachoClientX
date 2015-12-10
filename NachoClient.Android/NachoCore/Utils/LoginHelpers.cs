@@ -187,7 +187,8 @@ namespace NachoCore.Utils
 
         static public McAccount GetMostRecentAccount ()
         {
-            var deviceAccount = McAccount.GetDeviceAccount ();
+            var accounts = McAccount.GetAllAccounts ();
+            var deviceAccount = accounts.Where (x => x.AccountType == McAccount.AccountTypeEnum.Device).FirstOrDefault ();
             if (null == deviceAccount) {
                 return null;
             }
@@ -195,7 +196,7 @@ namespace NachoCore.Utils
             if ((0 == recentAccountId) || (deviceAccount.Id == recentAccountId)) {
                 return null;
             }
-            return McAccount.QueryById<McAccount> (recentAccountId);
+            return accounts.Where (x => x.Id == recentAccountId).FirstOrDefault ();
         }
 
         // Look for a configured account

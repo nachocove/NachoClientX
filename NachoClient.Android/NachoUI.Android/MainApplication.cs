@@ -28,6 +28,7 @@ namespace NachoClient.AndroidClient
             LifecycleSpy.SharedInstance.Init (this);
             BackupManager = new BackupManager (this);
             CopyAssetsToDocuments ();
+            OneTimeStartup ("MainApplication");
         }
 
         public static MainApplication Instance {
@@ -49,22 +50,24 @@ namespace NachoClient.AndroidClient
             }
             startupCalled = true;
 
+            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: {0}", caller);
+
             // This creates the NcApplication object
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
 
-            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: {0}", caller);
-
-            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: StartBasalServices");
             NcApplication.Instance.StartBasalServices ();
 
-            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: AppStartupTasks");
             NcApplication.Instance.AppStartupTasks ();
 
-            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: OnStart finished");
+            NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
+                Telemetry.SharedInstance.Throttling = false;
+            };
 
             MainApplication.Instance.StartService(new Intent(MainApplication.Instance, typeof(NotificationService)));
 
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
+
+            Log.Info (Log.LOG_LIFECYCLE, "OneTimeStartup: OnStart finished");
         }
 
         public static void CertAskReqCallback (int accountId, X509Certificate2 certificate)

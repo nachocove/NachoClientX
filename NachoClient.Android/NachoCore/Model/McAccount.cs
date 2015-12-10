@@ -112,7 +112,6 @@ namespace NachoCore.Model
             DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.OneMonth_5;
             NotificationConfiguration = DefaultNotificationConfiguration;
             FastNotificationEnabled = true;
-            GenerateLogSalt ();
         }
 
         /// AccountType is set as a side effect of setting AccountService. 
@@ -380,10 +379,14 @@ namespace NachoCore.Model
         public string GetLogSalt ()
         {
             if (null == LogSalt) {
-                return Keychain.Instance.GetLogSalt (Id);
-            } else {
-                return LogSalt;
+                if (0 < Id) {
+                    return Keychain.Instance.GetLogSalt (Id);
+                } else {
+                    // It can't be in the Keychain if McAccount not in DB yet.
+                    GenerateLogSalt ();
+                }
             }
+            return LogSalt;
         }
 
         private void GenerateLogSalt ()

@@ -25,7 +25,9 @@ namespace NachoPlatform
 
         private Contacts ()
         {
-            MainApplication.Instance.ContentResolver.RegisterContentObserver (ContactsContract.Contacts.ContentUri, true, new NcContactContentObserver (this, new Handler ()));
+            InvokeOnUIThread.Instance.Invoke (() => {
+                MainApplication.Instance.ContentResolver.RegisterContentObserver (ContactsContract.Contacts.ContentUri, true, new NcContactContentObserver (this, new Handler ()));
+            });
         }
 
         public class NcContactContentObserver : Android.Database.ContentObserver

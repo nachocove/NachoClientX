@@ -75,14 +75,21 @@ namespace NachoCore
             CannotFindServer,
         }
 
-        private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
+        private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
         private NcTimer PendingOnTimeTimer = null;
 
         /// <summary>
         /// Gets or sets the refresh cancel source. 
         /// </summary>
         /// <value>The refresh cancel source.</value>
-        protected CancellationTokenSource Oauth2RefreshCancelSource { get; set; }
+        /// 
+        private CancellationTokenSource _Oauth2RefreshCancelSource = new CancellationTokenSource ();
+        // For test use only.
+        protected CancellationTokenSource Oauth2RefreshCancelSource { 
+            set {
+                _Oauth2RefreshCancelSource = value;
+            }
+        }
 
         public enum CredReqActiveState
         {
@@ -141,11 +148,11 @@ namespace NachoCore
         /// entry to be created. At worst, we retry a few more times. If this causes undue delay
         /// for users, we should adjust KOauth2RefreshMaxFailure downwards.
         /// </summary>
-        protected Dictionary<int, CredReqActiveStatus> CredReqActive;
+        protected Dictionary<int, CredReqActiveStatus> CredReqActive = new Dictionary<int, CredReqActiveStatus> ();
 
         public NcPreFetchHints BodyFetchHints { get; set; }
 
-        public IBackEndOwner Owner { set; private get; }
+        private IBackEndOwner Owner { set; get; }
 
         private bool AccountHasServices (int accountId)
         {
@@ -157,8 +164,15 @@ namespace NachoCore
         {
             var protoControl = GetService (accountId, capability);
             if (null == protoControl) {
-                Log.Error (Log.LOG_BACKEND, "ServiceFromAccountId: can't find controller with desired capability {0}", capability);
-                return NcResult.Error (NcResult.SubKindEnum.Error_NoCapableService);
+                if (!AccountHasServices (accountId)) {
+                    CreateServices (accountId);
+                    Start (accountId);
+                    protoControl = GetService (accountId, capability);
+                }
+                if (null == protoControl) {
+                    Log.Error (Log.LOG_BACKEND, "ServiceFromAccountId: can't find controller with desired capability {0}", capability);
+                    return NcResult.Error (NcResult.SubKindEnum.Error_NoCapableService);
+                }
             }
             return func (protoControl);
         }
@@ -168,7 +182,6 @@ namespace NachoCore
             NcAssert.True (0 != accountId, "0 != accountId");
             ConcurrentQueue<NcProtoControl> services;
             if (!Services.TryGetValue (accountId, out services)) {
-                Log.Error (Log.LOG_BACKEND, "GetService called with bad accountId {0} @ {1}", accountId, new StackTrace ());
                 return null;
             }
             return services.FirstOrDefault (x => capability == (x.Capabilities & capability));
@@ -210,19 +223,12 @@ namespace NachoCore
         {
             // Adjust system settings.
             ServicePointManager.DefaultConnectionLimit = 25;
-
-            Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
-            CredReqActive = new Dictionary<int, CredReqActiveStatus> ();
             BodyFetchHints = new NcPreFetchHints ();
         }
 
-        public void CreateServices ()
+        public void Enable (IBackEndOwner owner)
         {
-            ApplyAcrossAccounts ("CreateServices", (accountId) => {
-                if (!AccountHasServices (accountId)) {
-                    CreateServices (accountId);
-                }
-            });
+            Owner = owner;
         }
 
         public void Start ()
@@ -231,7 +237,10 @@ namespace NachoCore
             Oauth2RefreshCancelSource = new CancellationTokenSource ();
             // The callee does Task.Run.
             ApplyAcrossAccounts ("Start", (accountId) => {
-                Start (accountId);
+                if (!AccountHasServices (accountId)) {
+                    CreateServices (accountId);
+                    Start (accountId);
+                }
             });
         }
 
@@ -242,9 +251,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
             // Cancel the refresh tokens, killing all currently active OAuth2 refresh attempts.
-            if (null != Oauth2RefreshCancelSource) {
-                Oauth2RefreshCancelSource.Cancel ();
-            }
+            _Oauth2RefreshCancelSource.Cancel ();
             // stop the OAuth2 refresh timer.
             // TODO: This is the only place we stop the timer. If we have the timer
             // running, and stop/delete/remove all accounts with Oauth2 creds, the timer
@@ -1031,7 +1038,7 @@ namespace NachoCore
                             null, refreshMsecs, refreshMsecs);
                 //x.Stfu = true;
                 // protect against stop having been called right during initialization.
-                if (!Oauth2RefreshCancelSource.IsCancellationRequested) {
+                if (!_Oauth2RefreshCancelSource.IsCancellationRequested) {
                     Oauth2RefreshTimer = x;
                 }
             }            
@@ -1045,7 +1052,7 @@ namespace NachoCore
         protected void RefreshAllDueTokens ()
         {
             foreach (var cred in McCred.QueryByCredType (McCred.CredTypeEnum.OAuth2)) {
-                if (Oauth2RefreshCancelSource.Token.IsCancellationRequested) {
+                if (_Oauth2RefreshCancelSource.Token.IsCancellationRequested) {
                     return;
                 }
                 var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
@@ -1109,7 +1116,7 @@ namespace NachoCore
         /// <param name="cred">Cred.</param>
         protected virtual void RefreshMcCred (McCred cred)
         {
-            cred.RefreshOAuth2 (TokenRefreshSuccess, TokenRefreshFailure, Oauth2RefreshCancelSource.Token);
+            cred.RefreshOAuth2 (TokenRefreshSuccess, TokenRefreshFailure, _Oauth2RefreshCancelSource.Token);
         }
 
         #endregion

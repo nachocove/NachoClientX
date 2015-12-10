@@ -16,9 +16,21 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NowListActivity")]            
+    [Activity (Label = "NowListActivity", MainLauncher = true, Icon = "@drawable/icon")]            
     public class NowListActivity : NcMessageListActivity
     {
+
+        protected override void OnCreate (Bundle bundle)
+        {
+            if (!NcApplication.ReadyToStartUI ()) {
+                var intent = new Intent (this, typeof(MainActivity));
+                StartActivity (intent);
+                Finish ();
+                return;
+            }
+            base.OnCreate (bundle);
+        }
+
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
         {
             NcAssert.NotNull (NcApplication.Instance.Account);
@@ -32,7 +44,7 @@ namespace NachoClient.AndroidClient
             return true;
         }
 
-        public override int ShowListStyle()
+        public override int ShowListStyle ()
         {
             if (LoginHelpers.ShowHotCards ()) {
                 return MessageListAdapter.CARDVIEW_STYLE;

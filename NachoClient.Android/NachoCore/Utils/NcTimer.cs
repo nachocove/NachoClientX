@@ -28,7 +28,7 @@ namespace NachoCore.Utils
         public int Id;
 
         private static int nextId = 0;
-        private static List<NcTimer> ActiveTimers;
+        private static List<NcTimer> ActiveTimers = new List<NcTimer> ();
         private static Object StaticLockObj = new Object ();
         // Used to prevent Dispose in the middle of a callback.
         private Object InstanceLockObj;
@@ -48,9 +48,6 @@ namespace NachoCore.Utils
         {
             lock (StaticLockObj) {
                 Id = ++nextId;
-                if (null == ActiveTimers) {
-                    ActiveTimers = new List<NcTimer> ();
-                }
                 ActiveTimers.Add (this);
             }
             InstanceLockObj = new object ();
