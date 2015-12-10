@@ -25,16 +25,20 @@ namespace NachoPlatform
 
         private Contacts ()
         {
-            MainApplication.Instance.ContentResolver.RegisterContentObserver (ContactsContract.Contacts.ContentUri, true, new NcContactContentObserver (this, new Handler ()));
+            InvokeOnUIThread.Instance.Invoke (() => {
+                MainApplication.Instance.ContentResolver.RegisterContentObserver (ContactsContract.Contacts.ContentUri, true, new NcContactContentObserver (this, new Handler ()));
+            });
         }
 
         public class NcContactContentObserver : Android.Database.ContentObserver
         {
             Contacts Owner { get; set; }
+
             public NcContactContentObserver (Contacts owner, Handler handler) : base (handler)
             {
                 Owner = owner;
             }
+
             public override void OnChange (bool selfChange)
             {
                 if (Owner.ChangeIndicator != null) {
@@ -42,7 +46,7 @@ namespace NachoPlatform
                 }
             }
         }
-            
+
         public static Contacts Instance {
             get {
                 if (instance == null) {
