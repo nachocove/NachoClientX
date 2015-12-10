@@ -236,7 +236,7 @@ namespace NachoCore.Utils
                     return false;
                 }
                 if ((StatusCode < HttpStatusCode.Continue || StatusCode >= HttpStatusCode.OK) &&
-                    StatusCode != HttpStatusCode.NoContent && 
+                    StatusCode != HttpStatusCode.NoContent &&
                     StatusCode != HttpStatusCode.NotModified) {
                     return true;
                 }
@@ -255,7 +255,7 @@ namespace NachoCore.Utils
 
         public NcHttpResponse (HttpMethod method, HttpStatusCode status, byte[] data, string contentType, NcHttpHeaders headers = null)
         {
-            initMe (method, status, StreamFromByte(data), contentType, headers);
+            initMe (method, status, StreamFromByte (data), contentType, headers);
         }
 
 
@@ -270,9 +270,10 @@ namespace NachoCore.Utils
         }
 
         string tempFileName { get; set; }
+
         public NcHttpResponse (string method, HttpStatusCode status, byte[] data, string contentType, NcHttpHeaders headers = null)
         {
-            initMe (method, status, StreamFromByte(data), contentType, headers);
+            initMe (method, status, StreamFromByte (data), contentType, headers);
         }
 
         void initMe (string method, HttpStatusCode status, FileStream stream, string contentType, NcHttpHeaders headers = null)
@@ -358,8 +359,9 @@ namespace NachoCore.Utils
                 // see 'Remarks' section here https://msdn.microsoft.com/en-us/library/System.Security.Cryptography.X509Certificates.X509Chain(v=vs.110).aspx
                 foreach (var status in chain.ChainStatus) {
                     switch (status.Status) {
-                    case X509ChainStatusFlags.UntrustedRoot:
-                    case X509ChainStatusFlags.NoError:
+                    case X509ChainStatusFlags.UntrustedRoot: // the chain validated up to a root, but we don't have it in our trust store.
+                    case X509ChainStatusFlags.PartialChain:  // the chain validated up to a non-root cert
+                    case X509ChainStatusFlags.NoError:       // the chain validated
                         break;
 
                     default:
