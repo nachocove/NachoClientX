@@ -19,8 +19,8 @@ using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (MainLauncher = true, Icon = "@drawable/icon")]
-    public class MainActivity : AppCompatActivity
+    [Activity ()]
+    public class MainActivity : NcActivity
     {
         bool StatusIndCallbackIsSet = false;
 
@@ -232,6 +232,7 @@ namespace NachoClient.AndroidClient
         }
 
         #region HockeyApp
+
         public class MyCustomCrashManagerListener : HockeyApp.CrashManagerListener
         {
             public string LastTrace { get; set; }
@@ -240,25 +241,28 @@ namespace NachoClient.AndroidClient
             {
                 return true;
             }
+
             public override string Description {
                 get {
                     var descr = NcApplication.ApplicationLogForCrashManager ();
-                    if (!string.IsNullOrEmpty (LastTrace))
-                    {
+                    if (!string.IsNullOrEmpty (LastTrace)) {
                         descr += "\n" + LastTrace;
                         LastTrace = null;
                     }
                     return descr;
                 }
             }
+
             public override bool IncludeDeviceData ()
             {
                 return true;
             }
+
             public override bool IncludeDeviceIdentifier ()
             {
                 return true;
             }
+
             public override int MaxRetryAttempts {
                 get {
                     return 1000;
@@ -269,12 +273,13 @@ namespace NachoClient.AndroidClient
         class UnCaughtExceptionHandler : Java.Lang.Object, Java.Lang.Thread.IUncaughtExceptionHandler
         {
             MyCustomCrashManagerListener CrashListener;
-            public UnCaughtExceptionHandler(MyCustomCrashManagerListener theListener)
+
+            public UnCaughtExceptionHandler (MyCustomCrashManagerListener theListener)
             {
                 CrashListener = theListener;
             }
 
-            public void UncaughtException(Java.Lang.Thread thread, Java.Lang.Throwable ex)
+            public void UncaughtException (Java.Lang.Thread thread, Java.Lang.Throwable ex)
             {
                 CrashListener.LastTrace = ex.GetStackTrace ().ToString ();
                 HockeyApp.TraceWriter.WriteTrace (ex);
@@ -297,7 +302,7 @@ namespace NachoClient.AndroidClient
             AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => {
                 // Use the trace writer to log exceptions so HockeyApp finds them
                 myListener.LastTrace = args.Exception.ToString ();
-                HockeyApp.TraceWriter.WriteTrace(args.Exception);
+                HockeyApp.TraceWriter.WriteTrace (args.Exception);
                 args.Handled = true;
             };
 
@@ -337,13 +342,14 @@ namespace NachoClient.AndroidClient
                 return;
             }
             //Register to with the Update Manager
-            HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener(), true);
+            HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener (), true);
         }
 
         private void UnregisterHockeyAppUpdateManager ()
         {
             HockeyApp.UpdateManager.Unregister ();
         }
+
         #endregion
     }
 }
