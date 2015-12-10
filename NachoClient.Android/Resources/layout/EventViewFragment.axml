@@ -67,7 +67,7 @@
                 android:layout_gravity="center_vertical">
                 <LinearLayout
                     android:id="@+id/event_attend_view"
-                    android:background="@android:color/white"
+                    android:background="?attr/selectableItemBackground"
                     android:orientation="horizontal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -79,8 +79,7 @@
                         android:src="@drawable/event_attend"
                         android:layout_width="22dp"
                         android:layout_height="22dp"
-                        android:gravity="left|center_vertical"
-                        android:background="@android:color/white" />
+                        android:gravity="left|center_vertical" />
                     <TextView
                         android:text="@string/event_attend"
                         android:layout_width="wrap_content"
@@ -89,12 +88,11 @@
                         android:gravity="left|center_vertical"
                         android:textSize="17dp"
                         android:textStyle="normal"
-                        android:textColor="@android:color/black"
-                        android:background="@android:color/white" />
+                        android:textColor="@android:color/black" />
                 </LinearLayout>
                 <LinearLayout
                     android:id="@+id/event_maybe_view"
-                    android:background="@android:color/white"
+                    android:background="?attr/selectableItemBackground"
                     android:orientation="horizontal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -106,8 +104,7 @@
                         android:src="@drawable/event_maybe"
                         android:layout_width="22dp"
                         android:layout_height="22dp"
-                        android:gravity="left|center_vertical"
-                        android:background="@android:color/white" />
+                        android:gravity="left|center_vertical" />
                     <TextView
                         android:text="@string/event_maybe"
                         android:layout_width="wrap_content"
@@ -116,12 +113,11 @@
                         android:gravity="left|center_vertical"
                         android:textSize="17dp"
                         android:textStyle="normal"
-                        android:textColor="@android:color/black"
-                        android:background="@android:color/white" />
+                        android:textColor="@android:color/black" />
                 </LinearLayout>
                 <LinearLayout
                     android:id="@+id/event_decline_view"
-                    android:background="@android:color/white"
+                    android:background="?attr/selectableItemBackground"
                     android:orientation="horizontal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -133,8 +129,7 @@
                         android:src="@drawable/event_decline"
                         android:layout_width="22dp"
                         android:layout_height="22dp"
-                        android:gravity="left|center_vertical"
-                        android:background="@android:color/white" />
+                        android:gravity="left|center_vertical" />
                     <TextView
                         android:text="@string/event_decline"
                         android:layout_width="wrap_content"
@@ -143,8 +138,7 @@
                         android:gravity="left|center_vertical"
                         android:textSize="17dp"
                         android:textStyle="normal"
-                        android:textColor="@android:color/black"
-                        android:background="@android:color/white" />
+                        android:textColor="@android:color/black" />
                 </LinearLayout>
             </LinearLayout>
             <LinearLayout
