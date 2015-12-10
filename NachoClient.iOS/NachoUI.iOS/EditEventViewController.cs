@@ -111,6 +111,7 @@ namespace NachoClient.iOS
 
         protected bool calendarItemIsMissing = false;
         protected bool noCalendarAccess = false;
+        protected bool noDeviceCalendar = false;
 
         protected event Action OpenKeyboardAction;
 
@@ -221,31 +222,35 @@ namespace NachoClient.iOS
             if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == accountCalendars.Count ()) {
                 Log.Info (Log.LOG_CALENDAR, "The current account does not support writing to calendars. Using the device account instead.");
                 account = McAccount.GetDeviceAccount ();
-            }
-
-            // There are additional restrictions on the event when it is on the device calendar.
-            if (McAccount.AccountTypeEnum.Device == account.AccountType) {
-                if (!Calendars.Instance.AuthorizationStatus) {
-                    // The current account does not support calendars, and the device calendar
-                    // is not accessible.  Look for any account that has a writable calendar.
-                    Log.Info (Log.LOG_CALENDAR, "The device calendar is not accessible. Looking for another account to use for the new calendar item.");
-                    noCalendarAccess = true;
+                if (!Calendars.Instance.AuthorizationStatus || 0 == new NachoFolders (account.Id, NachoFolders.FilterForCalendars).Count ()) {
+                    Log.Info (Log.LOG_CALENDAR, "The device calendar is inaccessible or doesn't have any calendars. Looking for another account to use for the new calendar item.");
+                    bool foundWritableCalendar = false;
                     foreach (var candidateAccountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
                         var candidateAccount = McAccount.QueryById<McAccount> (candidateAccountId);
                         if (candidateAccount.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && 0 < new NachoFolders (candidateAccountId, NachoFolders.FilterForCalendars).Count ()) {
-                            noCalendarAccess = false;
+                            foundWritableCalendar = true;
                             account = candidateAccount;
                             break;
                         }
                     }
-                } else {
-                    isSimpleEvent = true;
-                    if (CalendarItemEditorAction.create == action && null != item) {
-                        // The Create Event gesture on an email message will create a meeting with attendees.
-                        // But the app does not support creating meetings on the device calendar.  Remove any
-                        // attendees from the calendar item.
-                        item.attendees = new List<McAttendee> ();
+                    if (!foundWritableCalendar) {
+                        if (Calendars.Instance.AuthorizationStatus) {
+                            noDeviceCalendar = true;
+                        } else {
+                            noCalendarAccess = true;
+                        }
                     }
+                }
+            }
+
+            // There are additional restrictions on the event when it is on the device calendar.
+            if (McAccount.AccountTypeEnum.Device == account.AccountType) {
+                isSimpleEvent = true;
+                if (CalendarItemEditorAction.create == action && null != item) {
+                    // The Create Event gesture on an email message will create a meeting with attendees.
+                    // But the app does not support creating meetings on the device calendar.  Remove any
+                    // attendees from the calendar item.
+                    item.attendees = new List<McAttendee> ();
                 }
             }
         }
@@ -289,9 +294,16 @@ namespace NachoClient.iOS
             }
 
             if (noCalendarAccess) {
-                var message = string.Format (
-                    "The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar.");
-                NcAlertView.Show (this, "No Calendar Access", message,
+                NcAlertView.Show (this, "No Calendar Access",
+                    "The app doesn't have access to the device's calendar. To create or update events in the device calendar, use the Settings app to grant Nacho Mail access to the calendar.",
+                    new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                        NavigationController.PopViewController (true);
+                    }));
+            }
+
+            if (noDeviceCalendar) {
+                NcAlertView.Show (this, "No device calendars",
+                    "The Calendar app does not have any accessible calendars.",
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
                         NavigationController.PopViewController (true);
                     }));
@@ -820,7 +832,7 @@ namespace NachoClient.iOS
             alertDetailLabelView.Frame = new CGRect (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 
             //calendar view
-            if (null == calendarFolder && CalendarItemEditorAction.create == action && !noCalendarAccess) {
+            if (null == calendarFolder && CalendarItemEditorAction.create == action && !noCalendarAccess && !noDeviceCalendar) {
                 // Choose the initial calendar for the item.  Look for a default calendar folder within
                 // the selected account.
                 var accountCalendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
