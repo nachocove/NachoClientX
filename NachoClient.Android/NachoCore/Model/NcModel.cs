@@ -97,7 +97,7 @@ namespace NachoCore.Model
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
         public static string[] ExemptTables = new string[] { 
-            "McAccount", "sqlite_sequence", "McMigration", "McLicenseInformation",
+            "McAccount", "sqlite_sequence", "McMigration", "McLicenseInformation", "McBuildInfo",
         };
 
         public string DbFileName { set; get; }
@@ -295,6 +295,7 @@ namespace NachoCore.Model
         }
 
         private McBuildInfo _StoredBuildInfo = null;
+
         public McBuildInfo StoredBuildInfo {
             get {
                 if (null == _StoredBuildInfo) {
@@ -722,6 +723,7 @@ namespace NachoCore.Model
         // Test use only.
         public void Reset (string dbFileName)
         {
+            _StoredBuildInfo = null;
             DbFileName = dbFileName;
             InitializeDb ();
             GarbageCollectFiles ();
