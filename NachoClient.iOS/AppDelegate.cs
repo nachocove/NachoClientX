@@ -324,7 +324,7 @@ namespace NachoClient.iOS
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
             UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
-            UINavigationBar.Appearance.ShadowImage = new UIImage();
+            UINavigationBar.Appearance.ShadowImage = new UIImage ();
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
             UIBarButtonItem.Appearance.TintColor = A.Color_NachoBlue;
 
@@ -405,11 +405,13 @@ namespace NachoClient.iOS
             // to be in iOS-specific code.
             Log.Info (Log.LOG_LIFECYCLE, "Current time zone: {0}", NSTimeZone.LocalTimeZone.Description);
 
-            if (NcApplication.ReadyToStartUI ()) {
-                var mainStoryboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var appViewController = (UITabBarController)mainStoryboard.InstantiateInitialViewController ();
-                Window.RootViewController = appViewController;
-            }
+            var firstStoryboardName = NcApplication.ReadyToStartUI () ? "MainStoryboard_iPhone" : "Startup";
+            var mainStoryboard = UIStoryboard.FromName (firstStoryboardName, null);
+            var appViewController = mainStoryboard.InstantiateInitialViewController ();
+
+            Window = new UIWindow (UIScreen.MainScreen.Bounds);
+            Window.RootViewController = appViewController;
+            Window.MakeKeyAndVisible ();
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
@@ -419,7 +421,7 @@ namespace NachoClient.iOS
         public void CopyResourcesToDocuments ()
         {
             var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            string [] resources = {"nacho.html", "nacho.css", "nacho.js"};
+            string[] resources = { "nacho.html", "nacho.css", "nacho.js" };
             foreach (var resourceName in resources) {
                 var resourcePath = NSBundle.MainBundle.PathForResource (resourceName, null);
                 var destinationPath = Path.Combine (documentsPath, resourceName);
