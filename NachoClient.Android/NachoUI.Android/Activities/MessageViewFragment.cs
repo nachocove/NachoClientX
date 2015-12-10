@@ -258,9 +258,9 @@ namespace NachoClient.AndroidClient
             view.FindViewById (Resource.Id.archive).Click += ArchiveButton_Click;
             view.FindViewById (Resource.Id.delete).Click += DeleteButton_Click;
             view.FindViewById (Resource.Id.chili).Click += ChiliButton_Click;
-            view.FindViewById (Resource.Id.event_attend_button).Click += AttendButton_Click;
-            view.FindViewById (Resource.Id.event_maybe_button).Click += MaybeButton_Click;
-            view.FindViewById (Resource.Id.event_decline_button).Click += DeclineButton_Click;
+            view.FindViewById (Resource.Id.event_attend_view).Click += AttendButton_Click;
+            view.FindViewById (Resource.Id.event_maybe_view).Click += MaybeButton_Click;
+            view.FindViewById (Resource.Id.event_decline_view).Click += DeclineButton_Click;
             view.FindViewById (Resource.Id.event_organizer_initials).Click += MeetingOrganizer_Click;
             view.FindViewById (Resource.Id.event_attendee_0).Click += Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_1).Click += Attendees_Click;
@@ -279,9 +279,9 @@ namespace NachoClient.AndroidClient
             view.FindViewById (Resource.Id.archive).Click -= ArchiveButton_Click;
             view.FindViewById (Resource.Id.delete).Click -= DeleteButton_Click;
             view.FindViewById (Resource.Id.chili).Click -= ChiliButton_Click;
-            view.FindViewById (Resource.Id.event_attend_button).Click -= AttendButton_Click;
-            view.FindViewById (Resource.Id.event_maybe_button).Click -= MaybeButton_Click;
-            view.FindViewById (Resource.Id.event_decline_button).Click -= DeclineButton_Click;
+            view.FindViewById (Resource.Id.event_attend_view).Click -= AttendButton_Click;
+            view.FindViewById (Resource.Id.event_maybe_view).Click -= MaybeButton_Click;
+            view.FindViewById (Resource.Id.event_decline_view).Click -= DeclineButton_Click;
             view.FindViewById (Resource.Id.event_organizer_initials).Click -= MeetingOrganizer_Click;
             view.FindViewById (Resource.Id.event_attendee_0).Click -= Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_1).Click -= Attendees_Click;
@@ -291,7 +291,7 @@ namespace NachoClient.AndroidClient
 
             if (removeFromCalendarEnabled) {
                 removeFromCalendarEnabled = false;
-                view.FindViewById (Resource.Id.event_message_icon).Click -= RemoveFromCalendar_Click;
+                view.FindViewById (Resource.Id.event_message_view).Click -= RemoveFromCalendar_Click;
             }
         }
 
@@ -436,6 +436,7 @@ namespace NachoClient.AndroidClient
                 eventExists = (0 == exceptions.Count || 0 == exceptions [0].Deleted);
             }
 
+            var messageView = View.FindViewById<ImageView> (Resource.Id.event_message_view);
             var iconView = View.FindViewById<ImageView> (Resource.Id.event_message_icon);
             var textView = View.FindViewById<TextView> (Resource.Id.event_message_text);
             if (eventExists) {
@@ -443,7 +444,7 @@ namespace NachoClient.AndroidClient
                 textView.Text = "Remove from calendar";
                 if (!removeFromCalendarEnabled) {
                     removeFromCalendarEnabled = true;
-                    iconView.Click += RemoveFromCalendar_Click;
+                    messageView.Click += RemoveFromCalendar_Click;
                 }
             } else {
                 iconView.Visibility = ViewStates.Gone;
