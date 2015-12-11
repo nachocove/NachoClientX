@@ -216,9 +216,9 @@ namespace NachoClient.AndroidClient
             DateTime endTime;
             int colorIndex = 0;
 
-            if (0 > ev.CalendarId) {
+            if (0 != ev.DeviceCalendarId) {
 
-                if (!AndroidCalendars.GetEventDetails (-ev.CalendarId, out title, out location, out colorIndex)) {
+                if (!AndroidCalendars.GetEventDetails (ev.DeviceCalendarId, out title, out location, out colorIndex)) {
                     BindEmptyEventCell (titleView, colorView, durationView, locationView, locationImageView);
                     return;
                 }
