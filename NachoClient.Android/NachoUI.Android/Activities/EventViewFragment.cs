@@ -695,8 +695,10 @@ namespace NachoClient.AndroidClient
 
         public override bool CanEdit {
             get {
-                // TODO Allow editing of device events
-                return isAppEvent && base.CanEdit;
+                if (isAppEvent) {
+                    return base.CanEdit;
+                }
+                return IsOrganizer && !IsRecurring && 0 == SeriesItem.attendees.Count;
             }
         }
 

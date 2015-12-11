@@ -27,6 +27,7 @@ namespace NachoClient.AndroidClient
         public McEmailMessage EmailMessage;
 
         public McCalendar CalendarItem;
+        public bool IsAppEvent;
         public McAccount Account;
         public McFolder CalendarFolder;
         public DateTime StartTime;
@@ -52,6 +53,9 @@ namespace NachoClient.AndroidClient
         private McAccount account;
         private McCalendar cal;
         private McFolder calendarFolder;
+
+        private bool isAppEvent = true;
+        private string deviceCalendarName = "";
 
         private ButtonBar buttonBar;
         private EditText titleField;
@@ -114,6 +118,7 @@ namespace NachoClient.AndroidClient
 
             if (null != preConfigChange) {
                 cal = preConfigChange.CalendarItem;
+                isAppEvent = preConfigChange.IsAppEvent;
                 account = preConfigChange.Account;
                 calendarFolder = preConfigChange.CalendarFolder;
                 startTime = preConfigChange.StartTime;
@@ -191,7 +196,12 @@ namespace NachoClient.AndroidClient
 
                     cal = null;
                     if (null != dataFromIntent.Event) {
-                        cal = McCalendar.QueryById<McCalendar> (dataFromIntent.Event.CalendarId);
+                        if (0 < dataFromIntent.Event.CalendarId) {
+                            cal = McCalendar.QueryById<McCalendar> (dataFromIntent.Event.CalendarId);
+                        } else {
+                            cal = AndroidCalendars.GetEventDetails (-dataFromIntent.Event.CalendarId, out deviceCalendarName);
+                            isAppEvent = false;
+                        }
                     }
                     if (null == dataFromIntent.Event || null == cal) {
                         NcAlertView.Show (this, "Event Deleted", "The event can't be edited because it has been deleted.", () => {
@@ -200,7 +210,6 @@ namespace NachoClient.AndroidClient
                         });
                         return;
                     }
-                    cal = McCalendar.QueryById<McCalendar> (dataFromIntent.Event.CalendarId);
 
                     if (cal.AllDayEvent) {
                         // Calculate start and end times that will be used if the user changes the event to not be an all-day event.
@@ -222,8 +231,14 @@ namespace NachoClient.AndroidClient
                         endTime = cal.EndTime.ToLocalTime ();
                     }
 
-                    account = McAccount.QueryById<McAccount> (cal.AccountId);
-                    calendarFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
+                    if (isAppEvent) {
+                        account = McAccount.QueryById<McAccount> (cal.AccountId);
+                        calendarFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
+                    } else {
+                        account = McAccount.GetDeviceAccount ();
+                        // TODO Figure out how to show the correct folder.
+                        calendarFolder = McFolder.GetDeviceCalendarsFolder ();
+                    }
                 }
 
                 titleField.Text = cal.GetSubject ();
@@ -243,7 +258,7 @@ namespace NachoClient.AndroidClient
             var endFieldArrow = FindViewById<ImageView> (Resource.Id.event_edit_end_arrow);
             endFieldArrow.Click += EndField_Click;
 
-            // The text in the date/time fields, the reminder field, the attende count field,
+            // The text in the date/time fields, the reminder field, the attendee count field,
             // and the calendar field should look like the default text for an EditText field,
             // not a TextView field.  Copy the necessary information from one of the EditText
             // fields to make that happen.
@@ -261,20 +276,29 @@ namespace NachoClient.AndroidClient
             allDayField.Checked = cal.AllDayEvent;
             ConfigureStartEndFields ();
 
-            attendeeCountField.Text = string.Format ("( {0} )", cal.attendees.Count);
-            attendeeCountField.Click += Attendee_Click;
-            var attendeeArrow = FindViewById<ImageView> (Resource.Id.event_edit_attendee_arrow);
-            attendeeArrow.Click += Attendee_Click;
+            if (isAppEvent) {
+                attendeeCountField.Text = string.Format ("( {0} )", cal.attendees.Count);
+                attendeeCountField.Click += Attendee_Click;
+                var attendeeArrow = FindViewById<ImageView> (Resource.Id.event_edit_attendee_arrow);
+                attendeeArrow.Click += Attendee_Click;
+            } else {
+                FindViewById<View> (Resource.Id.event_edit_attendee_section).Visibility = ViewStates.Gone;
+            }
 
             reminderField.Text = Pretty.ReminderString (cal.HasReminder (), cal.GetReminder ());
             reminderField.Click += Reminder_Click;
             var reminderArrow = FindViewById<ImageView> (Resource.Id.event_edit_reminder_arrow);
             reminderArrow.Click += Reminder_Click;
 
-            calendarField.Text = calendarFolder.DisplayName;
-            calendarField.Click += Calendar_Click;
-            var calendarArrow = FindViewById<ImageView> (Resource.Id.event_edit_calendar_arrow);
-            calendarArrow.Click += Calendar_Click;
+            if (isAppEvent) {
+                calendarField.Text = calendarFolder.DisplayName;
+                calendarField.Click += Calendar_Click;
+                var calendarArrow = FindViewById<ImageView> (Resource.Id.event_edit_calendar_arrow);
+                calendarArrow.Click += Calendar_Click;
+            } else {
+                calendarField.Text = deviceCalendarName;
+                FindViewById<View> (Resource.Id.event_edit_calendar_arrow).Visibility = ViewStates.Invisible;
+            }
 
             if (null != bundle) {
                 var reminderFragment = FragmentManager.FindFragmentByTag<ReminderChooserFragment> (REMINDER_CHOOSER_TAG);
@@ -294,6 +318,7 @@ namespace NachoClient.AndroidClient
 
             var retained = RetainedData;
             retained.CalendarItem = cal;
+            retained.IsAppEvent = isAppEvent;
             retained.Account = account;
             retained.CalendarFolder = calendarFolder;
             retained.StartTime = startTime;
@@ -447,12 +472,16 @@ namespace NachoClient.AndroidClient
 
         private void DeleteEvent ()
         {
-            if (0 != cal.attendees.Count) {
-                var iCalCancelPart = CalendarHelper.MimeCancelFromCalendar (cal);
-                var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
-                CalendarHelper.SendMeetingCancelations (account, cal, null, mimeBody);
+            if (isAppEvent) {
+                if (0 != cal.attendees.Count) {
+                    var iCalCancelPart = CalendarHelper.MimeCancelFromCalendar (cal);
+                    var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
+                    CalendarHelper.SendMeetingCancelations (account, cal, null, mimeBody);
+                }
+                BackEnd.Instance.DeleteCalCmd (account.Id, cal.Id);
+            } else {
+                AndroidCalendars.DeleteEvent (-RetainedData.Event.CalendarId);
             }
-            BackEnd.Instance.DeleteCalCmd (account.Id, cal.Id);
         }
 
         private void ConfigureReminderChooser (ReminderChooserFragment reminderFragment)
@@ -531,7 +560,9 @@ namespace NachoClient.AndroidClient
 
                 cal.DtStamp = DateTime.UtcNow;
 
-                if (Intent.ActionCreateDocument == Intent.Action) {
+                if (!isAppEvent) {
+                    AndroidCalendars.WriteDeviceEvent (cal, -RetainedData.Event.CalendarId);
+                } else if (Intent.ActionCreateDocument == Intent.Action) {
                     cal.Insert ();
                     calendarFolder.Link (cal);
                     BackEnd.Instance.CreateCalCmd (account.Id, cal.Id, calendarFolder.Id);
