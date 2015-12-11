@@ -38,10 +38,10 @@ namespace NachoClient.AndroidClient
             var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
 
             // In case notification started the app
-            MainApplication.OneTimeStartup("NotificationActivity");
+            MainApplication.OneTimeStartup ("NotificationActivity");
 
             if (null == message) {
-                var inboxIntent =  NcTabBarActivity.InboxIntent (this);
+                var inboxIntent = NcTabBarActivity.InboxIntent (this);
                 StartActivity (inboxIntent);
                 Finish ();
                 return;
@@ -52,8 +52,13 @@ namespace NachoClient.AndroidClient
             thread.FirstMessageId = message.Id;
             thread.MessageCount = 1;
             var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-            intent.SetFlags ( ActivityFlags.NoAnimation);
-            StartActivity (intent);
+            intent.SetFlags (ActivityFlags.NoAnimation);
+
+            if (NcTabBarActivity.TabBarWasCreated) {
+                StartActivity (intent);
+            } else {
+                StartActivities (new Intent[] { NcTabBarActivity.InboxIntent (this), intent });
+            }
             Finish ();
         }
 
