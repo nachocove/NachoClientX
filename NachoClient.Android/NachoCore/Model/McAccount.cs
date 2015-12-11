@@ -320,10 +320,24 @@ namespace NachoCore.Model
             return result;
         }
 
+        // Create on first reference
         public static McAccount GetDeviceAccount ()
         {
-            return McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
+            if (null == _deviceAccount) {
+                NcModel.Instance.RunInTransaction (() => {
+                    _deviceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
+                    if (null == _deviceAccount) {
+                        _deviceAccount = new McAccount ();
+                        _deviceAccount.DisplayName = "Device";
+                        _deviceAccount.SetAccountType (McAccount.AccountTypeEnum.Device);
+                        _deviceAccount.Insert ();
+                    }
+                });
+            }
+            return _deviceAccount;
         }
+        // Cache it!
+        static McAccount _deviceAccount;
 
         public static List<McAccount> GetAllAccounts ()
         {
@@ -428,7 +442,7 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        public void LogHashedPassword(ulong service, string logComment, string password)
+        public void LogHashedPassword (ulong service, string logComment, string password)
         {
             string salt = null;
             try {
