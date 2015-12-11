@@ -65,7 +65,7 @@ namespace NachoPlatform
 
                 result.Add (new McEvent () {
                     AccountId = deviceAccount,
-                    CalendarId = (int)(-eventId),
+                    DeviceCalendarId = eventId,
                     StartTime = start,
                     EndTime = end,
                     AllDayEvent = allDay,
@@ -477,7 +477,7 @@ namespace NachoPlatform
             CalendarContract.EventsColumns.Rrule,
         };
 
-        public static void WriteDeviceEvent (McCalendar cal, long eventId)
+        public static void UpdateDeviceEvent (McCalendar cal, long eventId)
         {
             var resolver = MainApplication.Instance.ContentResolver;
             var values = new ContentValues ();
@@ -547,17 +547,6 @@ namespace NachoPlatform
         {
             var resolver = MainApplication.Instance.ContentResolver;
             resolver.Delete (ContentUris.AppendId (CalendarContract.Events.ContentUri.BuildUpon (), eventId).Build (), null, null);
-        }
-
-        /// <summary>
-        /// An Android intent that will view the given event in the Android calendar app.
-        /// </summary>
-        public static Intent ViewEventIntent (McEvent ev)
-        {
-            var intent = new Intent (Intent.ActionView, ContentUris.WithAppendedId (CalendarContract.Events.ContentUri, -ev.CalendarId));
-            intent.PutExtra (CalendarContract.ExtraEventBeginTime, ev.StartTime.MillisecondsSinceEpoch ());
-            intent.PutExtra (CalendarContract.ExtraEventEndTime, ev.EndTime.MillisecondsSinceEpoch ());
-            return intent;
         }
 
         /// <summary>

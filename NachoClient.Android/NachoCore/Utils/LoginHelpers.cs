@@ -141,13 +141,13 @@ namespace NachoCore.Utils
             }
         }
 
-        static public bool ShowHotCards()
+        static public bool ShowHotCards ()
         {
             var accountId = McAccount.GetDeviceAccount ().Id;
             return McMutables.GetBoolDefault (accountId, "GlobalSettings", "ShowHotCards", true);
         }
 
-        static public void SetShowHotCards(bool show)
+        static public void SetShowHotCards (bool show)
         {
             var accountId = McAccount.GetDeviceAccount ().Id;
             McMutables.SetBool (accountId, "GlobalSettings", "ShowHotCards", show);
@@ -170,8 +170,8 @@ namespace NachoCore.Utils
             var defaultTime = DateTime.UtcNow.ToString ("O");
             var switchToTime = McMutables.GetOrCreate (account.Id, "AccountSwitcher", "SwitchTo", defaultTime);
             DateTime result;
-            if (!DateTime.TryParseExact(switchToTime, "O", null, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out result)) {
-                if (!DateTime.TryParse(switchToTime, out result)) {
+            if (!DateTime.TryParseExact (switchToTime, "O", null, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out result)) {
+                if (!DateTime.TryParse (switchToTime, out result)) {
                     Log.Warn (Log.LOG_UTILS, "Could not parse switch-to time for account {0}: {1}", account.Id, switchToTime);
                     result = DateTime.UtcNow;
                 }
@@ -185,13 +185,10 @@ namespace NachoCore.Utils
             McMutables.SetInt (deviceId, "AccountSwitcher", "MostRecent", account.Id);
         }
 
-        static public McAccount GetMostRecentAccount ()
+        static McAccount GetMostRecentAccount ()
         {
             var accounts = McAccount.GetAllAccounts ();
-            var deviceAccount = accounts.Where (x => x.AccountType == McAccount.AccountTypeEnum.Device).FirstOrDefault ();
-            if (null == deviceAccount) {
-                return null;
-            }
+            var deviceAccount = McAccount.GetDeviceAccount ();
             var recentAccountId = McMutables.GetInt (deviceAccount.Id, "AccountSwitcher", "MostRecent", 0);
             if ((0 == recentAccountId) || (deviceAccount.Id == recentAccountId)) {
                 return null;

@@ -49,6 +49,14 @@ namespace NachoCore.Model
         /// </summary>
         public string UID { get; set; }
 
+        /// <summary>
+        /// The identifier of the calendar item in the device calendar for this instance.  This field is used
+        /// only for transitory McEvent objects that represent device calendar items.  This field is not stored
+        /// in the database.  If it is non-zero, then this McEvent is an in-memory object only.
+        /// </summary>
+        [Ignore]
+        public long DeviceCalendarId { get; set; }
+
         static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, string UID, bool allDayEvent, int calendarId, int exceptionId)
         {
             // Save the event

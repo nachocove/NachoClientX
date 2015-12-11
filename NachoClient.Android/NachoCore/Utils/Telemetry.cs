@@ -34,13 +34,17 @@ namespace NachoCore.Utils
         private const int THROTTLING_IDLE_PERIOD = 200;
 
         private static Telemetry _SharedInstance;
+        private static object lockObject = new object();
 
         public static Telemetry SharedInstance {
             get {
                 if (null == _SharedInstance) {
-                    _SharedInstance = new Telemetry ();
+                    lock (lockObject) {
+                        if (null == _SharedInstance) {
+                            _SharedInstance = new Telemetry ();
+                        }
+                    }
                 }
-                NcAssert.True (null != _SharedInstance);
                 return _SharedInstance;
             }
         }
