@@ -14,7 +14,7 @@ using System.IO;
 
 namespace NachoClient.AndroidClient
 {
-    [Application (AllowBackup = true, BackupAgent = typeof(NcBackupAgentHelper), RestoreAnyVersion = true)]
+    // DO NOT PUT THE [Application ...] tag here. It'll mess up unit tests. Edit Properties/AndroidManifest.xml directly (yuck)
     public class MainApplication : Application
     {
         static MainApplication _instance;
