@@ -11,6 +11,7 @@ using Android.Provider;
 using Android.Content;
 using Android.Database;
 using NachoCore.ActiveSync;
+using Android.Text.Format;
 
 namespace NachoPlatform
 {
@@ -211,6 +212,9 @@ namespace NachoPlatform
             var meetingResponse = (CalendarAttendeesStatus)eventCursor.GetInt (EVENT_DETAIL_RESPONSE_TYPE_INDEX);
             result.ResponseTypeIsSet = true;
             result.ResponseType = ResponseType (meetingResponse, isOrganizer);
+            var busyStatus = (EventsAvailability)eventCursor.GetInt (EVENT_DETAIL_AVAILABILITY_INDEX);
+            result.BusyStatusIsSet = true;
+            result.BusyStatus = BusyStatus (busyStatus);
 
             string timeZoneName = eventCursor.GetString (EVENT_DETAIL_TIME_ZONE_INDEX);
             TimeZoneInfo timeZone = TimeZoneInfo.Utc;
@@ -318,6 +322,18 @@ namespace NachoPlatform
                 return NcResponseType.None;
             }
             return NcResponseType.None;
+        }
+
+        static NcBusyStatus BusyStatus (EventsAvailability busy) {
+            switch (busy) {
+            case EventsAvailability.Busy:
+                return NcBusyStatus.Busy;
+            case EventsAvailability.Free:
+                return NcBusyStatus.Free;
+            case EventsAvailability.Tentative:
+                return NcBusyStatus.Tentative;
+            }
+            return NcBusyStatus.Busy;
         }
 
         static NcAttendeeType AttendeeType (CalendarAttendeesColumn attendeeType)
@@ -439,6 +455,98 @@ namespace NachoPlatform
                 result = NcDayOfWeek.Sunday;
             }
             return result;
+        }
+
+        private static string[] eventDetailProjectionZ = new string[] {
+            CalendarContract.EventsColumns.Title,
+            CalendarContract.EventsColumns.EventLocation,
+            CalendarContract.EventsColumns.Description,
+            CalendarContract.EventsColumns.Dtstart,
+            CalendarContract.EventsColumns.Dtend,
+            CalendarContract.EventsColumns.AllDay,
+            CalendarContract.EventsColumns.EventTimezone,
+            CalendarContract.EventsColumns.Uid2445,
+            CalendarContract.EventsColumns.HasAlarm,
+            CalendarContract.EventsColumns.HasAttendeeData,
+            CalendarContract.CalendarColumns.CalendarDisplayName,
+            CalendarContract.EventsColumns.Organizer,
+            CalendarContract.EventsColumns.Availability,
+            CalendarContract.EventsColumns.SelfAttendeeStatus,
+            CalendarContract.EventsColumns.IsOrganizer,
+            CalendarContract.EventsColumns.Status,
+            CalendarContract.EventsColumns.Rrule,
+        };
+
+        public static void WriteDeviceEvent (McCalendar cal, long eventId)
+        {
+            var resolver = MainApplication.Instance.ContentResolver;
+            var values = new ContentValues ();
+
+            SetIfExists (values, CalendarContract.EventsColumns.Title, cal.Subject);
+            SetIfExists (values, CalendarContract.EventsColumns.EventLocation, cal.Location);
+            SetIfExists (values, CalendarContract.EventsColumns.Description, cal.Description);
+            SetIfExists (values, CalendarContract.EventsColumns.Uid2445, cal.UID);
+            SetIfExists (values, CalendarContract.EventsColumns.Organizer, cal.OrganizerEmail);
+
+            values.Put (CalendarContract.EventsColumns.AllDay, cal.AllDayEvent);
+            if (cal.AllDayEvent) {
+                // Android requires that all-day events be in the UTC time zone.
+                values.Put (CalendarContract.EventsColumns.Dtstart, DateTime.SpecifyKind (cal.StartTime, DateTimeKind.Utc).MillisecondsSinceEpoch ());
+                values.Put (CalendarContract.EventsColumns.Dtend, DateTime.SpecifyKind (cal.EndTime, DateTimeKind.Utc).MillisecondsSinceEpoch ());
+                values.Put (CalendarContract.EventsColumns.EventTimezone, Time.TimezoneUtc);
+            } else {
+                values.Put (CalendarContract.EventsColumns.Dtstart, cal.StartTime.MillisecondsSinceEpoch ());
+                values.Put (CalendarContract.EventsColumns.Dtend, cal.EndTime.MillisecondsSinceEpoch ());
+                values.Put (CalendarContract.EventsColumns.EventTimezone, Time.CurrentTimezone);
+            }
+
+            if (cal.BusyStatusIsSet) {
+                values.Put (CalendarContract.EventsColumns.Availability, (int)BusyStatus (cal.BusyStatus));
+            }
+
+            resolver.Update (ContentUris.AppendId (CalendarContract.Events.ContentUri.BuildUpon (), eventId).Build (), values, null, null);
+        }
+
+        static void SetIfExists (ContentValues values, string fieldName, string value)
+        {
+            if (!string.IsNullOrEmpty (value)) {
+                values.Put (fieldName, value);
+            }
+        }
+
+        static EventsAvailability BusyStatus (NcBusyStatus busy)
+        {
+            switch (busy) {
+            case NcBusyStatus.Busy:
+            case NcBusyStatus.OutOfOffice:
+                return EventsAvailability.Busy;
+            case NcBusyStatus.Free:
+                return EventsAvailability.Free;
+            case NcBusyStatus.Tentative:
+                return EventsAvailability.Tentative;
+            }
+            return EventsAvailability.Busy;
+        }
+
+        static CalendarAttendeesStatus ResponseType (NcResponseType response)
+        {
+            switch (response) {
+            case NcResponseType.Accepted:
+                return CalendarAttendeesStatus.Accepted;
+            case NcResponseType.Tentative:
+                return CalendarAttendeesStatus.Tentative;
+            case NcResponseType.Declined:
+                return CalendarAttendeesStatus.Declined;
+            case NcResponseType.NotResponded:
+                return CalendarAttendeesStatus.Invited;
+            }
+            return CalendarAttendeesStatus.None;
+        }
+
+        public static void DeleteEvent (long eventId)
+        {
+            var resolver = MainApplication.Instance.ContentResolver;
+            resolver.Delete (ContentUris.AppendId (CalendarContract.Events.ContentUri.BuildUpon (), eventId).Build (), null, null);
         }
 
         /// <summary>
