@@ -20,74 +20,6 @@ using System.Runtime.CompilerServices;
 
 namespace NachoCore
 {
-
-    public class UserIdFile
-    {
-        private const string FileName = "user_id";
-        private const string OldFileName = "client_id";
-
-        public string FilePath { get; protected set; }
-
-        private static UserIdFile _Instance;
-
-        public static UserIdFile SharedInstance {
-            get {
-                if (null == _Instance) {
-                    // Check if there is a file with the old file name (client_id). Rename it
-                    var dirPath = NcApplication.GetDataDirPath ();
-                    var oldFilePath = Path.Combine (dirPath, OldFileName);
-                    var newFilePath = Path.Combine (dirPath, FileName);
-                    if (File.Exists (oldFilePath)) {
-                        File.Move (oldFilePath, newFilePath);
-                    }
-
-                    _Instance = new UserIdFile ();
-
-                    // Check if the there is a new file (user_id). If yes, migrate
-                    // the user ID to keychain
-                    if (_Instance.Exists ()) {
-                        _Instance.Write (_Instance.ReadFile ());
-                        File.Delete (_Instance.FilePath);
-                    }
-                }
-                return _Instance;
-            }
-        }
-
-        public UserIdFile ()
-        {
-            FilePath = Path.Combine (NcApplication.GetDataDirPath (), FileName);
-        }
-
-        public bool Exists ()
-        {
-            return File.Exists (FilePath);
-        }
-
-        protected string ReadFile ()
-        {
-            try {
-                using (var stream = new FileStream (FilePath, FileMode.Open, FileAccess.Read)) {
-                    using (var reader = new StreamReader (stream)) {
-                        return reader.ReadLine ();
-                    }
-                }
-            } catch (IOException) {
-                return null;
-            }
-        }
-
-        public string Read ()
-        {
-            return Keychain.Instance.GetUserId ();
-        }
-
-        public void Write (string userId)
-        {
-            Keychain.Instance.SetUserId (userId);
-        }
-    }
-
     // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
     // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
     // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD.
@@ -180,6 +112,7 @@ namespace NachoCore
         public string CrashFolder { get; set; }
 
         private string _StartupLog;
+
         public string StartupLog {
             get {
                 if (null == _StartupLog) {
@@ -189,23 +122,29 @@ namespace NachoCore
             }
         }
 
-        // Client Id is a string that uniquely identifies a NachoMail client on
-        // all cloud servers (telemetry, pinger, etc.)
-        private string _UserId;
-
+        // UserId is initialized in Telemetry and preserved from
+        // run-to-run and preserved over re-installs if possible
+        // using iOS keychain persistence and Android backup.
         public string UserId {
             get {
+                if (null == _UserId) {
+                    _UserId = Keychain.Instance.GetUserId ();
+                }
                 return _UserId;
             }
             set {
                 if (value != _UserId) {
                     _UserId = value;
-                    UserIdFile.SharedInstance.Write (_UserId);
+                    Keychain.Instance.SetUserId (_UserId);
                     InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_UserIdChanged, _UserId);
                 }
             }
         }
+        // Cache because UserId is called often.
+        string _UserId;
 
+        // Client Id is a string that uniquely identifies a Nacho Mail
+        // client on all cloud servers (telemetry, pinger, etc.)
         public string ClientId {
             get {
                 return Device.Instance.Identity ();
@@ -346,15 +285,6 @@ namespace NachoCore
             return false;
         }
 
-        private void UpdateUserIdFromFile (string clientIdFile)
-        {
-            UserId = UserIdFile.SharedInstance.Read ();
-            string cloudUserId = CloudHandler.Instance.GetUserId ();
-            if ((cloudUserId != null) && (cloudUserId != UserId)) {
-                UserId = cloudUserId;
-            }
-        }
-
         private NcApplication ()
         {
             // Install test mode handlers
@@ -402,9 +332,6 @@ namespace NachoCore
             };
             UiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
 
-            if (UserIdFile.SharedInstance.Exists ()) {
-                UpdateUserIdFromFile (UserIdFile.SharedInstance.FilePath);
-            }
             StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
                 if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
@@ -476,10 +403,6 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
             CloudHandler.Instance.Start ();
-            if (UserId == null) {
-                // this can be null if cloud is not accessible or if this the first time
-                UserId = CloudHandler.Instance.GetUserId (); 
-            }
             Telemetry.StartService ();
 
             // Pick most recently used account
@@ -721,17 +644,8 @@ namespace NachoCore
             }
             serviceHasBeenEstablished = true;
 
-            // Create Device account if not yet there.
-            McAccount deviceAccount = null;
-            NcModel.Instance.RunInTransaction (() => {
-                deviceAccount = McAccount.GetDeviceAccount ();
-                if (null == deviceAccount) {
-                    deviceAccount = new McAccount ();
-                    deviceAccount.DisplayName = "Device";
-                    deviceAccount.SetAccountType (McAccount.AccountTypeEnum.Device);
-                    deviceAccount.Insert ();
-                }
-            });
+            var deviceAccount = McAccount.GetDeviceAccount();
+
             // Create file directories.
             NcModel.Instance.InitializeDirs (deviceAccount.Id);
 
@@ -935,7 +849,7 @@ namespace NachoCore
             if (!File.Exists (StartupLog)) {
                 return false;
             }
-            if (new FileInfo(StartupLog).Length > 2) {
+            if (new FileInfo (StartupLog).Length > 2) {
                 Telemetry.JsonFileTable.FinalizeAll (); // close of all JSON files
                 return true;
             }
