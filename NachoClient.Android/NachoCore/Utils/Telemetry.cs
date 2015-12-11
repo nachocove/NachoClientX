@@ -45,7 +45,6 @@ namespace NachoCore.Utils
                         }
                     }
                 }
-                NcAssert.True (null != _SharedInstance);
                 return _SharedInstance;
             }
         }
