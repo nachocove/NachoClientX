@@ -159,9 +159,23 @@
     <None Include="Assets\AboutAssets.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="packages.config" />
+    <None Include="..\native.Android\libs\armeabi\libnachoplatform.so">
+      <Link>NachoPlatform.Android\libs\armeabi\libnachoplatform.so</Link>
+    </None>
+    <None Include="..\native.Android\libs\armeabi-v7a\libnachoplatform.so">
+      <Link>NachoPlatform.Android\libs\armeabi-v7a\libnachoplatform.so</Link>
+    </None>
+    <None Include="..\native.Android\libs\x86\libnachoplatform.so">
+      <Link>NachoPlatform.Android\libs\x86\libnachoplatform.so</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\Icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />
+    <AndroidNativeLibrary Include="lib\armeabi-v7a\libnachoplatform.so" />
+    <AndroidNativeLibrary Include="lib\x86\libnachoplatform.so" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NachoClient.Android\NachoClient.Android.csproj">
