@@ -16,7 +16,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NowListActivity", MainLauncher = true, Icon = "@drawable/icon")]            
+    [Activity (MainLauncher = true, Icon = "@drawable/icon")]
     public class NowListActivity : NcMessageListActivity
     {
 
