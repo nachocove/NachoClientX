@@ -79,18 +79,20 @@ namespace NachoPlatform
         private static string[] eventSummaryProjection = new string[] {
             CalendarContract.EventsColumns.Title,
             CalendarContract.EventsColumns.EventLocation,
+            CalendarContract.EventsColumns.DisplayColor,
         };
         private const int EVENT_SUMMARY_TITLE_INDEX = 0;
         private const int EVENT_SUMMARY_LOCATION_INDEX = 1;
+        private const int EVENT_SUMMARY_DISPLAY_COLOR_INDEX = 2;
 
         /// <summary>
         /// Get some of the details for a particular event in the Android calendar database.
         /// </summary>
-        public static bool GetEventDetails (long eventId, out string title, out string location, out int colorIndex)
+        public static bool GetEventDetails (long eventId, out string title, out string location, out int displayColor)
         {
             title = null;
             location = null;
-            colorIndex = 0;
+            displayColor = 0;
             var resolver = MainApplication.Instance.ContentResolver;
             ICursor eventCursor;
             try {
@@ -109,9 +111,7 @@ namespace NachoPlatform
             }
             title = eventCursor.GetString (EVENT_SUMMARY_TITLE_INDEX);
             location = eventCursor.GetString (EVENT_SUMMARY_LOCATION_INDEX);
-
-            // TODO Somehow get the color from the calendar that owns this event.
-            colorIndex = McFolder.GetDeviceCalendarsFolder ().DisplayColor;
+            displayColor = eventCursor.GetInt (EVENT_SUMMARY_DISPLAY_COLOR_INDEX);
 
             return true;
         }
@@ -134,6 +134,8 @@ namespace NachoPlatform
             CalendarContract.EventsColumns.IsOrganizer,
             CalendarContract.EventsColumns.Status,
             CalendarContract.EventsColumns.Rrule,
+            CalendarContract.SyncColumns.AccountName,
+            CalendarContract.SyncColumns.AccountType,
         };
         private const int EVENT_DETAIL_TITLE_INDEX = 0;
         private const int EVENT_DETAIL_LOCATION_INDEX = 1;
@@ -152,6 +154,8 @@ namespace NachoPlatform
         private const int EVENT_DETAIL_IS_ORGANIZER_INDEX = 14;
         private const int EVENT_DETAIL_MEETING_STATUS_INDEX = 15;
         private const int EVENT_DETAIL_RRULE_INDEX = 16;
+        private const int EVENT_DETAIL_ACCOUNT_NAME_INDEX = 17;
+        private const int EVENT_DETAIL_ACCOUNT_TYPE_INDEX = 18;
 
         private static string[] reminderProjection = new string[] {
             CalendarContract.RemindersColumns.Minutes,
@@ -192,9 +196,21 @@ namespace NachoPlatform
                 return null;
             }
 
-            calendarName = eventCursor.GetString (EVENT_DETAIL_CALENDAR_NAME_INDEX);
-            if (null == calendarName) {
-                calendarName = "[Unknown]";
+            string accountName = eventCursor.GetString (EVENT_DETAIL_ACCOUNT_NAME_INDEX);
+            string accountType = eventCursor.GetString (EVENT_DETAIL_ACCOUNT_TYPE_INDEX);
+            string calendarSimpleName = eventCursor.GetString (EVENT_DETAIL_CALENDAR_NAME_INDEX);
+            if (accountName == calendarSimpleName) {
+                string displayType = accountType;
+                if (CalendarContract.AccountTypeLocal == accountType) {
+                    displayType = "Local";
+                } else if ("com.google" == accountType) {
+                    displayType = "Gmail";
+                } else if ("com.android.exchange" == accountType) {
+                    displayType = "Exchange";
+                }
+                calendarName = string.Format ("{0} : {1}", displayType, calendarSimpleName);
+            } else {
+                calendarName = string.Format ("{0} : {1}", accountName, calendarSimpleName);
             }
 
             var result = new McCalendar ();
