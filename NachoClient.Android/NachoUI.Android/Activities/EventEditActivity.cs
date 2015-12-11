@@ -196,10 +196,10 @@ namespace NachoClient.AndroidClient
 
                     cal = null;
                     if (null != dataFromIntent.Event) {
-                        if (0 < dataFromIntent.Event.CalendarId) {
+                        if (0 == dataFromIntent.Event.DeviceCalendarId) {
                             cal = McCalendar.QueryById<McCalendar> (dataFromIntent.Event.CalendarId);
                         } else {
-                            cal = AndroidCalendars.GetEventDetails (-dataFromIntent.Event.CalendarId, out deviceCalendarName);
+                            cal = AndroidCalendars.GetEventDetails (dataFromIntent.Event.DeviceCalendarId, out deviceCalendarName);
                             isAppEvent = false;
                         }
                     }
@@ -480,7 +480,7 @@ namespace NachoClient.AndroidClient
                 }
                 BackEnd.Instance.DeleteCalCmd (account.Id, cal.Id);
             } else {
-                AndroidCalendars.DeleteEvent (-RetainedData.Event.CalendarId);
+                AndroidCalendars.DeleteEvent (RetainedData.Event.DeviceCalendarId);
             }
         }
 
@@ -561,7 +561,7 @@ namespace NachoClient.AndroidClient
                 cal.DtStamp = DateTime.UtcNow;
 
                 if (!isAppEvent) {
-                    AndroidCalendars.WriteDeviceEvent (cal, -RetainedData.Event.CalendarId);
+                    AndroidCalendars.UpdateDeviceEvent (cal, RetainedData.Event.DeviceCalendarId);
                 } else if (Intent.ActionCreateDocument == Intent.Action) {
                     cal.Insert ();
                     calendarFolder.Link (cal);
