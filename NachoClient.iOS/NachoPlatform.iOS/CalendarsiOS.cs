@@ -600,8 +600,8 @@ namespace NachoPlatform
 
         private void ToEKEvent (EKEvent ekEvent, McCalendar cal)
         {
-            ekEvent.StartDate = cal.StartTime.ToNSDate ();
             ekEvent.AllDay = cal.AllDayEvent;
+            ekEvent.StartDate = cal.StartTime.ToNSDate ();
             if (cal.AllDayEvent) {
                 // iOS wants the end time of an all-day event to be one second before midnight.
                 ekEvent.EndDate = (cal.EndTime - TimeSpan.FromSeconds (1)).ToNSDate ();

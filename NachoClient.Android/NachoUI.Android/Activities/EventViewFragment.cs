@@ -36,9 +36,13 @@ namespace NachoClient.AndroidClient
         private View view;
         private ButtonBar buttonBar;
 
-        private ImageView attendButton;
-        private ImageView maybeButton;
-        private ImageView declineButton;
+        private View attendButtonView;
+        private View maybeButtonView;
+        private View declineButtonView;
+
+        private ImageView attendButtonImage;
+        private ImageView maybeButtonImage;
+        private ImageView declineButtonImage;
 
         private NcResponseType userResponse = NcResponseType.None;
         private string responseCmdToken = null;
@@ -51,9 +55,13 @@ namespace NachoClient.AndroidClient
             view = inflater.Inflate (Resource.Layout.EventViewFragment, container, false);
             buttonBar = new ButtonBar (view);
 
-            attendButton = view.FindViewById<ImageView> (Resource.Id.event_attend_button);
-            maybeButton = view.FindViewById<ImageView> (Resource.Id.event_maybe_button);
-            declineButton = view.FindViewById<ImageView> (Resource.Id.event_decline_button);
+            attendButtonView = view.FindViewById<View> (Resource.Id.event_attend_view);
+            maybeButtonView = view.FindViewById<View> (Resource.Id.event_maybe_view);
+            declineButtonView = view.FindViewById<View> (Resource.Id.event_decline_view);
+
+            attendButtonImage = view.FindViewById<ImageView> (Resource.Id.event_attend_button);
+            maybeButtonImage = view.FindViewById<ImageView> (Resource.Id.event_maybe_button);
+            declineButtonImage = view.FindViewById<ImageView> (Resource.Id.event_decline_button);
 
             BindListeners ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
@@ -160,9 +168,9 @@ namespace NachoClient.AndroidClient
             var notesArrow = view.FindViewById<View> (Resource.Id.event_notes_arrow);
             notesArrow.Click += NotesView_Click;
 
-            attendButton.Click += AttendButton_Click;
-            maybeButton.Click += MaybeButton_Click;
-            declineButton.Click += DeclineButton_Click;
+            attendButtonView.Click += AttendButton_Click;
+            maybeButtonView.Click += MaybeButton_Click;
+            declineButtonView.Click += DeclineButton_Click;
         }
 
         /// <summary>
@@ -433,12 +441,12 @@ namespace NachoClient.AndroidClient
 
         private void ClearResponseButtons ()
         {
-            attendButton.SetImageResource (Resource.Drawable.event_attend);
-            attendButton.Enabled = true;
-            maybeButton.SetImageResource (Resource.Drawable.event_maybe);
-            maybeButton.Enabled = true;
-            declineButton.SetImageResource (Resource.Drawable.event_decline);
-            declineButton.Enabled = true;
+            attendButtonImage.SetImageResource (Resource.Drawable.event_attend);
+            attendButtonView.Enabled = true;
+            maybeButtonImage.SetImageResource (Resource.Drawable.event_maybe);
+            maybeButtonView.Enabled = true;
+            declineButtonImage.SetImageResource (Resource.Drawable.event_decline);
+            declineButtonView.Enabled = true;
         }
 
         private void SelectButtonForResponse (NcResponseType response)
@@ -447,16 +455,16 @@ namespace NachoClient.AndroidClient
 
             switch (response) {
             case NcResponseType.Accepted:
-                attendButton.SetImageResource (Resource.Drawable.event_attend_active);
-                attendButton.Enabled = false;
+                attendButtonImage.SetImageResource (Resource.Drawable.event_attend_active);
+                attendButtonView.Enabled = false;
                 break;
             case NcResponseType.Tentative:
-                maybeButton.SetImageResource (Resource.Drawable.event_maybe_active);
-                maybeButton.Enabled = false;
+                maybeButtonImage.SetImageResource (Resource.Drawable.event_maybe_active);
+                maybeButtonView.Enabled = false;
                 break;
             case NcResponseType.Declined:
-                declineButton.SetImageResource (Resource.Drawable.event_decline_active);
-                declineButton.Enabled = false;
+                declineButtonImage.SetImageResource (Resource.Drawable.event_decline_active);
+                declineButtonView.Enabled = false;
                 break;
             default:
                 // For any other response, leave all of the buttons unset.
@@ -506,41 +514,41 @@ namespace NachoClient.AndroidClient
                         .SetTitle ("Decline Meeting?")
                         .SetMessage ("Declining the meeting will also delete the meeting from your calendar.")
                         .SetPositiveButton ("Decline", (sender, e) => {
-                            new AlertDialog.Builder (this.Activity)
+                        new AlertDialog.Builder (this.Activity)
                                 .SetTitle ("Series or Occurrence?")
                                 .SetMessage ("Decline the entire series or just this one occurrence?")
                                 .SetPositiveButton ("Series", (sender1, e1) => {
-                                    MakeStatusUpdates (response, false);
-                                    this.Activity.SetResult (Result.Ok);
-                                    this.Activity.Finish ();
-                                })
-                                .SetNegativeButton ("Occurrence", (sender1, e1) => {
-                                    MakeStatusUpdates (response, true);
-                                    this.Activity.SetResult (Result.Ok);
-                                    this.Activity.Finish ();
-                                })
-                                .SetNeutralButton ("Cancel", (sender1, e1) => {
-                                    SelectButtonForResponse (userResponse);
-                                })
-                                .Create ().Show ();
+                            MakeStatusUpdates (response, false);
+                            this.Activity.SetResult (Result.Ok);
+                            this.Activity.Finish ();
                         })
-                        .SetNegativeButton ("Cancel", (sender, e) => {
+                                .SetNegativeButton ("Occurrence", (sender1, e1) => {
+                            MakeStatusUpdates (response, true);
+                            this.Activity.SetResult (Result.Ok);
+                            this.Activity.Finish ();
+                        })
+                                .SetNeutralButton ("Cancel", (sender1, e1) => {
                             SelectButtonForResponse (userResponse);
                         })
+                                .Create ().Show ();
+                    })
+                        .SetNegativeButton ("Cancel", (sender, e) => {
+                        SelectButtonForResponse (userResponse);
+                    })
                         .Create ().Show ();
                 } else {
                     new AlertDialog.Builder (this.Activity)
                         .SetTitle ("Series or Occurrence?")
                         .SetMessage ("Respond to the entire series or just this one occurrence?")
                         .SetPositiveButton ("Series", (sender, e) => {
-                            MakeStatusUpdates (response, false);
-                        })
+                        MakeStatusUpdates (response, false);
+                    })
                         .SetNegativeButton ("Occurrence", (sender, e) => {
-                            MakeStatusUpdates (response, true);
-                        })
+                        MakeStatusUpdates (response, true);
+                    })
                         .SetNeutralButton ("Cancel", (sender, e) => {
-                            SelectButtonForResponse (userResponse);
-                        })
+                        SelectButtonForResponse (userResponse);
+                    })
                         .Create ().Show ();
                 }
             } else if (NcResponseType.Declined == response) {
@@ -548,13 +556,13 @@ namespace NachoClient.AndroidClient
                     .SetTitle ("Decline Meeting?")
                     .SetMessage ("Declining the meeting will also delete the meeting from your calendar.")
                     .SetPositiveButton ("Decline", (sender, e) => {
-                        MakeStatusUpdates (response, false);
-                        this.Activity.SetResult (Result.Ok);
-                        this.Activity.Finish ();
-                    })
+                    MakeStatusUpdates (response, false);
+                    this.Activity.SetResult (Result.Ok);
+                    this.Activity.Finish ();
+                })
                     .SetNegativeButton ("Cancel", (sender, e) => {
-                        SelectButtonForResponse (userResponse);
-                    })
+                    SelectButtonForResponse (userResponse);
+                })
                     .Create ().Show ();
             } else {
                 MakeStatusUpdates (response, false);
@@ -687,8 +695,10 @@ namespace NachoClient.AndroidClient
 
         public override bool CanEdit {
             get {
-                // TODO Allow editing of device events
-                return isAppEvent && base.CanEdit;
+                if (isAppEvent) {
+                    return base.CanEdit;
+                }
+                return IsOrganizer && !IsRecurring && 0 == SeriesItem.attendees.Count;
             }
         }
 

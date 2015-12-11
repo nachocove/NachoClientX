@@ -161,7 +161,7 @@ namespace Test.Common
         [SetUp]
         public void Setup ()
         {
-            Telemetry.ENABLED = false;
+            Assert.IsFalse (Telemetry.ENABLED, "Telemetry needs to be disabled");
             NcTask.StartService ();
 
             // Set up credential
@@ -199,7 +199,6 @@ namespace Test.Common
             PushAssist.MinDelayMsec = OriginalMinDelayMsec;
             PushAssist.IncrementalDelayMsec = OriginalIncrementalDelayMsec;
             WrapPushAssist.SetDeviceToken (null); // do not use PushAssist.SetDeviceToken() as it creates a new task.
-            Telemetry.ENABLED = true;
         }
 
         private void WaitForState (uint expectedState)

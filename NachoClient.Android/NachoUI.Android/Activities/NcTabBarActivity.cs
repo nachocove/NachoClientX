@@ -19,10 +19,19 @@ namespace NachoClient.AndroidClient
     {
         SwitchAccountFragment switchAccountFragment = new SwitchAccountFragment ();
 
+        static bool tabBarCreated = false;
+
+        public static bool TabBarWasCreated {
+            get {
+                return tabBarCreated;
+            }
+        }
+
         protected void OnCreate (Bundle bundle, int layoutId)
         {
             base.OnCreate (bundle);
             SetContentView (layoutId);
+            tabBarCreated = true;
         }
 
         protected override void OnResume ()

@@ -11,6 +11,7 @@ using Android.Provider;
 using Android.Content;
 using Android.Database;
 using NachoCore.ActiveSync;
+using Android.Text.Format;
 
 namespace NachoPlatform
 {
@@ -132,6 +133,7 @@ namespace NachoPlatform
             CalendarContract.EventsColumns.SelfAttendeeStatus,
             CalendarContract.EventsColumns.IsOrganizer,
             CalendarContract.EventsColumns.Status,
+            CalendarContract.EventsColumns.Rrule,
         };
         private const int EVENT_DETAIL_TITLE_INDEX = 0;
         private const int EVENT_DETAIL_LOCATION_INDEX = 1;
@@ -149,6 +151,7 @@ namespace NachoPlatform
         private const int EVENT_DETAIL_RESPONSE_TYPE_INDEX = 13;
         private const int EVENT_DETAIL_IS_ORGANIZER_INDEX = 14;
         private const int EVENT_DETAIL_MEETING_STATUS_INDEX = 15;
+        private const int EVENT_DETAIL_RRULE_INDEX = 16;
 
         private static string[] reminderProjection = new string[] {
             CalendarContract.RemindersColumns.Minutes,
@@ -209,6 +212,9 @@ namespace NachoPlatform
             var meetingResponse = (CalendarAttendeesStatus)eventCursor.GetInt (EVENT_DETAIL_RESPONSE_TYPE_INDEX);
             result.ResponseTypeIsSet = true;
             result.ResponseType = ResponseType (meetingResponse, isOrganizer);
+            var busyStatus = (EventsAvailability)eventCursor.GetInt (EVENT_DETAIL_AVAILABILITY_INDEX);
+            result.BusyStatusIsSet = true;
+            result.BusyStatus = BusyStatus (busyStatus);
 
             string timeZoneName = eventCursor.GetString (EVENT_DETAIL_TIME_ZONE_INDEX);
             TimeZoneInfo timeZone = TimeZoneInfo.Utc;
@@ -267,6 +273,13 @@ namespace NachoPlatform
                 }
             }
 
+            var recurrence = ParseRecurrence (eventCursor.GetString (EVENT_DETAIL_RRULE_INDEX));
+            if (null != recurrence) {
+                var recurrences = new List<McRecurrence> (1);
+                recurrences.Add (recurrence);
+                result.recurrences = recurrences;
+            }
+
             bool isCancelled = (EventsStatus)eventCursor.GetInt (EVENT_DETAIL_MEETING_STATUS_INDEX) == EventsStatus.Canceled;
 
             result.MeetingStatusIsSet = true;
@@ -311,6 +324,18 @@ namespace NachoPlatform
             return NcResponseType.None;
         }
 
+        static NcBusyStatus BusyStatus (EventsAvailability busy) {
+            switch (busy) {
+            case EventsAvailability.Busy:
+                return NcBusyStatus.Busy;
+            case EventsAvailability.Free:
+                return NcBusyStatus.Free;
+            case EventsAvailability.Tentative:
+                return NcBusyStatus.Tentative;
+            }
+            return NcBusyStatus.Busy;
+        }
+
         static NcAttendeeType AttendeeType (CalendarAttendeesColumn attendeeType)
         {
             switch (attendeeType) {
@@ -340,6 +365,188 @@ namespace NachoPlatform
                 return NcAttendeeStatus.ResponseUnknown;
             }
             return NcAttendeeStatus.ResponseUnknown;
+        }
+
+        static McRecurrence ParseRecurrence (string pattern)
+        {
+            if (string.IsNullOrEmpty(pattern)) {
+                return null;
+            }
+
+            var result = new McRecurrence ();
+            var rule = new DDay.iCal.RecurrencePattern (pattern);
+
+            result.IntervalIsSet = true;
+            result.Interval = rule.Interval;
+
+            switch (rule.Frequency) {
+
+            case DDay.iCal.FrequencyType.None:
+            case DDay.iCal.FrequencyType.Secondly:
+            case DDay.iCal.FrequencyType.Minutely:
+            case DDay.iCal.FrequencyType.Hourly:
+                Log.Error (Log.LOG_CALENDAR, "Unsupported recurrence type from Android device calendar item: {0}", rule.Frequency.ToString ());
+                result.Type = NcRecurrenceType.Daily;
+                result.Interval = 1;
+                break;
+
+            case DDay.iCal.FrequencyType.Daily:
+                result.Type = NcRecurrenceType.Daily;
+                break;
+
+            case DDay.iCal.FrequencyType.Weekly:
+                result.Type = NcRecurrenceType.Weekly;
+                result.DayOfWeekIsSet = true;
+                result.DayOfWeek = ToNcDayOfWeek (rule.ByDay);
+                result.FirstDayOfWeekIsSet = true;
+                result.FirstDayOfWeek = (int)rule.FirstDayOfWeek;
+                break;
+
+            case DDay.iCal.FrequencyType.Monthly:
+                if (0 < rule.ByMonthDay.Count) {
+                    result.Type = NcRecurrenceType.Monthly;
+                    result.DayOfMonth = rule.ByMonthDay [0];
+                } else if (0 < rule.ByDay.Count) {
+                    result.Type = NcRecurrenceType.MonthlyOnDay;
+                    int weekOfMonth = rule.ByDay [0].Offset;
+                    if (weekOfMonth < 1 || 5 < weekOfMonth) {
+                        weekOfMonth = 5;
+                    }
+                    result.WeekOfMonth = weekOfMonth;
+                    result.DayOfWeek = CalendarHelper.ToNcDayOfWeek (rule.ByDay [0].DayOfWeek);
+                } else {
+                    result.Type = NcRecurrenceType.Monthly;
+                    result.DayOfMonth = 1;
+                }
+                break;
+
+            case DDay.iCal.FrequencyType.Yearly:
+                if (0 < rule.ByMonth.Count && 0 < rule.ByMonthDay.Count) {
+                    result.Type = NcRecurrenceType.Yearly;
+                    result.MonthOfYear = rule.ByMonth [0];
+                    result.DayOfMonth = rule.ByMonthDay [0];
+                } else if (0 < rule.ByMonth.Count && 0 < rule.ByDay.Count) {
+                    result.Type = NcRecurrenceType.YearlyOnDay;
+                    result.MonthOfYear = rule.ByMonth [0];
+                    int weekOfMonth = rule.ByDay [0].Offset;
+                    if (weekOfMonth < 1 || 5 < weekOfMonth) {
+                        weekOfMonth = 5;
+                    }
+                    result.WeekOfMonth = weekOfMonth;
+                    result.DayOfWeek = CalendarHelper.ToNcDayOfWeek (rule.ByDay [0].DayOfWeek);
+                } else {
+                    result.Type = NcRecurrenceType.Yearly;
+                    result.MonthOfYear = 1;
+                    result.DayOfMonth = 1;
+                }
+                break;
+            }
+
+            return result;
+        }
+
+        static NcDayOfWeek ToNcDayOfWeek (IList<DDay.iCal.IWeekDay> icalDays)
+        {
+            var result = (NcDayOfWeek)0;
+            foreach (var icalDay in icalDays) {
+                result = result | CalendarHelper.ToNcDayOfWeek (icalDay.DayOfWeek);
+            }
+            if (0 == result) {
+                result = NcDayOfWeek.Sunday;
+            }
+            return result;
+        }
+
+        private static string[] eventDetailProjectionZ = new string[] {
+            CalendarContract.EventsColumns.Title,
+            CalendarContract.EventsColumns.EventLocation,
+            CalendarContract.EventsColumns.Description,
+            CalendarContract.EventsColumns.Dtstart,
+            CalendarContract.EventsColumns.Dtend,
+            CalendarContract.EventsColumns.AllDay,
+            CalendarContract.EventsColumns.EventTimezone,
+            CalendarContract.EventsColumns.Uid2445,
+            CalendarContract.EventsColumns.HasAlarm,
+            CalendarContract.EventsColumns.HasAttendeeData,
+            CalendarContract.CalendarColumns.CalendarDisplayName,
+            CalendarContract.EventsColumns.Organizer,
+            CalendarContract.EventsColumns.Availability,
+            CalendarContract.EventsColumns.SelfAttendeeStatus,
+            CalendarContract.EventsColumns.IsOrganizer,
+            CalendarContract.EventsColumns.Status,
+            CalendarContract.EventsColumns.Rrule,
+        };
+
+        public static void WriteDeviceEvent (McCalendar cal, long eventId)
+        {
+            var resolver = MainApplication.Instance.ContentResolver;
+            var values = new ContentValues ();
+
+            SetIfExists (values, CalendarContract.EventsColumns.Title, cal.Subject);
+            SetIfExists (values, CalendarContract.EventsColumns.EventLocation, cal.Location);
+            SetIfExists (values, CalendarContract.EventsColumns.Description, cal.Description);
+            SetIfExists (values, CalendarContract.EventsColumns.Uid2445, cal.UID);
+            SetIfExists (values, CalendarContract.EventsColumns.Organizer, cal.OrganizerEmail);
+
+            values.Put (CalendarContract.EventsColumns.AllDay, cal.AllDayEvent);
+            if (cal.AllDayEvent) {
+                // Android requires that all-day events be in the UTC time zone.
+                values.Put (CalendarContract.EventsColumns.Dtstart, DateTime.SpecifyKind (cal.StartTime, DateTimeKind.Utc).MillisecondsSinceEpoch ());
+                values.Put (CalendarContract.EventsColumns.Dtend, DateTime.SpecifyKind (cal.EndTime, DateTimeKind.Utc).MillisecondsSinceEpoch ());
+                values.Put (CalendarContract.EventsColumns.EventTimezone, Time.TimezoneUtc);
+            } else {
+                values.Put (CalendarContract.EventsColumns.Dtstart, cal.StartTime.MillisecondsSinceEpoch ());
+                values.Put (CalendarContract.EventsColumns.Dtend, cal.EndTime.MillisecondsSinceEpoch ());
+                values.Put (CalendarContract.EventsColumns.EventTimezone, Time.CurrentTimezone);
+            }
+
+            if (cal.BusyStatusIsSet) {
+                values.Put (CalendarContract.EventsColumns.Availability, (int)BusyStatus (cal.BusyStatus));
+            }
+
+            resolver.Update (ContentUris.AppendId (CalendarContract.Events.ContentUri.BuildUpon (), eventId).Build (), values, null, null);
+        }
+
+        static void SetIfExists (ContentValues values, string fieldName, string value)
+        {
+            if (!string.IsNullOrEmpty (value)) {
+                values.Put (fieldName, value);
+            }
+        }
+
+        static EventsAvailability BusyStatus (NcBusyStatus busy)
+        {
+            switch (busy) {
+            case NcBusyStatus.Busy:
+            case NcBusyStatus.OutOfOffice:
+                return EventsAvailability.Busy;
+            case NcBusyStatus.Free:
+                return EventsAvailability.Free;
+            case NcBusyStatus.Tentative:
+                return EventsAvailability.Tentative;
+            }
+            return EventsAvailability.Busy;
+        }
+
+        static CalendarAttendeesStatus ResponseType (NcResponseType response)
+        {
+            switch (response) {
+            case NcResponseType.Accepted:
+                return CalendarAttendeesStatus.Accepted;
+            case NcResponseType.Tentative:
+                return CalendarAttendeesStatus.Tentative;
+            case NcResponseType.Declined:
+                return CalendarAttendeesStatus.Declined;
+            case NcResponseType.NotResponded:
+                return CalendarAttendeesStatus.Invited;
+            }
+            return CalendarAttendeesStatus.None;
+        }
+
+        public static void DeleteEvent (long eventId)
+        {
+            var resolver = MainApplication.Instance.ContentResolver;
+            resolver.Delete (ContentUris.AppendId (CalendarContract.Events.ContentUri.BuildUpon (), eventId).Build (), null, null);
         }
 
         /// <summary>

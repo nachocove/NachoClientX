@@ -241,7 +241,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                Telemetry.ENABLED = false;
+                Assert.IsFalse (Telemetry.ENABLED, "Telemetry needs to be disabled");
                 NcTask.StartService ();
 
                 // Set up credential
@@ -267,7 +267,6 @@ namespace Test.iOS
             public void TearDown ()
             {
                 NcApplication.Instance.TestOnlyInvokeUseCurrentThread = false;
-                Telemetry.ENABLED = true;
             }
 
             [Test]

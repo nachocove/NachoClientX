@@ -1724,6 +1724,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcHttpUtils.cs">
       <Link>NachoCore\Utils\NcHttpUtils.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McBuildInfo.cs">
+      <Link>NachoCore\Model\McBuildInfo.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

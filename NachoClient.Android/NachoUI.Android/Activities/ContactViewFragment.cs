@@ -629,9 +629,10 @@ namespace NachoClient.AndroidClient
                 chiliView.Click += ChiliView_Click;
             }
 
+            var mvh = new Bind.MessageHeaderViewHolder (view);
             var thread = owner.messages.GetEmailThread (position);
             var message = thread.FirstMessageSpecialCase ();
-            Bind.BindMessageHeader (thread, message, view);
+            Bind.BindMessageHeader (thread, message, mvh);
 
             // Preview label view
             var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);

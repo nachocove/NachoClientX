@@ -733,9 +733,9 @@ namespace NachoCore.Utils
             return attendeeList;
         }
 
-        public static McCalendar CreateMeeting (McEmailMessage message)
+        public static McCalendar CreateMeeting (McEmailMessage message, DateTime startDate = default(DateTime))
         {
-            var c = DefaultMeeting ();
+            var c = DefaultMeeting (startDate);
             c.AccountId = message.AccountId;
             c.Subject = message.Subject;
 //            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);

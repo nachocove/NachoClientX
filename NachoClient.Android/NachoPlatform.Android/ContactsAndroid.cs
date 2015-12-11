@@ -25,16 +25,20 @@ namespace NachoPlatform
 
         private Contacts ()
         {
-            MainApplication.Instance.ContentResolver.RegisterContentObserver (ContactsContract.Contacts.ContentUri, true, new NcContactContentObserver (this, new Handler ()));
+            InvokeOnUIThread.Instance.Invoke (() => {
+                MainApplication.Instance.ContentResolver.RegisterContentObserver (ContactsContract.Contacts.ContentUri, true, new NcContactContentObserver (this, new Handler ()));
+            });
         }
 
         public class NcContactContentObserver : Android.Database.ContentObserver
         {
             Contacts Owner { get; set; }
+
             public NcContactContentObserver (Contacts owner, Handler handler) : base (handler)
             {
                 Owner = owner;
             }
+
             public override void OnChange (bool selfChange)
             {
                 if (Owner.ChangeIndicator != null) {
@@ -42,7 +46,7 @@ namespace NachoPlatform
                 }
             }
         }
-            
+
         public static Contacts Instance {
             get {
                 if (instance == null) {
@@ -82,6 +86,7 @@ namespace NachoPlatform
                     retval.Add (entry);
                 }
             }
+            cur.Close ();
             return retval;
         }
 
@@ -281,22 +286,23 @@ namespace NachoPlatform
                 pCur.Close ();
             }
 
+            const int TYPE_BIRTHDAY = 3; // bug in xamarin. This isn't exposed.
             protected void GetContactBirthday ()
             {
                 // Birthday (Not sure how to get this yet. All java examples use Event.TYPE_BIRTHDAY, but that doesn't seem to exist in C#
-//                    Contact.Dates.RemoveAll ((x) => x.Name == "Birthday");
-//                    string where = ContactsContract.CommonDataKinds.Event.InterfaceConsts.Mimetype + "= ? AND " +
-//                        ContactsContract.CommonDataKinds.Event.InterfaceConsts.Type + "=" +
-//                        ContactsContract.CommonDataKinds.Event.InterfaceConsts.Birthday;
-//                    var pCur = cr.Query (ContactsContract.Data.ContentUri,
-//                                   null,
-//                                   where, new String[]{ ContactsContract.CommonDataKinds.Event.ContentItemType },
-//                                   null);
-//                    while (pCur.MoveToNext ()) {
-//                        var birthday = GetField (pCur, ContactsContract.CommonDataKinds.Event.StartDate);
-//                        Contact.AddDateAttribute (Account.Id, "Birthday", null, DateTime.Parse (birthday));
-//                    }
-//                    pCur.Close ();
+                Contact.Dates.RemoveAll ((x) => x.Name == "Birthday");
+                var pCur = MainApplication.Instance.ContentResolver.Query (ContactsContract.Data.ContentUri,
+                               null,
+                               ContactsContract.CommonDataKinds.StructuredPostal.InterfaceConsts.ContactId + "=? AND " +
+                               ContactsContract.CommonDataKinds.Event.InterfaceConsts.Mimetype + "=? AND " +
+                               ContactsContract.CommonDataKinds.Event.InterfaceConsts.Type + "=" + TYPE_BIRTHDAY,
+                               new []{ Contact.ServerId, ContactsContract.CommonDataKinds.Event.ContentItemType },
+                               null);
+                while (pCur.MoveToNext ()) {
+                    var birthday = GetField (pCur, ContactsContract.CommonDataKinds.Event.StartDate);
+                    Contact.AddDateAttribute (Contact.AccountId, "Birthday", null, DateTime.Parse (birthday));
+                }
+                pCur.Close ();
             }
 
             protected void GetContactAddress ()
