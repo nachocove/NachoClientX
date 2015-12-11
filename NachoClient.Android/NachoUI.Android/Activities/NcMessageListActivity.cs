@@ -58,6 +58,11 @@ namespace NachoClient.AndroidClient
 
             account = NcApplication.Instance.Account;
 
+            // Maybe during short-circuit start up
+            if (null == account) {
+                return;
+            }
+
             List<int> adds;
             List<int> deletes;
             var messages = GetMessages (out adds, out deletes);

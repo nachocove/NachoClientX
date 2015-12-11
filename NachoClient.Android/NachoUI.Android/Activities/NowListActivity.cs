@@ -22,13 +22,14 @@ namespace NachoClient.AndroidClient
 
         protected override void OnCreate (Bundle bundle)
         {
+            base.OnCreate (bundle);
+
             if (!NcApplication.ReadyToStartUI ()) {
                 var intent = new Intent (this, typeof(MainActivity));
                 StartActivity (intent);
                 Finish ();
                 return;
             }
-            base.OnCreate (bundle);
         }
 
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)
