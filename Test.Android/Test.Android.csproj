@@ -272,8 +272,5 @@
       <Link>Assets\xsd\Response\Ping.xsd</Link>
     </AndroidAsset>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\utopiasystems.cer" />
-  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
 </Project>

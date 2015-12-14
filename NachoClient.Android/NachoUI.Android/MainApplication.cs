@@ -17,21 +17,22 @@ namespace NachoClient.AndroidClient
     // DO NOT PUT THE [Application ...] tag here. It'll mess up unit tests. Edit Properties/AndroidManifest.xml directly (yuck)
     public class MainApplication : Application
     {
-        static MainApplication _instance;
+        /// <summary>
+        /// Public for testing only.
+        /// </summary>
+        public static Application _instance;
         static bool checkForUpdates = true;
         static bool startupCalled = false;
-        public BackupManager BackupManager;
 
         public MainApplication (IntPtr javaReference, JniHandleOwnership transfer) : base (javaReference, transfer)
         {
             _instance = this;
             LifecycleSpy.SharedInstance.Init (this);
-            BackupManager = new BackupManager (this);
             CopyAssetsToDocuments ();
             OneTimeStartup ("MainApplication");
         }
 
-        public static MainApplication Instance {
+        public static Application Instance {
             get {
                 return _instance;
             }

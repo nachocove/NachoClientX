@@ -15,6 +15,8 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Security;
+using System.IO;
+using System.Text;
 
 
 
@@ -122,6 +124,7 @@ namespace Test.iOS
             GetRequest (request, timeout, success, error, null, cancellationToken);
         }
 
+        string utopiasystems_cer = "-----BEGIN CERTIFICATE-----\nMIICCzCCAXQCCQDoS8XUL9bSozANBgkqhkiG9w0BAQUFADBKMQswCQYDVQQGEwJV\nUzELMAkGA1UECBMCQ0ExFTATBgNVBAcTDFNvbGFuYSBCZWFjaDEXMBUGA1UEChMO\nVXRvcGlhIFN5c3RlbXMwHhcNMTQwNTIyMTkwOTM1WhcNMTUwNTIyMTkwOTM1WjBK\nMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExFTATBgNVBAcTDFNvbGFuYSBCZWFj\naDEXMBUGA1UEChMOVXRvcGlhIFN5c3RlbXMwgZ8wDQYJKoZIhvcNAQEBBQADgY0A\nMIGJAoGBAMhoMLiT0Vk11Q4piLMnDfR5CyssqMKDxyBkQwNbmDboneJhXpxASDpT\nRjASXUWrbIJ0pcvIFcpSr/Cxa1jNy1dhPiQQHfkocWzrIu1mloHAIqQBKSsMapJV\nN+9PcmfZXdkU6VAhcXpb/WPsIP08/2tT+r134ss4KWniY48kV1IvAgMBAAEwDQYJ\nKoZIhvcNAQEFBQADgYEAjfcBGi1A5FAqDmBzhIfqkfHblnQNo7ehlDUGx0yAzzcw\nmBL3+awMzcYgSa3X1z6GQ8DzQ1Jy6eCiGjWal0bWR+gJSQAo9q/IwuHFe1Sa6fEa\nfhWL+g9yNN9EFPwWzWUXRO6lrM3jCMGLX/pDC2mqyMCSBGniT8BX5bmQaFo1ZQU=\n-----END CERTIFICATE-----";
         public void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
             // provide validated certificate
@@ -132,8 +135,7 @@ namespace Test.iOS
                 hasCert = HasServerCertificate ();
             }
 
-            // cert is under resources in Test.iOS and Test.Android
-            X509Certificate mockCert = new X509Certificate ("utopiasystems.cer");
+            X509Certificate mockCert = new X509Certificate (Encoding.ASCII.GetBytes(utopiasystems_cer));
 
             if (hasCert) {
                 ServerCertificatePeek.CertificateValidationCallback (webRequest, mockCert, new X509Chain (), new SslPolicyErrors ());

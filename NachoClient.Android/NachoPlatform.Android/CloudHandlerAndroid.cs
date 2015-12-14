@@ -34,9 +34,11 @@ namespace NachoPlatform
         }
 
         NcBackupPrefs BackupPrefs;
+        BackupManager BackupManager;
 
         public CloudHandler ()
         {
+            BackupManager = new BackupManager (MainApplication.Instance);
             BackupPrefs = NcBackupPrefs.Instance;
         }
 
@@ -50,7 +52,7 @@ namespace NachoPlatform
             var previous = GetUserId ();
             if (previous != UserId) {
                 BackupPrefs.SetKey (KUserId, UserId);
-                MainApplication.Instance.BackupManager.DataChanged ();
+                BackupManager.DataChanged ();
             }
         }
 
@@ -75,7 +77,7 @@ namespace NachoPlatform
             if (previous != purchaseDate) {
                 BackupPrefs.SetKey (KPurchaseDate, purchaseDate.ToBinary ());
                 BackupPrefs.SetKey (KIsAlreadyPurchased, true);
-                MainApplication.Instance.BackupManager.DataChanged ();
+                BackupManager.DataChanged ();
             }
         }
 
@@ -84,7 +86,7 @@ namespace NachoPlatform
             var previous = GetFirstInstallDate ();
             if (previous != installDate) {
                 BackupPrefs.SetKey (KFirstInstallDate, installDate.ToBinary ());
-                MainApplication.Instance.BackupManager.DataChanged ();
+                BackupManager.DataChanged ();
             }
         }
 

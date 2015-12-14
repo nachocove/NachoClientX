@@ -394,12 +394,6 @@
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\contacts.xsd">
       <Link>Resources\xsd\common\contacts.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\Test.Android\Resources\utopiasystems.cer">
-      <Link>Resources\utopiasystems.cer</Link>
-    </BundleResource>
-    <BundleResource Include="..\Test.Android\Resources\nco9.com.crt">
-      <Link>Resources\nco9.com.crt</Link>
-    </BundleResource>
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\request\Ping.xsd">
       <Link>Resources\xsd\request\Ping.xsd</Link>
     </BundleResource>
