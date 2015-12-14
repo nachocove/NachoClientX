@@ -22,7 +22,7 @@ namespace NachoCore.Utils
             ASWBXML encoder = new ASWBXML (cToken);
             encoder.XmlDoc = doc;
             if (isLarge) {
-                var tmp = NcModel.Instance.TmpPath (accountId);
+                var tmp = NcModel.Instance.TmpPath (accountId, "wbxml-stream");
                 var fileStream = new FileStream (tmp, FileMode.Create);
                 var writer = new BinaryWriter (fileStream);
                 Log.Debug (Log.LOG_HTTP, "ToWbxmlStream: EmitToStream(L) (#1313)");

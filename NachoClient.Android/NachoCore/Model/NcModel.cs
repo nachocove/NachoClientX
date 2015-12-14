@@ -729,9 +729,12 @@ namespace NachoCore.Model
             GarbageCollectFiles ();
         }
 
-        public string TmpPath (int accountId)
+        public string TmpPath (int accountId, string suffix=null)
         {
             var guidString = Guid.NewGuid ().ToString ("N");
+            if (!string.IsNullOrEmpty (suffix)) {
+                guidString += suffix;
+            }
             return Path.Combine (GetFileDirPath (accountId, KTmpPathSegment), guidString);
         }
 
