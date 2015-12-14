@@ -122,6 +122,7 @@ namespace NachoPlatform
             var config = NSUrlSessionConfiguration.DefaultSessionConfiguration;
             config.TimeoutIntervalForRequest = timeout;
             config.TimeoutIntervalForResource = timeout;
+            config.HttpMaximumConnectionsPerHost = 25;
             config.URLCache = new NSUrlCache (0, 0, "HttpClientCache");
 
             var session = NSUrlSession.FromConfiguration (config, dele, null);
