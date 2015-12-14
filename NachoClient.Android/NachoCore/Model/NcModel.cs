@@ -759,32 +759,35 @@ namespace NachoCore.Model
             foreach (var acctDir in acctLevelDirs) {
                 int accountId;
                 var suffix = Path.GetFileName (acctDir);
-                try {
-                    accountId = (int)uint.Parse (suffix);
+                if (int.TryParse (suffix, out accountId)) {
                     if (null == McAccount.QueryById<McAccount> (accountId)) {
                         try {
                             Directory.Delete (acctDir, true);
                         } catch (Exception ex) {
                             Log.Error (Log.LOG_DB, "GarbageCollectFiles: Exception deleting account-level dir: {0}", ex);
                         }
-                        continue;
+                    } else {
+                        // Remove any tmp files/dirs.
+                        DeleteDirContent (GetFileDirPath (accountId, KTmpPathSegment));
                     }
-                } catch {
-                    // Must not be a number, so we're not interested in it. Loop.
-                    continue;
                 }
-                var tmpTop = GetFileDirPath (accountId, KTmpPathSegment);
-                try {
-                    // Remove any tmp files/dirs.
-                    foreach (var dir in Directory.GetDirectories (tmpTop)) {
-                        Directory.Delete (dir, true);
-                    }
-                    foreach (var file in Directory.GetFiles (tmpTop)) {
-                        File.Delete (file);
-                    }
-                } catch (Exception ex) {
-                    Log.Error (Log.LOG_DB, "GarbageCollectFiles: Exception cleaning up tmp files: {0}", ex);
+            }
+            // Remove any global tmp files/dirs.
+            DeleteDirContent(Path.GetTempPath ());
+        }
+
+        static void DeleteDirContent (string dirname)
+        {
+            try {
+                // Remove any tmp files/dirs.
+                foreach (var dir in Directory.GetDirectories (dirname)) {
+                    Directory.Delete (dir, true);
                 }
+                foreach (var file in Directory.GetFiles (dirname)) {
+                    File.Delete (file);
+                }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_DB, "DeleteDirContent: Exception cleaning up files: {0}", ex);
             }
         }
 
