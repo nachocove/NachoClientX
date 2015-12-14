@@ -8,6 +8,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using NachoCore.Utils;
 using System.Net;
+using NachoPlatform;
+using System.Net.Http;
+using System.Threading;
 
 namespace Test.iOS
 {
@@ -87,6 +90,118 @@ namespace Test.iOS
             errors = SslPolicyErrors.None;
             expectedError = SslPolicyErrors.None;
             NcHttpCertificateValidation.CertValidation (url, Cert, getChain(), errors);
+        }
+    }
+
+    /// <summary>
+    /// Use these tests to test the underlying http transport implementation (for ios NSUrlSession, for android OkHttp)
+    /// 
+    /// NOTE: These tests need to be disabled by default, as they make requests to external servers, which is a no-no for 
+    /// regular unit test runs.
+    /// </summary>
+    public class NcHttpCertValidationLiveTests : NcTestBase
+    {
+        int DefaultTimeoutSecs = 5;
+        CancellationTokenSource Cts;
+        SemaphoreSlim Sem;
+
+        [SetUp]
+        public void Setup ()
+        {
+            Cts = new CancellationTokenSource ();
+            Sem = new SemaphoreSlim (0);
+        }
+
+        [TearDown]
+        public void TearDown ()
+        {
+            Cts.Dispose ();
+            Sem.Dispose ();
+            Sem = null;
+        }
+
+        INcHttpClient HttpClient {
+            get {
+                return NcHttpClient.Instance;
+            }
+        }
+
+        void TestInit ()
+        {
+            ServicePointManager.ServerCertificateValidationCallback = CertificateValidationCallback;
+            CertificateValidationCallbackCalled = false;
+            TestError = null;
+        }
+
+        [Test]
+        [Ignore]
+        public void TestValidUrl ()
+        {
+            TestInit ();
+            var request = new NcHttpRequest (HttpMethod.Get, "https://mail.d2.officeburrito.com/");
+            HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, Cts.Token);
+            Wait (1);
+            Assert.IsTrue (null == TestError, TestError);
+        }
+
+        [Test]
+        [Ignore]
+        public void TestInValidUrl ()
+        {
+            TestInit ();
+            var request = new NcHttpRequest (HttpMethod.Get, "https://pinger.officetaco.com/");
+            HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, Cts.Token);
+            Wait (1);
+            Assert.IsTrue (null != TestError, TestError);
+        }
+
+        private void Wait (int num_count)
+        {
+            for (int n = 0; n < num_count; n++) {
+                Assert.NotNull (Sem);
+                bool got = Sem.Wait (new TimeSpan (0, 0, DefaultTimeoutSecs + 1));
+                Assert.True (got);
+            }
+        }
+
+        string TestError = "Unknown Error";
+
+        void DownloadSuccess (NcHttpResponse response, CancellationToken token)
+        {
+            try {
+                if (null == response) {
+                    TestError = "Response is null";
+                    return;
+                }
+
+                if (HttpStatusCode.OK != response.StatusCode) {
+                    TestError = "Status is not 200: " + response.StatusCode.ToString ();
+                    return;
+                }
+                TestError = null;
+            } finally {
+                if (null != Sem) {
+                    Sem.Release ();
+                }
+            }
+        }
+
+        void DownloadError (Exception ex, CancellationToken cToken)
+        {
+            TestError = "DownloadError called: " + ex.ToString ();
+            if (null != Sem) {
+                Sem.Release ();
+            }
+        }
+
+        bool CertificateValidationCallbackCalled;
+        public bool CertificateValidationCallback (Object sender,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            CertificateValidationCallbackCalled = true;
+            return true;
         }
     }
 }
