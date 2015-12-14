@@ -50,7 +50,9 @@ namespace NachoPlatform
         }
 
         private static object LockObj = new object ();
+
         static NcHttpClient _Instance { get; set; }
+
         public static NcHttpClient Instance {
             get {
                 if (_Instance == null) {
@@ -90,7 +92,7 @@ namespace NachoPlatform
             }
 
             if (null != request.Cred && !request.RequestUri.IsHttps ()) {
-                Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace().ToString ());
+                Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace ().ToString ());
             }
                 
             if (PreAuthenticate && null != request.Cred) {
@@ -131,7 +133,7 @@ namespace NachoPlatform
             cancellationToken.Register (() => {
                 // make sure don't run on the UI thread.
                 if (NSThread.Current.IsMainThread) {
-                    NcTask.Run(() => {
+                    NcTask.Run (() => {
                         task.Cancel ();
                     }, "NcHttpClient.iOS.Cancel");
                 } else {
@@ -158,7 +160,7 @@ namespace NachoPlatform
                                 ProgressDelegate progress,
                                 CancellationToken cancellationToken)
         {
-            var dele = new NcDownloadTaskDelegate (this, request.Cred, cancellationToken, success, error, progress);
+            var dele = new NcDownloadTaskDelegate (this, request, request.Cred, cancellationToken, success, error, progress);
             SetupAndRunRequest (false, request, timeout, dele, cancellationToken);
         }
 
@@ -169,7 +171,7 @@ namespace NachoPlatform
 
         public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
-            var dele = new NcDownloadTaskDelegate (this, request.Cred, cancellationToken, success, error, progress);
+            var dele = new NcDownloadTaskDelegate (this, request, request.Cred, cancellationToken, success, error, progress);
             SetupAndRunRequest (true, request, timeout, dele, cancellationToken);
         }
 
@@ -195,7 +197,9 @@ namespace NachoPlatform
 
             public string FilePath { get; set; }
 
-            public NcDownloadTaskDelegate (NcHttpClient owner, McCred cred, CancellationToken cancellationToken, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress = null)
+            NcHttpRequest OriginalRequest;
+
+            public NcDownloadTaskDelegate (NcHttpClient owner, NcHttpRequest request, McCred cred, CancellationToken cancellationToken, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress = null)
             {
                 sw = new PlatformStopwatch ();
                 sw.Start ();
@@ -205,6 +209,7 @@ namespace NachoPlatform
                 Cred = cred;
                 Token = cancellationToken;
                 Owner = owner;
+                OriginalRequest = request;
             }
 
             public override void DidFinishDownloading (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, NSUrl location)
@@ -235,7 +240,7 @@ namespace NachoPlatform
                     long sent = task.BytesSent;
                     long received = task.BytesReceived;
                     Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", task.TaskDescription, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
-                        error != null ? string.Format(" (Error: {0})", error) : "");
+                        error != null ? string.Format (" (Error: {0})", error) : "");
 
                     if (Token.IsCancellationRequested) {
                         return;
@@ -246,6 +251,8 @@ namespace NachoPlatform
                     session.FinishTasksAndInvalidate ();
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidCompleteWithError exception {1}", task.TaskDescription, ex);
+                } finally {
+                    OriginalRequest.Dispose ();
                 }
             }
 
@@ -288,7 +295,7 @@ namespace NachoPlatform
                         completionHandler (null);
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection exception {1}",task.TaskDescription, ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection exception {1}", task.TaskDescription, ex);
                 }
             }
 

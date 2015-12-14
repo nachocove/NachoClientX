@@ -20,7 +20,7 @@ namespace NachoCore.Utils
     {
     }
 
-    public class NcHttpRequest
+    public class NcHttpRequest : IDisposable
     {
         public NcHttpHeaders Headers { get; protected set; }
 
@@ -151,6 +151,17 @@ namespace NachoCore.Utils
                 }
             }
         }
+
+        #region IDisposable implementation
+
+        public void Dispose ()
+        {
+            if (null != ContentStream) {
+                File.Delete (ContentStream.Name);
+            }
+        }
+
+        #endregion
 
         public byte[] GetContent ()
         {

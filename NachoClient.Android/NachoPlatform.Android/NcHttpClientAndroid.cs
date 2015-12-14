@@ -85,7 +85,7 @@ namespace NachoPlatform
 
         public void GetRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
-            var callbacks = new NcOkHttpCallback (this, cancellationToken, success, error, progress);
+            var callbacks = new NcOkHttpCallback (this, request, cancellationToken, success, error, progress);
             SetupAndRunRequest (false, request, timeout, callbacks, cancellationToken);
         }
 
@@ -96,7 +96,7 @@ namespace NachoPlatform
 
         public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
-            var callbacks = new NcOkHttpCallback (this, cancellationToken, success, error, progress);
+            var callbacks = new NcOkHttpCallback (this, request, cancellationToken, success, error, progress);
             SetupAndRunRequest (true, request, timeout, callbacks, cancellationToken);
         }
 
@@ -197,7 +197,9 @@ namespace NachoPlatform
 
             NcHttpClient Owner { get; set; }
 
-            public NcOkHttpCallback (NcHttpClient owner, CancellationToken cancellationToken, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress = null)
+            NcHttpRequest OriginalRequest;
+
+            public NcOkHttpCallback (NcHttpClient owner, NcHttpRequest request, CancellationToken cancellationToken, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress = null)
             {
                 sw = new PlatformStopwatch ();
                 sw.Start ();
@@ -206,6 +208,7 @@ namespace NachoPlatform
                 ProgressAction = progress;
                 Token = cancellationToken;
                 Owner = owner;
+                OriginalRequest = request;
             }
 
             void LogCompletion (long sent, long received)
@@ -226,6 +229,7 @@ namespace NachoPlatform
                 if (ErrorAction != null) {
                     ErrorAction (createExceptionForJavaIOException (p1), Token);
                 }
+                OriginalRequest.Dispose ();
             }
 
             public void OnResponse (Response p0)
@@ -278,6 +282,7 @@ namespace NachoPlatform
                     }
                 } finally {
                     File.Delete (filename);
+                    OriginalRequest.Dispose ();
                 }
             }
 
