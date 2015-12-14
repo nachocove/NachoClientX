@@ -110,7 +110,7 @@ namespace NachoClient.AndroidClient
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeferredFakeFolder ()), 0));
             }
 
-            displayList [displayList.Count - 1].lastInSection = true;
+            MarkLastInSection ();
 
             // Max 3 recents
             var recents = McFolder.QueryByMostRecentlyAccessedVisibleFolders (account.Id);
@@ -124,7 +124,7 @@ namespace NachoClient.AndroidClient
                 recentsList [0].header = Header.Recents;
                 displayList.AddRange (recentsList);
             }
-            displayList [displayList.Count - 1].lastInSection = true;
+            MarkLastInSection ();
 
             // Defaults, like inbox
             SortDefaultList (defaultList);
@@ -132,7 +132,7 @@ namespace NachoClient.AndroidClient
                 defaultList [0].header = Header.Default;
                 displayList.AddRange (defaultList);
             }
-            displayList [displayList.Count - 1].lastInSection = true;
+            MarkLastInSection ();
 
             // All of the folders
             int firstFolder = displayList.Count;
@@ -142,7 +142,14 @@ namespace NachoClient.AndroidClient
             if (firstFolder < displayList.Count) {
                 displayList [firstFolder].header = Header.Folders;
             }
-            displayList [displayList.Count - 1].lastInSection = true;
+            MarkLastInSection ();
+        }
+
+        void MarkLastInSection()
+        {
+            if (0 < displayList.Count) {
+                displayList [displayList.Count - 1].lastInSection = true;
+            }
         }
 
         // Fill in placeholders too
