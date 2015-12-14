@@ -214,17 +214,22 @@ namespace NachoClient.AndroidClient
             bool allDay = false;
             DateTime startTime;
             DateTime endTime;
-            int colorIndex = 0;
 
             if (0 != ev.DeviceCalendarId) {
 
-                if (!AndroidCalendars.GetEventDetails (ev.DeviceCalendarId, out title, out location, out colorIndex)) {
+                int displayColor;
+                if (!AndroidCalendars.GetEventDetails (ev.DeviceCalendarId, out title, out location, out displayColor)) {
                     BindEmptyEventCell (titleView, colorView, durationView, locationView, locationImageView);
                     return;
                 }
                 allDay = ev.AllDayEvent;
                 startTime = ev.StartTime;
                 endTime = ev.EndTime;
+
+                colorView.Visibility = ViewStates.Visible;
+                var circle = view.Resources.GetDrawable (Resource.Drawable.UserColor0).Mutate ();
+                ((GradientDrawable)circle).SetColor (displayColor);
+                colorView.Background = circle;
 
             } else {
 
@@ -235,6 +240,7 @@ namespace NachoClient.AndroidClient
                     return;
                 }
 
+                int colorIndex = 0;
                 var folder = McFolder.QueryByFolderEntryId<McCalendar> (eventDetail.Account.Id, eventDetail.SpecificItem.Id).FirstOrDefault ();
                 if (null != folder) {
                     colorIndex = folder.DisplayColor;
@@ -245,10 +251,10 @@ namespace NachoClient.AndroidClient
                 allDay = eventDetail.SpecificItem.AllDayEvent;
                 startTime = eventDetail.StartTime;
                 endTime = eventDetail.EndTime;
-            }
 
-            colorView.Visibility = ViewStates.Visible;
-            colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
+                colorView.Visibility = ViewStates.Visible;
+                colorView.SetBackgroundResource (Bind.ColorForUser (colorIndex));
+            }
 
             titleView.Text = Pretty.SubjectString (title);
 
