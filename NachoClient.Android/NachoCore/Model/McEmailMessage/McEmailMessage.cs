@@ -1002,7 +1002,7 @@ namespace NachoCore.Model
         List<McEmailMessageThread> thread;
 
         public McEmailMessage FirstMessageSpecialCase ()
-        {
+        { 
             return McEmailMessage.QueryById<McEmailMessage> (FirstMessageId);
         }
 
@@ -1060,9 +1060,9 @@ namespace NachoCore.Model
             }
         }
 
-        public void UpdateThreadCount(string threadId)
+        public void UpdateThreadCount (string threadId)
         {
-            var threadAdapter = Source.GetAdapterForThread(threadId);
+            var threadAdapter = Source.GetAdapterForThread (threadId);
             MessageCount = threadAdapter.Count ();
         }
     }

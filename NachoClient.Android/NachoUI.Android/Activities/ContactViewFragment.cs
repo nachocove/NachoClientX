@@ -176,8 +176,10 @@ namespace NachoClient.AndroidClient
         {
             var thread = messages.GetEmailThread (e.Position);
             var message = thread.FirstMessageSpecialCase ();
-            var intent = MessageViewActivity.ShowMessageIntent (Activity, thread, message);
-            StartActivity (intent);
+            if (null != message) {
+                var intent = MessageViewActivity.ShowMessageIntent (Activity, thread, message);
+                StartActivity (intent);
+            }
         }
 
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
@@ -636,8 +638,12 @@ namespace NachoClient.AndroidClient
 
             // Preview label view
             var previewView = view.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
-            var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
-            previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+            if (null == message) {
+                previewView.Text = "";
+            } else {
+                var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
+                previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+            }
 
             var multiSelectView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.selected);
             multiSelectView.Visibility = ViewStates.Invisible;
@@ -654,8 +660,10 @@ namespace NachoClient.AndroidClient
             var position = (int)chiliView.Tag;
             var thread = owner.messages.GetEmailThread (position);
             var message = thread.FirstMessageSpecialCase ();
-            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
-            Bind.BindMessageChili (thread, message, chiliView);
+            if (null != message) {
+                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                Bind.BindMessageChili (thread, message, chiliView);
+            }
         }
     }
 }
