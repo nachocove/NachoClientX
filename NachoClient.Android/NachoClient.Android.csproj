@@ -684,6 +684,7 @@
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
     <Folder Include="NachoCore\Model\McEmailAddress\" />
     <Folder Include="Resources\anim\" />
+    <Folder Include="Resources\xml\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -1675,6 +1676,7 @@
     <AndroidResource Include="Resources\layout\FileListActivity.axml" />
     <AndroidResource Include="Resources\drawable\SwipeFileDelete.xml" />
     <AndroidResource Include="Resources\drawable\SwipeFileForward.xml" />
+    <AndroidResource Include="Resources\xml\exported_paths.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

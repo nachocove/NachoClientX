@@ -12,29 +12,28 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "ImageViewActivity")]            
     public class ImageViewActivity : NcActivity
     {
-        private const string EXTRA_IMAGE_PATH = "com.nachocove.nachomail.EXTRA_IMAGE_PATH";
-        private const string EXTRA_IMAGE_NAME = "com.nachocove.nachomail.EXTRA_IMAGE_NAME";
+        private const string EXTRA_ATTACHMENT_ID = "com.nachocove.nachomail.EXTRA_ATTACHMENT_ID";
 
 
-        public static Intent ImageViewIntent (Context context, string pathToImage, string imageName)
+        public static Intent ImageViewIntent (Context context, McAttachment attachment)
         {
             var intent = new Intent (context, typeof(ImageViewActivity));
             intent.SetAction (Intent.ActionView);
-            intent.PutExtra (EXTRA_IMAGE_PATH, pathToImage);
-            intent.PutExtra (EXTRA_IMAGE_NAME, imageName);
+            intent.PutExtra (EXTRA_ATTACHMENT_ID, attachment.Id);
             return intent;
         }
 
-        public static void ExtractValues (Intent intent, out string imagePath, out string imageName)
+        public static void ExtractValues (Intent intent, out McAttachment attachment)
         {
-            imagePath = intent.GetStringExtra (EXTRA_IMAGE_PATH);
-            imageName = intent.GetStringExtra (EXTRA_IMAGE_NAME);
+            var id = intent.GetIntExtra (EXTRA_ATTACHMENT_ID, 0);
+            attachment = McAttachment.QueryById<McAttachment> (id);
         }
 
         protected override void OnCreate (Bundle bundle)

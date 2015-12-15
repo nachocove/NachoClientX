@@ -14,11 +14,14 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using Android.Webkit;
+using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
     public class ImageViewFragment : Fragment
     {
+        McAttachment attachment;
+
         public static ImageViewFragment newInstance ()
         {
             var fragment = new ImageViewFragment ();
@@ -34,20 +37,34 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.ImageViewFragment, container, false);
 
-            string pathToImage;
-            string imageName;
-            ImageViewActivity.ExtractValues (Activity.Intent, out pathToImage, out imageName);
+            ImageViewActivity.ExtractValues (Activity.Intent, out attachment);
+
+            if (null == attachment) {
+                Activity.Finish ();
+                return view;
+            }
+
+            var buttonBar = new ButtonBar (view);
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Android.Resource.Drawable.IcMenuShare, ShareButton_Click);
 
             var webview = view.FindViewById<WebView> (Resource.Id.webview);
             webview.Settings.LoadWithOverviewMode = true;
             webview.Settings.BuiltInZoomControls = true;
 
-            var baseUri =  Android.Net.Uri.FromFile (new Java.IO.File(pathToImage));
+            var pathToImage = attachment.GetFileDirectory ();
+            var imageName = attachment.GetFileName ();
+
+            var baseUri = Android.Net.Uri.FromFile (new Java.IO.File (pathToImage));
 
             var body = String.Format ("<body><image src=\"{0}\"/></body>", imageName);
-            webview.LoadDataWithBaseURL (baseUri.ToString() + "/", body, "text/html", "utf-8", null);
+            webview.LoadDataWithBaseURL (baseUri.ToString () + "/", body, "text/html", "utf-8", null);
 
             return view;
+        }
+
+        private void ShareButton_Click (object sender, EventArgs e)
+        {
+            Util.OpenAttachment (Activity, attachment, useInternalViewer: false);
         }
     }
 }
