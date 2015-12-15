@@ -72,8 +72,10 @@ namespace NachoClient.AndroidClient
         void MessageListFragment_onMessageClick (object sender, McEmailMessageThread thread)
         {
             var message = thread.FirstMessageSpecialCase ();
-            var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-            StartActivity (intent);
+            if (null != message) {
+                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
+                StartActivity (intent);
+            }
         }
 
         public override void OnBackPressed ()

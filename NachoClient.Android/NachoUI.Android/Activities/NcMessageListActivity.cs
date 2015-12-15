@@ -98,8 +98,10 @@ namespace NachoClient.AndroidClient
                 DealWithThreadInOutbox (thread);
             } else {
                 var message = thread.FirstMessageSpecialCase ();
-                var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
-                StartActivity (intent);
+                if (null != message) {
+                    var intent = MessageViewActivity.ShowMessageIntent (this, thread, message);
+                    StartActivity (intent);
+                }
             }
         }
 
