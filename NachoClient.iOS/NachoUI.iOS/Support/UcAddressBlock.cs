@@ -558,6 +558,9 @@ namespace NachoClient.iOS
                 address.Hidden = true;
                 outer.list.Remove (address);
                 address.RemoveFromSuperview ();
+                if (address.address != null) {
+                    outer.owner.AddressBlockRemovedAddress (outer, address.address);
+                }
             }
 
             protected void ProcessDeleteKey (UcAddressField addressField)
