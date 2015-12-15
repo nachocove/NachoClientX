@@ -74,7 +74,12 @@ namespace NachoCore.Brain
                 break;
             case NcBrainEventType.PERSISTENT_QUEUE:
                 var persistentQueueVent = (NcBrainPersistentQueueEvent)brainEvent;
-                ProcessPersistedRequests (persistentQueueVent.EventCount);
+                try {
+                    ProcessPersistedRequests (persistentQueueVent.EventCount);
+                } finally {
+                    // A reindex contact event can result in an index being left open.
+                    OpenedIndexes.Cleanup ();
+                }
                 break;
             case NcBrainEventType.UNINDEX_CONTACT:
             case NcBrainEventType.UNINDEX_MESSAGE:

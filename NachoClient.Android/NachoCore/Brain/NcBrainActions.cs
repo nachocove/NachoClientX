@@ -228,7 +228,7 @@ namespace NachoCore.Brain
                 var id = emailMessage.Id.ToString ();
                 if (0 != emailMessage.IsIndexed) {
                     // There is an old version in the index. Remove it first.
-                    OpenedIndexes.Cleanup ();
+                    OpenedIndexes.Release (emailMessage.AccountId);
                     index.Remove ("message", id);
                     index = OpenedIndexes.Get (emailMessage.AccountId);
                     Log.Warn (Log.LOG_SEARCH, "IndexEmailMessage: replacing index for {0}", id);
@@ -322,7 +322,7 @@ namespace NachoCore.Brain
                 var id = contact.Id.ToString ();
                 if (0 != contact.IndexVersion) {
                     // There is an old version in the index. Remove it first.
-                    OpenedIndexes.Cleanup ();
+                    OpenedIndexes.Release (contact.AccountId);
                     index.Remove ("contact", id);
                     index = OpenedIndexes.Get (contact.AccountId);
                 }
@@ -349,7 +349,7 @@ namespace NachoCore.Brain
                 Log.Info (Log.LOG_SEARCH, "Account {0} no longer exists. Ignore unindexing email message {1}", accountId, emailMessageId);
                 return;
             }
-            OpenedIndexes.Cleanup ();
+            OpenedIndexes.Release (accountId);
             var index = Index (accountId);
             if (null == index) {
                 Log.Warn (Log.LOG_SEARCH, "fail to find index for account {0}", accountId);
@@ -364,7 +364,7 @@ namespace NachoCore.Brain
                 Log.Info (Log.LOG_SEARCH, "Account {0} no longer exists. Ignore unindexing contact {1}", accountId, contactId);
                 return;
             }
-            OpenedIndexes.Cleanup ();
+            OpenedIndexes.Release (accountId);
             var index = Index (accountId);
             if (null == index) {
                 Log.Warn (Log.LOG_SEARCH, "fail to find index for account {0}", accountId);
