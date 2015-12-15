@@ -132,6 +132,7 @@ namespace NachoClient.AndroidClient
         {
             switch (state) {
             case CurrentTab.Contact:
+                StartActivityForResult (ContactEditActivity.EditContactIntent (this.Activity, contact), EDIT_REQUEST_CODE); 
                 break;
             case CurrentTab.Interactions:
                 break;
@@ -291,7 +292,6 @@ namespace NachoClient.AndroidClient
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
-            var s = (StatusIndEventArgs)e;
         }
 
         void ContactViewAdapter_OnSendMessage (object sender, string emailAddress)
