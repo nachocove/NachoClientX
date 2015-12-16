@@ -310,8 +310,10 @@ namespace NachoClient.AndroidClient
             McEmailMessage message;
             McEmailMessageThread thread;
             MessageFromPosition (position, out thread, out message);
-            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
-            Bind.BindMessageChili (thread, message, chiliView);
+            if (null != message) {
+                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                Bind.BindMessageChili (thread, message, chiliView);
+            }
         }
 
         class MessageDownloaderWithWebView : MessageDownloader
@@ -335,33 +337,36 @@ namespace NachoClient.AndroidClient
 
             Bind.BindMessageHeader (thread, message, vh.mvh);
             vh.mvh.subjectView.SetMaxLines (100);
+
             BindMeetingRequest (vh.ItemView, message);
-            NcEmailMessageBundle bundle;
-            if (message.BodyId != 0) {
-                bundle = new NcEmailMessageBundle (message);
-            } else {
-                bundle = null;
-            }
-            if (bundle == null || bundle.NeedsUpdate) {
-                var messageDownloader = new MessageDownloaderWithWebView ();
-                messageDownloader.webView = vh.webview;
-                messageDownloader.Bundle = bundle;
-                messageDownloader.Delegate = this;
-                messageDownloader.Download (message);
-            } else {
-                RenderBody (vh.webview, bundle);
+
+            if (null != message) {
+                NcEmailMessageBundle bundle;
+                if (message.BodyId != 0) {
+                    bundle = new NcEmailMessageBundle (message);
+                } else {
+                    bundle = null;
+                }
+                if (bundle == null || bundle.NeedsUpdate) {
+                    var messageDownloader = new MessageDownloaderWithWebView ();
+                    messageDownloader.webView = vh.webview;
+                    messageDownloader.Bundle = bundle;
+                    messageDownloader.Delegate = this;
+                    messageDownloader.Download (message);
+                } else {
+                    RenderBody (vh.webview, bundle);
+                }
             }
         }
 
         void BindMeetingRequest (View view, McEmailMessage message)
         {
-            var meeting = message.MeetingRequest;
-
-            if (null == meeting) {
+            if ((null == message) || (null == message.MeetingRequest)) {
                 view.FindViewById<View> (Resource.Id.event_in_message).Visibility = ViewStates.Gone;
                 return;
             }
 
+            var meeting = message.MeetingRequest;
             var calendarItem = McCalendar.QueryByUID (message.AccountId, meeting.GetUID ());
 
             var whenView = view.FindViewById<TextView> (Resource.Id.event_when_label);
@@ -628,7 +633,9 @@ namespace NachoClient.AndroidClient
             McEmailMessage message;
             McEmailMessageThread thread;
             MessageFromPosition (position, out thread, out message);
-            NcEmailArchiver.Archive (message);
+            if (null != message) {
+                NcEmailArchiver.Archive (message);
+            }
             DoneWithMessage ();
         }
 
@@ -638,7 +645,9 @@ namespace NachoClient.AndroidClient
             McEmailMessage message;
             McEmailMessageThread thread;
             MessageFromPosition (position, out thread, out message);
-            NcEmailArchiver.Delete (message);
+            if (null != message) {
+                NcEmailArchiver.Delete (message);
+            }
             DoneWithMessage ();
         }
 
@@ -648,7 +657,9 @@ namespace NachoClient.AndroidClient
             McEmailMessage message;
             McEmailMessageThread thread;
             MessageFromPosition (position, out thread, out message);
-            StartComposeActivity (EmailHelper.Action.Forward, thread, message);
+            if (null != message) {
+                StartComposeActivity (EmailHelper.Action.Forward, thread, message);
+            }
         }
 
         void ReplyButton_Click (int position)
@@ -657,7 +668,9 @@ namespace NachoClient.AndroidClient
             McEmailMessage message;
             McEmailMessageThread thread;
             MessageFromPosition (position, out thread, out message);
-            StartComposeActivity (EmailHelper.Action.Reply, thread, message);
+            if (null != message) {
+                StartComposeActivity (EmailHelper.Action.Reply, thread, message);
+            }
         }
 
         void ReplyAllButton_Click (int position)
@@ -666,7 +679,9 @@ namespace NachoClient.AndroidClient
             McEmailMessage message;
             McEmailMessageThread thread;
             MessageFromPosition (position, out thread, out message);
-            StartComposeActivity (EmailHelper.Action.ReplyAll, thread, message);
+            if (null != message) {
+                StartComposeActivity (EmailHelper.Action.ReplyAll, thread, message);
+            }
         }
 
         void StartComposeActivity (EmailHelper.Action action, McEmailMessageThread thread, McEmailMessage message)
