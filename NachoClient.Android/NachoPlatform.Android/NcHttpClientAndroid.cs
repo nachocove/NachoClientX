@@ -47,6 +47,8 @@ namespace NachoPlatform
 
         long defaultTimeoutSecs = 30;
 
+        int defaultAuthRetries = 1;
+
         private NcHttpClient ()
         {
             _client = new OkHttpClient ();
@@ -152,7 +154,7 @@ namespace NachoPlatform
                     Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace().ToString ());
                 }
                 var basicAuth = OkHttp.Credentials.Basic (request.Cred.Username, request.Cred.GetPassword ());
-                cloned.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth));
+                cloned.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth, defaultAuthRetries));
                 if (PreAuthenticate) {
                     builder.Header ("Authorization", basicAuth);
                 }
@@ -335,15 +337,24 @@ namespace NachoPlatform
         {
             private string CredString;
 
-            public NcOkNativeAuthenticator (string credString)
+            int retries;
+
+            public NcOkNativeAuthenticator (string credString, int maxRetries)
             {
+                retries = maxRetries;
                 CredString = credString;
             }
 
             public Request Authenticate (Java.Net.Proxy proxy, Response response)
             {
-                Log.Warn (Log.LOG_HTTP, "NcHttpClient: Doing auth, so pre-auth didn't work!");
-                return response.Request ().NewBuilder ().Header ("Authorization", CredString).Build ();
+                Request newRequest = null;
+                if (retries-- <= 0) {
+                    Log.Info (Log.LOG_HTTP, "NcOkNativeAuthenticator: Max-retries exceeded");
+                } else {
+                    Log.Info (Log.LOG_HTTP, "NcOkNativeAuthenticator: retries left {0}", retries);
+                    newRequest = response.Request ().NewBuilder ().Header ("Authorization", CredString).Build ();
+                }
+                return newRequest;
             }
 
             public Request AuthenticateProxy (Java.Net.Proxy proxy, Response response)
