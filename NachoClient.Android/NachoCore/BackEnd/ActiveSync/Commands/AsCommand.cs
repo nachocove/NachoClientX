@@ -115,11 +115,6 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public virtual bool IsContentLarge (AsHttpOperation Sender)
-        {
-            return false;
-        }
-
         public virtual bool DoSendPolicyKey (AsHttpOperation Sender)
         {
             return true;
@@ -210,7 +205,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public virtual bool SafeToMime (AsHttpOperation Sender, out Stream mime)
+        public virtual bool SafeToMime (AsHttpOperation Sender, out FileStream mime)
         {
             lock (PendingResolveLockObj) {
                 if (RequiresPending () && null == PendingSingle && 0 == PendingList.Count) {
@@ -222,7 +217,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        protected virtual Stream ToMime (AsHttpOperation Sender)
+        protected virtual FileStream ToMime (AsHttpOperation Sender)
         {
             return null;
         }
@@ -241,7 +236,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public virtual Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public virtual Event PreProcessResponse (AsHttpOperation Sender, NcHttpResponse response)
         {
             PendingNonResolveApply (pending => {
                 pending.ResponseHttpStatusCode = (uint)response.StatusCode;
@@ -249,12 +244,12 @@ namespace NachoCore.ActiveSync
             return null;
         }
         // Called for non-WBXML HTTP 200 responses.
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+        public virtual Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public virtual Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }

@@ -18,19 +18,18 @@ namespace NachoCore.ActiveSync
         double TimeoutInSeconds { get; }
 
         Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender);
-        Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response);
-        Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken);
-        Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken);
+        Event PreProcessResponse (AsHttpOperation Sender, NcHttpResponse response);
+        Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken);
+        Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken);
         void PostProcessEvent (Event evt);
         Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc);
         bool SafeToXDocument (AsHttpOperation Sender, out XDocument doc);
-        bool SafeToMime (AsHttpOperation Sender, out Stream mime);
+        bool SafeToMime (AsHttpOperation Sender, out FileStream mime);
         Uri ServerUri (AsHttpOperation Sender, bool isEmailRedacted = false);
         void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender);
         HttpMethod Method (AsHttpOperation Sender);
         bool UseWbxml (AsHttpOperation Sender);
         bool IgnoreBody (AsHttpOperation Sender);
-        bool IsContentLarge (AsHttpOperation Sender);
         bool DoSendPolicyKey (AsHttpOperation Sender);
         // TODO: is this really a good idea?
         void StatusInd (bool didSucceed);

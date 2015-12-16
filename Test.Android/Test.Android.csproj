@@ -61,21 +61,21 @@
     <Reference Include="GooglePlayServicesLib">
       <HintPath>..\packages\Xamarin.GooglePlayServices.22.0.0.2\lib\MonoAndroid41\GooglePlayServicesLib.dll</HintPath>
     </Reference>
-    <Reference Include="Xamarin.Android.Support.v4">
-      <HintPath>..\packages\Xamarin.Android.Support.v4.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
-    </Reference>
     <Reference Include="Mono.Android.Export" />
-    <Reference Include="Xamarin.Android.Support.v13">
-      <HintPath>..\packages\Xamarin.Android.Support.v13.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v13.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.CardView">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.CardView.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v7.CardView.dll</HintPath>
+    <Reference Include="Xamarin.Android.Support.v4">
+      <HintPath>..\packages\Xamarin.Android.Support.v4.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.Android.Support.v7.RecyclerView">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.RecyclerView.23.0.1.3\lib\MonoAndroid403\Xamarin.Android.Support.v7.RecyclerView.dll</HintPath>
+      <HintPath>..\packages\Xamarin.Android.Support.v7.RecyclerView.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.RecyclerView.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.CardView">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.CardView.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.CardView.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v13">
+      <HintPath>..\packages\Xamarin.Android.Support.v13.23.1.1.0\lib\MonoAndroid403\Xamarin.Android.Support.v13.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -151,15 +151,31 @@
     <Compile Include="McCredTest.cs" />
     <Compile Include="KeyChainAccessTest.cs" />
     <Compile Include="NcBase64Test.cs" />
+    <Compile Include="McContactTest.cs" />
+    <Compile Include="NcHttpUtilTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="packages.config" />
+    <None Include="..\native.Android\libs\armeabi\libnachoplatform.so">
+      <Link>NachoPlatform.Android\libs\armeabi\libnachoplatform.so</Link>
+    </None>
+    <None Include="..\native.Android\libs\armeabi-v7a\libnachoplatform.so">
+      <Link>NachoPlatform.Android\libs\armeabi-v7a\libnachoplatform.so</Link>
+    </None>
+    <None Include="..\native.Android\libs\x86\libnachoplatform.so">
+      <Link>NachoPlatform.Android\libs\x86\libnachoplatform.so</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\Icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />
+    <AndroidNativeLibrary Include="lib\armeabi-v7a\libnachoplatform.so" />
+    <AndroidNativeLibrary Include="lib\x86\libnachoplatform.so" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NachoClient.Android\NachoClient.Android.csproj">
@@ -205,14 +221,6 @@
     <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.Android\Lucene.Net.Android.csproj">
       <Project>{B0F398CA-1CAA-45FD-94DC-15BBF1A93377}</Project>
       <Name>Lucene.Net.Android</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ModernHttpClient\vendor\okhttp\OkHttp\OkHttp.csproj">
-      <Project>{133270E5-3A11-4A4A-A4AD-1D89FC9DBAAF}</Project>
-      <Name>OkHttp</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ModernHttpClient-demo\src\ModernHttpClient\ModernHttpClient.Android.csproj">
-      <Project>{F7290B9E-C821-4DA7-A4E5-824D9B0F70F2}</Project>
-      <Name>ModernHttpClient.Android</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\rtfparserkitBinding\rtfparserkitBinding\rtfparserkitBinding.csproj">
       <Project>{40A75D1C-1C71-41F5-9B84-A3884CD1EE81}</Project>
@@ -263,9 +271,6 @@
     <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\response\Ping.xsd">
       <Link>Assets\xsd\Response\Ping.xsd</Link>
     </AndroidAsset>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\utopiasystems.cer" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
 </Project>

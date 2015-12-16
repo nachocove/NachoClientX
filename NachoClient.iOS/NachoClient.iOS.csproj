@@ -1717,8 +1717,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimeStamp.cs">
       <Link>NachoCore\Utils\NcTimeStamp.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\NcHttpClientiOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcBase64.cs">
       <Link>NachoCore\Utils\NcBase64.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcHttpUtils.cs">
+      <Link>NachoCore\Utils\NcHttpUtils.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McBuildInfo.cs">
       <Link>NachoCore\Model\McBuildInfo.cs</Link>
@@ -2676,10 +2680,6 @@
     <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns.iOS\DnDns.iOS.csproj">
       <Project>{6F68E3AD-B80E-4980-8476-7ADDFFFF6672}</Project>
       <Name>DnDns.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ModernHttpClient\src\ModernHttpClient\ModernHttpClient.iOS64.csproj">
-      <Project>{6941F069-AC02-40EE-BBF3-9FE3331030EF}</Project>
-      <Name>ModernHttpClient.iOS64</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
       <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>

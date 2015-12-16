@@ -368,7 +368,7 @@ namespace NachoCore.Model
         }
 
         /// TODO: Support other types besides mime!
-        public Stream ToMime (out long length)
+        public FileStream ToMime (out long length)
         {
             length = 0;
             var bodyPath = MimePath ();

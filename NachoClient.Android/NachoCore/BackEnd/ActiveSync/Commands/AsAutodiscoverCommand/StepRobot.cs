@@ -16,7 +16,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using ModernHttpClient;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -572,7 +571,6 @@ namespace NachoCore.ActiveSync
                     DontReportCommResult = true,
                     TriesLeft = 2,
                     TimeoutExpander = KDefaultTimeoutExpander,
-                    DontReUseHttpClient = true,
                 };
             }
 
@@ -674,7 +672,7 @@ namespace NachoCore.ActiveSync
                 DoRobot2ReDir ();
             }
 
-            private async void DoRobotGetServerCert ()
+            private void DoRobotGetServerCert ()
             {
                 X509Certificate2 cached;
                 if (ServerCertificatePeek.Instance.Cache.TryGetValue (ReDirUri.Host, out cached)) {
@@ -684,31 +682,30 @@ namespace NachoCore.ActiveSync
                 }
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
-                    var handler = new HttpClientHandler () { AllowAutoRedirect = false };
-                    var client = (IHttpClient)Activator.CreateInstance (AsHttpOperation.HttpClientType, handler);
-                    client.Timeout = CertTimeout;
+                    var request = new NcHttpRequest (HttpMethod.Get, ReDirUri);
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
-                    try {
-                        LastUri = ReDirUri;
-                        await client.GetAsync (ReDirUri).ConfigureAwait (false);
-                    } catch (Exception ex) {
-                        // Exceptions don't matter - only the cert matters.
-                        Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", ex.ToString ());
-                    } finally {
-                        client.Dispose ();
-                        handler.Dispose ();
-                    }
-                    ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
-                    if (null == ServerCertificate) {
-                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC1");
-                        return;
-                    }
-                    StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSC2");
-                    return;
+                    LastUri = ReDirUri;
+                    Command.ProtoControl.HttpClient.GetRequest (request, CertTimeout.Milliseconds, GetServerCertSuccess, GetServerCertError, Cts.Token);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRGSC3");
                     return;
                 }
+            }
+
+            void GetServerCertSuccess (NcHttpResponse response, CancellationToken token)
+            {
+                ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
+                if (null == ServerCertificate) {
+                    StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC1");
+                } else {
+                    StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSC2");
+                }
+            }
+
+            void GetServerCertError (Exception exception, CancellationToken token)
+            {
+                Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", exception.ToString ());
+                GetServerCertSuccess (null, token);
             }
 
             private void DoRobotGotCert ()
@@ -849,7 +846,7 @@ namespace NachoCore.ActiveSync
                 throw new Exception ("We should not be getting this (HTTP 451) while doing autodiscovery.");
             }
 
-            public virtual bool SafeToMime (AsHttpOperation Sender, out Stream mime)
+            public virtual bool SafeToMime (AsHttpOperation Sender, out FileStream mime)
             {
                 // We don't generate MIME.
                 mime = null;
@@ -909,11 +906,6 @@ namespace NachoCore.ActiveSync
                 return false;
             }
 
-            public bool IsContentLarge (AsHttpOperation Sender)
-            {
-                return false;
-            }
-
             public bool DoSendPolicyKey (AsHttpOperation Sender)
             {
                 return false;
@@ -933,7 +925,7 @@ namespace NachoCore.ActiveSync
                 return true;
             }
 
-            public Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+            public Event PreProcessResponse (AsHttpOperation Sender, NcHttpResponse response)
             {
                 switch (response.StatusCode) {
                 case HttpStatusCode.Found:
@@ -957,13 +949,13 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
+            public Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, CancellationToken cToken)
             {
                 // We should never get back content that isn't XML.
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPR0HARD");
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+            public Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
             {
                 var xmlResponse = doc.Root.ElementAnyNs (Xml.Autodisco.Response);
                 var xmlUser = xmlResponse.ElementAnyNs (Xml.Autodisco.User);
