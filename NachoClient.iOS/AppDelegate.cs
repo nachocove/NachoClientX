@@ -990,6 +990,7 @@ namespace NachoClient.iOS
 
             var fromString = Pretty.SenderString (message.From);
             var subjectString = Pretty.SubjectString (message.Subject);
+            var previewString = Pretty.PreviewString (message.BodyPreview);
             if (!String.IsNullOrEmpty (subjectString)) {
                 subjectString += " ";
             }
@@ -1005,11 +1006,9 @@ namespace NachoClient.iOS
 
             if (NotificationCanAlert) {
                 var notif = new UILocalNotification ();
+                notif.AlertBody = String.Format ("{0}\n{1}\n{2}", fromString, subjectString, previewString);
                 if (notif.RespondsToSelector (new Selector ("setAlertTitle:"))) {
-                    notif.AlertTitle = fromString;
-                    notif.AlertBody = subjectString;
-                } else {
-                    notif.AlertBody = subjectString + " from " + fromString;
+                    notif.AlertTitle = "New Email";
                 }
                 notif.AlertAction = null;
                 notif.UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
