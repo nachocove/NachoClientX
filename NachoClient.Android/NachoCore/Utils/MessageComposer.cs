@@ -240,6 +240,14 @@ namespace NachoCore.Utils
 
         private void DownloadRelatedMessage ()
         {
+            if (RelatedMessage.BodyId == 0) {
+                var body = McBody.InsertPlaceholder (RelatedMessage.AccountId);
+                RelatedMessage = RelatedMessage.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
+                    var relatedMessage = record as McEmailMessage;
+                    relatedMessage.BodyId = body.Id;
+                    return true;
+                });
+            }
             var relatedBundle = new NcEmailMessageBundle (RelatedMessage);
             if (relatedBundle.NeedsUpdate) {
                 RelatedMessageDownloader = new MessageDownloader ();

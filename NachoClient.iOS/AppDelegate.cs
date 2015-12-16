@@ -68,6 +68,12 @@ namespace NachoClient.iOS
         private bool FirstLaunchInitialization = false;
         private bool DidEnterBackgroundCalled = false;
 
+        private const string NotificationActionIdentifierReply = "reply";
+        private const string NotificationActionIdentifierMark = "mark";
+        private const string NotificationActionIdentifierDelete = "delete";
+        private const string NotificationActionIdentifierArchive = "archive";
+        private const string NotificationCategoryIdentifierMessage = "message";
+
         private ulong UserNotificationSettings {
             get {
                 if (UIDevice.CurrentDevice.CheckSystemVersion (8, 0)) {
@@ -339,7 +345,31 @@ namespace NachoClient.iOS
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
-                var settings = UIUserNotificationSettings.GetSettingsForTypes (KNotificationSettings, null);
+                var replyAction = new UIMutableUserNotificationAction ();
+                replyAction.ActivationMode = UIUserNotificationActivationMode.Foreground;
+                replyAction.Identifier = NotificationActionIdentifierReply;
+                replyAction.Title = "Reply";
+                var markAction = new UIMutableUserNotificationAction ();
+                markAction.ActivationMode = UIUserNotificationActivationMode.Background;
+                markAction.Identifier = NotificationActionIdentifierMark;
+                markAction.Title = "Mark as Read";
+                var archiveAction = new UIMutableUserNotificationAction ();
+                archiveAction.ActivationMode = UIUserNotificationActivationMode.Background;
+                archiveAction.Identifier = NotificationActionIdentifierArchive;
+                archiveAction.Title = "Archive";
+                var deleteAction = new UIMutableUserNotificationAction ();
+                deleteAction.ActivationMode = UIUserNotificationActivationMode.Background;
+                deleteAction.Identifier = NotificationActionIdentifierDelete;
+                deleteAction.Title = "Delete";
+                deleteAction.Destructive = true;
+                var defaultActions = new UIUserNotificationAction[] { replyAction, markAction, archiveAction, deleteAction };
+                var minimalActions = new UIUserNotificationAction[] { replyAction, markAction };
+                var messageCategory = new UIMutableUserNotificationCategory ();
+                messageCategory.Identifier = NotificationCategoryIdentifierMessage;
+                messageCategory.SetActions (defaultActions, UIUserNotificationActionContext.Default);
+                messageCategory.SetActions (minimalActions, UIUserNotificationActionContext.Minimal);
+                var categories = new NSSet (messageCategory);
+                var settings = UIUserNotificationSettings.GetSettingsForTypes (KNotificationSettings, categories);
                 UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
                 UIApplication.SharedApplication.RegisterForRemoteNotifications ();
             } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
@@ -899,6 +929,43 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void HandleAction (UIApplication application, string actionIdentifier, UILocalNotification localNotification, Action completionHandler)
+        {
+            var emailNotification = (NSNumber)localNotification.UserInfo.ObjectForKey (EmailNotificationKey);
+            if (emailNotification != null) {
+                var emailMessageId = emailNotification.ToMcModelIndex ();
+                var thread = new McEmailMessageThread ();
+                thread.FirstMessageId = emailMessageId;
+                thread.MessageCount = 1;
+                if (actionIdentifier == NotificationActionIdentifierReply) {
+                    // TODO: switch accounts if necessary
+                    // But what to do with other things that might be currently active for the current account
+                    // like an existing compose window
+                    if (Window.RootViewController is NachoTabBarController) {
+                        EmailHelper.MarkAsRead (thread, force: true);
+                        var composeViewController = new MessageComposeViewController ();
+                        composeViewController.Composer.RelatedThread = thread;
+                        composeViewController.Composer.Kind = EmailHelper.Action.Reply;
+                        composeViewController.Present (false, null);
+                    }
+                } else if (actionIdentifier == NotificationActionIdentifierArchive) {
+                    var message = thread.FirstMessageSpecialCase ();
+                    NcEmailArchiver.Archive (message);
+                    BadgeNotifUpdate ();
+                } else if (actionIdentifier == NotificationActionIdentifierMark) {
+                    EmailHelper.MarkAsRead (thread, force: true);
+                    BadgeNotifUpdate ();
+                } else if (actionIdentifier == NotificationActionIdentifierDelete) {
+                    var message = thread.FirstMessageSpecialCase ();
+                    NcEmailArchiver.Delete (message);
+                    BadgeNotifUpdate ();
+                } else {
+                    NcAssert.CaseError ("Unknown notification action");
+                }
+            }
+            completionHandler ();
+        }
+
         public void BgStatusIndReceiver (object sender, EventArgs e)
         {
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
@@ -1006,6 +1073,7 @@ namespace NachoClient.iOS
 
             if (NotificationCanAlert) {
                 var notif = new UILocalNotification ();
+                notif.Category = NotificationCategoryIdentifierMessage;
                 notif.AlertBody = String.Format ("{0}\n{1}\n{2}", fromString, subjectString, previewString);
                 if (notif.RespondsToSelector (new Selector ("setAlertTitle:"))) {
                     notif.AlertTitle = "New Email";
