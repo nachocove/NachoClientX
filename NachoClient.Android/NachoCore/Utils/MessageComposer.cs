@@ -30,7 +30,7 @@ namespace NachoCore.Utils
         #region Properties
 
         public MessageComposerDelegate Delegate;
-        public readonly McAccount Account;
+        public McAccount Account { get; private set; }
         public McEmailMessage Message;
         public McEmailMessageThread RelatedThread;
         public McCalendar RelatedCalendarItem;
@@ -155,6 +155,12 @@ namespace NachoCore.Utils
             if (MessagePreparationState != MessagePreparationStatus.NotStarted) {
                 return;
             }
+            if (RelatedThread != null) {
+                RelatedMessage = RelatedThread.FirstMessageSpecialCase ();
+                if (RelatedMessage.AccountId != Account.Id) {
+                    Account = McAccount.QueryById<McAccount> (RelatedMessage.AccountId);
+                }
+            }
             MessagePreparationState = MessagePreparationStatus.Preparing;
             // We can be given a Message beforehand, but it's not required.
             // So if we weren't given a message, create a new completely blank one before proceeding.
@@ -177,7 +183,6 @@ namespace NachoCore.Utils
             // For a new message, we need to first save it to the database so we have an Id
             // that will be referenced by the bundle, attachments, etc.
             if (RelatedThread != null) {
-                RelatedMessage = RelatedThread.FirstMessageSpecialCase ();
                 Message.ReferencedEmailId = RelatedMessage.Id;
                 Message.ReferencedIsForward = Kind == EmailHelper.Action.Forward;
                 Message.ReferencedBodyIsIncluded = true;

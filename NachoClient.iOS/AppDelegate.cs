@@ -938,9 +938,6 @@ namespace NachoClient.iOS
                 thread.FirstMessageId = emailMessageId;
                 thread.MessageCount = 1;
                 if (actionIdentifier == NotificationActionIdentifierReply) {
-                    // TODO: switch accounts if necessary
-                    // But what to do with other things that might be currently active for the current account
-                    // like an existing compose window
                     if (Window.RootViewController is NachoTabBarController) {
                         EmailHelper.MarkAsRead (thread, force: true);
                         var composeViewController = new MessageComposeViewController ();
