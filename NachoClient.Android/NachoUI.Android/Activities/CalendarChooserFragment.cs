@@ -8,6 +8,7 @@ using NachoCore;
 using Android.Widget;
 using Android.Views;
 using Android.OS;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -127,7 +128,7 @@ namespace NachoClient.AndroidClient
                 } else {
                     cellView = convertView ?? LayoutInflater.From (parent.Context).Inflate (Resource.Layout.CalendarChooserCell, parent, false);
                     var icon = cellView.FindViewById<ImageView> (Resource.Id.calendar_chooser_icon);
-                    if (item.Item2.Id == selected.Id) {
+                    if (SameFolder (item.Item2, selected)) {
                         icon.SetImageResource (Resource.Drawable.gen_checkbox_checked);
                     } else {
                         icon.SetImageResource (Resource.Drawable.gen_checkbox);
@@ -136,6 +137,16 @@ namespace NachoClient.AndroidClient
                     text.Text = item.Item2.DisplayName;
                 }
                 return cellView;
+            }
+
+            private bool SameFolder (McFolder a, McFolder b)
+            {
+                var aDevice = a as AndroidDeviceCalendarFolder;
+                var bDevice = b as AndroidDeviceCalendarFolder;
+                if (null != aDevice && null != bDevice) {
+                    return aDevice.DeviceCalendarId == bDevice.DeviceCalendarId;
+                }
+                return null == aDevice && null == bDevice && a.Id == b.Id;
             }
         }
     }

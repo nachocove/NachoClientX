@@ -668,11 +668,13 @@ namespace NachoClient.AndroidClient
 
         public AndroidEventDetail (McEvent occurrence)
         {
-            isAppEvent = 0 == occurrence.DeviceCalendarId;
+            isAppEvent = 0 == occurrence.DeviceEventId;
             if (isAppEvent) {
                 base.Initialize (occurrence);
             } else {
-                var calItem = AndroidCalendars.GetEventDetails (occurrence.DeviceCalendarId, out calendarName);
+                AndroidDeviceCalendarFolder folder;
+                var calItem = AndroidCalendars.GetEventDetails (occurrence.DeviceEventId, out folder);
+                calendarName = (null == folder) ? null : folder.DisplayName;
                 base.Initialize (occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
             }
         }
@@ -688,7 +690,9 @@ namespace NachoClient.AndroidClient
             if (isAppEvent) {
                 base.Refresh ();
             } else {
-                var calItem = AndroidCalendars.GetEventDetails (Occurrence.DeviceCalendarId, out calendarName);
+                AndroidDeviceCalendarFolder folder;
+                var calItem = AndroidCalendars.GetEventDetails (Occurrence.DeviceEventId, out folder);
+                calendarName = (null == folder) ? null : folder.DisplayName;
                 base.Initialize (Occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
             }
         }

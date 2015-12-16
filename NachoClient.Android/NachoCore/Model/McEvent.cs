@@ -55,7 +55,7 @@ namespace NachoCore.Model
         /// in the database.  If it is non-zero, then this McEvent is an in-memory object only.
         /// </summary>
         [Ignore]
-        public long DeviceCalendarId { get; set; }
+        public long DeviceEventId { get; set; }
 
         static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, string UID, bool allDayEvent, int calendarId, int exceptionId)
         {
