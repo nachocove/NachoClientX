@@ -620,6 +620,8 @@
     <Compile Include="NachoUI.Android\Support\WrapperRecyclerAdapter.cs" />
     <Compile Include="NachoUI.Android\Activities\FileListActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\FileListFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\ContactEditActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\ContactEditFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -684,6 +686,7 @@
     <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
     <Folder Include="NachoCore\Model\McEmailAddress\" />
     <Folder Include="Resources\anim\" />
+    <Folder Include="Resources\xml\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -1675,6 +1678,9 @@
     <AndroidResource Include="Resources\layout\FileListActivity.axml" />
     <AndroidResource Include="Resources\drawable\SwipeFileDelete.xml" />
     <AndroidResource Include="Resources\drawable\SwipeFileForward.xml" />
+    <AndroidResource Include="Resources\xml\exported_paths.xml" />
+    <AndroidResource Include="Resources\layout\ContactEditActivity.axml" />
+    <AndroidResource Include="Resources\layout\ContactEditFragment.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

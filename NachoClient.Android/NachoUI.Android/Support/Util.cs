@@ -6,6 +6,8 @@ using Android.Widget;
 using NachoCore;
 using Android.Content;
 using Android.Content.PM;
+using Android.Support.V4.Content;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -118,7 +120,7 @@ namespace NachoClient.AndroidClient
             context.StartActivity (MessageComposeActivity.NewMessageIntent (context, emailAddress));
         }
 
-        public static void CallNumber(Context context, McContact contact, string alternatePhoneNumber)
+        public static void CallNumber (Context context, McContact contact, string alternatePhoneNumber)
         {
             try {
                 if (null != alternatePhoneNumber) {
@@ -142,31 +144,41 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static void OpenAttachment(Context context, McAttachment attachment)
+
+        public static void OpenAttachment (Context context, McAttachment attachment, bool useInternalViewer = true)
         {
-            if (attachment.IsImageFile ()) {
-                var viewerIntent = ImageViewActivity.ImageViewIntent (context, attachment.GetFileDirectory (), attachment.GetFileName ());
+            if (useInternalViewer && attachment.IsImageFile ()) {
+                var viewerIntent = ImageViewActivity.ImageViewIntent (context, attachment);
                 context.StartActivity (viewerIntent);
                 return;
             }
                 
             try {
-                var myIntent = new Intent (Intent.ActionView);
-                var file = new Java.IO.File (attachment.GetFilePath ()); 
-                var extension = Android.Webkit.MimeTypeMap.GetFileExtensionFromUrl (Android.Net.Uri.FromFile (file).ToString ());
-                var mimetype = Android.Webkit.MimeTypeMap.Singleton.GetMimeTypeFromExtension (extension);
-                myIntent.SetDataAndType (Android.Net.Uri.FromFile (file), mimetype);
+                Android.Net.Uri fileUri;
+                var file = new Java.IO.File (attachment.GetFilePath ());
+                try {
+                    fileUri = FileProvider.GetUriForFile (context, "com.nachocove.fileprovider", file);
+                } catch (Java.Lang.IllegalArgumentException e) {
+                    Log.Error (Log.LOG_UTILS, "FileProvider error\n{0}", e.StackTrace);
+                    NcAlertView.ShowMessage (context, "Attachment", String.Format ("The selected file cannot be shared: {0}", attachment.DisplayName));
+                    return;
+                }
+                var intent = new Intent (Intent.ActionView);
+                intent.AddFlags (ActivityFlags.GrantReadUriPermission);
+                var fileType = context.ContentResolver.GetType (fileUri);
+                intent.SetDataAndType (fileUri, fileType);
+                // Look for potential handlers
                 var packageManager = context.PackageManager;
-                var activities = packageManager.QueryIntentActivities (myIntent, PackageInfoFlags.MatchDefaultOnly);
+                var activities = packageManager.QueryIntentActivities (intent, PackageInfoFlags.MatchDefaultOnly);
                 var isIntentSafe = 0 < activities.Count;
                 if (isIntentSafe) {
-                    context.StartActivity (myIntent);
+                    context.StartActivity (intent);
                 } else {
-                    NcAlertView.ShowMessage (context, "Attachment", "No application can open this attachment.");
+                    NcAlertView.ShowMessage (context, "Attachment", String.Format ("No application can open this attachment: {0}", attachment.DisplayName));
                 }
-            } catch (Exception e) {
-                // TODO: handle exception
-                String data = e.Message;
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_UTILS, "Sharing error\n{0}", ex.StackTrace);
+                NcAlertView.ShowMessage (context, "Attachment", String.Format ("The selected file cannot be shared: {0}", attachment.DisplayName));
             }
         }
     }
