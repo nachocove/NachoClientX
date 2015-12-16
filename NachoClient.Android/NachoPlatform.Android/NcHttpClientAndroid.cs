@@ -47,7 +47,7 @@ namespace NachoPlatform
 
         long defaultTimeoutSecs = 30;
 
-        int defaultAuthRetries = 1;
+        int defaultAuthRetries = 0;
 
         private NcHttpClient ()
         {
@@ -348,7 +348,7 @@ namespace NachoPlatform
             public Request Authenticate (Java.Net.Proxy proxy, Response response)
             {
                 Request newRequest = null;
-                if (retries-- <= 0) {
+                if (retries-- < 1) {
                     Log.Info (Log.LOG_HTTP, "NcOkNativeAuthenticator: Max-retries exceeded");
                 } else {
                     Log.Info (Log.LOG_HTTP, "NcOkNativeAuthenticator: retries left {0}", retries);

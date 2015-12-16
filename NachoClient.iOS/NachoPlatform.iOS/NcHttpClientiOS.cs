@@ -45,6 +45,8 @@ namespace NachoPlatform
 
         public readonly bool PreAuthenticate = true;
 
+        int defaultAuthRetries = 0;
+
         private NcHttpClient ()
         {
         }
@@ -160,7 +162,7 @@ namespace NachoPlatform
                                 ProgressDelegate progress,
                                 CancellationToken cancellationToken)
         {
-            var dele = new NcDownloadTaskDelegate (this, request, request.Cred, cancellationToken, success, error, progress);
+            var dele = new NcDownloadTaskDelegate (this, request, request.Cred, defaultAuthRetries, cancellationToken, success, error, progress);
             SetupAndRunRequest (false, request, timeout, dele, cancellationToken);
         }
 
@@ -171,7 +173,7 @@ namespace NachoPlatform
 
         public void SendRequest (NcHttpRequest request, int timeout, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress, CancellationToken cancellationToken)
         {
-            var dele = new NcDownloadTaskDelegate (this, request, request.Cred, cancellationToken, success, error, progress);
+            var dele = new NcDownloadTaskDelegate (this, request, request.Cred, defaultAuthRetries, cancellationToken, success, error, progress);
             SetupAndRunRequest (true, request, timeout, dele, cancellationToken);
         }
 
@@ -199,7 +201,9 @@ namespace NachoPlatform
 
             NcHttpRequest OriginalRequest;
 
-            public NcDownloadTaskDelegate (NcHttpClient owner, NcHttpRequest request, McCred cred, CancellationToken cancellationToken, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress = null)
+            int retries;
+
+            public NcDownloadTaskDelegate (NcHttpClient owner, NcHttpRequest request, McCred cred, int maxRetries, CancellationToken cancellationToken, SuccessDelegate success, ErrorDelegate error, ProgressDelegate progress = null)
             {
                 sw = new PlatformStopwatch ();
                 sw.Start ();
@@ -210,6 +214,7 @@ namespace NachoPlatform
                 Token = cancellationToken;
                 Owner = owner;
                 OriginalRequest = request;
+                retries = maxRetries;
             }
 
             public override void DidFinishDownloading (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, NSUrl location)
@@ -302,7 +307,21 @@ namespace NachoPlatform
             public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
             {
                 try {
-                    BaseDidReceiveChallenge (Cred, session, task, challenge, completionHandler);
+                    if (challenge.ProtectionSpace.AuthenticationMethod != "NSURLAuthenticationMethodServerTrust") {
+                        if (retries-- < 1) {
+                            Log.Info (Log.LOG_HTTP, "NcDownloadTaskDelegate: retries exceeded");
+                            completionHandler(NSUrlSessionAuthChallengeDisposition.RejectProtectionSpace, null);
+                        } else {
+                            Log.Info (Log.LOG_HTTP, "NcDownloadTaskDelegate: auth retries left {0}", retries);
+                            HandleCredentialsRequest (Cred, challenge, completionHandler);
+                        }
+                    } else {
+                        if (ServicePointManager.ServerCertificateValidationCallback == null) {
+                            completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
+                        } else {
+                            CertValidation (task.OriginalRequest.Url, challenge, completionHandler);
+                        }
+                    }
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidReceiveChallenge exception {1}", task.TaskDescription, ex);
                 }
@@ -333,20 +352,6 @@ namespace NachoPlatform
             return ret;
         }
 
-
-        public static void BaseDidReceiveChallenge (McCred cred, NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
-        {
-            if (challenge.ProtectionSpace.AuthenticationMethod != "NSURLAuthenticationMethodServerTrust") {
-                Log.Warn (Log.LOG_HTTP, "NcHttpClient({0}): Doing auth, so pre-auth didn't work!", task.TaskDescription);
-                HandleCredentialsRequest (cred, challenge, completionHandler);
-            } else {
-                if (ServicePointManager.ServerCertificateValidationCallback == null) {
-                    completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
-                } else {
-                    CertValidation (task.OriginalRequest.Url, challenge, completionHandler);
-                }
-            }
-        }
 
         static void HandleCredentialsRequest (McCred cred, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
         {
