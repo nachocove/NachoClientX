@@ -2,7 +2,6 @@
 //
 using System;
 using System.Linq;
-using System.Net.Http;
 using System.Xml.Linq;
 using System.Threading;
 using NachoCore.ActiveSync;
@@ -83,7 +82,7 @@ namespace NachoCore.ActiveSync
             return (didSucceed) ? NcResult.SubKindEnum.Info_EmailMessageMoveSucceeded : NcResult.SubKindEnum.Error_EmailMessageMoveFailed;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
+        public override Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
         {
             if (!SiezePendingCleanup ()) {
                 return Event.Create ((uint)SmEvt.E.TempFail, "MICANCEL");

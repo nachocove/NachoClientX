@@ -77,10 +77,10 @@ namespace NachoPlatform
             string hashStr;
             using (SHA256Managed sha256 = new SHA256Managed()) {
                 var hash = sha256.ComputeHash (Encoding.UTF8.GetBytes (MainApplication.Instance.ApplicationInfo.PackageName+DeviceIdHashInput));
-                hashStr = string.Format("Ncho{0}", string.Join("", hash.Select(b => b.ToString("X2")).ToArray()));
+                hashStr = string.Format("Ncho{0}", string.Join("", hash.Select(b => b.ToString(IsSimulator () ? "x2" : "X2")).ToArray()));
             }
             // We current truncate the string to 28 bytes, but we could by spec go for 32 bytes.
-            return hashStr.Substring (0, 28);
+            return hashStr.Substring (0, IsSimulator () ? 16 : 28);
         }
 
         public string Os () {

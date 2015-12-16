@@ -10,8 +10,8 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using System.Threading;
-using System.Net.Http;
 using System.Text;
+using System.IO;
 
 namespace Test.iOS
 {
@@ -132,11 +132,7 @@ namespace Test.iOS
             });
 
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
-                var mockResponse = new HttpResponseMessage () {
-                    Content = new StringContent (responseXml, Encoding.UTF8, "text/xml"),
-                };
-
-                return mockResponse;
+                return new NcHttpResponse ("POST", System.Net.HttpStatusCode.OK, Encoding.UTF8.GetBytes (responseXml), "text/xml", new NcHttpHeaders());
             };
 
             cmd.Execute (sm);

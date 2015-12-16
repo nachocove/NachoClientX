@@ -8,9 +8,13 @@
         android:minSdkVersion="16"
         android:targetSdkVersion="21" />
     <application
+        android:name="nachoclient.androidclient.MainApplication"
         android:label="Nacho Mail"
         android:theme="@style/Theme.NachoMail"
         android:icon="@drawable/icon">
+        android:allowBackup="true"
+	android:backupAgent="nachoplatform.NcBackupAgentHelper"
+	android:restoreAnyVersion="true"
         <activity
             android:name="net.hockeyapp.android.UpdateActivity" />
         <meta-data

@@ -14,6 +14,10 @@ using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
+using NachoPlatform;
+using System.IO;
+using System.Text;
+using System.Net;
 
 namespace Test.Common
 {
@@ -47,11 +51,12 @@ namespace Test.Common
 
         public PushAssistParameters PushAssistParameters ()
         {
-            var request = new HttpRequestMessage ();
-            request.Headers.Add ("Cookie", Cookie);
-            request.Content = new StringContent ("abc");
-            request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse (ContentType);
-            request.Content.Headers.ContentLength = ResponseData.Length;
+            //request.Content = new StringContent ("abc");
+
+            var headers = new NcHttpHeaders ();
+            headers.Add ("Cookie", Cookie);
+            headers.Add ("Content-Type", MediaTypeHeaderValue.Parse (ContentType).ToString ());
+            headers.Add ("Content-Length", ResponseData.Length.ToString ());
 
             return new PushAssistParameters () {
                 MailServerCredentials = new Credentials () {
@@ -60,8 +65,7 @@ namespace Test.Common
                 },
                 RequestUrl = ServerUrl,
                 RequestData = RequestData,
-                RequestHeaders = request.Headers,
-                ContentHeaders = request.Content.Headers,
+                RequestHeaders = headers,
                 NoChangeResponseData = ResponseData,
                 Protocol = PushAssistProtocol.ACTIVE_SYNC,
                 ResponseTimeoutMsec = ResponseTimeout,
@@ -129,6 +133,12 @@ namespace Test.Common
         public WrapPushAssist (IPushAssistOwner owner) : base (owner)
         {
         }
+
+        protected override INcHttpClient HttpClient {
+            get {
+                return MockHttpClient.Instance;
+            }
+        }
     }
 
     public class PushAssistTest : NcTestBase
@@ -171,7 +181,6 @@ namespace Test.Common
 
             Owner = new MockPushAssistOwnwer ();
             Owner.Account = account;
-            PushAssist.HttpClientType = typeof(MockHttpClient);
             Wpa = new WrapPushAssist (Owner);
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
 
@@ -219,13 +228,13 @@ namespace Test.Common
             Assert.AreEqual (Convert.ToBase64String (bytes), b64);
         }
 
-        private async void CheckStartSessionRequest (HttpRequestMessage httpRequest)
+        private void CheckStartSessionRequest (NcHttpRequest httpRequest)
         {
             Assert.AreEqual (Wpa.StartSessionUrl, httpRequest.RequestUri.AbsoluteUri);
-            CheckHttpHeader<string> (httpRequest.Content.Headers, "Content-Type", "application/json");
+            CheckHttpHeader<string> (httpRequest.Headers, "Content-Type", "application/json");
 
-            var jsonContent = await httpRequest.Content.ReadAsStringAsync ().ConfigureAwait (false);
-            var jsonRequest = JsonConvert.DeserializeObject <StartSessionRequest> (jsonContent);
+            var jsonContent = httpRequest.GetContent ();
+            var jsonRequest = JsonConvert.DeserializeObject <StartSessionRequest> (Encoding.UTF8.GetString (jsonContent));
 
             Assert.AreEqual (NcApplication.Instance.ClientId, jsonRequest.ClientId);
             Assert.AreEqual (Wpa.ClientContext, jsonRequest.ClientContext);
@@ -241,13 +250,13 @@ namespace Test.Common
             CheckContent (MockPushAssistOwnwer.ResponseData, jsonRequest.NoChangeReply);
         }
 
-        private async void CheckDeferSessionRequest (HttpRequestMessage httpRequest)
+        private void CheckDeferSessionRequest (NcHttpRequest httpRequest)
         {
             Assert.AreEqual (Wpa.DeferSessionUrl, httpRequest.RequestUri.AbsoluteUri);
-            CheckHttpHeader<string> (httpRequest.Content.Headers, "Content-Type", "application/json");
+            CheckHttpHeader<string> (httpRequest.Headers, "Content-Type", "application/json");
 
-            var jsonContent = await httpRequest.Content.ReadAsStringAsync ().ConfigureAwait (false);
-            var jsonRequest = JsonConvert.DeserializeObject <DeferSessionRequest> (jsonContent);
+            var jsonContent = httpRequest.GetContent ();
+            var jsonRequest = JsonConvert.DeserializeObject <DeferSessionRequest> (Encoding.UTF8.GetString (jsonContent));
 
             Assert.AreEqual (NcApplication.Instance.ClientId, jsonRequest.ClientId);
             Assert.AreEqual (Wpa.ClientContext, jsonRequest.ClientContext);
@@ -255,86 +264,71 @@ namespace Test.Common
             Assert.AreEqual (MockPushAssistOwnwer.ResponseTimeout, jsonRequest.ResponseTimeout);
         }
 
-        private async void CheckStopSessionRequest (HttpRequestMessage httpRequest)
+        private void CheckStopSessionRequest (NcHttpRequest httpRequest)
         {
             Assert.AreEqual (Wpa.StopSessionUrl, httpRequest.RequestUri.AbsoluteUri);
-            CheckHttpHeader<string> (httpRequest.Content.Headers, "Content-Type", "application/json");
+            CheckHttpHeader<string> (httpRequest.Headers, "Content-Type", "application/json");
 
-            var jsonContent = await httpRequest.Content.ReadAsStringAsync ().ConfigureAwait (false);
-            var jsonRequest = JsonConvert.DeserializeObject <StopSessionRequest> (jsonContent);
+            var jsonContent = httpRequest.GetContent ();
+            var jsonRequest = JsonConvert.DeserializeObject <StopSessionRequest> (Encoding.UTF8.GetString (jsonContent));
 
             Assert.AreEqual (NcApplication.Instance.ClientId, jsonRequest.ClientId);
             Assert.AreEqual (Wpa.ClientContext, jsonRequest.ClientContext);
             Assert.AreEqual (Wpa.SessionToken, jsonRequest.Token);
         }
 
-        private StringContent EncodeJsonResponse (PingerResponse jsonResponse)
+        private NcHttpResponse PingerResponse (NcHttpRequest httpRequest, string status, string message, string token = null)
         {
-            var jsonContent = JsonConvert.SerializeObject (jsonResponse);
-            var content = new StringContent (jsonContent);
-            content.Headers.ContentType = MediaTypeHeaderValue.Parse ("application/json");
-            content.Headers.ContentLength = jsonContent.Length;
-            return content;
-        }
-
-        private HttpResponseMessage PingerResponse (HttpRequestMessage httpRequest, string status, string message, string token = null)
-        {
-            var httpResponse = new HttpResponseMessage ();
-            httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
-
             var jsonResponse = new PingerResponse () {
                 Status = status,
                 Message = message,
                 Token = token,
             };
-            httpResponse.Content = EncodeJsonResponse (jsonResponse);
-
-            return httpResponse;
+            var jsonContent = Encoding.UTF8.GetBytes (JsonConvert.SerializeObject (jsonResponse));
+            return new NcHttpResponse (httpRequest.Method, HttpStatusCode.OK, jsonContent, "application/json");
         }
 
-        private HttpResponseMessage StartSessionOkResponse (HttpRequestMessage httpRequest)
+        private NcHttpResponse StartSessionOkResponse (NcHttpRequest httpRequest)
         {
             return PingerResponse (httpRequest, "OK", "", SessionToken);
         }
 
-        private HttpResponseMessage StartSessionWarnResponse (HttpRequestMessage httpRequest)
+        private NcHttpResponse StartSessionWarnResponse (NcHttpRequest httpRequest)
         {
             return PingerResponse (httpRequest, "WARN", "Something is not right", SessionToken);
         }
 
-        private HttpResponseMessage StartSessionErrorResponse (HttpRequestMessage httpRequest)
+        private NcHttpResponse StartSessionErrorResponse (NcHttpRequest httpRequest)
         {
             return PingerResponse (httpRequest, "ERROR", "Oh crap!");
         }
 
-        private HttpResponseMessage DeferSessionOkResponse (HttpRequestMessage httpRequest)
+        private NcHttpResponse DeferSessionOkResponse (NcHttpRequest httpRequest)
         {
             return PingerResponse (httpRequest, "OK", "");
         }
 
-        private HttpResponseMessage DeferSessionWarnResponse (HttpRequestMessage httpRequest)
+        private NcHttpResponse DeferSessionWarnResponse (NcHttpRequest httpRequest)
         {
             return PingerResponse (httpRequest, "WARN", "Something is not right");
         }
 
-        private HttpResponseMessage DeferSessionErrorResponse (HttpRequestMessage httpRequest)
+        private NcHttpResponse DeferSessionErrorResponse (NcHttpRequest httpRequest)
         {
             return PingerResponse (httpRequest, "ERROR", "Oh crap!");
         }
 
-        private HttpResponseMessage StopSessionOkResponse (HttpRequestMessage httpRequest)
+        private NcHttpResponse StopSessionOkResponse (NcHttpRequest httpRequest)
         {
             return PingerResponse (httpRequest, "OK", "");
         }
 
-        private HttpResponseMessage HttpErrorPingerResponse (HttpRequestMessage httpRequest)
+        private NcHttpResponse HttpErrorPingerResponse (NcHttpRequest httpRequest)
         {
-            return new HttpResponseMessage () {
-                StatusCode = System.Net.HttpStatusCode.InternalServerError,
-            };
+            return new NcHttpResponse (httpRequest.Method, HttpStatusCode.InternalServerError);
         }
 
-        private HttpResponseMessage NetworkErrorPingerResponse (HttpRequestMessage httpRequest)
+        private NcHttpResponse NetworkErrorPingerResponse (NcHttpRequest httpRequest)
         {
             throw new System.Net.WebException ("Network blows up");
         }
