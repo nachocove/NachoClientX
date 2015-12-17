@@ -729,7 +729,7 @@ namespace NachoCore.Model
             GarbageCollectFiles ();
         }
 
-        public string TmpPath (int accountId, string suffix=null)
+        public string TmpPath (int accountId, string suffix = null)
         {
             var guidString = Guid.NewGuid ().ToString ("N");
             if (!string.IsNullOrEmpty (suffix)) {
@@ -773,10 +773,10 @@ namespace NachoCore.Model
                 }
             }
             // Remove any global tmp files/dirs.
-            DeleteDirContent(Path.GetTempPath ());
+            DeleteDirContent (Path.GetTempPath ());
         }
 
-        static void DeleteDirContent (string dirname)
+        static void DeleteDirContent (string dirname, bool logFiles = true)
         {
             try {
                 // Remove any tmp files/dirs.
@@ -784,6 +784,9 @@ namespace NachoCore.Model
                     Directory.Delete (dir, true);
                 }
                 foreach (var file in Directory.GetFiles (dirname)) {
+                    if (logFiles) {
+                        Log.Info (Log.LOG_SYS, "DeleteDirContent: Removing left-over file {0}", file);
+                    }
                     File.Delete (file);
                 }
             } catch (Exception ex) {
