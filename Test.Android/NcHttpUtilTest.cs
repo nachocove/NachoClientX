@@ -66,12 +66,21 @@ namespace Test.iOS
             NcHttpCertificateValidation.CertValidation (url, Cert, getChain(), errors);
         }
 
-        [Test]
+        //[Test]
+        // this test was originally intended to catch a 'broken' chain, i.e. we add the top cert,
+        // to the list, but not the intermediary cert. This results in a partial chain. It turns out, though,
+        // that in iOS we are called with the full chain that IOS assembled for us, and in android we are called
+        // with ONLY the certs sent by the server, which in most cases includes ONLY the server cert and the
+        // intermediary cert(s), but NOT the top cert. This results in us ALWAYS getting a partial chain match,
+        // so this test is no longer really useful.
+        //
+        // In general our cert validation isn't very useful, since cert validation is already done by the udnerlying
+        // implementation (OkHttp and NSUrlSession respectively).
         public void TestCertValidationBadChain ()
         {
             var url = new Uri ("http://www.google.com");
             var errors = SslPolicyErrors.None;
-            expectedError = SslPolicyErrors.RemoteCertificateChainErrors;
+            expectedError = SslPolicyErrors.RemoteCertificateChainErrors; // since we allow partial chains, this error will not be seen, making this test useless
             var badChain = new X509Chain ();
             badChain.ChainPolicy.ExtraStore.Add (new X509Certificate2 (Encoding.ASCII.GetBytes (digicert_global_root)));
 
