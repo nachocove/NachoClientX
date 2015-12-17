@@ -76,6 +76,16 @@ namespace NachoCore.Model
             return body;
         }
 
+        public static McBody InsertPlaceholder (int accountId)
+        {
+            var body = new McBody () {
+                AccountId = accountId,
+                FilePresence = FilePresenceEnum.None,
+            };
+            body.CompleteInsertSaveStart ();
+            return body;
+        }
+
         public static string GetContentsString (int bodyId)
         {
             var body = QueryById<McBody> (bodyId);

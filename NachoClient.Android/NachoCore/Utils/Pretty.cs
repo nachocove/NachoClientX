@@ -33,6 +33,16 @@ namespace NachoCore.Utils
             return "No subject";
         }
 
+        static public string PreviewString (String preview)
+        {
+            if (null == preview) {
+                return "";
+            } else {
+                var regex = new Regex("\\s+");
+                return regex.Replace (preview, " ");
+            }
+        }
+
         /// <summary>
         /// Calendar event duration, 0h0m style.
         /// Returns an empty string for a zero length time span.
