@@ -208,13 +208,15 @@ namespace NachoCore.Utils
                 return null;
             }
             protected set {
-                MediaTypeHeaderValue cType;
-                if (MediaTypeHeaderValue.TryParse (value, out cType)) {
-                    if (!Headers.Contains ("Content-Type")) {
-                        Headers.Add ("Content-Type", value);
+                if (!string.IsNullOrEmpty (value)) {
+                    MediaTypeHeaderValue cType;
+                    if (MediaTypeHeaderValue.TryParse (value, out cType)) {
+                        if (!Headers.Contains ("Content-Type")) {
+                            Headers.Add ("Content-Type", value);
+                        }
+                    } else {
+                        Log.Error (Log.LOG_HTTP, "Bad media-type value {0}", value);
                     }
-                } else {
-                    Log.Error (Log.LOG_HTTP, "Bad media-type value {0}", value);
                 }
             }
         }
