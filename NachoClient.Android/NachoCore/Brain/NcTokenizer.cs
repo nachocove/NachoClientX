@@ -164,8 +164,9 @@ namespace NachoCore.Brain
                         _Keywords.AddRange (words);
                     }
                 });
+            } catch (OperationCanceledException e) {
             } catch (Exception e) {
-                Log.Error (Log.LOG_BRAIN, "fail to parse HTML (execption={0})", e.Message);
+                Log.Error (Log.LOG_BRAIN, "failed to parse HTML (execption={0})", e.Message);
             }
         }
 
