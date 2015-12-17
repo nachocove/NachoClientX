@@ -18,7 +18,7 @@
             android:value="AEdPqrEAAAAIHhu7nvviRVUbM-wMP0XfbO1OAPy579Irm97hJw" />
         <provider
             android:name="android.support.v4.content.FileProvider"
-            android:authorities="com.nachocove.fileprovider"
+            android:authorities="com.nachocove.dev.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
