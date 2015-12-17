@@ -726,7 +726,7 @@ namespace NachoCore.Model
             _StoredBuildInfo = null;
             DbFileName = dbFileName;
             InitializeDb ();
-            GarbageCollectFiles ();
+            GarbageCollectFiles (false);
         }
 
         public string TmpPath (int accountId, string suffix = null)
@@ -751,7 +751,7 @@ namespace NachoCore.Model
         }
 
         // To be run synchronously only on app boot.
-        public void GarbageCollectFiles ()
+        public void GarbageCollectFiles (bool deleteGlobalTmp = true)
         {
             // Find any top-level file dir not backed by McAccount. Delete it.
             var acctLevelDirs = Directory.GetDirectories (GetDataDirPath ());
@@ -772,8 +772,10 @@ namespace NachoCore.Model
                     }
                 }
             }
-            // Remove any global tmp files/dirs.
-            DeleteDirContent (Path.GetTempPath ());
+            if (deleteGlobalTmp) {
+                // Remove any global tmp files/dirs.
+                DeleteDirContent (Path.GetTempPath ());
+            }
         }
 
         static void DeleteDirContent (string dirname, bool logFiles = true)
