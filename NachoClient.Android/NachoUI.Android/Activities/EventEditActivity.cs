@@ -55,7 +55,6 @@ namespace NachoClient.AndroidClient
         private McFolder calendarFolder;
 
         private bool isAppEvent = true;
-        private string deviceCalendarName = "";
 
         private ButtonBar buttonBar;
         private EditText titleField;
@@ -151,28 +150,38 @@ namespace NachoClient.AndroidClient
                     // Figure out the correct account for the new event.
                     account = NcApplication.Instance.Account;
                     if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == new NachoFolders (account.Id, NachoFolders.FilterForCalendars).Count ()) {
-                        bool foundAccount = false;
-                        foreach (var candidateAccountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
-                            if (candidateAccountId != account.Id) {
-                                var candidateAccount = McAccount.QueryById<McAccount> (candidateAccountId);
-                                if (candidateAccount.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && 0 < new NachoFolders (candidateAccountId, NachoFolders.FilterForCalendars).Count ()) {
-                                    foundAccount = true;
-                                    account = candidateAccount;
-                                    break;
+                        if (AndroidCalendars.DeviceCalendarsExist ()) {
+                            isAppEvent = false;
+                            account = McAccount.GetDeviceAccount ();
+                        } else {
+                            bool foundAccount = false;
+                            foreach (var candidateAccountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+                                if (candidateAccountId != account.Id) {
+                                    var candidateAccount = McAccount.QueryById<McAccount> (candidateAccountId);
+                                    if (candidateAccount.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && 0 < new NachoFolders (candidateAccountId, NachoFolders.FilterForCalendars).Count ()) {
+                                        foundAccount = true;
+                                        account = candidateAccount;
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        if (!foundAccount) {
-                            NcAlertView.Show (this, "No Calendar Support", "None of the accounts support creating or editing calendar events.", () => {
-                                SetResult (Result.Canceled);
-                                Finish ();
-                            });
-                            return;
+                            if (!foundAccount) {
+                                NcAlertView.Show (this, "No Calendar Support", "None of the accounts support creating or editing calendar events.", () => {
+                                    SetResult (Result.Canceled);
+                                    Finish ();
+                                });
+                                return;
+                            }
                         }
                     }
 
                     // Figure out the correct calendar within that account for the new event.
-                    var accountCalendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+                    NachoFolders accountCalendars;
+                    if (isAppEvent) {
+                        accountCalendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+                    } else {
+                        accountCalendars = new NachoFolders (AndroidCalendars.GetCalendarFolders ().ToArray ());
+                    }
                     calendarFolder = accountCalendars.GetFolder (0);
                     for (int f = 0; f < accountCalendars.Count (); ++f) {
                         var calendar = accountCalendars.GetFolder (f);
@@ -196,10 +205,12 @@ namespace NachoClient.AndroidClient
 
                     cal = null;
                     if (null != dataFromIntent.Event) {
-                        if (0 == dataFromIntent.Event.DeviceCalendarId) {
+                        if (0 == dataFromIntent.Event.DeviceEventId) {
                             cal = McCalendar.QueryById<McCalendar> (dataFromIntent.Event.CalendarId);
                         } else {
-                            cal = AndroidCalendars.GetEventDetails (dataFromIntent.Event.DeviceCalendarId, out deviceCalendarName);
+                            AndroidDeviceCalendarFolder androidCalendarFolder;
+                            cal = AndroidCalendars.GetEventDetails (dataFromIntent.Event.DeviceEventId, out androidCalendarFolder);
+                            calendarFolder = androidCalendarFolder;
                             isAppEvent = false;
                         }
                     }
@@ -236,8 +247,9 @@ namespace NachoClient.AndroidClient
                         calendarFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
                     } else {
                         account = McAccount.GetDeviceAccount ();
-                        // TODO Figure out how to show the correct folder.
-                        calendarFolder = McFolder.GetDeviceCalendarsFolder ();
+                        if (null == calendarFolder) {
+                            calendarFolder = McFolder.GetDeviceCalendarsFolder ();
+                        }
                     }
                 }
 
@@ -276,12 +288,11 @@ namespace NachoClient.AndroidClient
             allDayField.Checked = cal.AllDayEvent;
             ConfigureStartEndFields ();
 
-            if (isAppEvent) {
-                attendeeCountField.Text = string.Format ("( {0} )", cal.attendees.Count);
-                attendeeCountField.Click += Attendee_Click;
-                var attendeeArrow = FindViewById<ImageView> (Resource.Id.event_edit_attendee_arrow);
-                attendeeArrow.Click += Attendee_Click;
-            } else {
+            attendeeCountField.Text = string.Format ("( {0} )", cal.attendees.Count);
+            attendeeCountField.Click += Attendee_Click;
+            var attendeeArrow = FindViewById<ImageView> (Resource.Id.event_edit_attendee_arrow);
+            attendeeArrow.Click += Attendee_Click;
+            if (!isAppEvent) {
                 FindViewById<View> (Resource.Id.event_edit_attendee_section).Visibility = ViewStates.Gone;
             }
 
@@ -290,15 +301,10 @@ namespace NachoClient.AndroidClient
             var reminderArrow = FindViewById<ImageView> (Resource.Id.event_edit_reminder_arrow);
             reminderArrow.Click += Reminder_Click;
 
-            if (isAppEvent) {
-                calendarField.Text = calendarFolder.DisplayName;
-                calendarField.Click += Calendar_Click;
-                var calendarArrow = FindViewById<ImageView> (Resource.Id.event_edit_calendar_arrow);
-                calendarArrow.Click += Calendar_Click;
-            } else {
-                calendarField.Text = deviceCalendarName;
-                FindViewById<View> (Resource.Id.event_edit_calendar_arrow).Visibility = ViewStates.Invisible;
-            }
+            calendarField.Text = calendarFolder.DisplayName;
+            calendarField.Click += Calendar_Click;
+            var calendarArrow = FindViewById<ImageView> (Resource.Id.event_edit_calendar_arrow);
+            calendarArrow.Click += Calendar_Click;
 
             if (null != bundle) {
                 var reminderFragment = FragmentManager.FindFragmentByTag<ReminderChooserFragment> (REMINDER_CHOOSER_TAG);
@@ -350,25 +356,17 @@ namespace NachoClient.AndroidClient
 
         public static Intent NewEventIntent (Context context)
         {
-            if (NcApplication.Instance.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                var intent = new Intent (context, typeof(EventEditActivity));
-                intent.SetAction (Intent.ActionCreateDocument);
-                return intent;
-            } else {
-                return AndroidCalendars.NewEventIntent ();
-            }
+            var intent = new Intent (context, typeof(EventEditActivity));
+            intent.SetAction (Intent.ActionCreateDocument);
+            return intent;
         }
 
         public static Intent NewEventOnDayIntent (Context context, DateTime day)
         {
-            if (NcApplication.Instance.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                var intent = new Intent (context, typeof(EventEditActivity));
-                intent.SetAction (Intent.ActionCreateDocument);
-                intent.PutExtra (EXTRA_START_DATE, day.ToString ("O"));
-                return intent;
-            } else {
-                return AndroidCalendars.NewEventOnDayIntent (day);
-            }
+            var intent = new Intent (context, typeof(EventEditActivity));
+            intent.SetAction (Intent.ActionCreateDocument);
+            intent.PutExtra (EXTRA_START_DATE, day.ToString ("O"));
+            return intent;
         }
 
         public static Intent EditEventIntent (Context context, McEvent ev)
@@ -456,10 +454,17 @@ namespace NachoClient.AndroidClient
                 candidateAccounts = new McAccount[] { account };
             }
             foreach (var account in candidateAccounts) {
-                if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                    var calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
-                    if (0 < calendars.Count ()) {
-                        result.Add (new Tuple<McAccount, NachoFolders> (account, calendars));
+                if (McAccount.AccountTypeEnum.Device == account.AccountType) {
+                    var calendars = AndroidCalendars.GetCalendarFolders ();
+                    if (0 < calendars.Count) {
+                        result.Add (new Tuple<McAccount, NachoFolders> (account, new NachoFolders (calendars.ToArray ())));
+                    }
+                } else {
+                    if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                        var calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+                        if (0 < calendars.Count ()) {
+                            result.Add (new Tuple<McAccount, NachoFolders> (account, calendars));
+                        }
                     }
                 }
             }
@@ -480,7 +485,7 @@ namespace NachoClient.AndroidClient
                 }
                 BackEnd.Instance.DeleteCalCmd (account.Id, cal.Id);
             } else {
-                AndroidCalendars.DeleteEvent (RetainedData.Event.DeviceCalendarId);
+                AndroidCalendars.DeleteEvent (RetainedData.Event.DeviceEventId);
             }
         }
 
@@ -500,6 +505,13 @@ namespace NachoClient.AndroidClient
             calendarFragment.SetValues (GetChoosableCalendars (), calendarFolder, (McFolder selectedFolder) => {
                 if (account.Id != selectedFolder.AccountId) {
                     account = McAccount.QueryById<McAccount> (selectedFolder.AccountId);
+                    bool newIsAppEvent = McAccount.AccountTypeEnum.Device != account.AccountType;
+                    if (isAppEvent && !newIsAppEvent) {
+                        FindViewById<View> (Resource.Id.event_edit_attendee_section).Visibility = ViewStates.Gone;
+                    } else if (!isAppEvent && newIsAppEvent) {
+                        FindViewById<View> (Resource.Id.event_edit_attendee_section).Visibility = ViewStates.Visible;
+                    }
+                    isAppEvent = newIsAppEvent;
                 }
                 calendarFolder = selectedFolder;
                 calendarField.Text = selectedFolder.DisplayName;
@@ -561,7 +573,15 @@ namespace NachoClient.AndroidClient
                 cal.DtStamp = DateTime.UtcNow;
 
                 if (!isAppEvent) {
-                    AndroidCalendars.UpdateDeviceEvent (cal, RetainedData.Event.DeviceCalendarId);
+                    long calendarId = 0;
+                    if (calendarFolder is AndroidDeviceCalendarFolder) {
+                        calendarId = ((AndroidDeviceCalendarFolder)calendarFolder).DeviceCalendarId;
+                    }
+                    if (Intent.ActionCreateDocument == Intent.Action) {
+                        AndroidCalendars.InsertDeviceEvent (cal, calendarId);
+                    } else {
+                        AndroidCalendars.UpdateDeviceEvent (cal, RetainedData.Event.DeviceEventId, calendarId);
+                    }
                 } else if (Intent.ActionCreateDocument == Intent.Action) {
                     cal.Insert ();
                     calendarFolder.Link (cal);
@@ -569,6 +589,12 @@ namespace NachoClient.AndroidClient
                 } else {
                     cal.RecurrencesGeneratedUntil = DateTime.MinValue;
                     cal.Update ();
+                    var oldFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
+                    if (null != oldFolder && oldFolder.Id != calendarFolder.Id) {
+                        BackEnd.Instance.MoveCalCmd (account.Id, cal.Id, calendarFolder.Id);
+                        oldFolder.Unlink (cal);
+                        calendarFolder.Link (cal);
+                    }
                     BackEnd.Instance.UpdateCalCmd (cal.AccountId, cal.Id, descriptionChanged);
                 }
 

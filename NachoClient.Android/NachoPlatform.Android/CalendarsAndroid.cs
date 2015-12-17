@@ -65,7 +65,7 @@ namespace NachoPlatform
 
                 result.Add (new McEvent () {
                     AccountId = deviceAccount,
-                    DeviceCalendarId = eventId,
+                    DeviceEventId = eventId,
                     StartTime = start,
                     EndTime = end,
                     AllDayEvent = allDay,
@@ -136,6 +136,7 @@ namespace NachoPlatform
             CalendarContract.EventsColumns.Rrule,
             CalendarContract.SyncColumns.AccountName,
             CalendarContract.SyncColumns.AccountType,
+            CalendarContract.EventsColumns.CalendarId,
         };
         private const int EVENT_DETAIL_TITLE_INDEX = 0;
         private const int EVENT_DETAIL_LOCATION_INDEX = 1;
@@ -156,6 +157,7 @@ namespace NachoPlatform
         private const int EVENT_DETAIL_RRULE_INDEX = 16;
         private const int EVENT_DETAIL_ACCOUNT_NAME_INDEX = 17;
         private const int EVENT_DETAIL_ACCOUNT_TYPE_INDEX = 18;
+        private const int EVENT_DETAIL_CALENDAR_ID_INDEX = 19;
 
         private static string[] reminderProjection = new string[] {
             CalendarContract.RemindersColumns.Minutes,
@@ -175,9 +177,9 @@ namespace NachoPlatform
         private const int ATTENDEE_STATUS_INDEX = 3;
         private const int ATTENDEE_TYPE_INDEX = 4;
 
-        public static McCalendar GetEventDetails (long eventid, out string calendarName)
+        public static McCalendar GetEventDetails (long eventId, out AndroidDeviceCalendarFolder folder)
         {
-            calendarName = "[Unknown]";
+            folder = null;
 
             var resolver = MainApplication.Instance.ContentResolver;
             ICursor eventCursor;
@@ -186,7 +188,7 @@ namespace NachoPlatform
                     CalendarContract.Events.ContentUri,
                     eventDetailProjection,
                     CalendarContract.Events.InterfaceConsts.Id + " = ?",
-                    new string[] { eventid.ToString () },
+                    new string[] { eventId.ToString () },
                     null, null);
             } catch (Exception e) {
                 Log.Error (Log.LOG_SYS, "Looking up device details failed with {0}", e.ToString ());
@@ -199,19 +201,8 @@ namespace NachoPlatform
             string accountName = eventCursor.GetString (EVENT_DETAIL_ACCOUNT_NAME_INDEX);
             string accountType = eventCursor.GetString (EVENT_DETAIL_ACCOUNT_TYPE_INDEX);
             string calendarSimpleName = eventCursor.GetString (EVENT_DETAIL_CALENDAR_NAME_INDEX);
-            if (accountName == calendarSimpleName) {
-                string displayType = accountType;
-                if (CalendarContract.AccountTypeLocal == accountType) {
-                    displayType = "Local";
-                } else if ("com.google" == accountType) {
-                    displayType = "Gmail";
-                } else if ("com.android.exchange" == accountType) {
-                    displayType = "Exchange";
-                }
-                calendarName = string.Format ("{0} : {1}", displayType, calendarSimpleName);
-            } else {
-                calendarName = string.Format ("{0} : {1}", accountName, calendarSimpleName);
-            }
+            long calendarId = eventCursor.GetLong (EVENT_DETAIL_CALENDAR_ID_INDEX);
+            folder = new AndroidDeviceCalendarFolder (calendarId, CalendarDisplayName (accountName, accountType, calendarSimpleName));
 
             var result = new McCalendar ();
 
@@ -247,7 +238,7 @@ namespace NachoPlatform
             if (hasAlarm) {
                 ICursor reminderCursor = null;
                 try {
-                    reminderCursor = CalendarContract.Reminders.Query (resolver, eventid, reminderProjection);
+                    reminderCursor = CalendarContract.Reminders.Query (resolver, eventId, reminderProjection);
                 } catch (Exception e) {
                     Log.Error (Log.LOG_SYS, "Looking up reminders failed with {0}", e.ToString ());
                 }
@@ -267,7 +258,7 @@ namespace NachoPlatform
             if (hasAttendees) {
                 ICursor attendeeCursor = null;
                 try {
-                    attendeeCursor = CalendarContract.Attendees.Query (resolver, eventid, attendeeProjection);
+                    attendeeCursor = CalendarContract.Attendees.Query (resolver, eventId, attendeeProjection);
                 } catch (Exception e) {
                     Log.Error (Log.LOG_SYS, "Looking up attendees failed with {0}", e.ToString ());
                 }
@@ -318,6 +309,22 @@ namespace NachoPlatform
             }
 
             return result;
+        }
+
+        static string CalendarDisplayName (string accountName, string accountType, string calendarName)
+        {
+            string accountPart = accountName;
+            if (accountName == calendarName) {
+                accountPart = accountType;
+                if (CalendarContract.AccountTypeLocal == accountType) {
+                    accountPart = "Local";
+                } else if ("com.google" == accountType) {
+                    accountPart = "Gmail";
+                } else if ("com.android.exchange" == accountType) {
+                    accountPart = "Exchange";
+                }
+            }
+            return string.Format ("{0} : {1}", accountPart, calendarName);
         }
 
         static NcResponseType ResponseType (CalendarAttendeesStatus response, bool isOrganizer)
@@ -473,29 +480,8 @@ namespace NachoPlatform
             return result;
         }
 
-        private static string[] eventDetailProjectionZ = new string[] {
-            CalendarContract.EventsColumns.Title,
-            CalendarContract.EventsColumns.EventLocation,
-            CalendarContract.EventsColumns.Description,
-            CalendarContract.EventsColumns.Dtstart,
-            CalendarContract.EventsColumns.Dtend,
-            CalendarContract.EventsColumns.AllDay,
-            CalendarContract.EventsColumns.EventTimezone,
-            CalendarContract.EventsColumns.Uid2445,
-            CalendarContract.EventsColumns.HasAlarm,
-            CalendarContract.EventsColumns.HasAttendeeData,
-            CalendarContract.CalendarColumns.CalendarDisplayName,
-            CalendarContract.EventsColumns.Organizer,
-            CalendarContract.EventsColumns.Availability,
-            CalendarContract.EventsColumns.SelfAttendeeStatus,
-            CalendarContract.EventsColumns.IsOrganizer,
-            CalendarContract.EventsColumns.Status,
-            CalendarContract.EventsColumns.Rrule,
-        };
-
-        public static void UpdateDeviceEvent (McCalendar cal, long eventId)
+        private static ContentValues McCalendarToAndroidEvent (McCalendar cal, long calendarId)
         {
-            var resolver = MainApplication.Instance.ContentResolver;
             var values = new ContentValues ();
 
             SetIfExists (values, CalendarContract.EventsColumns.Title, cal.Subject);
@@ -503,6 +489,10 @@ namespace NachoPlatform
             SetIfExists (values, CalendarContract.EventsColumns.Description, cal.Description);
             SetIfExists (values, CalendarContract.EventsColumns.Uid2445, cal.UID);
             SetIfExists (values, CalendarContract.EventsColumns.Organizer, cal.OrganizerEmail);
+
+            if (0 != calendarId) {
+                values.Put (CalendarContract.EventsColumns.CalendarId, calendarId);
+            }
 
             values.Put (CalendarContract.EventsColumns.AllDay, cal.AllDayEvent);
             if (cal.AllDayEvent) {
@@ -520,7 +510,54 @@ namespace NachoPlatform
                 values.Put (CalendarContract.EventsColumns.Availability, (int)BusyStatus (cal.BusyStatus));
             }
 
+            return values;
+        }
+
+        private static string[] reminderIdProjection = new string[] {
+            CalendarContract.Reminders.InterfaceConsts.Id,
+        };
+        private const int REMINDER_ID_INDEX = 0;
+
+        public static void UpdateDeviceEvent (McCalendar cal, long eventId, long calendarId)
+        {
+            var resolver = MainApplication.Instance.ContentResolver;
+            var values = McCalendarToAndroidEvent (cal, calendarId);
             resolver.Update (ContentUris.AppendId (CalendarContract.Events.ContentUri.BuildUpon (), eventId).Build (), values, null, null);
+
+            ICursor reminderCursor = null;
+            try {
+                reminderCursor = CalendarContract.Reminders.Query (resolver, eventId, reminderIdProjection);
+            } catch (Exception e) {
+                Log.Error (Log.LOG_SYS, "Looking up reminders failed with {0}", e.ToString ());
+            }
+            if (null != reminderCursor) {
+                while (reminderCursor.MoveToNext ()) {
+                    long reminderId = reminderCursor.GetLong (REMINDER_ID_INDEX);
+                    resolver.Delete (ContentUris.AppendId (CalendarContract.Reminders.ContentUri.BuildUpon (), reminderId).Build (), null, null);
+                }
+            }
+            if (cal.HasReminder ()) {
+                var reminderValues = new ContentValues ();
+                reminderValues.Put (CalendarContract.RemindersColumns.EventId, eventId);
+                reminderValues.Put (CalendarContract.RemindersColumns.Minutes, (int)cal.GetReminder ());
+                reminderValues.Put (CalendarContract.RemindersColumns.Method, (int)RemindersMethod.Default);
+                resolver.Insert (CalendarContract.Reminders.ContentUri, reminderValues);
+            }
+        }
+
+        public static void InsertDeviceEvent (McCalendar cal, long calendarId)
+        {
+            var resolver = MainApplication.Instance.ContentResolver;
+            var values = McCalendarToAndroidEvent (cal, calendarId);
+            var newEventUri = resolver.Insert (CalendarContract.Events.ContentUri, values);
+
+            if (cal.HasReminder ()) {
+                var reminderValues = new ContentValues ();
+                reminderValues.Put (CalendarContract.RemindersColumns.EventId, ContentUris.ParseId (newEventUri));
+                reminderValues.Put (CalendarContract.RemindersColumns.Minutes, (int)cal.GetReminder ());
+                reminderValues.Put (CalendarContract.RemindersColumns.Method, (int)RemindersMethod.Default);
+                resolver.Insert (CalendarContract.Reminders.ContentUri, reminderValues);
+            }
         }
 
         static void SetIfExists (ContentValues values, string fieldName, string value)
@@ -565,25 +602,67 @@ namespace NachoPlatform
             resolver.Delete (ContentUris.AppendId (CalendarContract.Events.ContentUri.BuildUpon (), eventId).Build (), null, null);
         }
 
-        /// <summary>
-        /// An Android intent to create a new event using the Android calendar app.
-        /// </summary>
-        /// <returns>The event intent.</returns>
-        public static Intent NewEventIntent ()
+        private static string[] calendarsExistProjection = {
+            CalendarContract.Calendars.InterfaceConsts.Id,
+        };
+
+        public static bool DeviceCalendarsExist ()
         {
-            return NewEventOnDayIntent (DateTime.Now);
+            try {
+                var cursor = MainApplication.Instance.ContentResolver.Query (CalendarContract.Calendars.ContentUri, calendarsExistProjection, null, null, null);
+                return null != cursor && 0 < cursor.Count;
+            } catch (Exception) {
+                return false;
+            }
         }
 
-        /// <summary>
-        /// An Android intent to create a new event on the given day using the Android calendar app.
-        /// </summary>
-        public static Intent NewEventOnDayIntent (DateTime day)
+        private static string[] calendarProjection = {
+            CalendarContract.Calendars.InterfaceConsts.Id,
+            CalendarContract.CalendarColumns.CalendarDisplayName,
+            CalendarContract.SyncColumns.AccountName,
+            CalendarContract.SyncColumns.AccountType,
+        };
+        private const int CALENDAR_ID_INDEX = 0;
+        private const int CALENDAR_DISPLAY_NAME_INDEX = 1;
+        private const int CALENDAR_ACCOUNT_NAME_INDEX = 2;
+        private const int CALENDAR_ACCOUNT_TYPE_INDEX = 3;
+
+        public static List<McFolder> GetCalendarFolders ()
         {
-            var tempCal = CalendarHelper.DefaultMeeting (day);
-            var intent = new Intent (Intent.ActionInsert, CalendarContract.Events.ContentUri);
-            intent.PutExtra (CalendarContract.ExtraEventBeginTime, tempCal.StartTime.MillisecondsSinceEpoch ());
-            intent.PutExtra (CalendarContract.ExtraEventEndTime, tempCal.EndTime.MillisecondsSinceEpoch ());
-            return intent;
+            var resolver = MainApplication.Instance.ContentResolver;
+            ICursor calendarCursor = null;
+            try {
+                calendarCursor = resolver.Query (CalendarContract.Calendars.ContentUri, calendarProjection, null, null, null);
+            } catch (Exception e) {
+                Log.Error (Log.LOG_SYS, "Looking up calendars failed with {0}", e.ToString ());
+                return new List<McFolder> ();
+            }
+            if (null == calendarCursor) {
+                return new List<McFolder> ();
+            }
+
+            var result = new List<McFolder> ();
+            while (calendarCursor.MoveToNext ()) {
+                string accountName = calendarCursor.GetString (CALENDAR_ACCOUNT_NAME_INDEX);
+                string accountType = calendarCursor.GetString (CALENDAR_ACCOUNT_TYPE_INDEX);
+                string calendarName = calendarCursor.GetString (CALENDAR_DISPLAY_NAME_INDEX);
+                long calendarId = calendarCursor.GetLong (CALENDAR_ID_INDEX);
+                result.Add (new AndroidDeviceCalendarFolder (calendarId, CalendarDisplayName (accountName, accountType, calendarName)));
+            }
+            return result;
+        }
+    }
+
+    public class AndroidDeviceCalendarFolder : McFolder
+    {
+        public long DeviceCalendarId { get; set; }
+
+        public AndroidDeviceCalendarFolder (long calendarId, string displayName)
+        {
+            this.AccountId = McAccount.GetDeviceAccount ().Id;
+            this.DeviceCalendarId = calendarId;
+            this.DisplayName = displayName;
+            this.Type = Xml.FolderHierarchy.TypeCode.UserCreatedCal_13;
         }
     }
 
