@@ -4,16 +4,15 @@ using NachoCore.Utils;
 using MailKit;
 using System.IO;
 using MailKit.Net.Imap;
-using System.Linq;
-using System.Text;
+using System;
 
 namespace NachoCore.IMAP
 {
-    public class NcImapClient : MailKit.Net.Imap.ImapClient
+    public class NcImapClient : ImapClient
     {
         public NcMailKitProtocolLogger MailKitProtocolLogger { get; private set; }
 
-        public NcImapClient () : base(getLogger())
+        public NcImapClient () : base (getLogger ())
         {
             MailKitProtocolLogger = ProtocolLogger as NcMailKitProtocolLogger;
         }
@@ -33,18 +32,30 @@ namespace NachoCore.IMAP
 
     public class NcImapFolder : ImapFolder
     {
-        public NcImapFolder (ImapFolderConstructorArgs args) : base(args) {}
-
-        private NcImapFolderStreamContext StreamContext { get; set; }
-        public void SetStreamContext (UniqueId uid, string filePath)
+        public NcImapFolder (ImapFolderConstructorArgs args) : base (args)
         {
-            StreamContext = new NcImapFolderStreamContext() {
-                uid = uid,
-                FilePath = filePath,
-            };
         }
 
-        public void UnsetStreamContext()
+        NcImapFolderStreamContext _StreamContext;
+
+        NcImapFolderStreamContext StreamContext {
+            get {
+                return _StreamContext;
+            }
+            set {
+                if (null != _StreamContext) {
+                    _StreamContext.Dispose ();
+                }
+                _StreamContext = value;
+            }
+        }
+
+        public void SetStreamContext (UniqueId uid, string filePath, bool deleteFile = true)
+        {
+            StreamContext = new NcImapFolderStreamContext (uid, filePath, deleteFile);
+        }
+
+        public void UnsetStreamContext ()
         {
             StreamContext = null;
         }
@@ -59,11 +70,11 @@ namespace NachoCore.IMAP
             } else {
                 uidString = "none";
             }
-            if (null != StreamContext && StreamContext.uid.ToString () != uidString) {
-                Log.Error (Log.LOG_IMAP, "StreamContext UID {0} does not match uid {1}", StreamContext.uid, uidString);
+            if (null != StreamContext && StreamContext.Uid.ToString () != uidString) {
+                Log.Error (Log.LOG_IMAP, "StreamContext UID {0} does not match uid {1}", StreamContext.Uid, uidString);
             }
             Stream stream;
-            if (null == StreamContext || StreamContext.uid.ToString () != uidString) {
+            if (null == StreamContext || StreamContext.Uid.ToString () != uidString) {
                 stream = base.CreateStream (uid, section, offset, length);
             } else {
                 stream = new FileStream (StreamContext.FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
@@ -81,13 +92,31 @@ namespace NachoCore.IMAP
             }
         }
 
-        public class NcImapFolderStreamContext
+        public class NcImapFolderStreamContext : IDisposable
         {
-            public UniqueId uid;
-            public string FilePath;
+            public UniqueId Uid { get; protected set; }
 
-            public NcImapFolderStreamContext ()
-            {}
+            public string FilePath { get; protected set; }
+
+            public bool DeleteFile { get; set; }
+
+            public NcImapFolderStreamContext (UniqueId uid, string filePath, bool deleteFile)
+            {
+                Uid = uid;
+                FilePath = filePath;
+                DeleteFile = deleteFile;
+            }
+
+            #region IDisposable implementation
+
+            public void Dispose ()
+            {
+                if (DeleteFile && !string.IsNullOrEmpty (FilePath)) {
+                    File.Delete (FilePath);
+                }
+            }
+
+            #endregion
         }
     }
 }

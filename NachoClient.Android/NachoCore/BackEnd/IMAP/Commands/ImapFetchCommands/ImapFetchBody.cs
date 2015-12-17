@@ -215,7 +215,7 @@ namespace NachoCore.IMAP
         /// <param name="imapBody">Imap body.</param>
         private NcResult DownloadEntireMessage (ref McBody body, NcImapFolder mailKitFolder, UniqueId uid, BodyPart imapBody)
         {
-            var tmp = NcModel.Instance.TmpPath (AccountId);
+            var tmp = NcModel.Instance.TmpPath (AccountId, "msg");
             try {
                 mailKitFolder.SetStreamContext (uid, tmp);
                 NcCapture.AddKind (KImapFetchBodyCommandFetch);
@@ -293,7 +293,7 @@ namespace NachoCore.IMAP
         private NcResult DownloadIndividualParts (McEmailMessage email, ref McBody body, NcImapFolder mailKitFolder, UniqueId uid, List<FetchKit.DownloadPart> Parts, string boundary)
         {
             NcAssert.True (null != Parts && Parts.Any ());
-            var tmp = NcModel.Instance.TmpPath (AccountId);
+            var tmp = NcModel.Instance.TmpPath (AccountId, "part");
             try {
                 using (FileStream stream = new FileStream (tmp, FileMode.CreateNew)) {
                     WriteUTF8String (stream, email.Headers);
@@ -368,14 +368,13 @@ namespace NachoCore.IMAP
         /// <param name="dp">DownloadPart.</param>
         private void GetBodyPart (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
-            var tmp = NcModel.Instance.TmpPath (AccountId);
+            var tmp = NcModel.Instance.TmpPath (AccountId, "bodypart");
             try {
                 mailKitFolder.SetStreamContext (uid, tmp);
                 var mime = mailKitFolder.GetBodyPart (uid, dp.PartSpecifier, Cts.Token, this);
                 mime.WriteTo (stream);
             } finally {
                 mailKitFolder.UnsetStreamContext ();
-                File.Delete (tmp);
             }
         }
 
@@ -390,7 +389,7 @@ namespace NachoCore.IMAP
         /// <param name="dp">DownloadPart.</param>
         private void GetBodyPartHeader (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
-            var tmp = NcModel.Instance.TmpPath (AccountId);
+            var tmp = NcModel.Instance.TmpPath (AccountId, "header");
             try {
                 mailKitFolder.SetStreamContext (uid, tmp);
                 var mime = mailKitFolder.GetBodyPart (uid, dp.PartSpecifier, true, Cts.Token, this);
@@ -400,7 +399,6 @@ namespace NachoCore.IMAP
                 mime.WriteTo (stream);
             } finally {
                 mailKitFolder.UnsetStreamContext ();
-                File.Delete (tmp);
             }
         }
 
@@ -413,7 +411,7 @@ namespace NachoCore.IMAP
         /// <param name="dp">DownloadPart.</param>
         private void GetBodyPartData (Stream stream, NcImapFolder mailKitFolder, UniqueId uid, FetchKit.DownloadPart dp)
         {
-            var tmp = NcModel.Instance.TmpPath (AccountId);
+            var tmp = NcModel.Instance.TmpPath (AccountId, "data");
             try {
                 mailKitFolder.SetStreamContext (uid, tmp);
                 if (dp.IsTruncated) {
@@ -427,7 +425,6 @@ namespace NachoCore.IMAP
                 }
             } finally {
                 mailKitFolder.UnsetStreamContext ();
-                File.Delete (tmp);
             }
         }
 

@@ -726,12 +726,15 @@ namespace NachoCore.Model
             _StoredBuildInfo = null;
             DbFileName = dbFileName;
             InitializeDb ();
-            GarbageCollectFiles ();
+            GarbageCollectFiles (false);
         }
 
-        public string TmpPath (int accountId)
+        public string TmpPath (int accountId, string suffix = null)
         {
             var guidString = Guid.NewGuid ().ToString ("N");
+            if (!string.IsNullOrEmpty (suffix)) {
+                guidString += suffix;
+            }
             return Path.Combine (GetFileDirPath (accountId, KTmpPathSegment), guidString);
         }
 
@@ -748,7 +751,7 @@ namespace NachoCore.Model
         }
 
         // To be run synchronously only on app boot.
-        public void GarbageCollectFiles ()
+        public void GarbageCollectFiles (bool deleteGlobalTmp = true)
         {
             // Find any top-level file dir not backed by McAccount. Delete it.
             var acctLevelDirs = Directory.GetDirectories (GetDataDirPath ());
@@ -756,32 +759,40 @@ namespace NachoCore.Model
             foreach (var acctDir in acctLevelDirs) {
                 int accountId;
                 var suffix = Path.GetFileName (acctDir);
-                try {
-                    accountId = (int)uint.Parse (suffix);
+                if (int.TryParse (suffix, out accountId)) {
                     if (null == McAccount.QueryById<McAccount> (accountId)) {
                         try {
                             Directory.Delete (acctDir, true);
                         } catch (Exception ex) {
                             Log.Error (Log.LOG_DB, "GarbageCollectFiles: Exception deleting account-level dir: {0}", ex);
                         }
-                        continue;
+                    } else {
+                        // Remove any tmp files/dirs.
+                        DeleteDirContent (GetFileDirPath (accountId, KTmpPathSegment));
                     }
-                } catch {
-                    // Must not be a number, so we're not interested in it. Loop.
-                    continue;
                 }
-                var tmpTop = GetFileDirPath (accountId, KTmpPathSegment);
-                try {
-                    // Remove any tmp files/dirs.
-                    foreach (var dir in Directory.GetDirectories (tmpTop)) {
-                        Directory.Delete (dir, true);
-                    }
-                    foreach (var file in Directory.GetFiles (tmpTop)) {
-                        File.Delete (file);
-                    }
-                } catch (Exception ex) {
-                    Log.Error (Log.LOG_DB, "GarbageCollectFiles: Exception cleaning up tmp files: {0}", ex);
+            }
+            if (deleteGlobalTmp) {
+                // Remove any global tmp files/dirs.
+                DeleteDirContent (Path.GetTempPath ());
+            }
+        }
+
+        static void DeleteDirContent (string dirname, bool logFiles = true)
+        {
+            try {
+                // Remove any tmp files/dirs.
+                foreach (var dir in Directory.GetDirectories (dirname)) {
+                    Directory.Delete (dir, true);
                 }
+                foreach (var file in Directory.GetFiles (dirname)) {
+                    if (logFiles) {
+                        Log.Info (Log.LOG_SYS, "DeleteDirContent: Removing left-over file {0}", file);
+                    }
+                    File.Delete (file);
+                }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_DB, "DeleteDirContent: Exception cleaning up files: {0}", ex);
             }
         }
 
