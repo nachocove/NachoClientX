@@ -889,12 +889,12 @@ namespace NachoCore.Utils
             return false;
         }
 
-        public static void MarkAsRead (McEmailMessageThread thread)
+        public static void MarkAsRead (McEmailMessageThread thread, bool force = false)
         {
             var message = thread.SingleMessageSpecialCase ();
             if ((null != message) && !message.IsRead) {
                 var body = McBody.QueryById<McBody> (message.BodyId);
-                if (McBody.IsComplete (body)) {
+                if (force || McBody.IsComplete (body)) {
                     BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
                 }
             }

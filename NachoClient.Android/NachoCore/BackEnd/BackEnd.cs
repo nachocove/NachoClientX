@@ -165,7 +165,6 @@ namespace NachoCore
             var protoControl = GetService (accountId, capability);
             if (null == protoControl) {
                 if (!AccountHasServices (accountId)) {
-                    CreateServices (accountId);
                     Start (accountId);
                     protoControl = GetService (accountId, capability);
                 }
@@ -237,10 +236,7 @@ namespace NachoCore
             Oauth2RefreshCancelSource = new CancellationTokenSource ();
             // The callee does Task.Run.
             ApplyAcrossAccounts ("Start", (accountId) => {
-                if (!AccountHasServices (accountId)) {
-                    CreateServices (accountId);
-                    Start (accountId);
-                }
+                Start (accountId);
             });
         }
 

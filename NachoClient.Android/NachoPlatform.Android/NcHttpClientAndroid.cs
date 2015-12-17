@@ -330,7 +330,7 @@ namespace NachoPlatform
 
         public static Exception createExceptionForJavaIOException (Java.IO.IOException error)
         {
-            return new IOException (error.Message);
+            return new WebException (error.Message);
         }
 
         class NcOkNativeAuthenticator : Java.Lang.Object, IAuthenticator
