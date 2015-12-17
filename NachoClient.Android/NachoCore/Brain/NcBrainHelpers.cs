@@ -39,12 +39,10 @@ namespace NachoCore.Brain
         public void Release (int accountId)
         {
             NcIndex index;
-            if (!TryGetValue (accountId, out index)) {
-                Log.Error (Log.LOG_BRAIN, "Attempt to release the index write lock for account {0} when the lock was not held.", accountId);
-                return;
+            if (TryGetValue (accountId, out index)) {
+                index.EndAddTransaction ();
+                Remove (accountId);
             }
-            index.EndAddTransaction ();
-            Remove (accountId);
         }
 
         public void Cleanup ()
