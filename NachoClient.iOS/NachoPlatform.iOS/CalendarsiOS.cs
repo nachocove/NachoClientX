@@ -579,7 +579,10 @@ namespace NachoPlatform
                 return;
             }
 
-            var defaultId = Es.DefaultCalendarForNewEvents.CalendarIdentifier;
+            string defaultId = "no default";
+            if (null != Es.DefaultCalendarForNewEvents) {
+                defaultId = Es.DefaultCalendarForNewEvents.CalendarIdentifier;
+            }
             foreach (var ekCalendar in ekCalendars) {
                 cancellationToken.ThrowIfCancellationRequested ();
                 appFolders.Add (new PlatformCalendarFolderRecordiOS (ekCalendar, ekCalendar.CalendarIdentifier == defaultId));
