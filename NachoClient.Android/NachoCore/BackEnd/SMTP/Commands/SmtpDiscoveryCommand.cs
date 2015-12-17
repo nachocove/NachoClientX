@@ -49,6 +49,7 @@ namespace NachoCore.SMTP
                     }
                     return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
                 });
+                Cts.Token.ThrowIfCancellationRequested ();
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
                 return evt1;
             } catch (OperationCanceledException ex ) {
@@ -116,11 +117,10 @@ namespace NachoCore.SMTP
                 ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                 Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
-            if (Initial) {
+            if (Initial && !Cts.IsCancellationRequested) {
                 StatusInd (errResult);
             }
             return evt;
         }
     }
 }
-
