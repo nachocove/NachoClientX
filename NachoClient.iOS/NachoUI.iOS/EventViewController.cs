@@ -1332,41 +1332,35 @@ namespace NachoClient.iOS
             }
         }
 
-        private void ResponseChangeDeniedPopUp ()
+        private void UserResponseChanged (NcResponseType response)
         {
-            NcAlertView.ShowMessage (this, "Can't Change Response",
-                "Your response to the meeting can't be changed because the meeting is stored in a calendar that is not writable by this app. " +
-                "Use a different client, such as the Calendar app, to change your response.");
+            if (McAccount.AccountTypeEnum.Device == detail.Account.AccountType) {
+                NcAlertView.ShowMessage (this, "Can't Change Response",
+                    "Your response to the meeting can't be changed because the meeting is managed by the Calendar app, not by Nacho Mail. " +
+                    "Use the Calendar app or some other client to change your response.");
+            } else if (!detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                NcAlertView.ShowMessage (this, "Can't Change Response",
+                    "Your response to the meeting can't be changed because the meeting is stored in a calendar that is not writable by this app. " +
+                    "Use a different client to change your response.");
+            } else {
+                SelectButtonForResponse (response);
+                UpdateStatus (response);
+            }
         }
 
         private void AcceptButtonTouchUpInside (object sender, EventArgs e)
         {
-            if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                SelectButtonForResponse (NcResponseType.Accepted);
-                UpdateStatus (NcResponseType.Accepted);
-            } else {
-                ResponseChangeDeniedPopUp ();
-            }
+            UserResponseChanged (NcResponseType.Accepted);
         }
 
         private void TentativeButtonTouchUpInside (object sender, EventArgs e)
         {
-            if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                SelectButtonForResponse (NcResponseType.Tentative);
-                UpdateStatus (NcResponseType.Tentative);
-            } else {
-                ResponseChangeDeniedPopUp ();
-            }
+            UserResponseChanged (NcResponseType.Tentative);
         }
 
         private void DeclineButtonTouchUpInside (object sender, EventArgs e)
         {
-            if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                SelectButtonForResponse (NcResponseType.Declined);
-                UpdateStatus (NcResponseType.Declined);
-            } else {
-                ResponseChangeDeniedPopUp ();
-            }
+            UserResponseChanged (NcResponseType.Declined);
         }
 
         private void EditButtonClicked (object sender, EventArgs e)
