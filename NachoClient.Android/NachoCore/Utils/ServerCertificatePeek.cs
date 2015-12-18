@@ -66,6 +66,8 @@ namespace NachoCore.Utils
     {
         public X509Certificate2 PinnedCert { set; get; }
 
+        public X509Certificate2 PinnedSigningCert { set; get; }
+
         public ServerCertificateValidator Validator { set; get; }
     }
 
@@ -141,24 +143,26 @@ namespace NachoCore.Utils
                 if (hasPinning) {
                     // Extract all CRL DP in intermediary certs
                     foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                        var crlUrls = CertificateHelper.CrlDistributionPoint (cert);
-                        CrlMonitor.Register (crlUrls);
+                        CrlMonitor.Register (cert, policy.PinnedSigningCert);
                     }
+
                     // Pinned cert - Remove all self-signed certs in ExtraStore and inject the pinned cert
                     var selfSignedCerts = new X509Certificate2Collection ();
                     foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                        if (cert.Issuer == cert.Subject) {
+                        if (cert != policy.PinnedCert && cert.Issuer == cert.Subject) {
                             selfSignedCerts.Add (cert);
                         }
                     }
                     chain.ChainPolicy.ExtraStore.RemoveRange (selfSignedCerts);
-                    chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
+                    if (!chain.ChainPolicy.ExtraStore.Contains (policy.PinnedCert)) {
+                        chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
+                    }
                 }
 
                 // Remove all revoked certs
                 var revokedCerts = new X509Certificate2Collection ();
                 foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                    if (CrlMonitor.IsRevoked (cert.SerialNumber)) {
+                    if (CrlMonitor.IsRevoked (cert)) {
                         revokedCerts.Add (cert);
                     }
                 }
@@ -166,7 +170,7 @@ namespace NachoCore.Utils
                 bool ok;
                 if (null == certificate2) {
                     ok = false;
-                } else if (CrlMonitor.IsRevoked (certificate2.SerialNumber)) {
+                } else if (CrlMonitor.IsRevoked (certificate2)) {
                     ok = false;
                 } else {
                     ok = chain.Build (certificate2);

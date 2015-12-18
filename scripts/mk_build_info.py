@@ -86,6 +86,11 @@ def create_buildinfo(options):
     with open(os.path.join('..', 'Resources', pinger['root_cert'])) as f:
         pinger_cert = f.read()
 
+    pinger_crl_signing_cert = None
+    if pinger.get('crl_signing_cert', None):
+        with open(os.path.join('..', 'Resources', pinger['crl_signing_cert'])) as f:
+            pinger_crl_signing_cert = f.read()
+
     build_info.add('Version', version)
     build_info.add('BuildNumber', build_number)
     build_info.add('Time', datetime.now().strftime('%m/%d/%Y %H:%M:%S'))
@@ -102,6 +107,7 @@ def create_buildinfo(options):
     build_info.add('AwsAuthRoleArn', aws['auth_role_arn'])
     build_info.add('PingerHostname', pinger['hostname'])
     build_info.add('PingerCertPem', pinger_cert)
+    build_info.add('PingerCrlSigningCert', pinger_crl_signing_cert if pinger_crl_signing_cert else "")
     build_info.add('GoogleClientId', google['client_id'])
     build_info.add('GoogleClientSecret', google['client_secret'])
     build_info.add('S3Bucket', aws['s3_bucket'])

@@ -11,44 +11,31 @@ using System.IO;
 using Org.BouncyCastle.Security.Certificates;
 using Org.BouncyCastle.Security;
 using NachoPlatform;
+using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore.Utils
 {
-    public class CrlMonitor
+    public static class CrlMonitor
     {
-        private const long PollingPeriod = 2 * 3600 * 1000;
-
-        private const long RetryInterval = 15 * 1000;
+        // Keep track of all registered monitors
+        private static Dictionary<string, CrlMonitorItem> Monitors = new Dictionary<string, CrlMonitorItem> ();
 
         private static int NextId = 0;
-
-        private const int DefaultTimeoutSecs = 10;
-
-        // Keep track of all registered monitors
-        private static Dictionary<string, CrlMonitor> Monitors = new Dictionary<string, CrlMonitor> ();
 
         // For synchronized access of monitors dictionary
         private static object LockObj = new object ();
 
-        public int Id { get; protected set; }
-
-        public string Url { get; protected set; }
-
-        public String Crl { get; protected set; }
-
-        public HashSet<string> Revoked { get; protected set; }
-
-        public DateTime LastUpdated { get; protected set; }
-
-        // I don't think the number of CRLs will be a large numbers. So, I am not using
-        // NcTimerPool now. But if that ever becomes a problem, we can switch easily.
-        public NcTimer Timer;
+        static CancellationTokenSource Cts;
 
         public static void StartService ()
         {
             lock (LockObj) {
+                if (Cts != null) {
+                    Cts.Cancel ();
+                }
+                Cts = new CancellationTokenSource ();
                 foreach (var monitor in Monitors.Values) {
-                    monitor.StartTimer ();
+                    monitor.StartTimer (Cts.Token);
                 }
             }
         }
@@ -56,44 +43,39 @@ namespace NachoCore.Utils
         public static void StopService ()
         {
             lock (LockObj) {
-                foreach (var monitor in Monitors.Values) {
-                    monitor.StopTimer ();
-                }
+                Cts.Cancel ();
             }
         }
 
-        public static bool Register (string url)
+        public static void Register (X509Certificate2 cert, X509Certificate2 signerCert = null)
         {
             lock (LockObj) {
-                if (Monitors.ContainsKey (url)) {
-                    return false;
+                // need to extract the CRLDP's, and find the root cert that signed them
+                var crlUrls = CertificateHelper.CrlDistributionPoint (cert);
+                if (null == crlUrls) {
+                    return;
                 }
-                var monitor = new CrlMonitor (url);
-                Monitors.Add (monitor.Url, monitor);
-                return true;
-            }
-        }
-
-        public static void Register (HashSet<string> distributionPoints)
-        {
-            if (null == distributionPoints) {
-                return;
-            }
-            foreach (var dp in distributionPoints) {
-                string url;
-                if (!CrlDistributionPoint.IsHttp (dp, out url)) {
-                    Log.Error (Log.LOG_PUSH, "Non-HTTP CRL distribution point - {0}", url);
-                    continue;
+                foreach (var dp in crlUrls) {
+                    string url;
+                    if (!CrlDistributionPoint.IsHttp (dp, out url)) {
+                        Log.Error (Log.LOG_PUSH, "Non-HTTP CRL distribution point - {0}", url);
+                        continue;
+                    }
+                    if (Monitors.ContainsKey (url)) {
+                        continue;
+                    }
+                    var monitor = new CrlMonitorItem (Interlocked.Increment (ref NextId), url, cert, signerCert ?? cert);
+                    monitor.StartTimer (Cts.Token);
+                    Monitors.Add (url, monitor);
+                    Log.Info (Log.LOG_PUSH, "CRL Monitor: register {0}", url);
                 }
-                Log.Info (Log.LOG_PUSH, "CRL Monitor: register {0}", url);
-                CrlMonitor.Register (url);
             }
         }
 
         public static bool Deregister (string url)
         {
             lock (LockObj) {
-                CrlMonitor monitor;
+                CrlMonitorItem monitor;
                 if (!Monitors.TryGetValue (url, out monitor)) {
                     return false;
                 }
@@ -104,11 +86,11 @@ namespace NachoCore.Utils
             }
         }
 
-        public static bool IsRevoked (string serialNumber)
+        public static bool IsRevoked (X509Certificate2 cert)
         {
             lock (LockObj) {
                 foreach (var monitor in Monitors.Values) {
-                    if (monitor.Revoked.Contains (serialNumber)) {
+                    if (monitor.IsRevoked (cert)) {
                         return true;
                     }
                 }
@@ -116,14 +98,56 @@ namespace NachoCore.Utils
             }
         }
 
-        public CrlMonitor (string url)
+    }
+
+    public class CrlMonitorItem
+    {
+        string Name { get; set; }
+
+        const long RetryInterval = 15 * 1000;
+
+        const int DefaultTimeoutSecs = 10;
+
+        string Url { get; set; }
+
+        protected HashSet<string> Revoked { get; set; }
+
+        DateTime? NextUpdate { get; set; }
+
+        // I don't think the number of CRLs will be a large numbers. So, I am not using
+        // NcTimerPool now. But if that ever becomes a problem, we can switch easily.
+        NcTimer Timer;
+
+        X509Crl Crl { get; set; }
+
+        /// <summary>
+        /// The issuer of certs. May not be the same as the CrlSignerCert.Subject, which is why it's separate.
+        /// </summary>
+        public X500DistinguishedName Issuer;
+
+        /// <summary>
+        /// The crl signer cert. May not be the same as the CA certificate, though is most cases it will be (delegate
+        /// signing certificates are allowed by RFC but rarely used)
+        /// </summary>
+        X509Certificate2 CrlSignerCert;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NachoCore.Utils.CrlMonitorItem"/> class.
+        /// </summary>
+        /// <param name="id">Identifier.</param>
+        /// <param name="url">URL for the CRL</param>
+        /// <param name="cacert">The CA Certificate</param>
+        /// <param name="delegateSigner">The CRL delegate signing certificate, if one is used (rare)</param>
+        public CrlMonitorItem (int id, string url, X509Certificate2 cacert, X509Certificate2 delegateSigner = null)
         {
-            Id = Interlocked.Increment (ref NextId);
+            Name = String.Format ("CrlMonitorItem[{0}]", id);
             Url = url;
+            Issuer = cacert.IssuerName;
+            CrlSignerCert = delegateSigner ?? cacert;
             Revoked = new HashSet<string> ();
         }
 
-        private void StopTimer ()
+        public void StopTimer ()
         {
             if (null != Timer) {
                 Timer.Dispose ();
@@ -131,17 +155,20 @@ namespace NachoCore.Utils
             }
         }
 
-        private void StartTimer ()
+        /// <summary>
+        /// Starts the timer with a time of 0, i.e. immediately. The underlying code will reset the timer to run when needed.
+        /// TODO: Get rid of the timers, and instead have the CrlMonitor static class periodically inspect all CrlMonitorItem's
+        /// to see if a new CRL needs to be fetched.
+        /// </summary>
+        public void StartTimer (CancellationToken cToken)
         {
             StopTimer ();
-            var name = String.Format ("Crl[{0}]", Id);
-            long sinceLast = (long)((DateTime.UtcNow - LastUpdated).TotalMilliseconds);
-            long duration = (sinceLast >= PollingPeriod ? 0 : PollingPeriod - sinceLast);
-            Timer = new NcTimer (name, (state) => {
+            cToken.Register (StopTimer);
+            Timer = new NcTimer (Name, (state) => {
                 NcTask.Run (() => {
-                    Download (NcTask.Cts.Token);
+                    ValidateCrl (cToken);
                 }, (string)state);
-            }, null, duration, PollingPeriod);
+            }, null, 0, 0);
         }
 
         public virtual INcHttpClient HttpClient {
@@ -150,143 +177,156 @@ namespace NachoCore.Utils
             }
         }
 
-        public void Download (CancellationToken cToken)
+        void ValidateCrl (CancellationToken cToken)
         {
             var request = new NcHttpRequest (HttpMethod.Get, Url);
+            NextUpdate = null;
             HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, cToken);
         }
 
         void DownloadSuccess (NcHttpResponse response, CancellationToken token)
         {
-            NcAssert.True (null != response, "response should not be null");
-            if (HttpStatusCode.OK == response.StatusCode) {
-                NcAssert.True (null != response.Content, "content should not be null");
-                LastUpdated = DateTime.UtcNow;
-                // FIXME - Need a different signing scheme so we can present the signing cert to verify the CRL.
-                Revoked = CrlGetRevoked (response.Content as FileStream);
-                Log.Info (Log.LOG_PUSH, "CRL pull response: statusCode={0}, content={1}", response.StatusCode, Crl);
+            if (token.IsCancellationRequested) {
                 return;
-            } else {
-                Log.Warn (Log.LOG_PUSH, "CRL pull response: statusCode={0}", response.StatusCode);
+            }
+            long retryIn = RetryInterval;
+            try {
+                NcAssert.True (null != response, "response should not be null");
+                if (HttpStatusCode.OK == response.StatusCode) {
+                    NcAssert.True (null != response.Content, "content should not be null");
+                    if (ExtractCrl (response.Content as FileStream)) {
+                        if (token.IsCancellationRequested) {
+                            return;
+                        }
+                        CrlGetRevoked ();
+                        Log.Info (Log.LOG_PUSH, "{0}: CRL pull response: statusCode={1}", Name, response.StatusCode);
+                    }
+                } else {
+                    Log.Warn (Log.LOG_PUSH, "{0}: CRL pull response: statusCode={1}", Name, response.StatusCode);
+                }
+                if (NextUpdate.HasValue) {
+                    Log.Info (Log.LOG_SYS, "{0}: NextUpdate {1}", Name, NextUpdate.Value);
+                    var ms = (NextUpdate.Value - DateTime.UtcNow).TotalMilliseconds;
+                    NcAssert.True (ms > 0);
+                    retryIn = (long)ms;
+                }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "{0}: Exception processing response: {1}", Name, ex);
+            } finally {
+                ResetTimer (retryIn);
             }
         }
 
         void DownloadError (Exception ex, CancellationToken cToken)
         {
-            if (ex is OperationCanceledException) {
-                Log.Warn (Log.LOG_PUSH, "CRL pull: canceled");
-                if (cToken.IsCancellationRequested) {
-                    return;
-                }
-            } else if (ex is WebException) {
-                var webex = ex as WebException;
-                Log.Warn (Log.LOG_PUSH, "CRL pull: Caught network exception: {0} - {1}", webex.Status, webex.Message);
-            } else {
-                Log.Warn (Log.LOG_PUSH, "CRL pull: Caught unexpected http exception - {0}", ex);
+            if (cToken.IsCancellationRequested) {
+                return;
             }
+            try {
+                if (ex is OperationCanceledException) {
+                    Log.Warn (Log.LOG_PUSH, "{0}: CRL pull: canceled", Name);
+                } else if (ex is WebException) {
+                    var webex = ex as WebException;
+                    Log.Warn (Log.LOG_PUSH, "{0}: CRL pull: Caught network exception: {1} - {2}", Name, webex.Status, webex.Message);
+                } else {
+                    Log.Warn (Log.LOG_PUSH, "{0}: CRL pull: Caught unexpected http exception - {1}", Name, ex);
+                }
+            } finally {
+                ResetTimer (RetryInterval);
+            }
+        }
 
+        void ResetTimer (long nextRetry)
+        {
             // Check that the timer has not been disposed because the client goes to background.
             if (null != Timer) {
-                // Something went wrong and we cannot get a new CRL. Poll again at a shorter interval.
-                Timer.Change (RetryInterval, PollingPeriod);
+                Timer.Change (nextRetry, 0);
             }
         }
 
-        #region CRLParsing
-
-        public class InvalidCrl : Exception
-        {
-            public InvalidCrl (string message) : base(message)
-            {}
-        }
-
-        public static HashSet<string> CrlGetRevoked (string crl, string signingCert)
-        {
-            var crlStream = new MemoryStream (Encoding.ASCII.GetBytes (crl));
-            var certStream = new MemoryStream (Encoding.ASCII.GetBytes (signingCert));
-            return CrlGetRevoked (crlStream, certStream);
-        }
-
-        public static HashSet<string> CrlGetRevoked (Stream crl, Stream signingCert)
-        {
-            var sigCert = ParseX509Pem (signingCert);
-            var theCrl = ParseX509CrlPem (crl);
-            return CrlGetRevoked (theCrl, sigCert);
-        }
-
-        public static HashSet<string> CrlGetRevoked (string crl)
-        {
-            var crlStream = new MemoryStream (Encoding.ASCII.GetBytes (crl));
-            return CrlGetRevoked (crlStream);
-        }
-
-        public static HashSet<string> CrlGetRevoked (Stream crl)
-        {
-            var theCrl = ParseX509CrlPem (crl);
-            return CrlGetRevoked (theCrl, null);
-        }
-
-        protected static HashSet<string> CrlGetRevoked (X509Crl crl, X509Certificate signingCert)
-        {
-            if (signingCert != null) {
-                try {
-                    crl.Verify (signingCert.GetPublicKey ());
-                } catch (CrlException ex) {
-                    throw new InvalidCrl (ex.ToString ());
-                } catch (SignatureException ex) {
-                    throw new InvalidCrl (ex.ToString ());
-                }
-            }
-            var ret = new HashSet<string> ();
-            var revokedList = crl.GetRevokedCertificates ();
-            if (revokedList != null) {
-                foreach (X509CrlEntry revoked in revokedList) {
-                    ret.Add (revoked.SerialNumber.LongValue.ToString ("X"));
-                }
-            }
-            return ret;
-        }
-
-        static X509Certificate ParseX509Pem (Stream certStream)
-        {
-            X509CertificateParser x509Parser = new X509CertificateParser ();
-            var theCert = x509Parser.ReadCertificate (certStream);
-            if (theCert == null) {
-                throw new ArgumentException ("Could not convert signingCert");
-            }
-            return theCert;
-        }
-
-        static X509Crl ParseX509CrlPem (Stream crlStream)
+        /// <summary>
+        /// Given a CRL, check whether it's still valid (i.e. If NextUpdate is still in the future)
+        /// and whether the CRL signature can be validated with the CrlSignerCert.
+        /// </summary>
+        /// <returns><c>true</c>, if crl was extracted, <c>false</c> otherwise.</returns>
+        /// <param name="crl">Crl.</param>
+        /// <param name="failOnExpired">If set to <c>true</c> fail on expired.</param>
+        protected bool ExtractCrl (Stream crl, bool failOnExpired = true)
         {
             X509CrlParser parser = new X509CrlParser (true);
-            var theCrl = parser.ReadCrl (crlStream);
+            var theCrl = parser.ReadCrl (crl);
             if (theCrl == null) {
-                throw new ArgumentException ("Could not convert crl");
+                Log.Info (Log.LOG_SYS, "Could not convert crl");
+                return false;
             }
-            return theCrl;
+            var now = DateTime.UtcNow;
+            if (theCrl.NextUpdate.Value <= now) {
+                // For dev, we hardly ever update the CRL, so just set it to once a day
+                if (failOnExpired || !BuildInfoHelper.IsDev) {
+                    Log.Info (Log.LOG_SYS, "{0}: CRL is already expired: {1}", Name, theCrl.NextUpdate.Value);
+                    return false;
+                } else {
+                    NextUpdate = DateTime.UtcNow.AddDays (1);
+                }
+            } else {
+                NextUpdate = theCrl.NextUpdate.Value;
+            }
+
+            var crlIssuerDn = new X500DistinguishedName (theCrl.IssuerDN.GetDerEncoded ());
+            if (crlIssuerDn.Name != CrlSignerCert.SubjectName.Name) {
+                Log.Info (Log.LOG_SYS, "CRL issuer {0} does not match SignerCert {1}", crlIssuerDn.Name, CrlSignerCert.SubjectName.Name);
+                return false;
+            }
+            try {
+                var certStream = new MemoryStream (CrlSignerCert.Export (X509ContentType.Cert));
+                X509CertificateParser x509Parser = new X509CertificateParser ();
+                var cert = x509Parser.ReadCertificate (certStream);
+                theCrl.Verify (cert.GetPublicKey ());
+            } catch (CrlException ex) {
+                Log.Error (Log.LOG_SYS, "CrlException: {0}", ex.Message);
+                return false;
+            } catch (SignatureException ex) {
+                Log.Error (Log.LOG_SYS, "SignatureException: {0}", ex.Message);
+                return false;
+            }
+            Crl = theCrl;
+            return true;
         }
 
-        string ConvertCrl (byte[] crlBytes)
+        protected void CrlGetRevoked ()
         {
-            string crl;
-            try {
-                crl = Encoding.ASCII.GetString (crlBytes);
-                // This looks like an ASCII string. Does it look like a PEM object? (Is this simple way sufficient?)
-                if (!crl.StartsWith ("-----BEGIN")) {
-                    crl = null;
+            NcAssert.NotNull (Crl);
+
+            var revokedSet = new HashSet<string> ();
+            var revokedList = Crl.GetRevokedCertificates ();
+            if (revokedList != null) {
+                foreach (X509CrlEntry revoked in revokedList) {
+                    revokedSet.Add (revoked.SerialNumber.LongValue.ToString ("X"));
                 }
-            } catch (ArgumentException) {
-                // Will end up here if the CRL is in DER format and has non-ASCII characters
-                crl = null;
             }
-            if (null == Crl) {
-                // Looks like we get DER CRL. Convert it to PEM as our OpenSSL binding requires PEM objects.
-                crl = "-----BEGIN X509 CRL-----\n" + Convert.ToBase64String (crlBytes, Base64FormattingOptions.InsertLineBreaks) + "\n-----END X509 CRL-----\n";
-            }
-            return crl;
+            Revoked = revokedSet;
         }
-        #endregion
+
+        /// <summary>
+        /// Checks to see if this certificate is revoked. Both Issuer and SerialNumber must be checked.
+        /// </summary>
+        /// <returns><c>true</c> if this certificate is revoked; otherwise, <c>false</c>.</returns>
+        /// <param name="cert">Cert.</param>
+        public bool IsRevoked (X509Certificate2 cert)
+        {
+            return cert.IssuerName == Issuer && Revoked.Contains (cert.SerialNumber.ToUpperInvariant ());
+        }
+
+        public static string ExportToPEM (X509Certificate2 cert)
+        {
+            StringBuilder builder = new StringBuilder ();            
+
+            builder.AppendLine ("-----BEGIN CERTIFICATE-----");
+            builder.AppendLine (Convert.ToBase64String (cert.Export (X509ContentType.Cert), Base64FormattingOptions.InsertLineBreaks));
+            builder.AppendLine ("-----END CERTIFICATE-----");
+
+            return builder.ToString ();
+        }
     }
 }
 

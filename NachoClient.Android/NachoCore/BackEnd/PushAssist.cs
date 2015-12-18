@@ -152,22 +152,20 @@ namespace NachoCore
         public static void InstallCertPolicy ()
         {
             var identity = new ServerIdentity (new Uri ("https://" + BuildInfo.PingerHostname));
-            var pem = System.Text.ASCIIEncoding.ASCII.GetBytes (BuildInfo.PingerCertPem);
-            var rootCert = new X509Certificate2 (pem);
-            var crlUrls = CertificateHelper.CrlDistributionPoint (rootCert);
-            CrlMonitor.Register (crlUrls);
+            var rootCert = new X509Certificate2 (Encoding.ASCII.GetBytes (BuildInfo.PingerCertPem));
+            X509Certificate2 signingCert = null;
+            if (!string.IsNullOrEmpty (BuildInfo.PingerCrlSigningCert)) {
+                signingCert = new X509Certificate2 (Encoding.ASCII.GetBytes (BuildInfo.PingerCrlSigningCert));
+            }
+            var chain = new X509Chain ();
+            chain.ChainPolicy.ExtraStore.Add (signingCert);
+            CrlMonitor.Register (rootCert, signingCert);
             var policy = new ServerValidationPolicy () {
                 PinnedCert = rootCert,
+                PinnedSigningCert = signingCert,
             };
             ServerCertificatePeek.Instance.AddPolicy (identity, policy);
             IsCertPolicyInstalled = true;
-        }
-
-        public static bool ValidatorHack (IHttpWebRequest sender, X509Certificate2 certificate, X509Chain chain, bool result)
-        {
-            // FIXME - Until we have the cert hierarchy fully verified, just accept pinger cert. 
-            Log.Warn (Log.LOG_PUSH, "Blindly accept the certificate. Alpha build only");
-            return true;
         }
 
         public static bool SetDeviceToken (string token)
@@ -532,6 +530,7 @@ namespace NachoCore
             } else {
                 Log.Info (Log.LOG_PUSH, "PA is disabled in account setting (accountId={0})", account.Id);
             }
+            PushAssist.SetDeviceToken ("SIMULATOR");
         }
 
         public void Defer ()
