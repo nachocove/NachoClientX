@@ -18,7 +18,7 @@ namespace NachoClient.AndroidClient
     public class NotificationService : Service
     {
 
-        const int EMAIL_NOTIFICATION_ID = 0;
+        public const int EMAIL_NOTIFICATION_ID = 0;
 
         public override void OnCreate ()
         {
@@ -123,6 +123,16 @@ namespace NachoClient.AndroidClient
             builder.SetWhen (message.DateReceived.MillisecondsSinceEpoch ());
             builder.SetAutoCancel (true);
 
+            var deleteIntent = new Intent (this, typeof (NotificationDeleteMessageReceiver));
+            deleteIntent.PutExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", message.Id);
+            var pendingDeleteIntent = PendingIntent.GetBroadcast (this, 0, deleteIntent, PendingIntentFlags.UpdateCurrent);
+            builder.AddAction (Resource.Drawable.email_notification_delete, "Delete", pendingDeleteIntent);
+
+            var archiveIntent = new Intent (this, typeof (NotificationArchiveMessageReceiver));
+            archiveIntent.PutExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", message.Id);
+            var pendingArchiveIntent = PendingIntent.GetBroadcast (this, 0, archiveIntent, PendingIntentFlags.UpdateCurrent);
+            builder.AddAction (Resource.Drawable.email_notification_archive, "Archive", pendingArchiveIntent);
+
             var preview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
 
             if (!String.IsNullOrEmpty (preview)) {
@@ -193,6 +203,42 @@ namespace NachoClient.AndroidClient
         private int dp2px (int dp)
         {
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
+        }
+
+    }
+
+    [BroadcastReceiver (Enabled=true)]
+    class NotificationDeleteMessageReceiver : BroadcastReceiver
+    {
+
+        public override void OnReceive (Context context, Intent intent)
+        {
+            var messageId = intent.GetIntExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", 0);
+            if (messageId != 0) {
+                var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
+                NcEmailArchiver.Delete (message);
+                message.MarkHasBeenNotified (false);
+                var nMgr = (NotificationManager)MainApplication.Instance.GetSystemService (Context.NotificationService);
+                nMgr.Cancel (NotificationService.EMAIL_NOTIFICATION_ID);
+            }
+        }
+
+    }
+
+    [BroadcastReceiver (Enabled=true)]
+    class NotificationArchiveMessageReceiver : BroadcastReceiver
+    {
+
+        public override void OnReceive (Context context, Intent intent)
+        {
+            var messageId = intent.GetIntExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", 0);
+            if (messageId != 0) {
+                var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
+                NcEmailArchiver.Archive (message);
+                message.MarkHasBeenNotified (false);
+                var nMgr = (NotificationManager)MainApplication.Instance.GetSystemService (Context.NotificationService);
+                nMgr.Cancel (NotificationService.EMAIL_NOTIFICATION_ID);
+            }
         }
 
     }
