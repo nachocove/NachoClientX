@@ -157,9 +157,10 @@ namespace NachoCore
             if (!string.IsNullOrEmpty (BuildInfo.PingerCrlSigningCert)) {
                 signingCert = new X509Certificate2 (Encoding.ASCII.GetBytes (BuildInfo.PingerCrlSigningCert));
             }
-            var chain = new X509Chain ();
-            chain.ChainPolicy.ExtraStore.Add (signingCert);
-            CrlMonitor.Register (rootCert, signingCert);
+            var chain = new X509Certificate2Collection ();
+            chain.Add (rootCert);
+            chain.Add (signingCert);
+            CrlMonitor.Instance.Register (chain);
             var policy = new ServerValidationPolicy () {
                 PinnedCert = rootCert,
                 PinnedSigningCert = signingCert,

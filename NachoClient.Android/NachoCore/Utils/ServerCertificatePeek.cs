@@ -141,10 +141,11 @@ namespace NachoCore.Utils
             if (Instance.Policies.TryGetValue (ident, out policy)) {
                 bool hasPinning = (null != policy.PinnedCert);
                 if (hasPinning) {
-                    // Extract all CRL DP in intermediary certs
-                    foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                        CrlMonitor.Register (cert, policy.PinnedSigningCert);
+                    if (!chain.ChainPolicy.ExtraStore.Contains (policy.PinnedCert)) {
+                        chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
                     }
+
+                    CrlMonitor.Instance.Register (chain.ChainPolicy.ExtraStore);
 
                     // Pinned cert - Remove all self-signed certs in ExtraStore and inject the pinned cert
                     var selfSignedCerts = new X509Certificate2Collection ();
@@ -154,15 +155,12 @@ namespace NachoCore.Utils
                         }
                     }
                     chain.ChainPolicy.ExtraStore.RemoveRange (selfSignedCerts);
-                    if (!chain.ChainPolicy.ExtraStore.Contains (policy.PinnedCert)) {
-                        chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
-                    }
                 }
 
                 // Remove all revoked certs
                 var revokedCerts = new X509Certificate2Collection ();
                 foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                    if (CrlMonitor.IsRevoked (cert)) {
+                    if (CrlMonitor.Instance.IsRevoked (cert)) {
                         revokedCerts.Add (cert);
                     }
                 }
@@ -170,7 +168,7 @@ namespace NachoCore.Utils
                 bool ok;
                 if (null == certificate2) {
                     ok = false;
-                } else if (CrlMonitor.IsRevoked (certificate2)) {
+                } else if (CrlMonitor.Instance.IsRevoked (certificate2)) {
                     ok = false;
                 } else {
                     ok = chain.Build (certificate2);
