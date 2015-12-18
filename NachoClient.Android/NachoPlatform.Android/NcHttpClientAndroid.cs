@@ -55,16 +55,18 @@ namespace NachoPlatform
             _client.SetHostnameVerifier (new HostnameVerifier ());
 
             // FIXME: If we are using the instance pattern, setting the client timeouts won't work well for multiple requests
-            _client.SetConnectTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
-            _client.SetWriteTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
-            _client.SetReadTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
+            _client.SetConnectTimeout (defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
+            _client.SetWriteTimeout (defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
+            _client.SetReadTimeout (defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
             _client.FollowRedirects = AllowAutoRedirect;
             _client.SetFollowSslRedirects (AllowAutoRedirect);
             _client.SetConnectionPool (ConnectionPool.Default); // see http://square.github.io/okhttp/2.x/okhttp/com/squareup/okhttp/ConnectionPool.html
         }
 
         private static object LockObj = new object ();
+
         static NcHttpClient _Instance { get; set; }
+
         public static NcHttpClient Instance {
             get {
                 if (_Instance == null) {
@@ -106,7 +108,7 @@ namespace NachoPlatform
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NcOkHttpCallback callbacks, CancellationToken cancellationToken)
         {
-            OkHttpClient cloned = _client.Clone(); // Clone to make a customized OkHttp for this request.
+            OkHttpClient cloned = _client.Clone (); // Clone to make a customized OkHttp for this request.
             cloned.SetConnectTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
             cloned.SetWriteTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
             cloned.SetReadTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
@@ -151,9 +153,9 @@ namespace NachoPlatform
 
             if (null != request.Cred) {
                 if (!request.RequestUri.IsHttps ()) {
-                    Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace().ToString ());
+                    Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace ().ToString ());
                 }
-                var basicAuth = OkHttp.Credentials.Basic (request.Cred.Username, request.Cred.GetPassword ());
+                var basicAuth = Credentials.Basic (request.Cred.Username, request.Cred.GetPassword ());
                 cloned.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth, defaultAuthRetries));
                 if (PreAuthenticate) {
                     builder.Header ("Authorization", basicAuth);
@@ -226,7 +228,7 @@ namespace NachoPlatform
                 if (Token.IsCancellationRequested) {
                     return;
                 }
-                LogCompletion (SentBytesFromRequestBody(p0), -1);
+                LogCompletion (SentBytesFromRequestBody (p0), -1);
 
                 if (ErrorAction != null) {
                     ErrorAction (createExceptionForJavaIOException (p1), Token);
@@ -272,12 +274,12 @@ namespace NachoPlatform
                         } while (n > 0);
                     }
 
-                    LogCompletion (SentBytesFromRequestBody(p0.Request ()), received);
+                    LogCompletion (SentBytesFromRequestBody (p0.Request ()), received);
 
                     // reopen as read-only
                     using (var fileStream = new FileStream (filename, FileMode.Open, FileAccess.Read)) {
                         if (SuccessAction != null) {
-                            using (var response = new NcHttpResponse (p0.Request ().Method (), (HttpStatusCode)p0.Code (), fileStream, ContentTypeFromResponseBody(p0), FromOkHttpHeaders (p0.Headers ()))) {
+                            using (var response = new NcHttpResponse (p0.Request ().Method (), (HttpStatusCode)p0.Code (), fileStream, ContentTypeFromResponseBody (p0), FromOkHttpHeaders (p0.Headers ()))) {
                                 SuccessAction (response, Token);
                             }
                         }
