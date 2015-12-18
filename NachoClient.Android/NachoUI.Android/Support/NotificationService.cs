@@ -85,14 +85,12 @@ namespace NachoClient.AndroidClient
 
             unreadAndHot.RemoveAll (x => String.IsNullOrEmpty (x.From));
 
-            if (1 == unreadAndHot.Count) {
-                ExpandedNotification (EMAIL_NOTIFICATION_ID, unreadAndHot.ElementAt (0));
-            } else if (1 < unreadAndHot.Count) {
-                InboxNotification (EMAIL_NOTIFICATION_ID, unreadAndHot);
+            if (unreadAndHot.Count > 0) {
+                ExpandedNotification (EMAIL_NOTIFICATION_ID, unreadAndHot.Last (), unreadAndHot.Count);
             }
         }
 
-        private bool ExpandedNotification (int notificationId, McEmailMessage message)
+        private bool ExpandedNotification (int notificationId, McEmailMessage message, int count)
         {
             if (String.IsNullOrEmpty (message.From)) {
                 // Don't notify or count in badge number from-me messages.
@@ -122,6 +120,9 @@ namespace NachoClient.AndroidClient
             builder.SetContentText (subjectString);
             builder.SetWhen (message.DateReceived.MillisecondsSinceEpoch ());
             builder.SetAutoCancel (true);
+            if (count > 1) {
+                builder.SetContentInfo (String.Format ("{0} more message{1}", count - 1, count > 2 ? "s" : ""));
+            }
 
             var deleteIntent = new Intent (this, typeof (NotificationDeleteMessageReceiver));
             deleteIntent.PutExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", message.Id);
@@ -144,53 +145,6 @@ namespace NachoClient.AndroidClient
             }
            
             var intent = NotificationActivity.ShowMessageIntent (this, message);
-            var pendingIntent = PendingIntent.GetActivity (this, 0, intent, 0);
-            builder.SetContentIntent (pendingIntent);
-
-            var nMgr = (NotificationManager)GetSystemService (NotificationService);
-            nMgr.Notify (notificationId, builder.Build ());
-
-            return true;
-        }
-
-        private bool InboxNotification (int notificationId, List<McEmailMessage> messages)
-        {
-            var countString = String.Format ("{0} new messages", messages.Count);
-
-            var largeIcon = BitmapFactory.DecodeResource (Resources, Resource.Drawable.Icon);
-            largeIcon = Bitmap.CreateScaledBitmap (largeIcon, dp2px (32), dp2px (32), true);
-
-            var builder = new NotificationCompat.Builder (this);
-            builder.SetSmallIcon (Resource.Drawable.Loginscreen_2);
-            builder.SetLargeIcon (largeIcon);
-            builder.SetContentTitle (countString);
-            var UnixEpoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            builder.SetWhen ((long)((DateTime.UtcNow - UnixEpoch).TotalMilliseconds));
-            builder.SetAutoCancel (true);
-
-            var inbox = new NotificationCompat.InboxStyle ();
-
-            inbox.SetBigContentTitle (countString);
-
-            foreach (var message in messages) {
-
-                var fromString = Pretty.SenderString (message.From);
-                var subjectString = Pretty.SubjectString (message.Subject);
-                if (!String.IsNullOrEmpty (subjectString)) {
-                    subjectString += " ";
-                }
-                if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
-                    // Add debugging info for dev & alpha
-                    var latency = (DateTime.UtcNow - message.DateReceived).TotalSeconds;
-                    subjectString += String.Format ("[{0:N1}s]", latency);
-                }
-
-                inbox.AddLine (Pretty.Join (fromString, subjectString));
-            }
-
-            builder.SetStyle (inbox);
-
-            var intent = NotificationActivity.ShowMessageIntent (this, messages.ElementAt (0));
             var pendingIntent = PendingIntent.GetActivity (this, 0, intent, 0);
             builder.SetContentIntent (pendingIntent);
 
