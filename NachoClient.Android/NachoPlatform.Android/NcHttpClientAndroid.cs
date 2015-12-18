@@ -282,6 +282,9 @@ namespace NachoPlatform
                             }
                         }
                     }
+                } catch (Exception ex) {
+                    Log.Info (Log.LOG_HTTP, "Error Processing response: {0}", ex);
+                    ErrorAction (ex, Token);
                 } finally {
                     File.Delete (filename);
                     OriginalRequest.Dispose ();
