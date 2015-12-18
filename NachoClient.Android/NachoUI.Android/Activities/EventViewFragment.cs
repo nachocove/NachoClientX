@@ -569,6 +569,22 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        private void UserResponseChanged (NcResponseType response)
+        {
+            if (McAccount.AccountTypeEnum.Device == detail.Account.AccountType) {
+                NcAlertView.ShowMessage (this.Activity, "Can't Change Response",
+                    "Your response to this meeting can't be changed because the meeting is managed by the device's calendar, not by Nacho Mail." +
+                    "Use a different calendar app to change your response.");
+            } else if (!detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                NcAlertView.ShowMessage (this.Activity, "Can't Change Response",
+                    "Your response to the meeting can't be changed because the meeting is stored in a calendar that is not writable by this app. " +
+                    "Use a different client to change your response.");
+            } else {
+                SelectButtonForResponse (response);
+                UpdateStatus (response);
+            }
+        }
+
         private void EventWasDeleted ()
         {
             NcAlertView.Show (this.Activity, "Deleted Event", "The event has been deleted.", () => {
@@ -602,8 +618,12 @@ namespace NachoClient.AndroidClient
                     if (hasReminder) {
                         detail.SpecificItem.Reminder = (uint)reminder;
                     }
-                    detail.SpecificItem.Update ();
-                    BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
+                    if (detail.IsAppEvent) {
+                        detail.SpecificItem.Update ();
+                        BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SpecificItem.Id, false);
+                    } else {
+                        AndroidCalendars.UpdateEventReminder (detail.SpecificItem, detail.Occurrence.DeviceEventId, removeExisting: true);
+                    }
                     BindEventView ();
                 });
         }
@@ -644,20 +664,17 @@ namespace NachoClient.AndroidClient
 
         private void AttendButton_Click (object sender, EventArgs e)
         {
-            SelectButtonForResponse (NcResponseType.Accepted);
-            UpdateStatus (NcResponseType.Accepted);
+            UserResponseChanged (NcResponseType.Accepted);
         }
 
         private void MaybeButton_Click (object sender, EventArgs e)
         {
-            SelectButtonForResponse (NcResponseType.Tentative);
-            UpdateStatus (NcResponseType.Tentative);
+            UserResponseChanged (NcResponseType.Tentative);
         }
 
         private void DeclineButton_Click (object sender, EventArgs e)
         {
-            SelectButtonForResponse (NcResponseType.Declined);
-            UpdateStatus (NcResponseType.Declined);
+            UserResponseChanged (NcResponseType.Declined);
         }
     }
 
@@ -703,13 +720,6 @@ namespace NachoClient.AndroidClient
                     return base.CanEdit;
                 }
                 return IsOrganizer && !IsRecurring && 0 == SeriesItem.attendees.Count;
-            }
-        }
-
-        public override bool CanChangeReminder {
-            get {
-                // TODO Allow changing the reminder for device events
-                return isAppEvent && base.CanChangeReminder;
             }
         }
 

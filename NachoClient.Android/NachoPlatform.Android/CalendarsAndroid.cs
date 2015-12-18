@@ -524,25 +524,7 @@ namespace NachoPlatform
             var values = McCalendarToAndroidEvent (cal, calendarId);
             resolver.Update (ContentUris.AppendId (CalendarContract.Events.ContentUri.BuildUpon (), eventId).Build (), values, null, null);
 
-            ICursor reminderCursor = null;
-            try {
-                reminderCursor = CalendarContract.Reminders.Query (resolver, eventId, reminderIdProjection);
-            } catch (Exception e) {
-                Log.Error (Log.LOG_SYS, "Looking up reminders failed with {0}", e.ToString ());
-            }
-            if (null != reminderCursor) {
-                while (reminderCursor.MoveToNext ()) {
-                    long reminderId = reminderCursor.GetLong (REMINDER_ID_INDEX);
-                    resolver.Delete (ContentUris.AppendId (CalendarContract.Reminders.ContentUri.BuildUpon (), reminderId).Build (), null, null);
-                }
-            }
-            if (cal.HasReminder ()) {
-                var reminderValues = new ContentValues ();
-                reminderValues.Put (CalendarContract.RemindersColumns.EventId, eventId);
-                reminderValues.Put (CalendarContract.RemindersColumns.Minutes, (int)cal.GetReminder ());
-                reminderValues.Put (CalendarContract.RemindersColumns.Method, (int)RemindersMethod.Default);
-                resolver.Insert (CalendarContract.Reminders.ContentUri, reminderValues);
-            }
+            UpdateEventReminder (cal, eventId, removeExisting: true);
         }
 
         public static void InsertDeviceEvent (McCalendar cal, long calendarId)
@@ -551,9 +533,30 @@ namespace NachoPlatform
             var values = McCalendarToAndroidEvent (cal, calendarId);
             var newEventUri = resolver.Insert (CalendarContract.Events.ContentUri, values);
 
+            UpdateEventReminder (cal, ContentUris.ParseId (newEventUri), removeExisting: false);
+        }
+
+        public static void UpdateEventReminder (McAbstrCalendarRoot cal, long eventId, bool removeExisting)
+        {
+            var resolver = MainApplication.Instance.ContentResolver;
+
+            if (removeExisting) {
+                ICursor reminderCursor = null;
+                try {
+                    reminderCursor = CalendarContract.Reminders.Query (resolver, eventId, reminderIdProjection);
+                } catch (Exception e) {
+                    Log.Error (Log.LOG_SYS, "Looking up reminders failed with {0}", e.ToString ());
+                }
+                if (null != reminderCursor) {
+                    while (reminderCursor.MoveToNext ()) {
+                        long reminderId = reminderCursor.GetLong (REMINDER_ID_INDEX);
+                        resolver.Delete (ContentUris.AppendId (CalendarContract.Reminders.ContentUri.BuildUpon (), reminderId).Build (), null, null);
+                    }
+                }
+            }
             if (cal.HasReminder ()) {
                 var reminderValues = new ContentValues ();
-                reminderValues.Put (CalendarContract.RemindersColumns.EventId, ContentUris.ParseId (newEventUri));
+                reminderValues.Put (CalendarContract.RemindersColumns.EventId, eventId);
                 reminderValues.Put (CalendarContract.RemindersColumns.Minutes, (int)cal.GetReminder ());
                 reminderValues.Put (CalendarContract.RemindersColumns.Method, (int)RemindersMethod.Default);
                 resolver.Insert (CalendarContract.Reminders.ContentUri, reminderValues);

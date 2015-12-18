@@ -56,10 +56,9 @@ namespace NachoPlatform
             _client = new OkHttpClient ();
             _client.SetHostnameVerifier (new HostnameVerifier ());
 
-            // FIXME: If we are using the instance pattern, setting the client timeouts won't work well for multiple requests
-            _client.SetConnectTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
-            _client.SetWriteTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
-            _client.SetReadTimeout ((long)defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
+            _client.SetConnectTimeout (defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
+            _client.SetWriteTimeout (defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
+            _client.SetReadTimeout (defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
             _client.FollowRedirects = AllowAutoRedirect;
             _client.SetFollowSslRedirects (AllowAutoRedirect);
             _client.SetConnectionPool (ConnectionPool.Default); // see http://square.github.io/okhttp/2.x/okhttp/com/squareup/okhttp/ConnectionPool.html
@@ -160,7 +159,7 @@ namespace NachoPlatform
                 if (!request.RequestUri.IsHttps ()) {
                     Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace ().ToString ());
                 }
-                var basicAuth = OkHttp.Credentials.Basic (request.Cred.Username, request.Cred.GetPassword ());
+                var basicAuth = Credentials.Basic (request.Cred.Username, request.Cred.GetPassword ());
                 cloned.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth, defaultAuthRetries));
                 if (PreAuthenticate) {
                     builder.Header ("Authorization", basicAuth);
@@ -318,6 +317,9 @@ namespace NachoPlatform
                             }
                         }
                     }
+                } catch (Exception ex) {
+                    Log.Info (Log.LOG_HTTP, "Error Processing response: {0}", ex);
+                    ErrorAction (ex, Token);
                 } finally {
                     File.Delete (filename);
                     OriginalRequest.Dispose ();
