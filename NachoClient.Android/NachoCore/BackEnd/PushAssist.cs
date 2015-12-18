@@ -2,11 +2,9 @@
 //
 using System;
 using System.Net.Http;
-using System.IO;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
@@ -149,7 +147,8 @@ namespace NachoCore
             };
         }
 
-        public static void InstallCertPolicy ()
+        X509Certificate2Collection SSLCerts;
+        public void InstallCertPolicy ()
         {
             var identity = new ServerIdentity (new Uri ("https://" + BuildInfo.PingerHostname));
             var rootCert = new X509Certificate2 (Encoding.ASCII.GetBytes (BuildInfo.PingerCertPem));
@@ -157,10 +156,12 @@ namespace NachoCore
             if (!string.IsNullOrEmpty (BuildInfo.PingerCrlSigningCert)) {
                 signingCert = new X509Certificate2 (Encoding.ASCII.GetBytes (BuildInfo.PingerCrlSigningCert));
             }
-            var chain = new X509Certificate2Collection ();
-            chain.Add (rootCert);
-            chain.Add (signingCert);
-            CrlMonitor.Instance.Register (chain);
+            SSLCerts = new X509Certificate2Collection ();
+            SSLCerts.Add (rootCert);
+            SSLCerts.Add (signingCert);
+            // TODO We might want to hold off any pinger accesses until the CRL's have been fetched, and stop pinger
+            // if the CRL's can't be fetched. Perhaps a new state.
+            CrlMonitor.Instance.Register (SSLCerts);
             var policy = new ServerValidationPolicy () {
                 PinnedCert = rootCert,
                 PinnedSigningCert = signingCert,
@@ -531,7 +532,8 @@ namespace NachoCore
             } else {
                 Log.Info (Log.LOG_PUSH, "PA is disabled in account setting (accountId={0})", account.Id);
             }
-            PushAssist.SetDeviceToken ("SIMULATOR");
+            // Uncomment for debugging on simulator
+            // PushAssist.SetDeviceToken ("SIMULATOR");
         }
 
         public void Defer ()
@@ -1048,6 +1050,7 @@ namespace NachoCore
                 return;
             }
 
+            request.SetPrivateCerts (SSLCerts);
             ResetTimeout (timeoutAction);
             HttpClient.SendRequest (request, (MaxTimeoutMsec / 1000),
                 (response, token) => {

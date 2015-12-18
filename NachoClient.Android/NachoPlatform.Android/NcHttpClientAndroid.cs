@@ -34,6 +34,8 @@ using Javax.Net.Ssl;
 using System.Security.Cryptography.X509Certificates;
 using OkHttp.Okio;
 using System.Net.Http;
+using Java.Security.Cert;
+using Java.Security;
 
 namespace NachoPlatform
 {
@@ -64,7 +66,9 @@ namespace NachoPlatform
         }
 
         private static object LockObj = new object ();
+
         static NcHttpClient _Instance { get; set; }
+
         public static NcHttpClient Instance {
             get {
                 if (_Instance == null) {
@@ -106,10 +110,13 @@ namespace NachoPlatform
 
         protected void SetupAndRunRequest (bool isSend, NcHttpRequest request, int timeout, NcOkHttpCallback callbacks, CancellationToken cancellationToken)
         {
-            OkHttpClient cloned = _client.Clone(); // Clone to make a customized OkHttp for this request.
+            OkHttpClient cloned = _client.Clone (); // Clone to make a customized OkHttp for this request.
             cloned.SetConnectTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
             cloned.SetWriteTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
             cloned.SetReadTimeout ((long)timeout, Java.Util.Concurrent.TimeUnit.Seconds);
+            if (null != request.SSLCerts) {
+                cloned.SetSslSocketFactory (SSLSocketFactoryFromCerts (request.SSLCerts));
+            }
 
             var builder = new Request.Builder ()
                 .Url (new Java.Net.URL (request.RequestUri.ToString ()))
@@ -151,7 +158,7 @@ namespace NachoPlatform
 
             if (null != request.Cred) {
                 if (!request.RequestUri.IsHttps ()) {
-                    Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace().ToString ());
+                    Log.Error (Log.LOG_HTTP, "Thou shalt not send credentials over http\n{0}", new System.Diagnostics.StackTrace ().ToString ());
                 }
                 var basicAuth = OkHttp.Credentials.Basic (request.Cred.Username, request.Cred.GetPassword ());
                 cloned.SetAuthenticator (new NcOkNativeAuthenticator (basicAuth, defaultAuthRetries));
@@ -161,6 +168,7 @@ namespace NachoPlatform
             }
 
             var rq = builder.Build ();
+
             var call = cloned.NewCall (rq);
             cancellationToken.Register (() => {
                 if (!call.IsCanceled) {
@@ -183,6 +191,34 @@ namespace NachoPlatform
                 }
             });
             call.Enqueue (callbacks);
+        }
+
+        static SSLSocketFactory SSLSocketFactoryFromCerts (X509Certificate2Collection certs)
+        {
+            // Create a KeyStore containing our trusted CAs
+            KeyStore keyStore = KeyStore.GetInstance (KeyStore.DefaultType);
+            keyStore.Load (null, null);
+
+            CertificateFactory cf = CertificateFactory.GetInstance ("X.509");
+
+            foreach (var cert in certs) {
+                if (!keyStore.ContainsAlias (cert.SubjectName.Name)) {
+                    using (var mem = new MemoryStream (cert.Export (X509ContentType.Cert))) {
+                        using (var ca = cf.GenerateCertificate (mem)) {
+                            keyStore.SetCertificateEntry (cert.SubjectName.Name, ca);
+                        }
+                    }
+                }
+            }
+
+            // Create a TrustManager that trusts the CAs in our KeyStore
+            TrustManagerFactory tmf = TrustManagerFactory.GetInstance (TrustManagerFactory.DefaultAlgorithm);
+            tmf.Init (keyStore);
+
+            // Create an SSLContext that uses our TrustManager
+            SSLContext context = SSLContext.GetInstance ("TLS");
+            context.Init (null, tmf.GetTrustManagers (), null);
+            return context.SocketFactory;
         }
 
         public class NcOkHttpCallback : Java.Lang.Object, ICallback
@@ -226,7 +262,7 @@ namespace NachoPlatform
                 if (Token.IsCancellationRequested) {
                     return;
                 }
-                LogCompletion (SentBytesFromRequestBody(p0), -1);
+                LogCompletion (SentBytesFromRequestBody (p0), -1);
 
                 if (ErrorAction != null) {
                     ErrorAction (createExceptionForJavaIOException (p1), Token);
@@ -272,12 +308,12 @@ namespace NachoPlatform
                         } while (n > 0);
                     }
 
-                    LogCompletion (SentBytesFromRequestBody(p0.Request ()), received);
+                    LogCompletion (SentBytesFromRequestBody (p0.Request ()), received);
 
                     // reopen as read-only
                     using (var fileStream = new FileStream (filename, FileMode.Open, FileAccess.Read)) {
                         if (SuccessAction != null) {
-                            using (var response = new NcHttpResponse (p0.Request ().Method (), (HttpStatusCode)p0.Code (), fileStream, ContentTypeFromResponseBody(p0), FromOkHttpHeaders (p0.Headers ()))) {
+                            using (var response = new NcHttpResponse (p0.Request ().Method (), (HttpStatusCode)p0.Code (), fileStream, ContentTypeFromResponseBody (p0), FromOkHttpHeaders (p0.Headers ()))) {
                                 SuccessAction (response, Token);
                             }
                         }
@@ -314,7 +350,6 @@ namespace NachoPlatform
                 }
                 return contentType;
             }
-
 
             #endregion
         }

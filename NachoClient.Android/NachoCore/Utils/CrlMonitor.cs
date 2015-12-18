@@ -18,7 +18,7 @@ namespace NachoCore.Utils
     public class CrlMonitor
     {
         // Keep track of all registered monitors
-        protected Dictionary<X500DistinguishedName, CrlMonitorItem> Monitors = new Dictionary<X500DistinguishedName, CrlMonitorItem> ();
+        protected Dictionary<string, CrlMonitorItem> Monitors = new Dictionary<string, CrlMonitorItem> ();
 
         protected int NextId = 0;
 
@@ -50,14 +50,12 @@ namespace NachoCore.Utils
 
         public void StartService ()
         {
-            if (null == Cts) {
-                StopService ();
-            }
+            StopService ();
             Cts = new CancellationTokenSource ();
             MonitorTimer = new NcTimer ("CrlMonitorTimer", (state) => {
                 foreach (var monitor in Monitors.Values) {
                     if (monitor.NeedsUpdate ()) {
-                        monitor.FetchCRL (Cts.Token); // spawns a task
+                        monitor.StartUpdate (Cts.Token); // spawns a task
                     }
                 }
             }, null, 0, 60 * 60 * 1000);
@@ -66,10 +64,14 @@ namespace NachoCore.Utils
         public void StopService ()
         {
             lock (LockObj) {
-                Cts.Cancel ();
-                Cts = null;
-                MonitorTimer.Dispose ();
-                MonitorTimer = null;
+                if (Cts != null) {
+                    Cts.Cancel ();
+                    Cts = null;
+                }
+                if (MonitorTimer != null) {
+                    MonitorTimer.Dispose ();
+                    MonitorTimer = null;
+                }
             }
         }
 
@@ -77,7 +79,7 @@ namespace NachoCore.Utils
         {
             lock (LockObj) {
                 foreach (var cert in signerCerts) {
-                    if (Monitors.ContainsKey (cert.SubjectName)) {
+                    if (Monitors.ContainsKey (cert.SubjectName.Name)) {
                         continue;
                     }
                     var urls = CDPUrls (cert);
@@ -85,8 +87,9 @@ namespace NachoCore.Utils
                         continue;
                     }
                     var monitor = new CrlMonitorItem (Interlocked.Increment (ref NextId), cert, urls, signerCerts);
-                    Monitors.Add (cert.SubjectName, monitor);
-                    Log.Info (Log.LOG_PUSH, "CRL Monitor: register {0}", cert.SubjectName.Name);
+                    Monitors.Add (cert.SubjectName.Name, monitor);
+                    Log.Info (Log.LOG_PUSH, "CRL Monitor: register {0}: {1}", monitor.Name, HashHelper.Sha256 (cert.SubjectName.Name));
+                    monitor.StartUpdate (Cts.Token);
                 }
             }
         }
@@ -95,10 +98,10 @@ namespace NachoCore.Utils
         {
             lock (LockObj) {
                 CrlMonitorItem monitor;
-                if (!Monitors.TryGetValue (cert.SubjectName, out monitor)) {
+                if (!Monitors.TryGetValue (cert.SubjectName.Name, out monitor)) {
                     return false;
                 }
-                var removed = Monitors.Remove (cert.SubjectName);
+                var removed = Monitors.Remove (cert.SubjectName.Name);
                 NcAssert.True (removed);
                 return true;
             }
@@ -108,7 +111,7 @@ namespace NachoCore.Utils
         {
             lock (LockObj) {
                 CrlMonitorItem monitor;
-                if (!Monitors.TryGetValue (cert.SubjectName, out monitor)) {
+                if (!Monitors.TryGetValue (cert.IssuerName.Name, out monitor)) {
                     return false;
                 }
 
@@ -177,6 +180,8 @@ namespace NachoCore.Utils
 
         protected HashSet<string> Revoked { get; set; }
 
+        protected bool UpdateRunning { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="NachoCore.Utils.CrlMonitorItem"/> class.
         /// </summary>
@@ -212,16 +217,23 @@ namespace NachoCore.Utils
             return false;
         }
 
-        public void FetchCRL (CancellationToken cToken)
+        public void StartUpdate (CancellationToken cToken)
+        {
+            UrlIndex = 0;
+            UpdateRunning = true;
+            FetchCRL (cToken);
+        }
+
+        void FetchCRL (CancellationToken cToken)
         {
             if (UrlIndex < Urls.Count) {
-                NcTask.Run (() => {
-                    var request = new NcHttpRequest (HttpMethod.Get, Urls [UrlIndex]);
-                    NextUpdate = null;
-                    HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, cToken);
-                }, Name);
+                var request = new NcHttpRequest (HttpMethod.Get, Urls [UrlIndex]);
+                NextUpdate = null;
+                Log.Info (Log.LOG_SYS, "{0}: Updating crl", Name);
+                HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, cToken);
             } else {
                 Log.Info (Log.LOG_SYS, "{0}: No more URL's to try. Stopping.", Name);
+                UpdateRunning = false;
             }
         }
 
@@ -234,18 +246,21 @@ namespace NachoCore.Utils
                 NcAssert.True (null != response, "response should not be null");
                 if (HttpStatusCode.OK == response.StatusCode) {
                     NcAssert.True (null != response.Content, "content should not be null");
+                    Log.Info (Log.LOG_PUSH, "{0}: CRL pull response: statusCode={1}", Name, response.StatusCode);
                     if (ExtractCrl (response.Content as FileStream)) {
                         if (token.IsCancellationRequested) {
                             return;
                         }
                         CrlGetRevoked ();
-                        Log.Info (Log.LOG_PUSH, "{0}: CRL pull response: statusCode={1}", Name, response.StatusCode);
+                        UpdateRunning = false;
                     }
                 } else {
                     Log.Warn (Log.LOG_PUSH, "{0}: CRL pull response: statusCode={1}", Name, response.StatusCode);
+                    DownloadError (null, token);
                 }
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SYS, "{0}: Exception processing response: {1}", Name, ex);
+                DownloadError (ex, token);
             }
         }
 
@@ -255,13 +270,15 @@ namespace NachoCore.Utils
                 return;
             }
             try {
-                if (ex is OperationCanceledException) {
-                    Log.Warn (Log.LOG_PUSH, "{0}: CRL pull: canceled", Name);
-                } else if (ex is WebException) {
-                    var webex = ex as WebException;
-                    Log.Warn (Log.LOG_PUSH, "{0}: CRL pull: Caught network exception: {1} - {2}", Name, webex.Status, webex.Message);
-                } else {
-                    Log.Warn (Log.LOG_PUSH, "{0}: CRL pull: Caught unexpected http exception - {1}", Name, ex);
+                if (ex != null) {
+                    if (ex is OperationCanceledException) {
+                        Log.Warn (Log.LOG_PUSH, "{0}: CRL pull: cancelled", Name);
+                    } else if (ex is WebException) {
+                        var webex = ex as WebException;
+                        Log.Warn (Log.LOG_PUSH, "{0}: CRL pull: Caught network exception: {1} - {2}", Name, webex.Status, webex.Message);
+                    } else {
+                        Log.Warn (Log.LOG_PUSH, "{0}: CRL pull: Caught unexpected http exception - {1}", Name, ex);
+                    }
                 }
             } finally {
                 UrlIndex++;
@@ -281,13 +298,13 @@ namespace NachoCore.Utils
             X509CrlParser parser = new X509CrlParser (true);
             var theCrl = parser.ReadCrl (crl);
             if (theCrl == null) {
-                Log.Info (Log.LOG_SYS, "Could not convert crl");
+                Log.Info (Log.LOG_SYS, "{0}: Could not convert crl", Name);
                 return false;
             }
             var now = DateTime.UtcNow;
             if (theCrl.NextUpdate.Value <= now) {
                 // For dev, we hardly ever update the CRL, so just set it to once a day
-                if (failOnExpired || !BuildInfoHelper.IsDev) {
+                if (failOnExpired && !BuildInfoHelper.IsDev) {
                     Log.Info (Log.LOG_SYS, "{0}: CRL is already expired: {1}", Name, theCrl.NextUpdate.Value);
                     return false;
                 } else {
@@ -299,14 +316,16 @@ namespace NachoCore.Utils
 
             var crlIssuerDn = new X500DistinguishedName (theCrl.IssuerDN.GetDerEncoded ());
             X509Certificate2 signerCert = null;
+            List<string> names = new List<string> ();
             foreach (var cert in CrlSignerCerts) {
+                names.Add (HashHelper.Sha256 (cert.SubjectName.Name));
                 if (crlIssuerDn.Name == cert.SubjectName.Name) {
                     signerCert = cert;
                     break;
                 }
             }
             if (signerCert == null) {
-                Log.Info (Log.LOG_SYS, "{0}: No CRL signer certificate found in list", Name);
+                Log.Info (Log.LOG_SYS, "{0}: No CRL signer certificate found in list <{1}>", Name, String.Join ("> <", names));
                 return false;
             }
             try {
@@ -314,11 +333,12 @@ namespace NachoCore.Utils
                 X509CertificateParser x509Parser = new X509CertificateParser ();
                 var cert = x509Parser.ReadCertificate (certStream);
                 theCrl.Verify (cert.GetPublicKey ());
+                Log.Info (Log.LOG_SYS, "{0}: CRL Validated Successfully", Name);
             } catch (CrlException ex) {
-                Log.Error (Log.LOG_SYS, "CrlException: {0}", ex.Message);
+                Log.Error (Log.LOG_SYS, "CrlException/{0}: {1}", Name, ex.Message);
                 return false;
             } catch (SignatureException ex) {
-                Log.Error (Log.LOG_SYS, "SignatureException: {0}", ex.Message);
+                Log.Error (Log.LOG_SYS, "SignatureException/{0}: {1}", Name, ex.Message);
                 return false;
             }
             Crl = theCrl;
@@ -336,6 +356,7 @@ namespace NachoCore.Utils
                     revokedSet.Add (revoked.SerialNumber.LongValue.ToString ("X"));
                 }
             }
+            Log.Info (Log.LOG_SYS, "{0}: Extracted {1} Revoked certificates", Name, revokedSet.Count);
             Revoked = revokedSet;
         }
 
@@ -346,7 +367,9 @@ namespace NachoCore.Utils
         /// <param name="cert">Cert.</param>
         public bool IsRevoked (X509Certificate2 cert)
         {
-            return cert.IssuerName.Name == Cert.SubjectName.Name && Revoked.Contains (cert.SerialNumber.ToUpperInvariant ());
+            // TODO Should we reject any certs if the CRL hasn't been fetched yet or could not be fetched/Updated?
+            // It might be a vulnerability one way (attacker could prevent us from fetching it), and a DoS attack in the other way (.
+            return null != Revoked && cert.IssuerName.Name == Cert.SubjectName.Name && Revoked.Contains (cert.SerialNumber.ToUpperInvariant ());
         }
 
         public static string ExportToPEM (X509Certificate2 cert)

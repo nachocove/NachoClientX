@@ -150,7 +150,7 @@ namespace NachoCore.Utils
                     // Pinned cert - Remove all self-signed certs in ExtraStore and inject the pinned cert
                     var selfSignedCerts = new X509Certificate2Collection ();
                     foreach (var cert in chain.ChainPolicy.ExtraStore) {
-                        if (cert != policy.PinnedCert && cert.Issuer == cert.Subject) {
+                        if (CompareCerts(cert, policy.PinnedCert) == false && cert.Issuer == cert.Subject) {
                             selfSignedCerts.Add (cert);
                         }
                     }
@@ -206,6 +206,13 @@ namespace NachoCore.Utils
                 return true;
             }
             return false;
+        }
+
+        static bool CompareCerts (X509Certificate2 cert1, X509Certificate2 cert2)
+        {
+            return cert1.SubjectName.Name == cert2.SubjectName.Name &&
+            cert1.SerialNumber == cert2.SerialNumber &&
+            cert1.IssuerName.Name == cert2.IssuerName.Name;
         }
 
         public static void TestOnlyFlushCache ()
