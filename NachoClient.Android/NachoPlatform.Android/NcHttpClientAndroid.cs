@@ -54,7 +54,6 @@ namespace NachoPlatform
             _client = new OkHttpClient ();
             _client.SetHostnameVerifier (new HostnameVerifier ());
 
-            // FIXME: If we are using the instance pattern, setting the client timeouts won't work well for multiple requests
             _client.SetConnectTimeout (defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
             _client.SetWriteTimeout (defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
             _client.SetReadTimeout (defaultTimeoutSecs, Java.Util.Concurrent.TimeUnit.Seconds);
