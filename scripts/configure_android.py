@@ -18,6 +18,10 @@ def edit_manifest(manifest_file, android, build, version):
     for md in meta_data:
         if md.attrib.get('{http://schemas.android.com/apk/res/android}name', '') == 'com.google.android.backup.api_key':
             md.attrib['{http://schemas.android.com/apk/res/android}value'] = android['backup.api_key']
+    provider_data = application.findall('provider')
+    for pd in provider_data:
+        if pd.attrib.get('{http://schemas.android.com/apk/res/android}authorities', '') == 'com.nachocove.dev.fileprovider':
+            pd.attrib['{http://schemas.android.com/apk/res/android}authorities'] = android['fileprovider']
     tree.write(manifest_file)
 
 
