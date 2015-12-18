@@ -66,7 +66,7 @@ namespace NachoCore.IMAP
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.MissingOnServer);
             }
 
-            var tmp = NcModel.Instance.TmpPath (AccountId);
+            var tmp = NcModel.Instance.TmpPath (AccountId, "attach");
             mailKitFolder.SetStreamContext (new UniqueId (email.ImapUid), tmp);
             try {
                 Stream st = mailKitFolder.GetStream (new UniqueId (email.ImapUid), attachment.FileReference, Cts.Token, this);

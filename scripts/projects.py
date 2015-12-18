@@ -24,6 +24,7 @@ projects = {
                          'alias': '',
                          },
             'backup.api_key': 'AEdPqrEAAAAIHhu7nvviRVUbM-wMP0XfbO1OAPy579Irm97hJw',
+            'fileprovider': 'com.nachocove.dev.fileprovider',
         },
         'aws': {
             'prefix': 'dev',
@@ -60,6 +61,7 @@ projects = {
                          'alias': 'com.nachocove.mail.alpha',
                          },
             'backup.api_key': 'AEdPqrEAAAAI6nEa_tRWJ5NsItWcRQ4vDQVTyXlzBZA34k1MJQ',
+            'fileprovider': 'com.nachocove.alpha.fileprovider',
         },
         'aws': {
             'prefix': 'alpha',
@@ -96,6 +98,7 @@ projects = {
                          'alias': 'com.nachocove.mail',
                          },
             'backup.api_key': 'AEdPqrEAAAAIWORF8SdqdCn_lVgJTP6lxCod1PGW3He-2OIV0g',
+            'fileprovider': 'com.nachocove.fileprovider',
         },
         'aws': {
             'prefix': 'beta',
@@ -132,6 +135,7 @@ projects = {
                          'alias': 'com.nachocove.mail',
                          },
             'backup.api_key': 'AEdPqrEAAAAIEP3e9PW3CpJ8D8MpJDOAg2dugLzFunXiC9LbfA',
+            'fileprovider': 'com.nachocove.fileprovider',
         },
         'aws': {
             'prefix': 'prod',
