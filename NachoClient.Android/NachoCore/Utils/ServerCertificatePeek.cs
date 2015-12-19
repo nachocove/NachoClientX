@@ -66,7 +66,7 @@ namespace NachoCore.Utils
     {
         public X509Certificate2 PinnedCert { set; get; }
 
-        public X509Certificate2 PinnedSigningCert { set; get; }
+        public X509Certificate2Collection PinnedSigningCerts { set; get; }
 
         public ServerCertificateValidator Validator { set; get; }
     }
@@ -143,6 +143,11 @@ namespace NachoCore.Utils
                 if (hasPinning) {
                     if (!chain.ChainPolicy.ExtraStore.Contains (policy.PinnedCert)) {
                         chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
+                    }
+                    foreach (var cert in policy.PinnedSigningCerts) {
+                        if (!chain.ChainPolicy.ExtraStore.Contains (cert)) {
+                            chain.ChainPolicy.ExtraStore.Add (cert);
+                        }                            
                     }
 
                     CrlMonitor.Instance.Register (chain.ChainPolicy.ExtraStore);

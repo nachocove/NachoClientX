@@ -152,19 +152,18 @@ namespace NachoCore
         {
             var identity = new ServerIdentity (new Uri ("https://" + BuildInfo.PingerHostname));
             var rootCert = new X509Certificate2 (Encoding.ASCII.GetBytes (BuildInfo.PingerCertPem));
-            X509Certificate2 signingCert = null;
-            if (!string.IsNullOrEmpty (BuildInfo.PingerCrlSigningCert)) {
-                signingCert = new X509Certificate2 (Encoding.ASCII.GetBytes (BuildInfo.PingerCrlSigningCert));
-            }
             SSLCerts = new X509Certificate2Collection ();
             SSLCerts.Add (rootCert);
-            SSLCerts.Add (signingCert);
+            foreach (var cert in BuildInfo.PingerCrlSigningCerts) {
+                SSLCerts.Add (new X509Certificate2 (Encoding.ASCII.GetBytes (cert)));
+            }
+
             // TODO We might want to hold off any pinger accesses until the CRL's have been fetched, and stop pinger
-            // if the CRL's can't be fetched. Perhaps a new state.
+            // if the CRL's can't be fetched. Perhaps a new state. For now, access will fail if the CRL could not be fetched
             CrlMonitor.Instance.Register (SSLCerts);
             var policy = new ServerValidationPolicy () {
                 PinnedCert = rootCert,
-                PinnedSigningCert = signingCert,
+                PinnedSigningCerts = SSLCerts,
             };
             ServerCertificatePeek.Instance.AddPolicy (identity, policy);
             IsCertPolicyInstalled = true;
