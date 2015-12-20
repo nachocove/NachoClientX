@@ -52,7 +52,7 @@ namespace NachoCore.Brain
                     LastPeriodicGlean = DateTime.Now;
                 }
                 NotificationRateLimiter.Running = false;
-                var runTill = EvaluateRunTime (NcContactGleaner.GLEAN_PERIOD);
+                var runTill = EvaluateRunTime (NcContactGleaner.GleanPeriod);
                 ProcessPeriodic (runTill);
                 NotificationRateLimiter.Running = true;
                 break;

@@ -6,6 +6,7 @@ using NachoCore.Utils;
 using Android.OS;
 using NachoCore.Model;
 using NachoCore;
+using NachoCore.Brain;
 
 namespace NachoClient.AndroidClient
 {
@@ -65,6 +66,7 @@ namespace NachoClient.AndroidClient
             isForeground = false;
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
             McMutables.Set (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", DateTime.UtcNow.ToString ());
+            NcContactGleaner.GleanPeriod = 120;
         }
 
         void Application.IActivityLifecycleCallbacks.OnActivityResumed (Activity activity)
@@ -73,6 +75,7 @@ namespace NachoClient.AndroidClient
             isForeground = true;
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
             NotificationService.OnForeground ();
+            NcContactGleaner.GleanPeriod = 4;
         }
 
         void Application.IActivityLifecycleCallbacks.OnActivitySaveInstanceState (Activity activity, Bundle outState)
@@ -86,9 +89,6 @@ namespace NachoClient.AndroidClient
         void Application.IActivityLifecycleCallbacks.OnActivityStopped (Activity activity)
         {
         }
-
-
-
     }
 }
 
