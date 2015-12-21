@@ -171,6 +171,9 @@ namespace NachoClient.AndroidClient
             attendButtonView.Click += AttendButton_Click;
             maybeButtonView.Click += MaybeButton_Click;
             declineButtonView.Click += DeclineButton_Click;
+
+            var removeButton = view.FindViewById<View> (Resource.Id.event_remove_view);
+            removeButton.Click += RemoveButton_Click;
         }
 
         /// <summary>
@@ -514,41 +517,41 @@ namespace NachoClient.AndroidClient
                         .SetTitle ("Decline Meeting?")
                         .SetMessage ("Declining the meeting will also delete the meeting from your calendar.")
                         .SetPositiveButton ("Decline", (sender, e) => {
-                        new AlertDialog.Builder (this.Activity)
+                            new AlertDialog.Builder (this.Activity)
                                 .SetTitle ("Series or Occurrence?")
                                 .SetMessage ("Decline the entire series or just this one occurrence?")
                                 .SetPositiveButton ("Series", (sender1, e1) => {
-                            MakeStatusUpdates (response, false);
-                            this.Activity.SetResult (Result.Ok);
-                            this.Activity.Finish ();
-                        })
+                                    MakeStatusUpdates (response, false);
+                                    this.Activity.SetResult (Result.Ok);
+                                    this.Activity.Finish ();
+                                })
                                 .SetNegativeButton ("Occurrence", (sender1, e1) => {
-                            MakeStatusUpdates (response, true);
-                            this.Activity.SetResult (Result.Ok);
-                            this.Activity.Finish ();
-                        })
+                                    MakeStatusUpdates (response, true);
+                                    this.Activity.SetResult (Result.Ok);
+                                    this.Activity.Finish ();
+                                })
                                 .SetNeutralButton ("Cancel", (sender1, e1) => {
+                                    SelectButtonForResponse (userResponse);
+                                })
+                                .Create ().Show ();
+                        })
+                        .SetNegativeButton ("Cancel", (sender, e) => {
                             SelectButtonForResponse (userResponse);
                         })
-                                .Create ().Show ();
-                    })
-                        .SetNegativeButton ("Cancel", (sender, e) => {
-                        SelectButtonForResponse (userResponse);
-                    })
                         .Create ().Show ();
                 } else {
                     new AlertDialog.Builder (this.Activity)
                         .SetTitle ("Series or Occurrence?")
                         .SetMessage ("Respond to the entire series or just this one occurrence?")
                         .SetPositiveButton ("Series", (sender, e) => {
-                        MakeStatusUpdates (response, false);
-                    })
+                            MakeStatusUpdates (response, false);
+                        })
                         .SetNegativeButton ("Occurrence", (sender, e) => {
-                        MakeStatusUpdates (response, true);
-                    })
+                            MakeStatusUpdates (response, true);
+                        })
                         .SetNeutralButton ("Cancel", (sender, e) => {
-                        SelectButtonForResponse (userResponse);
-                    })
+                            SelectButtonForResponse (userResponse);
+                        })
                         .Create ().Show ();
                 }
             } else if (NcResponseType.Declined == response) {
@@ -556,13 +559,13 @@ namespace NachoClient.AndroidClient
                     .SetTitle ("Decline Meeting?")
                     .SetMessage ("Declining the meeting will also delete the meeting from your calendar.")
                     .SetPositiveButton ("Decline", (sender, e) => {
-                    MakeStatusUpdates (response, false);
-                    this.Activity.SetResult (Result.Ok);
-                    this.Activity.Finish ();
-                })
+                        MakeStatusUpdates (response, false);
+                        this.Activity.SetResult (Result.Ok);
+                        this.Activity.Finish ();
+                    })
                     .SetNegativeButton ("Cancel", (sender, e) => {
-                    SelectButtonForResponse (userResponse);
-                })
+                        SelectButtonForResponse (userResponse);
+                    })
                     .Create ().Show ();
             } else {
                 MakeStatusUpdates (response, false);
@@ -675,6 +678,21 @@ namespace NachoClient.AndroidClient
         private void DeclineButton_Click (object sender, EventArgs e)
         {
             UserResponseChanged (NcResponseType.Declined);
+        }
+
+        private void RemoveButton_Click (object sender, EventArgs e)
+        {
+            // Remove the item from the calendar
+            if (detail.SpecificItem is McException && NcMeetingStatus.MeetingAttendeeCancelled != detail.SeriesItem.MeetingStatus) {
+                // The user is viewing an occurrence of a recurring meeting, and it appears that the
+                // entire series has not been canceled.  So delete just this one occurrence.
+                CalendarHelper.CancelOccurrence (detail.SeriesItem, ((McException)detail.SpecificItem).ExceptionStartTime);
+                BackEnd.Instance.UpdateCalCmd (detail.Account.Id, detail.SeriesItem.Id, sendBody: false);
+            } else {
+                BackEnd.Instance.DeleteCalCmd (detail.Account.Id, detail.SeriesItem.Id);
+            }
+
+            this.Activity.Finish ();
         }
     }
 

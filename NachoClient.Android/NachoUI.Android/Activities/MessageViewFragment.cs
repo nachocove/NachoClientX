@@ -436,7 +436,7 @@ namespace NachoClient.AndroidClient
                 eventExists = (0 == exceptions.Count || 0 == exceptions [0].Deleted);
             }
 
-            var messageView = View.FindViewById<ImageView> (Resource.Id.event_message_view);
+            var messageView = View.FindViewById<View> (Resource.Id.event_message_view);
             var iconView = View.FindViewById<ImageView> (Resource.Id.event_message_icon);
             var textView = View.FindViewById<TextView> (Resource.Id.event_message_text);
             if (eventExists) {

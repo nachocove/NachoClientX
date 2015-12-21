@@ -809,6 +809,15 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
+
+            if (null == c.OrganizerEmail) {
+                // AWS leaves out the OrganizerEmail field for calendar items owned by the current user.
+                // Other servers always include the OrganizerEmail field.  The code assumes that OrganizerEmail
+                // is always set (since AWS is the most recent server to be supported).  So make sure it
+                // is always set.
+                c.OrganizerEmail = McAccount.QueryById<McAccount>(accountId).EmailAddr;
+            }
+
             c.attendees = attendees;
             c.categories = categories;
             c.recurrences = recurrences;
