@@ -33,7 +33,7 @@ namespace NachoCore
 {
     public delegate void NotificationFetchFunc (int accountId);
 
-    public class PushAssist : IDisposable
+    public class PushAssistCommon : IPushAssist, IDisposable
     {
         public static int IncrementalDelayMsec = 500;
         public static int MinDelayMsec = 5000;
@@ -187,11 +187,11 @@ namespace NachoCore
             return true;
         }
 
-        public static PushAssist GetPAObjectByContext (string context)
+        public static PushAssistCommon GetPAObjectByContext (string context)
         {
             WeakReference weakRef;
             if (ContextObjectMap.TryGetValue (context, out weakRef)) {
-                return (PushAssist)weakRef.Target;
+                return (PushAssistCommon)weakRef.Target;
             }
             return null;
         }
@@ -245,7 +245,7 @@ namespace NachoCore
             }
         }
 
-        public PushAssist (IPushAssistOwner owner)
+        public PushAssistCommon (IPushAssistOwner owner)
         {
             if (!IsCertPolicyInstalled) {
                 InstallCertPolicy ();
@@ -501,7 +501,9 @@ namespace NachoCore
             return HashHelper.Sha256 (prefix + ":" + id).Substring (0, 8);
         }
 
-        public void Dispose ()
+        #region PushAssist Platform API
+
+        public virtual void Dispose ()
         {
             if (!IsDisposed) {
                 IsDisposed = true;
@@ -550,10 +552,18 @@ namespace NachoCore
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
 
+        public bool IsStartOrParked ()
+        {
+            return IsStart () || IsParked ();
+        }
+
+
         public void Stop ()
         {
             PostEvent (PAEvt.E.Stop, "PASTOP");
         }
+
+        #endregion
 
         public bool IsActive ()
         {
@@ -568,11 +578,6 @@ namespace NachoCore
         public bool IsStart ()
         {
             return ((uint)St.Start == Sm.State);
-        }
-
-        public bool IsStartOrParked ()
-        {
-            return IsStart () || IsParked ();
         }
 
         private void PostEvent (SmEvt.E evt, string mnemonic)

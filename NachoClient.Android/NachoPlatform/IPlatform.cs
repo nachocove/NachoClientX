@@ -381,4 +381,17 @@ namespace NachoPlatform
     }
 
     #endregion
+
+    #region platform pushassist
+
+    public interface IPushAssist
+    {
+        void Dispose ();
+        void Execute ();
+        void Stop ();
+        void Park ();
+        bool IsStartOrParked ();
+    }
+
+    #endregion
 }
