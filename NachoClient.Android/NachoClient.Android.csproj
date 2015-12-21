@@ -1693,6 +1693,14 @@
     <AndroidResource Include="Resources\layout\ContactLabelChooserCell.axml" />
     <AndroidResource Include="Resources\layout\ContactLabelChooserFragment.axml" />
     <AndroidResource Include="Resources\menu\contact_edit_action.xml" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_notification_delete.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_notification_delete.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_notification_delete.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_notification_delete.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_notification_archive.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_notification_archive.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_notification_archive.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_notification_archive.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
