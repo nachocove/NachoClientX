@@ -187,7 +187,7 @@ namespace NachoCore.IMAP
                     }
                     return Tuple.Create<PickActionEnum, ImapCommand> (action, cmd);
                 }
-                // (FG, BG) If it has been more than 5 min since last FolderSync, do a FolderSync.
+                // (FG, BG) If it has been more than FolderExamineInterval (depends on exeCtxt) since last FolderSync, do a FolderSync.
                 if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext, Client));
                 }
