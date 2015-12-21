@@ -2,10 +2,6 @@
 //
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading;
-using System.Linq;
 using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
@@ -23,12 +19,26 @@ namespace NachoCore.Brain
 
     public class NcContactGleaner
     {
-        public const int GLEAN_PERIOD = 4;
+        public const int DEFAULT_GLEAN_PERIOD = 4;
+        static int _GleanPeriod = DEFAULT_GLEAN_PERIOD;
+        public static int GleanPeriod {
+            get {
+                return _GleanPeriod;
+            }
+
+            set {
+                if (_GleanPeriod != value) {
+                    _GleanPeriod = value;
+                    if (null != Invoker) {
+                        Invoker.Change (TimeSpan.Zero, new TimeSpan (0, 0, value));
+                    }
+                }
+            }
+        }
+
         private const uint MaxSaneAddressLength = 40;
 
-        #pragma warning disable 414
         private static NcTimer Invoker;
-        #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
             if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
@@ -44,7 +54,7 @@ namespace NachoCore.Brain
         {
             if (NcBrain.ENABLED) {
                 Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
-                    TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
+                    TimeSpan.Zero, new TimeSpan (0, 0, GleanPeriod));
                 Invoker.Stfu = true;
             }
         }

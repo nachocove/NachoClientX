@@ -208,7 +208,7 @@ namespace NachoCore.Brain
                 break;
             case NcResult.SubKindEnum.Info_BackgroundAbateStopped:
                 DateTime now = DateTime.Now;
-                if (((double)NcContactGleaner.GLEAN_PERIOD < (now - LastPeriodicGlean).TotalSeconds) &&
+                if (((double)NcContactGleaner.GleanPeriod < (now - LastPeriodicGlean).TotalSeconds) &&
                     (LastPeriodicGleanRestart < LastPeriodicGlean)) {
                     LastPeriodicGleanRestart = now;
                     NcContactGleaner.Stop ();
