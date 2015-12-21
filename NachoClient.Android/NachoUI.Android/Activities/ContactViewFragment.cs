@@ -190,9 +190,13 @@ namespace NachoClient.AndroidClient
             switch (requestCode) {
 
             case EDIT_REQUEST_CODE:
-                if (Result.Ok == resultCode) {
-                    // The contact was edited. Refresh the UI.
+                if ((Result.Ok == resultCode) || (Result.Canceled == resultCode)) {
+                    // Editing is destructive even if cancelled
+                    contact = McContact.QueryById<McContact> (contact.Id);
+                    contactViewAdapter.UpdateContact (contact);
                     BindValues (View);
+                } else if (ContactEditFragment.DELETE_CONTACT_RESULT_CODE == resultCode) {
+                    Activity.Finish ();
                 }
                 break;
 
@@ -365,6 +369,18 @@ namespace NachoClient.AndroidClient
             this.contact = contact;
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
+            CreateDisplayList ();
+        }
+
+        public void UpdateContact (McContact contact)
+        {
+            this.contact = contact;
+            CreateDisplayList ();
+            NotifyDataSetChanged ();
+        }
+
+        void CreateDisplayList ()
+        {
             displayList = new List<DisplayInfo> ();
 
             if (contact.EmailAddresses.Count > 0) {
@@ -433,6 +449,7 @@ namespace NachoClient.AndroidClient
                 foreach (var c in contact.Relationships) {
                     if (c.Name == Xml.Contacts.Child) {
                         Add (Xml.Contacts.Children);
+                        break; // All children added
                     }
                 }
             }

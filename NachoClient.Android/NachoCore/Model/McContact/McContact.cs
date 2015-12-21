@@ -443,6 +443,71 @@ namespace NachoCore.Model
             return l;
         }
 
+        public void RemoveDateAttribute (string name)
+        {
+            foreach (var l in Dates) {
+                if (l.Name.Equals (name)) {
+                    Dates.Remove (l);
+                    return;
+                }
+            }
+        }
+
+        public void RemoveAddressAttribute (string name)
+        {
+            foreach (var l in Addresses) {
+                if (l.Name.Equals (name)) {
+                    Addresses.Remove (l);
+                    return;
+                }
+            }
+        }
+
+        public void RemoveEmailAddressAttribute (string name)
+        {
+            foreach (var l in EmailAddresses) {
+                if (l.Name.Equals (name)) {
+                    EmailAddresses.Remove (l);
+                    return;
+                }
+            }
+        }
+
+        public void RemoveStringAttribute (List<McContactStringAttribute> list, McContactStringType type, string name)
+        {
+            foreach (var l in list) {
+                if (l.Type.Equals (type) && l.Name.Equals (name)) {
+                    list.Remove (l);
+                    return;
+                }
+            }
+        }
+
+        public void RemovePhoneNumberAttribute (string name)
+        {
+            RemoveStringAttribute (PhoneNumbers, McContactStringType.PhoneNumber, name);
+        }
+
+        public void RemoveIMAddressAttribute (string name)
+        {
+            RemoveStringAttribute (IMAddresses, McContactStringType.IMAddress, name);
+        }
+
+        public void RemoveRelationshipAttribute (string name)
+        {
+            RemoveStringAttribute (Relationships, McContactStringType.Relationship, name);
+        }
+
+        public void RemoveRelationshipAttributes (string name, string value)
+        {
+            foreach (var r in Relationships) {
+                if (r.Name.Equals (name) && r.Value.Equals (value)) {
+                    Relationships.Remove (r);
+                    return;
+                }
+            }
+        }
+
         public McContactDateAttribute AddDateAttribute (int accountId, string name, string label, DateTime value)
         {
             var f = new McContactDateAttribute ();
@@ -647,7 +712,7 @@ namespace NachoCore.Model
             return f;
         }
 
-        public string GetDefaultOrSinglePhoneNumber()
+        public string GetDefaultOrSinglePhoneNumber ()
         {
             if (0 == PhoneNumbers.Count) {
                 return null;
@@ -663,7 +728,7 @@ namespace NachoCore.Model
             return null;
         }
 
-        public string GetDefaultOrSingleEmailAddress()
+        public string GetDefaultOrSingleEmailAddress ()
         {
             if (0 == EmailAddresses.Count) {
                 return null;
