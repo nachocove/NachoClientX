@@ -69,7 +69,7 @@ namespace NachoCore.IMAP
 
         private int FolderExamineInterval { 
             get {
-                return NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.Foreground ? KFolderExamineQSInterval : KFolderExamineInterval;
+                return NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync ? KFolderExamineQSInterval : KFolderExamineInterval;
             }
         }
 
