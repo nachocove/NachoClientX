@@ -167,6 +167,8 @@ namespace NachoClient.AndroidClient
 
         public override void OnReceive (Context context, Intent intent)
         {
+            // In case notification started the app
+            MainApplication.OneTimeStartup ("NotificationActivity");
             var messageId = intent.GetIntExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", 0);
             if (messageId != 0) {
                 var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
@@ -185,6 +187,8 @@ namespace NachoClient.AndroidClient
 
         public override void OnReceive (Context context, Intent intent)
         {
+            // In case notification started the app
+            MainApplication.OneTimeStartup ("NotificationActivity");
             var messageId = intent.GetIntExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", 0);
             if (messageId != 0) {
                 var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
