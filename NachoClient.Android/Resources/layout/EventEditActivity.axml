@@ -17,6 +17,7 @@
                 android:id="@+id/event_edit_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:inputType="textCapSentences"
                 android:padding="4dp"
                 android:hint="Title"
                 android:background="@android:color/white" />
@@ -27,6 +28,7 @@
                 android:id="@+id/event_edit_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:inputType="textCapSentences|textMultiLine"
                 android:padding="4dp"
                 android:hint="Description"
                 android:background="@android:color/white" />
@@ -119,6 +121,7 @@
                 android:id="@+id/event_edit_location"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:inputType="textCapSentences"
                 android:padding="4dp"
                 android:hint="Location"
                 android:background="@android:color/white" />
