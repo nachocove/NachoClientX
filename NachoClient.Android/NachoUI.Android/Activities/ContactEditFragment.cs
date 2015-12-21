@@ -172,11 +172,6 @@ namespace NachoClient.AndroidClient
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
             }
-            // FIXME remove this code
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                Status = NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged),
-                Account = McAccount.QueryById<McAccount> (contact.AccountId),
-            });
             Activity.SetResult (Result.Ok);
             Activity.Finish ();
         }
