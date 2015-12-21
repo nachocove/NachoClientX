@@ -172,4 +172,27 @@
     <string name="intent_title">Message Intent</string>
     <string name="attachment_picker_title">Add Attachment</string>
     <string name="file_picker_title">Attach File</string>
+    <string name="first_name">First Name</string>
+    <string name="middle_name">Middle Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="suffix">Suffix</string>
+    <string name="company">Company</string>
+    <string name="delete_contact">Delete Contact</string>
+    <string name="add_phone">Add Phone</string>
+    <string name="add_email">Add Email</string>
+    <string name="add_date">Add Date</string>
+    <string name="add_address">Add Address</string>
+    <string name="add_im">Add IM Address</string>
+    <string name="add_relationship">Add Relationship</string>
+    <string name="add_other">Add Other</string>
+    <string name="edit_contact">Edit Contact</string>
+    <string name="new_contact">New Contact</string>
+    <string name="select_label">Select Label</string>
+    <string name="delete">Delete</string>
+    <string name="make_default">Make Default</string>
+    <string name="street">Street</string>
+    <string name="city">City</string>
+    <string name="state">State</string>
+    <string name="zip">Zip Code</string>
+    <string name="country">Country</string>
 </resources>

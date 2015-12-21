@@ -216,6 +216,7 @@ namespace NachoClient.AndroidClient
 
         void AddButton_Click (object sender, EventArgs e)
         {
+            Activity.StartActivity (ContactEditActivity.AddContactIntent (Activity));
         }
 
         void SearchButton_Click (object sender, EventArgs e)

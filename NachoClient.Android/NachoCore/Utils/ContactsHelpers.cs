@@ -435,9 +435,60 @@ namespace NachoCore.Utils
             return "";
         }
 
+        public static void AssignMiscContactAttribute (McContact contact, string name, string value)
+        {
+            switch (name) {
+            case Xml.Contacts.Alias:
+                contact.Alias = value;
+                break;
+            case Xml.Contacts.Department:
+                contact.Department = value;
+                break;
+            case Xml.Contacts.FileAs:
+                contact.FileAs = value;
+                break;
+            case Xml.Contacts.JobTitle:
+                contact.JobTitle = value;
+                break;
+            case Xml.Contacts.OfficeLocation:
+                contact.OfficeLocation = value;
+                break;
+            case Xml.Contacts.Title:
+                contact.Title = value;
+                break;
+            case Xml.Contacts.WebPage:
+                contact.WebPage = value;
+                break;
+            case Xml.Contacts2.AccountName:
+                contact.AccountName = value;
+                break;
+            case Xml.Contacts2.CustomerId:
+                contact.CustomerId = value;
+                break;
+            case Xml.Contacts2.GovernmentId:
+                contact.GovernmentId = value;
+                break;
+            case Xml.Contacts2.MMS:
+                contact.MMS = value;
+                break;
+            case Xml.Contacts2.NickName:
+                contact.NickName = value;
+                break;
+            default:
+                Log.Warn (Log.LOG_UI, "Setting unknown contact misc. field {0}", name);
+                break;
+            }
+        }
+
         public static List<string> GetAvailableMiscNames (List<string> takenNames)
         {
             return MiscNames.Except (takenNames).ToList ();
+        }
+
+        public static List<string> GetAvailableMiscNames(McContact contact)
+        {
+            var takenNames = GetTakenMiscNames (contact);
+            return GetAvailableMiscNames (takenNames);
         }
 
         public class PhoneAttributeComparer: IComparer<McContactStringAttribute>
