@@ -280,9 +280,6 @@
     <Compile Include="..\Test.Android\McEventTest.cs">
       <Link>McEventTest.cs</Link>
     </Compile>
-    <Compile Include="..\Test.Android\PushAssistTest.cs">
-      <Link>PushAssistTest.cs</Link>
-    </Compile>
     <Compile Include="..\Test.Android\HashHelperTest.cs">
       <Link>HashHelperTest.cs</Link>
     </Compile>
@@ -352,6 +349,7 @@
     <Compile Include="..\Test.Android\NcHttpUtilTest.cs">
       <Link>NcHttpUtilTest.cs</Link>
     </Compile>
+    <Compile Include="PushAssistTestiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

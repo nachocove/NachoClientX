@@ -1,10 +1,8 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Net.Http;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
@@ -76,7 +74,7 @@ namespace Test.Common
 
     // A simple class that wraps PushAssist so it can expose some internal states
     // in unit tests
-    public class WrapPushAssist : PushAssist
+    public class WrapPushAssist : PushAssistCommon
     {
         public uint State {
             get {
