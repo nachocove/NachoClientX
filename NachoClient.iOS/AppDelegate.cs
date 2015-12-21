@@ -837,6 +837,7 @@ namespace NachoClient.iOS
             NcApplication.Instance.UnmarkStartup ();
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
+                BackEnd.Instance.Start ();
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
             // iOS only allows a limited amount of time to fetch data in the background.
