@@ -330,16 +330,33 @@ namespace NachoCore
                     }
                 }
             };
-            UiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+            UiThreadId = Thread.CurrentThread.ManagedThreadId;
 
             StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
-                if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
-                    var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
-                    NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "NcApplication received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
-                } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStopped) {
-                    var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
-                    NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
+                TimeSpan deliveryTime;
+                switch (siea.Status.SubKind) {
+                case NcResult.SubKindEnum.Info_BackgroundAbateStarted:
+                    deliveryTime = NcAbate.DeliveryTime (siea);
+                    Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
+                    break;
+
+                case NcResult.SubKindEnum.Info_BackgroundAbateStopped:
+                    deliveryTime = NcAbate.DeliveryTime (siea);
+                    Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
+                    break;
+
+                case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                    switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
+                    case NcApplication.ExecutionContextEnum.Foreground:
+                        MonitorStart ();
+                        break;
+
+                    default:
+                        MonitorStop ();
+                        break;
+                    }
+                    break;
                 }
             };
             ProcessMemory = new NcSamples ("Monitor.ProcessMemory");
@@ -582,6 +599,7 @@ namespace NachoCore
             }
         }
 
+        int defaultMonitorPeriodic = 30;
         public void MonitorStart ()
         {
             MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
@@ -735,7 +753,8 @@ namespace NachoCore
             InvokeStatusIndEvent (siea);
         }
 
-        // IBackEndOwner methods below.
+        #region IBackEndOwner
+
         public void CredReq (int accountId)
         {
             if (null != CredReqCallback) {
@@ -800,6 +819,18 @@ namespace NachoCore
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication SendEmailRespCallback.");
             }
         }
+
+        public void BackendAbateStart ()
+        {
+            // STEVE fill me in
+        }
+
+        public void BackendAbateStop ()
+        {
+            // STEVE fill me in
+        }
+
+        #endregion
 
         public bool CertAskReqPreApproved (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
