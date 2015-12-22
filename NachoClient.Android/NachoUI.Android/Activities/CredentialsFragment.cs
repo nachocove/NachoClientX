@@ -523,7 +523,7 @@ namespace NachoClient.AndroidClient
             if (service == McAccount.AccountServiceEnum.GoogleExchange || service == McAccount.AccountServiceEnum.Office365Exchange) {
                 Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait for known exchange service {0}, not showing advanced", service);
                 ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
-            } else {
+            } else if (service == McAccount.AccountServiceEnum.Exchange || service == McAccount.AccountServiceEnum.IMAP_SMTP) {
                 Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait for service {0}, showing advanced", service);
                 UpdateForSubmitting ();
                 if (!IsShowingAdvanced) {
@@ -532,6 +532,9 @@ namespace NachoClient.AndroidClient
                 } else {
                     statusLabel.Text = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
                 }
+            } else {
+                Log.Info (Log.LOG_UI, "CredentialsFragment got unexpected ServerConfWait for service {0}", service);
+                ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
             }
         }
 
