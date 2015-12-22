@@ -392,10 +392,14 @@ namespace NachoClient.AndroidClient
                         attendeeNameView.Text = "";
                     } else if (a < attendeesFromMessage.Count) {
                         var attendee = attendeesFromMessage [a] as MailboxAddress;
-                        var initials = ContactsHelper.NameToLetters (attendee.Name);
+                        string displayName = attendee.Name;
+                        if (string.IsNullOrEmpty (displayName)) {
+                            displayName = attendee.Address;
+                        }
+                        var initials = ContactsHelper.NameToLetters (displayName);
                         var color = Util.ColorResourceForEmail (attendee.Address);
                         attendeePhotoView.SetEmailAddress (message.AccountId, attendee.Address, initials, color);
-                        attendeeNameView.Text = GetFirstName (attendee.Name);
+                        attendeeNameView.Text = GetFirstName (displayName);
                     } else {
                         attendeePhotoView.Visibility = ViewStates.Gone;
                         attendeeNameView.Visibility = ViewStates.Gone;
@@ -558,7 +562,7 @@ namespace NachoClient.AndroidClient
         private static string GetFirstName (string displayName)
         {
             string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (names [0] == null) {
+            if (0 == names.Length || names [0] == null) {
                 return "";
             }
             if (names [0].Length > 1) {
