@@ -267,6 +267,8 @@ namespace NachoClient.AndroidClient
             view.FindViewById (Resource.Id.event_attendee_2).Click += Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_3).Click += Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_4).Click += Attendees_Click;
+            view.FindViewById (Resource.Id.message_header).Click += Header_Click;
+            view.FindViewById (Resource.Id.address_block).Click += Header_Click;
         }
 
         void DetachListeners (View view)
@@ -288,6 +290,8 @@ namespace NachoClient.AndroidClient
             view.FindViewById (Resource.Id.event_attendee_2).Click -= Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_3).Click -= Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_4).Click -= Attendees_Click;
+            view.FindViewById (Resource.Id.message_header).Click -= Header_Click;
+            view.FindViewById (Resource.Id.address_block).Click -= Header_Click;
 
             if (removeFromCalendarEnabled) {
                 removeFromCalendarEnabled = false;
@@ -757,6 +761,31 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "CreateEvent_Click");
             StartActivity (EventEditActivity.MeetingFromMessageIntent (Activity, message));
+        }
+
+        void HeaderFill(TextView view, string rawAddressString, NcEmailAddress.Kind kind)
+        {
+            if (String.IsNullOrEmpty (rawAddressString)) {
+                view.Visibility = ViewStates.Gone;
+            } else {
+                view.Visibility = ViewStates.Visible;
+                view.Text = NcEmailAddress.ToPrefix(kind) + ": " + Pretty.MessageAddressString (rawAddressString, kind);
+            }
+        }
+
+        void Header_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "Header_Click");
+            var headerView = View.FindViewById (Resource.Id.address_block);
+
+            if (ViewStates.Visible == headerView.Visibility) {
+                headerView.Visibility = ViewStates.Gone;
+            } else {
+                headerView.Visibility = ViewStates.Visible;
+                HeaderFill (View.FindViewById<TextView> (Resource.Id.to_block), message.To, NcEmailAddress.Kind.To);
+                HeaderFill (View.FindViewById<TextView> (Resource.Id.cc_block), message.Cc, NcEmailAddress.Kind.Cc);
+                HeaderFill (View.FindViewById<TextView> (Resource.Id.bcc_block), message.Bcc, NcEmailAddress.Kind.Bcc);
+            }
         }
 
         void StartComposeActivity (EmailHelper.Action action, bool quickReply = false)
