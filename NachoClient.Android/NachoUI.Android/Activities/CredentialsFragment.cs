@@ -530,7 +530,7 @@ namespace NachoClient.AndroidClient
                     statusLabel.Text = "We were unable to verify your information.  Please confirm or enter advanced configuration information.";
                 }
             } else {
-                Log.Info (Log.LOG_UI, "CredentialsFragment got ServerConfWait for service {0}, showing advanced", service);
+                Log.Info (Log.LOG_UI, "CredentialsFragment got unexpected ServerConfWait for service {0}", service);
                 ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
             }
         }
