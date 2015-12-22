@@ -350,10 +350,12 @@ namespace NachoCore
                     switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
                     case NcApplication.ExecutionContextEnum.Foreground:
                         MonitorStart ();
+                        NcContactGleaner.Start ();
                         break;
 
                     default:
                         MonitorStop ();
+                        NcContactGleaner.Stop ();
                         break;
                     }
                     break;
@@ -821,13 +823,12 @@ namespace NachoCore
 
         public void BackendAbateStart ()
         {
-            NcBrain.StopService ();
+            NcBrain.SharedInstance.PauseService ();
             NcContactGleaner.Stop ();
         }
 
         public void BackendAbateStop ()
         {
-            NcBrain.StartService ();
             NcContactGleaner.Start ();
         }
 

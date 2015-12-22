@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
+using System.Threading;
 
 namespace NachoCore.Brain
 {
@@ -47,6 +48,10 @@ namespace NachoCore.Brain
             Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
 
             switch (brainEvent.Type) {
+            case NcBrainEventType.PAUSE:
+                Thread.Sleep (4 * 1000);
+                break;
+
             case NcBrainEventType.PERIODIC_GLEAN:
                 if (!NcApplication.Instance.IsBackgroundAbateRequired) {
                     LastPeriodicGlean = DateTime.Now;
@@ -58,10 +63,10 @@ namespace NachoCore.Brain
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 var stateMachineEvent = (NcBrainStateMachineEvent)brainEvent;
-                /// FIXME - Should get the number from the event arg
                 var accountId = (int)stateMachineEvent.AccountId;
-                QuickScoreEmailMessages (accountId, 100);
-                GleanEmailMessages (100, stateMachineEvent.AccountId);
+                var count = stateMachineEvent.Count;
+                QuickScoreEmailMessages (accountId, count);
+                GleanEmailMessages (count, stateMachineEvent.AccountId);
                 break;
             case NcBrainEventType.UI:
                 ProcessUIEvent (brainEvent as NcBrainUIEvent);

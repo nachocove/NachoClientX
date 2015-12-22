@@ -10,6 +10,7 @@ using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.Index;
+using System.Threading;
 
 namespace NachoCore.Brain
 {
@@ -125,10 +126,15 @@ namespace NachoCore.Brain
             NcBrain.SharedInstance.SignalTermination ();
         }
 
+
+        public void PauseService ()
+        {
+            EventQueue.Undequeue (new NcBrainEvent(NcBrainEventType.PAUSE));
+        }
+
         public void SignalTermination ()
         {
-            var brainEvent = new NcBrainEvent (NcBrainEventType.TERMINATE);
-            EventQueue.Undequeue (brainEvent);
+            EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
         }
 
         private bool IsInUnitTest ()
@@ -216,7 +222,7 @@ namespace NachoCore.Brain
                 }
                 break;
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-                var stateMachineEvent = new NcBrainStateMachineEvent (eventArgs.Account.Id);
+                var stateMachineEvent = new NcBrainStateMachineEvent (eventArgs.Account.Id, 100);
                 NcBrain.SharedInstance.Enqueue (stateMachineEvent);
                 break;
             }
