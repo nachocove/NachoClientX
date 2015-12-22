@@ -809,6 +809,15 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
+
+            if (null == c.OrganizerEmail) {
+                // AWS leaves out the OrganizerEmail field for calendar items owned by the current user.
+                // Other servers always include the OrganizerEmail field.  The code assumes that OrganizerEmail
+                // is always set (since AWS is the most recent server to be supported).  So make sure it
+                // is always set.
+                c.OrganizerEmail = McAccount.QueryById<McAccount>(accountId).EmailAddr;
+            }
+
             c.attendees = attendees;
             c.categories = categories;
             c.recurrences = recurrences;
@@ -1134,6 +1143,26 @@ namespace NachoCore.ActiveSync
             emailMessage.Categories = categories;
             if (null == emailMessage.ConversationId) {
                 emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();
+            }
+            if (null != emailMessage.MeetingRequest) {
+                // AWS Exchange servers include several flags in all meeting request messages.
+                // Those flags mess up the app's handling of the messages, causing the messages
+                // to not show up in the inbox if the meeting is in the future.  (And having the
+                // meeting request message appear only after the meeting is over is not user-friendly
+                // behavior.)  To work around this quirky server behavior, ignore the flags in all
+                // messages that have a MeetingRequest element.
+                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
+                emailMessage.FlagType = null;
+                emailMessage.FlagStartDate = DateTime.MinValue;
+                emailMessage.FlagUtcStartDate = DateTime.MinValue;
+                emailMessage.FlagDue = DateTime.MinValue;
+                emailMessage.FlagUtcDue = DateTime.MinValue;
+                emailMessage.FlagReminderSet = false;
+                emailMessage.FlagReminderTime = DateTime.MinValue;
+                emailMessage.FlagCompleteTime = DateTime.MinValue;
+                emailMessage.FlagDateCompleted = DateTime.MinValue;
+                emailMessage.FlagOrdinalDate = DateTime.MinValue;
+                emailMessage.FlagSubOrdinalDate = DateTime.MinValue;
             }
             return NcResult.OK (emailMessage);
         }

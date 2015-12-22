@@ -38,7 +38,7 @@ namespace NachoCore.Utils
             if (null == preview) {
                 return "";
             } else {
-                var regex = new Regex("\\s+");
+                var regex = new Regex ("\\s+");
                 return regex.Replace (preview, " ");
             }
         }
@@ -280,7 +280,7 @@ namespace NachoCore.Utils
             if (result.EndsWith (",")) {
                 result = result.Substring (0, result.Length - 1).Trim ();
             }
-            if (result.StartsWith(",")) {
+            if (result.StartsWith (",")) {
                 result = result.Substring (1).Trim ();
             }
             return result;
@@ -837,13 +837,43 @@ namespace NachoCore.Utils
             return detailText;
         }
 
-        public static string NoteTitle(string title)
+        public static string NoteTitle (string title)
         {
             if (null == title) {
                 return "Note";
             } else {
                 return string.Format ("Note: {0}", title);
             }
+        }
+
+        public static string MessageAddressString (string rawAddressString, NcEmailAddress.Kind kind)
+        {
+            List<string> cooked = new List<string> ();
+
+            if (String.IsNullOrEmpty (rawAddressString)) {
+                return "";
+            }
+
+            var addressList = NcEmailAddress.ParseAddressListString (rawAddressString, kind);
+            foreach (var address in addressList) {
+                if (null == address.contact) {
+                    string text;
+                    InternetAddress parsedAddress;
+                    if (!InternetAddress.TryParse (address.address, out parsedAddress)) {
+                        text = address.address; // can't parse the string. just display verbatim
+                    } else {
+                        if (parsedAddress is MailboxAddress) {
+                            text = (parsedAddress as MailboxAddress).Address;
+                        } else {
+                            text = parsedAddress.ToString ();
+                        }
+                    }
+                    cooked.Add (text);
+                } else {
+                    cooked.Add (address.contact.GetPrimaryCanonicalEmailAddress ());
+                }
+            }
+            return String.Join (" ", cooked);
         }
     }
 }

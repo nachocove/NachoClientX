@@ -3,15 +3,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NachoCore;
-using NachoCore.Utils;
-using NachoCore.Model;
-using NachoClient.AndroidClient;
-using Android.Provider;
+using Android.App;
 using Android.Content;
 using Android.Database;
-using NachoCore.ActiveSync;
+using Android.Provider;
 using Android.Text.Format;
+using NachoClient.AndroidClient;
+using NachoCore;
+using NachoCore.ActiveSync;
+using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoPlatform
 {
@@ -725,6 +726,26 @@ namespace NachoPlatform
             get {
                 return false;
             }
+        }
+
+        public void DeviceCalendarChanged ()
+        {
+            if (null != ChangeIndicator) {
+                ChangeIndicator (this, EventArgs.Empty);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A listener for changes to the device calendar.
+    /// </summary>
+    [BroadcastReceiver (Enabled = true)]
+    [IntentFilter (new[] { Intent.ActionProviderChanged }, DataScheme="content", DataHost="com.android.calendar")]
+    public class AndroidCalendarChangeListener : BroadcastReceiver
+    {
+        public override void OnReceive (Context context, Intent intent)
+        {
+            Calendars.Instance.DeviceCalendarChanged ();
         }
     }
 }

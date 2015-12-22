@@ -267,6 +267,8 @@ namespace NachoClient.AndroidClient
             view.FindViewById (Resource.Id.event_attendee_2).Click += Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_3).Click += Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_4).Click += Attendees_Click;
+            view.FindViewById (Resource.Id.message_header).Click += Header_Click;
+            view.FindViewById (Resource.Id.address_block).Click += Header_Click;
         }
 
         void DetachListeners (View view)
@@ -288,6 +290,8 @@ namespace NachoClient.AndroidClient
             view.FindViewById (Resource.Id.event_attendee_2).Click -= Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_3).Click -= Attendees_Click;
             view.FindViewById (Resource.Id.event_attendee_4).Click -= Attendees_Click;
+            view.FindViewById (Resource.Id.message_header).Click -= Header_Click;
+            view.FindViewById (Resource.Id.address_block).Click -= Header_Click;
 
             if (removeFromCalendarEnabled) {
                 removeFromCalendarEnabled = false;
@@ -388,10 +392,14 @@ namespace NachoClient.AndroidClient
                         attendeeNameView.Text = "";
                     } else if (a < attendeesFromMessage.Count) {
                         var attendee = attendeesFromMessage [a] as MailboxAddress;
-                        var initials = ContactsHelper.NameToLetters (attendee.Name);
+                        string displayName = attendee.Name;
+                        if (string.IsNullOrEmpty (displayName)) {
+                            displayName = attendee.Address;
+                        }
+                        var initials = ContactsHelper.NameToLetters (displayName);
                         var color = Util.ColorResourceForEmail (attendee.Address);
                         attendeePhotoView.SetEmailAddress (message.AccountId, attendee.Address, initials, color);
-                        attendeeNameView.Text = GetFirstName (attendee.Name);
+                        attendeeNameView.Text = GetFirstName (displayName);
                     } else {
                         attendeePhotoView.Visibility = ViewStates.Gone;
                         attendeeNameView.Visibility = ViewStates.Gone;
@@ -436,7 +444,7 @@ namespace NachoClient.AndroidClient
                 eventExists = (0 == exceptions.Count || 0 == exceptions [0].Deleted);
             }
 
-            var messageView = View.FindViewById<ImageView> (Resource.Id.event_message_view);
+            var messageView = View.FindViewById<View> (Resource.Id.event_message_view);
             var iconView = View.FindViewById<ImageView> (Resource.Id.event_message_icon);
             var textView = View.FindViewById<TextView> (Resource.Id.event_message_text);
             if (eventExists) {
@@ -554,7 +562,7 @@ namespace NachoClient.AndroidClient
         private static string GetFirstName (string displayName)
         {
             string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (names [0] == null) {
+            if (0 == names.Length || names [0] == null) {
                 return "";
             }
             if (names [0].Length > 1) {
@@ -757,6 +765,31 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "CreateEvent_Click");
             StartActivity (EventEditActivity.MeetingFromMessageIntent (Activity, message));
+        }
+
+        void HeaderFill(TextView view, string rawAddressString, NcEmailAddress.Kind kind)
+        {
+            if (String.IsNullOrEmpty (rawAddressString)) {
+                view.Visibility = ViewStates.Gone;
+            } else {
+                view.Visibility = ViewStates.Visible;
+                view.Text = NcEmailAddress.ToPrefix(kind) + ": " + Pretty.MessageAddressString (rawAddressString, kind);
+            }
+        }
+
+        void Header_Click (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "Header_Click");
+            var headerView = View.FindViewById (Resource.Id.address_block);
+
+            if (ViewStates.Visible == headerView.Visibility) {
+                headerView.Visibility = ViewStates.Gone;
+            } else {
+                headerView.Visibility = ViewStates.Visible;
+                HeaderFill (View.FindViewById<TextView> (Resource.Id.to_block), message.To, NcEmailAddress.Kind.To);
+                HeaderFill (View.FindViewById<TextView> (Resource.Id.cc_block), message.Cc, NcEmailAddress.Kind.Cc);
+                HeaderFill (View.FindViewById<TextView> (Resource.Id.bcc_block), message.Bcc, NcEmailAddress.Kind.Bcc);
+            }
         }
 
         void StartComposeActivity (EmailHelper.Action action, bool quickReply = false)

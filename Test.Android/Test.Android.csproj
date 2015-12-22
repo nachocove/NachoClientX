@@ -129,7 +129,6 @@
     <Compile Include="McMapEmailAddressEntryTest.cs" />
     <Compile Include="NcContactGleanerTest.cs" />
     <Compile Include="McEventTest.cs" />
-    <Compile Include="PushAssistTest.cs" />
     <Compile Include="HashHelperTest.cs" />
     <Compile Include="CrlMonitorTest.cs" />
     <Compile Include="RemoveAccountTest.cs" />

@@ -799,13 +799,13 @@ namespace NachoClient.AndroidClient
 
             switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageChanged:
-            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
-            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshVisibleMessageCells ();
                 break;
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
                 RefreshIfVisible ();
                 break;
             case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
