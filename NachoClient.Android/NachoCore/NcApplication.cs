@@ -821,12 +821,14 @@ namespace NachoCore
 
         public void BackendAbateStart ()
         {
-            // STEVE fill me in
+            NcBrain.StopService ();
+            NcContactGleaner.Stop ();
         }
 
         public void BackendAbateStop ()
         {
-            // STEVE fill me in
+            NcBrain.StartService ();
+            NcContactGleaner.Start ();
         }
 
         #endregion
