@@ -302,7 +302,10 @@ namespace NachoClient.AndroidClient
 
         void SupportButton_Click (object sender, EventArgs e)
         {
-            Log.Info (Log.LOG_UI, "CredentialsFragment showing support");
+            Log.Info (Log.LOG_UI, "SupportButton_Click");
+            var intent = new Intent ();
+            intent.SetClass (this.Activity, typeof(SupportActivity));
+            StartActivity (intent);
         }
 
         void AdvancedButton_Click (object sender, EventArgs e)
