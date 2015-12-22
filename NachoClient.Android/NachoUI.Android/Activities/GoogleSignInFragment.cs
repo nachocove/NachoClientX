@@ -120,6 +120,9 @@ namespace NachoClient.AndroidClient
             case SIGNIN_REQUEST_CODE:
                 if (Result.Ok == resultCode) {
                     ValidationIsFinished ();
+                } else {
+                    // Canceled in Google land
+                    Activity.Finish();
                 }
                 break;
             }
@@ -201,14 +204,14 @@ namespace NachoClient.AndroidClient
                 }
             } else {
                 Log.Info (Log.LOG_UI, "GoogleCredentialsViewController completed unauthenticated");
-                NcAlertView.ShowMessage (Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                // Auth error has already been called.
             }
         }
 
         public void AuthError (object sender, AuthenticatorErrorEventArgs e)
         {
             Log.Info (Log.LOG_UI, "GoogleCredentialsViewController auth error");
-            NcAlertView.ShowMessage (Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+            // Google has already complained
         }
     }
 }
