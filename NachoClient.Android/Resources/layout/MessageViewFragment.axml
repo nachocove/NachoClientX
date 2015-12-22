@@ -23,6 +23,36 @@
                 android:background="@color/NachoLightGray" />
             <include
                 layout="@layout/MessageHeader" />
+            <LinearLayout
+                android:id="@+id/address_block"
+                android:paddingLeft="63dp"
+                android:paddingBottom="5dp"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone">
+                <TextView
+                    android:id="@+id/to_block"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="14dp"
+                    android:visibility="gone" />
+                <TextView
+                    android:id="@+id/cc_block"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="14dp"
+                    android:visibility="gone" />
+                <TextView
+                    android:id="@+id/bcc_block"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="14dp"
+                    android:visibility="gone" />
+            </LinearLayout>
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
