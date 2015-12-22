@@ -166,9 +166,9 @@ namespace NachoCore.IMAP
                     changed = true;
                 }
             }
-            BEContext.Owner.BackendAbateStart ();
-            try {
-                if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
+            if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
+                BEContext.Owner.BackendAbateStart ();
+                try {
                     mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadOnly);
                     // First find all messages marked as /Deleted
                     UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
@@ -187,13 +187,13 @@ namespace NachoCore.IMAP
 
                     Cts.Token.ThrowIfCancellationRequested ();
                     changed |= deleted.Any () || newOrChanged.Any ();
+                } finally {
+                    BEContext.Owner.BackendAbateStop ();
                 }
-
-                Finish (changed);
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
-            } finally {
-                BEContext.Owner.BackendAbateStop ();
             }
+
+            Finish (changed);
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
         private void Finish (bool emailSetChanged)
