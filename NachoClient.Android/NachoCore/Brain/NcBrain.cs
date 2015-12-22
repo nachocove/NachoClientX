@@ -196,13 +196,13 @@ namespace NachoCore.Brain
             StatusIndEventArgs eventArgs = args as StatusIndEventArgs;
             switch (eventArgs.Status.SubKind) {
             case NcResult.SubKindEnum.Info_RicInitialSyncCompleted:
-                /// Status indication handler for Info_RicInitialSyncCompleted. We do not 
-                /// generate initial email address scores from RIC in this function for 2
-                /// reasons. First, we do not want to hold up the status indication callback
-                /// for a long duration. Second, the callback may be in a different threads
-                /// as NcBrain task. So, we may have two threads updatind the same object.
-                /// Therefore, we enqueue a brain event and let brain task to do the actual
-                /// processing.
+                // Status indication handler for Info_RicInitialSyncCompleted. We do not 
+                // generate initial email address scores from RIC in this function for 2
+                // reasons. First, we do not want to hold up the status indication callback
+                // for a long duration. Second, the callback may be in a different threads
+                // as NcBrain task. So, we may have two threads updating the same object.
+                // Therefore, we enqueue a brain event and let brain task to do the actual
+                // processing.
                 var initialRicEvent = new NcBrainInitialRicEvent (eventArgs.Account.Id);
                 NcBrain.SharedInstance.Enqueue (initialRicEvent);
                 break;
