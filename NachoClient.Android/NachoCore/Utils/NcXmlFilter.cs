@@ -38,6 +38,11 @@ namespace NachoCore.Wbxml
     {
         public RedactionType ElementRedaction { get; set; }
 
+        /// <summary>
+        /// This doesn't appear to be used, i.e. Attribute redaction is not used (we don't copy attributes,
+        /// so redaction appears to always be FULL.
+        /// </summary>
+        /// <value>The attribute redaction.</value>
         public RedactionType AttributeRedaction { get; set; }
 
         public NcXmlFilterNode (string name, RedactionType elementRedaction, RedactionType attributeRedaction) :
@@ -337,6 +342,7 @@ namespace NachoCore.Wbxml
                 Wbxml.AddRange (wbxml);
             } else {
                 newElement = new XElement (element.Name);
+                // TODO Add attribute redaction here? No attributes are copied from element, so redaction is always FULL.
                 if (0 == FilterStack.Count) {
                     NcAssert.True (null == XmlDoc.Root);
                     XmlDoc.Add (newElement);
