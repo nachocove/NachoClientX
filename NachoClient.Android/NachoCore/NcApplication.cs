@@ -599,7 +599,6 @@ namespace NachoCore
             }
         }
 
-        int defaultMonitorPeriodic = 30;
         public void MonitorStart ()
         {
             MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
