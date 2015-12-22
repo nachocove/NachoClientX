@@ -307,7 +307,12 @@ namespace NachoClient.AndroidClient
                 if (position == 0 || !Files [position - 1].Contact.Equals (file.Contact)) {
                     header.Visibility = ViewStates.Visible;
                     var contactNameLabel = view.FindViewById<TextView> (Resource.Id.file_contact_name);
-                    contactNameLabel.Text = file.Contact;
+                    contactNameLabel.Text = Pretty.SenderString (file.Contact);
+                    var userPhotoView = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
+                    int colorIndex;
+                    string initials;
+                    EmailColorAndInitials (file.Contact, NcApplication.Instance.Account.Id, out colorIndex, out initials); 
+                    userPhotoView.SetEmailAddress (NcApplication.Instance.Account.Id, file.Contact, initials, colorIndex);
                 } else {
                     header.Visibility = ViewStates.Gone;
                 }
@@ -316,6 +321,27 @@ namespace NachoClient.AndroidClient
             }
 
             return view;
+        }
+
+        void EmailColorAndInitials (string from, int accountId, out int ColorResource, out string Initials)
+        {
+            // Parse the from address
+            var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (from);
+            if (null == mailboxAddress) {
+                ColorResource = Bind.ColorForUser (1);
+                Initials = "";
+                return;
+            }
+            // And get a McEmailAddress
+            McEmailAddress emailAddress;
+            if (!McEmailAddress.Get (accountId, mailboxAddress, out emailAddress)) {
+                ColorResource = Bind.ColorForUser (1);
+                Initials = "";
+                return;
+            }
+            // Cache the color
+            ColorResource = Bind.ColorForUser (emailAddress.ColorIndex);
+            Initials = EmailHelper.Initials (from);
         }
 
         static string DetailTextForAttachment (McAttachment attachment)
