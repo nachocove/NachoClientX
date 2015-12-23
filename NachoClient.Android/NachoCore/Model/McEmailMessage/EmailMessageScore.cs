@@ -772,8 +772,8 @@ namespace NachoCore.Model
 
         public static void StartTimeVariance (CancellationToken token)
         {
-            /// Look for all email messages that are:
-            ///
+            // Look for all email messages that are:
+            //
             // 1. ScoreVersion is non-zero
             // 2. TimeVarianceType is not DONE
             List<NcEmailMessageIndex> emailMessageIdList = 
@@ -793,7 +793,7 @@ namespace NachoCore.Model
                 emailMessage.UpdateTimeVariance ();
                 numStarted++;
 
-                /// Throttle
+                // Throttle
                 n = (n + 1) % 8;
                 if (0 == n) {
                     if (!NcTask.CancelableSleep (500, token)) {
