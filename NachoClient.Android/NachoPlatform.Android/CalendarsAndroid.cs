@@ -138,6 +138,7 @@ namespace NachoPlatform
             CalendarContract.SyncColumns.AccountName,
             CalendarContract.SyncColumns.AccountType,
             CalendarContract.EventsColumns.CalendarId,
+            CalendarContract.CalendarColumns.CalendarAccessLevel,
         };
         private const int EVENT_DETAIL_TITLE_INDEX = 0;
         private const int EVENT_DETAIL_LOCATION_INDEX = 1;
@@ -159,6 +160,7 @@ namespace NachoPlatform
         private const int EVENT_DETAIL_ACCOUNT_NAME_INDEX = 17;
         private const int EVENT_DETAIL_ACCOUNT_TYPE_INDEX = 18;
         private const int EVENT_DETAIL_CALENDAR_ID_INDEX = 19;
+        private const int EVENT_DETAIL_CALENDAR_ACCESS_LEVEL_INDEX = 20;
 
         private static string[] reminderProjection = new string[] {
             CalendarContract.RemindersColumns.Minutes,
@@ -203,7 +205,10 @@ namespace NachoPlatform
             string accountType = eventCursor.GetString (EVENT_DETAIL_ACCOUNT_TYPE_INDEX);
             string calendarSimpleName = eventCursor.GetString (EVENT_DETAIL_CALENDAR_NAME_INDEX);
             long calendarId = eventCursor.GetLong (EVENT_DETAIL_CALENDAR_ID_INDEX);
-            folder = new AndroidDeviceCalendarFolder (calendarId, CalendarDisplayName (accountName, accountType, calendarSimpleName));
+            var calendarAccess = (CalendarAccess)eventCursor.GetInt (EVENT_DETAIL_CALENDAR_ACCESS_LEVEL_INDEX);
+            bool isWritableCalendar = CalendarAccess.AccessOwner == calendarAccess || CalendarAccess.AccessContributor == calendarAccess || 
+                CalendarAccess.AccessEditor == calendarAccess;
+            folder = new AndroidDeviceCalendarFolder (calendarId, CalendarDisplayName (accountName, accountType, calendarSimpleName), isWritableCalendar);
 
             var result = new McCalendar ();
 
@@ -607,14 +612,22 @@ namespace NachoPlatform
         }
 
         private static string[] calendarsExistProjection = {
-            CalendarContract.Calendars.InterfaceConsts.Id,
+            CalendarContract.CalendarColumns.CalendarAccessLevel,
         };
 
         public static bool DeviceCalendarsExist ()
         {
             try {
                 var cursor = MainApplication.Instance.ContentResolver.Query (CalendarContract.Calendars.ContentUri, calendarsExistProjection, null, null, null);
-                return null != cursor && 0 < cursor.Count;
+                if (null != cursor) {
+                    while (cursor.MoveToNext ()) {
+                        var access = (CalendarAccess)cursor.GetInt (0);
+                        if (CalendarAccess.AccessOwner == access || CalendarAccess.AccessContributor == access || CalendarAccess.AccessEditor == access) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
             } catch (Exception) {
                 return false;
             }
@@ -625,11 +638,13 @@ namespace NachoPlatform
             CalendarContract.CalendarColumns.CalendarDisplayName,
             CalendarContract.SyncColumns.AccountName,
             CalendarContract.SyncColumns.AccountType,
+            CalendarContract.CalendarColumns.CalendarAccessLevel,
         };
         private const int CALENDAR_ID_INDEX = 0;
         private const int CALENDAR_DISPLAY_NAME_INDEX = 1;
         private const int CALENDAR_ACCOUNT_NAME_INDEX = 2;
         private const int CALENDAR_ACCOUNT_TYPE_INDEX = 3;
+        private const int CALENDAR_ACCESS_LEVEL_INDEX = 4;
 
         public static List<McFolder> GetCalendarFolders ()
         {
@@ -651,7 +666,11 @@ namespace NachoPlatform
                 string accountType = calendarCursor.GetString (CALENDAR_ACCOUNT_TYPE_INDEX);
                 string calendarName = calendarCursor.GetString (CALENDAR_DISPLAY_NAME_INDEX);
                 long calendarId = calendarCursor.GetLong (CALENDAR_ID_INDEX);
-                result.Add (new AndroidDeviceCalendarFolder (calendarId, CalendarDisplayName (accountName, accountType, calendarName)));
+                var access = (CalendarAccess)calendarCursor.GetInt (CALENDAR_ACCESS_LEVEL_INDEX);
+                bool isWritable = CalendarAccess.AccessOwner == access || CalendarAccess.AccessContributor == access || CalendarAccess.AccessEditor == access;
+                if (isWritable) {
+                    result.Add (new AndroidDeviceCalendarFolder (calendarId, CalendarDisplayName (accountName, accountType, calendarName), isWritable));
+                }
             }
             return result;
         }
@@ -660,13 +679,15 @@ namespace NachoPlatform
     public class AndroidDeviceCalendarFolder : McFolder
     {
         public long DeviceCalendarId { get; set; }
+        public bool IsWritable { get; set; }
 
-        public AndroidDeviceCalendarFolder (long calendarId, string displayName)
+        public AndroidDeviceCalendarFolder (long calendarId, string displayName, bool isWritable)
         {
             this.AccountId = McAccount.GetDeviceAccount ().Id;
             this.DeviceCalendarId = calendarId;
             this.DisplayName = displayName;
             this.Type = Xml.FolderHierarchy.TypeCode.UserCreatedCal_13;
+            this.IsWritable = isWritable;
         }
     }
 
