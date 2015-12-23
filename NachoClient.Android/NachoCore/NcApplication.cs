@@ -355,7 +355,6 @@ namespace NachoCore
 
                     default:
                         MonitorStop ();
-                        NcContactGleaner.Stop ();
                         break;
                     }
                     break;

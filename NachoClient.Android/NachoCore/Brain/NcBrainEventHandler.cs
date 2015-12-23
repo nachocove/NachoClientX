@@ -58,7 +58,9 @@ namespace NachoCore.Brain
                 }
                 NotificationRateLimiter.Running = false;
                 var runTill = EvaluateRunTime (NcContactGleaner.GLEAN_PERIOD);
-                ProcessPeriodic (runTill);
+                if (!ProcessPeriodic (runTill)) {
+                    NcContactGleaner.Stop ();
+                }
                 NotificationRateLimiter.Running = true;
                 break;
             case NcBrainEventType.STATE_MACHINE:
@@ -117,9 +119,10 @@ namespace NachoCore.Brain
             return numProcessed;
         }
 
-        private void ProcessPeriodic (DateTime runTill)
+        private bool ProcessPeriodic (DateTime runTill)
         {
             try {
+                bool didSomething = false;
                 bool ranOnce = false;
                 while (DateTime.UtcNow < runTill) {
                     if (IsInterrupted ()) {
@@ -139,6 +142,7 @@ namespace NachoCore.Brain
                     if (!Scheduler.Run (out result)) {
                         break;
                     }
+                    didSomething = true;
                 }
                 while (DateTime.UtcNow < runTill) {
                     if (IsInterrupted ()) {
@@ -154,8 +158,10 @@ namespace NachoCore.Brain
                             break;
                         }
                         UpdateEmailMessageScores (emailMessage);
+                        didSomething = true;
                     }
                 }
+                return didSomething;
             } finally {
                 OpenedIndexes.Cleanup ();
                 Scheduler.DumpRunCounts ();
