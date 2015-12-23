@@ -781,7 +781,7 @@ namespace NachoCore.Model
                 "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != ? ORDER BY DateReceived ASC", NcTimeVarianceType.DONE);
             int n = 0;
             int numStarted = 0;
-            Log.Info (Log.LOG_BRAIN, "Starting all time variances");
+            Log.Info (Log.LOG_BRAIN, "Starting all time variances ({0} emails)", emailMessageIdList.Count);
             foreach (var emailMessageId in emailMessageIdList) {
                 if (token.IsCancellationRequested) {
                     return;
