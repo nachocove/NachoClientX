@@ -49,7 +49,7 @@ namespace NachoCore.Brain
 
             switch (brainEvent.Type) {
             case NcBrainEventType.PAUSE:
-                Thread.Sleep (4 * 1000);
+                NcTask.CancelableSleep (4 * 1000, EventQueue.Token);
                 break;
 
             case NcBrainEventType.PERIODIC_GLEAN:
