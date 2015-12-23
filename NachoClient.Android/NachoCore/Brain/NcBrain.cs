@@ -129,7 +129,19 @@ namespace NachoCore.Brain
 
         public void PauseService ()
         {
-            EventQueue.Undequeue (new NcBrainEvent(NcBrainEventType.PAUSE));
+            var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
+            EventQueue.UndequeueIfNot (pause, (obj) => {
+                NcBrainEvent evt = obj;
+                return evt.Type == NcBrainEventType.PAUSE;
+            });
+        }
+
+        public void UnPauseService ()
+        {
+            EventQueue.DequeueIf ((obj) => {
+                NcBrainEvent evt = obj;
+                return evt.Type == NcBrainEventType.PAUSE;
+            });
         }
 
         public void SignalTermination ()
@@ -226,6 +238,12 @@ namespace NachoCore.Brain
                 NcBrain.SharedInstance.Enqueue (stateMachineEvent);
                 break;
             }
+        }
+
+        public void ProcessOneNewEmail (McEmailMessage emailMessage)
+        {
+            NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+            QuickScoreEmailMessage (emailMessage);
         }
     }
 }

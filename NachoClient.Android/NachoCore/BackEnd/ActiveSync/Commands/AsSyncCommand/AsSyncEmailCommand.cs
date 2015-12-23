@@ -67,7 +67,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.Insert ();
                     folder.Link (emailMessage);
                     aHelp.InsertAttachments (emailMessage);
-                    NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+                    NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
                 } else {
                     emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                         var target = (McEmailMessage)record;

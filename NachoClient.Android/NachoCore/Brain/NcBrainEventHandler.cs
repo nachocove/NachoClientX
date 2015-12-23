@@ -311,13 +311,7 @@ namespace NachoCore.Brain
                 if (IsInterrupted ()) {
                     break;
                 }
-                var newScores = emailMessage.Classify ();
-                emailMessage.UpdateByBrain ((item) => {
-                    var em = (McEmailMessage)item;
-                    em.Score = newScores.Item1;
-                    em.Score2 = newScores.Item2;
-                    return true;
-                });
+                QuickScoreEmailMessage (emailMessage);
                 numScored++;
             }
             if (0 != numScored) {
@@ -325,6 +319,17 @@ namespace NachoCore.Brain
                 NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
             }
             return numScored;
+        }
+
+        private void QuickScoreEmailMessage (McEmailMessage emailMessage)
+        {
+            var newScores = emailMessage.Classify ();
+            emailMessage.UpdateByBrain ((item) => {
+                var em = (McEmailMessage)item;
+                em.Score = newScores.Item1;
+                em.Score2 = newScores.Item2;
+                return true;
+            });
         }
 
         // Called when message set changes

@@ -385,7 +385,7 @@ namespace NachoCore.IMAP
                         emailMessage.Insert ();
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
-                        NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+                        NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                             var target = (McEmailMessage)record;
