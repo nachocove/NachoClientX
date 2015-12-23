@@ -135,9 +135,11 @@ namespace NachoCore.Utils
         public void UndequeueIfNot (T obj, QueueItemMatchFunction match)
         {
             lock (Lock) {
-                T objAlreadyThere = Peek ();
-                if (obj == default(T) && !match (objAlreadyThere)) {
-                    Undequeue (obj);
+                if (_Queue.Count > 0) {
+                    T objAlreadyThere = Peek ();
+                    if (!match (objAlreadyThere)) {
+                        Undequeue (obj);
+                    }
                 }
             }
         }
@@ -145,11 +147,14 @@ namespace NachoCore.Utils
         public T DequeueIf (QueueItemMatchFunction match)
         {
             lock (Lock) {
-                T obj = Peek ();
-                if (obj != default(T) && match (obj)) {
-                    Dequeue ();
+                if (_Queue.Count > 0) {
+                    T obj = Peek ();
+                    if (match (obj)) {
+                        Dequeue ();
+                    }
+                    return obj;
                 }
-                return obj;
+                return default(T);
             }
         }
 
