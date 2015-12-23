@@ -126,7 +126,6 @@ namespace NachoCore.Brain
             NcBrain.SharedInstance.SignalTermination ();
         }
 
-
         public void PauseService ()
         {
             var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
