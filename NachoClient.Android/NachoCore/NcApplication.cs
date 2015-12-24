@@ -350,7 +350,6 @@ namespace NachoCore
                     switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
                     case NcApplication.ExecutionContextEnum.Foreground:
                         MonitorStart ();
-                        NcContactGleaner.Start ();
                         break;
 
                     default:
@@ -539,7 +538,6 @@ namespace NachoCore
                 NcModel.Instance.Info ();
                 BackEnd.Instance.Start ();
                 NcBrain.StartService ();
-                NcContactGleaner.Start ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
                 if (null != Class4LateShowEvent) {
@@ -557,7 +555,6 @@ namespace NachoCore
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
                 NcBrain.StopService ();
-                NcContactGleaner.Stop ();
                 NcCapture.PauseAll ();
                 NcTimeVariance.PauseAll ();
             }
@@ -602,10 +599,12 @@ namespace NachoCore
 
         public void MonitorStart ()
         {
-            MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
-                MonitorReport ();
-            }, null, new TimeSpan (0, 0, 30), new TimeSpan (0, 0, 60));
-            MonitorTimer.Stfu = true;
+            if (null == MonitorTimer) {
+                MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
+                    MonitorReport ();
+                }, null, new TimeSpan (0, 0, 30), new TimeSpan (0, 0, 60));
+                MonitorTimer.Stfu = true;
+            }
         }
 
         public void MonitorStop ()
@@ -823,12 +822,11 @@ namespace NachoCore
         public void BackendAbateStart ()
         {
             NcBrain.SharedInstance.PauseService ();
-            NcContactGleaner.Stop ();
         }
 
         public void BackendAbateStop ()
         {
-            NcContactGleaner.Start ();
+            NcBrain.SharedInstance.UnPauseService ();
         }
 
         #endregion
