@@ -74,15 +74,17 @@ namespace NachoCore.Utils
 
         public void StartService ()
         {
-            StopService ();
-            Cts = new CancellationTokenSource ();
-            MonitorTimer = new NcTimer ("CrlMonitorTimer", (state) => {
-                foreach (var monitor in Monitors.Values) {
-                    if (monitor.NeedsUpdate ()) {
-                        monitor.StartUpdate (Cts.Token); // spawns a task
+            lock (LockObj) {
+                StopService ();
+                Cts = new CancellationTokenSource ();
+                MonitorTimer = new NcTimer ("CrlMonitorTimer", (state) => {
+                    foreach (var monitor in Monitors.Values) {
+                        if (monitor.NeedsUpdate ()) {
+                            monitor.StartUpdate (Cts.Token); // spawns a task
+                        }
                     }
-                }
-            }, null, 0, DefaultRecheckTimeSecs * 1000);
+                }, null, 0, DefaultRecheckTimeSecs * 1000);
+            }
         }
 
         public void StopService ()
@@ -99,6 +101,11 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Register a list of certificates with the CRL Monitoring service.
+        /// NOTE: It is the caller's responsibility to validate all certs passed in.
+        /// </summary>
+        /// <param name="signerCerts">Signer certs.</param>
         public void Register (X509Certificate2Collection signerCerts)
         {
             lock (LockObj) {
