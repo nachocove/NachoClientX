@@ -129,6 +129,46 @@ namespace NachoCore.Utils
                 return (0 == _Queue.Count);
             }
         }
+
+        public delegate bool QueueItemMatchFunction (T obj1);
+
+        public void UndequeueIfNot (T obj, QueueItemMatchFunction match)
+        {
+            lock (Lock) {
+                if (_Queue.Count > 0) {
+                    T objAlreadyThere = Peek ();
+                    if (!match (objAlreadyThere)) {
+                        Undequeue (obj);
+                    }
+                }
+            }
+        }
+
+        public T DequeueIf (QueueItemMatchFunction match)
+        {
+            lock (Lock) {
+                if (_Queue.Count > 0) {
+                    T obj = Peek ();
+                    if (match (obj)) {
+                        Dequeue ();
+                    }
+                    return obj;
+                }
+                return default(T);
+            }
+        }
+
+        public T Peek ()
+        {
+            Token.ThrowIfCancellationRequested ();
+            T obj = default(T);
+            lock (Lock) {
+                if (_Queue.Count > 0) {
+                    obj = _Queue [0];
+                }
+            }
+            return obj;
+        }
     }
 }
 

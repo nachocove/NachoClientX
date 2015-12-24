@@ -537,7 +537,14 @@ namespace NachoCore.ActiveSync
                     var xmlResponses = collection.Element (m_ns + Xml.AirSync.Responses);
                     ProcessCollectionResponses (folder, xmlResponses);
                     if (!HasBeenCancelled) {
-                        ProcessCollectionCommands (folder, xmlCommands);
+                        if (null != xmlCommands && xmlCommands.Elements ().Any ()) {
+                            BEContext.Owner.BackendAbateStart ();
+                            try {
+                                ProcessCollectionCommands (folder, xmlCommands);
+                            } finally {
+                                BEContext.Owner.BackendAbateStop ();
+                            }
+                        }
                     }
                     lock (PendingResolveLockObj) {
                         // Any pending not already resolved gets resolved as Success.
@@ -829,9 +836,6 @@ namespace NachoCore.ActiveSync
 
         private void ProcessCollectionCommands (McFolder folder, XElement xmlCommands)
         {
-            if (null == xmlCommands) {
-                return;
-            }
             var commands = xmlCommands.Elements ();
             foreach (var command in commands) {
                 var classCode = GetClassCode (command, folder);

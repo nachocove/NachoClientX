@@ -25,6 +25,7 @@ namespace NachoCore.Brain
         UPDATE_MESSAGE_NOTIFICATION_STATUS,
         UPDATE_MESSAGE_READ_STATUS,
         UPDATE_MESSAGE_REPLY_STATUS,
+        PAUSE,
     };
 
     [Serializable]
@@ -291,10 +292,12 @@ namespace NachoCore.Brain
     public class NcBrainStateMachineEvent : NcBrainEvent
     {
         public Int64 AccountId;
+        public int Count;
 
-        public NcBrainStateMachineEvent (Int64 accountId) : base (NcBrainEventType.STATE_MACHINE)
+        public NcBrainStateMachineEvent (Int64 accountId, int count) : base (NcBrainEventType.STATE_MACHINE)
         {
             AccountId = accountId;
+            Count = count;
         }
 
         public override string ToString ()

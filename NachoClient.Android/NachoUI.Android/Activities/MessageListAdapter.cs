@@ -286,6 +286,12 @@ namespace NachoClient.AndroidClient
             } else {
                 vh.multiSelectView.Visibility = ViewStates.Invisible;
             }
+
+            // Since there is a decent chance that the user will open this message,
+            // ask the backend to fetch itdownload its body.
+            if ((null != message) && (0 == message.BodyId)) {
+                BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
+            }
         }
 
         void MessageFromPosition (int position, out McEmailMessageThread thread, out McEmailMessage message)
@@ -355,6 +361,13 @@ namespace NachoClient.AndroidClient
                     messageDownloader.Download (message);
                 } else {
                     RenderBody (vh.webview, bundle);
+                }
+
+
+                // Since there is a decent chance that the user will open this message,
+                // ask the backend to fetch itdownload its body.
+                if (0 == message.BodyId) {
+                    BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
                 }
             }
         }

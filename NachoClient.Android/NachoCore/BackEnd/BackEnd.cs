@@ -835,23 +835,6 @@ namespace NachoCore
             NcApplication.Instance.InvokeStatusIndEvent (e);
         }
 
-        public void StatusInd (NcProtoControl sender, NcResult status)
-        {
-            InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Account = sender.Account,
-                Status = status,
-            });
-        }
-
-        public void StatusInd (NcProtoControl sender, NcResult status, string[] tokens)
-        {
-            InvokeStatusIndEvent (new StatusIndEventArgs () {
-                Account = sender.Account,
-                Status = status,
-                Tokens = tokens,
-            });
-        }
-
         /// <summary>
         /// Do we need to tell the UI about refreshing this Credentials?
         /// </summary>
@@ -871,40 +854,29 @@ namespace NachoCore
                         return true;
                     }
                 } else {
-                    Log.Warn (Log.LOG_BACKEND, "TokenRefreshFailure: No CredReqActive entry.");
+                    Log.Warn (Log.LOG_BACKEND, "NeedToPassReqToUi: No CredReqActive entry.");
                     return true;
                 }
             }
             return false;
         }
 
-        /// <summary>
-        /// Callback called after a failure to refresh the oauth2 token
-        /// </summary>
-        /// <param name="cred">Cred.</param>
-        protected virtual void TokenRefreshFailure (McCred cred)
+        #region INcProtoControlOwner
+        public void StatusInd (NcProtoControl sender, NcResult status)
         {
-            if (NeedToPassReqToUi (cred.AccountId)) {
-                InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (cred.AccountId));
-            }
+            InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Account = sender.Account,
+                Status = status,
+            });
         }
 
-        /// <summary>
-        /// Callback called after a successful OAuth2 refresh.
-        /// </summary>
-        /// <param name="cred">Cred.</param>
-        protected virtual void TokenRefreshSuccess (McCred cred)
+        public void StatusInd (NcProtoControl sender, NcResult status, string[] tokens)
         {
-            lock (CredReqActive) {
-                CredReqActiveStatus status;
-                if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
-                    if (status.NeedCredResp) {
-                        CredResp (cred.AccountId);
-                    } else {
-                        CredReqActive.Remove (cred.AccountId);
-                    }
-                }
-            }
+            InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Account = sender.Account,
+                Status = status,
+                Tokens = tokens,
+            });
         }
 
         /// <summary>
@@ -956,6 +928,18 @@ namespace NachoCore
                 Owner.SendEmailResp (sender.AccountId, emailMessageId, didSend);
             });
         }
+
+        public void BackendAbateStart ()
+        {
+            Owner.BackendAbateStart ();
+        }
+
+        public void BackendAbateStop ()
+        {
+            Owner.BackendAbateStop ();
+        }
+
+        #endregion
 
         public void SendEmailBodyFetchHint (int accountId, int emailMessageId)
         {
@@ -1113,6 +1097,35 @@ namespace NachoCore
         protected virtual void RefreshMcCred (McCred cred)
         {
             cred.RefreshOAuth2 (TokenRefreshSuccess, TokenRefreshFailure, _Oauth2RefreshCancelSource.Token);
+        }
+
+        /// <summary>
+        /// Callback called after a failure to refresh the oauth2 token
+        /// </summary>
+        /// <param name="cred">Cred.</param>
+        protected virtual void TokenRefreshFailure (McCred cred)
+        {
+            if (NeedToPassReqToUi (cred.AccountId)) {
+                InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (cred.AccountId));
+            }
+        }
+
+        /// <summary>
+        /// Callback called after a successful OAuth2 refresh.
+        /// </summary>
+        /// <param name="cred">Cred.</param>
+        protected virtual void TokenRefreshSuccess (McCred cred)
+        {
+            lock (CredReqActive) {
+                CredReqActiveStatus status;
+                if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
+                    if (status.NeedCredResp) {
+                        CredResp (cred.AccountId);
+                    } else {
+                        CredReqActive.Remove (cred.AccountId);
+                    }
+                }
+            }
         }
 
         #endregion

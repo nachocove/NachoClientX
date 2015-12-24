@@ -26,9 +26,7 @@ namespace NachoCore.Brain
         public const int GLEAN_PERIOD = 4;
         private const uint MaxSaneAddressLength = 40;
 
-        #pragma warning disable 414
         private static NcTimer Invoker;
-        #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
             if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
