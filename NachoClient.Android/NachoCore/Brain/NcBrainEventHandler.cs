@@ -33,6 +33,14 @@ namespace NachoCore.Brain
             EventQueue.Enqueue (brainEvent);
         }
 
+        public void EnqueueIfNotAlreadyThere (NcBrainEvent brainEvent)
+        {
+            EventQueue.EnqueueIfNot (brainEvent, (obj) => {
+                NcBrainEvent evt = obj;
+                return evt.Type == brainEvent.Type;
+            });
+        }
+
         public bool IsQueueEmpty ()
         {
             return EventQueue.IsEmpty ();
