@@ -167,24 +167,29 @@ namespace NachoCore.IMAP
                 }
             }
             if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
-                mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadOnly);
-                // First find all messages marked as /Deleted
-                UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
+                BEContext.Owner.BackendAbateStart ();
+                try {
+                    mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadOnly);
+                    // First find all messages marked as /Deleted
+                    UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
 
-                Cts.Token.ThrowIfCancellationRequested ();
+                    Cts.Token.ThrowIfCancellationRequested ();
 
-                // Process any new or changed messages. This will also tell us any messages that vanished.
-                UniqueIdSet vanished;
-                UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
+                    // Process any new or changed messages. This will also tell us any messages that vanished.
+                    UniqueIdSet vanished;
+                    UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
 
-                Cts.Token.ThrowIfCancellationRequested ();
+                    Cts.Token.ThrowIfCancellationRequested ();
 
-                // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
-                toDelete.AddRange (vanished);
-                var deleted = deleteEmails (toDelete);
+                    // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
+                    toDelete.AddRange (vanished);
+                    var deleted = deleteEmails (toDelete);
 
-                Cts.Token.ThrowIfCancellationRequested ();
-                changed |= deleted.Any () || newOrChanged.Any ();
+                    Cts.Token.ThrowIfCancellationRequested ();
+                    changed |= deleted.Any () || newOrChanged.Any ();
+                } finally {
+                    BEContext.Owner.BackendAbateStop ();
+                }
             }
 
             Finish (changed);
@@ -380,7 +385,7 @@ namespace NachoCore.IMAP
                         emailMessage.Insert ();
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
-                        NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+                        NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                             var target = (McEmailMessage)record;
