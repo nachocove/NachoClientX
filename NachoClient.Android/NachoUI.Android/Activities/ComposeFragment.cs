@@ -90,6 +90,7 @@ namespace NachoClient.AndroidClient
 
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
             buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.contact_quickemail, QuickResponseButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right3, Resource.Drawable.files_email_attachment, AddAttachmentButton_Click);
             SendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
 
             HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
@@ -234,6 +235,14 @@ namespace NachoClient.AndroidClient
         void QuickResponseButton_Click (object sender, EventArgs e)
         {
             ShowQuickResponses ();
+        }
+
+        void AddAttachmentButton_Click (object sender, EventArgs e)
+        {
+            var attachmentPicker = new AttachmentPickerFragment ();
+            attachmentPicker.Account = Composer.Account;
+            attachmentPicker.Delegate = this;
+            attachmentPicker.Show (FragmentManager, ATTACHMENT_PICKER_TAG);
         }
             
         public void Discard ()
