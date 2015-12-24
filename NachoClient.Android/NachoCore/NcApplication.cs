@@ -350,7 +350,6 @@ namespace NachoCore
                     switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
                     case NcApplication.ExecutionContextEnum.Foreground:
                         MonitorStart ();
-                        NcContactGleaner.Start ();
                         break;
 
                     default:
@@ -526,7 +525,7 @@ namespace NachoCore
             LocalNotificationManager.ScheduleNotifications ();
 
             MonitorStart (); // Has a deferred timer start inside.
-            CrlMonitor.StartService ();
+            CrlMonitor.Instance.StartService ();
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
             Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
@@ -539,7 +538,6 @@ namespace NachoCore
                 NcModel.Instance.Info ();
                 BackEnd.Instance.Start ();
                 NcBrain.StartService ();
-                NcContactGleaner.Start ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
                 if (null != Class4LateShowEvent) {
@@ -553,11 +551,10 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
             MonitorStop ();
-            CrlMonitor.StopService ();
+            CrlMonitor.Instance.StopService ();
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
                 NcBrain.StopService ();
-                NcContactGleaner.Stop ();
                 NcCapture.PauseAll ();
                 NcTimeVariance.PauseAll ();
             }
@@ -602,10 +599,12 @@ namespace NachoCore
 
         public void MonitorStart ()
         {
-            MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
-                MonitorReport ();
-            }, null, new TimeSpan (0, 0, 30), new TimeSpan (0, 0, 60));
-            MonitorTimer.Stfu = true;
+            if (null == MonitorTimer) {
+                MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
+                    MonitorReport ();
+                }, null, new TimeSpan (0, 0, 30), new TimeSpan (0, 0, 60));
+                MonitorTimer.Stfu = true;
+            }
         }
 
         public void MonitorStop ()
@@ -823,12 +822,11 @@ namespace NachoCore
         public void BackendAbateStart ()
         {
             NcBrain.SharedInstance.PauseService ();
-            NcContactGleaner.Stop ();
         }
 
         public void BackendAbateStop ()
         {
-            NcContactGleaner.Start ();
+            NcBrain.SharedInstance.UnPauseService ();
         }
 
         #endregion
