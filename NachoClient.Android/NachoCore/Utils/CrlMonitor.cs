@@ -47,8 +47,29 @@ namespace NachoCore.Utils
 
         public NcTimer MonitorTimer { get; set; }
 
+        public static string CrlDocumentPath { get; protected set; }
+
         public CrlMonitor ()
         {
+            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            CrlDocumentPath = Path.Combine (documentsPath, "crl");
+            Directory.CreateDirectory (CrlDocumentPath); // checks first, so no need to check here.
+            foreach (var crl in Directory.EnumerateFiles (CrlDocumentPath)) {
+                NcCrl theCrl;
+                bool deleteMe = false;
+                try {
+                    theCrl = new NcCrl (new FileStream (crl, FileMode.Open, FileAccess.Read, FileShare.Read));
+                    if (theCrl.IsExpired ()) {
+                        deleteMe = true;
+                    }
+                } catch (ArgumentException ex) {
+                    Log.Info (Log.LOG_SYS, "{0}: Could not convert crl: {1}", crl, ex);
+                    deleteMe = true;
+                }
+                if (deleteMe) {
+                    File.Delete (crl);
+                }
+            }
         }
 
         public void StartService ()
@@ -168,7 +189,7 @@ namespace NachoCore.Utils
 
         DateTime? NextUpdate { get; set; }
 
-        X509Crl Crl { get; set; }
+        NcCrl Crl { get; set; }
 
         /// <summary>
         /// The Issuer cert. May not be the same as the CRL signer certificate
@@ -243,6 +264,16 @@ namespace NachoCore.Utils
             UpdateRunning = false;
         }
 
+        string _crlPath;
+        string crlPath {
+            get {
+                if (string.IsNullOrEmpty (_crlPath)) {
+                    _crlPath = Path.Combine (CrlMonitor.CrlDocumentPath, HashHelper.Sha256 (Cert.SubjectName.Name));
+                }
+                return _crlPath;
+            }
+        }
+
         void FetchCRL (CancellationToken cToken)
         {
             if (cToken.IsCancellationRequested) {
@@ -255,10 +286,20 @@ namespace NachoCore.Utils
             }
 
             if (Retries < MaxRetries) {
-                var request = new NcHttpRequest (HttpMethod.Get, Urls [UrlIndex]);
                 NextUpdate = null;
-                Log.Info (Log.LOG_SYS, "{0}: Updating crl url {1} (retry {2})", Name, UrlIndex, Retries);
-                HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, cToken);
+                if (File.Exists (crlPath)) {
+                    NcTask.Run (() => {
+                        var fs = new FileStream (crlPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                        if (!ProcessCrl (fs, cToken)) {
+                            File.Delete (crlPath);
+                            DownloadCrl (cToken);
+                        } else {
+                            FinishUpdate ();
+                        }
+                    }, "ProcessCrl");
+                } else {
+                    DownloadCrl (cToken);
+                }
             } else {
                 Log.Info (Log.LOG_SYS, "{0}: Could not fetch CRL. Stopping.", Name);
                 var timer = new NcTimer (Name + "Timer", (state) => {
@@ -268,6 +309,13 @@ namespace NachoCore.Utils
                 FinishUpdate ();
                 Revoked = null;
             }
+        }
+
+        void DownloadCrl (CancellationToken cToken)
+        {
+            var request = new NcHttpRequest (HttpMethod.Get, Urls [UrlIndex]);
+            Log.Info (Log.LOG_SYS, "{0}: Updating crl url {1} (retry {2})", Name, UrlIndex, Retries);
+            HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, cToken);
         }
 
         void DownloadSuccess (NcHttpResponse response, CancellationToken token)
@@ -280,15 +328,19 @@ namespace NachoCore.Utils
                 if (HttpStatusCode.OK == response.StatusCode) {
                     NcAssert.True (null != response.Content, "content should not be null");
                     Log.Info (Log.LOG_PUSH, "{0}: CRL pull response: statusCode={1}", Name, response.StatusCode);
-                    if (ExtractCrl (response.Content as FileStream)) {
-                        if (token.IsCancellationRequested) {
-                            return;
-                        }
-                        CrlGetRevoked ();
-                        FinishUpdate ();
-                    } else {
-                        Log.Warn (Log.LOG_PUSH, "{0}: CRL failed to extract", Name);
+                    using (var fs = new FileStream (crlPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
+                        response.Content.CopyTo (fs);
+                    }
+                    bool processSuccess;
+                    using (var fs = new FileStream (crlPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                        processSuccess = ProcessCrl (fs, token);
+                    }
+                    if (!processSuccess) {
+                        File.Delete (crlPath);
+                        Log.Warn (Log.LOG_PUSH, "{0}: CRL failed to process crl", Name);
                         DownloadError (null, token);
+                    } else {
+                        FinishUpdate ();
                     }
                 } else {
                     Log.Warn (Log.LOG_PUSH, "{0}: CRL pull response: statusCode={1}", Name, response.StatusCode);
@@ -322,6 +374,20 @@ namespace NachoCore.Utils
             }
         }
 
+        protected bool ProcessCrl (Stream crl, CancellationToken cToken)
+        {
+            if (ExtractCrl (crl)) {
+                if (cToken.IsCancellationRequested) {
+                    return false;
+                }
+                CrlGetRevoked ();
+                return true;
+            }
+
+            Log.Warn (Log.LOG_PUSH, "{0}: CRL failed to extract", Name);
+            return false;
+        }
+
         /// <summary>
         /// Given a CRL, check whether it's still valid (i.e. If NextUpdate is still in the future)
         /// and whether the CRL signature can be validated with the CrlSignerCert.
@@ -331,26 +397,26 @@ namespace NachoCore.Utils
         /// <param name="failOnExpired">If set to <c>true</c> fail on expired.</param>
         protected bool ExtractCrl (Stream crl, bool failOnExpired = true)
         {
-            X509CrlParser parser = new X509CrlParser (true);
-            var theCrl = parser.ReadCrl (crl);
-            if (theCrl == null) {
-                Log.Info (Log.LOG_SYS, "{0}: Could not convert crl", Name);
+            NcCrl theCrl;
+            try {
+                theCrl = new NcCrl (crl);
+            } catch (ArgumentException ex) {
+                Log.Info (Log.LOG_SYS, "{0}: Could not convert crl: {1}", Name, ex);
                 return false;
             }
-            var now = DateTime.UtcNow;
-            if (theCrl.NextUpdate.Value <= now) {
+            if (theCrl.IsExpired ()) {
                 // For dev, we hardly ever update the CRL, so just set it to once a day
                 if (failOnExpired && !BuildInfoHelper.IsDev) {
-                    Log.Info (Log.LOG_SYS, "{0}: CRL is already expired: {1}", Name, theCrl.NextUpdate.Value);
+                    Log.Info (Log.LOG_SYS, "{0}: CRL is already expired: {1}", Name, theCrl.NextUpdate);
                     return false;
                 } else {
                     NextUpdate = DateTime.UtcNow.AddDays (1);
                 }
             } else {
-                NextUpdate = theCrl.NextUpdate.Value;
+                NextUpdate = theCrl.NextUpdate;
             }
 
-            var crlIssuerDn = new X500DistinguishedName (theCrl.IssuerDN.GetDerEncoded ());
+            var crlIssuerDn = new X500DistinguishedName (theCrl.IssuerDnDer);
             X509Certificate2 signerCert = null;
             foreach (var cert in CrlSignerCerts) {
                 if (crlIssuerDn.Name == cert.SubjectName.Name) {
@@ -362,19 +428,12 @@ namespace NachoCore.Utils
                 Log.Info (Log.LOG_SYS, "{0}: No CRL signer certificate found");
                 return false;
             }
-            try {
-                var certStream = new MemoryStream (signerCert.Export (X509ContentType.Cert));
-                X509CertificateParser x509Parser = new X509CertificateParser ();
-                var cert = x509Parser.ReadCertificate (certStream);
-                theCrl.Verify (cert.GetPublicKey ());
-                Log.Info (Log.LOG_SYS, "{0}: CRL Validated Successfully", Name);
-            } catch (CrlException ex) {
-                Log.Error (Log.LOG_SYS, "CrlException/{0}: {1}", Name, ex.Message);
-                return false;
-            } catch (SignatureException ex) {
-                Log.Error (Log.LOG_SYS, "SignatureException/{0}: {1}", Name, ex.Message);
+            string errorMsg;
+            if (!theCrl.Verify (signerCert, out errorMsg)) {
+                Log.Error (Log.LOG_SYS, "Could not validate crl {0}: {1}", Name, errorMsg);
                 return false;
             }
+            Log.Info (Log.LOG_SYS, "{0}: CRL Validated Successfully", Name);
             Crl = theCrl;
             return true;
         }
@@ -382,16 +441,8 @@ namespace NachoCore.Utils
         protected void CrlGetRevoked ()
         {
             NcAssert.NotNull (Crl);
-
-            var revokedSet = new HashSet<string> ();
-            var revokedList = Crl.GetRevokedCertificates ();
-            if (revokedList != null) {
-                foreach (X509CrlEntry revoked in revokedList) {
-                    revokedSet.Add (revoked.SerialNumber.LongValue.ToString ("X"));
-                }
-            }
-            Log.Info (Log.LOG_SYS, "{0}: Extracted {1} Revoked certificates", Name, revokedSet.Count);
-            Revoked = revokedSet;
+            Revoked = Crl.ExpiredCerts;
+            Log.Info (Log.LOG_SYS, "{0}: Extracted {1} Revoked certificates", Name, Revoked.Count);
         }
 
         /// <summary>
@@ -419,6 +470,89 @@ namespace NachoCore.Utils
 
             return builder.ToString ();
         }
+    }
+
+    public class NcCrl
+    {
+        protected object LockObj = new object ();
+        protected X509Crl Crl;
+        protected HashSet<string> _ExpiredCerts;
+
+        public NcCrl (Stream crlStream)
+        {
+            Crl = ParseCrl (crlStream);
+            if (null == Crl) {
+                throw new ArgumentException ("Could not parse CRL");
+            }
+        }
+
+        public HashSet<string> ExpiredCerts {
+            get {
+                if (null == _ExpiredCerts) {
+                    lock (LockObj) {
+                        if (null == _ExpiredCerts) {
+                            _ExpiredCerts = new HashSet<string> ();
+                            var revokedList = Crl.GetRevokedCertificates ();
+                            if (revokedList != null) {
+                                foreach (X509CrlEntry revoked in revokedList) {
+                                    _ExpiredCerts.Add (revoked.SerialNumber.LongValue.ToString ("X"));
+                                }
+                            }
+                        }
+                    }
+                }
+                return _ExpiredCerts;
+            }
+        }
+
+        public bool IsExpired ()
+        {
+            return IsExpired (Crl);
+        }
+
+        public DateTime NextUpdate {
+            get {
+                return Crl.NextUpdate.Value;
+            }
+        }
+
+        public byte[] IssuerDnDer {
+            get {
+                return Crl.IssuerDN.GetDerEncoded ();
+            }
+        }
+
+        public bool Verify (X509Certificate2 cert, out string errorMsg)
+        {
+            errorMsg = null;
+            var certStream = new MemoryStream (cert.Export (X509ContentType.Cert));
+            X509CertificateParser x509Parser = new X509CertificateParser ();
+            var bccert = x509Parser.ReadCertificate (certStream);
+            try {
+                Crl.Verify (bccert.GetPublicKey ());
+                    return true;
+            } catch (CrlException ex) {
+                errorMsg = ex.Message;
+                return false;
+            } catch (SignatureException ex) {
+                errorMsg = ex.Message;
+                return false;
+            }
+        }
+
+        public static X509Crl ParseCrl (Stream stream)
+        {
+            X509CrlParser parser = new X509CrlParser (true);
+            var theCrl = parser.ReadCrl (stream);
+            return theCrl;
+        }
+
+        public static bool IsExpired (X509Crl crl)
+        {
+            return crl.NextUpdate.Value >= DateTime.UtcNow;
+        }
+
+
     }
 }
 
