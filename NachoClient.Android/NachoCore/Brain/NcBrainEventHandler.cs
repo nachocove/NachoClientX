@@ -28,9 +28,16 @@ namespace NachoCore.Brain
             Scheduler.Add ("index email messages", new RoundRobinSource (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 5), 3);
         }
 
-        public void Enqueue (NcBrainEvent brainEvent)
+        public void Enqueue (NcBrainEvent brainEvent, bool unique = false)
         {
-            EventQueue.Enqueue (brainEvent);
+            if (unique) {
+                EventQueue.EnqueueIfNot (brainEvent, (obj) => {
+                    NcBrainEvent evt = obj;
+                    return evt.Type == brainEvent.Type;
+                });
+            } else {
+                EventQueue.Enqueue (brainEvent);
+            }
         }
 
         public bool IsQueueEmpty ()

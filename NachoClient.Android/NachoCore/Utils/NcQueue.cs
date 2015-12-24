@@ -132,32 +132,71 @@ namespace NachoCore.Utils
 
         public delegate bool QueueItemMatchFunction (T obj1);
 
+        /// <summary>
+        /// Undequeues an object if there's not one already like it (based on the match function) at the head of the list
+        /// </summary>
+        /// <param name="obj">Object.</param>
+        /// <param name="match">Match Function.</param>
         public void UndequeueIfNot (T obj, QueueItemMatchFunction match)
         {
+            Token.ThrowIfCancellationRequested ();
             lock (Lock) {
                 if (_Queue.Count > 0) {
                     T objAlreadyThere = Peek ();
                     if (!match (objAlreadyThere)) {
                         Undequeue (obj);
                     }
+                } else {
+                    Undequeue (obj);
                 }
             }
         }
 
+        /// <summary>
+        /// Enqueues an object if a similar object matched with the match function is not already in the queue.
+        /// WARNING: O(n) operation to search for similar items.
+        /// </summary>
+        /// <param name="obj">Object.</param>
+        /// <param name="match">Match Function.</param>
+        public void EnqueueIfNot (T obj, QueueItemMatchFunction match)
+        {
+            Token.ThrowIfCancellationRequested ();
+            lock (Lock) {
+                if (_Queue.Count > 0) {
+                    foreach (var qObj in _Queue) {
+                        Token.ThrowIfCancellationRequested ();
+                        if (match (qObj)) {
+                            return;
+                        }
+                    }
+                }
+                Enqueue (obj);
+            }
+        }
+
+        /// <summary>
+        // Dequeues an object from the queue if it matches based on the match function
+        /// </summary>
+        /// <returns>The object</returns>
+        /// <param name="match">Match Function.</param>
         public T DequeueIf (QueueItemMatchFunction match)
         {
+            Token.ThrowIfCancellationRequested ();
             lock (Lock) {
                 if (_Queue.Count > 0) {
                     T obj = Peek ();
                     if (match (obj)) {
                         Dequeue ();
+                        return obj;
                     }
-                    return obj;
                 }
                 return default(T);
             }
         }
 
+        /// <summary>
+        /// Return the head of the queue without affecting the queue itself.
+        /// </summary>
         public T Peek ()
         {
             Token.ThrowIfCancellationRequested ();

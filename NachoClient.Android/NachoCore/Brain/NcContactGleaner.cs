@@ -35,7 +35,7 @@ namespace NachoCore.Brain
                 return;
             }
             NcBrainEvent brainEvent = new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN);
-            NcBrain.SharedInstance.Enqueue (brainEvent);
+            NcBrain.SharedInstance.Enqueue (brainEvent, true);
         }
 
         public static void Start ()
