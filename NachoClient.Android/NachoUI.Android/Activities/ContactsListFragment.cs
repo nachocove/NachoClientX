@@ -216,7 +216,11 @@ namespace NachoClient.AndroidClient
 
         void AddButton_Click (object sender, EventArgs e)
         {
-            Activity.StartActivity (ContactEditActivity.AddContactIntent (Activity));
+            if (NcApplication.Instance.Account.CanAddContact ()) {
+                Activity.StartActivity (ContactEditActivity.AddContactIntent (Activity));
+            } else {
+                NcAlertView.ShowMessage (Activity, "Contacts", "Cannot add contacts to the current account. Select other account for the new contact.");
+            }
         }
 
         void SearchButton_Click (object sender, EventArgs e)
