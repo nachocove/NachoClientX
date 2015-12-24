@@ -102,6 +102,8 @@ namespace Test.iOS
             public void CertAskReq (NcProtoControl sender, X509Certificate2 certificate) {}
             public void SearchContactsResp (NcProtoControl sender, string prefix, string token) {}
             public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend) {}
+            public void BackendAbateStart () {}
+            public void BackendAbateStop () {}
         }
 
         [Test]

@@ -56,6 +56,7 @@ namespace NachoClient.iOS
         NcUIBarButtonItem CloseButton;
         NcUIBarButtonItem SendButton;
         NcUIBarButtonItem QuickResponseButton;
+        NcUIBarButtonItem AddAttachmentButton;
         UIAlertController CloseAlertController;
         UIAlertController SubjectAlertController;
         UIAlertController SizeAlertController;
@@ -131,10 +132,17 @@ namespace NachoClient.iOS
             QuickResponseButton.AccessibilityLabel = "Quick response";
             QuickResponseButton.Clicked += QuickReply;
 
+
+            AddAttachmentButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (AddAttachmentButton, "files-email-attachment");
+            AddAttachmentButton.AccessibilityLabel = "Add attachment";
+            AddAttachmentButton.Clicked += AddAttachment;
+
             NavigationItem.LeftBarButtonItem = CloseButton;
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 SendButton,
                 QuickResponseButton,
+                AddAttachmentButton,
             };
 
             // Content Area
@@ -350,6 +358,13 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             ShowQuickResponses ();
+        }
+
+        // User hitting the add attachment button
+        public void AddAttachment (object sender, EventArgs e)
+        {
+            View.EndEditing (true);
+            ShowAddAttachment (true);
         }
 
         // User hitting the close button

@@ -70,6 +70,14 @@ namespace Test.Common
         public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
         {
         }
+
+        public void BackendAbateStart ()
+        {
+        }
+
+        public void BackendAbateStop ()
+        {
+        }
     }
 
     public class MockNcFolder : McFolder

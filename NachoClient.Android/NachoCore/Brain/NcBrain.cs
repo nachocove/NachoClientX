@@ -10,6 +10,7 @@ using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.Index;
+using System.Threading;
 
 namespace NachoCore.Brain
 {
@@ -125,10 +126,26 @@ namespace NachoCore.Brain
             NcBrain.SharedInstance.SignalTermination ();
         }
 
+        public void PauseService ()
+        {
+            var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
+            EventQueue.UndequeueIfNot (pause, (obj) => {
+                NcBrainEvent evt = obj;
+                return evt.Type == NcBrainEventType.PAUSE;
+            });
+        }
+
+        public void UnPauseService ()
+        {
+            EventQueue.DequeueIf ((obj) => {
+                NcBrainEvent evt = obj;
+                return evt.Type == NcBrainEventType.PAUSE;
+            });
+        }
+
         public void SignalTermination ()
         {
-            var brainEvent = new NcBrainEvent (NcBrainEventType.TERMINATE);
-            EventQueue.Undequeue (brainEvent);
+            EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
         }
 
         private bool IsInUnitTest ()
@@ -196,13 +213,13 @@ namespace NachoCore.Brain
             StatusIndEventArgs eventArgs = args as StatusIndEventArgs;
             switch (eventArgs.Status.SubKind) {
             case NcResult.SubKindEnum.Info_RicInitialSyncCompleted:
-                /// Status indication handler for Info_RicInitialSyncCompleted. We do not 
-                /// generate initial email address scores from RIC in this function for 2
-                /// reasons. First, we do not want to hold up the status indication callback
-                /// for a long duration. Second, the callback may be in a different threads
-                /// as NcBrain task. So, we may have two threads updatind the same object.
-                /// Therefore, we enqueue a brain event and let brain task to do the actual
-                /// processing.
+                // Status indication handler for Info_RicInitialSyncCompleted. We do not 
+                // generate initial email address scores from RIC in this function for 2
+                // reasons. First, we do not want to hold up the status indication callback
+                // for a long duration. Second, the callback may be in a different threads
+                // as NcBrain task. So, we may have two threads updating the same object.
+                // Therefore, we enqueue a brain event and let brain task to do the actual
+                // processing.
                 var initialRicEvent = new NcBrainInitialRicEvent (eventArgs.Account.Id);
                 NcBrain.SharedInstance.Enqueue (initialRicEvent);
                 break;
@@ -216,10 +233,16 @@ namespace NachoCore.Brain
                 }
                 break;
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-                var stateMachineEvent = new NcBrainStateMachineEvent (eventArgs.Account.Id);
+                var stateMachineEvent = new NcBrainStateMachineEvent (eventArgs.Account.Id, 100);
                 NcBrain.SharedInstance.Enqueue (stateMachineEvent);
                 break;
             }
+        }
+
+        public void ProcessOneNewEmail (McEmailMessage emailMessage)
+        {
+            NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+            QuickScoreEmailMessage (emailMessage);
         }
     }
 }

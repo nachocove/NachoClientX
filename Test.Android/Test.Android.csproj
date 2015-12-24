@@ -152,6 +152,7 @@
     <Compile Include="NcBase64Test.cs" />
     <Compile Include="McContactTest.cs" />
     <Compile Include="NcHttpUtilTest.cs" />
+    <Compile Include="NcQueueTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -772,8 +772,8 @@ namespace NachoCore.Model
 
         public static void StartTimeVariance (CancellationToken token)
         {
-            /// Look for all email messages that are:
-            ///
+            // Look for all email messages that are:
+            //
             // 1. ScoreVersion is non-zero
             // 2. TimeVarianceType is not DONE
             List<NcEmailMessageIndex> emailMessageIdList = 
@@ -781,7 +781,7 @@ namespace NachoCore.Model
                 "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != ? ORDER BY DateReceived ASC", NcTimeVarianceType.DONE);
             int n = 0;
             int numStarted = 0;
-            Log.Info (Log.LOG_BRAIN, "Starting all time variances");
+            Log.Info (Log.LOG_BRAIN, "Starting all time variances ({0} emails)", emailMessageIdList.Count);
             foreach (var emailMessageId in emailMessageIdList) {
                 if (token.IsCancellationRequested) {
                     return;
@@ -793,7 +793,7 @@ namespace NachoCore.Model
                 emailMessage.UpdateTimeVariance ();
                 numStarted++;
 
-                /// Throttle
+                // Throttle
                 n = (n + 1) % 8;
                 if (0 == n) {
                     if (!NcTask.CancelableSleep (500, token)) {
