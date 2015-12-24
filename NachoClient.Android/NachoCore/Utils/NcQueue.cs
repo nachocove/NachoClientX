@@ -162,12 +162,10 @@ namespace NachoCore.Utils
         {
             Token.ThrowIfCancellationRequested ();
             lock (Lock) {
-                if (_Queue.Count > 0) {
-                    foreach (var qObj in _Queue) {
-                        Token.ThrowIfCancellationRequested ();
-                        if (match (qObj)) {
-                            return;
-                        }
+                foreach (var qObj in _Queue) {
+                    Token.ThrowIfCancellationRequested ();
+                    if (match (qObj)) {
+                        return;
                     }
                 }
                 Enqueue (obj);
