@@ -34,8 +34,13 @@ namespace NachoCore.Brain
                 // TODO - This is a temporary solution. We should not process any event other 
                 return;
             }
-            NcBrainEvent brainEvent = new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN);
-            NcBrain.SharedInstance.EnqueueIfNotAlreadyThere (brainEvent);
+            try {
+                NcBrain.SharedInstance.EnqueueIfNotAlreadyThere (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
+            } catch (OperationCanceledException) {
+                // brain is no longer active. Shut ourselves down.
+                Log.Error (Log.LOG_BRAIN, "NcContactGleaner tried to enqueue, but brain is not there.");
+                Stop ();
+            }
         }
 
         public static void Start ()
