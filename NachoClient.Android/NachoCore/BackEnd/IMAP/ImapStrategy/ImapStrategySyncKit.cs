@@ -73,7 +73,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        //MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
+        private static MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
 
         private static HashSet<HeaderId> ImapSummaryHeaders ()
         {
@@ -134,7 +134,7 @@ namespace NachoCore.IMAP
         /// <param name="folder">Folder.</param>
         /// <param name="protocolState">Protocol state.</param>
         /// <param name="span">Span</param>
-        public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState, uint span)
+        public static SyncInstruction SyncSet (McFolder folder, ref McProtocolState protocolState, uint span)
         {
             bool needSync = needFullSync (folder);
             bool hasNewMail = HasNewMail (folder);
@@ -148,31 +148,37 @@ namespace NachoCore.IMAP
                 startingPoint = (0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
             }
 
-            IList<UniqueId> syncSet;
+            SyncInstruction instructions = null;
 
             // Get the list of emails we have locally in the range (0-startingPoint) over span.
             UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span);
             // Get the list of emails on the server in the range (0-startingPoint) over span.
             UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span);
             // if both are empty, we're done. Nothing to do.
-            if (!currentMails.Any () && !currentUidSet.Any ()) {
-                return new UniqueIdSet ();
-            }
+            if (currentMails.Any () || currentUidSet.Any ()) {
+                var newMail = currentUidSet.Except (currentMails).ToList ();
+                if (newMail.Any ()) {
+                    // If we're at the top, make sure we have the highest possible UID in the set. Otherwise,
+                    // we might constantly loop looking to sync up to UidNext, when there's possibly no messages
+                    // to sync (they might have gotten deleted).
+                    var startingUid = new UniqueId (startingPoint);
+                    if (startingPointMustBeInSet && !newMail.Contains (startingUid)) {
+                        newMail.Remove (newMail.Min ());
+                        newMail.Add (startingUid);
+                    }
+                    instructions = new SyncInstruction (span, 
+                        SyncKit.MustUniqueIdSet (newMail.OrderByDescending (x => x).Take ((int)span).ToList ()),
+                        ImapSummaryitems (protocolState), ImapSummaryHeaders (), true, true);
+                }
 
-            // Take the union of the two sets, so that we get new (only in the currentUidSet)
-            // as well as removed (only in currentMails) Uids to look at when we perform the sync.
-            syncSet = SyncKit.MustUniqueIdSet (
-                currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
-
-            // If we're at the top, make sure we have the highest possible UID in the set. Otherwise,
-            // we might constantly loop looking to sync up to UidNext, when there's possibly no messages
-            // to sync (they might have gotten deleted).
-            var startingUid = new UniqueId (startingPoint);
-            if (startingPointMustBeInSet && !syncSet.Contains (startingUid)) {
-                syncSet.Remove (syncSet.Min ());
-                syncSet.Add (startingUid);
+                var resyncMail = currentMails.Except (currentUidSet).ToList ();
+                if (resyncMail.Any ()) {
+                    instructions = new SyncInstruction (span, 
+                        SyncKit.MustUniqueIdSet (resyncMail.OrderByDescending (x => x).Take ((int)span).ToList ()),
+                        FlagResyncFlags, new HashSet<HeaderId> (), false, false);
+                }
             }
-            return syncSet;
+            return instructions;
         }
 
         /// <summary>
@@ -181,7 +187,7 @@ namespace NachoCore.IMAP
         /// <returns>A set of UniqueId's.</returns>
         /// <param name="folder">Folder.</param>
         /// <param name="protocolState">Protocol state.</param>
-        public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState)
+        public static SyncInstruction SyncSet (McFolder folder, ref McProtocolState protocolState)
         {
             uint span = SpanSizeWithCommStatus (protocolState);
             return SyncSet (folder, ref protocolState, span);
@@ -268,7 +274,8 @@ namespace NachoCore.IMAP
             if (HasNewMail (folder) || havePending || quickSync || folder.ImapLastExamine == DateTime.MinValue) {
                 // Let's try to get a chunk of new messages quickly.
                 uint span = SpanSizeWithCommStatus (protocolState);
-                syncKit = new SyncKit (folder, span, pending, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
+                var sync = new SyncInstruction (span, null, ImapSummaryitems (protocolState), ImapSummaryHeaders (), true, true);
+                syncKit = new SyncKit (folder, pending, sync);
             } else if (NeedFolderMetadata (folder)) {
                 // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
@@ -286,14 +293,12 @@ namespace NachoCore.IMAP
             } else {
                 uint span = SpanSizeWithCommStatus (protocolState);
                 var outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
-                IList<UniqueId> syncSet;
+                SyncInstruction syncSet = null;
                 if (outMessages.Count < span) {
                     syncSet = SyncSet (folder, ref protocolState, (uint)(span - outMessages.Count));
-                } else {
-                    syncSet = new UniqueIdSet ();
                 }
-                if (syncSet.Any () || outMessages.Any ()) {
-                    syncKit = new SyncKit (folder, syncSet, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
+                if (null != syncSet || outMessages.Any ()) {
+                    syncKit = new SyncKit (folder, syncSet);
                     syncKit.UploadMessages = outMessages;
                     if (null != syncKit && null != pending) {
                         syncKit.PendingSingle = pending;
@@ -328,16 +333,16 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
-        public static bool FillInQuickSyncKit (ref SyncKit Synckit, int AccountId, uint span)
+        public static bool FillInQuickSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId, uint span)
         {
             var uploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
-            UniqueIdRange syncSet = null;
+            UniqueIdRange uidSet = null;
             if (uploadMessages.Count < span) {
-                syncSet = QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, (uint)(span - uploadMessages.Count));
+                uidSet = QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, (uint)(span - uploadMessages.Count));
             }
-            if ((null != syncSet && syncSet.Any ()) ||
+            if ((null != uidSet && uidSet.Any ()) ||
                 (null != uploadMessages && uploadMessages.Any ())) {
-                Synckit.SyncSet = syncSet;
+                Synckit.SyncSet = new SyncInstruction (span, uidSet, ImapSummaryitems (protocolState), ImapSummaryHeaders (), true, true);
                 Synckit.UploadMessages = uploadMessages;
                 return true;
             }
