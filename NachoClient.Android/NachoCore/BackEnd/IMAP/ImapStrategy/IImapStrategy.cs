@@ -15,11 +15,6 @@ namespace NachoCore.IMAP
     public class SyncInstruction
     {
         /// <summary>
-        /// The Sync Span
-        /// </summary>
-        public uint Span;
-
-        /// <summary>
         /// Message Summary Flags. Tunes IMAP fetch behavior
         /// </summary>
         public MessageSummaryItems Flags;
@@ -45,9 +40,8 @@ namespace NachoCore.IMAP
         /// </summary>
         public bool GetHeaders;
 
-        public SyncInstruction (uint span, IList<UniqueId> uidSet, MessageSummaryItems flags, HashSet<HeaderId> headers, bool getPreviews, bool getHeaders)
+        public SyncInstruction (IList<UniqueId> uidSet, MessageSummaryItems flags, HashSet<HeaderId> headers, bool getPreviews, bool getHeaders)
         {
-            Span = span;
             UidSet = uidSet;
             Flags = flags;
             Headers = headers;
@@ -103,7 +97,12 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The sync set.
         /// </summary>
-        public SyncInstruction SyncSet;
+        public List<SyncInstruction> SyncInstructions;
+
+        /// <summary>
+        /// The Sync Span
+        /// </summary>
+        public uint Span;
 
         public SyncKit (McFolder folder)
         {
@@ -111,19 +110,20 @@ namespace NachoCore.IMAP
             Folder = folder;
         }
 
-        public SyncKit (McFolder folder, McPending pending, SyncInstruction syncSet)
+        public SyncKit (McFolder folder, uint span, McPending pending, List<SyncInstruction> syncSet)
         {
+            Span = span;
             Method = MethodEnum.QuickSync;
             Folder = folder;
-            SyncSet = syncSet;
+            SyncInstructions = syncSet;
             PendingSingle = pending;
         }
 
-        public SyncKit (McFolder folder, SyncInstruction syncSet)
+        public SyncKit (McFolder folder, List<SyncInstruction> syncSet)
         {
             Method = MethodEnum.Sync;
             Folder = folder;
-            SyncSet = syncSet;
+            SyncInstructions = syncSet;
         }
 
         public static UniqueIdSet MustUniqueIdSet (IList<UniqueId> uids)
@@ -140,7 +140,7 @@ namespace NachoCore.IMAP
             string me = string.Format ("SyncKit {0} (Type {{{1}}}", Folder.ImapFolderNameRedacted (), Method);
             switch (Method) {
             case MethodEnum.Sync:
-                me += string.Format (" SyncSet {{{0}}}", SyncSet);
+                me += string.Format (" SyncSet {{{0}}}", SyncInstructions);
                 me += string.Format (" UploadMessages {{{0}}}", null != UploadMessages ? UploadMessages.Count : 0);
                 break;
 

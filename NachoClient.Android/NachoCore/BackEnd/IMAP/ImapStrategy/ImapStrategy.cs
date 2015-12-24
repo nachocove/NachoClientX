@@ -246,8 +246,13 @@ namespace NachoCore.IMAP
             uint rung = protocolState.ImapSyncRung;
             switch (protocolState.ImapSyncRung) {
             case 0:
+                var syncInstList = SyncInstructions (defInbox, ref protocolState);
+                var uidSet = new UniqueIdSet ();
+                foreach (var inst in syncInstList) {
+                    uidSet.AddRange (inst.UidSet);
+                }
                 if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
-                    !SyncSet (defInbox, ref protocolState).UidSet.Any ()) {
+                    !uidSet.Any ()) {
                     // TODO For now skip stage 1, since it's not implemented.
                     rung = 2;
                     // reset the foldersync so we re-do it. In rung 0, we only sync'd Inbox.
