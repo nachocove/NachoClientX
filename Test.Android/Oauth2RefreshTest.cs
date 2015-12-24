@@ -142,6 +142,18 @@ namespace Test.iOS
         {
             throw new NotImplementedException ();
         }
+
+        public void BackendAbateStart ()
+        {
+            throw new NotImplementedException ();
+        }
+
+
+        public void BackendAbateStop ()
+        {
+            throw new NotImplementedException ();
+        }
+
         #endregion
 
         uint expirySecs = 1;

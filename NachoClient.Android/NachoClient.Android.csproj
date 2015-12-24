@@ -1701,6 +1701,10 @@
     <AndroidResource Include="Resources\drawable-xhdpi\email_notification_archive.png" />
     <AndroidResource Include="Resources\drawable-mdpi\email_notification_archive.png" />
     <AndroidResource Include="Resources\drawable-hdpi\email_notification_archive.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\files_email_attachment.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\files_email_attachment.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\files_email_attachment.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\files_email_attachment.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
