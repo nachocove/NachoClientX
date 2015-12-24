@@ -41,6 +41,7 @@ namespace NachoClient.AndroidClient
         public const string EXTRA_INITIAL_RECIPIENT = "com.nachocove.nachomail.initialRecipient";
         public const string EXTRA_INITIAL_QUICK_REPLY = "com.nachocove.nachomail.initialQuickReply";
         public const string EXTRA_INITIAL_ATTACHMENT = "com.nachocove.nachomail.initialAttachment";
+        public const string EXTRA_INITIAL_ATTACHMENTS = "com.nachocove.nachomail.initialAttachments";
 
         private const string COMPOSE_FRAGMENT_TAG = "ComposeFragment";
 
@@ -101,12 +102,21 @@ namespace NachoClient.AndroidClient
                 if (Intent.HasExtra (EXTRA_INITIAL_QUICK_REPLY)) {
                     composeFragment.Composer.InitialQuickReply = Intent.GetBooleanExtra (EXTRA_INITIAL_QUICK_REPLY, false);
                 }
-                if(Intent.HasExtra(EXTRA_INITIAL_ATTACHMENT)) {
-                    var attachmentId = Intent.GetIntExtra(EXTRA_INITIAL_ATTACHMENT, 0);
-                    if(0 != attachmentId) {
-                        var attachment = McAttachment.QueryById<McAttachment>(attachmentId);
-                        if(null != attachment) {
-                            composeFragment.Composer.InitialAttachments.Add(attachment);
+                if (Intent.HasExtra (EXTRA_INITIAL_ATTACHMENT)) {
+                    var attachmentId = Intent.GetIntExtra (EXTRA_INITIAL_ATTACHMENT, 0);
+                    if (0 != attachmentId) {
+                        var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
+                        if (null != attachment) {
+                            composeFragment.Composer.InitialAttachments.Add (attachment);
+                        }
+                    }
+                }
+                if (Intent.HasExtra (EXTRA_INITIAL_ATTACHMENTS)) {
+                    var attachmentIds = Intent.GetIntArrayExtra (EXTRA_INITIAL_ATTACHMENTS);
+                    foreach (int id in attachmentIds) {
+                        var attachment = McAttachment.QueryById<McAttachment> (id);
+                        if (null != attachment) {
+                            composeFragment.Composer.InitialAttachments.Add (attachment);
                         }
                     }
                 }
@@ -160,6 +170,21 @@ namespace NachoClient.AndroidClient
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
             intent.PutExtra (EXTRA_INITIAL_TEXT, text);
+            return intent;
+        }
+
+        public static Intent MessageWithAttachmentsIntent (Context context, McEmailMessage message, string text, IList<McAttachment> attachments)
+        {
+            var intent = new Intent (context, typeof(MessageComposeActivity));
+            intent.SetAction (Intent.ActionSend);
+            intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
+            intent.PutExtra (EXTRA_INITIAL_TEXT, text);
+            int[] attachmentIds = new int[attachments.Count];
+            int a = 0;
+            foreach (var attachment in attachments) {
+                attachmentIds [a++] = attachment.Id;
+            }
+            intent.PutExtra (EXTRA_INITIAL_ATTACHMENTS, attachmentIds);
             return intent;
         }
 
