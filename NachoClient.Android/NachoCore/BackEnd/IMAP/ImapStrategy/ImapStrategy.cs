@@ -31,7 +31,7 @@ namespace NachoCore.IMAP
         /// window size calculations, i.e. multiplied by a certain number for CellFast and another
         /// number for Wifi, etc.
         /// </summary>
-        const uint KRung0SyncWindowSize = 5;
+        const uint KRung0SyncWindowSize = 3;
 
         private static uint[] KRungSyncWindowSize = new uint[] { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
 
