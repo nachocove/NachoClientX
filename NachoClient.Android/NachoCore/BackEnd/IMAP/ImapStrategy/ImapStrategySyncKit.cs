@@ -174,7 +174,6 @@ namespace NachoCore.IMAP
                     // to sync (they might have gotten deleted).
                     var startingUid = new UniqueId (startingPoint);
                     if (startingPointMustBeInSet && !newMail.Contains (startingUid)) {
-                        newMail.Remove (newMail.Min ());
                         newMail.Add (startingUid);
                     }
                     var uidSet = SyncKit.MustUniqueIdSet (newMail.OrderByDescending (x => x).Take ((int)span).ToList ());

@@ -120,6 +120,48 @@ namespace NachoCore.IMAP
             SyncInstructions = syncSet;
         }
 
+        public uint? MaxSynced {
+            get {
+                if (!_MaxSynced.HasValue) {
+                    MaxMinOfUidSets(SyncInstructions);
+                }
+                return _MaxSynced;
+            }
+        }
+
+        public uint? MinSynced {
+            get {
+                if (!_MinSynced.HasValue) {
+                    MaxMinOfUidSets(SyncInstructions);
+                }
+                return _MinSynced;
+            }
+        }
+
+        public UniqueIdSet CombinedUidSet {
+            get {
+                if (null == _CombinedUidSet) {
+                    MaxMinOfUidSets(SyncInstructions);
+                }
+                return _CombinedUidSet;
+            }
+        }
+
+        uint? _MaxSynced;
+        uint? _MinSynced;
+        UniqueIdSet _CombinedUidSet;
+        void MaxMinOfUidSets (List<SyncInstruction> syncInstructions)
+        {
+            _CombinedUidSet = new UniqueIdSet ();
+            foreach (var syncInst in syncInstructions) {
+                if (null != syncInst.UidSet && syncInst.UidSet.Any ()) {
+                    _CombinedUidSet.AddRange (syncInst.UidSet);
+                    _MaxSynced = Math.Max (syncInst.UidSet.Max ().Id, _MaxSynced.HasValue ? _MaxSynced.Value : uint.MinValue);
+                    _MinSynced = Math.Min (syncInst.UidSet.Min ().Id, _MinSynced.HasValue ? _MinSynced.Value : uint.MaxValue);
+                }
+            }
+        }
+
         public static UniqueIdSet MustUniqueIdSet (IList<UniqueId> uids)
         {
             if (uids is UniqueIdSet) {

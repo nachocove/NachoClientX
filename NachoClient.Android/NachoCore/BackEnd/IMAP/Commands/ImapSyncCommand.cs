@@ -104,7 +104,6 @@ namespace NachoCore.IMAP
         /// </summary>
         /// <returns>The Event to post</returns>
         /// <param name="mailKitFolder">Mail kit folder.</param>
-        /// <param name="span">Span.</param>
         /// <param name="timespan">Timespan.</param>
         private Event QuickSync (NcImapFolder mailKitFolder, TimeSpan timespan)
         {
@@ -206,38 +205,40 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
+        public static Tuple<uint, uint> MaxMinOfUidSets (List<SyncInstruction> syncInstructions, McFolder folder)
+        {
+            uint MaxSynced = 0;
+            uint MinSynced = 0;
+            var SyncedUidSet = new UniqueIdSet ();
+            foreach (var syncInst in syncInstructions) {
+                if (null != syncInst.UidSet && syncInst.UidSet.Any ()) {
+                    SyncedUidSet.AddRange (syncInst.UidSet);
+                    MaxSynced = Math.Max (syncInst.UidSet.Max ().Id, folder.ImapUidHighestUidSynced);
+                    MinSynced = Math.Min (syncInst.UidSet.Min ().Id, folder.ImapUidLowestUidSynced);
+                }
+            }
+            return new Tuple<uint, uint> (MaxSynced, MinSynced);
+        }
+
         private void Finish (bool emailSetChanged)
         {
             Cts.Token.ThrowIfCancellationRequested ();
             if (emailSetChanged) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
-            // remember where we sync'd
-            uint MaxSynced = 0;
-            uint MinSynced = 0;
-            var SyncedUidSet = new UniqueIdSet ();
-            foreach (var syncInst in Synckit.SyncInstructions) {
-                if (null != syncInst.UidSet && syncInst.UidSet.Any ()) {
-                    SyncedUidSet.AddRange (syncInst.UidSet);
-                    MaxSynced = Math.Max (syncInst.UidSet.Max ().Id, Synckit.Folder.ImapUidHighestUidSynced);
-                    MinSynced = Math.Min (syncInst.UidSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced);
-                    if (MaxSynced != 0 && MaxSynced != Synckit.Folder.ImapUidHighestUidSynced ||
-                        MinSynced != 0 && MinSynced != Synckit.Folder.ImapUidLowestUidSynced) {
-                    }
-                }
-            }
+
             // Update the sync count and last attempt and set the Highest and lowest sync'd
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
-                if (MaxSynced != 0) {
-                    target.ImapUidHighestUidSynced = MaxSynced;
+                if (Synckit.MaxSynced.HasValue) {
+                    target.ImapUidHighestUidSynced = Synckit.MaxSynced.Value;
                 }
-                if (MinSynced != 0) {
-                    target.ImapUidLowestUidSynced = MinSynced;
+                if (Synckit.MinSynced.HasValue) {
+                    target.ImapUidLowestUidSynced = Synckit.MinSynced.Value;
                 }
-                if (SyncedUidSet.Any ()) {
-                    target.ImapLastUidSynced = SyncedUidSet.Min ().Id;
+                if (Synckit.CombinedUidSet.Any ()) {
+                    target.ImapLastUidSynced = Synckit.CombinedUidSet.Min ().Id;
                 }
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
