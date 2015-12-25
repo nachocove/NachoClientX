@@ -117,17 +117,20 @@ namespace NachoCore.Brain
             NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
                 brain.EventQueue.Token = NcTask.Cts.Token;
+                NcContactGleaner.Start ();
                 brain.Process ();
             }, "Brain");
         }
 
         public static void StopService ()
         {
+            NcContactGleaner.Stop ();
             NcBrain.SharedInstance.SignalTermination ();
         }
 
         public void PauseService ()
         {
+            NcContactGleaner.Stop ();
             var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
             EventQueue.UndequeueIfNot (pause, (obj) => {
                 NcBrainEvent evt = obj;
@@ -141,6 +144,7 @@ namespace NachoCore.Brain
                 NcBrainEvent evt = obj;
                 return evt.Type == NcBrainEventType.PAUSE;
             });
+            NcContactGleaner.Start ();
         }
 
         public void SignalTermination ()

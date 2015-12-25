@@ -626,6 +626,7 @@
     <Compile Include="NachoUI.Android\Activities\ContactEditFragment.cs" />
     <Compile Include="NachoPlatform.Android\PushAssistAndroid.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactLabelChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageComposePublicListener.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
