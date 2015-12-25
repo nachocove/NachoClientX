@@ -135,11 +135,11 @@ namespace NachoCore.IMAP
             switch (Method) {
             case MethodEnum.Sync:
                 if (SyncInstructions.Any ()) {
-                    me += " SyncInstructions {{";
+                    me += " SyncInstructions {";
                     foreach (var inst in SyncInstructions) {
                         me += string.Format (" {{{0}}}", inst);;
                     }
-                    me += "}}";
+                    me += "}";
                 }
                 me += string.Format (" UploadMessages {{{0}}}", null != UploadMessages ? UploadMessages.Count : 0);
                 break;
