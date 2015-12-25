@@ -34,7 +34,7 @@ namespace NachoCore.IMAP
         {
             foreach (var folder in SyncFolderList (protocolState.ImapSyncRung, exeCtxt)) {
                 SyncKit syncKit = GenSyncKit (ref protocolState, folder, pending,
-                    exeCtxt == NcApplication.ExecutionContextEnum.QuickSync);
+                                      exeCtxt == NcApplication.ExecutionContextEnum.QuickSync);
                 if (null != syncKit) {
                     return syncKit;
                 }
@@ -156,9 +156,9 @@ namespace NachoCore.IMAP
             List<SyncInstruction> instructions = new List<SyncInstruction> ();
 
             // Get the list of emails we have locally in the range (0-startingPoint) over span.
-            UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span);
+            UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span * 3);
             // Get the list of emails on the server in the range (0-startingPoint) over span.
-            UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span);
+            UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span * 3);
             // if both are empty, we're done. Nothing to do.
             if (currentMails.Any () || currentUidSet.Any ()) {
                 var newMail = currentUidSet.Except (currentMails).ToList ();
@@ -172,12 +172,15 @@ namespace NachoCore.IMAP
                         newMail.Add (startingUid);
                     }
                     var uidSet = SyncKit.MustUniqueIdSet (newMail.OrderByDescending (x => x).Take ((int)span).ToList ());
+                    span -= (uint)(uidSet.Count);
                     instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
                 }
 
-                var resyncMail = currentMails.Except (currentUidSet).ToList ();
-                if (resyncMail.Any ()) {
-                    var uidSet = SyncKit.MustUniqueIdSet (resyncMail.OrderByDescending (x => x).Take ((int)span).ToList ());
+                // resync all the existing mails; resync is much faster (we only get flags, not the summary and headers, etc, so
+                // we can bump the span up a bit)
+
+                if (currentMails.Any ()) {
+                    var uidSet = SyncKit.MustUniqueIdSet (currentMails.OrderByDescending (x => x).Take ((int)span * 2).ToList ());
                     instructions.Add (SyncInstructionForFlagSync (uidSet));
                 }
             }
