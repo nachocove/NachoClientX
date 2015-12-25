@@ -140,7 +140,13 @@ namespace NachoCore.IMAP
             string me = string.Format ("SyncKit {0} (Type {{{1}}}", Folder.ImapFolderNameRedacted (), Method);
             switch (Method) {
             case MethodEnum.Sync:
-                me += string.Format (" SyncSet {{{0}}}", SyncInstructions);
+                if (SyncInstructions.Any ()) {
+                    me += " SyncInstructions {{";
+                    foreach (var inst in SyncInstructions) {
+                        me += string.Format (" {{{0}}}", inst);;
+                    }
+                    me += "}}";
+                }
                 me += string.Format (" UploadMessages {{{0}}}", null != UploadMessages ? UploadMessages.Count : 0);
                 break;
 
