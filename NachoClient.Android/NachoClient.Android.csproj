@@ -22,6 +22,7 @@
     <SynchReleaseVersion>false</SynchReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug</OutputPath>
@@ -41,8 +42,6 @@
       </CustomCommands>
     </CustomCommands>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <DebugSymbols>true</DebugSymbols>
-    <AotAssemblies>false</AotAssemblies>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
