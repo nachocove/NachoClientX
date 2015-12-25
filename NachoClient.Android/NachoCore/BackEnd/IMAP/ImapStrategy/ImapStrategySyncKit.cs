@@ -279,10 +279,9 @@ namespace NachoCore.IMAP
             SyncKit syncKit = null;
             if (HasNewMail (folder) || havePending || quickSync || folder.ImapLastExamine == DateTime.MinValue) {
                 // Let's try to get a chunk of new messages quickly.
-                uint span = SpanSizeWithCommStatus (protocolState);
                 List<SyncInstruction> instructions = new List<SyncInstruction> ();
                 instructions.Add (new SyncInstruction (null, ImapSummaryitems (protocolState), ImapSummaryHeaders (), true, true));
-                syncKit = new SyncKit (folder, span, pending, instructions);
+                syncKit = new SyncKit (folder, pending, instructions);
             } else if (NeedFolderMetadata (folder)) {
                 // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
@@ -347,8 +346,9 @@ namespace NachoCore.IMAP
             return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<HeaderId> (), false, false);
         }
 
-        public static bool FillInQuickSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId, uint span)
+        public static bool FillInQuickSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId)
         {
+            uint span = SpanSizeWithCommStatus (protocolState);
             var uploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
             UniqueIdRange uidSet = null;
             if (uploadMessages.Count < span) {

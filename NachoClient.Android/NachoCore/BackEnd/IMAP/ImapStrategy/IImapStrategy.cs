@@ -99,20 +99,14 @@ namespace NachoCore.IMAP
         /// </summary>
         public List<SyncInstruction> SyncInstructions;
 
-        /// <summary>
-        /// The Sync Span
-        /// </summary>
-        public uint Span;
-
         public SyncKit (McFolder folder)
         {
             Method = MethodEnum.OpenOnly;
             Folder = folder;
         }
 
-        public SyncKit (McFolder folder, uint span, McPending pending, List<SyncInstruction> syncSet)
+        public SyncKit (McFolder folder, McPending pending, List<SyncInstruction> syncSet)
         {
-            Span = span;
             Method = MethodEnum.QuickSync;
             Folder = folder;
             SyncInstructions = syncSet;
