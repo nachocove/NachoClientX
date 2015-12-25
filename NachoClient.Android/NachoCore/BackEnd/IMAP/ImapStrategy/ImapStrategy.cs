@@ -27,7 +27,9 @@ namespace NachoCore.IMAP
         const int KImapSyncRung0InboxCount = 400;
 
         /// <summary>
-        /// The size of the initial (rung 0) sync window size
+        /// The size of the initial (rung 0) sync window size. It's also the base-number for other
+        /// window size calculations, i.e. multiplied by a certain number for CellFast and another
+        /// number for Wifi, etc.
         /// </summary>
         const uint KRung0SyncWindowSize = 5;
 
