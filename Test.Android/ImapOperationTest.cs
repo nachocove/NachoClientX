@@ -329,10 +329,9 @@ namespace Test.iOS
             Assert.NotNull (syncKit.SyncInstructions);
             Assert.AreEqual (1, syncKit.SyncInstructions.Count);
             syncInst = syncKit.SyncInstructions.First ();
-            Assert.AreEqual (defaultSpan, syncInst.UidSet.Count);
-            Assert.AreEqual (122, syncInst.UidSet.Max ().Id);
-            Assert.AreEqual (122-defaultSpan+1, syncInst.UidSet.Min ().Id);
-            syncKit = new NachoCore.IMAP.SyncKit(TestFolder, new List<SyncInstruction> () { syncInst });
+            Assert.AreEqual (122, syncInst.UidSet.Count); // no new mails, and we're resyncing up to 30*10. Since there's only 122, that's all we resync
+            Assert.AreEqual (122, syncKit.MaxSynced);
+            Assert.AreEqual (1, syncKit.MinSynced);
             TestFolder = DoFakeSync (TestFolder, syncKit);
 
             // This would be the second pass, where we sync the next batch.
