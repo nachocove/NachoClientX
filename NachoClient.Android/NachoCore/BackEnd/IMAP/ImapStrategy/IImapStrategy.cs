@@ -52,7 +52,7 @@ namespace NachoCore.IMAP
         public override string ToString ()
         {
             string me = string.Format ("SyncInstruction Flags {{{0}}}", Flags);
-            me += string.Format (" UidSet {{{0}}}", UidSet);
+            me += string.Format (" UidSet({0}) {{{1}}}", UidSet.Count, UidSet);
             return me;
         }
     }
