@@ -88,6 +88,11 @@ namespace NachoCore.IMAP
             return headers;
         }
 
+        /// <summary>
+        /// FIXME: Should calculate this in the ctor, ot every time. It's not like it's going to change.
+        /// </summary>
+        /// <returns>The summaryitems.</returns>
+        /// <param name="protocolState">Protocol state.</param>
         private static MessageSummaryItems ImapSummaryitems (McProtocolState protocolState)
         {
             MessageSummaryItems NewMessageFlags = MessageSummaryItems.BodyStructure
@@ -148,7 +153,7 @@ namespace NachoCore.IMAP
                 startingPoint = (0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
             }
 
-            List<SyncInstruction> instructions = null;
+            List<SyncInstruction> instructions = new List<SyncInstruction> ();
 
             // Get the list of emails we have locally in the range (0-startingPoint) over span.
             UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span);
@@ -166,15 +171,17 @@ namespace NachoCore.IMAP
                         newMail.Remove (newMail.Min ());
                         newMail.Add (startingUid);
                     }
-                    instructions.Add (SyncInstructionForNewMails (ref protocolState, SyncKit.MustUniqueIdSet (newMail.OrderByDescending (x => x).Take ((int)span).ToList ())));
+                    var uidSet = SyncKit.MustUniqueIdSet (newMail.OrderByDescending (x => x).Take ((int)span).ToList ());
+                    instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
                 }
 
                 var resyncMail = currentMails.Except (currentUidSet).ToList ();
                 if (resyncMail.Any ()) {
-                    instructions.Add (SyncInstructionForFlagSync (SyncKit.MustUniqueIdSet (resyncMail.OrderByDescending (x => x).Take ((int)span).ToList ())));
+                    var uidSet = SyncKit.MustUniqueIdSet (resyncMail.OrderByDescending (x => x).Take ((int)span).ToList ());
+                    instructions.Add (SyncInstructionForFlagSync (uidSet));
                 }
             }
-            return instructions;
+            return instructions.Any () ? instructions : null;
         }
 
         /// <summary>
@@ -290,10 +297,7 @@ namespace NachoCore.IMAP
             } else {
                 uint span = SpanSizeWithCommStatus (protocolState);
                 var outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
-                List<SyncInstruction> instructions = null;
-                if (outMessages.Count < span) {
-                    instructions = SyncInstructions (folder, ref protocolState, (uint)(span - outMessages.Count));
-                }
+                List<SyncInstruction> instructions = (outMessages.Count < span) ? SyncInstructions (folder, ref protocolState, (uint)(span - outMessages.Count)) : null;
                 if (null != instructions || outMessages.Any ()) {
                     syncKit = new SyncKit (folder, instructions);
                     syncKit.UploadMessages = outMessages;
