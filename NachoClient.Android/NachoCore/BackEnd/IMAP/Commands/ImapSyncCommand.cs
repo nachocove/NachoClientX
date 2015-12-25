@@ -171,6 +171,8 @@ namespace NachoCore.IMAP
             }
             foreach (var syncInst in Synckit.SyncInstructions) {
                 if (null != syncInst.UidSet && syncInst.UidSet.Any ()) {
+                    var sw = new PlatformStopwatch ();
+                    sw.Start ();
                     try {
                         mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadOnly);
                         // First find all messages marked as /Deleted
@@ -194,6 +196,8 @@ namespace NachoCore.IMAP
                         changed |= deleted.Any () || newOrChanged.Any ();
                     } finally {
                         BEContext.Owner.BackendAbateStop ();
+                        sw.Stop ();
+                        Log.Info (Log.LOG_IMAP, "Processing SyncInstructions {0} took {1}ms ({2} per uid)", syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds/syncInst.UidSet.Count);
                     }
                 }
             }
