@@ -28,6 +28,12 @@ namespace NachoCore.IMAP
         /// </summary>
         const int KInboxMinSyncTime = 15 * 60;
 
+        /// <summary>
+        /// The multiplier we apply to the span for messages we're just resyncing, i.e. checking for flag changes and deletion.
+        /// Resyncing per message runs on the average 20 times faster than fetching a new message.
+        /// </summary>
+        const int KResyncMultiplier = 10;
+
         #region GenSyncKit
 
         public SyncKit GenSyncKit (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt, McPending pending)
@@ -156,9 +162,9 @@ namespace NachoCore.IMAP
             List<SyncInstruction> instructions = new List<SyncInstruction> ();
 
             // Get the list of emails we have locally in the range (0-startingPoint) over span.
-            UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span * 3);
+            UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span * KResyncMultiplier);
             // Get the list of emails on the server in the range (0-startingPoint) over span.
-            UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span * 3);
+            UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span * KResyncMultiplier);
             // if both are empty, we're done. Nothing to do.
             if (currentMails.Any () || currentUidSet.Any ()) {
                 var newMail = currentUidSet.Except (currentMails).ToList ();
@@ -176,11 +182,9 @@ namespace NachoCore.IMAP
                     instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
                 }
 
-                // resync all the existing mails; resync is much faster (we only get flags, not the summary and headers, etc, so
-                // we can bump the span up a bit)
-
+                // resync all the existing mails
                 if (currentMails.Any ()) {
-                    var uidSet = SyncKit.MustUniqueIdSet (currentMails.OrderByDescending (x => x).Take ((int)span * 2).ToList ());
+                    var uidSet = SyncKit.MustUniqueIdSet (currentMails.OrderByDescending (x => x).Take ((int)span * KResyncMultiplier).ToList ());
                     instructions.Add (SyncInstructionForFlagSync (uidSet));
                 }
             }
