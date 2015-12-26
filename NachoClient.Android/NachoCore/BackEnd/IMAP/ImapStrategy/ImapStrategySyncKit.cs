@@ -32,7 +32,7 @@ namespace NachoCore.IMAP
         /// The multiplier we apply to the span for messages we're just resyncing, i.e. checking for flag changes and deletion.
         /// Resyncing per message runs on the average 20 times faster than fetching a new message.
         /// </summary>
-        const int KResyncMultiplier = 10;
+        public const int KResyncMultiplier = 10;
 
         #region GenSyncKit
 
@@ -159,6 +159,11 @@ namespace NachoCore.IMAP
                 startingPoint = (0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
             }
 
+            // 0 isn't a valid UID, so this folder might not have been opened yet.
+            if (startingPoint == 0) {
+                return null;
+            }
+
             List<SyncInstruction> instructions = new List<SyncInstruction> ();
 
             // Get the list of emails we have locally in the range (0-startingPoint) over span.
@@ -167,24 +172,27 @@ namespace NachoCore.IMAP
             UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span * KResyncMultiplier);
             // if both are empty, we're done. Nothing to do.
             if (currentMails.Any () || currentUidSet.Any ()) {
-                var newMail = currentUidSet.Except (currentMails).ToList ();
-                if (newMail.Any ()) {
-                    // If we're at the top, make sure we have the highest possible UID in the set. Otherwise,
-                    // we might constantly loop looking to sync up to UidNext, when there's possibly no messages
-                    // to sync (they might have gotten deleted).
-                    var startingUid = new UniqueId (startingPoint);
-                    if (startingPointMustBeInSet && !newMail.Contains (startingUid)) {
-                        newMail.Add (startingUid);
-                    }
-                    var uidSet = SyncKit.MustUniqueIdSet (newMail.OrderByDescending (x => x).Take ((int)span).ToList ());
-                    span -= (uint)(uidSet.Count);
-                    instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
-                }
-
-                // resync all the existing mails
+                // resync all the existing mails.
                 if (currentMails.Any ()) {
                     var uidSet = SyncKit.MustUniqueIdSet (currentMails.OrderByDescending (x => x).Take ((int)span * KResyncMultiplier).ToList ());
                     instructions.Add (SyncInstructionForFlagSync (uidSet));
+                    span -= (uint)(uidSet.Count / KResyncMultiplier);
+                }
+
+                if (span > 0) {
+                    var newMail = currentUidSet.Except (currentMails).ToList ();
+                    if (newMail.Any ()) {
+                        // If we're at the top, make sure we have the highest possible UID in the set. Otherwise,
+                        // we might constantly loop looking to sync up to UidNext, when there's possibly no messages
+                        // to sync (they might have gotten deleted).
+                        var startingUid = new UniqueId (startingPoint);
+                        if (startingPointMustBeInSet && !newMail.Contains (startingUid)) {
+                            newMail.Add (startingUid);
+                        }
+                        var uidSet = SyncKit.MustUniqueIdSet (newMail.OrderByDescending (x => x).Take ((int)span).ToList ());
+                        span -= (uint)(uidSet.Count);
+                        instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
+                    }
                 }
             }
             return instructions.Any () ? instructions : null;
@@ -219,7 +227,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private static void resetLastSyncPoint (ref McFolder folder)
+        public static void resetLastSyncPoint (ref McFolder folder)
         {
             if (folder.ImapLastUidSynced != folder.ImapUidNext) {
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
@@ -282,9 +290,7 @@ namespace NachoCore.IMAP
             SyncKit syncKit = null;
             if (HasNewMail (folder) || havePending || quickSync || folder.ImapLastExamine == DateTime.MinValue) {
                 // Let's try to get a chunk of new messages quickly.
-                List<SyncInstruction> instructions = new List<SyncInstruction> ();
-                instructions.Add (new SyncInstruction (null, ImapSummaryitems (protocolState), ImapSummaryHeaders (), true, true));
-                syncKit = new SyncKit (folder, pending, instructions);
+                syncKit = new SyncKit (folder, pending);
             } else if (NeedFolderMetadata (folder)) {
                 // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {

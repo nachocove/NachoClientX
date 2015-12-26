@@ -105,19 +105,19 @@ namespace NachoCore.IMAP
             Folder = folder;
         }
 
-        public SyncKit (McFolder folder, McPending pending, List<SyncInstruction> syncSet)
+        public SyncKit (McFolder folder, McPending pending)
         {
             Method = MethodEnum.QuickSync;
             Folder = folder;
-            SyncInstructions = syncSet;
+            SyncInstructions = new List<SyncInstruction> ();
             PendingSingle = pending;
         }
 
-        public SyncKit (McFolder folder, List<SyncInstruction> syncSet)
+        public SyncKit (McFolder folder, List<SyncInstruction> syncInstructions)
         {
             Method = MethodEnum.Sync;
             Folder = folder;
-            SyncInstructions = syncSet;
+            SyncInstructions = syncInstructions;
         }
 
         public uint? MaxSynced {
