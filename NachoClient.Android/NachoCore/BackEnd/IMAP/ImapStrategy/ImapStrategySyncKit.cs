@@ -153,7 +153,7 @@ namespace NachoCore.IMAP
             bool startingPointMustBeInSet = false;
             if (needSync || hasNewMail) {
                 resetLastSyncPoint (ref folder);
-                startingPoint = folder.ImapUidNext > 1 ? folder.ImapUidNext - 1 : 0;
+                startingPoint = folder.ImapUidNext;
                 startingPointMustBeInSet = true;
             } else {
                 startingPoint = (0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
@@ -171,9 +171,14 @@ namespace NachoCore.IMAP
             // Get the list of emails on the server in the range (0-startingPoint) over span.
             UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span * KResyncMultiplier);
             // if both are empty, we're done. Nothing to do.
+            var startingUid = new UniqueId (startingPoint - 1);
             if (currentMails.Any () || currentUidSet.Any ()) {
                 // resync all the existing mails.
                 if (currentMails.Any ()) {
+                    if (startingPointMustBeInSet && !currentMails.Contains (startingUid)) {
+                        // it doesn't hurt to add the starting Uid to both sets, if that winds up happening.
+                        currentMails.Add (startingUid);
+                    }
                     var uidSet = SyncKit.MustUniqueIdSet (currentMails.OrderByDescending (x => x).Take ((int)span * KResyncMultiplier).ToList ());
                     instructions.Add (SyncInstructionForFlagSync (uidSet));
                     span -= (uint)(uidSet.Count / KResyncMultiplier);
@@ -185,7 +190,6 @@ namespace NachoCore.IMAP
                         // If we're at the top, make sure we have the highest possible UID in the set. Otherwise,
                         // we might constantly loop looking to sync up to UidNext, when there's possibly no messages
                         // to sync (they might have gotten deleted).
-                        var startingUid = new UniqueId (startingPoint);
                         if (startingPointMustBeInSet && !newMail.Contains (startingUid)) {
                             newMail.Add (startingUid);
                         }

@@ -448,27 +448,32 @@ namespace Test.iOS
             // 
             var protocolState = ProtocolState;
             TestFolder = resetFolder (TestFolder);
+
+            // UidNext 100 means the highest Uid that HAS existed in the folder is 99.
+            // Since HighestSynced is 97, that means there's two messages that apparently got instantiated
+            // and then deleted: 98, and 99.
             uint UidNext = 100;
             uint HighestSynced = 97;
 
             MakeFakeEmails (TestFolder.Id, 1, HighestSynced);
+            var expected_count = HighestSynced + 1; // add one because we'll add a fake Uid for 99.
+            var expected_max = 99;
+            var expected_min = 1;
             TestFolder = DoFakeFolderOpen (TestFolder, UidNext, DateTime.UtcNow.AddMinutes (-(6*60)));
-            TestFolder.ImapUidHighestUidSynced = HighestSynced;
-            TestFolder.ImapUidSet = string.Format ("{0}:{1}", 1, HighestSynced);
+            TestFolder = TestFolder.UpdateWithOCApply<McFolder> (((record) => {
+                var target = (McFolder)record;
+                target.ImapUidHighestUidSynced = HighestSynced;
+                target.ImapUidSet = string.Format ("{0}:{1}", 1, HighestSynced);
+                return true;
+            }));
             var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState, 10);
             Assert.NotNull (syncInstList);
-            Assert.AreEqual (2, syncInstList.Count); // since there's existing emails, and a new email, there will be 2 instructions
-            foreach (var inst in syncInstList) {
-                if (inst.Headers.Count != 0) {
-                    // this is the 'new mail list'. There should be two messages
-                    Assert.AreEqual (2, inst.UidSet.Count);
-                } else {
-                    Assert.AreEqual (80, inst.UidSet.Count);
-                }
-            }
-            var syncKit = new NachoCore.IMAP.SyncKit(TestFolder, syncInstList);
-            Assert.AreEqual (UidNext-1, syncKit.MaxSynced.Value);
-            Assert.AreEqual (82, syncKit.CombinedUidSet.Count);
+            Assert.AreEqual (1, syncInstList.Count); // since there's existing emails, and a new email, there will be 2 instructions
+            var syncInst = syncInstList.First ();
+            Assert.AreEqual (expected_count, syncInst.UidSet.Count);
+            Assert.AreEqual (expected_max, syncInst.UidSet.Max ().Id);
+            Assert.AreEqual (expected_min, syncInst.UidSet.Min ().Id);
+            Assert.IsFalse (syncInst.UidSet.Contains (new UniqueId (98)));
         }
 
         private void DeleteAllTestMail()
