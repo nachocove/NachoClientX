@@ -413,7 +413,7 @@ namespace Test.iOS
             Assert.NotNull (syncKit.SyncInstructions);
             Assert.AreEqual (1, syncKit.SyncInstructions.Count);
             syncInst = syncKit.SyncInstructions.First ();
-            Assert.AreEqual (expected_max, syncInst.UidSet.Count);
+            Assert.AreEqual (defaultSpan, syncInst.UidSet.Count);
             Assert.AreEqual (expected_max, syncInst.UidSet.Max ().Id);
             Assert.AreEqual (expected_min, syncInst.UidSet.Min ().Id);
             TestFolder = DoFakeSync (TestFolder, syncKit);
