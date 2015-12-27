@@ -24,11 +24,6 @@ namespace NachoClient.AndroidClient
     [IntentFilter (new[] { Intent.ActionSendto }, Categories = new[] { Intent.CategoryDefault }, DataScheme = "mailto", DataMimeType = "*/*")]
     public class MessageComposePublicListener : NcActivity
     {
-        private static string[] dataColumnProjection = {
-            Android.Provider.MediaStore.MediaColumns.Data,
-            Android.Provider.MediaStore.MediaColumns.DisplayName,
-        };
-
         protected override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
@@ -67,14 +62,14 @@ namespace NachoClient.AndroidClient
                         if (Intent.ActionSendMultiple == Intent.Action) {
                             var uris = Intent.GetParcelableArrayListExtra (Intent.ExtraStream);
                             foreach (var uriObject in uris) {
-                                var attachment = UriToAttachment ((Android.Net.Uri)uriObject, Intent.Type);
+                                var attachment = AttachmentHelper.UriToAttachment (this, (Android.Net.Uri)uriObject, Intent.Type);
                                 if (null != attachment) {
                                     attachments.Add (attachment);
                                 }
                             }
                         } else {
                             var uri = (Android.Net.Uri)Intent.GetParcelableExtra (Intent.ExtraStream);
-                            var attachment = UriToAttachment (uri, Intent.Type);
+                            var attachment = AttachmentHelper.UriToAttachment (this, uri, Intent.Type);
                             if (null != attachment) {
                                 attachments.Add (attachment);
                             }
@@ -98,32 +93,6 @@ namespace NachoClient.AndroidClient
             });
         }
 
-        private McAttachment MakeAttachment (string filePath, string displayName, string type)
-        {
-            var attachment = McAttachment.InsertSaveStart (NcApplication.Instance.Account.Id);
-            attachment.ContentType = type;
-            attachment.DisplayName = displayName;
-            attachment.UpdateFileCopy (filePath);
-            attachment.UpdateSaveFinish ();
-            return attachment;
-        }
-
-        private McAttachment UriToAttachment (Android.Net.Uri uri, string mimeType)
-        {
-            try {
-                if ("file" == uri.Scheme) {
-                    return MakeAttachment (uri.Path, new System.IO.FileInfo (uri.Path).Name, mimeType);
-                } else if ("content" == uri.Scheme) {
-                    var cursor = ContentResolver.Query (uri, dataColumnProjection, null, null, null);
-                    if (cursor.MoveToNext ()) {
-                        return MakeAttachment (cursor.GetString (0), cursor.GetString (1), mimeType);
-                    }
-                }
-            } catch (Exception e) {
-                Log.Error (Log.LOG_LIFECYCLE, "Exception while creating an attachment during processing of a Send intent: {0}", e.ToString ());
-            }
-            return null;
-        }
     }
 }
 
