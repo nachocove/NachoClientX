@@ -235,6 +235,8 @@ namespace NachoCore.IMAP
 
         #endregion
 
+        #region SyncInstructions
+
         /// <summary>
         /// Generate the set of UIDs that we need to look at.
         /// </summary>
@@ -315,6 +317,18 @@ namespace NachoCore.IMAP
             return SyncInstructions (folder, ref protocolState, span);
         }
 
+        public static SyncInstruction SyncInstructionForNewMails (ref McProtocolState protocolState, UniqueIdSet uidSet)
+        {
+            return new SyncInstruction (uidSet, ImapSummaryitems (protocolState), ImapSummaryHeaders (), true, true);
+        }
+
+        public static SyncInstruction SyncInstructionForFlagSync (UniqueIdSet uidSet)
+        {
+            return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<HeaderId> (), false, false);
+        }
+
+        #endregion
+
         public static UniqueIdRange QuickSyncSet (uint UidNext, McFolder folder, uint span)
         {
             uint highest = UidNext > 1 ? UidNext - 1 : 0;
@@ -356,17 +370,6 @@ namespace NachoCore.IMAP
                 return true;  // folder metadata is stale. Get new data.
             }
             return false;
-        }
-
-
-        public static SyncInstruction SyncInstructionForNewMails (ref McProtocolState protocolState, UniqueIdSet uidSet)
-        {
-            return new SyncInstruction (uidSet, ImapSummaryitems (protocolState), ImapSummaryHeaders (), true, true);
-        }
-
-        public static SyncInstruction SyncInstructionForFlagSync (UniqueIdSet uidSet)
-        {
-            return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<HeaderId> (), false, false);
         }
 
         public static bool FillInQuickSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId)
