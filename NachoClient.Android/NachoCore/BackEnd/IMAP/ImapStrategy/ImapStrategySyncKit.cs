@@ -13,6 +13,8 @@ namespace NachoCore.IMAP
 {
     public partial class ImapStrategy
     {
+        #region Sync Parameters
+
         /// <summary>
         /// The base sync-window size
         /// </summary>
@@ -53,6 +55,67 @@ namespace NachoCore.IMAP
         /// </summary>
         public const int KResyncMultiplier = 100;
 
+        private static uint SpanSizeWithCommStatus (McProtocolState protocolState)
+        {
+            uint overallWindowSize = KRungSyncWindowSize [protocolState.ImapSyncRung];
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.CellFast_1:
+                overallWindowSize *= 2;
+                break;
+            case NetStatusSpeedEnum.WiFi_0:
+                overallWindowSize *= 3;
+                break;
+            }
+            return overallWindowSize;
+        }
+
+        private int FolderExamineInterval { 
+            get {
+                return NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync ? KFolderExamineQSInterval : KFolderExamineInterval;
+            }
+        }
+
+        #endregion
+
+        private static MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
+
+        private static HashSet<HeaderId> ImapSummaryHeaders ()
+        {
+            HashSet<HeaderId> headers = new HashSet<HeaderId> ();
+            headers.Add (HeaderId.Importance);
+            headers.Add (HeaderId.DkimSignature);
+            headers.Add (HeaderId.ContentClass);
+            headers.Add (HeaderId.XPriority);
+            headers.Add (HeaderId.Priority);
+            headers.Add (HeaderId.XMSMailPriority);
+
+            return headers;
+        }
+
+        /// <summary>
+        /// FIXME: Should calculate this in the ctor, ot every time. It's not like it's going to change.
+        /// </summary>
+        /// <returns>The summaryitems.</returns>
+        /// <param name="protocolState">Protocol state.</param>
+        private static MessageSummaryItems ImapSummaryitems (McProtocolState protocolState)
+        {
+            MessageSummaryItems NewMessageFlags = MessageSummaryItems.BodyStructure
+                | MessageSummaryItems.Envelope
+                | MessageSummaryItems.Flags
+                | MessageSummaryItems.InternalDate
+                | MessageSummaryItems.MessageSize
+                | MessageSummaryItems.UniqueId;
+            ;
+
+            if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
+                NewMessageFlags |= MessageSummaryItems.GMailMessageId;
+                NewMessageFlags |= MessageSummaryItems.GMailThreadId;
+                // TODO Perhaps we can use the gmail labels to give more hints to Brain, i.e. 'Important' or somesuch.
+                //flags |= MessageSummaryItems.GMailLabels;
+            }
+            return NewMessageFlags;
+        }
+
         #region GenSyncKit
 
         public SyncKit GenSyncKit (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt, McPending pending)
@@ -78,84 +141,99 @@ namespace NachoCore.IMAP
             return GenSyncKit (ref protocolState, folder, pending, true);
         }
 
-        private static uint SpanSizeWithCommStatus (McProtocolState protocolState)
-        {
-            uint overallWindowSize = KRungSyncWindowSize [protocolState.ImapSyncRung];
-            switch (NcCommStatus.Instance.Speed) {
-            case NetStatusSpeedEnum.CellFast_1:
-                overallWindowSize *= 2;
-                break;
-            case NetStatusSpeedEnum.WiFi_0:
-                overallWindowSize *= 3;
-                break;
-            }
-            return overallWindowSize;
-        }
-
-        private int FolderExamineInterval { 
-            get {
-                return NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync ? KFolderExamineQSInterval : KFolderExamineInterval;
-            }
-        }
-
-        private static MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
-
-        private static HashSet<HeaderId> ImapSummaryHeaders ()
-        {
-            HashSet<HeaderId> headers = new HashSet<HeaderId> ();
-            headers.Add (HeaderId.Importance);
-            headers.Add (HeaderId.DkimSignature);
-            headers.Add (HeaderId.ContentClass);
-            headers.Add (HeaderId.XPriority);
-            headers.Add (HeaderId.Priority);
-            headers.Add (HeaderId.XMSMailPriority);
-
-            return headers;
-        }
-
         /// <summary>
-        /// FIXME: Should calculate this in the ctor, ot every time. It's not like it's going to change.
+        /// GenSyncKit generates a data structure (SyncKit) that contains parameters and values
+        /// needed for the BE to do a sync with the server.
         /// </summary>
-        /// <returns>The summaryitems.</returns>
-        /// <param name="protocolState">Protocol state.</param>
-        private static MessageSummaryItems ImapSummaryitems (McProtocolState protocolState)
+        /// <param name="protocolState">The protocol state.</param>
+        /// <param name="folder">The folder to sync.</param>
+        /// <param name="pending">A pending (optional).</param>
+        /// <param name="quickSync">Perform a quick sync, not a full sync</param>
+        /// <remarks>
+        /// This function reads folder.ImapUidHighestUidSynced and folder.ImapUidLowestUidSynced
+        /// (and other values), but does NOT SET THEM. When the sync is executed (via ImapSymcCommand),
+        /// it will set folder.ImapUidHighestUidSynced and folder.ImapUidLowestUidSynced. Next time
+        /// GenSyncKit is called, these values are used to create the next SyncKit for ImapSyncCommand
+        /// to consume.
+        /// </remarks>
+        public SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync)
         {
-            MessageSummaryItems NewMessageFlags = MessageSummaryItems.BodyStructure
-                                                  | MessageSummaryItems.Envelope
-                                                  | MessageSummaryItems.Flags
-                                                  | MessageSummaryItems.InternalDate
-                                                  | MessageSummaryItems.MessageSize
-                                                  | MessageSummaryItems.UniqueId;
-            ;
-
-            if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
-                NewMessageFlags |= MessageSummaryItems.GMailMessageId;
-                NewMessageFlags |= MessageSummaryItems.GMailThreadId;
-                // TODO Perhaps we can use the gmail labels to give more hints to Brain, i.e. 'Important' or somesuch.
-                //flags |= MessageSummaryItems.GMailLabels;
+            if (null == folder) {
+                return null;
             }
-            return NewMessageFlags;
-        }
-
-        private static bool needFullSync (McFolder folder)
-        {
-            bool needSync = false;
-            var exeCtxt = NcApplication.Instance.ExecutionContext;
-            switch (exeCtxt) {
-            case NcApplication.ExecutionContextEnum.Foreground:
-                needSync = folder.ImapNeedFullSync;
-                break;
-
-            default:
-                break;
+            if (folder.ImapNoSelect) {
+                return null;
             }
-            return needSync;
+            bool havePending = null != pending;
+            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (UidNext {1}, LastExamined {2}, LastSynced {3}, HighestSynced {4}, LowestSynced {5}, Pending {6}, QuickSync {7})",
+                folder.ImapFolderNameRedacted (), 
+                folder.ImapUidNext,
+                folder.ImapLastExamine.ToString ("MM/dd/yyyy hh:mm:ss.fff tt"),
+                folder.ImapLastUidSynced,
+                folder.ImapUidHighestUidSynced, 
+                folder.ImapUidLowestUidSynced, 
+                havePending,
+                quickSync);
+
+            SyncKit syncKit = null;
+            if (HasNewMail (folder) || havePending || quickSync || folder.ImapLastExamine == DateTime.MinValue) {
+                // Let's try to get a chunk of new messages quickly.
+                syncKit = new SyncKit (folder, pending);
+            } else if (NeedFolderMetadata (folder)) {
+                // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
+                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                    McFolder target = (McFolder)record;
+                    target.ImapNeedFullSync = true;
+                    return true;
+                });
+                if (null != pending) {
+                    // dispatch it and mark it deferred for later.
+                    pending = pending.MarkDispached ();
+                    pending = pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFMetaData,
+                        NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete, NcResult.WhyEnum.UnavoidableDelay), true);
+                }
+                syncKit = new SyncKit (folder);
+            } else {
+                uint span = SpanSizeWithCommStatus (protocolState);
+                var outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
+                List<SyncInstruction> instructions = (outMessages.Count < span) ? SyncInstructions (folder, ref protocolState, (uint)(span - outMessages.Count)) : null;
+                if (null != instructions || outMessages.Any ()) {
+                    syncKit = new SyncKit (folder, instructions);
+                    syncKit.UploadMessages = outMessages;
+                    if (null != syncKit && null != pending) {
+                        syncKit.PendingSingle = pending;
+                    }
+                } else {
+                    // Nothing to sync.
+                    if (null != pending && pending.State == McPending.StateEnum.Eligible) {
+                        // Mark the pending as dispatched, so we can resolve it right after.
+                        // This can happen if we JUST refreshed the folder metadata within the 
+                        // time-window (see NeedFolderMetadata()), and skipped the OpenOnly step.
+                        // We need to dispatch the pending before ResolveOneSync() so we don't
+                        // try to ResolveAsSuccess an eligible pending (which leads to a crash).
+                        pending = pending.MarkDispached ();
+                    }
+                    ResolveOneSync (BEContext, ref protocolState, folder, pending);
+                }
+            }
+            if (null == syncKit) {
+                // update the sync count, even though there was nothing to do.
+                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.SyncAttemptCount += 1;
+                    target.LastSyncAttempt = DateTime.UtcNow;
+                    return true;
+                });
+            }
+            if (null != syncKit) {
+                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: {1}", folder.ImapFolderNameRedacted (), syncKit);
+            } else {
+                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: nothing to do", folder.ImapFolderNameRedacted ());
+            }
+            return syncKit;
         }
 
-        private static bool HasNewMail (McFolder folder)
-        {
-            return ((folder.ImapUidNext > 1) && (folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1));
-        }
+        #endregion
 
         /// <summary>
         /// Generate the set of UIDs that we need to look at.
@@ -280,97 +358,6 @@ namespace NachoCore.IMAP
             return false;
         }
 
-        /// <summary>
-        /// GenSyncKit generates a data structure (SyncKit) that contains parameters and values
-        /// needed for the BE to do a sync with the server.
-        /// </summary>
-        /// <param name="protocolState">The protocol state.</param>
-        /// <param name="folder">The folder to sync.</param>
-        /// <param name="pending">A pending (optional).</param>
-        /// <param name="quickSync">Perform a quick sync, not a full sync</param>
-        /// <remarks>
-        /// This function reads folder.ImapUidHighestUidSynced and folder.ImapUidLowestUidSynced
-        /// (and other values), but does NOT SET THEM. When the sync is executed (via ImapSymcCommand),
-        /// it will set folder.ImapUidHighestUidSynced and folder.ImapUidLowestUidSynced. Next time
-        /// GenSyncKit is called, these values are used to create the next SyncKit for ImapSyncCommand
-        /// to consume.
-        /// </remarks>
-        public SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync)
-        {
-            if (null == folder) {
-                return null;
-            }
-            if (folder.ImapNoSelect) {
-                return null;
-            }
-            bool havePending = null != pending;
-            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (UidNext {1}, LastExamined {2}, LastSynced {3}, HighestSynced {4}, LowestSynced {5}, Pending {6}, QuickSync {7})",
-                folder.ImapFolderNameRedacted (), 
-                folder.ImapUidNext,
-                folder.ImapLastExamine.ToString ("MM/dd/yyyy hh:mm:ss.fff tt"),
-                folder.ImapLastUidSynced,
-                folder.ImapUidHighestUidSynced, 
-                folder.ImapUidLowestUidSynced, 
-                havePending,
-                quickSync);
-
-            SyncKit syncKit = null;
-            if (HasNewMail (folder) || havePending || quickSync || folder.ImapLastExamine == DateTime.MinValue) {
-                // Let's try to get a chunk of new messages quickly.
-                syncKit = new SyncKit (folder, pending);
-            } else if (NeedFolderMetadata (folder)) {
-                // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
-                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
-                    McFolder target = (McFolder)record;
-                    target.ImapNeedFullSync = true;
-                    return true;
-                });
-                if (null != pending) {
-                    // dispatch it and mark it deferred for later.
-                    pending = pending.MarkDispached ();
-                    pending = pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFMetaData,
-                        NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete, NcResult.WhyEnum.UnavoidableDelay), true);
-                }
-                syncKit = new SyncKit (folder);
-            } else {
-                uint span = SpanSizeWithCommStatus (protocolState);
-                var outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
-                List<SyncInstruction> instructions = (outMessages.Count < span) ? SyncInstructions (folder, ref protocolState, (uint)(span - outMessages.Count)) : null;
-                if (null != instructions || outMessages.Any ()) {
-                    syncKit = new SyncKit (folder, instructions);
-                    syncKit.UploadMessages = outMessages;
-                    if (null != syncKit && null != pending) {
-                        syncKit.PendingSingle = pending;
-                    }
-                } else {
-                    // Nothing to sync.
-                    if (null != pending && pending.State == McPending.StateEnum.Eligible) {
-                        // Mark the pending as dispatched, so we can resolve it right after.
-                        // This can happen if we JUST refreshed the folder metadata within the 
-                        // time-window (see NeedFolderMetadata()), and skipped the OpenOnly step.
-                        // We need to dispatch the pending before ResolveOneSync() so we don't
-                        // try to ResolveAsSuccess an eligible pending (which leads to a crash).
-                        pending = pending.MarkDispached ();
-                    }
-                    ResolveOneSync (BEContext, ref protocolState, folder, pending);
-                }
-            }
-            if (null == syncKit) {
-                // update the sync count, even though there was nothing to do.
-                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
-                    var target = (McFolder)record;
-                    target.SyncAttemptCount += 1;
-                    target.LastSyncAttempt = DateTime.UtcNow;
-                    return true;
-                });
-            }
-            if (null != syncKit) {
-                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: {1}", folder.ImapFolderNameRedacted (), syncKit);
-            } else {
-                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: nothing to do", folder.ImapFolderNameRedacted ());
-            }
-            return syncKit;
-        }
 
         public static SyncInstruction SyncInstructionForNewMails (ref McProtocolState protocolState, UniqueIdSet uidSet)
         {
@@ -437,7 +424,25 @@ namespace NachoCore.IMAP
             return retUids;
         }
 
-        #endregion
+        private static bool needFullSync (McFolder folder)
+        {
+            bool needSync = false;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
+            switch (exeCtxt) {
+            case NcApplication.ExecutionContextEnum.Foreground:
+                needSync = folder.ImapNeedFullSync;
+                break;
+
+            default:
+                break;
+            }
+            return needSync;
+        }
+
+        private static bool HasNewMail (McFolder folder)
+        {
+            return ((folder.ImapUidNext > 1) && (folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1));
+        }
 
         /// <summary>
         /// Resolves the one sync, i.e. One SyncKit.
