@@ -24,7 +24,7 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The Inbox message count after which we'll transition out of Stage/Rung 0
         /// </summary>
-        const int KImapSyncRung0InboxCount = 400;
+        const int KImapSyncRung0InboxCount = 200;
 
         /// <summary>
         /// The size of the initial (rung 0) sync window size. It's also the base-number for other
