@@ -231,10 +231,10 @@ namespace NachoCore.IMAP
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
-                if (Synckit.MaxSynced.HasValue) {
+                if (Synckit.MaxSynced.HasValue && Synckit.MaxSynced.Value > target.ImapUidHighestUidSynced) {
                     target.ImapUidHighestUidSynced = Synckit.MaxSynced.Value;
                 }
-                if (Synckit.MinSynced.HasValue) {
+                if (Synckit.MinSynced.HasValue && Synckit.MinSynced.Value < target.ImapUidLowestUidSynced) {
                     target.ImapUidLowestUidSynced = Synckit.MinSynced.Value;
                 }
                 if (Synckit.CombinedUidSet.Any ()) {
@@ -242,10 +242,6 @@ namespace NachoCore.IMAP
                 }
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
-                if (Synckit.Method == SyncKit.MethodEnum.QuickSync && exeCtxt == NcApplication.ExecutionContextEnum.Foreground) {
-                    // After a quick sync we really need to do a full sync to capture deleted and changed messages
-                    target.ImapNeedFullSync = true;
-                }
                 return true;
             });
 
