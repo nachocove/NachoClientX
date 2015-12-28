@@ -14,6 +14,25 @@ namespace NachoCore.IMAP
     public partial class ImapStrategy
     {
         /// <summary>
+        /// The base sync-window size
+        /// </summary>
+        const uint KBaseOverallWindowSize = 10;
+
+        /// <summary>
+        /// The Inbox message count after which we'll transition out of Stage/Rung 0
+        /// </summary>
+        const int KImapSyncRung0InboxCount = 200;
+
+        /// <summary>
+        /// The size of the initial (rung 0) sync window size. It's also the base-number for other
+        /// window size calculations, i.e. multiplied by a certain number for CellFast and another
+        /// number for Wifi, etc.
+        /// </summary>
+        const uint KRung0SyncWindowSize = 3;
+
+        private static uint[] KRungSyncWindowSize = new uint[] { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
+
+        /// <summary>
         /// The default interval in seconds after which we'll re-examine a folder (i.e. fetch its metadata)
         /// </summary>
         const int KFolderExamineInterval = 60 * 10;
@@ -511,6 +530,52 @@ namespace NachoCore.IMAP
             if (!folderList.Any (x => x.Id == folder.Id)) {
                 folderList.Add (folder);
             }
+        }
+
+        private static uint MaybeAdvanceSyncStage (ref McProtocolState protocolState)
+        {
+            McFolder defInbox = McFolder.GetDefaultInboxFolder (protocolState.AccountId);
+            uint rung = protocolState.ImapSyncRung;
+            switch (protocolState.ImapSyncRung) {
+            case 0:
+                var syncInstList = SyncInstructions (defInbox, ref protocolState);
+                var uidSet = new UniqueIdSet ();
+                foreach (var inst in syncInstList) {
+                    uidSet.AddRange (inst.UidSet);
+                }
+                if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
+                    !uidSet.Any ()) {
+                    // TODO For now skip stage 1, since it's not implemented.
+                    rung = 2;
+                    // reset the foldersync so we re-do it. In rung 0, we only sync'd Inbox.
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsLastFolderSync = DateTime.MinValue;
+                        return true;
+                    });
+                }
+                break;
+
+            case 1:
+                // TODO Fill in stage 1 later. For now just fall through to stage 2
+                rung = 2;
+                break;
+
+            case 2:
+                // we never exit this stage
+                rung = 2;
+                break;
+            }
+
+            if (rung != protocolState.ImapSyncRung) {
+                Log.Info (Log.LOG_IMAP, "GenSyncKit: Strategy rung update {0} -> {1}", protocolState.ImapSyncRung, rung);
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.ImapSyncRung = rung;
+                    return true;
+                });
+            }
+            return rung;
         }
     }
 }
