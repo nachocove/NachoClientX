@@ -196,7 +196,7 @@ namespace NachoCore.IMAP
                     } finally {
                         BEContext.Owner.BackendAbateStop ();
                         sw.Stop ();
-                        Log.Info (Log.LOG_IMAP, "{0}: Processing {1} took {2}ms ({3} per uid)", Synckit.Folder, syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds/syncInst.UidSet.Count);
+                        Log.Info (Log.LOG_IMAP, "{0}: Processing {1} took {2}ms ({3} per uid)", Synckit.Folder.ImapFolderNameRedacted (), syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds/syncInst.UidSet.Count);
                     }
                 }
             }
