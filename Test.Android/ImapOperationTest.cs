@@ -24,7 +24,8 @@ namespace Test.iOS
         UniqueId TestUniqueId = new UniqueId (1);
         int someIndex = 1;
         McAccount Account;
-        uint defaultSpan = 30;
+        uint defaultSpan;
+        uint resyncDefaultSpan;
 
         McFolder TestFolder { get; set; }
         McProtocolState ProtocolState { get; set; }
@@ -43,6 +44,8 @@ namespace Test.iOS
             p.Insert ();
             ProtocolState = p;
             NcCommStatus.Instance.Speed = NetStatusSpeedEnum.WiFi_0;
+            defaultSpan = ImapStrategy.KBaseFetchSize * 3 * ImapStrategy.KInboxWindowMultiplier;
+            resyncDefaultSpan = defaultSpan * ImapStrategy.KResyncMultiplier;
         }
 
         [TearDown]
@@ -183,7 +186,7 @@ namespace Test.iOS
 
             TestFolder = resetFolder (TestFolder);
             TestFolder = DoFakeFolderOpen (TestFolder, 10);
-            var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState);
+            var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState, false);
             Assert.AreEqual (1, syncInstList.Count);
             syncKit = new NachoCore.IMAP.SyncKit(TestFolder, new List<SyncInstruction> () { syncInstList.First () });
             TestFolder = DoFakeSync (TestFolder, syncKit); // creates emails 1-9
@@ -239,7 +242,7 @@ namespace Test.iOS
             // create some emails, simulating an initial sync
             TestFolder = resetFolder (TestFolder);
             TestFolder = DoFakeFolderOpen (TestFolder, 10);
-            var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState);
+            var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState, false);
             Assert.AreEqual (1, syncInstList.Count);
             syncKit = new NachoCore.IMAP.SyncKit(TestFolder, new List<SyncInstruction> () { syncInstList.First () });
             TestFolder = DoFakeSync (TestFolder, syncKit); // creates emails 1-9
@@ -293,8 +296,9 @@ namespace Test.iOS
             TestFolder = DoFakeFolderOpen (TestFolder, 1, DateTime.UtcNow.AddMinutes (-(6*60)));
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (NachoCore.IMAP.SyncKit.MethodEnum.OpenOnly, syncKit.Method);
-            Assert.Null (syncKit.SyncInstructions);
+            Assert.AreEqual (NachoCore.IMAP.SyncKit.MethodEnum.QuickSync, syncKit.Method);
+            Assert.NotNull (syncKit.SyncInstructions);
+            Assert.AreEqual (0, syncKit.SyncInstructions.Count);
 
             // an empty folder (UidNext is 1, i.e. there's no messages at all)
             TestFolder = resetFolder (TestFolder);
@@ -345,6 +349,7 @@ namespace Test.iOS
 
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.NotNull (syncKit);
+            Assert.AreEqual (NachoCore.IMAP.SyncKit.MethodEnum.QuickSync, syncKit.Method);
             Assert.NotNull (syncKit.SyncInstructions);
             Assert.AreEqual (0, syncKit.SyncInstructions.Count);
             ImapStrategy.FillInQuickSyncKit (ref protocolState, ref syncKit, TestFolder.AccountId);
@@ -352,20 +357,6 @@ namespace Test.iOS
             syncInst = syncKit.SyncInstructions.First ();
             Assert.NotNull (syncInst.UidSet);
             Assert.AreEqual (newMessages, syncKit.CombinedUidSet.Count);
-            Assert.AreEqual (expected_max, syncKit.MaxSynced);
-            Assert.AreEqual (expected_min, syncKit.MinSynced);
-            TestFolder = DoFakeSync (TestFolder, syncKit);
-
-            // now we only resync until we hit the old low
-            var resyncDefaultSpan = defaultSpan * ImapStrategy.KResyncMultiplier;
-            expected_max = expected_min - 1;
-            expected_min = expected_max - resyncDefaultSpan + 1;
-            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
-            Assert.NotNull (syncKit);
-            Assert.NotNull (syncKit.SyncInstructions);
-            Assert.AreEqual (1, syncKit.SyncInstructions.Count);
-            syncInst = syncKit.SyncInstructions.First ();
-            Assert.AreEqual (resyncDefaultSpan, syncInst.UidSet.Count);
             Assert.AreEqual (expected_max, syncKit.MaxSynced);
             Assert.AreEqual (expected_min, syncKit.MinSynced);
             TestFolder = DoFakeSync (TestFolder, syncKit);
@@ -466,7 +457,7 @@ namespace Test.iOS
                 target.ImapUidSet = string.Format ("{0}:{1}", 1, HighestSynced);
                 return true;
             }));
-            var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState, 10);
+            var syncInstList = ImapStrategy.SyncInstructions (TestFolder, ref protocolState, 10, false);
             Assert.NotNull (syncInstList);
             Assert.AreEqual (1, syncInstList.Count); // since there's existing emails, and a new email, there will be 2 instructions
             var syncInst = syncInstList.First ();
@@ -556,7 +547,6 @@ namespace Test.iOS
                     }
                 }
             });
-            Console.WriteLine ("Created emails from {0} to {1}", min, max);
         }
 
         private McFolder resetFolder(McFolder folder)

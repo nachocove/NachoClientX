@@ -18,12 +18,12 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The base sync-window size
         /// </summary>
-        const uint KBaseOverallWindowSize = 10;
+        const uint KBaseOverallWindowSize = 5;
 
         /// <summary>
         /// The Inbox message count after which we'll transition out of Stage/Rung 0
         /// </summary>
-        const int KImapSyncRung0InboxCount = 200;
+        const int KImapSyncRung0InboxCount = 100;
 
         /// <summary>
         /// The size of the initial (rung 0) sync window size. It's also the base-number for other
@@ -32,12 +32,12 @@ namespace NachoCore.IMAP
         /// </summary>
         const uint KRung0SyncWindowSize = 3;
 
-        private static uint[] KRungSyncWindowSize = new uint[] { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
+        private static uint[] KRungSyncWindowSize = { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
 
         /// <summary>
         /// The default interval in seconds after which we'll re-examine a folder (i.e. fetch its metadata)
         /// </summary>
-        const int KFolderExamineInterval = 60 * 10;
+        const int KFolderExamineInterval = 60 * 30;
 
         /// <summary>
         /// The default interval in seconds for QuickSync after which we'll re-examine the folder.
@@ -53,7 +53,12 @@ namespace NachoCore.IMAP
         /// The multiplier we apply to the span for messages we're just resyncing, i.e. checking for flag changes and deletion.
         /// Resyncing per message runs on the average 20 times faster than fetching a new message.
         /// </summary>
-        public const int KResyncMultiplier = 100;
+        public const int KResyncMultiplier = 200;
+
+        /// <summary>
+        /// The Window multiplier for inbox, i.e. we fetch this many times more messages for inbox than for any other folder. (except in Quicksync)
+        /// </summary>
+        public const int KInboxWindowMultiplier = 2;
 
         private static uint SpanSizeWithCommStatus (McProtocolState protocolState)
         {
@@ -100,12 +105,11 @@ namespace NachoCore.IMAP
         private static MessageSummaryItems ImapSummaryitems (McProtocolState protocolState)
         {
             MessageSummaryItems NewMessageFlags = MessageSummaryItems.BodyStructure
-                | MessageSummaryItems.Envelope
-                | MessageSummaryItems.Flags
-                | MessageSummaryItems.InternalDate
-                | MessageSummaryItems.MessageSize
-                | MessageSummaryItems.UniqueId;
-            ;
+                                                  | MessageSummaryItems.Envelope
+                                                  | MessageSummaryItems.Flags
+                                                  | MessageSummaryItems.InternalDate
+                                                  | MessageSummaryItems.MessageSize
+                                                  | MessageSummaryItems.UniqueId;
 
             if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
                 NewMessageFlags |= MessageSummaryItems.GMailMessageId;
@@ -182,7 +186,7 @@ namespace NachoCore.IMAP
             } else {
                 uint span = SpanSizeWithCommStatus (protocolState);
                 var outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
-                List<SyncInstruction> instructions = (outMessages.Count < span) ? SyncInstructions (folder, ref protocolState, (uint)(span - outMessages.Count)) : null;
+                List<SyncInstruction> instructions = (outMessages.Count < span) ? SyncInstructions (folder, ref protocolState, (uint)(span - outMessages.Count), pending != null) : null;
                 if (null != instructions || outMessages.Any ()) {
                     syncKit = new SyncKit (folder, instructions);
                     syncKit.UploadMessages = outMessages;
@@ -230,7 +234,8 @@ namespace NachoCore.IMAP
         /// <param name="folder">Folder.</param>
         /// <param name="protocolState">Protocol state.</param>
         /// <param name="span">Span</param>
-        public static List<SyncInstruction> SyncInstructions (McFolder folder, ref McProtocolState protocolState, uint span)
+        /// <param name = "hasPending">If the sync is a pull-to-refresh</param>
+        public static List<SyncInstruction> SyncInstructions (McFolder folder, ref McProtocolState protocolState, uint span, bool hasPending)
         {
             bool needSync = needFullSync (folder);
             bool hasNewMail = HasNewMail (folder);
@@ -251,6 +256,11 @@ namespace NachoCore.IMAP
             // 0 isn't a valid UID, so this folder might not have been opened yet.
             if (startingPoint == 0) {
                 return null;
+            }
+
+            var defInbox = McFolder.GetDefaultInboxFolder (folder.AccountId);
+            if (!hasPending && defInbox.Id == folder.Id) {
+                span *= KInboxWindowMultiplier;
             }
 
             List<SyncInstruction> instructions = new List<SyncInstruction> ();
@@ -297,10 +307,11 @@ namespace NachoCore.IMAP
         /// <returns>A set of UniqueId's.</returns>
         /// <param name="folder">Folder.</param>
         /// <param name="protocolState">Protocol state.</param>
-        public static List<SyncInstruction> SyncInstructions (McFolder folder, ref McProtocolState protocolState)
+        /// <param name = "hasPending">If the sync is a pull-to-refresh</param>
+        public static List<SyncInstruction> SyncInstructions (McFolder folder, ref McProtocolState protocolState, bool hasPending)
         {
             uint span = SpanSizeWithCommStatus (protocolState);
-            return SyncInstructions (folder, ref protocolState, span);
+            return SyncInstructions (folder, ref protocolState, span, hasPending);
         }
 
         public static SyncInstruction SyncInstructionForNewMails (ref McProtocolState protocolState, UniqueIdSet uidSet)
@@ -421,9 +432,6 @@ namespace NachoCore.IMAP
             case NcApplication.ExecutionContextEnum.Foreground:
                 needSync = folder.ImapNeedFullSync;
                 break;
-
-            default:
-                break;
             }
             return needSync;
         }
@@ -442,7 +450,7 @@ namespace NachoCore.IMAP
         {
             var protocolState = BEContext.ProtocolState;
             ResolveOneSync (BEContext, ref protocolState, synckit.Folder, synckit.PendingSingle);
-            MaybeAdvanceSyncStage (ref protocolState);
+            MaybeAdvanceSyncStage (ref protocolState, synckit.PendingSingle != null);
         }
 
         /// <summary>
@@ -526,13 +534,13 @@ namespace NachoCore.IMAP
             }
         }
 
-        private static uint MaybeAdvanceSyncStage (ref McProtocolState protocolState)
+        private static uint MaybeAdvanceSyncStage (ref McProtocolState protocolState, bool hasPending)
         {
             McFolder defInbox = McFolder.GetDefaultInboxFolder (protocolState.AccountId);
             uint rung = protocolState.ImapSyncRung;
             switch (protocolState.ImapSyncRung) {
             case 0:
-                var syncInstList = SyncInstructions (defInbox, ref protocolState);
+                var syncInstList = SyncInstructions (defInbox, ref protocolState, hasPending);
                 var uidSet = new UniqueIdSet ();
                 foreach (var inst in syncInstList) {
                     uidSet.AddRange (inst.UidSet);
