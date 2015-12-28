@@ -237,7 +237,7 @@ namespace NachoClient.AndroidClient
 
         public void AttachmentSelectedCallback (McAttachment attachment)
         {
-            Util.OpenAttachment (Activity, attachment);
+            AttachmentHelper.OpenAttachment (Activity, attachment);
         }
 
         public  void AttachmentErrorCallback (McAttachment attachment, NcResult nr)
