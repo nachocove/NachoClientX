@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace NachoCore.IMAP
 {
-    public partial class ImapStrategy : NcStrategy
+    public partial class ImapStrategy
     {
         /// <summary>
         /// The default interval in seconds after which we'll re-examine a folder (i.e. fetch its metadata)
@@ -32,7 +32,7 @@ namespace NachoCore.IMAP
         /// The multiplier we apply to the span for messages we're just resyncing, i.e. checking for flag changes and deletion.
         /// Resyncing per message runs on the average 20 times faster than fetching a new message.
         /// </summary>
-        public const int KResyncMultiplier = 10;
+        public const int KResyncMultiplier = 100;
 
         #region GenSyncKit
 
