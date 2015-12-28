@@ -156,7 +156,11 @@ namespace NachoCore.IMAP
                 startingPoint = folder.ImapUidNext;
                 startingPointMustBeInSet = true;
             } else {
-                startingPoint = (0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
+                if (0 != folder.ImapLastUidSynced) {
+                    startingPoint = folder.ImapLastUidSynced;
+                } else {
+                    startingPoint = folder.ImapUidNext;
+                }
             }
 
             // 0 isn't a valid UID, so this folder might not have been opened yet.
