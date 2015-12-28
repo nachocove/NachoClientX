@@ -250,7 +250,7 @@ namespace NachoCore.IMAP
                     }
                     cap.Pause ();
                     float kBytes = (float)bytes / (float)1024.0;
-                    Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Body download of size {0}k took {1}ms ({2}k/sec; {3})",
+                    Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Body download of size {0} took {1}ms ({2}k/sec; {3})",
                         bytes, cap.ElapsedMilliseconds,
                         kBytes / ((float)cap.ElapsedMilliseconds / (float)1000.0), NcCommStatus.Instance.Speed);
                 }
