@@ -627,6 +627,7 @@
     <Compile Include="NachoPlatform.Android\PushAssistAndroid.cs" />
     <Compile Include="NachoUI.Android\Activities\ContactLabelChooserFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\MessageComposePublicListener.cs" />
+    <Compile Include="NachoUI.Android\Support\AttachmentHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1706,6 +1707,9 @@
     <AndroidResource Include="Resources\drawable-xhdpi\files_email_attachment.png" />
     <AndroidResource Include="Resources\drawable-mdpi\files_email_attachment.png" />
     <AndroidResource Include="Resources\drawable-hdpi\files_email_attachment.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\Icon.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\Icon.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\Icon.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
