@@ -67,15 +67,6 @@ namespace NachoCore.IMAP
             Event evt;
             NcCapture cap;
             switch (Synckit.Method) {
-            case SyncKit.MethodEnum.OpenOnly:
-                if (null != Synckit.PendingSingle) {
-                    Log.Error (Log.LOG_IMAP, "OpenOnly SyncKit with a pending is not allowed");
-                }
-                NcCapture.AddKind (KImapSyncOpenTiming);
-                cap = NcCapture.CreateAndStart (KImapSyncOpenTiming);
-                evt = getFolderMetaDataInternal (mailKitFolder, timespan);
-                break;
-
             case SyncKit.MethodEnum.Sync:
                 NcCapture.AddKind (KImapSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
@@ -107,11 +98,7 @@ namespace NachoCore.IMAP
         /// <param name="timespan">Timespan.</param>
         private Event QuickSync (NcImapFolder mailKitFolder, TimeSpan timespan)
         {
-            if (!GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan)) {
-                Log.Warn (Log.LOG_IMAP, "Could not get folder metadata");
-                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL1");
-            }
-            bool changed = false;
+            bool changed = GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan);
             Event evt;
             var protocolState = BEContext.ProtocolState;
             if (ImapStrategy.FillInQuickSyncKit (ref protocolState, ref Synckit, AccountId)) {
@@ -131,15 +118,6 @@ namespace NachoCore.IMAP
             }
             Finish (changed);
             return evt;
-        }
-
-        private Event getFolderMetaDataInternal (NcImapFolder mailKitFolder, TimeSpan timespan)
-        {
-            if (!GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan)) {
-                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL");
-            } else {
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
-            }
         }
 
         /// <summary>

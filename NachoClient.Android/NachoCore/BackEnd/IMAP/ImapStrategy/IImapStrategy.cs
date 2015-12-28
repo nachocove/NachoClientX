@@ -70,7 +70,6 @@ namespace NachoCore.IMAP
         public enum MethodEnum
         {
             Sync,
-            OpenOnly,
             QuickSync,
         };
 
@@ -98,12 +97,6 @@ namespace NachoCore.IMAP
         /// The sync set.
         /// </summary>
         public List<SyncInstruction> SyncInstructions;
-
-        public SyncKit (McFolder folder)
-        {
-            Method = MethodEnum.OpenOnly;
-            Folder = folder;
-        }
 
         public SyncKit (McFolder folder, McPending pending)
         {

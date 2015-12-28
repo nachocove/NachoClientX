@@ -176,23 +176,9 @@ namespace NachoCore.IMAP
                 quickSync);
 
             SyncKit syncKit = null;
-            if (HasNewMail (folder) || havePending || quickSync || folder.ImapLastExamine == DateTime.MinValue) {
+            if (HasNewMail (folder) || havePending || quickSync || NeedFolderMetadata (folder)) {
                 // Let's try to get a chunk of new messages quickly.
                 syncKit = new SyncKit (folder, pending);
-            } else if (NeedFolderMetadata (folder)) {
-                // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
-                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
-                    McFolder target = (McFolder)record;
-                    target.ImapNeedFullSync = true;
-                    return true;
-                });
-                if (null != pending) {
-                    // dispatch it and mark it deferred for later.
-                    pending = pending.MarkDispached ();
-                    pending = pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFMetaData,
-                        NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete, NcResult.WhyEnum.UnavoidableDelay), true);
-                }
-                syncKit = new SyncKit (folder);
             } else {
                 uint span = SpanSizeWithCommStatus (protocolState);
                 var outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
