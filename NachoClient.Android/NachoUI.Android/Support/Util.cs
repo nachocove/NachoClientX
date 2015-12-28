@@ -11,7 +11,6 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using Android.App;
-using NachoClient.Build;
 
 namespace NachoClient.AndroidClient
 {
@@ -145,43 +144,6 @@ namespace NachoClient.AndroidClient
                 context.StartActivity (new Intent (Intent.ActionDial, phoneUri));
             } catch (ActivityNotFoundException) {
                 NcAlertView.ShowMessage (context, "Cannot Call", "This device does not support making phone calls.");
-            }
-        }
-
-        public static void OpenAttachment (Context context, McAttachment attachment, bool useInternalViewer = true)
-        {
-            if (useInternalViewer && attachment.IsImageFile ()) {
-                var viewerIntent = ImageViewActivity.ImageViewIntent (context, attachment);
-                context.StartActivity (viewerIntent);
-                return;
-            }
-                
-            try {
-                Android.Net.Uri fileUri;
-                var file = new Java.IO.File (attachment.GetFilePath ());
-                try {
-                    fileUri = FileProvider.GetUriForFile (context, BuildInfo.FileProvider, file);
-                } catch (Java.Lang.IllegalArgumentException e) {
-                    Log.Error (Log.LOG_UTILS, "FileProvider error\n{0}", e.StackTrace);
-                    NcAlertView.ShowMessage (context, "Attachment", String.Format ("The selected file cannot be shared: {0}", attachment.DisplayName));
-                    return;
-                }
-                var intent = new Intent (Intent.ActionView);
-                intent.AddFlags (ActivityFlags.GrantReadUriPermission);
-                var fileType = context.ContentResolver.GetType (fileUri);
-                intent.SetDataAndType (fileUri, fileType);
-                // Look for potential handlers
-                var packageManager = context.PackageManager;
-                var activities = packageManager.QueryIntentActivities (intent, PackageInfoFlags.MatchDefaultOnly);
-                var isIntentSafe = 0 < activities.Count;
-                if (isIntentSafe) {
-                    context.StartActivity (intent);
-                } else {
-                    NcAlertView.ShowMessage (context, "Attachment", String.Format ("No application can open this attachment: {0}", attachment.DisplayName));
-                }
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_UTILS, "Sharing error\n{0}", ex.StackTrace);
-                NcAlertView.ShowMessage (context, "Attachment", String.Format ("The selected file cannot be shared: {0}", attachment.DisplayName));
             }
         }
 

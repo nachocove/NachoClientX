@@ -11,6 +11,8 @@ using Android.Provider;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using Android.Support.V4.Content;
+using NachoClient.Build;
 
 namespace NachoClient.AndroidClient
 {
@@ -63,6 +65,81 @@ namespace NachoClient.AndroidClient
             }
             return null;
         }
+
+        public static int FileIconFromExtension (McAttachment attachment)
+        {
+            var extension = Pretty.GetExtension (attachment.DisplayName);
+
+            switch (extension) {
+            case ".DOC":
+            case ".DOCX":
+                return Resource.Drawable.icn_files_wrd;
+            case ".PPT":
+            case ".PPTX":
+                return Resource.Drawable.icn_files_ppt;
+            case ".XLS":
+            case ".XLSX":
+                return Resource.Drawable.icn_files_xls;
+            case ".PDF":
+                return Resource.Drawable.icn_files_pdf;
+            case ".TXT":
+            case ".TEXT":
+                return Resource.Drawable.icn_files_txt;
+            case ".ZIP":
+                return Resource.Drawable.icn_files_zip;
+            case ".PNG":
+                return Resource.Drawable.icn_files_png;
+            default:
+                if (attachment.IsImageFile ()) {
+                    return Resource.Drawable.icn_files_img;
+                } else {
+                    return Resource.Drawable.email_att_files;
+                }
+            }
+        }
+
+        public static void OpenAttachment (Context context, McAttachment attachment, bool useInternalViewer = true)
+        {
+            if (useInternalViewer && attachment.IsImageFile ()) {
+                var viewerIntent = ImageViewActivity.ImageViewIntent (context, attachment);
+                context.StartActivity (viewerIntent);
+                return;
+            }
+
+            try {
+                Android.Net.Uri fileUri;
+                var file = new Java.IO.File (attachment.GetFilePath ());
+                try {
+                    fileUri = FileProvider.GetUriForFile (context, BuildInfo.FileProvider, file);
+                } catch (Java.Lang.IllegalArgumentException e) {
+                    Log.Error (Log.LOG_UTILS, "FileProvider error\n{0}", e.StackTrace);
+                    NcAlertView.ShowMessage (context, "Attachment", String.Format ("The selected file cannot be shared: {0}", attachment.DisplayName));
+                    return;
+                }
+                var intent = new Intent (Intent.ActionView);
+                intent.AddFlags (ActivityFlags.GrantReadUriPermission);
+                string fileType;
+                if(!String.IsNullOrEmpty(attachment.ContentType)) {
+                    fileType = attachment.ContentType;
+                } else {
+                    fileType = context.ContentResolver.GetType (fileUri);
+                }
+                intent.SetDataAndType (fileUri, fileType.ToLower());
+                // Look for potential handlers
+                var packageManager = context.PackageManager;
+                var activities = packageManager.QueryIntentActivities (intent, PackageInfoFlags.MatchDefaultOnly);
+                var isIntentSafe = 0 < activities.Count;
+                if (isIntentSafe) {
+                    context.StartActivity (intent);
+                } else {
+                    NcAlertView.ShowMessage (context, "Attachment", String.Format ("No application can open this attachment: {0}", attachment.DisplayName));
+                }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_UTILS, "Sharing error\n{0}", ex.StackTrace);
+                NcAlertView.ShowMessage (context, "Attachment", String.Format ("The selected file cannot be shared: {0}", attachment.DisplayName));
+            }
+        }
+
     }
 
 

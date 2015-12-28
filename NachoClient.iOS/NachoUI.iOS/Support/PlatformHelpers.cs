@@ -148,6 +148,26 @@ namespace NachoClient
         public static void DisplayAttachment (UIViewController vc, McAttachment attachment)
         {
             var path = attachment.GetFilePath ();
+
+            // Add extension if there isn't one
+            var ext = Pretty.GetExtension (path);
+            if (String.IsNullOrEmpty (ext)) {
+                if (!String.IsNullOrEmpty (attachment.ContentType)) {
+                    var mimeInfo = attachment.ContentType.Split (new char[] { '/' });
+                    if (2 == mimeInfo.Length) {
+                        if (!String.IsNullOrEmpty (mimeInfo [1])) {
+                            var displayName = attachment.DisplayName;
+                            if (String.IsNullOrEmpty (displayName)) {
+                                displayName = "noname";
+                            }
+                            displayName += "." + mimeInfo [1].ToLower ();
+                            attachment.SetDisplayName(displayName);
+                            path = attachment.GetFilePath ();
+                        }
+                    }
+                }
+            }
+
             DisplayFile (vc, path);
         }
 

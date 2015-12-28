@@ -392,8 +392,7 @@ namespace NachoCore.Model
             return (IsComplete (file) && !file.Truncated);
         }
 
-
-        public bool IsImageFile ()
+        public virtual bool IsImageFile ()
         {
             string[] subtype = {
                 ".tiff",
@@ -405,8 +404,8 @@ namespace NachoCore.Model
 
             var extension = Pretty.GetExtension (DisplayName);
 
-            if (null == extension) {
-                return false;
+            if (String.IsNullOrEmpty (extension) && !String.IsNullOrEmpty (LocalFileName)) {
+                extension = Pretty.GetExtension (LocalFileName);
             }
 
             foreach (var s in subtype) {
