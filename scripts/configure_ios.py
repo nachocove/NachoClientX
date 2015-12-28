@@ -123,10 +123,20 @@ def edit_plist(plist_file, ios, build, version, project_dir, release_dir):
     info_plist.write()
 
 
+def edit_entitlements(entitlements_file, ios, build, version, project_dir, release_dir):
+    app_group = ios['app_group']
+    entitlements_plist = PlistFile(entitlements_file)
+    entitlements_plist.write(os.path.join(project_dir, 'Entitlements.plist.rewritten'))
+    entitlements_plist.remove_list_index('com.apple.security.application-groups', 0)
+    entitlements_plist.append('com.apple.security.application-groups', app_group)
+    entitlements_plist.write()
+
+
 def main():
     (ios, release, version, build, release_dir) = configure_base.setup('ios')
     project_dir = os.path.dirname(os.path.abspath(sys.argv[1]))
     edit_plist(sys.argv[1], ios, build, version, project_dir, release_dir)
+    edit_entitlements(os.path.join(project_dir, 'Entitlements.plist'), ios, build, version, project_dir, release_dir)
     configure_base.copy_icons(ios.get('icon_script', None), os.path.join(project_dir, 'Resources'), release_dir)
 
 
