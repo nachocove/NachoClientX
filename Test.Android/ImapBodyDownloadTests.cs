@@ -21,8 +21,7 @@ namespace Test.iOS
         [SetUp]
         public void Setup ()
         {
-            Account = new McAccount () {
-            };
+            Account = new McAccount ();
             Account.Insert ();
 
             TestFolder = new McFolder () {

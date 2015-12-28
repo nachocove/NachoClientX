@@ -12,6 +12,51 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.IMAP
 {
+    public class SyncInstruction
+    {
+        /// <summary>
+        /// Message Summary Flags. Tunes IMAP fetch behavior
+        /// </summary>
+        public MessageSummaryItems Flags;
+
+        /// <summary>
+        /// A list of Uid's to sync.
+        /// </summary>
+        public IList<UniqueId> UidSet;
+
+        /// <summary>
+        /// The headers to fetch for the summary fetch.
+        /// </summary>
+        public HashSet<HeaderId> Headers;
+
+        /// <summary>
+        /// Whether to get Previews during fetching of the summary.
+        /// </summary>
+        public bool GetPreviews;
+
+        /// <summary>
+        /// Whether to fetch the RAW headers when getting the message summary.
+        /// This is not related to the Headers list above.
+        /// </summary>
+        public bool GetHeaders;
+
+        public SyncInstruction (IList<UniqueId> uidSet, MessageSummaryItems flags, HashSet<HeaderId> headers, bool getPreviews, bool getHeaders)
+        {
+            UidSet = uidSet;
+            Flags = flags;
+            Headers = headers;
+            GetPreviews = getPreviews;
+            GetHeaders = getHeaders;
+        }
+
+        public override string ToString ()
+        {
+            string me = string.Format ("SyncInstruction Flags {{{0}}}", Flags);
+            me += string.Format (" UidSet({0}) {{{1}}}", UidSet.Count, UidSet);
+            return me;
+        }
+    }
+
     public class SyncKit
     {
 
@@ -25,7 +70,6 @@ namespace NachoCore.IMAP
         public enum MethodEnum
         {
             Sync,
-            OpenOnly,
             QuickSync,
         };
 
@@ -40,29 +84,9 @@ namespace NachoCore.IMAP
         public McFolder Folder;
 
         /// <summary>
-        /// Message Summary Flags. Tunes IMAP fetch behavior
-        /// </summary>
-        public MessageSummaryItems Flags;
-
-        /// <summary>
         /// PendingSingle is null if Strategy decided to Sync.
         /// </summary>
         public McPending PendingSingle;
-
-        /// <summary>
-        /// A list of Uid's to sync.
-        /// </summary>
-        public IList<UniqueId> SyncSet;
-
-        /// <summary>
-        /// The headers to fetch for the summary fetch.
-        /// </summary>
-        public HashSet<HeaderId> Headers;
-
-        /// <summary>
-        /// Whether to get Previews during fetching of the summary.
-        /// </summary>
-        public bool GetPreviews;
 
         /// <summary>
         /// List of message Id's of messages we need to upload/sync to the server.
@@ -70,43 +94,65 @@ namespace NachoCore.IMAP
         public List<NcEmailMessageIndex> UploadMessages;
 
         /// <summary>
-        /// Whether to fetch the RAW headers when getting the message summary.
-        /// This is not related to the Headers list above.
+        /// The sync set.
         /// </summary>
-        public bool GetHeaders;
+        public List<SyncInstruction> SyncInstructions;
 
-        /// <summary>
-        /// The Sync Span
-        /// </summary>
-        public uint Span;
-
-        public SyncKit (McFolder folder)
-        {
-            Method = MethodEnum.OpenOnly;
-            Folder = folder;
-        }
-
-        public SyncKit (McFolder folder, uint span, McPending pending, MessageSummaryItems flags, HashSet<HeaderId> headers)
+        public SyncKit (McFolder folder, McPending pending)
         {
             Method = MethodEnum.QuickSync;
             Folder = folder;
-            Span = span;
-            Flags = flags;
-            Headers = headers;
-            GetPreviews = true;
-            GetHeaders = true;
+            SyncInstructions = new List<SyncInstruction> ();
             PendingSingle = pending;
         }
 
-        public SyncKit (McFolder folder, IList<UniqueId> uidset, MessageSummaryItems flags, HashSet<HeaderId> headers)
+        public SyncKit (McFolder folder, List<SyncInstruction> syncInstructions)
         {
             Method = MethodEnum.Sync;
             Folder = folder;
-            SyncSet = uidset;
-            Flags = flags;
-            Headers = headers;
-            GetPreviews = true;
-            GetHeaders = true;
+            SyncInstructions = syncInstructions;
+        }
+
+        public uint? MaxSynced {
+            get {
+                if (!_MaxSynced.HasValue) {
+                    MaxMinOfUidSets(SyncInstructions);
+                }
+                return _MaxSynced;
+            }
+        }
+
+        public uint? MinSynced {
+            get {
+                if (!_MinSynced.HasValue) {
+                    MaxMinOfUidSets(SyncInstructions);
+                }
+                return _MinSynced;
+            }
+        }
+
+        public UniqueIdSet CombinedUidSet {
+            get {
+                if (null == _CombinedUidSet) {
+                    MaxMinOfUidSets(SyncInstructions);
+                }
+                return _CombinedUidSet;
+            }
+        }
+
+        uint? _MaxSynced;
+        uint? _MinSynced;
+        UniqueIdSet _CombinedUidSet;
+        void MaxMinOfUidSets (List<SyncInstruction> syncInstructions)
+        {
+            _CombinedUidSet = new UniqueIdSet ();
+            foreach (var syncInst in syncInstructions) {
+                if (null != syncInst.UidSet && syncInst.UidSet.Any ()) {
+                    _CombinedUidSet.AddRange (syncInst.UidSet);
+                    _MaxSynced = Math.Max (syncInst.UidSet.Max ().Id, _MaxSynced.HasValue ? _MaxSynced.Value : uint.MinValue);
+                    _MinSynced = Math.Min (syncInst.UidSet.Min ().Id, _MinSynced.HasValue ? _MinSynced.Value : uint.MaxValue);
+                }
+            }
         }
 
         public static UniqueIdSet MustUniqueIdSet (IList<UniqueId> uids)
@@ -120,11 +166,16 @@ namespace NachoCore.IMAP
 
         public override string ToString ()
         {
-            string me = string.Format ("SyncKit {0} (Type {{{1}}}", Folder.ImapFolderNameRedacted (), Method.ToString ());
+            string me = string.Format ("SyncKit {0} (Type {{{1}}}", Folder.ImapFolderNameRedacted (), Method);
             switch (Method) {
             case MethodEnum.Sync:
-                me += string.Format (" Flags {{{0}}}", Flags);
-                me += string.Format (" SyncSet {{{0}}}", SyncSet.ToString ());
+                if (SyncInstructions.Any ()) {
+                    me += " SyncInstructions {";
+                    foreach (var inst in SyncInstructions) {
+                        me += string.Format (" {{{0}}}", inst);;
+                    }
+                    me += "}";
+                }
                 me += string.Format (" UploadMessages {{{0}}}", null != UploadMessages ? UploadMessages.Count : 0);
                 break;
 
