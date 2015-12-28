@@ -57,7 +57,7 @@ namespace NachoClient.AndroidClient
             OptionsGridView = view.FindViewById<GridView> (Resource.Id.attachment_options);
             Options = new List<AttachmentOption> (3);
             Options.Add (new AttachmentOption ("Add Photo", Resource.Drawable.calendar_add_photo, AddPhoto));
-            if (CanTakePhoto ()) {
+            if (Util.CanTakePhoto (Activity)) {
                 Options.Add (new AttachmentOption ("Take Photo", Resource.Drawable.calendar_take_photo, TakePhoto));
             }
             Options.Add (new AttachmentOption ("Add File", Resource.Drawable.calendar_add_files, AddFile));
@@ -124,13 +124,6 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        bool CanTakePhoto ()
-        {
-            Intent intent = new Intent (MediaStore.ActionImageCapture);
-            IList<Android.Content.PM.ResolveInfo> activities = Activity.PackageManager.QueryIntentActivities (intent, Android.Content.PM.PackageInfoFlags.MatchDefaultOnly);
-            return activities != null && activities.Count > 0;
-        }
-
         void AddPhoto ()
         {
             var intent = new Intent ();
@@ -141,15 +134,7 @@ namespace NachoClient.AndroidClient
 
         void TakePhoto ()
         {
-            var dir = new Java.IO.File (Android.OS.Environment.GetExternalStoragePublicDirectory (Android.OS.Environment.DirectoryPictures), "NachoAttachmentCamera");
-            if (!dir.Exists ()) {
-                dir.Mkdirs ();
-            }
-            var intent = new Intent (MediaStore.ActionImageCapture);
-            var file = new Java.IO.File (dir, String.Format("photo_{0}.jpg", Guid.NewGuid ()));
-            CameraOutputUri = Android.Net.Uri.FromFile (file);
-            intent.PutExtra (MediaStore.ExtraOutput, CameraOutputUri);
-            StartActivityForResult (intent, TAKE_PHOTO);
+            CameraOutputUri = Util.TakePhoto (Activity, TAKE_PHOTO);
         }
 
         void AddFile ()
@@ -210,7 +195,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public override AttachmentOption this[int index] {
+        public override AttachmentOption this [int index] {
             get {
                 return Options [index];
             }

@@ -67,6 +67,7 @@ namespace NachoCore.Brain
                 NotificationRateLimiter.Running = false;
                 var runTill = EvaluateRunTime (NcContactGleaner.GLEAN_PERIOD);
                 if (!ProcessPeriodic (runTill)) {
+                    // nothing was done, so stop the gleaner. It'll start when there's something to do.
                     NcContactGleaner.Stop ();
                 }
                 NotificationRateLimiter.Running = true;

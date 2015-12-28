@@ -121,6 +121,8 @@ def create_buildinfo(options):
     build_info.add('GoogleClientSecret', google['client_secret'])
     build_info.add('S3Bucket', aws['s3_bucket'])
     build_info.add('SupportS3Bucket', aws['support_s3_bucket'])
+    if options.architecture == 'android':
+        build_info.add('FileProvider', project[options.architecture]['fileprovider'])
     build_info.write(path)
 
 
