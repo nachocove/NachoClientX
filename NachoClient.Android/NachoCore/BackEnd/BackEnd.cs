@@ -436,7 +436,8 @@ namespace NachoCore
         {
             NcCommStatus.Instance.ForceUp ("CmdInDoNotDelayContext");
             return ApplyToService (accountId, capability, (service) => {
-                if (NcCommStatus.Instance.Quality (service.Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
+                var server = service.Server;
+                if (null == server || NcCommStatus.Instance.Quality (server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
                     return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
                 }
                 if (!service.IsDoNotDelayOk) {
