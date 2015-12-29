@@ -29,6 +29,13 @@
     <MtouchDebug>true</MtouchDebug>
     <CodesignKey>iPhone Developer</CodesignKey>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignProvision>3a2274db-5f96-4a25-83c9-b8220c23ad3d</CodesignProvision>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>
@@ -45,6 +52,7 @@
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CustomCommands>
       <CustomCommands>
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios_share.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
@@ -63,6 +71,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <CustomCommands>
       <CustomCommands>
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios_share.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
@@ -86,6 +95,11 @@
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchUseSGen>true</MtouchUseSGen>
     <CodesignProvision>3a2274db-5f96-4a25-83c9-b8220c23ad3d</CodesignProvision>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -105,6 +119,7 @@
     <Compile Include="ShareViewController.designer.cs">
       <DependentUpon>ShareViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="BuildInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.AppExtension.CSharp.targets" />
 </Project>
