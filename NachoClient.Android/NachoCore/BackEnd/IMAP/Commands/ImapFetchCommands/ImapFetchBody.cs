@@ -123,12 +123,16 @@ namespace NachoCore.IMAP
             }
 
             Cts.Token.ThrowIfCancellationRequested ();
-
-            if (null == fetchBody.Parts) {
-                result = DownloadEntireMessage (ref body, mailKitFolder, uid, imapBody);
-            } else {
-                result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, fetchBody.Parts, imapBody.ContentType.Boundary);
+            try {
+                if (null == fetchBody.Parts) {
+                    result = DownloadEntireMessage (ref body, mailKitFolder, uid, imapBody);
+                } else {
+                    result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, fetchBody.Parts, imapBody.ContentType.Boundary);
+                }
+            } catch (MessageNotFoundException ex) {
+                result = NcResult.Error (ex.Message);
             }
+
             Cts.Token.ThrowIfCancellationRequested ();
             if (!result.isOK ()) {
                 // The message doesn't exist. Delete it locally.
