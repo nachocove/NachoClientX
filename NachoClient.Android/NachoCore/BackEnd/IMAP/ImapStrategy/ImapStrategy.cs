@@ -16,23 +16,6 @@ namespace NachoCore.IMAP
 {
     public partial class ImapStrategy : NcStrategy
     {
-        /// <summary>
-        /// The base sync-window size
-        /// </summary>
-        const uint KBaseOverallWindowSize = 10;
-
-        /// <summary>
-        /// The Inbox message count after which we'll transition out of Stage/Rung 0
-        /// </summary>
-        const int KImapSyncRung0InboxCount = 400;
-
-        /// <summary>
-        /// The size of the initial (rung 0) sync window size
-        /// </summary>
-        const uint KRung0SyncWindowSize = 5;
-
-        private static uint[] KRungSyncWindowSize = new uint[] { KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize };
-
         private Random CoinToss;
 
         public ImapStrategy (IBEContext becontext) : base (becontext)
@@ -238,48 +221,6 @@ namespace NachoCore.IMAP
         }
 
         #endregion
-
-
-        private static uint MaybeAdvanceSyncStage (ref McProtocolState protocolState)
-        {
-            McFolder defInbox = McFolder.GetDefaultInboxFolder (protocolState.AccountId);
-            uint rung = protocolState.ImapSyncRung;
-            switch (protocolState.ImapSyncRung) {
-            case 0:
-                if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
-                    !SyncSet (defInbox, ref protocolState).Any ()) {
-                    // TODO For now skip stage 1, since it's not implemented.
-                    rung = 2;
-                    // reset the foldersync so we re-do it. In rung 0, we only sync'd Inbox.
-                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                        var target = (McProtocolState)record;
-                        target.AsLastFolderSync = DateTime.MinValue;
-                        return true;
-                    });
-                }
-                break;
-
-            case 1:
-                // TODO Fill in stage 1 later. For now just fall through to stage 2
-                rung = 2;
-                break;
-
-            case 2:
-                // we never exit this stage
-                rung = 2;
-                break;
-            }
-
-            if (rung != protocolState.ImapSyncRung) {
-                Log.Info (Log.LOG_IMAP, "GenSyncKit: Strategy rung update {0} -> {1}", protocolState.ImapSyncRung, rung);
-                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                    var target = (McProtocolState)record;
-                    target.ImapSyncRung = rung;
-                    return true;
-                });
-            }
-            return rung;
-        }
     }
 }
 

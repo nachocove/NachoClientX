@@ -62,9 +62,7 @@ namespace NachoCore.IMAP
                 StatusItems.Unread);
             UpdateImapSetting (mailKitFolder, ref IdleFolder);
             if (mailArrived || mailDeleted || needResync) {
-                if (!GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
-                    Log.Error (Log.LOG_IMAP, "{0}: Could not refresh folder metadata", IdleFolder.ImapFolderNameRedacted ());
-                }
+                GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ());
             }
 
             var protocolState = BEContext.ProtocolState;

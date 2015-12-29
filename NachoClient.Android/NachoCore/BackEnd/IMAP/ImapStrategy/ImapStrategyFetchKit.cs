@@ -16,7 +16,7 @@ using System.Threading;
 
 namespace NachoCore.IMAP
 {
-    public partial class ImapStrategy : NcStrategy
+    public partial class ImapStrategy
     {
         public const int KBaseFetchSize = 5;
 

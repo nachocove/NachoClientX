@@ -425,7 +425,7 @@ namespace NachoClient.AndroidClient
 
         public void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment)
         {
-            Util.OpenAttachment (Activity, attachment, true);
+            AttachmentHelper.OpenAttachment (Activity, attachment, true);
         }
 
         public void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment)

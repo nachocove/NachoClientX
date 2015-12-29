@@ -380,11 +380,7 @@ namespace NachoClient.AndroidClient
         public static void BindAttachmentView (McAttachment attachment, View view)
         {
             var attachmentImage = view.FindViewById<ImageView> (Resource.Id.attachment_icon);
-            if (Pretty.TreatLikeAPhoto (attachment.DisplayName)) {
-                attachmentImage.SetImageResource (Resource.Drawable.email_att_photos);
-            } else {
-                attachmentImage.SetImageResource (Resource.Drawable.email_att_files);
-            }
+            attachmentImage.SetImageResource (AttachmentHelper.FileIconFromExtension (attachment));
             var filenameView = view.FindViewById<TextView> (Resource.Id.attachment_name);
             filenameView.Text = System.IO.Path.GetFileNameWithoutExtension (attachment.DisplayName);
             var descriptionView = view.FindViewById<TextView> (Resource.Id.attachment_description);

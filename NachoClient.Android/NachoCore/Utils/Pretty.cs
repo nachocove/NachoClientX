@@ -539,27 +539,6 @@ namespace NachoCore.Utils
             return one + separator + two;
         }
 
-        public static bool TreatLikeAPhoto (string path)
-        {
-            string[] ext = {
-                "tiff",
-                "jpeg",
-                "jpg",
-                "gif",
-                "png",
-                "raw",
-            };
-            if (null == path) {
-                return false;
-            }
-            foreach (var s in ext) {
-                if (path.EndsWith (s, StringComparison.OrdinalIgnoreCase)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         protected static string DayOfWeekAsString (NcDayOfWeek dow)
         {
             var fullNames = DTFormat.DayNames;
@@ -829,7 +808,16 @@ namespace NachoCore.Utils
                 detailText += "Inline ";
             }
             string extension = Pretty.GetExtension (attachment.DisplayName);
-            detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+            if (1 < extension.Length) {
+                detailText += extension.Substring (1) + " ";
+            } else if (!String.IsNullOrEmpty (attachment.ContentType)) {
+                var mimeInfo = attachment.ContentType.Split (new char[] { '/' });
+                if (2 == mimeInfo.Length) {
+                    detailText += mimeInfo [1].ToUpper () + " ";
+                }
+            } else {
+                detailText += "Unrecognized ";
+            }
             detailText += "file";
             if (0 != attachment.FileSize) {
                 detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);

@@ -266,10 +266,9 @@ namespace NachoClient.AndroidClient
                 var attachment = McAttachment.QueryById<McAttachment> (file.Id);
                 if (attachment != null) {
                     populated = true;
-                    var extension = Pretty.GetExtension (attachment.DisplayName);
                     nameLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
                     infoLabel.Text = DetailTextForAttachment (attachment);
-                    iconView.SetImageResource (FileIconFromExtension (extension));
+                    iconView.SetImageResource (AttachmentHelper.FileIconFromExtension (attachment));
                     dateLabel.Text = DateToString (attachment.CreatedAt);
                     downloadIndicator.Visibility = ViewStates.Gone;
                     if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
@@ -360,36 +359,6 @@ namespace NachoClient.AndroidClient
                 detailText += " - Downloaded";
             }
             return detailText;
-        }
-
-        static int FileIconFromExtension (string extension)
-        {
-            switch (extension) {
-            case ".DOC":
-            case ".DOCX":
-                return Resource.Drawable.icn_files_wrd;
-            case ".PPT":
-            case ".PPTX":
-                return Resource.Drawable.icn_files_ppt;
-            case ".XLS":
-            case ".XLSX":
-                return Resource.Drawable.icn_files_xls;
-            case ".PDF":
-                return Resource.Drawable.icn_files_pdf;
-            case ".TXT":
-            case ".TEXT":
-                return Resource.Drawable.icn_files_txt;
-            case ".ZIP":
-                return Resource.Drawable.icn_files_zip;
-            case ".PNG":
-                return Resource.Drawable.icn_files_png;
-            default:
-                if (Pretty.TreatLikeAPhoto (extension)) {
-                    return Resource.Drawable.icn_files_img;
-                } else {
-                    return Resource.Drawable.email_att_files;
-                }
-            }
         }
 
         static string DateToString (DateTime date)

@@ -480,15 +480,17 @@ namespace NachoClient.iOS
                 }
                 detailTextLabel.Text = detailText;
                 dateTextLabel.Text = DateToString (item.CreatedAt);
-                iconView.Image = FileIconFromExtension (extension);
+                iconView.Image = FileIconFromExtension (attachment);
             } else {
                 textLabel.Text = "File no longer exists"; 
             }
 
         }
 
-        static public UIImage FileIconFromExtension (string extension)
+        static public UIImage FileIconFromExtension (McAttachment attachment)
         {
+            var extension = Pretty.GetExtension (attachment.DisplayName);
+
             switch (extension) {
             case ".DOC":
             case ".DOCX":
@@ -509,7 +511,7 @@ namespace NachoClient.iOS
             case ".PNG":
                 return UIImage.FromBundle ("icn-files-png");
             default:
-                if (Pretty.TreatLikeAPhoto (extension)) {
+                if (attachment.IsImageFile()) {
                     return UIImage.FromBundle ("icn-files-img");
                 } else {
                     return UIImage.FromBundle ("email-att-files");
