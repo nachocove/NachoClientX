@@ -56,6 +56,8 @@ namespace NachoCore.Utils
 
         protected FileStream ContentStream { get; set; }
 
+        protected bool DeleteStreamFile { get; set; }
+
         protected byte[] ContentData { get; set; }
 
         protected McCred _Cred;
@@ -110,29 +112,20 @@ namespace NachoCore.Utils
             return (ContentStream != null && ContentStream.Length > 0) || (ContentData != null && ContentData.Length > 0);
         }
 
-        public void SetContent (FileStream stream, string contentType)
+        public void SetContent (FileStream stream, string contentType, bool deleteFile)
         {
-            SetContent (stream, null, null, contentType);
-        }
-
-        public void SetContent (FileStream stream, long? contentLength, string contentType)
-        {
-            SetContent (stream, null, contentLength, contentType);
+            SetContent (stream, null, null, contentType, deleteFile);
         }
 
         public void SetContent (byte[] data, string contentType)
         {
-            SetContent (data, data.Length, contentType);
+            SetContent (null, data, data.Length, contentType, false);
         }
 
-        public void SetContent (byte[] data, long? contentLength, string contentType)
-        {
-            SetContent (null, data, contentLength, contentType);
-        }
-
-        void SetContent (FileStream stream, byte[] data, long? contentLength, string contentType)
+        protected void SetContent (FileStream stream, byte[] data, long? contentLength, string contentType, bool deleteFile)
         {
             ContentStream = stream;
+            DeleteStreamFile = deleteFile;
             ContentData = data;
             if (!Headers.Contains ("Content-Type")) {
                 Headers.Add ("Content-Type", contentType);
@@ -156,8 +149,12 @@ namespace NachoCore.Utils
 
         public void Dispose ()
         {
-            if (null != ContentStream) {
-                File.Delete (ContentStream.Name);
+            if (null != ContentStream && DeleteStreamFile) {
+                if (!File.Exists (ContentStream.Name)) {
+                    Log.Error (Log.LOG_HTTP, "NcHttpRequest.Dispose: Can not delete file since it no longer exists: {0}", ContentStream.Name);
+                } else {
+                    File.Delete (ContentStream.Name);
+                }
             }
         }
 
