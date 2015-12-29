@@ -36,8 +36,8 @@ namespace NachoClient.AndroidClient
 
         private  const int MOVE_DURATION = 150;
 
-        private int MAX_Y = 5;
-        private int MAX_X = 3;
+        private int MAX_Y = 10;
+        private int MAX_X = 10;
         private float mDownX;
         private float mDownY;
         private int mTouchState;
