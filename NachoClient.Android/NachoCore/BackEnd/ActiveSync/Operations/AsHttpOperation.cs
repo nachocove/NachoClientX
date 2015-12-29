@@ -362,7 +362,7 @@ namespace NachoCore.ActiveSync
                     var stream = doc.ToWbxmlStream (AccountId, cToken);
                     capture.Stop ();
                     diaper.Dispose ();
-                    request.SetContent (stream, ContentTypeWbxml);
+                    request.SetContent (stream, ContentTypeWbxml, true);
                 } else {
                     // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
                     // Xamarin bug: this prints out the wrong decl, which breaks autodiscovery. Revert to SO
@@ -377,7 +377,7 @@ namespace NachoCore.ActiveSync
                 return false;
             }
             if (null != mime) {
-                request.SetContent (mime, ContentTypeMail);
+                request.SetContent (mime, ContentTypeMail, false);
             }
             request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
             if (Owner.DoSendPolicyKey (this)) {
