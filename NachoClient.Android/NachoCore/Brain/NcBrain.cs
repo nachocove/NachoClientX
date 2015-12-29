@@ -116,7 +116,9 @@ namespace NachoCore.Brain
             // Set up the logging functions for IndexLib
             NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
-                brain.EventQueue.Token = NcTask.Cts.Token;
+                var token = NcTask.Cts.Token;
+                token.Register (NcContactGleaner.Stop);
+                brain.EventQueue.Token = token;
                 NcContactGleaner.Start ();
                 brain.Process ();
             }, "Brain");
@@ -147,7 +149,7 @@ namespace NachoCore.Brain
             NcContactGleaner.Start ();
         }
 
-        public void SignalTermination ()
+        protected void SignalTermination ()
         {
             EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
         }

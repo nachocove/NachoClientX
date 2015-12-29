@@ -46,9 +46,11 @@ namespace NachoCore.Brain
         public static void Start ()
         {
             if (NcBrain.ENABLED) {
-                Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
-                    TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
-                Invoker.Stfu = true;
+                if (!NcBrain.SharedInstance.IsCancelled ()) {
+                    Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
+                        TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
+                    Invoker.Stfu = true;
+                }
             }
         }
 

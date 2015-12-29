@@ -51,6 +51,11 @@ namespace NachoCore.Brain
             return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired;
         }
 
+        public bool IsCancelled ()
+        {
+            return null == EventQueue || EventQueue.Token.IsCancellationRequested;
+        }
+
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
             Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
