@@ -19,8 +19,7 @@ namespace NachoClient.AndroidClient
     public class AttachmentHelper
     {
         private static string[] dataColumnProjection = {
-            Android.Provider.MediaStore.MediaColumns.Data,
-            Android.Provider.MediaStore.MediaColumns.DisplayName,
+            Android.Provider.MediaStore.MediaColumns.DisplayName
         };
 
         private static McAttachment MakeAttachment (string filePath, string displayName, string type)
@@ -56,7 +55,7 @@ namespace NachoClient.AndroidClient
                     using (var stream = contentResolver.OpenTypedAssetFileDescriptor (uri, mimeType, null).CreateInputStream ()) {
                         var cursor = contentResolver.Query (uri, dataColumnProjection, null, null, null);
                         if (cursor.MoveToNext ()) {
-                            return MakeAttachment (stream, cursor.GetString (1), mimeType);
+                            return MakeAttachment (stream, cursor.GetString (0), mimeType);
                         }
                     }
                 }
