@@ -145,7 +145,7 @@ namespace NachoClient.AndroidClient
             }
            
             var intent = NotificationActivity.ShowMessageIntent (this, message);
-            var pendingIntent = PendingIntent.GetActivity (this, 0, intent, 0);
+            var pendingIntent = PendingIntent.GetActivity (this, 0, intent, PendingIntentFlags.UpdateCurrent);
             builder.SetContentIntent (pendingIntent);
 
             var nMgr = (NotificationManager)GetSystemService (NotificationService);
@@ -172,8 +172,10 @@ namespace NachoClient.AndroidClient
             var messageId = intent.GetIntExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", 0);
             if (messageId != 0) {
                 var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
-                NcEmailArchiver.Delete (message);
-                message.MarkHasBeenNotified (false);
+                if (null != message) {
+                    NcEmailArchiver.Delete (message);
+                    message.MarkHasBeenNotified (false);
+                }
                 var nMgr = (NotificationManager)MainApplication.Instance.GetSystemService (Context.NotificationService);
                 nMgr.Cancel (NotificationService.EMAIL_NOTIFICATION_ID);
             }
@@ -192,8 +194,10 @@ namespace NachoClient.AndroidClient
             var messageId = intent.GetIntExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", 0);
             if (messageId != 0) {
                 var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
-                NcEmailArchiver.Archive (message);
-                message.MarkHasBeenNotified (false);
+                if (null != message) {
+                    NcEmailArchiver.Archive (message);
+                    message.MarkHasBeenNotified (false);
+                }
                 var nMgr = (NotificationManager)MainApplication.Instance.GetSystemService (Context.NotificationService);
                 nMgr.Cancel (NotificationService.EMAIL_NOTIFICATION_ID);
             }
