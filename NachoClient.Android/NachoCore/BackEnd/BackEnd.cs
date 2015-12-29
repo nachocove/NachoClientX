@@ -438,6 +438,10 @@ namespace NachoCore
             return ApplyToService (accountId, capability, (service) => {
                 var server = service.Server;
                 if (null == server || NcCommStatus.Instance.Quality (server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
+                    if (null == server) {
+                        System.Diagnostics.StackTrace t = new System.Diagnostics.StackTrace();
+                        Log.Error (Log.LOG_BACKEND, "CmdInDoNotDelayContext called with no server active: {0}", t.ToString ());
+                    }
                     return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
                 }
                 if (!service.IsDoNotDelayOk) {
