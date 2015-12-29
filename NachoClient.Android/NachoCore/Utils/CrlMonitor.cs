@@ -12,6 +12,7 @@ using Org.BouncyCastle.Security.Certificates;
 using Org.BouncyCastle.Security;
 using NachoPlatform;
 using System.Security.Cryptography.X509Certificates;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
@@ -77,13 +78,7 @@ namespace NachoCore.Utils
             lock (LockObj) {
                 StopService ();
                 Cts = new CancellationTokenSource ();
-                MonitorTimer = new NcTimer ("CrlMonitorTimer", (state) => {
-                    foreach (var monitor in Monitors.Values) {
-                        if (monitor.NeedsUpdate ()) {
-                            monitor.StartUpdate (Cts.Token); // spawns a task
-                        }
-                    }
-                }, null, 0, DefaultRecheckTimeSecs * 1000);
+                PossiblyStartTimer ();
             }
         }
 
@@ -94,10 +89,7 @@ namespace NachoCore.Utils
                     Cts.Cancel ();
                     Cts = null;
                 }
-                if (MonitorTimer != null) {
-                    MonitorTimer.Dispose ();
-                    MonitorTimer = null;
-                }
+                StopTimer ();
             }
         }
 
@@ -133,7 +125,72 @@ namespace NachoCore.Utils
                 }
                 var removed = Monitors.Remove (cert.SubjectName.Name);
                 NcAssert.True (removed);
+                PossiblyStartTimer ();
                 return true;
+            }
+        }
+
+        void StopTimer ()
+        {
+            if (MonitorTimer != null) {
+                MonitorTimer.Dispose ();
+                MonitorTimer = null;
+            }
+        }
+
+        public void PossiblyStartTimer ()
+        {
+            lock (LockObj) {
+                StopTimer ();
+                try {
+                    var soonestExpiry = SoonestCrlExpiry ();
+                    if (soonestExpiry < DateTime.UtcNow) {
+                        StartUpdates ();
+                        return;
+                    }
+                    var dueIn = soonestExpiry - DateTime.UtcNow;
+                    if (soonestExpiry != DateTime.MaxValue) {
+                        MonitorTimer = new NcTimer ("CrlMonitorTimer", (state) => {
+                            StartUpdates ();
+                        }, null, dueIn, TimeSpan.Zero);
+                    }
+                } catch (CrlMonitorNoItems) {
+                    return;
+                }
+            }
+        }
+
+        class CrlMonitorNoItems : ArgumentOutOfRangeException
+        {
+        }
+
+        /// <summary>
+        /// Finds the soonest any of the CRL's expires.
+        /// </summary>
+        /// <exception cref="CrlMonitorNoItems">Throws CrlMonitorNoItems if no CRL's are currently registered.</exception>
+        /// <returns>The crl expiry.</returns>
+        DateTime SoonestCrlExpiry ()
+        {
+            if (!Monitors.Any()) {
+                throw new CrlMonitorNoItems ();
+            }
+            DateTime soonest = DateTime.MaxValue;
+            foreach (var item in Monitors) {
+                var crlNextupdate = item.Value.CrlNextUpdate ();
+                if (crlNextupdate < soonest) {
+                    soonest = crlNextupdate;
+                }
+            }
+            NcAssert.True (soonest != DateTime.MaxValue);
+            return soonest;
+        }
+
+        void StartUpdates ()
+        {
+            foreach (var monitor in Monitors.Values) {
+                if (monitor.NeedsUpdate ()) {
+                    monitor.StartUpdate (Cts.Token); // spawns a task
+                }
             }
         }
 
@@ -268,6 +325,7 @@ namespace NachoCore.Utils
 
         void FinishUpdate ()
         {
+            CrlMonitor.Instance.PossiblyStartTimer ();
             UpdateRunning = false;
         }
 
@@ -476,6 +534,14 @@ namespace NachoCore.Utils
             builder.AppendLine ("-----END CERTIFICATE-----");
 
             return builder.ToString ();
+        }
+
+        public DateTime CrlNextUpdate ()
+        {
+            if (null != Crl) {
+                return Crl.NextUpdate;
+            }
+            return DateTime.MaxValue;
         }
     }
 
