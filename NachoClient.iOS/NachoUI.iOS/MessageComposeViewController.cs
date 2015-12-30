@@ -18,6 +18,8 @@ using NachoCore.Model;
 using NachoCore.Utils;
 
 using WebKit;
+using Photos;
+using MobileCoreServices;
 
 namespace NachoClient.iOS
 {
@@ -42,7 +44,9 @@ namespace NachoClient.iOS
         INachoFileChooserParent,
         INachoContactChooserDelegate,
         MessageComposerDelegate,
-        NcWebViewMessageHandler
+        NcWebViewMessageHandler,
+        IUIDocumentMenuDelegate,
+        IUIDocumentPickerDelegate
     {
 
         #region Properties
@@ -835,6 +839,60 @@ namespace NachoClient.iOS
 
         #endregion
 
+        #region Document Menu & Picker
+
+        void ShowBrowsePhotos ()
+        {
+            var helper = new AddAttachmentViewController.ImagePickerHelper (this, Composer.Account);
+            helper.SetupPhotoPicker (false);
+            PresentViewController (helper.ImagePicker, true, null);
+        }
+
+        void ShowTakePhoto ()
+        {
+            var helper = new AddAttachmentViewController.ImagePickerHelper (this, Composer.Account);
+            helper.SetupPhotoPicker (true);
+            PresentViewController (helper.ImagePicker, true, null);
+        }
+
+        void ShowBrowseAttachments ()
+        {
+            var fileListViewController = MainStoryboard.InstantiateViewController ("FileListViewController") as FileListViewController;
+            fileListViewController.SetOwner (this);
+            fileListViewController.SetModal (true);
+            PresentViewController (fileListViewController, true, null);
+        }
+
+        public void DidPickDocumentPicker (UIDocumentMenuViewController documentMenu, UIDocumentPickerViewController documentPicker)
+        {
+            documentPicker.Delegate = this;
+            PresentViewController (documentPicker, true, null);
+        }
+
+        public void WasCancelled (UIDocumentMenuViewController documentMenu)
+        {
+        }
+
+        public void DidPickDocument (UIDocumentPickerViewController controller, NSUrl url)
+        {
+            if (url.IsFileUrl) {
+                var path = url.Path;
+                if (Directory.Exists (path)) {
+                    System.IO.Compression.ZipFile.CreateFromDirectory (path, path + ".zip");
+                    path = path + ".zip";
+                }
+                var attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
+                attachment.SetDisplayName (url.LastPathComponent);
+                attachment.UpdateFileCopy (path);
+                attachment.Link (Composer.Message);
+                HeaderView.AttachmentsView.Append (attachment);
+            } else {
+                Log.Error (Log.LOG_UI, "DidPickDocument received non-file URL: {0}", url);
+            }
+        }
+
+        #endregion
+
         #region Helpers
 
         private void UpdateSendEnabled ()
@@ -844,10 +902,19 @@ namespace NachoClient.iOS
 
         private void ShowAddAttachment (bool inline = false)
         {
-            AddAttachmentViewController attachmentViewController = MainStoryboard.InstantiateViewController ("AddAttachmentViewController") as AddAttachmentViewController;
-            attachmentViewController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
-            attachmentViewController.SetOwner (this, Composer.Account);
-            PresentViewController (attachmentViewController, true, null);
+            var menu = new UIDocumentMenuViewController(new string[] {
+                UTType.Data,
+                UTType.Package
+            }, UIDocumentPickerMode.Import);
+            menu.Delegate = this;
+            menu.AddOption ("Browse Attachments", UIImage.FromBundle("calendar-add-files"), UIDocumentMenuOrder.First, ShowBrowseAttachments);
+            menu.AddOption ("Take a Photo", UIImage.FromBundle("calendar-take-photo"), UIDocumentMenuOrder.First, ShowTakePhoto);
+            menu.AddOption ("Browse Photos", UIImage.FromBundle("calendar-add-photo"), UIDocumentMenuOrder.First, ShowBrowsePhotos);
+            PresentViewController (menu, true, null);
+//            AddAttachmentViewController attachmentViewController = MainStoryboard.InstantiateViewController ("AddAttachmentViewController") as AddAttachmentViewController;
+//            attachmentViewController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+//            attachmentViewController.SetOwner (this, Composer.Account);
+//            PresentViewController (attachmentViewController, true, null);
         }
 
         private void ShowQuickResponses (bool animated = true)
