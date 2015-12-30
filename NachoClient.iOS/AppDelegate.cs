@@ -513,12 +513,25 @@ namespace NachoClient.iOS
 
         void OpenFiles (string[] paths, string source = null)
         {
-            foreach (var path in paths) {
-                // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
-                var document = McDocument.InsertSaveStart (McAccount.GetDeviceAccount ().Id);
-                document.SetDisplayName (Path.GetFileName (path));
-                document.SourceApplication = source;
-                document.UpdateFileMove (path);
+            if (NcApplication.ReadyToStartUI ()) {
+                var account = NcApplication.Instance.Account;
+                var attachments = new List<McAttachment> ();
+                foreach (var path in paths) {
+                    // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
+                    var document = McDocument.InsertSaveStart (McAccount.GetDeviceAccount ().Id);
+                    document.SetDisplayName (Path.GetFileName (path));
+                    document.SourceApplication = source;
+                    document.UpdateFileMove (path);
+                    var attachment = McAttachment.InsertSaveStart (account.Id);
+                    attachment.SetDisplayName (document.DisplayName);
+                    attachment.UpdateFileCopy (document.GetFilePath ());
+                    attachments.Add (attachment);
+                }
+                if (attachments.Count > 0) {
+                    var composeViewController = new MessageComposeViewController ();
+                    composeViewController.Composer.InitialAttachments = attachments;
+                    composeViewController.Present ();
+                }
             }
         }
 
