@@ -29,7 +29,6 @@
     <MtouchDebug>true</MtouchDebug>
     <CodesignKey>iPhone Developer</CodesignKey>
     <MtouchProfiling>true</MtouchProfiling>
-    <CodesignProvision>3a2274db-5f96-4a25-83c9-b8220c23ad3d</CodesignProvision>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
     <CustomCommands>
       <CustomCommands>
@@ -94,7 +93,6 @@
     <MtouchProfiling>true</MtouchProfiling>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchUseSGen>true</MtouchUseSGen>
-    <CodesignProvision>3a2274db-5f96-4a25-83c9-b8220c23ad3d</CodesignProvision>
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile} --architecture ios" workingdir="${ProjectDir}" />
