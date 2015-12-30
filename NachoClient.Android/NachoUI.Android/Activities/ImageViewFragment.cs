@@ -56,7 +56,7 @@ namespace NachoClient.AndroidClient
 
             var baseUri = Android.Net.Uri.FromFile (new Java.IO.File (pathToImage));
 
-            var body = String.Format ("<body><image src=\"{0}\"/></body>", imageName);
+            var body = String.Format ("<style>img{{display: inline; height: auto; max-width: 100%;}}</style><body><image src=\"{0}\"/></body>", imageName);
             webview.LoadDataWithBaseURL (baseUri.ToString () + "/", body, "text/html", "utf-8", null);
 
             return view;
@@ -64,7 +64,7 @@ namespace NachoClient.AndroidClient
 
         private void ShareButton_Click (object sender, EventArgs e)
         {
-            Util.OpenAttachment (Activity, attachment, useInternalViewer: false);
+            AttachmentHelper.OpenAttachment (Activity, attachment, useInternalViewer: false);
         }
     }
 }

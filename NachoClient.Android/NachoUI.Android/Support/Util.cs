@@ -1,13 +1,16 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using NachoCore.Model;
-using Android.Widget;
-using NachoCore;
+using System.Collections.Generic;
 using Android.Content;
 using Android.Content.PM;
+using Android.Provider;
 using Android.Support.V4.Content;
+using Android.Widget;
+using NachoCore;
+using NachoCore.Model;
 using NachoCore.Utils;
+using Android.App;
 
 namespace NachoClient.AndroidClient
 {
@@ -144,42 +147,25 @@ namespace NachoClient.AndroidClient
             }
         }
 
-
-        public static void OpenAttachment (Context context, McAttachment attachment, bool useInternalViewer = true)
+        public static bool CanTakePhoto (Context context)
         {
-            if (useInternalViewer && attachment.IsImageFile ()) {
-                var viewerIntent = ImageViewActivity.ImageViewIntent (context, attachment);
-                context.StartActivity (viewerIntent);
-                return;
+            Intent intent = new Intent (MediaStore.ActionImageCapture);
+            IList<Android.Content.PM.ResolveInfo> activities = context.PackageManager.QueryIntentActivities (intent, Android.Content.PM.PackageInfoFlags.MatchDefaultOnly);
+            return activities != null && activities.Count > 0;
+        }
+
+        public static Android.Net.Uri TakePhoto (Activity context, int requestCode)
+        {
+            var dir = new Java.IO.File (Android.OS.Environment.GetExternalStoragePublicDirectory (Android.OS.Environment.DirectoryPictures), "NachoAttachmentCamera");
+            if (!dir.Exists ()) {
+                dir.Mkdirs ();
             }
-                
-            try {
-                Android.Net.Uri fileUri;
-                var file = new Java.IO.File (attachment.GetFilePath ());
-                try {
-                    fileUri = FileProvider.GetUriForFile (context, "com.nachocove.fileprovider", file);
-                } catch (Java.Lang.IllegalArgumentException e) {
-                    Log.Error (Log.LOG_UTILS, "FileProvider error\n{0}", e.StackTrace);
-                    NcAlertView.ShowMessage (context, "Attachment", String.Format ("The selected file cannot be shared: {0}", attachment.DisplayName));
-                    return;
-                }
-                var intent = new Intent (Intent.ActionView);
-                intent.AddFlags (ActivityFlags.GrantReadUriPermission);
-                var fileType = context.ContentResolver.GetType (fileUri);
-                intent.SetDataAndType (fileUri, fileType);
-                // Look for potential handlers
-                var packageManager = context.PackageManager;
-                var activities = packageManager.QueryIntentActivities (intent, PackageInfoFlags.MatchDefaultOnly);
-                var isIntentSafe = 0 < activities.Count;
-                if (isIntentSafe) {
-                    context.StartActivity (intent);
-                } else {
-                    NcAlertView.ShowMessage (context, "Attachment", String.Format ("No application can open this attachment: {0}", attachment.DisplayName));
-                }
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_UTILS, "Sharing error\n{0}", ex.StackTrace);
-                NcAlertView.ShowMessage (context, "Attachment", String.Format ("The selected file cannot be shared: {0}", attachment.DisplayName));
-            }
+            var intent = new Intent (MediaStore.ActionImageCapture);
+            var file = new Java.IO.File (dir, String.Format ("photo_{0}.jpg", Guid.NewGuid ()));
+            var outputUri = Android.Net.Uri.FromFile (file);
+            intent.PutExtra (MediaStore.ExtraOutput, outputUri);
+            context.StartActivityForResult (intent, requestCode);
+            return outputUri;
         }
     }
 

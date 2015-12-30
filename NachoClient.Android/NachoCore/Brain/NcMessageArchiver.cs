@@ -33,6 +33,9 @@ namespace NachoCore
             if (0 == messages.Count) {
                 return;
             }
+            foreach (var message in messages) {
+                RemoveDeferral (message);
+            }
             var Ids = messages.Select (x => x.Id).ToList ();
             BackEnd.Instance.MoveEmailsCmd (folder.AccountId, Ids, folder.Id);
         }
@@ -70,6 +73,9 @@ namespace NachoCore
             if (0 == messages.Count) {
                 return;
             }
+            foreach (var message in messages) {
+                RemoveDeferral (message);
+            }
             var Ids = messages.Select (x => x.Id).ToList ();
             int accountId = messages [0].AccountId;
             if (ShouldDeleteInsteadOfArchive (accountId)) {
@@ -99,6 +105,9 @@ namespace NachoCore
         {
             if (0 == messages.Count) {
                 return;
+            }
+            foreach (var message in messages) {
+                RemoveDeferral (message);
             }
             var Ids = messages.Select (x => x.Id).ToList ();
             int accountId = messages [0].AccountId;

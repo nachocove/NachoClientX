@@ -267,7 +267,7 @@ namespace NachoClient.AndroidClient
                 return;
             }
             if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                Util.OpenAttachment (Activity, attachment);
+                AttachmentHelper.OpenAttachment (Activity, attachment);
                 return;
             }
             var cell = GetViewByPosition (position);
@@ -294,7 +294,7 @@ namespace NachoClient.AndroidClient
             var actionAttachmentDownloader = (ActionAttachmentDownloader)downloader;
             switch (actionAttachmentDownloader.tag) {
             case VIEW_TAG:
-                Util.OpenAttachment (Activity, attachment);
+                AttachmentHelper.OpenAttachment (Activity, attachment);
                 break;
             case FORWARD_TAG:
                 var intent = MessageComposeActivity.ForwardAttachmentIntent (Activity, attachment.Id);

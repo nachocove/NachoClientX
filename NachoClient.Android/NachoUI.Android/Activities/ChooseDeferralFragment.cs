@@ -57,14 +57,19 @@ namespace NachoClient.AndroidClient
             }
 
             var gridview = view.FindViewById<GridView> (Resource.Id.gridview);
+            var messageview = view.FindViewById<TextView> (Resource.Id.message);
+
             DeferralAdapter.Data[] data = null;
+
             switch (type) {
             case NcMessageDeferral.MessageDateType.Defer:
                 data = DeferralAdapter.DeferralData;
+                messageview.SetText (Resource.String.defer_message_until);
                 break;
             case NcMessageDeferral.MessageDateType.Deadline:
             case NcMessageDeferral.MessageDateType.Intent:
                 data = DeferralAdapter.DeadlineData;
+                messageview.SetText (Resource.String.set_deadline);
                 break;
             default:
                 NcAssert.CaseError ();

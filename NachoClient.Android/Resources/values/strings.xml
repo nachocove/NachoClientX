@@ -53,6 +53,7 @@
     <string name="subject">Subject:</string>
     <string name="message_not_available">Message not available</string>
     <string name="defer_message_until">Defer Message</string>
+    <string name="set_deadline">Set Deadline</string>
     <string name="choose_folder">Choose Folder</string>
     <string name="email">Email</string>
     <string name="call">Call</string>

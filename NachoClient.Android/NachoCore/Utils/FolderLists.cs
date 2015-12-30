@@ -25,7 +25,6 @@ namespace NachoClient.AndroidClient
 
             public Node Copy (McFolder folder)
             {
-                this.children = new List<Node> ();
                 this.id = folder.ServerId;
                 this.folder = folder;
                 this.opened = false;

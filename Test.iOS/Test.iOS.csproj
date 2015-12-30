@@ -350,6 +350,9 @@
       <Link>NcHttpUtilTest.cs</Link>
     </Compile>
     <Compile Include="PushAssistTestiOS.cs" />
+    <Compile Include="..\Test.Android\NcQueueTests.cs">
+      <Link>NcQueueTests.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

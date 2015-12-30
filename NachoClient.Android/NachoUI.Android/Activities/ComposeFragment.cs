@@ -8,7 +8,6 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
 
@@ -21,6 +20,7 @@ using MimeKit;
 using Java.Interop;
 using NachoPlatform;
 using System.IO;
+using Android.Views.InputMethods;
 
 namespace NachoClient.AndroidClient
 {
@@ -31,10 +31,13 @@ namespace NachoClient.AndroidClient
         NachoWebClientDelegate,
         MessageComposeHeaderViewDelegate,
         IntentFragmentDelegate,
-        AttachmentPickerFragmentDelegate,
+        FilePickerFragmentDelegate,
         QuickResponseFragmentDelegate
     {
-        private const string ATTACHMENT_PICKER_TAG = "AttachmentPickerFragment";
+        private const string FILE_PICKER_TAG = "FilePickerFragment";
+
+        private const int PICK_REQUEST_CODE = 1;
+        private const int TAKE_PHOTO_REQUEST_CODE = 2;
 
         #region Properties
 
@@ -42,19 +45,21 @@ namespace NachoClient.AndroidClient
             get;
             private set;
         }
+
         MessageComposeHeaderView HeaderView;
         Android.Webkit.WebView WebView;
         Android.Widget.ImageView SendButton;
         bool IsWebViewLoaded;
         bool FocusWebViewOnLoad;
         List<Tuple<string, JavascriptCallback>> JavaScriptQueue;
+        Android.Net.Uri CameraOutputUri;
         ButtonBar buttonBar;
 
         #endregion
 
         #region Constructor/Factory
 
-        public ComposeFragment () : base()
+        public ComposeFragment () : base ()
         {
             Composer = new MessageComposer (NcApplication.Instance.Account);
             Composer.Delegate = this;
@@ -74,12 +79,6 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-            if (null != savedInstanceState) {
-                var attachmentPicker = FragmentManager.FindFragmentByTag<AttachmentPickerFragment> (ATTACHMENT_PICKER_TAG);
-                if (null != attachmentPicker) {
-                    attachmentPicker.Delegate = this;
-                }
-            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -90,6 +89,7 @@ namespace NachoClient.AndroidClient
 
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
             buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.contact_quickemail, QuickResponseButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right3, Resource.Drawable.files_email_attachment, AddAttachmentButton_Click);
             SendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
 
             HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);
@@ -97,8 +97,8 @@ namespace NachoClient.AndroidClient
 
             WebView = view.FindViewById<Android.Webkit.WebView> (Resource.Id.message);
             WebView.Settings.JavaScriptEnabled = true;
-            WebView.AddJavascriptInterface (new NachoJavascriptMessenger(this, "nacho"), "_android_messageHandlers_nacho");
-            WebView.AddJavascriptInterface (new NachoJavascriptMessenger(this, "nachoCompose"), "_android_messageHandlers_nachoCompose");
+            WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nacho"), "_android_messageHandlers_nacho");
+            WebView.AddJavascriptInterface (new NachoJavascriptMessenger (this, "nachoCompose"), "_android_messageHandlers_nachoCompose");
             WebView.SetWebViewClient (new NachoWebClient (this));
 
             if (MessageIsReady) {
@@ -112,6 +112,7 @@ namespace NachoClient.AndroidClient
         }
 
         private bool messageIsReady = true;
+
         public bool MessageIsReady {
             private get {
                 return messageIsReady;
@@ -162,14 +163,14 @@ namespace NachoClient.AndroidClient
                 Composer.Save (html);
                 if (Composer.IsOversize) {
                     if (Composer.CanResize) {
-                        var alert = new AlertDialog.Builder (Activity).SetTitle (String.Format ("This message is {0}. Do you want to resize images?", Pretty.PrettyFileSize(Composer.MessageSize)));
+                        var alert = new AlertDialog.Builder (Activity).SetTitle (String.Format ("This message is {0}. Do you want to resize images?", Pretty.PrettyFileSize (Composer.MessageSize)));
                         alert.SetSingleChoiceItems (new string[] {
-                            String.Format ("Small Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedSmallSize)),
-                            String.Format ("Medium Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedMediumSize)),
-                            String.Format ("Large Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedLargeSize)),
-                            String.Format ("Actual Size ({0})", Pretty.PrettyFileSize(Composer.MessageSize))
+                            String.Format ("Small Images ({0})", Pretty.PrettyFileSize (Composer.EstimatedSmallSize)),
+                            String.Format ("Medium Images ({0})", Pretty.PrettyFileSize (Composer.EstimatedMediumSize)),
+                            String.Format ("Large Images ({0})", Pretty.PrettyFileSize (Composer.EstimatedLargeSize)),
+                            String.Format ("Actual Size ({0})", Pretty.PrettyFileSize (Composer.MessageSize))
                         }, -1, (object sender, DialogClickEventArgs e) => {
-                            switch (e.Which){
+                            switch (e.Which) {
                             case 0:
                                 ResizeImagesSmall (sender, e);
                                 break;
@@ -183,13 +184,13 @@ namespace NachoClient.AndroidClient
                                 AcknowlegeSizeWarning (sender, e);
                                 break;
                             default:
-                                NcAssert.CaseError();
+                                NcAssert.CaseError ();
                                 break;
                             }
                         });
                         alert.Show ();
                     } else {
-                        var alert = new AlertDialog.Builder (Activity).SetTitle ("Large Message").SetMessage (String.Format ("This message is {0}", Pretty.PrettyFileSize(Composer.MessageSize)));
+                        var alert = new AlertDialog.Builder (Activity).SetTitle ("Large Message").SetMessage (String.Format ("This message is {0}", Pretty.PrettyFileSize (Composer.MessageSize)));
                         alert.SetNeutralButton ("Send Anyway", AcknowlegeSizeWarning);
                         alert.Show ();
                     }
@@ -235,12 +236,125 @@ namespace NachoClient.AndroidClient
         {
             ShowQuickResponses ();
         }
-            
+
+        void AddAttachmentButton_Click (object sender, EventArgs e)
+        {
+            PickAttachment ();
+        }
+
+        void PickAttachment ()
+        {
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+            imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
+
+            Intent shareIntent = new Intent ();
+            shareIntent.SetAction (Intent.ActionPick);
+            shareIntent.SetType ("image/*");
+            shareIntent.PutExtra (Intent.ExtraAllowMultiple, true);
+            var resInfos = Activity.PackageManager.QueryIntentActivities (shareIntent, 0);
+            var packages = new List<string> ();
+            if (Util.CanTakePhoto (Activity)) {
+                packages.Add (ChooserArrayAdapter.TAKE_PHOTO);
+            }
+            packages.Add (ChooserArrayAdapter.ADD_FILE);
+            foreach (var resInfo in resInfos) {
+                packages.Add (resInfo.ActivityInfo.PackageName);
+            }
+            if (packages.Count > 1) {
+                ArrayAdapter<String> adapter = new ChooserArrayAdapter (Activity, Android.Resource.Layout.SelectDialogItem, Android.Resource.Id.Text1, packages);
+                var builder = new AlertDialog.Builder (Activity);
+                builder.SetTitle ("Get File");
+                builder.SetAdapter (adapter, (s, ev) => {
+                    InvokeApplication (packages [ev.Which]);
+                });
+                builder.Show ();
+            } else if (1 == packages.Count) {
+                InvokeApplication (packages [0]);
+            }
+
+        }
+
+        void InvokeApplication (string packageName)
+        {
+            if (ChooserArrayAdapter.TAKE_PHOTO == packageName) {
+                CameraOutputUri = Util.TakePhoto (Activity, TAKE_PHOTO_REQUEST_CODE);
+                return;
+            }
+            if (ChooserArrayAdapter.ADD_FILE == packageName) {
+                var filePicker = new FilePickerFragment ();
+                filePicker.Delegate = this;
+                filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
+                return;
+            }
+            var intent = new Intent ();
+            intent.SetAction (Intent.ActionGetContent);
+            intent.AddCategory (Intent.CategoryOpenable);
+            intent.SetType ("*/*");
+            intent.SetFlags (ActivityFlags.SingleTop);
+            intent.PutExtra (Intent.ExtraAllowMultiple, true);
+            intent.SetPackage (packageName);
+
+            StartActivityForResult (intent, PICK_REQUEST_CODE);
+        }
+
+
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            if (Result.Ok != resultCode) {
+                return;
+            }
+            if (TAKE_PHOTO_REQUEST_CODE == requestCode) {
+                var mediaScanIntent = new Intent (Intent.ActionMediaScannerScanFile);
+                mediaScanIntent.SetData (CameraOutputUri);
+                Activity.SendBroadcast (mediaScanIntent);
+                var attachment = McAttachment.InsertSaveStart (NcApplication.Instance.Account.Id);
+                var filename = Path.GetFileName (CameraOutputUri.Path);
+                attachment.SetDisplayName (filename);
+                attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
+                attachment.UpdateFileCopy (CameraOutputUri.Path);
+                attachment.UpdateSaveFinish ();
+                attachment.Link (Composer.Message);
+                HeaderView.AttachmentsView.AddAttachment (attachment);
+            } else if (PICK_REQUEST_CODE == requestCode) {
+                try {
+                    var clipData = data.ClipData;
+                    if (null == clipData) {
+                        var attachment = AttachmentHelper.UriToAttachment (Activity, data.Data, data.Type);
+                        if (null != attachment) {
+                            attachment.Link (Composer.Message);
+                            HeaderView.AttachmentsView.AddAttachment (attachment);
+                        }
+                    } else {
+                        for (int i = 0; i < clipData.ItemCount; i++) {
+                            var uri = clipData.GetItemAt (i).Uri;
+                            var attachment = AttachmentHelper.UriToAttachment (Activity, uri, data.Type);
+                            if (null != attachment) {
+                                attachment.Link (Composer.Message);
+                                HeaderView.AttachmentsView.AddAttachment (attachment);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    NachoCore.Utils.Log.Error (NachoCore.Utils.Log.LOG_LIFECYCLE, "Exception while processing the STREAM extra of a Send intent: {0}", e.ToString ());
+                }
+            }
+        }
+
+        public void FilePickerDidPickFile (FilePickerFragment picker, McAbstrFileDesc file)
+        {
+            picker.Dismiss ();
+            var attachment = file as McAttachment;
+            if (attachment != null) {
+                attachment.Link (Composer.Message);
+                HeaderView.AttachmentsView.AddAttachment (attachment);
+            }
+        }
+
         public void Discard ()
         {
             Composer.Message.Delete ();
         }
-            
+
         public void Save (Action callback)
         {
             GetHtmlContent ((string html) => {
@@ -275,7 +389,7 @@ namespace NachoClient.AndroidClient
         {
             Composer.Message.Subject = subject;
         }
-            
+
         public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
         {
             var intentFragment = new IntentFragment ();
@@ -306,21 +420,12 @@ namespace NachoClient.AndroidClient
 
         public void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view)
         {
-            var attachmentPicker = new AttachmentPickerFragment ();
-            attachmentPicker.Account = Composer.Account;
-            attachmentPicker.Delegate = this;
-            attachmentPicker.Show (FragmentManager, ATTACHMENT_PICKER_TAG);
-        }
-
-        public void AttachmentPickerDidPickAttachment (AttachmentPickerFragment picker, McAttachment attachment)
-        {
-            attachment.Link (Composer.Message);
-            HeaderView.AttachmentsView.AddAttachment (attachment);
+            PickAttachment ();
         }
 
         public void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment)
         {
-            // TODO: display attachment
+            AttachmentHelper.OpenAttachment (Activity, attachment, true);
         }
 
         public void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment)
@@ -330,12 +435,12 @@ namespace NachoClient.AndroidClient
 
         public void QuickResponseFragmentDidSelectResponse (QuickResponseFragment fragment, NcQuickResponse.QuickResponse response)
         {
-            if (!EmailHelper.IsReplyAction(Composer.Kind) && !EmailHelper.IsForwardAction(Composer.Kind)) {
+            if (!EmailHelper.IsReplyAction (Composer.Kind) && !EmailHelper.IsForwardAction (Composer.Kind)) {
                 Composer.Message.Subject = response.subject;
                 UpdateHeaderSubjectView ();
             }
             if (Composer.IsMessagePrepared) {
-                var javascriptString = JavaScriptEscapedString (response.body + Composer.SignatureText());
+                var javascriptString = JavaScriptEscapedString (response.body + Composer.SignatureText ());
                 EvaluateJavascript (String.Format ("Editor.defaultEditor.replaceUserText({0});", javascriptString));
             } else {
                 Composer.InitialText = response.body;
@@ -406,7 +511,7 @@ namespace NachoClient.AndroidClient
 
         public void MessageComposerDidFailToLoadMessage (MessageComposer composer)
         {
-            NcAlertView.ShowMessage(Activity, "Could not load message", "Sorry, we could not load your message.  Please try again.");
+            NcAlertView.ShowMessage (Activity, "Could not load message", "Sorry, we could not load your message.  Please try again.");
         }
 
         public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
@@ -438,7 +543,7 @@ namespace NachoClient.AndroidClient
                 primitive.Save (writer);
                 escaped = writer.ToString ();
             }
-            return escaped.Replace("\n", "\\n");
+            return escaped.Replace ("\n", "\\n");
         }
 
         delegate void HtmlContentCallback (string html);
@@ -449,7 +554,7 @@ namespace NachoClient.AndroidClient
                 var stringResult = result as Java.Lang.String;
                 // I don't know why the result is coming in as a JSON-encoded string value, but it is
                 var json = stringResult.ToString ();
-                var str = System.Json.JsonValue.Parse(json);
+                var str = System.Json.JsonValue.Parse (json);
                 callback ("<!DOCTYPE html>\n" + str);
             });
         }
@@ -485,7 +590,7 @@ namespace NachoClient.AndroidClient
             HeaderView.AttachmentsView.SetAttachments (attachments);
         }
 
-        void MaybeShowQuickResponses()
+        void MaybeShowQuickResponses ()
         {
             if (Composer.InitialQuickReply) {
                 Composer.InitialQuickReply = false;
@@ -519,7 +624,7 @@ namespace NachoClient.AndroidClient
 
             JavascriptCallback Callback;
 
-            public JavascriptResultHandler (JavascriptCallback callback) : base()
+            public JavascriptResultHandler (JavascriptCallback callback) : base ()
             {
                 Callback = callback;
             }
@@ -535,13 +640,15 @@ namespace NachoClient.AndroidClient
 
     }
 
-    public interface NachoJavascriptMessageHandler {
+    public interface NachoJavascriptMessageHandler
+    {
 
         void HandleJavascriptMessage (NachoJavascriptMessage message);
 
     }
 
-    public class NachoJavascriptMessage {
+    public class NachoJavascriptMessage
+    {
 
         object Body;
         string Name;
@@ -576,13 +683,14 @@ namespace NachoClient.AndroidClient
 
     }
 
-    interface NachoWebClientDelegate {
+    interface NachoWebClientDelegate
+    {
 
-        void OnPageFinished  (Android.Webkit.WebView view, string url);
+        void OnPageFinished (Android.Webkit.WebView view, string url);
 
     }
 
-    class NachoWebClient : Android.Webkit.WebViewClient 
+    class NachoWebClient : Android.Webkit.WebViewClient
     {
 
         NachoWebClientDelegate Delegate;
@@ -597,5 +705,6 @@ namespace NachoClient.AndroidClient
             Delegate.OnPageFinished (view, url);
         }
     }
+
 }
 

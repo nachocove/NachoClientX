@@ -700,6 +700,7 @@ namespace NachoClient.AndroidClient
     {
         bool isAppEvent;
         string calendarName;
+        bool isWritableDeviceCalendar;
 
         public AndroidEventDetail (McEvent occurrence)
         {
@@ -710,6 +711,7 @@ namespace NachoClient.AndroidClient
                 AndroidDeviceCalendarFolder folder;
                 var calItem = AndroidCalendars.GetEventDetails (occurrence.DeviceEventId, out folder);
                 calendarName = (null == folder) ? null : folder.DisplayName;
+                isWritableDeviceCalendar = folder.IsWritable;
                 base.Initialize (occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
             }
         }
@@ -728,6 +730,7 @@ namespace NachoClient.AndroidClient
                 AndroidDeviceCalendarFolder folder;
                 var calItem = AndroidCalendars.GetEventDetails (Occurrence.DeviceEventId, out folder);
                 calendarName = (null == folder) ? null : folder.DisplayName;
+                isWritableDeviceCalendar = folder.IsWritable;
                 base.Initialize (Occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
             }
         }
@@ -737,7 +740,7 @@ namespace NachoClient.AndroidClient
                 if (isAppEvent) {
                     return base.CanEdit;
                 }
-                return IsOrganizer && !IsRecurring && 0 == SeriesItem.attendees.Count;
+                return isWritableDeviceCalendar && IsOrganizer && !IsRecurring && 0 == SeriesItem.attendees.Count;
             }
         }
 

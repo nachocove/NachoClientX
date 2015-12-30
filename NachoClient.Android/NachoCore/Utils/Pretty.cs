@@ -38,7 +38,7 @@ namespace NachoCore.Utils
             if (null == preview) {
                 return "";
             } else {
-                var regex = new Regex("\\s+");
+                var regex = new Regex ("\\s+");
                 return regex.Replace (preview, " ");
             }
         }
@@ -280,7 +280,7 @@ namespace NachoCore.Utils
             if (result.EndsWith (",")) {
                 result = result.Substring (0, result.Length - 1).Trim ();
             }
-            if (result.StartsWith(",")) {
+            if (result.StartsWith (",")) {
                 result = result.Substring (1).Trim ();
             }
             return result;
@@ -537,27 +537,6 @@ namespace NachoCore.Utils
                 return one;
             }
             return one + separator + two;
-        }
-
-        public static bool TreatLikeAPhoto (string path)
-        {
-            string[] ext = {
-                "tiff",
-                "jpeg",
-                "jpg",
-                "gif",
-                "png",
-                "raw",
-            };
-            if (null == path) {
-                return false;
-            }
-            foreach (var s in ext) {
-                if (path.EndsWith (s, StringComparison.OrdinalIgnoreCase)) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         protected static string DayOfWeekAsString (NcDayOfWeek dow)
@@ -829,7 +808,16 @@ namespace NachoCore.Utils
                 detailText += "Inline ";
             }
             string extension = Pretty.GetExtension (attachment.DisplayName);
-            detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+            if (1 < extension.Length) {
+                detailText += extension.Substring (1) + " ";
+            } else if (!String.IsNullOrEmpty (attachment.ContentType)) {
+                var mimeInfo = attachment.ContentType.Split (new char[] { '/' });
+                if (2 == mimeInfo.Length) {
+                    detailText += mimeInfo [1].ToUpper () + " ";
+                }
+            } else {
+                detailText += "Unrecognized ";
+            }
             detailText += "file";
             if (0 != attachment.FileSize) {
                 detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
@@ -837,13 +825,43 @@ namespace NachoCore.Utils
             return detailText;
         }
 
-        public static string NoteTitle(string title)
+        public static string NoteTitle (string title)
         {
             if (null == title) {
                 return "Note";
             } else {
                 return string.Format ("Note: {0}", title);
             }
+        }
+
+        public static string MessageAddressString (string rawAddressString, NcEmailAddress.Kind kind)
+        {
+            List<string> cooked = new List<string> ();
+
+            if (String.IsNullOrEmpty (rawAddressString)) {
+                return "";
+            }
+
+            var addressList = NcEmailAddress.ParseAddressListString (rawAddressString, kind);
+            foreach (var address in addressList) {
+                if (null == address.contact) {
+                    string text;
+                    InternetAddress parsedAddress;
+                    if (!InternetAddress.TryParse (address.address, out parsedAddress)) {
+                        text = address.address; // can't parse the string. just display verbatim
+                    } else {
+                        if (parsedAddress is MailboxAddress) {
+                            text = (parsedAddress as MailboxAddress).Address;
+                        } else {
+                            text = parsedAddress.ToString ();
+                        }
+                    }
+                    cooked.Add (text);
+                } else {
+                    cooked.Add (address.contact.GetPrimaryCanonicalEmailAddress ());
+                }
+            }
+            return String.Join (" ", cooked);
         }
     }
 }

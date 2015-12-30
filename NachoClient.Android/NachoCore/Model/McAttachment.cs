@@ -73,6 +73,36 @@ namespace NachoCore.Model
 
         public string ContentType { get; set; }
 
+        public override bool IsImageFile ()
+        {
+            if (base.IsImageFile ()) {
+                return true;
+            }
+            if (String.IsNullOrEmpty (ContentType)) {
+                return false;
+            }
+            var mimeInfo = ContentType.Split (new char[] { '/' });
+            if (2 != mimeInfo.Length) {
+                return false;
+            }
+            if (!String.Equals ("image", mimeInfo [0], StringComparison.OrdinalIgnoreCase)) {
+                return false;
+            }
+            string[] subtype = {
+                "tiff",
+                "jpeg",
+                "jpg",
+                "gif",
+                "png",
+            };
+            foreach (var s in subtype) {
+                if (String.Equals (s, mimeInfo [1], StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public NcResult Link (McAbstrItem item, bool includedInBody = false)
         {
             NcAssert.False (0 == Id);
@@ -162,9 +192,9 @@ namespace NachoCore.Model
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " likelihood (e.Score >= ?, 0.1) AND " +
                 " a.FileSize <= ? AND " +
-                " a.FilePresence != ? AND " + 
                 " a.FilePresence != ? AND " +
-                " a.FilePresence != ? " + 
+                " a.FilePresence != ? AND " +
+                " a.FilePresence != ? " +
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
                 accountId, minScore, maxSize,
                 (int)FilePresenceEnum.Complete, (int)FilePresenceEnum.Partial, (int)FilePresenceEnum.Error,
@@ -180,23 +210,23 @@ namespace NachoCore.Model
         {
             var retval = new List<McAbstrItem> ();
             var emails = NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT e.* FROM McEmailMessage AS e " +
-                " JOIN McMapAttachmentItem AS m ON e.Id = m.ItemId " +
-                " JOIN McAttachment AS a ON a.Id = m.AttachmentId " +
-                " WHERE " +
-                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (a.Id = ?, 0.01) AND " +
-                " likelihood (m.ClassCode = ?, 0.5) ",
-                attachmentId, (int)McAbstrFolderEntry.ClassCodeEnum.Email);
-            var cals =  NcModel.Instance.Db.Query<McCalendar> (
-                "SELECT c.* FROM McCalendar AS c " +
-                " JOIN McMapAttachmentItem AS m ON c.Id = m.ItemId " +
-                " JOIN McAttachment AS a ON a.Id = m.AttachmentId " +
-                " WHERE " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (a.Id = ?, 0.01) AND " +
-                " likelihood (m.ClassCode = ?, 0.5) ",
-                attachmentId, (int)McAbstrFolderEntry.ClassCodeEnum.Calendar);
+                             "SELECT e.* FROM McEmailMessage AS e " +
+                             " JOIN McMapAttachmentItem AS m ON e.Id = m.ItemId " +
+                             " JOIN McAttachment AS a ON a.Id = m.AttachmentId " +
+                             " WHERE " +
+                             " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                             " likelihood (a.Id = ?, 0.01) AND " +
+                             " likelihood (m.ClassCode = ?, 0.5) ",
+                             attachmentId, (int)McAbstrFolderEntry.ClassCodeEnum.Email);
+            var cals = NcModel.Instance.Db.Query<McCalendar> (
+                           "SELECT c.* FROM McCalendar AS c " +
+                           " JOIN McMapAttachmentItem AS m ON c.Id = m.ItemId " +
+                           " JOIN McAttachment AS a ON a.Id = m.AttachmentId " +
+                           " WHERE " +
+                           " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
+                           " likelihood (a.Id = ?, 0.01) AND " +
+                           " likelihood (m.ClassCode = ?, 0.5) ",
+                           attachmentId, (int)McAbstrFolderEntry.ClassCodeEnum.Calendar);
             retval.AddRange (emails);
             retval.AddRange (cals);
             return retval;
@@ -212,23 +242,23 @@ namespace NachoCore.Model
         {
             var retval = new List<McAbstrItem> ();
             var emails = NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT e.* FROM McEmailMessage AS e " +
-                " JOIN McMapAttachmentItem AS m ON e.Id = m.ItemId " +
-                " JOIN McAttachment AS a ON a.Id = m.AttachmentId " +
-                " WHERE " +
-                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (e.AccountId = ?, 0.5) AND " +
-                " likelihood (a.Id = ?, 0.01) ",
-                accountId, attachmentId);
-            var cals =  NcModel.Instance.Db.Query<McCalendar> (
-                "SELECT c.* FROM McCalendar AS c " +
-                " JOIN McMapAttachmentItem AS m ON c.Id = m.ItemId " +
-                " JOIN McAttachment AS a ON a.Id = m.AttachmentId " +
-                " WHERE " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (c.AccountId = ?, 0.5) AND " +
-                " likelihood (a.Id = ?, 0.01) ",
-                accountId, attachmentId);
+                             "SELECT e.* FROM McEmailMessage AS e " +
+                             " JOIN McMapAttachmentItem AS m ON e.Id = m.ItemId " +
+                             " JOIN McAttachment AS a ON a.Id = m.AttachmentId " +
+                             " WHERE " +
+                             " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                             " likelihood (e.AccountId = ?, 0.5) AND " +
+                             " likelihood (a.Id = ?, 0.01) ",
+                             accountId, attachmentId);
+            var cals = NcModel.Instance.Db.Query<McCalendar> (
+                           "SELECT c.* FROM McCalendar AS c " +
+                           " JOIN McMapAttachmentItem AS m ON c.Id = m.ItemId " +
+                           " JOIN McAttachment AS a ON a.Id = m.AttachmentId " +
+                           " WHERE " +
+                           " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
+                           " likelihood (c.AccountId = ?, 0.5) AND " +
+                           " likelihood (a.Id = ?, 0.01) ",
+                           accountId, attachmentId);
             retval.AddRange (emails);
             retval.AddRange (cals);
             return retval;

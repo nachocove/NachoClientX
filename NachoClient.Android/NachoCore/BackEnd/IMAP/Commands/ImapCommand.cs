@@ -372,9 +372,7 @@ namespace NachoCore.IMAP
 
             // Get the current list of UID's. Don't set added_or_changed. Sync will notice later.
             if (doFolderMetadata && !mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
-                if (!GetFolderMetaData (ref folder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
-                    Log.Error (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0}: Could not refresh folder metadata", folder.ImapFolderNameRedacted ());
-                }
+                GetFolderMetaData (ref folder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ());
             }
 
             return added_or_changed;
@@ -407,7 +405,7 @@ namespace NachoCore.IMAP
         /// Calls UpdateImapSetting() to update the corresponding McFolder, and sets the ImapUidSet,
         /// and ImapLastExamine.
         /// </summary>
-        /// <returns><c>true</c>, if folder meta data was gotten, <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c>, if folder meta data was gotten and has changed, <c>false</c> otherwise.</returns>
         /// <param name="folder">Folder.</param>
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="timespan">Timespan.</param>
@@ -423,23 +421,20 @@ namespace NachoCore.IMAP
 
                 Cts.Token.ThrowIfCancellationRequested ();
 
-                UpdateImapSetting (mailKitFolder, ref folder);
-
-                Cts.Token.ThrowIfCancellationRequested ();
-
-                Cts.Token.ThrowIfCancellationRequested ();
+                bool changed = UpdateImapSetting (mailKitFolder, ref folder);
 
                 var uidstring = uids.ToString ();
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     if (uidstring != target.ImapUidSet) {
                         target.ImapUidSet = uidstring;
+                        changed = true;
                     }
                     target.ImapLastExamine = DateTime.UtcNow;
                     return true;
                 });
                 McPending.MakeEligibleOnFMetaData (folder);
-                return true;
+                return changed;
             }
         }
 

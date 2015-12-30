@@ -64,7 +64,7 @@ namespace NachoClient.iOS
 
             var imageY = (VIEW_HEIGHT / 2) - (ICON_SIZE / 2);
             imageView = new UIImageView (new CGRect (0, imageY, ICON_SIZE, ICON_SIZE));
-            imageView.Image = FilesTableViewSource.FileIconFromExtension (Pretty.GetExtension (attachment.DisplayName));
+            imageView.Image = FilesTableViewSource.FileIconFromExtension (attachment);
             imageView.Tag = (int)TagType.ATTACHMENT_IMAGE_TAG;
             imageView.UserInteractionEnabled = false;
             AddSubview (imageView);
@@ -80,19 +80,8 @@ namespace NachoClient.iOS
             ViewFramer.Create (filenameView).Height (LINE_HEIGHT);
             AddSubview (filenameView);
 
-            var detailText = "";
-            if (attachment.IsInline) {
-                detailText += "Inline ";
-            }
-            string extension = Pretty.GetExtension (attachment.DisplayName);
-            detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
-            detailText += "file";
-            if (0 != attachment.FileSize) {
-                detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
-            } 
-
             detailView = new UILabel (new CGRect (leftMargin, TOP_MARGIN + LINE_HEIGHT, lineLength, LINE_HEIGHT));
-            detailView.Text = detailText;
+            detailView.Text = Pretty.AttachmentDescription (attachment);
             detailView.TextColor = A.Color_NachoTextGray;
             detailView.Font = A.Font_AvenirNextRegular14;
             detailView.Tag = (int)TagType.ATTACHMENT_SIZE_TAG;

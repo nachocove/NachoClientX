@@ -117,7 +117,7 @@ namespace NachoClient.iOS
                     detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
                 } 
                 detailTextlabel.Text = detailText;
-                cellIconImageView.Image = FilesTableViewSource.FileIconFromExtension (Pretty.GetExtension (attachment.DisplayName));
+                cellIconImageView.Image = FilesTableViewSource.FileIconFromExtension (attachment);
             } else {
                 textLabel.Text = "File no longer exists";
             }
@@ -207,9 +207,9 @@ namespace NachoClient.iOS
             }
         }
 
-        public void ReplaceAttachment(McAttachment original, McAttachment replacement)
+        public void ReplaceAttachment (McAttachment original, McAttachment replacement)
         {
-            foreach(var a in list) {
+            foreach (var a in list) {
                 if (original == a.attachment) {
                     a.attachment = replacement;
                     original.Delete ();
@@ -270,7 +270,7 @@ namespace NachoClient.iOS
 
             Layout ();
             ConfigureView ();
-        } 
+        }
 
         public void Remove (UcAttachmentCell c)
         {
@@ -362,14 +362,14 @@ namespace NachoClient.iOS
             ShowChooser ();
         }
 
-        private void ShowChooser()
+        private void ShowChooser ()
         {
             if (null != owner) {
                 owner.ShowChooserForAttachmentBlock ();
             }
         }
 
-        private void ShowChooserOrToggleCompactness()
+        private void ShowChooserOrToggleCompactness ()
         {
             if (0 == list.Count) {
                 ShowChooser ();

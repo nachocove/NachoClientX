@@ -26,9 +26,7 @@ namespace NachoCore.Brain
         public const int GLEAN_PERIOD = 4;
         private const uint MaxSaneAddressLength = 40;
 
-        #pragma warning disable 414
         private static NcTimer Invoker;
-        #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
             if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
@@ -36,16 +34,23 @@ namespace NachoCore.Brain
                 // TODO - This is a temporary solution. We should not process any event other 
                 return;
             }
-            NcBrainEvent brainEvent = new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN);
-            NcBrain.SharedInstance.Enqueue (brainEvent);
+            try {
+                NcBrain.SharedInstance.EnqueueIfNotAlreadyThere (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
+            } catch (OperationCanceledException) {
+                // brain is no longer active. Shut ourselves down.
+                Log.Error (Log.LOG_BRAIN, "NcContactGleaner tried to enqueue, but brain is not there.");
+                Stop ();
+            }
         }
 
         public static void Start ()
         {
             if (NcBrain.ENABLED) {
-                Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
-                    TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
-                Invoker.Stfu = true;
+                if (!NcBrain.SharedInstance.IsCancelled ()) {
+                    Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
+                        TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
+                    Invoker.Stfu = true;
+                }
             }
         }
 

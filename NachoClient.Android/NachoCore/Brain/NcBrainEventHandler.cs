@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
+using System.Threading;
 
 namespace NachoCore.Brain
 {
@@ -32,6 +33,14 @@ namespace NachoCore.Brain
             EventQueue.Enqueue (brainEvent);
         }
 
+        public void EnqueueIfNotAlreadyThere (NcBrainEvent brainEvent)
+        {
+            EventQueue.EnqueueIfNot (brainEvent, (obj) => {
+                NcBrainEvent evt = obj;
+                return evt.Type == brainEvent.Type;
+            });
+        }
+
         public bool IsQueueEmpty ()
         {
             return EventQueue.IsEmpty ();
@@ -42,26 +51,38 @@ namespace NachoCore.Brain
             return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired;
         }
 
+        public bool IsCancelled ()
+        {
+            return null == EventQueue || EventQueue.Token.IsCancellationRequested;
+        }
+
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
             Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
 
             switch (brainEvent.Type) {
+            case NcBrainEventType.PAUSE:
+                NcTask.CancelableSleep (4 * 1000, EventQueue.Token);
+                break;
+
             case NcBrainEventType.PERIODIC_GLEAN:
                 if (!NcApplication.Instance.IsBackgroundAbateRequired) {
                     LastPeriodicGlean = DateTime.Now;
                 }
                 NotificationRateLimiter.Running = false;
                 var runTill = EvaluateRunTime (NcContactGleaner.GLEAN_PERIOD);
-                ProcessPeriodic (runTill);
+                if (!ProcessPeriodic (runTill)) {
+                    // nothing was done, so stop the gleaner. It'll start when there's something to do.
+                    NcContactGleaner.Stop ();
+                }
                 NotificationRateLimiter.Running = true;
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 var stateMachineEvent = (NcBrainStateMachineEvent)brainEvent;
-                /// FIXME - Should get the number from the event arg
                 var accountId = (int)stateMachineEvent.AccountId;
-                QuickScoreEmailMessages (accountId, 100);
-                GleanEmailMessages (100, stateMachineEvent.AccountId);
+                var count = stateMachineEvent.Count;
+                QuickScoreEmailMessages (accountId, count);
+                GleanEmailMessages (count, stateMachineEvent.AccountId);
                 break;
             case NcBrainEventType.UI:
                 ProcessUIEvent (brainEvent as NcBrainUIEvent);
@@ -112,9 +133,10 @@ namespace NachoCore.Brain
             return numProcessed;
         }
 
-        private void ProcessPeriodic (DateTime runTill)
+        private bool ProcessPeriodic (DateTime runTill)
         {
             try {
+                bool didSomething = false;
                 bool ranOnce = false;
                 while (DateTime.UtcNow < runTill) {
                     if (IsInterrupted ()) {
@@ -134,6 +156,7 @@ namespace NachoCore.Brain
                     if (!Scheduler.Run (out result)) {
                         break;
                     }
+                    didSomething = true;
                 }
                 while (DateTime.UtcNow < runTill) {
                     if (IsInterrupted ()) {
@@ -149,8 +172,10 @@ namespace NachoCore.Brain
                             break;
                         }
                         UpdateEmailMessageScores (emailMessage);
+                        didSomething = true;
                     }
                 }
+                return didSomething;
             } finally {
                 OpenedIndexes.Cleanup ();
                 Scheduler.DumpRunCounts ();
@@ -306,13 +331,7 @@ namespace NachoCore.Brain
                 if (IsInterrupted ()) {
                     break;
                 }
-                var newScores = emailMessage.Classify ();
-                emailMessage.UpdateByBrain ((item) => {
-                    var em = (McEmailMessage)item;
-                    em.Score = newScores.Item1;
-                    em.Score2 = newScores.Item2;
-                    return true;
-                });
+                QuickScoreEmailMessage (emailMessage);
                 numScored++;
             }
             if (0 != numScored) {
@@ -320,6 +339,17 @@ namespace NachoCore.Brain
                 NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
             }
             return numScored;
+        }
+
+        private void QuickScoreEmailMessage (McEmailMessage emailMessage)
+        {
+            var newScores = emailMessage.Classify ();
+            emailMessage.UpdateByBrain ((item) => {
+                var em = (McEmailMessage)item;
+                em.Score = newScores.Item1;
+                em.Score2 = newScores.Item2;
+                return true;
+            });
         }
 
         // Called when message set changes
