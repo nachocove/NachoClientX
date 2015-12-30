@@ -288,10 +288,9 @@ namespace Test.iOS
             TestFolder.ImapNoSelect = false;
 
             TestFolder = resetFolder (TestFolder);
-            // UidNext of 0 isn't valid. Expect a null
+            // UidNext of 0 isn't valid. Expect an exception
             TestFolder = DoFakeFolderOpen (TestFolder, 0);
-            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
-            Assert.Null (syncKit);
+            Assert.Throws<NcAssert.NachoAssertionFailure> (() => Strategy.GenSyncKit (ref protocolState, TestFolder, null, false));
 
             TestFolder = DoFakeFolderOpen (TestFolder, 1, DateTime.UtcNow.AddMinutes (-(6*60)));
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
