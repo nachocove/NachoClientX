@@ -2730,6 +2730,11 @@
       <Project>{63F04FFB-A98F-4DAA-9870-80527037DD61}</Project>
       <Name>JetBlack.Caching.iOS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NachoClientShare.iOS\NachoClientShare.iOS.csproj">
+      <Project>{4E723051-3DD7-4CD4-A2D9-C82E5B7E2560}</Project>
+      <Name>NachoClientShare.iOS</Name>
+      <IsAppExtension>True</IsAppExtension>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Welcome to Taco Mail.pdf" />

@@ -50,17 +50,6 @@ class PlistFile:
         return self.plist.get(key)
 
 
-def find_url_type_by_scheme(plist, scheme):
-    index = 0
-    bundle_url_types = plist.get('CFBundleURLTypes')
-    for url_type in bundle_url_types:
-        url_schemes = url_type['CFBundleURLSchemes']
-        if scheme in url_schemes:
-            return index
-        index += 1
-    return None
-
-
 def edit_plist(plist_file, ios, build, version, project_dir, release_dir):
     app_id = ios['bundle_id']
     display_name = ios['display_name']
@@ -80,45 +69,6 @@ def edit_plist(plist_file, ios, build, version, project_dir, release_dir):
     info_plist.replace('CFBundleShortVersionString', version)
     info_plist.replace('CFBundleDisplayName', display_name)
 
-    info_plist.replace('UIFileSharingEnabled', ios['file_sharing'])
-
-    # Copy the google info plist over
-    google_path = '%s/Resources/%s' % (project_dir, release_dir)
-    src_path = os.path.join(google_path, 'GoogleService-Info.plist')
-    dst_path = os.path.join(project_dir, 'GoogleService-Info.plist')
-    # Need to remove the original value. This is done by reading the dst .plist
-    # and remove the value there
-    old_google_plist = plistlib.readPlist(dst_path)
-    rev_client_id = old_google_plist['REVERSED_CLIENT_ID']
-    print 'Remove old google service value %s' % rev_client_id
-    index = find_url_type_by_scheme(info_plist, rev_client_id)
-    if index is not None:
-        info_plist.remove_list_index('CFBundleURLTypes', index)
-    if release_dir is not None:
-        shutil.copyfile(src_path, dst_path)
-    google_plist_path = os.path.join(project_dir, 'GoogleService-Info.plist')
-    google_plist = plistlib.readPlist(google_plist_path)
-    print 'Add new google service value %s' % google_plist['REVERSED_CLIENT_ID']
-
-    index = find_url_type_by_scheme(info_plist, orig_bundle_id)
-    if index is not None:
-        info_plist.remove_list_index('CFBundleURLTypes', index)
-
-    # Create a new entry and insert it
-    entry = {
-        'CFBundleURLName': 'google',
-        'CFBundleURLSchemes': [google_plist['REVERSED_CLIENT_ID']],
-        'CFBundleURLTypes': 'Editor'
-    }
-    info_plist.append('CFBundleURLTypes', entry)
-
-    entry2 = {
-        'CFBundleURLName': 'google',
-        'CFBundleURLSchemes': [app_id],
-        'CFBundleURLTypes': 'Editor'
-    }
-    info_plist.append('CFBundleURLTypes', entry2)
-
     # Update the entry with bundle ID as well
     info_plist.write()
 
@@ -133,11 +83,10 @@ def edit_entitlements(entitlements_file, ios, build, version, project_dir, relea
 
 
 def main():
-    (ios, release, version, build, release_dir) = configure_base.setup('ios')
+    (ios, release, version, build, release_dir) = configure_base.setup('ios_share')
     project_dir = os.path.dirname(os.path.abspath(sys.argv[1]))
-    edit_plist(sys.argv[1], ios, build, version, project_dir, release_dir)
     edit_entitlements(os.path.join(project_dir, 'Entitlements.plist'), ios, build, version, project_dir, release_dir)
-    configure_base.copy_icons(ios.get('icon_script', None), os.path.join(project_dir, 'Resources'), release_dir)
+    edit_plist(sys.argv[1], ios, build, version, project_dir, release_dir)
 
 
 if __name__ == '__main__':
