@@ -252,7 +252,7 @@ namespace NachoPlatform
                 }
                 cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (eventTimeZone), cal.StartTime).toEncodedTimeZone ();
 
-                if (Event.HasAlarms && Event.Alarms[0].RelativeOffset < 0.0) {
+                if (Event.HasAlarms && Event.Alarms[0].RelativeOffset <= 0.0) {
                     // EKAlarm.RelativeOffset is the number of seconds relative to the event, where a negative
                     // value means before.  McCalendar.Reminder is the number of minutes before the event.
                     cal.ReminderIsSet = true;
@@ -723,7 +723,7 @@ namespace NachoPlatform
                 ToEKEvent (ekEvent, cal);
 
                 if (cal.ReminderIsSet) {
-                    if (ekEvent.HasAlarms && ekEvent.Alarms [0].RelativeOffset < 0.0) {
+                    if (ekEvent.HasAlarms && ekEvent.Alarms [0].RelativeOffset <= 0.0) {
                         // This is the alarm that was synched with McCalendar.Reminder.
                         // Adjust the iOS alarm's value, in case the user changed something
                         // in the app.
@@ -736,7 +736,7 @@ namespace NachoPlatform
                         });
                     }
                 } else {
-                    if (ekEvent.HasAlarms && ekEvent.Alarms [0].RelativeOffset < 0.0) {
+                    if (ekEvent.HasAlarms && ekEvent.Alarms [0].RelativeOffset <= 0.0) {
                         // The iOS event has an alarm that would have been synched.  The user
                         // must have removed that reminder.  So remove the iOS alarm.
                         ekEvent.RemoveAlarm (ekEvent.Alarms [0]);
