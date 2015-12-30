@@ -95,6 +95,7 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
             scrollView = new UIScrollView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
+            scrollView.AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
             scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
             scrollView.ScrollEnabled = true;
             scrollView.AlwaysBounceVertical = true;
