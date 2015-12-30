@@ -19,41 +19,104 @@ namespace NachoClient.iOS
     public partial class AddAttachmentViewController : NcUIViewControllerNoLeaks
     {
 
-        public class ImagePickerHelper
+        public class MenuHelper : NSObject, IUIDocumentMenuDelegate, IUIDocumentPickerDelegate
         {
-
-            public UIImagePickerController ImagePicker { get; private set; }
+            public UIDocumentMenuViewController MenuViewController { get; private set; }
             INachoFileChooserParent owner;
             McAccount account;
+            UIStoryboard storyboard;
 
-            public ImagePickerHelper (INachoFileChooserParent owner, McAccount account)
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIStoryboard storyboard)
             {
                 this.owner = owner;
                 this.account = account;
+                this.storyboard = storyboard;
+
+                MenuViewController = new UIDocumentMenuViewController(new string[] {
+                    UTType.Data,
+                    UTType.Package
+                }, UIDocumentPickerMode.Import);
+                MenuViewController.Delegate = this;
+                MenuViewController.AddOption ("Browse Attachments", UIImage.FromBundle("calendar-add-files"), UIDocumentMenuOrder.First, ShowBrowseAttachments);
+                MenuViewController.AddOption ("Take a Photo", UIImage.FromBundle("calendar-take-photo"), UIDocumentMenuOrder.First, ShowTakePhoto);
+                MenuViewController.AddOption ("Browse Photos", UIImage.FromBundle("calendar-add-photo"), UIDocumentMenuOrder.First, ShowBrowsePhotos);
             }
 
-            public void SetupPhotoPicker (bool useCamera)
+            void ShowBrowsePhotos ()
             {
-                ImagePicker = new UIImagePickerController ();
-                ImagePicker.NavigationBar.Translucent = false;
-                ImagePicker.NavigationBar.BarTintColor = A.Color_NachoGreen;
-                ImagePicker.NavigationBar.TintColor = A.Color_NachoBlue;
+                ShowPhotoPicker (false);
+            }
+
+            void ShowTakePhoto ()
+            {
+                ShowPhotoPicker (true);
+            }
+
+            void ShowBrowseAttachments ()
+            {
+                var fileListViewController = storyboard.InstantiateViewController ("FileListViewController") as FileListViewController;
+                fileListViewController.SetOwner (owner);
+                fileListViewController.SetModal (true);
+                owner.PresentFileChooserViewController (fileListViewController);
+            }
+
+            public void DidPickDocumentPicker (UIDocumentMenuViewController documentMenu, UIDocumentPickerViewController documentPicker)
+            {
+                documentPicker.Delegate = this;
+                owner.PresentFileChooserViewController (documentPicker);
+            }
+
+            public void WasCancelled (UIDocumentMenuViewController documentMenu)
+            {
+            }
+
+            public void DidPickDocument (UIDocumentPickerViewController controller, NSUrl url)
+            {
+                if (url.IsFileUrl) {
+                    var path = url.Path;
+                    if (Directory.Exists (path)) {
+                        url = url.AppendPathExtension ("zip");
+                        System.IO.Compression.ZipFile.CreateFromDirectory (path, url.Path);
+                        Directory.Delete (path, true);
+                        path = url.Path;
+                    }
+                    var attachment = McAttachment.InsertSaveStart (account.Id);
+                    attachment.SetDisplayName (url.LastPathComponent);
+                    attachment.UpdateFileMove (path);
+                    owner.Append (attachment);
+                } else {
+                    Log.Error (Log.LOG_UI, "DidPickDocument received non-file URL: {0}", url);
+                }
+            }
+
+            public void ShowPhotoPicker (bool useCamera, UIViewController fromViewController = null)
+            {
+                var imagePicker = new UIImagePickerController ();
+                imagePicker.NavigationBar.Translucent = false;
+                imagePicker.NavigationBar.BarTintColor = A.Color_NachoGreen;
+                imagePicker.NavigationBar.TintColor = A.Color_NachoBlue;
 
                 if (useCamera) {
                     if (UIImagePickerController.IsSourceTypeAvailable (UIImagePickerControllerSourceType.Camera)) {
-                        ImagePicker.SourceType = UIImagePickerControllerSourceType.Camera;
+                        imagePicker.SourceType = UIImagePickerControllerSourceType.Camera;
                     } else {
                         Util.ComplainAbout ("Error", "Your device does not have a camera");
                     }
                 } else {
-                    ImagePicker.SourceType = UIImagePickerControllerSourceType.PhotoLibrary;
+                    imagePicker.SourceType = UIImagePickerControllerSourceType.PhotoLibrary;
                 }
 
-                ImagePicker.FinishedPickingMedia += HandleFinishedPickingMedia;
-                ImagePicker.Canceled += HandleCanceled;
-                ImagePicker.MediaTypes = new string[]{ UTType.Image.ToString (), UTType.Movie.ToString () };
+                imagePicker.FinishedPickingMedia += HandleFinishedPickingMedia;
+                imagePicker.Canceled += HandleCanceled;
+                imagePicker.MediaTypes = new string[]{ UTType.Image.ToString (), UTType.Movie.ToString () };
 
-                ImagePicker.ModalPresentationStyle = UIModalPresentationStyle.CurrentContext;
+                imagePicker.ModalPresentationStyle = UIModalPresentationStyle.CurrentContext;
+
+                if (fromViewController != null) {
+                    fromViewController.PresentViewController (imagePicker, true, null);
+                } else {
+                    owner.PresentFileChooserViewController (imagePicker);
+                }
             }
 
             protected void HandleCanceled (object sender, EventArgs e)
@@ -288,9 +351,8 @@ namespace NachoClient.iOS
 
         void SetupPhotoPicker (bool useCamera)
         {
-            var helper = new ImagePickerHelper (owner, account);
-            helper.SetupPhotoPicker (useCamera);
-            PresentViewController (helper.ImagePicker, true, null);
+            var helper = new MenuHelper (owner, account, Storyboard);
+            helper.ShowPhotoPicker (useCamera, this);
         }
 
         public void dismissClicked (object sender, EventArgs e)
