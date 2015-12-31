@@ -44,6 +44,7 @@ namespace NachoCore.SMTP
                     TryLock (Client.SyncRoot, KLockTimeout);
                 } catch (CommandLockTimeOutException ex) {
                     Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, AccountId, ex.Message);
+                    Client.DOA = true;
                 }
             }
         }
