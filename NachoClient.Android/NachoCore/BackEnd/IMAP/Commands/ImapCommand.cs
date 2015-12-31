@@ -117,7 +117,6 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "KeychainItemNotFoundException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPKEYCHFAIL");
-                Client.DOA = true;
             } catch (CommandLockTimeOutException ex) {
                 Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
