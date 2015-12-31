@@ -101,6 +101,16 @@ namespace NachoCore.Brain
             return ClearMessageThreadFlags (thread);
         }
 
+        static public NcResult RemoveDueDate (McEmailMessage message)
+        {
+            return ClearMessageFlags (message);
+        }
+
+        static public NcResult RemoveDueDate (McEmailMessageThread thread)
+        {
+            return ClearMessageThreadFlags (thread);
+        }
+
         static public NcResult SetDueDate (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime dueOn)
         {
             if (MessageDeferralType.Custom != deferralType) {
