@@ -114,8 +114,7 @@ namespace NachoCore.IMAP
             if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
                 NewMessageFlags |= MessageSummaryItems.GMailMessageId;
                 NewMessageFlags |= MessageSummaryItems.GMailThreadId;
-                // TODO Perhaps we can use the gmail labels to give more hints to Brain, i.e. 'Important' or somesuch.
-                //flags |= MessageSummaryItems.GMailLabels;
+                NewMessageFlags |= MessageSummaryItems.GMailLabels;
             }
             return NewMessageFlags;
         }
