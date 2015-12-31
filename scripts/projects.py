@@ -16,6 +16,7 @@ projects = {
             'file_sharing': True,
             'app_group': 'group.com.nachocove.nachomail',
             'hockeyapp': {'app_id': 'b22a505d784d64901ab1abde0728df67', 'api_token': 'dbccf0190d5b410e8f43ef2b5e7d6b43'},
+            'icloud_container': 'iCloud.com.nachocove.nachomail'
         },
         'ios_share': {
             'bundle_id': 'com.nachocove.nachomail.share',
@@ -58,6 +59,7 @@ projects = {
             'file_sharing': True,
             'app_group': 'group.com.nachocove.nachomail.alpha',
             'hockeyapp': {'app_id': 'f0c98aa84e693061fbbf3d60bb6ab1fc', 'api_token': '4a472c5e774a4004a4eb1dd648b8af8a'},
+            'icloud_container': 'iCloud.com.nachocove.nachomail.alpha'
         },
         'ios_share': {
             'bundle_id': 'com.nachocove.nachomail.alpha.share',
@@ -101,6 +103,7 @@ projects = {
             'file_sharing': False,
             'app_group': 'group.com.nachocove.nachomail.beta',
             'hockeyapp': {'app_id': '44dae4a6ae9134930c64c623d5023ac4', 'api_token': '1c08642c07d244f7a0600ef5654e0dad'},
+            'icloud_container': 'iCloud.com.nachocove.nachomail.beta'
         },
         'ios_share': {
             'bundle_id': 'com.nachocove.nachomail.beta.share',
@@ -144,6 +147,7 @@ projects = {
             'file_sharing': False,
             'app_group': 'group.com.nachocove.mail',
             'hockeyapp': {'app_id': 'df752a5c4c7bb503fac6e26b0f0dcafa', 'api_token': '0344908b24aa498288268a726d028332'},
+            'icloud_container': 'iCloud.com.nachocove.mail'
         },
         'ios_share': {
             'bundle_id': 'com.nachocove.mail.share',

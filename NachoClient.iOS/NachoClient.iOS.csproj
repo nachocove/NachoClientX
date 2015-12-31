@@ -200,6 +200,7 @@
     </Reference>
     <Reference Include="Xamarin.iOS" />
     <Reference Include="System.Web.Services" />
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

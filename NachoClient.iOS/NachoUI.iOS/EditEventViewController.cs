@@ -372,13 +372,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("SegueToAddAttachment")) {
-                var dc = (AddAttachmentViewController)segue.DestinationViewController;
-                ExtractValues ();
-                dc.SetOwner (this, account);
-                return;
-            }
-
             if (segue.Identifier.Equals ("EventToPhone")) {
                 var dc = (PhoneViewController)segue.DestinationViewController;
                 dc.SetPhone (TempPhone);
@@ -1292,7 +1285,8 @@ namespace NachoClient.iOS
         /// IUcAttachmentBlock delegate
         public void ShowChooserForAttachmentBlock ()
         {
-            PerformSegue ("SegueToAddAttachment", new SegueHolder (null));
+            var helper = new AddAttachmentViewController.MenuHelper (this, account, Storyboard);
+            PresentViewController (helper.MenuViewController, true, null);
         }
 
         /// IUcAttachmentBlock delegate
@@ -1386,6 +1380,11 @@ namespace NachoClient.iOS
         public void DismissPhotoPicker ()
         {
             this.DismissViewController (true, null);
+        }
+
+        public void PresentFileChooserViewController (UIViewController vc)
+        {
+            PresentViewController (vc, true, null);
         }
 
         // Event handlers
