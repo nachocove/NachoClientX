@@ -35,14 +35,14 @@ namespace NachoClient.AndroidClient
             return fragment;
         }
 
-        protected void SetMessageThread(McEmailMessageThread messageThread)
+        protected void SetMessageThread (McEmailMessageThread messageThread)
         {
             this.messageThread = messageThread;
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            Dialog.Window.RequestFeature(WindowFeatures.NoTitle);
+            Dialog.Window.RequestFeature (WindowFeatures.NoTitle);
 
             var view = inflater.Inflate (Resource.Layout.ChooseDeferralFragment, container, false);
 
@@ -139,15 +139,13 @@ namespace NachoClient.AndroidClient
             return 0;
         }
 
-        // create a new ImageView for each item referenced by the Adapter
+        // Create a new view for each item referenced by the Adapter
+        // because re-using views adds += ClickView too many times.
+        // Should be using gridview.itemclick instead anyway.
         public override View GetView (int position, View convertView, ViewGroup parent)
         {
-            View view;
-            if (convertView == null) {
-                view = inflater.Inflate (Resource.Layout.ChooseDeferralButton, null);
-            } else {
-                view = convertView;
-            }
+            var view = inflater.Inflate (Resource.Layout.ChooseDeferralButton, null);
+
             var image = view.FindViewById<ImageView> (Resource.Id.image);
             image.SetImageResource (data [position].i);
 
