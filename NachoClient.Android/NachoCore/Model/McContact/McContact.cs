@@ -2147,11 +2147,6 @@ namespace NachoCore.Model
             this.IsVip = IsVip;
             this.Update ();
 
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                Status = NcResult.Info (NcResult.SubKindEnum.Info_ContactChanged),
-                Account = McAccount.QueryById<McAccount> (this.AccountId),
-            });
-
             foreach (var emailAddressAttribute in this.EmailAddresses) {
                 var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
                 if (null != emailAddress) {
@@ -2160,6 +2155,11 @@ namespace NachoCore.Model
                     NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.AccountId, emailAddress.Id, true);
                 }
             }
+
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_ContactChanged),
+                Account = McAccount.QueryById<McAccount> (this.AccountId),
+            });
         }
 
         public bool CanUserEdit ()

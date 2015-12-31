@@ -181,6 +181,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+            RefreshVisibleContactCells ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
