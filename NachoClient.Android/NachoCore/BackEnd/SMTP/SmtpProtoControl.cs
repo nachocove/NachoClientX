@@ -18,6 +18,7 @@ namespace NachoCore.SMTP
             get {
                 if (null != _MainClient && _MainClient.DOA) {
                     // Do our best to disconnect and dispose of this client, since it seems to be hosed.
+                    Log.Info (Log.LOG_SMTP, "Client is DOA. Replacing");
                     var tmpClient = _MainClient;
                     _MainClient = null;
                     NcTask.Run (() => {
