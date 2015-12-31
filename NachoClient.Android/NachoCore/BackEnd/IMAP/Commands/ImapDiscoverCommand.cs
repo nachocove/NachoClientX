@@ -56,6 +56,7 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: CommandLockTimeOutException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, string> (ResolveAction.DeferAll, ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOLOKTIME");
+                Client.DOA = true;
             } catch (OperationCanceledException ex) {
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
                 action = new Tuple<ResolveAction, string> (ResolveAction.DeferAll, ex.Message);

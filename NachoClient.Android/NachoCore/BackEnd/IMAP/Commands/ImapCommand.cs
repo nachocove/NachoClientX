@@ -59,6 +59,7 @@ namespace NachoCore.IMAP
                     TryLock (Client.SyncRoot, KLockTimeout);
                 } catch (CommandLockTimeOutException ex) {
                     Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, AccountId, ex.Message);
+                    Client.DOA = true;
                 }
             }
         }
@@ -116,10 +117,12 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "KeychainItemNotFoundException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPKEYCHFAIL");
+                Client.DOA = true;
             } catch (CommandLockTimeOutException ex) {
                 Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
+                Client.DOA = true;
             } catch (ServiceNotConnectedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
