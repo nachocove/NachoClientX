@@ -190,14 +190,17 @@ namespace NachoCore.Brain
                 break;
             case MessageDeferralType.MonthEnd:
                 // Last day
+                from = from.ToLocalTime ();
+                from = from.AddDays (1.0 - from.Day); // Day is 1..31
                 from = from.AddMonths (1);
-                from = from.AddDays (-from.Day); // Day is 1..31
+                from = from.AddDays (-1);
                 from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.NextMonth:
                 // First day
-                from = from.AddMonths (1);
+                from = from.ToLocalTime();
                 from = from.AddDays (1.0 - from.Day); // Day is 1..32
+                from = from.AddMonths (1);
                 from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.Forever:
