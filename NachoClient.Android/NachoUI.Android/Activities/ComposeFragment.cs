@@ -89,7 +89,7 @@ namespace NachoClient.AndroidClient
 
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.icn_send, SendButton_Click);
             buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.contact_quickemail, QuickResponseButton_Click);
-            buttonBar.SetIconButton (ButtonBar.Button.Right3, Resource.Drawable.files_email_attachment, AddAttachmentButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right3, Resource.Drawable.email_icn_attachment, AddAttachmentButton_Click);
             SendButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
 
             HeaderView = view.FindViewById<MessageComposeHeaderView> (Resource.Id.header);

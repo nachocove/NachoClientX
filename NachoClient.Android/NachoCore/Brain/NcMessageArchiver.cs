@@ -22,6 +22,13 @@ namespace NachoCore
             }
         }
 
+        private static void RemoveDeadline (McEmailMessage message)
+        {
+            if (message.HasDueDate ()) {
+                Brain.NcMessageDeferral.RemoveDueDate (message);
+            }
+        }
+
         public static void Move (McEmailMessage message, McFolder folder)
         {
             RemoveDeferral (message);
@@ -49,7 +56,7 @@ namespace NachoCore
             Move (messages, folder);
         }
 
-        private static bool ShouldDeleteInsteadOfArchive(int accountId)
+        private static bool ShouldDeleteInsteadOfArchive (int accountId)
         {
             // Google doesn't archive. All messages are deemed 'archived' by being in the 'All Mails' folder (aka label).
             // Archiving is simply deleting from the current folder (i.e. removing the label for the folder), and finding
@@ -60,7 +67,7 @@ namespace NachoCore
 
         public static void Archive (McEmailMessage message)
         {
-            if (ShouldDeleteInsteadOfArchive(message.AccountId)) {
+            if (ShouldDeleteInsteadOfArchive (message.AccountId)) {
                 Delete (message, true);
             } else {
                 McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (message.AccountId);
@@ -98,6 +105,7 @@ namespace NachoCore
         public static void Delete (McEmailMessage message, bool justDelete = false)
         {
             RemoveDeferral (message);
+            RemoveDeadline (message);
             BackEnd.Instance.DeleteEmailCmd (message.AccountId, message.Id, justDelete);
         }
 
@@ -108,6 +116,7 @@ namespace NachoCore
             }
             foreach (var message in messages) {
                 RemoveDeferral (message);
+                RemoveDeadline (message);
             }
             var Ids = messages.Select (x => x.Id).ToList ();
             int accountId = messages [0].AccountId;

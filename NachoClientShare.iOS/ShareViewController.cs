@@ -121,7 +121,11 @@ namespace NachoClientShare.iOS
                 responder = responder.NextResponder;
             }
             if (responder != null) {
-                var url = new NSUrl (String.Format ("com.nachocove.nachomail:///share/{0}", StashName));
+                var nachoSchemeObject = NSBundle.MainBundle.InfoDictionary.ObjectForKey (new NSString ("CFBundleIdentifier"));
+                var nachoScheme = nachoSchemeObject.ToString ();
+                // The scheme is the same as our parent app's bundle ID, which this extension's bundle ID minus the final .whatever
+                nachoScheme = nachoScheme.Substring (0, nachoScheme.LastIndexOf ('.'));
+                var url = new NSUrl (String.Format ("{0}:///share/{1}", nachoScheme, StashName));
                 responder.PerformSelector (openURL, url);
             }
         }

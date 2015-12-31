@@ -39,6 +39,10 @@ namespace NachoClient.AndroidClient
             var folderView = view.FindViewById<View> (Resource.Id.mail);
             folderView.Click += FolderView_Click;
 
+            var likelyToReadView = view.FindViewById<View> (Resource.Id.likely_to_read);
+            likelyToReadView.Click += LikelyToReadView_Click;
+            ;
+
             var deferredView = view.FindViewById<View> (Resource.Id.deferred);
             deferredView.Click += DeferredView_Click;
 
@@ -62,6 +66,13 @@ namespace NachoClient.AndroidClient
             moreImage.SetImageResource (Resource.Drawable.nav_more_active);
 
             return view;
+        }
+
+        void LikelyToReadView_Click (object sender, EventArgs e)
+        {
+            var folder = McFolder.GetLtrFakeFolder ();
+            var intent = LtrFolderActivity.ShowLtrFolderIntent (this.Activity, folder);
+            StartActivity (intent); 
         }
 
         void AboutView_Click (object sender, EventArgs e)

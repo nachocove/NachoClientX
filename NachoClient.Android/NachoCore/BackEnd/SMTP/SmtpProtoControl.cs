@@ -13,6 +13,27 @@ namespace NachoCore.SMTP
     {
         private const int KDiscoveryMaxRetries = 5;
 
+        NcSmtpClient _MainClient;
+        public NcSmtpClient MainClient {
+            get {
+                if (null != _MainClient && _MainClient.DOA) {
+                    // Do our best to disconnect and dispose of this client, since it seems to be hosed.
+                    Log.Info (Log.LOG_SMTP, "Client is DOA. Replacing");
+                    var tmpClient = _MainClient;
+                    _MainClient = null;
+                    NcTask.Run (() => {
+                        tmpClient.Disconnect (false);
+                        tmpClient.Dispose ();
+                    }, "SmtpProtoControlClientCleanup");
+                }
+                if (null == _MainClient) {
+                    _MainClient = new NcSmtpClient ();
+                }
+                return _MainClient;
+            }
+        }
+
+
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
@@ -119,7 +140,6 @@ namespace NachoCore.SMTP
             ProtoControl = this;
             Capabilities = McAccount.SmtpCapabilities;
             SetupAccount ();
-            SmtpClient = new NcSmtpClient ();
 
             Sm = new NcStateMachine ("SMTPPC") { 
                 Name = string.Format ("SMTPPC({0})", AccountId),
@@ -430,9 +450,7 @@ namespace NachoCore.SMTP
         {
             Cmd.Execute (Sm);
         }
-
-        public NcSmtpClient SmtpClient;
-
+        
         private void DoDisc ()
         {
             // HACK HACK: There appears to be a race-condition when the NcBackend (via UI) 
@@ -450,7 +468,7 @@ namespace NachoCore.SMTP
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
             BackEndStatePreset = BackEndStateEnum.Running;
-            SetCmd (new SmtpDiscoveryCommand (this, SmtpClient));
+            SetCmd (new SmtpDiscoveryCommand (this, MainClient));
             ExecuteCmd ();
         }
 
@@ -526,7 +544,7 @@ namespace NachoCore.SMTP
         private void DoConn ()
         {
             DiscoveryRetries = 0;
-            SetCmd (new SmtpAuthenticateCommand (this, SmtpClient));
+            SetCmd (new SmtpAuthenticateCommand (this, MainClient));
             ExecuteCmd ();
         }
 
@@ -567,20 +585,20 @@ namespace NachoCore.SMTP
                 Log.Info (Log.LOG_SMTP, "Strategy:FG/BG:Send");
                 switch (send.Operation) {
                 case McPending.Operations.EmailSend:
-                    SetAndExecute (new SmtpSendMailCommand (this, SmtpClient, send));
+                    SetAndExecute (new SmtpSendMailCommand (this, MainClient, send));
                     return Lst.QOpW;
                 case McPending.Operations.EmailForward:
-                    SetAndExecute (new SmtpForwardMailCommand (this, SmtpClient, send));
+                    SetAndExecute (new SmtpForwardMailCommand (this, MainClient, send));
                     return Lst.QOpW;
                 case McPending.Operations.EmailReply:
-                    SetAndExecute (new SmtpReplyMailCommand (this, SmtpClient, send));
+                    SetAndExecute (new SmtpReplyMailCommand (this, MainClient, send));
                     return Lst.QOpW;
                 default:
                     NcAssert.CaseError (send.Operation.ToString ());
                     return Lst.IdleW;
                 }
             } else {
-                SetAndExecute (new SmtpDisconnectCommand (this, SmtpClient));
+                SetAndExecute (new SmtpDisconnectCommand (this, MainClient));
                 return Lst.IdleW;
             }
         }
@@ -593,7 +611,7 @@ namespace NachoCore.SMTP
 
         protected void DoIdle ()
         {
-            SetCmd (new SmtpDisconnectCommand (this, SmtpClient));
+            SetCmd (new SmtpDisconnectCommand (this, MainClient));
             ExecuteCmd ();
         }
 
@@ -604,7 +622,7 @@ namespace NachoCore.SMTP
             SetCmd (null);
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, AccountId);
 
-            var disconnect = new SmtpDisconnectCommand (this, SmtpClient);
+            var disconnect = new SmtpDisconnectCommand (this, MainClient);
             disconnect.Execute (this.Sm);
         }
 
@@ -625,7 +643,7 @@ namespace NachoCore.SMTP
         private void DoWait ()
         {
             var waitTime = (int)Sm.Arg;
-            SetCmd (new SmtpWaitCommand (this, SmtpClient, waitTime, true));
+            SetCmd (new SmtpWaitCommand (this, MainClient, waitTime, true));
             ExecuteCmd ();
         }
 

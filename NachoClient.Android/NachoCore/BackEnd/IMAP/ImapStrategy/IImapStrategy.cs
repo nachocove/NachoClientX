@@ -169,7 +169,7 @@ namespace NachoCore.IMAP
             string me = string.Format ("SyncKit {0} (Type {{{1}}}", Folder.ImapFolderNameRedacted (), Method);
             switch (Method) {
             case MethodEnum.Sync:
-                if (SyncInstructions.Any ()) {
+                if (null != SyncInstructions && SyncInstructions.Any ()) {
                     me += " SyncInstructions {";
                     foreach (var inst in SyncInstructions) {
                         me += string.Format (" {{{0}}}", inst);;

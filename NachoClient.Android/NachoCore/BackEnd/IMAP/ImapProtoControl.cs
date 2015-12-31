@@ -16,7 +16,26 @@ namespace NachoCore.IMAP
 {
     public partial class ImapProtoControl : NcProtoControl, IPushAssistOwner
     {
-        public NcImapClient MainClient;
+        NcImapClient _MainClient;
+        public NcImapClient MainClient {
+            get {
+                if (null != _MainClient && _MainClient.DOA) {
+                    // Do our best to disconnect and dispose of this client, since it seems to be hosed.
+                    Log.Info (Log.LOG_IMAP, "Client is DOA. Replacing");
+                    var tmpClient = _MainClient;
+                    _MainClient = null;
+                    NcTask.Run (() => {
+                        tmpClient.Disconnect (false);
+                        tmpClient.Dispose ();
+                    }, "ImapProtoControlClientCleanup");
+                }
+                if (null == _MainClient) {
+                    _MainClient = new NcImapClient ();
+                }
+                return _MainClient;
+            }
+        }
+
         private const int KDiscoveryMaxRetries = 5;
 
         public enum Lst : uint
@@ -137,7 +156,6 @@ namespace NachoCore.IMAP
             ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
             SetupAccount ();
-            MainClient = new NcImapClient ();
             NcCapture.AddKind (KImapStrategyPick);
 
             Sm = new NcStateMachine ("IMAPPC") { 
