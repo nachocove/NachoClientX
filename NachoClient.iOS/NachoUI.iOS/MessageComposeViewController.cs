@@ -708,8 +708,10 @@ namespace NachoClient.iOS
                     WebView.LoadRequest (request);
                 } else {
                     var html = Composer.Bundle.FullHtml;
-                    var url = new NSUrl (Composer.Bundle.BaseUrl.AbsoluteUri);
-                    WebView.LoadHtmlString (new NSString(html), url);
+                    if (html != null) {
+                        var url = new NSUrl (Composer.Bundle.BaseUrl.AbsoluteUri);
+                        WebView.LoadHtmlString (new NSString (html), url);
+                    }
                 }
             }
         }
