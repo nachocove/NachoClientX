@@ -22,6 +22,9 @@ namespace NachoCore.Model
         [Indexed]
         public int AsSyncEpoch { get; set; }
 
+        [Indexed]       
+        public uint ImapUid { get; set; }
+
         public McMapFolderFolderEntry ()
         {
             AsSyncEpoch = int.MaxValue;
@@ -84,6 +87,17 @@ namespace NachoCore.Model
                 accountId, folderEntryId, classCode);
             return maps.ToList ();
         }
-    }
+
+        public static List<McMapFolderFolderEntry> QueryByFolderEntryImapIdClassCode (int accountId, uint imapUid,
+            McAbstrFolderEntry.ClassCodeEnum classCode)
+        {
+            var maps = NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
+                " likelihood (mm.AccountId = ?, 1.0) AND " +
+                " likelihood (mm.ImapUid = ?, 0.001) AND " +
+                " likelihood (mm.ClassCode = ?, 0.2)",
+                accountId, imapUid, classCode);
+            return maps.ToList ();
+        }
+        }
 }
 

@@ -14,6 +14,7 @@ using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Brain;
 using NachoCore.Index;
+using MailKit;
 
 namespace NachoCore.Model
 {
@@ -226,12 +227,8 @@ namespace NachoCore.Model
         /// Must be set when Insert()ing a to-be-send message into the DB.
         public bool ClientIsSender { set; get; }
 
-        /// IMAP Stuff
-        [Indexed]       
-        public uint ImapUid { get; set; }
-
         /// <summary>
-        /// Email headers only. Used for Brain to help with scoring, etc.
+        /// Email headers only. Used for Brain to help with scoring, etc. Currently only filled in by IMAP
         /// </summary>
         /// <value>The headers.</value>
         public string Headers { get; set; }
@@ -243,6 +240,8 @@ namespace NachoCore.Model
         /// If true, this message is in a junk folder or has been
         /// classified as junk and will be disqualified by brain.
         public bool IsJunk { get; set; }
+
+        /// IMAP Stuff
 
         /// <summary>
         /// The Imap BODYSTRUCTURE.
@@ -818,7 +817,7 @@ namespace NachoCore.Model
                 // We'll just reuse NcEmailMessageIndex instead of making a new fake class to fetch the Uid's. It would
                 // look identical except for the Id argument, so what the heck.
                 return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                    "SELECT e.ImapUid as Id FROM McEmailMessage as e " +
+                    "SELECT m.ImapUid as Id FROM McEmailMessage as e " +
                     " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                     " JOIN McFolder AS f ON m.FolderId = f.Id " +
                     " WHERE " +
@@ -826,11 +825,38 @@ namespace NachoCore.Model
                     " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                     " likelihood (m.AccountId = ?, 1.0) AND " +
                     " likelihood (m.ClassCode = ?, 0.2) AND " +
-                    " likelihood (e.ImapUid <> 0 AND e.ImapUid >= ? AND e.ImapUid < ?, 0.1) AND " +
+                    " likelihood (m.ImapUid <> 0 AND m.ImapUid >= ? AND m.ImapUid < ?, 0.1) AND " +
                     " likelihood (m.FolderId = ?, 0.5) " +
-                    " ORDER BY e.ImapUid DESC LIMIT ?",
+                    " ORDER BY m.ImapUid DESC LIMIT ?",
                     accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
                     min, max, folderId, limit);
+            }
+        }
+
+        const string KCapQueryByImapUidList = "NcModel.McEmailMessage.QueryByImapUidList";
+
+        public static List<NcEmailMessageIndex> QueryByImapUidList (int accountId, int folderId, IList<UniqueId> uids, uint limit)
+        {
+            NcCapture.AddKind (KCapQueryByImapUidRange);
+            using (var cap = NcCapture.CreateAndStart (KCapQueryByImapUidRange)) {
+                var uidList = new List<string> ();
+                foreach (var uid in uids) {
+                    uidList.Add (uid.Id.ToString ());
+                }
+                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                    string.Format ("SELECT m.Id FROM McEmailMessage as e " +
+                        " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                        " JOIN McFolder AS f ON m.FolderId = f.Id " +
+                        " WHERE " +
+                        " likelihood (e.AccountId = ?, 1.0) AND " +
+                        " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                        " likelihood (m.AccountId = ?, 1.0) AND " +
+                        " likelihood (m.ClassCode = ?, 0.2) AND " +
+                        " likelihood (m.ImapUid IN ('{0}'), 0.1) AND " +
+                        " likelihood (m.FolderId = ?, 0.5) " +
+                        " ORDER BY m.ImapUid DESC LIMIT ?", String.Join ("','", uidList)),
+                    accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
+                    folderId, limit);
             }
         }
 
@@ -849,12 +875,57 @@ namespace NachoCore.Model
                     " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                     " likelihood (m.AccountId = ?, 1.0) AND " +
                     " likelihood (m.ClassCode = ?, 0.2) AND " +
-                    " likelihood (e.ImapUid = 0, 0.1) AND " +
+                    " likelihood (m.ImapUid = 0, 0.1) AND " +
                     " likelihood (m.FolderId = ?, 0.5) " +
                     " LIMIT ?",
                     accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
                     folderId, limit);
             }
+        }
+
+        public static McEmailMessage QueryByImapUid (int accountId, UniqueId uid)
+        {
+            int folderId;
+            return QueryByImapUid (accountId, uid, out folderId);
+        }
+
+        public static McEmailMessage QueryByImapUid (int accountId, UniqueId uid, out int folderId)
+        {
+            var mappings = McMapFolderFolderEntry.QueryByFolderEntryImapIdClassCode (accountId, uid.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+            if (mappings.Count == 0) {
+                folderId = -1;
+                return null;
+            }
+            NcAssert.True (mappings.Count == 1);
+            folderId = mappings [0].FolderId;
+            return McEmailMessage.QueryById<McEmailMessage> (mappings [0].FolderEntryId);
+        }
+
+        public void SetImapUid (McFolder folder, UniqueId uid)
+        {
+            var mapping = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId, folder.Id, Id, GetClassCode ());
+            if (null == mapping) {
+                folder.Link (this, uid);
+                return;
+            } else {
+                if (mapping.ImapUid != 0) {
+                    throw new ArgumentException ("Can not change an email's UID");
+                }
+                mapping = mapping.UpdateWithOCApply<McMapFolderFolderEntry> (((record) => {
+                    var target = (McMapFolderFolderEntry)record;
+                    target.ImapUid = uid.Id;
+                    return true;
+                }));
+            }
+        }
+
+        public UniqueId GetImapUid (McFolder folder)
+        {
+            var mapping = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId, folder.Id, Id, GetClassCode ());
+            if (mapping.ImapUid == 0) {
+                throw new ArgumentException ("No ImapUID set");
+            }
+            return new UniqueId (mapping.ImapUid);
         }
 
         public override ClassCodeEnum GetClassCode ()

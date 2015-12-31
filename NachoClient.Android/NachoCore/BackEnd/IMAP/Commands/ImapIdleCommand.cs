@@ -98,9 +98,9 @@ namespace NachoCore.IMAP
                 } else {
                     Log.Info (Log.LOG_IMAP, "{0}: flags for message {1} have changed to: {2}.",
                         IdleFolder.ImapFolderNameRedacted (), e.UniqueId, e.Flags);
-                    McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (
-                        AccountId,
-                        ImapProtoControl.MessageServerId (IdleFolder, e.UniqueId.Value));
+                    int folderId;
+                    McEmailMessage emailMessage = McEmailMessage.QueryByImapUid (AccountId, e.UniqueId.Value, out folderId);
+                    NcAssert.AreEqual (IdleFolder.Id, folderId);
                     if (null != emailMessage) {
                         if (emailMessage.IsRead != e.Flags.HasFlag (MessageFlags.Seen)) {
                             emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {

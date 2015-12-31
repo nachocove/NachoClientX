@@ -52,7 +52,7 @@ namespace NachoCore.IMAP
                 .Or (SearchQuery.BccContains (PendingSingle.Search_Prefix))
                 .Or (SearchQuery.MessageContains (PendingSingle.Search_Prefix))
                 .Or (SearchQuery.CcContains (PendingSingle.Search_Prefix));
-            if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.GMailExt1)) {
+            if (Client.Capabilities.HasFlag (ImapCapabilities.GMailExt1)) {
                 query = query.Or (SearchQuery.GMailRawSearch (PendingSingle.Search_Prefix));
             }
             if (TimeSpan.Zero != timespan) {
@@ -68,25 +68,14 @@ namespace NachoCore.IMAP
                 var mailKitFolder = GetOpenMailkitFolder (folder);
                 if (mailKitFolder.Count > 0) {
                     IList<UniqueId> uids;
-                    if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.Sort)) {
+                    if (Client.Capabilities.HasFlag (ImapCapabilities.Sort)) {
                         uids = mailKitFolder.Search (query, orderBy);
                     } else {
                         uids = mailKitFolder.Search (query);
                     }
                     if (uids.Any ()) {
-                        List<string> serverIdList = new List<string> ();
-                        foreach (var uid in uids) {
-                            serverIdList.Add ("\"" + ImapProtoControl.MessageServerId (folder, uid) + "\"");
-                        }
-                        var idList = McEmailMessage.QueryByServerIdList (AccountId, serverIdList);
-                        if (idList.Any ()) {
-                            foreach (var id in idList) {
-                                emailList.Add(id);
-                                if (emailList.Count > PendingSingle.Search_MaxResults) {
-                                   break;
-                                }
-                            }
-                        }
+                        emailList.AddRange (McEmailMessage.QueryByImapUidList (AccountId, folder.Id, uids,
+                            (uint)(PendingSingle.Search_MaxResults - emailList.Count)));
                     }
                 }
                 if (emailList.Count > PendingSingle.Search_MaxResults) {

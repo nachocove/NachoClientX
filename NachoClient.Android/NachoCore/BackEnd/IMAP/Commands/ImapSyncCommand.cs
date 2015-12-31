@@ -140,7 +140,7 @@ namespace NachoCore.IMAP
                     Cts.Token.ThrowIfCancellationRequested ();
                     var emailMessage = AppendMessage (mailKitFolder, Synckit.Folder, messageId.Id);
                     // add the uploaded email to the syncSet, so that we immedaitely sync it back down.
-                    uidSet.Add (new UniqueId (emailMessage.ImapUid));
+                    uidSet.Add (emailMessage.GetImapUid (Synckit.Folder));
                     changed = true;
                 }
                 var protocolState = BEContext.ProtocolState;
@@ -281,7 +281,7 @@ namespace NachoCore.IMAP
                         if (syncInst.GetHeaders && string.IsNullOrEmpty (emailMessage.Headers)) {
                             NcCapture.AddKind (KImapFetchHeaders);
                             using (var cap3 = NcCapture.CreateAndStart (KImapFetchHeaders)) {
-                                emailMessage = FetchHeaders (emailMessage, mailKitFolder, Cts.Token);
+                                emailMessage = FetchHeaders (emailMessage, Synckit.Folder, mailKitFolder, Cts.Token);
                             }
                         }
                         summaryUids.Add (imapSummary.UniqueId);
@@ -346,8 +346,8 @@ namespace NachoCore.IMAP
                 return null;
             }
 
-            string McEmailMessageServerId = ImapProtoControl.MessageServerId (folder, imapSummary.UniqueId);
-            McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
+            var serverId = imapSummary.GMailMessageId.HasValue ? imapSummary.GMailMessageId.Value.ToString () : imapSummary.UniqueId.Id.ToString ();
+            McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, serverId);
             if (null != emailMessage) {
                 try {
                     changed = UpdateEmailMetaData (emailMessage, imapSummary);
@@ -356,8 +356,7 @@ namespace NachoCore.IMAP
                 }
             } else {
                 try {
-                    emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary);
-                    updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                    emailMessage = ParseEmail (accountId, serverId, imapSummary);
                     changed = true;
                     justCreated = true;
                 } catch (Exception ex) {
@@ -372,8 +371,7 @@ namespace NachoCore.IMAP
                     if (justCreated) {
                         emailMessage.IsJunk = folder.IsJunkFolder ();
                         emailMessage.Insert ();
-                        folder.Link (emailMessage);
-                        InsertAttachments (emailMessage, imapSummary as MessageSummary);
+                        InsertAttachments (emailMessage, imapSummary);
                         NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -386,6 +384,10 @@ namespace NachoCore.IMAP
                             // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
                             NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
                         }
+                    }
+                    var result = folder.Link (emailMessage, imapSummary.UniqueId);
+                    if (!result.isOK () && result.SubKind != NcResult.SubKindEnum.Error_AlreadyInFolder) {
+                        throw new Exception (string.Format ("Could not link message: {0}", result.GetMessage ()));
                     }
                 });
             }
@@ -421,12 +423,6 @@ namespace NachoCore.IMAP
             }
             var uid = mailKitFolder.Append (mimeMessage, flags, Cts.Token);
             if (uid.HasValue) {
-                EmailMessage = EmailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                    var target = (McEmailMessage)record;
-                    target.ImapUid = uid.Value.Id;
-                    target.ServerId = ImapProtoControl.MessageServerId (Synckit.Folder, uid.Value);
-                    return true;
-                });
                 EmailMessage = FixupFromInfo (EmailMessage, true);
             } else {
                 Log.Error (Log.LOG_IMAP, "Append to Folder did not return a uid!");
@@ -447,7 +443,7 @@ namespace NachoCore.IMAP
             // TODO Convert some of this to queries instead of loops
             UniqueIdSet messagesDeleted = new UniqueIdSet ();
             foreach (var uid in uids) {
-                var email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, ImapProtoControl.MessageServerId (Synckit.Folder, uid));
+                var email = McEmailMessage.QueryByImapUid (AccountId, uid);
                 if (null != email) {
                     email.Delete ();
                     messagesDeleted.Add (uid);
@@ -475,6 +471,9 @@ namespace NachoCore.IMAP
                     changed = true;
                 }
             }
+
+            ParseGmailLabels (emailMessage, summary);
+
             bool ch;
             FixupFromInfo (emailMessage, false, out ch);
             if (ch) {
@@ -483,7 +482,45 @@ namespace NachoCore.IMAP
             return changed;
         }
 
-        private static bool updateFlags (McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
+        static bool ParseGmailLabels (McEmailMessage emailMessage, MessageSummary summary)
+        {
+            bool changed = false;
+            foreach (var label in summary.GMailLabels) {
+                if (!label.StartsWith ("\\")) {
+                    // these are user-labels. ignore these
+                    continue;
+                }
+                    
+                switch (label) {
+                case "\\Starred":
+                    changed |= emailMessage.UserAction == 1;
+                    emailMessage.UserAction = 1;
+                    break;
+
+                case "\\Deleted":
+                    // TODO we really ought to stop here and delete the message!
+                    break;
+
+                case "\\Important":
+                    // TODO Should we honor this? It's from google's 'brain'.
+                    break;
+
+                case "\\Inbox":
+                case "\\Sent":
+                case "\\Drafts":
+                case "\\Trash":
+                    // various standard folder types (i.e. labels in gmail-land)
+                    break;
+
+                default:
+                    Log.Warn (Log.LOG_IMAP, "Unhandled Gmail message label {0}", label);
+                    break;
+                }
+            }
+            return changed;
+        }
+
+        static bool updateFlags (McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
         {
             bool changed = false;
             bool before = emailMessage.IsRead;
@@ -495,7 +532,7 @@ namespace NachoCore.IMAP
             if ((Flags & MessageFlags.Answered) == MessageFlags.Answered) {
             }
             if ((Flags & MessageFlags.Flagged) == MessageFlags.Flagged) {
-                //emailMessage.UserAction = 1;
+                emailMessage.UserAction = 1;
             }
             if ((Flags & MessageFlags.Deleted) == MessageFlags.Deleted) {
             }
@@ -560,11 +597,12 @@ namespace NachoCore.IMAP
 
         public static McEmailMessage ParseEmail (int accountId, string ServerId, MessageSummary summary)
         {
-            NcAssert.NotNull (summary.Envelope);
+            if (null == summary.Envelope) {
+                NcAssert.NotNull (summary.Envelope);
+            }
 
             var emailMessage = new McEmailMessage () {
                 ServerId = ServerId,
-                ImapUid = summary.UniqueId.Id,
                 AccountId = accountId,
                 Subject = summary.Envelope.Subject,
                 InReplyTo = summary.Envelope.InReplyTo,
@@ -665,8 +703,9 @@ namespace NachoCore.IMAP
                 emailMessage.MessageID = summary.GMailMessageId.Value.ToString ();
             }
             SetConversationId (emailMessage, summary);
+            ParseGmailLabels (emailMessage, summary);
+            updateFlags (emailMessage, summary.Flags.GetValueOrDefault (), summary.UserFlags);
             emailMessage.IsIncomplete = false;
-
             return FixupFromInfo (emailMessage, false);
         }
 
@@ -684,9 +723,9 @@ namespace NachoCore.IMAP
             return changed;
         }
 
-        public static McEmailMessage FetchHeaders (McEmailMessage email, NcImapFolder mailKitFolder, CancellationToken Token)
+        public static McEmailMessage FetchHeaders (McEmailMessage email, McFolder folder, NcImapFolder mailKitFolder, CancellationToken Token)
         {
-            var uid = new UniqueId (email.ImapUid);
+            var uid = email.GetImapUid (folder);
             var stream = mailKitFolder.GetStream (uid, "HEADER", Token);
             using (var decoded = new MemoryStream ()) {
                 stream.CopyTo (decoded);

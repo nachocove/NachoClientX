@@ -62,13 +62,13 @@ namespace NachoCore.IMAP
 
             McFolder folder = McFolder.QueryByServerId (AccountId, fetchBody.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
-            var uid = new UniqueId (email.ImapUid);
+            var uid = email.GetImapUid (folder);
 
             Cts.Token.ThrowIfCancellationRequested ();
 
             if (string.IsNullOrEmpty (email.ImapBodyStructure)) {
                 // backwards compatibility: Current code fills this in, but older code didn't. So fetch it now.
-                email = FillInBodyStructure (email, mailKitFolder, Cts.Token);
+                email = FillInBodyStructure (email,folder, mailKitFolder, Cts.Token);
                 if (email == null) {
                     return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
                         NcResult.WhyEnum.MissingOnServer);
@@ -79,7 +79,7 @@ namespace NachoCore.IMAP
 
             if (string.IsNullOrEmpty (email.Headers)) {
                 // sync didn't fetch them for us. Do it now.
-                email = ImapSyncCommand.FetchHeaders (email, mailKitFolder, Cts.Token);
+                email = ImapSyncCommand.FetchHeaders (email, folder, mailKitFolder, Cts.Token);
             }
 
             BodyPart imapBody;
@@ -495,10 +495,10 @@ namespace NachoCore.IMAP
             }
         }
 
-        public static McEmailMessage FillInBodyStructure (McEmailMessage email, NcImapFolder mailKitFolder, CancellationToken Token)
+        public static McEmailMessage FillInBodyStructure (McEmailMessage email, McFolder folder, NcImapFolder mailKitFolder, CancellationToken Token)
         {
             var UidList = new List<UniqueId> ();
-            var uid = new UniqueId (email.ImapUid);
+            var uid = email.GetImapUid (folder);
             UidList.Add (uid);
             MessageSummaryItems flags = MessageSummaryItems.BodyStructure | MessageSummaryItems.UniqueId;
             var isummary = mailKitFolder.Fetch (UidList, flags, Token);

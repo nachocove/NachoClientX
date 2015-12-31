@@ -101,7 +101,7 @@ namespace NachoCore.IMAP
 
             var uids = new List<UniqueId> ();
             foreach (var email in emails) {
-                uids.Add (new UniqueId (email.ImapUid));
+                uids.Add (email.GetImapUid (src));
             }
             srcFolder.Open (FolderAccess.ReadWrite, Token);
             try {
@@ -109,12 +109,7 @@ namespace NachoCore.IMAP
                 if (newUids.Any ()) {
                     NcModel.Instance.RunInTransaction (() => {
                         for (var i=0; i<newUids.Count; i++) {
-                            emails[i].UpdateWithOCApply<McEmailMessage> ((record) => {
-                                var target = (McEmailMessage)record;
-                                target.ServerId = ImapProtoControl.MessageServerId (dst, newUids[i]);
-                                target.ImapUid = newUids[i].Id;
-                                return true;
-                            });
+                            emails[i].SetImapUid (dst, new UniqueId (newUids[i].Id));
                         }
                     });
                 } else {

@@ -60,16 +60,17 @@ namespace NachoCore.IMAP
         private NcResult FetchAttachment (McFolder folder, McAttachment attachment, McEmailMessage email)
         {
             var mailKitFolder = GetOpenMailkitFolder (folder);
-            var part = attachmentBodyPart (new UniqueId(email.ImapUid), mailKitFolder, attachment.FileReference);
+            var uid = email.GetImapUid (folder);
+            var part = attachmentBodyPart (uid, mailKitFolder, attachment.FileReference);
             if (null == part) {
                 Log.Error (Log.LOG_IMAP, "Could not find part with PartSpecifier {0} in summary", attachment.FileReference);
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.MissingOnServer);
             }
 
             var tmp = NcModel.Instance.TmpPath (AccountId, "attach");
-            mailKitFolder.SetStreamContext (new UniqueId (email.ImapUid), tmp);
+            mailKitFolder.SetStreamContext (uid, tmp);
             try {
-                Stream st = mailKitFolder.GetStream (new UniqueId (email.ImapUid), attachment.FileReference, Cts.Token, this);
+                Stream st = mailKitFolder.GetStream (uid, attachment.FileReference, Cts.Token, this);
                 var path = attachment.GetFilePath ();
                 using (var attachFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
                     using (var filtered = new FilteredStream (attachFile)) {

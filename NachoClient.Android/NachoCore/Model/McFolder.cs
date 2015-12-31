@@ -7,6 +7,7 @@ using NachoCore.Utils;
 using NachoCore.ActiveSync;
 using Portable.Text;
 using System.Security.Cryptography;
+using MailKit;
 
 namespace NachoCore.Model
 {
@@ -742,7 +743,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public NcResult Link (McAbstrItem obj)
+        public NcResult Link (McAbstrItem obj, UniqueId? imapUid = null)
         {
             var classCode = obj.GetClassCode ();
             NcAssert.True (classCode != ClassCodeEnum.Folder, "Linking folders is not currently supported");
@@ -758,6 +759,7 @@ namespace NachoCore.Model
                 FolderEntryId = obj.Id,
                 ClassCode = classCode,
                 AsSyncEpoch = AsSyncEpoch,
+                ImapUid = imapUid.HasValue ? imapUid.Value.Id : 0,
             };
             NcModel.Instance.RunInTransaction (() => {
                 map.Insert ();
