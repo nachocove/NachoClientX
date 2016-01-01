@@ -1548,10 +1548,17 @@ namespace NachoCore.Model
         /// </summary>
         public static List<McContact> SearchAllContactsByName (string searchFor)
         {
-            string prefixPattern = searchFor.Replace ('%', '_') + "%";
-            return NcModel.Instance.Db.Query<McContact> (
-                "SELECT * FROM McContact WHERE FirstName LIKE ? OR LastName LIKE ? OR CompanyName LIKE ? LIMIT 100",
-                prefixPattern, prefixPattern, prefixPattern);
+            if (searchFor.Contains ("%") || searchFor.Contains ("_")) {
+                string prefixPattern = searchFor.Replace ("^", "^^").Replace ("%", "^%").Replace ("_", "^_") + "%";
+                return NcModel.Instance.Db.Query<McContact> (
+                    "SELECT * FROM McContact WHERE FirstName LIKE ? ESCAPE '^' OR LastName LIKE ? ESCAPE '^' OR CompanyName LIKE ? ESCAPE '^' LIMIT 100",
+                    prefixPattern, prefixPattern, prefixPattern);
+            } else {
+                string prefixPattern = searchFor + "%";
+                return NcModel.Instance.Db.Query<McContact> (
+                    "SELECT * FROM McContact WHERE FirstName LIKE ? OR LastName LIKE ? OR CompanyName LIKE ? LIMIT 100",
+                    prefixPattern, prefixPattern, prefixPattern);
+            }
         }
 
         /// <summary>
@@ -1560,11 +1567,19 @@ namespace NachoCore.Model
         /// </summary>
         public static List<McContactEmailAddressAttribute> SearchAllContactEmail (string searchFor)
         {
-            string prefixPattern = searchFor.Replace ('%', '_') + "%";
-            string domainPattern = "%@" + prefixPattern;
-            return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
-                "SELECT * FROM McContactEmailAddressAttribute WHERE Value LIKE ? OR Value LIKE ? LIMIT 100",
-                prefixPattern, domainPattern);
+            if (searchFor.Contains ("%") || searchFor.Contains ("_")) {
+                string prefixPattern = searchFor.Replace ("^", "^^").Replace ("%", "^%").Replace ("_", "^_") + "%";
+                string domainPattern = "%@" + prefixPattern;
+                return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
+                    "SELECT * FROM McContactEmailAddressAttribute WHERE Value LIKE ? ESCAPE '^' OR Value LIKE ? ESCAPE '^' LIMIT 100",
+                    prefixPattern, domainPattern);
+            } else {
+                string prefixPattern = searchFor + "%";
+                string domainPattern = "%@" + prefixPattern;
+                return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
+                    "SELECT * FROM McContactEmailAddressAttribute WHERE Value LIKE ? OR Value LIKE ? LIMIT 100",
+                    prefixPattern, domainPattern);
+            }
         }
 
         /// <summary>
