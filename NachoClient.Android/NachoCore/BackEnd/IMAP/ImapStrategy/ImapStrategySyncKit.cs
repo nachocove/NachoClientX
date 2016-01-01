@@ -82,7 +82,16 @@ namespace NachoCore.IMAP
 
         #endregion
 
-        private static MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
+        private static MessageSummaryItems ImapSummaryItemsResync (McProtocolState protocolState)
+        {
+            MessageSummaryItems NewMessageFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
+            if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
+                NewMessageFlags |= MessageSummaryItems.GMailMessageId;
+                NewMessageFlags |= MessageSummaryItems.GMailThreadId;
+                NewMessageFlags |= MessageSummaryItems.GMailLabels;
+            }
+            return NewMessageFlags;
+        }
 
         private static HashSet<HeaderId> ImapSummaryHeaders ()
         {
@@ -102,7 +111,7 @@ namespace NachoCore.IMAP
         /// </summary>
         /// <returns>The summaryitems.</returns>
         /// <param name="protocolState">Protocol state.</param>
-        private static MessageSummaryItems ImapSummaryitems (McProtocolState protocolState)
+        private static MessageSummaryItems ImapSummaryItemsNewMail (McProtocolState protocolState)
         {
             MessageSummaryItems NewMessageFlags = MessageSummaryItems.BodyStructure
                                                   | MessageSummaryItems.Envelope
@@ -275,7 +284,7 @@ namespace NachoCore.IMAP
                         currentMails.Add (startingUid);
                     }
                     var uidSet = SyncKit.MustUniqueIdSet (currentMails.OrderByDescending (x => x).Take ((int)span * KResyncMultiplier).ToList ());
-                    instructions.Add (SyncInstructionForFlagSync (uidSet));
+                    instructions.Add (SyncInstructionForFlagSync (ref protocolState, uidSet));
                     span -= (uint)(uidSet.Count / KResyncMultiplier);
                 }
 
@@ -312,12 +321,12 @@ namespace NachoCore.IMAP
 
         public static SyncInstruction SyncInstructionForNewMails (ref McProtocolState protocolState, UniqueIdSet uidSet)
         {
-            return new SyncInstruction (uidSet, ImapSummaryitems (protocolState), ImapSummaryHeaders (), true, true);
+            return new SyncInstruction (uidSet, ImapSummaryItemsNewMail (protocolState), ImapSummaryHeaders (), true, true);
         }
 
-        public static SyncInstruction SyncInstructionForFlagSync (UniqueIdSet uidSet)
+        public static SyncInstruction SyncInstructionForFlagSync (ref McProtocolState protocolState, UniqueIdSet uidSet)
         {
-            return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<HeaderId> (), false, false);
+            return new SyncInstruction (uidSet, ImapSummaryItemsResync (protocolState), new HashSet<HeaderId> (), false, false);
         }
 
         #endregion
