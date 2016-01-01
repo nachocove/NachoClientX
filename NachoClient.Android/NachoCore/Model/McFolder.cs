@@ -800,6 +800,11 @@ namespace NachoCore.Model
                 return NcResult.Error (NcResult.SubKindEnum.Error_NotInFolder);
             }
             existing.Delete ();
+            var others = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (AccountId, feId, classCode);
+            if (!others.Any ()) {
+                Log.Warn (Log.LOG_SYS, "No more mapping entries for {0} item {1} in account {2}. Perhaps it needs to be deleted", classCode, AccountId, feId);
+                return NcResult.Info (NcResult.SubKindEnum.Info_ItemOrphaned);
+            }
             return NcResult.OK ();
         }
 

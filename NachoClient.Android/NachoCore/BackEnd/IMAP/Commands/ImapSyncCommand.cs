@@ -428,6 +428,7 @@ namespace NachoCore.IMAP
             var uid = mailKitFolder.Append (mimeMessage, flags, Cts.Token);
             if (uid.HasValue) {
                 EmailMessage = FixupFromInfo (EmailMessage, true);
+                EmailMessage.SetImapUid (folder, uid.Value);
             } else {
                 Log.Error (Log.LOG_IMAP, "Append to Folder did not return a uid!");
             }

@@ -592,8 +592,8 @@ namespace NachoClient.AndroidClient
                     var oldFolder = McFolder.QueryByFolderEntryId<McCalendar> (cal.AccountId, cal.Id).FirstOrDefault ();
                     if (null != oldFolder && oldFolder.Id != calendarFolder.Id) {
                         BackEnd.Instance.MoveCalCmd (account.Id, cal.Id, calendarFolder.Id);
-                        oldFolder.Unlink (cal);
                         calendarFolder.Link (cal);
+                        oldFolder.Unlink (cal);
                     }
                     BackEnd.Instance.UpdateCalCmd (cal.AccountId, cal.Id, descriptionChanged);
                 }

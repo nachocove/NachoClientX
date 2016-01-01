@@ -59,8 +59,10 @@ namespace NachoCore.IMAP
             }
 
             var emails = new List<McEmailMessage> ();
+            var uids = new List<UniqueId> ();
             var removeList = new List<McPending> ();
             foreach (var pending in PendingList) {
+                NcAssert.True (pending.ItemId > 0);
                 var emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, pending.ServerId);
                 if (null == emailMessage) {
                     Log.Error (Log.LOG_IMAP, "Could not find email message {0}", pending.ServerId);
@@ -69,6 +71,7 @@ namespace NachoCore.IMAP
                     continue;
                 }
                 emails.Add (emailMessage);
+                uids.Add (new UniqueId ((uint)(pending.ItemId)));
             }
             foreach (var pending in removeList) {
                 PendingList.Remove (pending);
@@ -78,7 +81,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMOVHARD");
 
             }
-            var result = MoveEmails (emails, src, dst, Cts.Token);
+            var result = MoveEmails (emails, uids, src, dst, Cts.Token);
             if (result.isOK ()) {
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMoveSucceeded));
@@ -91,7 +94,16 @@ namespace NachoCore.IMAP
             }
         }
 
-        public NcResult MoveEmails (List<McEmailMessage> emails, McFolder src, McFolder dst, CancellationToken Token)
+        /// <summary>
+        /// Moves the emails.
+        /// </summary>
+        /// <returns>The emails.</returns>
+        /// <param name="emails">Emails.</param>
+        /// <param name="uids">Uids. Order must match the emails</param>
+        /// <param name="src">Source.</param>
+        /// <param name="dst">Dst.</param>
+        /// <param name="Token">Token.</param>
+        public NcResult MoveEmails (List<McEmailMessage> emails, List<UniqueId> uids, McFolder src, McFolder dst, CancellationToken Token)
         {
             NcResult result;
             var srcFolder = Client.GetFolder (src.ServerId, Token);
@@ -99,10 +111,6 @@ namespace NachoCore.IMAP
             var dstFolder = Client.GetFolder (dst.ServerId, Token);
             NcAssert.NotNull (dstFolder);
 
-            var uids = new List<UniqueId> ();
-            foreach (var email in emails) {
-                uids.Add (email.GetImapUid (src));
-            }
             srcFolder.Open (FolderAccess.ReadWrite, Token);
             try {
                 var newUids = srcFolder.MoveTo (uids, dstFolder, Token);

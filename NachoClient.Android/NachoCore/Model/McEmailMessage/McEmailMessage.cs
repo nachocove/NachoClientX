@@ -922,9 +922,8 @@ namespace NachoCore.Model
         public UniqueId GetImapUid (McFolder folder)
         {
             var mapping = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId, folder.Id, Id, GetClassCode ());
-            if (mapping.ImapUid == 0) {
-                throw new ArgumentException ("No ImapUID set");
-            }
+            NcAssert.NotNull (mapping);
+            NcAssert.True (mapping.ImapUid > 0);
             return new UniqueId (mapping.ImapUid);
         }
 

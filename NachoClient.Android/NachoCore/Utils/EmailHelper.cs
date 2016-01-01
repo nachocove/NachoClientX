@@ -146,8 +146,8 @@ namespace NachoCore.Utils
             // Move files in client-owned folders manually
             var draftsFolder = McFolder.GetClientOwnedDraftsFolder (message.AccountId);
             var outboxFolder = McFolder.GetClientOwnedOutboxFolder (message.AccountId);
-            outboxFolder.Unlink (message);
             draftsFolder.Link (message);
+            outboxFolder.Unlink (message);
             // Send status ind after the message is moved
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 

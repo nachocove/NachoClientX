@@ -110,7 +110,7 @@ namespace NachoCore.IMAP
         {
             Method = MethodEnum.Sync;
             Folder = folder;
-            SyncInstructions = syncInstructions;
+            SyncInstructions = syncInstructions != null ? syncInstructions : new List<SyncInstruction> ();
         }
 
         public uint? MaxSynced {
@@ -169,7 +169,7 @@ namespace NachoCore.IMAP
             string me = string.Format ("SyncKit {0} (Type {{{1}}}", Folder.ImapFolderNameRedacted (), Method);
             switch (Method) {
             case MethodEnum.Sync:
-                if (null != SyncInstructions && SyncInstructions.Any ()) {
+                if (SyncInstructions.Any ()) {
                     me += " SyncInstructions {";
                     foreach (var inst in SyncInstructions) {
                         me += string.Format (" {{{0}}}", inst);;

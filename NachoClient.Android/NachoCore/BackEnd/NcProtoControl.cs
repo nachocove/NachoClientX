@@ -355,12 +355,18 @@ namespace NachoCore
                         });
                     }
                 }
+
                 var pending = new McPending (AccountId, capability) {
                     Operation = op,
                     ServerId = item.ServerId,
                     ParentId = srcFolder.ServerId,
                     DestParentId = destFolder.ServerId,
                 };
+                var emailItem = item as McEmailMessage;
+                if (null != emailItem) {
+                    var uid = emailItem.GetImapUid (srcFolder);
+                    pending.ItemId = (int)(uid.Id);
+                }
 
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
@@ -656,14 +662,17 @@ namespace NachoCore
                         Operation = McPending.Operations.EmailDelete,
                         ParentId = primeFolder.ServerId,
                         ServerId = emailMessage.ServerId,
+                        ItemId = (int)(emailMessage.GetImapUid (primeFolder).Id),
                     };
                     emailMessage.Delete ();
                 } else {
+                    var uid = emailMessage.GetImapUid (primeFolder);
                     pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                         Operation = McPending.Operations.EmailMove,
                         ServerId = emailMessage.ServerId,
                         ParentId = primeFolder.ServerId,
                         DestParentId = trash.ServerId,
+                        ItemId = (int)(uid.Id),
                     };
                     trash.Link (emailMessage);
                     primeFolder.Unlink (emailMessage);

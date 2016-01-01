@@ -54,18 +54,8 @@ namespace NachoCore.IMAP
             List<UniqueId> uids = new List<UniqueId> ();
             var removeList = new List<McPending> ();
             foreach (var pending in PendingList) {
-                UInt32 uid;
-                // FIXME This will not work once we turn on email-in-multiple-folders feature
-                // To fix, we'll presumably keep the ImapUid in the Folder mapping (since each folder will know the email
-                // by a different Uid). In that case, we need to look up the folder-mapping for the email's serverId, and
-                // extract the ImapUid from there.
-                if (!UInt32.TryParse (pending.ServerId.Split (':') [1], out uid)) {
-                    Log.Error (Log.LOG_IMAP, "Could not extract UID from ServerId {0}", pending.ServerId);
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageDeleteFailed, NcResult.WhyEnum.BadOrMalformed));
-                    removeList.Add (pending);
-                    continue;
-                }
-                uids.Add (new UniqueId(uid));
+                NcAssert.True (pending.ItemId > 0);
+                uids.Add (new UniqueId ((uint)(pending.ItemId)));
             }
             foreach (var pending in removeList) {
                 PendingList.Remove (pending);

@@ -139,8 +139,8 @@ namespace NachoCore
                 } else if (null != existingAppFolder && existingAppFolder.ServerId != deviceEvent.ParentFolder.ServerId) {
                     // The event has been moved to a different calendar/folder.
                     NcModel.Instance.RunInTransaction (() => {
-                        existingAppFolder.Unlink (existing);
                         LinkToFolder (existing, deviceEvent.ParentFolder.ServerId);
+                        existingAppFolder.Unlink (existing);
                     });
                     ++MoveCount;
                 }
