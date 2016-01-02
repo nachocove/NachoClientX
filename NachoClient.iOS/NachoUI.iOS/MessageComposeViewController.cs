@@ -664,6 +664,7 @@ namespace NachoClient.iOS
 
         public void MessageComposerDidCompletePreparation (MessageComposer composer)
         {
+            UpdateSendEnabled ();
             DisplayMessageBody ();
         }
 
@@ -846,7 +847,7 @@ namespace NachoClient.iOS
 
         private void UpdateSendEnabled ()
         {
-            SendButton.Enabled = Composer.HasRecipient;
+            SendButton.Enabled = Composer.HasRecipient && Composer.IsMessagePrepared;
         }
 
         private void ShowAddAttachment (bool inline = false)
