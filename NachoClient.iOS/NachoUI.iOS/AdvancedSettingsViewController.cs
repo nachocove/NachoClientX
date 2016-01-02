@@ -199,7 +199,7 @@ namespace NachoClient.iOS
                 HandleAccountIssue ("Validation Failed", "This account may not be able to send or receive emails. Save anyway?");
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
-                HandleAccountIssue ("Invalid Credentials", "User name or password is incorrect. No emails can be sent or recieved. Save anyway?");
+                HandleAccountIssue ("Invalid Credentials", "User name or password is incorrect. No emails can be sent or received. Save anyway?");
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
                 HandleAccountIssue ("Invalid Username", "User name is incorrect. No emails can be sent or received. Save anyway?");
