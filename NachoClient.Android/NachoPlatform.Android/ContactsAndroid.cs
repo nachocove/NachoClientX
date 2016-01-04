@@ -72,7 +72,7 @@ namespace NachoPlatform
             var projection = new [] {
                 ContactsContract.Contacts.InterfaceConsts.Id,
                 ContactsContract.Contacts.InterfaceConsts.ContactLastUpdatedTimestamp,
-                ContactsContract.Contacts.InterfaceConsts.HasPhoneNumber,
+                ContactsContract.Contacts.InterfaceConsts.Starred,
             };
             var cur = cr.Query (ContactsContract.Contacts.ContentUri, projection, null, null, null, null);
             if (cur.Count > 0) {
@@ -81,8 +81,8 @@ namespace NachoPlatform
 
                     String lastUpdateString = GetField (cur, ContactsContract.Contacts.InterfaceConsts.ContactLastUpdatedTimestamp);
                     var lastUpdate = FromUnixTimeMilliseconds (lastUpdateString, DateTime.UtcNow);
-                    //bool HasPhoneNumber = int.Parse (GetField (cur, ContactsContract.Contacts.InterfaceConsts.HasPhoneNumber)) > 0;
-                    var entry = new PlatformContactRecordAndroid (deviceAccount, id, lastUpdate);
+                    int starred = GetFieldInt (cur, ContactsContract.Contacts.InterfaceConsts.Starred);
+                    var entry = new PlatformContactRecordAndroid (deviceAccount, id, lastUpdate, starred != 0);
                     retval.Add (entry);
                 }
             }
@@ -158,11 +158,14 @@ namespace NachoPlatform
 
             public override DateTime LastUpdate { get { return _LastUpdate; } }
 
-            public PlatformContactRecordAndroid (McAccount account, long id, DateTime lastUpdate) : base ()
+            bool Starred;
+
+            public PlatformContactRecordAndroid (McAccount account, long id, DateTime lastUpdate, bool starred) : base ()
             {
                 Account = account;
                 _ServerId = id.ToString ();
                 _LastUpdate = lastUpdate;
+                Starred = starred;
             }
 
             public override NcResult ToMcContact (McContact contactToUpdate)
@@ -174,7 +177,11 @@ namespace NachoPlatform
                     Contact.ServerId = _ServerId;
                     Contact.Source = McAbstrItem.ItemSource.Device;
                     Contact.OwnerEpoch = Contacts.SchemaRev;
+                    Contact.IsVip = Starred;
                 } else {
+                    if (Starred != contactToUpdate.IsVip) {
+                        contactToUpdate.SetVIP (Starred);
+                    }
                     Contact = contactToUpdate;
                 }
 
