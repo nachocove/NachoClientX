@@ -54,7 +54,8 @@ namespace NachoClient.AndroidClient
             var setButton = view.FindViewById<Button> (Resource.Id.date_time_set);
             setButton.Click += (object sender, EventArgs e) => {
                 // DateTime coming back as 'unspecified'
-                var newDateTime = (datePicker.DateTime.Date.ToLocalTime () + new TimeSpan ((int)timePicker.CurrentHour, (int)timePicker.CurrentMinute, 0)).ToUniversalTime ();
+                var pickedDate = DateTime.SpecifyKind (datePicker.DateTime, DateTimeKind.Local);
+                var newDateTime = (pickedDate + new TimeSpan ((int)timePicker.CurrentHour, (int)timePicker.CurrentMinute, 0)).ToUniversalTime ();
                 if (null == validationCallback || validationCallback (newDateTime)) {
                     dialog.Dismiss ();
                     if (null != selectedCallback) {
