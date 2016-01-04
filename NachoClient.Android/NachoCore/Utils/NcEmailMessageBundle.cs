@@ -856,7 +856,9 @@ namespace NachoCore.Utils
                     if (message.Cc.Count > 0) {
                         IncludeText (String.Format ("Cc: {0}\n", message.Cc.ToString ()));
                     }
-                    IncludeText (String.Format ("Sent: {0}\n", message.Date.ToString ()));
+                    if (!message.Date.Equals (DateTime.MinValue)) {
+                        IncludeText (String.Format ("Sent: {0}\n", message.Date.ToString ()));
+                    }
                     if (!String.IsNullOrEmpty (message.Subject)) {
                         IncludeText (String.Format ("Subject: {0}\n", message.Subject));
                     }
@@ -888,7 +890,9 @@ namespace NachoCore.Utils
                     if (message.Cc.Count > 0) {
                         headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Cc", message.Cc.ToString ()));
                     }
-                    headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Date", message.Date.ToString ()));
+                    if (!message.Date.Equals (DateTime.MinValue)) {
+                        headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Sent", message.Date.ToString ()));
+                    }
                     if (!String.IsNullOrEmpty (message.Subject)) {
                         headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Subject", message.Subject));
                     }
