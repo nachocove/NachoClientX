@@ -807,6 +807,7 @@ namespace NachoClient.AndroidClient
             case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
                 RefreshIfVisible ();
+                RefreshVisibleMessageCells ();
                 break;
             case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
                 UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
