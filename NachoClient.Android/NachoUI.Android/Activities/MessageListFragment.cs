@@ -579,7 +579,11 @@ namespace NachoClient.AndroidClient
         void StartSearching ()
         {
             searching = true;
+            searchResultsMessages.UpdateMatches (null);
+            searchResultsMessages.UpdateServerMatches (null);
+
             messageListAdapter.StartSearch ();
+            messageListAdapter.RefreshSearchMatches ();
 
             var search = View.FindViewById (Resource.Id.search);
             search.Visibility = ViewStates.Visible;
