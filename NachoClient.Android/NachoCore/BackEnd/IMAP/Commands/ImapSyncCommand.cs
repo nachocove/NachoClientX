@@ -135,6 +135,7 @@ namespace NachoCore.IMAP
             // start by uploading messages
             if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
                 var uidSet = new UniqueIdSet ();
+                // need to reopen the folder read-write so we can upload the message
                 mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadWrite);
                 foreach (var messageId in Synckit.UploadMessages) {
                     Cts.Token.ThrowIfCancellationRequested ();
@@ -151,6 +152,8 @@ namespace NachoCore.IMAP
                     var sw = new PlatformStopwatch ();
                     sw.Start ();
                     try {
+                        // we might have re-opened the folder 'read-write' above. re-open as read-only.
+                        // Note if we didn't reopen the folder, this call will do nothing.
                         mailKitFolder = GetOpenMailkitFolder (Synckit.Folder, FolderAccess.ReadOnly);
                         // First find all messages marked as /Deleted
                         UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, syncInst.UidSet);
@@ -167,10 +170,10 @@ namespace NachoCore.IMAP
 
                         // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
                         toDelete.AddRange (vanished);
-                        var deleted = deleteEmails (toDelete);
+                        deleteEmails (toDelete);
 
                         Cts.Token.ThrowIfCancellationRequested ();
-                        changed |= deleted.Any () || newOrChanged.Any ();
+                        changed |= toDelete.Any () || newOrChanged.Any ();
                     } finally {
                         BEContext.Owner.BackendAbateStop ();
                         sw.Stop ();
@@ -220,10 +223,6 @@ namespace NachoCore.IMAP
                 }
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
-                if (Synckit.Method == SyncKit.MethodEnum.QuickSync && exeCtxt == NcApplication.ExecutionContextEnum.Foreground) {
-                    // After a quick sync we really need to do a full sync to capture deleted and changed messages
-                    target.ImapNeedFullSync = true;
-                }
                 return true;
             });
 
@@ -502,6 +501,7 @@ namespace NachoCore.IMAP
                 //emailMessage.UserAction = 1;
             }
             if ((Flags & MessageFlags.Deleted) == MessageFlags.Deleted) {
+                // deleted by not yet expunged. Should we set the AwaitingDelete flag?
             }
             if ((Flags & MessageFlags.Draft) == MessageFlags.Draft) {
             }

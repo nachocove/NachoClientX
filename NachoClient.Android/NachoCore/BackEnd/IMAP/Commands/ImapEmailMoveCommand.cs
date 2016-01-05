@@ -99,26 +99,56 @@ namespace NachoCore.IMAP
             var dstFolder = Client.GetFolder (dst.ServerId, Token);
             NcAssert.NotNull (dstFolder);
 
+            var emailUidMapping = new Dictionary<uint, McEmailMessage> ();
             var uids = new List<UniqueId> ();
             foreach (var email in emails) {
                 uids.Add (new UniqueId (email.ImapUid));
+                emailUidMapping [email.ImapUid] = email;
             }
             srcFolder.Open (FolderAccess.ReadWrite, Token);
             try {
-                var newUids = srcFolder.MoveTo (uids, dstFolder, Token);
-                if (newUids.Any ()) {
-                    NcModel.Instance.RunInTransaction (() => {
-                        for (var i=0; i<newUids.Count; i++) {
-                            emails[i].UpdateWithOCApply<McEmailMessage> ((record) => {
+                // in order to protect against messages having been deleted, let's get a list of messages
+                // that exist in the folder, based on the list of uid's we want to move.
+                var summaries = srcFolder.Fetch (uids, MessageSummaryItems.UniqueId, Token);
+                var existingUids = new List<UniqueId> ();
+                foreach (var sum in summaries) {
+                    existingUids.Add (sum.UniqueId);
+                }
+                // then move the ones we know exist
+                // Note: There's still a tiny window where something might have deleted
+                // one of these messages, too. We can't prevent it. MailKit doesn't pass back 
+                // the necessary information we need from the COPYUID response to accomplish this.
+                var newUids = srcFolder.MoveTo (existingUids, dstFolder, Token);
+                if (existingUids.Count != newUids.Count) {
+                    Log.Warn (Log.LOG_IMAP, "Messages seem to have disappeared during move! Wanted to move: {0}, found existing UIDS {1}, and new UIDS {2}", uids, existingUids, newUids);
+                }
+
+                NcModel.Instance.RunInTransaction (() => {
+                    for (var i = 0; i < existingUids.Count; i++) {
+                        McEmailMessage email;
+                        if (emailUidMapping.TryGetValue (existingUids [i].Id, out email)) {
+                            email.UpdateWithOCApply<McEmailMessage> ((record) => {
                                 var target = (McEmailMessage)record;
-                                target.ServerId = ImapProtoControl.MessageServerId (dst, newUids[i]);
-                                target.ImapUid = newUids[i].Id;
+                                target.ServerId = ImapProtoControl.MessageServerId (dst, newUids [i]);
+                                target.ImapUid = newUids [i].Id;
                                 return true;
                             });
+                        } else {
+                            Log.Error (Log.LOG_IMAP, "Could not match UID {0} to email", existingUids [i]);
                         }
-                    });
-                } else {
-                    // FIXME How do we determine the new ID? This can happen with servers that don't support UIDPLUS.
+                    }
+                });
+
+                // deal with the deleted emails
+                var toDelete = uids.Except (existingUids).ToList ();
+                if (toDelete.Any ()) {
+                    foreach (var uid in toDelete) {
+                        McEmailMessage email;
+                        if (emailUidMapping.TryGetValue (uid.Id, out email)) {
+                            email.Delete ();
+                        }
+                    }
+                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 }
                 result = NcResult.OK ();
                 result.Value = Event.Create ((uint)SmEvt.E.Success, "IMAPMOVSUC");
