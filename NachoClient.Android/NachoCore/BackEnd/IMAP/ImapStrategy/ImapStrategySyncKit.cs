@@ -366,6 +366,17 @@ namespace NachoCore.IMAP
             return false;
         }
 
+        /// <summary>
+        /// Determine what this quicksync will do:
+        /// - If there's messages to be sent, do that first.
+        /// - If there's new messages to fetch, add a SyncInstruction to the list
+        /// - If we have any slots (span) left, fetch some flag-changes and look for deleted messages. For this, 
+        ///    ignore the usual multiplier we apply to resync, since this is a *quick*sync.
+        /// </summary>
+        /// <returns><c>true</c>, if in quick sync kit was filled, <c>false</c> otherwise.</returns>
+        /// <param name="protocolState">Protocol state.</param>
+        /// <param name="Synckit">Synckit.</param>
+        /// <param name="AccountId">Account identifier.</param>
         public static bool FillInQuickSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId)
         {
             uint span = SpanSizeWithCommStatus (protocolState);
