@@ -275,7 +275,7 @@ namespace NachoCore.IMAP
                         // it doesn't hurt to add the starting Uid to both sets, if that winds up happening.
                         currentMails.Add (startingUid);
                     }
-                    var uidSet = SyncKit.MustUniqueIdSet (currentMails.OrderByDescending (x => x).Take ((int)span * KResyncMultiplier).ToList ());
+                    var uidSet = OrderedSetWithSpan (currentMails, span * KResyncMultiplier);
                     instructions.Add (SyncInstructionForFlagSync (uidSet));
                     span -= (uint)(uidSet.Count / KResyncMultiplier);
                 }
@@ -289,7 +289,7 @@ namespace NachoCore.IMAP
                         if (startingPointMustBeInSet && !newMail.Contains (startingUid)) {
                             newMail.Add (startingUid);
                         }
-                        var uidSet = SyncKit.MustUniqueIdSet (newMail.OrderByDescending (x => x).Take ((int)span).ToList ());
+                        var uidSet = OrderedSetWithSpan (newMail, span);
                         span -= (uint)(uidSet.Count);
                         instructions.Add (SyncInstructionForNewMails (ref protocolState, uidSet));
                     }
@@ -379,25 +379,43 @@ namespace NachoCore.IMAP
         /// <param name="AccountId">Account identifier.</param>
         public static bool FillInQuickSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId)
         {
+            resetLastSyncPoint (ref Synckit.Folder);
+            var startingPoint = Synckit.Folder.ImapUidNext;
+            bool startingPointMustBeInSet = true;
             uint span = SpanSizeWithCommStatus (protocolState);
             Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
             span -= (uint)Synckit.UploadMessages.Count;
             if (span > 0) {
-                var uidSet = QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
-                if (null != uidSet && uidSet.Any ()) {
-                    Synckit.SyncInstructions.Add (SyncInstructionForNewMails (ref protocolState, SyncKit.MustUniqueIdSet (uidSet)));
-                    span -= (uint)uidSet.Count;
+                var uidSet = SyncKit.MustUniqueIdSet (QuickSyncSet (startingPoint, Synckit.Folder, span));
+                if (uidSet.Any ()) {
+                    if (startingPointMustBeInSet) {
+                        uidSet.Add (new UniqueId (startingPoint));
+                        startingPointMustBeInSet = false;
+                    }
+                    var syncInst = SyncInstructionForNewMails (ref protocolState, OrderedSetWithSpan (uidSet, span));
+                    Synckit.SyncInstructions.Add (syncInst);
+                    span -= (uint)syncInst.UidSet.Count;
                 }
             }
             if (span > 0) {
                 // don't use the multiplier here, since it's a quicksync.
-                var emails = getCurrentEmailUids (Synckit.Folder, 0, Synckit.Folder.ImapUidNext, span);
+                var emails = getCurrentEmailUids (Synckit.Folder, 0, startingPoint, span);
                 if (emails.Any ()) {
-                    Synckit.SyncInstructions.Add (SyncInstructionForFlagSync (SyncKit.MustUniqueIdSet (emails)));
-                    span -= (uint)emails.Count;
+                    if (startingPointMustBeInSet) {
+                        emails.Add (new UniqueId (startingPoint));
+                        startingPointMustBeInSet = false;
+                    }
+                    var syncInst = SyncInstructionForFlagSync (OrderedSetWithSpan (emails, span));
+                    Synckit.SyncInstructions.Add (syncInst);
+                    span -= (uint)syncInst.UidSet.Count;
                 }
             }
             return Synckit.SyncInstructions.Any () || Synckit.UploadMessages.Any ();
+        }
+
+        protected static UniqueIdSet OrderedSetWithSpan (IList<UniqueId> uids, uint span)
+        {
+            return SyncKit.MustUniqueIdSet (uids.OrderByDescending (x => x).Take ((int)span).ToList ());
         }
 
         private static UniqueIdSet getCurrentEmailUids (McFolder folder, uint min, uint max, uint span)
