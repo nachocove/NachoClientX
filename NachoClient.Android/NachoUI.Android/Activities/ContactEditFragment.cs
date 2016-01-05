@@ -595,7 +595,7 @@ namespace NachoClient.AndroidClient
 
         View BindDateCell (LinearLayout list, string name, string label, DateTime value, EventHandler labelClick, EventHandler actionClick)
         {
-            var cell = BindCell (list, name, label, Pretty.ShortDate (value), labelClick, actionClick);
+            var cell = BindCell (list, name, label, Pretty.BirthdayOrAnniversary (value), labelClick, actionClick);
             ConfigureDateCell (cell, value);
             return cell;
         }
@@ -626,11 +626,14 @@ namespace NachoClient.AndroidClient
             var initialDate = ((JavaObjectWrapper<DateTime>)valueView.Tag).Item;
 
             if (DateTime.MinValue == initialDate) {
-                initialDate = DateTime.UtcNow;
+                initialDate = DateTime.Now;
+            } else {
+                initialDate = DateTime.SpecifyKind (initialDate, DateTimeKind.Local);
             }
 
-            DateTimePicker.Show (Activity, initialDate, false, DateTime.MinValue, DateTime.MaxValue, null, (date) => {
-                valueView.Text = Pretty.ShortDate (date);
+            DatePicker.Show (this.Activity, initialDate, DateTime.MinValue, DateTime.MaxValue, (DateTime date) => {
+                date = DateTime.SpecifyKind (date.Date, DateTimeKind.Utc);
+                valueView.Text = Pretty.BirthdayOrAnniversary (date);
                 valueView.Tag = new JavaObjectWrapper<DateTime> () { Item = date };
             });
         }

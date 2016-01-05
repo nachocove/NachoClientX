@@ -165,27 +165,25 @@ namespace NachoClient.AndroidClient
             var type = data [position].t;
 
             if (MessageDeferralType.Custom == type) {
-                ShowDateTimePicker ();
+                ShowDatePicker ();
             } else if (null != mOnDeferralSelected) {
                 mOnDeferralSelected (type, null, DateTime.MinValue);
             }
         }
 
-        void ShowDateTimePicker ()
+        void ShowDatePicker ()
         {
-            DateTimePicker.Show (context, DateTime.Now.AddHours (1), true, DateTime.Now, DateTime.Now.AddYears (10),
-                (DateTime date) => {
-                    if (DateTime.UtcNow > date) {
-                        NcAlertView.ShowMessage (context, "Defer Message", "The chosen date is in the past. You must select a date in the future.");
-                        return false;
-                    }
-                    return true;
-                },
-                (DateTime date) => {
-                    if (null != mOnDeferralSelected) {
-                        mOnDeferralSelected (MessageDeferralType.Custom, null, date);
-                    }
-                });
+            // Today is not a valid choice when picking a date.  Have the initial selection for the date picker be tomorrow.
+            DateTime tomorrow = DateTime.Now.AddDays (1).Date;
+            DatePicker.Show (context, tomorrow, tomorrow, DateTime.Now.AddYears (10), (DateTime date) => {
+                if (date < tomorrow) {
+                    // The user selected an invalid date.  (Due to a bug in Android, DatePicker doesn't always enforce the
+                    // minimum date.)  Show the date picker all over again.
+                    NcAlertView.Show (context, "Pick Date", "The chosen date is in the past. You must select a date in the future.", ShowDatePicker);
+                } else if (null != mOnDeferralSelected) {
+                    mOnDeferralSelected (MessageDeferralType.Custom, null, date.Date);
+                }
+            });
         }
 
         public struct Data
