@@ -12,6 +12,7 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using NachoCore;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -58,6 +59,13 @@ namespace NachoClient.AndroidClient
             privacyPolicyView.Click += PrivacyPolicyView_Click;
             licenseAgreementView.Click += LicenseAgreementView_Click;
             openSourceContributionsView.Click += OpenSourceContributionsView_Click;
+
+            var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            if (LoginHelpers.ShouldAlertUser ()) {
+                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+            } else {
+                moreImage.SetImageResource (Resource.Drawable.nav_more);
+            }
         }
 
         public override void OnPause ()

@@ -125,6 +125,12 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+            var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            if (LoginHelpers.ShouldAlertUser ()) {
+                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+            } else {
+                moreImage.SetImageResource (Resource.Drawable.nav_more);
+            }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 

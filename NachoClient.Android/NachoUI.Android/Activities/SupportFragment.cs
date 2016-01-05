@@ -12,6 +12,7 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using NachoCore;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -48,6 +49,17 @@ namespace NachoClient.AndroidClient
             moreImage.SetImageResource (Resource.Drawable.nav_more_active);
 
             return view;
+        }
+
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            if (LoginHelpers.ShouldAlertUser ()) {
+                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+            } else {
+                moreImage.SetImageResource (Resource.Drawable.nav_more);
+            }
         }
 
         void CallSupport_Click (object sender, EventArgs e)
