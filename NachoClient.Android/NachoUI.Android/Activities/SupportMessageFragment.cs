@@ -62,7 +62,7 @@ namespace NachoClient.AndroidClient
         public override void OnPause ()
         {
             base.OnPause ();
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         void SendButton_Click (object sender, EventArgs e)
