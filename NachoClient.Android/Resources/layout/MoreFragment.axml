@@ -203,11 +203,21 @@
                             android:textColor="@android:color/black"
                             android:textSize="14dp"
                             android:textStyle="normal"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
+                            android:layout_weight="1.0"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center_vertical"
                             android:text="@string/settings"
                             android:paddingLeft="10dp" />
+                        <ImageView
+                            android:id="@+id/account_alert"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp"
+                            android:scaleType="fitXY"
+                            android:layout_gravity="right|center_vertical"
+                            android:src="@drawable/gen_avatar_alert" />
                     </LinearLayout>
                     <View
                         android:layout_width="fill_parent"

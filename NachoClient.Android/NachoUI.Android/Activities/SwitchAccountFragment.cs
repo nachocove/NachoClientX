@@ -254,6 +254,15 @@ namespace NachoClient.AndroidClient
             icon.SetImageResource (Util.GetAccountServiceImageId (account.AccountService));
             name.Text = Pretty.AccountName (account);
             email.Text = account.EmailAddr;
+
+            if (ROW_TYPE == holder.ItemViewType) {
+                var alert = holder.ItemView.FindViewById<Android.Widget.ImageView> (Resource.Id.account_alert);
+                if ((DisplayMode.SettingsListview == displayMode) && LoginHelpers.ShouldAlertUser (account.Id)) {
+                    alert.Visibility = ViewStates.Visible;
+                } else {
+                    alert.Visibility = ViewStates.Gone;
+                }
+            }
         }
 
         void OnClick (int position, int viewType, int resourceId)
