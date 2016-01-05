@@ -3,6 +3,7 @@
 using System;
 using Foundation;
 using NachoCore.Model;
+using UIKit;
 
 namespace NachoClient.iOS
 {
@@ -24,6 +25,8 @@ namespace NachoClient.iOS
         void AttachmentUpdated (McAttachment attachment);
 
         void DismissPhotoPicker ();
+
+        void PresentFileChooserViewController (UIViewController vc);
     }
 }
 

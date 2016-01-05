@@ -11,7 +11,7 @@ namespace NachoCore
 {
     public class NcCommand : INcCommand
     {
-        protected const int KLockTimeout = 10000;
+        protected const int KLockTimeout = 2000;
 
         protected IBEContext BEContext;
         protected int AccountId { get; set; }

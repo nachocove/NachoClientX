@@ -18,6 +18,8 @@ using NachoCore.Model;
 using NachoCore.Utils;
 
 using WebKit;
+using Photos;
+using MobileCoreServices;
 
 namespace NachoClient.iOS
 {
@@ -596,6 +598,11 @@ namespace NachoClient.iOS
             DismissViewController (true, null);
         }
 
+        public void PresentFileChooserViewController (UIViewController vc)
+        {
+            PresentViewController (vc, true, null);
+        }
+
         // Not really a direct user action, but caused by the user selecting a contact
         public void DismissINachoContactChooser (INachoContactChooser vc)
         {
@@ -657,6 +664,7 @@ namespace NachoClient.iOS
 
         public void MessageComposerDidCompletePreparation (MessageComposer composer)
         {
+            UpdateSendEnabled ();
             DisplayMessageBody ();
         }
 
@@ -700,8 +708,10 @@ namespace NachoClient.iOS
                     WebView.LoadRequest (request);
                 } else {
                     var html = Composer.Bundle.FullHtml;
-                    var url = new NSUrl (Composer.Bundle.BaseUrl.AbsoluteUri);
-                    WebView.LoadHtmlString (new NSString(html), url);
+                    if (html != null) {
+                        var url = new NSUrl (Composer.Bundle.BaseUrl.AbsoluteUri);
+                        WebView.LoadHtmlString (new NSString (html), url);
+                    }
                 }
             }
         }
@@ -839,15 +849,13 @@ namespace NachoClient.iOS
 
         private void UpdateSendEnabled ()
         {
-            SendButton.Enabled = Composer.HasRecipient;
+            SendButton.Enabled = Composer.HasRecipient && Composer.IsMessagePrepared;
         }
 
         private void ShowAddAttachment (bool inline = false)
         {
-            AddAttachmentViewController attachmentViewController = MainStoryboard.InstantiateViewController ("AddAttachmentViewController") as AddAttachmentViewController;
-            attachmentViewController.ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
-            attachmentViewController.SetOwner (this, Composer.Account);
-            PresentViewController (attachmentViewController, true, null);
+            var helper = new AddAttachmentViewController.MenuHelper (this, Composer.Account, MainStoryboard);
+            PresentViewController (helper.MenuViewController, true, null);
         }
 
         private void ShowQuickResponses (bool animated = true)

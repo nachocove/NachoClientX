@@ -64,6 +64,7 @@ namespace NachoCore.Utils
         {
             var result = BackEnd.Instance.DnldEmailBodyCmd (Message.AccountId, Message.Id, true);
             if (result.isError ()) {
+                Log.Warn (Log.LOG_UI, "DnldEmailBodyCmd({0}:{1}) failed with error: {2}", Message.Id, Message.AccountId, result);
                 DownloadToken = null;
             } else {
                 DownloadToken = result.GetValue<string> ();

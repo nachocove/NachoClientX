@@ -10,6 +10,8 @@ namespace NachoCore.SMTP
     {
         public NcMailKitProtocolLogger MailKitProtocolLogger { get; private set; }
 
+        public bool DOA { get; set; }
+
         public NcSmtpClient () : base(getLogger())
         {
             MailKitProtocolLogger = ProtocolLogger as NcMailKitProtocolLogger;

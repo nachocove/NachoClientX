@@ -579,7 +579,11 @@ namespace NachoClient.AndroidClient
         void StartSearching ()
         {
             searching = true;
+            searchResultsMessages.UpdateMatches (null);
+            searchResultsMessages.UpdateServerMatches (null);
+
             messageListAdapter.StartSearch ();
+            messageListAdapter.RefreshSearchMatches ();
 
             var search = View.FindViewById (Resource.Id.search);
             search.Visibility = ViewStates.Visible;
@@ -807,6 +811,7 @@ namespace NachoClient.AndroidClient
             case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
                 RefreshIfVisible ();
+                RefreshVisibleMessageCells ();
                 break;
             case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
                 UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());

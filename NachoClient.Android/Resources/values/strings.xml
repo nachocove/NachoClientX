@@ -53,6 +53,7 @@
     <string name="subject">Subject:</string>
     <string name="message_not_available">Message not available</string>
     <string name="defer_message_until">Defer Message</string>
+    <string name="set_deadline">Set Deadline</string>
     <string name="choose_folder">Choose Folder</string>
     <string name="email">Email</string>
     <string name="call">Call</string>
@@ -109,6 +110,7 @@
     <string name="message_support">Message Support</string>
     <string name="deferred">Deferred</string>
     <string name="deadline">Deadline</string>
+    <string name="likely_to_read">Focused</string>
     <string name="no_hot_event">No upcoming events</string>
     <string name="contact_email">EMAIL</string>
     <string name="contact_phone">PHONE</string>
@@ -195,4 +197,5 @@
     <string name="state">State</string>
     <string name="zip">Zip Code</string>
     <string name="country">Country</string>
+    <string name="contact_not_available">Contact not available</string>
 </resources>

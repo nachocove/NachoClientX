@@ -173,7 +173,7 @@ namespace Test.Common
                 return true;
             });
 
-            // included with late DateRecieved. HasBeenNotified == true && ShouldNotify == true.
+            // included with late DateReceived. HasBeenNotified == true && ShouldNotify == true.
             var late = new McEmailMessage ();
             late.AccountId = 1;
             late.IsRead = false;

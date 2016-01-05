@@ -1710,6 +1710,19 @@
     <AndroidResource Include="Resources\drawable-hdpi\Icon.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\Icon.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\Icon.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\attachment_add_files.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\attachment_take_photo.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\email_icn_attachment.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\attachment_add_files.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\attachment_take_photo.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\email_icn_attachment.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\attachment_add_files.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\attachment_take_photo.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\email_icn_attachment.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\attachment_add_files.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\attachment_take_photo.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\email_icn_attachment.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\inbox_icn_deadline.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

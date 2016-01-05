@@ -142,15 +142,17 @@ namespace NachoClient.AndroidClient
             listView.setOnMenuItemClickListener (( position, menu, index) => {
                 string alternateEmailAddress;
                 var contact = contactsListAdapter.GetContact (position, out alternateEmailAddress);
-                switch (index) {
-                case CALL_TAG:
-                    Util.CallNumber (Activity, contact, null);
-                    break;
-                case EMAIL_TAG:
-                    Util.SendEmail (Activity, contact, alternateEmailAddress);
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
+                if (null != contact) {
+                    switch (index) {
+                    case CALL_TAG:
+                        Util.CallNumber (Activity, contact, null);
+                        break;
+                    case EMAIL_TAG:
+                        Util.SendEmail (Activity, contact, alternateEmailAddress);
+                        break;
+                    default:
+                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
+                    }
                 }
                 return false;
             });
@@ -181,6 +183,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+            RefreshVisibleContactCells ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -210,7 +213,10 @@ namespace NachoClient.AndroidClient
             if (null != onContactClick) {
                 InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
                 imm.HideSoftInputFromWindow (searchEditText.WindowToken, HideSoftInputFlags.NotAlways);
-                onContactClick (this, contactsListAdapter [e.Position]);
+                var contact = contactsListAdapter [e.Position];
+                if (null != contact) {
+                    onContactClick (this, contact);
+                }
             }
         }
 
@@ -572,8 +578,10 @@ namespace NachoClient.AndroidClient
             var vipView = (Android.Widget.ImageView)sender;
             var contactId = (int)vipView.Tag;
             var contact = McContact.QueryById<McContact> (contactId);
-            contact.SetVIP (!contact.IsVip);
-            Bind.BindContactVip (contact, vipView);
+            if (null != contact) {
+                contact.SetVIP (!contact.IsVip);
+                Bind.BindContactVip (contact, vipView);
+            }
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

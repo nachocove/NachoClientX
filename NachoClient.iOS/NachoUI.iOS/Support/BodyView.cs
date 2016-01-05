@@ -242,6 +242,7 @@ namespace NachoClient.iOS
                     "Unhandled abstract item type {0}", item.GetType ().Name));
             }
             if (nr.isError ()) {
+                Log.Warn (Log.LOG_UI, "DnldEmailBodyCmd({0}:{1}) failed with error: {2}", item.Id, item.AccountId, nr);
                 downloadToken = null;
             } else {
                 downloadToken = nr.GetValue<string> ();

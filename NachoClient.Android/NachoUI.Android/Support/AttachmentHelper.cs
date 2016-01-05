@@ -148,7 +148,7 @@ namespace NachoClient.AndroidClient
         int mTextViewResourceId;
         List<String> mPackages;
 
-        public static string ADD_FILE = "Add File";
+        public static string ADD_FILE = "Browse Attachments";
         public static string TAKE_PHOTO = "Take Photo";
 
         public ChooserArrayAdapter (Context context, int resource, int textViewResourceId, List<String> packages) :
@@ -169,10 +169,10 @@ namespace NachoClient.AndroidClient
                 Drawable appIcon;
                 if (ADD_FILE == pkg) {
                     appName = pkg;
-                    appIcon = parent.Resources.GetDrawable (Resource.Drawable.calendar_add_files);
+                    appIcon = parent.Resources.GetDrawable (Resource.Drawable.attachment_add_files);
                 } else if (TAKE_PHOTO == pkg) {
                     appName = pkg;
-                    appIcon = parent.Resources.GetDrawable (Resource.Drawable.calendar_take_photo);
+                    appIcon = parent.Resources.GetDrawable (Resource.Drawable.attachment_take_photo);
                 } else {
                     var ai = mPm.GetApplicationInfo (pkg, 0);
                     appName = mPm.GetApplicationLabel (ai);

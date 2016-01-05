@@ -20,16 +20,30 @@ namespace NachoCore.IMAP
     {
         public const int KBaseFetchSize = 5;
 
+        /// <summary>
+        /// The max total size of attachments we're willing to download, depending on Comm Status. Value returned is in bytes.
+        /// </summary>
+        /// <returns>The attach total size with comm status.</returns>
         private static uint DownloadAttachTotalSizeWithCommStatus ()
         {
             return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 50 * 1024 : 100 * 1024);
         }
 
+        /// <summary>
+        /// The max size we're willing to download per attachment, depending on Comm Status. Value returned is in bytes.
+        /// </summary>
+        /// <returns>The attach size with comm status.</returns>
         private static uint DownloadAttachSizeWithCommStatus ()
         {
             return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 1 * 1024 : 5 * 1024);
         }
 
+        /// <summary>
+        /// The maximum number of parts we'll download individually. Anything over this would incur more
+        /// cost (time, especially) and won't be worth it, i.e. we'll download all at once, instead of one
+        /// at a time.
+        /// </summary>
+        /// <returns>The parts with comm status.</returns>
         private static uint MaxPartsWithCommStatus ()
         {
             return (uint)(NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 5 : 25);

@@ -253,10 +253,7 @@ namespace NachoCore.IMAP
                 }
             }
 
-            // 0 isn't a valid UID, so this folder might not have been opened yet.
-            if (startingPoint == 0) {
-                return null;
-            }
+            NcAssert.True (startingPoint > 0, "Possibly trying to get syncinstructions before the folder has been opened!");
 
             var defInbox = McFolder.GetDefaultInboxFolder (folder.AccountId);
             if (!hasPending && defInbox.Id == folder.Id) {
@@ -540,10 +537,12 @@ namespace NachoCore.IMAP
             uint rung = protocolState.ImapSyncRung;
             switch (protocolState.ImapSyncRung) {
             case 0:
-                var syncInstList = SyncInstructions (defInbox, ref protocolState, hasPending);
                 var uidSet = new UniqueIdSet ();
-                foreach (var inst in syncInstList) {
-                    uidSet.AddRange (inst.UidSet);
+                var syncInstList = SyncInstructions (defInbox, ref protocolState, hasPending);
+                if (null != syncInstList) {
+                    foreach (var inst in syncInstList) {
+                        uidSet.AddRange (inst.UidSet);
+                    }
                 }
                 if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
                     !uidSet.Any ()) {

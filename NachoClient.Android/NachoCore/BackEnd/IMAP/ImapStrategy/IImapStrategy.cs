@@ -110,7 +110,7 @@ namespace NachoCore.IMAP
         {
             Method = MethodEnum.Sync;
             Folder = folder;
-            SyncInstructions = syncInstructions;
+            SyncInstructions = syncInstructions ?? new List<SyncInstruction> ();
         }
 
         public uint? MaxSynced {

@@ -487,16 +487,52 @@ namespace NachoClient.iOS
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
+            var nachoSchemeObject = NSBundle.MainBundle.InfoDictionary.ObjectForKey (new NSString ("CFBundleIdentifier"));
+            var nachoScheme = nachoSchemeObject.ToString ();
 
-            if (!url.IsFileUrl) {
-                return false;
+            if (url.IsFileUrl) {
+                OpenFiles (new string[] { url.Path }, sourceApplication);
+                return true;
+            }else if (url.Scheme.Equals (nachoScheme)) {
+                var components = url.PathComponents;
+                if (components.Length > 1) {
+                    if (components [1].Equals ("share") && components.Length > 2) {
+                        var stashName = components [2];
+                        var containerUrl = NSFileManager.DefaultManager.GetContainerUrl (BuildInfo.AppGroup);
+                        if (containerUrl != null) {
+                            var stashUrl = containerUrl.Append (stashName, true);
+                            var paths = Directory.GetFiles (stashUrl.Path);
+                            OpenFiles (paths, sourceApplication);
+                            return true;
+                        }
+                    }
+                }
             }
-            // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
-            var document = McDocument.InsertSaveStart (McAccount.GetDeviceAccount ().Id);
-            document.SetDisplayName (Path.GetFileName (url.Path));
-            document.SourceApplication = sourceApplication;
-            document.UpdateFileMove (url.Path);
-            return true;
+            return false;
+        }
+
+        void OpenFiles (string[] paths, string source = null)
+        {
+            if (NcApplication.ReadyToStartUI ()) {
+                var account = NcApplication.Instance.Account;
+                var attachments = new List<McAttachment> ();
+                foreach (var path in paths) {
+                    // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
+                    var document = McDocument.InsertSaveStart (McAccount.GetDeviceAccount ().Id);
+                    document.SetDisplayName (Path.GetFileName (path));
+                    document.SourceApplication = source;
+                    document.UpdateFileMove (path);
+                    var attachment = McAttachment.InsertSaveStart (account.Id);
+                    attachment.SetDisplayName (document.DisplayName);
+                    attachment.UpdateFileCopy (document.GetFilePath ());
+                    attachments.Add (attachment);
+                }
+                if (attachments.Count > 0) {
+                    var composeViewController = new MessageComposeViewController ();
+                    composeViewController.Composer.InitialAttachments = attachments;
+                    composeViewController.Present ();
+                }
+            }
         }
 
         // OnActivated AND OnResignActivation ARE MIRROR IMAGE (except for BeginBackgroundTask).

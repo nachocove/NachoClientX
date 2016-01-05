@@ -1192,7 +1192,7 @@ namespace NachoCore.Model
         {
             return new McFolder () {
                 Id = LTR_FAKE_FOLDER_ID,
-                DisplayName = "Likely To Read",
+                DisplayName = "Focused",
             };
         }
 
@@ -1200,7 +1200,7 @@ namespace NachoCore.Model
         {
             return new McFolder () {
                 Id = DEFERRED_FAKE_FOLDER_ID,
-                DisplayName = "Deferred Messages",
+                DisplayName = "Deferred",
             };
         }
 
@@ -1208,7 +1208,7 @@ namespace NachoCore.Model
         {
             return new McFolder () {
                 Id = DEADLINE_FAKE_FOLDER_ID,
-                DisplayName = "Deadline Messages",
+                DisplayName = "Deadline",
             };
         }
     }

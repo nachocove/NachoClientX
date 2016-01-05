@@ -46,6 +46,8 @@ namespace NachoClient.AndroidClient
             public TextView dateView;
             public ImageView chiliView;
             public ImageView paperclipView;
+            public View dueDateView;
+            public TextView dueDateTextView;
 
             public MessageHeaderViewHolder (View view)
             {
@@ -56,6 +58,8 @@ namespace NachoClient.AndroidClient
                 dateView = view.FindViewById<Android.Widget.TextView> (Resource.Id.date);
                 chiliView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chili);
                 paperclipView = view.FindViewById<Android.Widget.ImageView> (Resource.Id.paperclip);
+                dueDateView = view.FindViewById (Resource.Id.due_date_view);
+                dueDateTextView = view.FindViewById<TextView> (Resource.Id.due_date);
             }
         }
 
@@ -110,6 +114,13 @@ namespace NachoClient.AndroidClient
             } else {
                 vh.paperclipView.Visibility = ViewStates.Invisible;
             }
+
+            if (message.HasDueDate () || message.IsDeferred ()) {
+                vh.dueDateView.Visibility = ViewStates.Visible;
+                vh.dueDateTextView.Text = Pretty.ReminderText (message);
+            } else {
+                vh.dueDateView.Visibility = ViewStates.Gone;
+            }
                 
         }
 
@@ -131,6 +142,18 @@ namespace NachoClient.AndroidClient
 
         public static int BindContactCell (McContact contact, View view, string sectionLabel, string alternateEmailAddress)
         {
+            if (null == contact) {
+                var titleView = view.FindViewById<TextView>(Resource.Id.contact_title);
+                titleView.Visibility = ViewStates.Visible;
+                titleView.SetText (Resource.String.contact_not_available);
+                view.FindViewById(Resource.Id.contact_section_header).Visibility = ViewStates.Invisible;
+                view.FindViewById(Resource.Id.user_initials).Visibility = ViewStates.Invisible;
+                view.FindViewById(Resource.Id.contact_subtitle1).Visibility = ViewStates.Invisible;
+                view.FindViewById(Resource.Id.contact_subtitle2).Visibility = ViewStates.Invisible;
+                view.FindViewById(Resource.Id.vip).Visibility = ViewStates.Invisible;
+                return 0;
+            }
+
             var titleLabel = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_title);
             var subtitle1Label = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_subtitle1);
             var subtitle2Label = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_subtitle2);

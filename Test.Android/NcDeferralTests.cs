@@ -357,6 +357,83 @@ namespace Test.Common
             deferUntil = extractTime (r);
             Assert.AreEqual (from.ToLocalTime ().DayOfWeek, deferUntil.ToLocalTime ().DayOfWeek);
         }
+
+        [Test]
+        public void MonthEnd ()
+        {
+            NcResult r;
+            DateTime from;
+            DateTime deferUntil;
+
+            from = myMidnight ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.MonthEnd, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (3, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (31, deferUntil.ToLocalTime ().Day);
+
+            from = my6am ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.MonthEnd, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (3, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (31, deferUntil.ToLocalTime ().Day);
+
+            from = myNoon ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.MonthEnd, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (3, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (31, deferUntil.ToLocalTime ().Day);
+
+            from = my6pm ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.MonthEnd, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (3, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (31, deferUntil.ToLocalTime ().Day);
+
+            from = my9pm ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.MonthEnd, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (3, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (31, deferUntil.ToLocalTime ().Day);
+        }
+
+
+        [Test]
+        public void NextMonth ()
+        {
+            NcResult r;
+            DateTime from;
+            DateTime deferUntil;
+
+            from = myMidnight ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.NextMonth, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (4, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (1, deferUntil.ToLocalTime ().Day);
+
+            from = my6am ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.NextMonth, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (4, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (1, deferUntil.ToLocalTime ().Day);
+
+            from = myNoon ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.NextMonth, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (4, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (1, deferUntil.ToLocalTime ().Day);
+
+            from = my6pm ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.NextMonth, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (4, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (1, deferUntil.ToLocalTime ().Day);
+
+            from = my9pm ().ToUniversalTime ();
+            r = NcMessageDeferral.ComputeDeferral (from, NachoCore.Model.MessageDeferralType.NextMonth, DateTime.MinValue);
+            deferUntil = extractTime (r);
+            Assert.AreEqual (4, deferUntil.ToLocalTime ().Month);
+            Assert.AreEqual (1, deferUntil.ToLocalTime ().Day);
+        }
     }
 }
 
