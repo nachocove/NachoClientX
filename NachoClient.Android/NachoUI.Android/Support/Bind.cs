@@ -142,6 +142,18 @@ namespace NachoClient.AndroidClient
 
         public static int BindContactCell (McContact contact, View view, string sectionLabel, string alternateEmailAddress)
         {
+            if (null == contact) {
+                var titleView = view.FindViewById<TextView>(Resource.Id.contact_title);
+                titleView.Visibility = ViewStates.Visible;
+                titleView.SetText (Resource.String.contact_not_available);
+                view.FindViewById(Resource.Id.contact_section_header).Visibility = ViewStates.Invisible;
+                view.FindViewById(Resource.Id.user_initials).Visibility = ViewStates.Invisible;
+                view.FindViewById(Resource.Id.contact_subtitle1).Visibility = ViewStates.Invisible;
+                view.FindViewById(Resource.Id.contact_subtitle2).Visibility = ViewStates.Invisible;
+                view.FindViewById(Resource.Id.vip).Visibility = ViewStates.Invisible;
+                return 0;
+            }
+
             var titleLabel = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_title);
             var subtitle1Label = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_subtitle1);
             var subtitle2Label = view.FindViewById<Android.Widget.TextView> (Resource.Id.contact_subtitle2);
