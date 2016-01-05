@@ -665,7 +665,7 @@ namespace NachoCore.Utils
                             }
                         }
                         if (!excluded) {
-                            addressList.Add (new NcEmailAddress (kind, address.Address));
+                            addressList.Add (new NcEmailAddress (kind, address.ToString()));
                         }
                     }
                 }
