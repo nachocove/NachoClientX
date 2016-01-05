@@ -127,7 +127,7 @@ namespace NachoCore.IMAP
                     for (var i = 0; i < existingUids.Count; i++) {
                         McEmailMessage email;
                         if (emailUidMapping.TryGetValue (existingUids [i].Id, out email)) {
-                            emails [i].UpdateWithOCApply<McEmailMessage> ((record) => {
+                            email.UpdateWithOCApply<McEmailMessage> ((record) => {
                                 var target = (McEmailMessage)record;
                                 target.ServerId = ImapProtoControl.MessageServerId (dst, newUids [i]);
                                 target.ImapUid = newUids [i].Id;
