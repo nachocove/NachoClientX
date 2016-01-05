@@ -60,11 +60,6 @@ namespace NachoClient.AndroidClient
                 tutorialButton.Click += TutorialButton_Click;
             }
 
-
-            // Highlight the tab bar icon of this activity
-            var moreImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
-            moreImage.SetImageResource (Resource.Drawable.nav_more_active);
-
             return view;
         }
 
@@ -86,6 +81,16 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+
+            // Highlight the tab bar icon of this activity
+            var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+
+            if (LoginHelpers.ShouldAlertUser ()) {
+                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+            } else {
+                moreImage.SetImageResource (Resource.Drawable.nav_more_active);
+            }
+
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 

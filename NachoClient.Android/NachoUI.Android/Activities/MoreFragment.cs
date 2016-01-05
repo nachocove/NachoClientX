@@ -12,6 +12,7 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -41,7 +42,6 @@ namespace NachoClient.AndroidClient
 
             var likelyToReadView = view.FindViewById<View> (Resource.Id.likely_to_read);
             likelyToReadView.Click += LikelyToReadView_Click;
-            ;
 
             var deferredView = view.FindViewById<View> (Resource.Id.deferred);
             deferredView.Click += DeferredView_Click;
@@ -61,11 +61,24 @@ namespace NachoClient.AndroidClient
             var aboutView = view.FindViewById<View> (Resource.Id.about);
             aboutView.Click += AboutView_Click;
 
-            // Highlight the tab bar icon of this activity
-            var moreImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
-            moreImage.SetImageResource (Resource.Drawable.nav_more_active);
-
             return view;
+        }
+
+        public override void OnResume ()
+        {
+            base.OnResume ();
+
+            // Highlight the tab bar icon of this activity
+            var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            var settingsImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.account_alert);
+
+            if (LoginHelpers.ShouldAlertUser ()) {
+                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+                settingsImage.Visibility = ViewStates.Visible;
+            } else {
+                moreImage.SetImageResource (Resource.Drawable.nav_more_active);
+                settingsImage.Visibility = ViewStates.Invisible;
+            }
         }
 
         void LikelyToReadView_Click (object sender, EventArgs e)

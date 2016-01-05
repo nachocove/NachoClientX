@@ -15,6 +15,7 @@ using NachoCore;
 using NachoCore.Model;
 using Android.Support.V7.Widget;
 using Android.Support.V4.Widget;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -62,6 +63,13 @@ namespace NachoClient.AndroidClient
             base.OnResume ();
             if (null != folderListAdapter) {
                 folderListAdapter.SwitchAccount (NcApplication.Instance.Account);
+            }
+
+            var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            if (LoginHelpers.ShouldAlertUser ()) {
+                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+            } else {
+                moreImage.SetImageResource (Resource.Drawable.nav_more);
             }
         }
 

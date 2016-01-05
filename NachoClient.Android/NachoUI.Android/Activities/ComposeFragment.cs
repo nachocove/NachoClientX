@@ -277,7 +277,7 @@ namespace NachoClient.AndroidClient
         void InvokeApplication (string packageName)
         {
             if (ChooserArrayAdapter.TAKE_PHOTO == packageName) {
-                CameraOutputUri = Util.TakePhoto (Activity, TAKE_PHOTO_REQUEST_CODE);
+                CameraOutputUri = Util.TakePhoto (this, TAKE_PHOTO_REQUEST_CODE);
                 return;
             }
             if (ChooserArrayAdapter.ADD_FILE == packageName) {
@@ -296,8 +296,7 @@ namespace NachoClient.AndroidClient
 
             StartActivityForResult (intent, PICK_REQUEST_CODE);
         }
-
-
+            
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
         {
             if (Result.Ok != resultCode) {

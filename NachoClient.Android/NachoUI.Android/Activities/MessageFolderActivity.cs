@@ -84,6 +84,17 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        protected override void OnResume ()
+        {
+            base.OnResume ();
+            var moreImage = Window.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            if (LoginHelpers.ShouldAlertUser ()) {
+                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+            } else {
+                moreImage.SetImageResource (Resource.Drawable.nav_more);
+            }
+        }
+
         public override void OnBackPressed ()
         {
             Finish ();

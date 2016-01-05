@@ -12,6 +12,7 @@ using Android.Graphics;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using Android.Views;
 
 namespace NachoClient.AndroidClient
 {
@@ -39,6 +40,13 @@ namespace NachoClient.AndroidClient
             base.OnResume ();
             this.MaybeSwitchAccount ();
             this.SetSwitchAccountButtonImage (Window.FindViewById (Resource.Id.content));
+
+            var moreImage = Window.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            if (LoginHelpers.ShouldAlertUser ()) {
+                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+            } else {
+                moreImage.SetImageResource (Resource.Drawable.nav_more);
+            }
         }
 
         public void HookNavigationToolbar (Android.Views.View view)
