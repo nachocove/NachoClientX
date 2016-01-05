@@ -1405,6 +1405,7 @@ namespace NachoCore.Model
                 int returnVal = 0;
                 NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Delete ();
+                    // FIXME: Do we need to delete associated records like Attachments?
                     NcBrain.UnindexEmailMessage (this);
                     DeleteScoreStates ();
                 });
