@@ -134,7 +134,7 @@ namespace NachoClient.AndroidClient
 
         void TakePhoto ()
         {
-            CameraOutputUri = Util.TakePhoto (Activity, TAKE_PHOTO);
+            CameraOutputUri = Util.TakePhoto (this, TAKE_PHOTO);
         }
 
         void AddFile ()
