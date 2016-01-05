@@ -60,8 +60,14 @@ namespace NachoClient.AndroidClient
         private EditText titleField;
         private EditText descriptionField;
         private Switch allDayField;
-        private TextView startField;
-        private TextView endField;
+        private TextView startDateField;
+        private TextView startTimeField;
+        private View startDateArrow;
+        private View startTimeArrow;
+        private TextView endDateField;
+        private TextView endTimeField;
+        private View endDateArrow;
+        private View endTimeArrow;
         private EditText locationField;
         private TextView attendeeCountField;
         private TextView reminderField;
@@ -105,8 +111,14 @@ namespace NachoClient.AndroidClient
             titleField = FindViewById<EditText> (Resource.Id.event_edit_title);
             descriptionField = FindViewById<EditText> (Resource.Id.event_edit_description);
             allDayField = FindViewById<Switch> (Resource.Id.event_edit_allday_toggle);
-            startField = FindViewById<TextView> (Resource.Id.event_edit_start);
-            endField = FindViewById<TextView> (Resource.Id.event_edit_end);
+            startDateField = FindViewById<TextView> (Resource.Id.event_edit_start_date);
+            startDateArrow = FindViewById<View> (Resource.Id.event_edit_start_date_arrow);
+            startTimeField = FindViewById<TextView> (Resource.Id.event_edit_start_time);
+            startTimeArrow = FindViewById<View> (Resource.Id.event_edit_start_time_arrow);
+            endDateField = FindViewById<TextView> (Resource.Id.event_edit_end_date);
+            endDateArrow = FindViewById<View> (Resource.Id.event_edit_end_date_arrow);
+            endTimeField = FindViewById<TextView> (Resource.Id.event_edit_end_time);
+            endTimeArrow = FindViewById<View> (Resource.Id.event_edit_end_time_arrow);
             locationField = FindViewById<EditText> (Resource.Id.event_edit_location);
             attendeeCountField = FindViewById<TextView> (Resource.Id.event_edit_attendee_count);
             reminderField = FindViewById<TextView> (Resource.Id.event_edit_reminder);
@@ -263,24 +275,30 @@ namespace NachoClient.AndroidClient
             }
 
             allDayField.CheckedChange += AllDayField_CheckedChange;
-            startField.Click += StartField_Click;
-            endField.Click += EndField_Click;
-            var startFieldArrow = FindViewById<ImageView> (Resource.Id.event_edit_start_arrow);
-            startFieldArrow.Click += StartField_Click;
-            var endFieldArrow = FindViewById<ImageView> (Resource.Id.event_edit_end_arrow);
-            endFieldArrow.Click += EndField_Click;
+            startDateField.Click += StartDateField_Click;
+            startDateArrow.Click += StartDateField_Click;
+            startTimeField.Click += StartTimeField_Click;
+            startTimeArrow.Click += StartTimeField_Click;
+            endDateField.Click += EndDateField_Click;
+            endDateArrow.Click += EndDateField_Click;
+            endTimeField.Click += EndTimeField_Click;
+            endTimeArrow.Click += EndTimeField_Click;
 
             // The text in the date/time fields, the reminder field, the attendee count field,
             // and the calendar field should look like the default text for an EditText field,
             // not a TextView field.  Copy the necessary information from one of the EditText
             // fields to make that happen.
-            startField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
-            endField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            startDateField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            startTimeField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            endDateField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
+            endTimeField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             attendeeCountField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             reminderField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
             calendarField.SetTextSize (Android.Util.ComplexUnitType.Px, titleField.TextSize);
-            startField.SetTextColor (titleField.TextColors);
-            endField.SetTextColor (titleField.TextColors);
+            startDateField.SetTextColor (titleField.TextColors);
+            startTimeField.SetTextColor (titleField.TextColors);
+            endDateField.SetTextColor (titleField.TextColors);
+            endTimeField.SetTextColor (titleField.TextColors);
             attendeeCountField.SetTextColor (titleField.TextColors);
             reminderField.SetTextColor (titleField.TextColors);
             calendarField.SetTextColor (titleField.TextColors);
@@ -409,18 +427,29 @@ namespace NachoClient.AndroidClient
 
         private void ConfigureStartEndFields ()
         {
+            startDateField.Text = Pretty.MediumFullDate (startTime);
+            endDateField.Text = Pretty.MediumFullDate (endTime);
+
             if (allDayField.Checked) {
-                startField.Text = Pretty.MediumFullDate (startTime);
-                endField.Text = Pretty.MediumFullDate (endTime);
+                startTimeField.Visibility = ViewStates.Gone;
+                startTimeArrow.Visibility = ViewStates.Gone;
+                endTimeField.Visibility = ViewStates.Gone;
+                endTimeArrow.Visibility = ViewStates.Gone;
             } else {
-                startField.Text = Pretty.MediumFullDateTime (startTime);
-                endField.Text = Pretty.MediumFullDateTime (endTime);
+                startTimeField.Visibility = ViewStates.Visible;
+                startTimeArrow.Visibility = ViewStates.Visible;
+                endTimeField.Visibility = ViewStates.Visible;
+                endTimeArrow.Visibility = ViewStates.Visible;
+                startTimeField.Text = Pretty.Time (startTime);
+                endTimeField.Text = Pretty.Time (endTime);
             }
 
             if (ValidStartEndTimes ()) {
-                endField.SetTextColor (titleField.TextColors);
+                endDateField.SetTextColor (titleField.TextColors);
+                endTimeField.SetTextColor (titleField.TextColors);
             } else {
-                endField.SetTextColor (Android.Graphics.Color.Red);
+                endDateField.SetTextColor (Android.Graphics.Color.Red);
+                endTimeField.SetTextColor (Android.Graphics.Color.Red);
             }
         }
 
@@ -622,24 +651,36 @@ namespace NachoClient.AndroidClient
             ConfigureStartEndFields ();
         }
 
-        private void StartField_Click (object sender, EventArgs e)
+        private void StartDateField_Click (object sender, EventArgs e)
         {
             DateTime minDate, maxDate;
             DatePickerRangeForEvent (startTime, endTime, out minDate, out maxDate);
-            DateTimePicker.Show (this, startTime, !allDayField.Checked, minDate, maxDate, null,
-                (DateTime newDateTime) => {
-                    StartTimeMaybeChanged (newDateTime.ToLocalTime ());
-                });
+            DatePicker.Show (this, startTime, minDate, maxDate, (DateTime date) => {
+                StartTimeMaybeChanged (date.Date + startTime.TimeOfDay);
+            });
         }
 
-        private void EndField_Click (object sender, EventArgs e)
+        private void StartTimeField_Click (object sender, EventArgs e)
+        {
+            TimePicker.Show (this, startTime.TimeOfDay, (TimeSpan time) => {
+                StartTimeMaybeChanged (startTime.Date + time);
+            });
+        }
+
+        private void EndDateField_Click (object sender, EventArgs e)
         {
             DateTime minDate, maxDate;
             DatePickerRangeForEvent (startTime, endTime, out minDate, out maxDate);
-            DateTimePicker.Show (this, endTime, !allDayField.Checked, minDate, maxDate, null,
-                (DateTime newDateTime) => {
-                    EndTimeMaybeChanged (newDateTime.ToLocalTime ());
-                });
+            DatePicker.Show (this, endTime, minDate, maxDate, (DateTime date) => {
+                EndTimeMaybeChanged (date.Date + endTime.TimeOfDay);
+            });
+        }
+
+        private void EndTimeField_Click (object sender, EventArgs e)
+        {
+            TimePicker.Show (this, endTime.TimeOfDay, (TimeSpan time) => {
+                EndTimeMaybeChanged (endTime.Date + time);
+            });
         }
 
         private void Reminder_Click (object sender, EventArgs e)

@@ -119,6 +119,14 @@ namespace NachoCore.IMAP
                 mailKitFolder.MessageFlagsChanged += MessageFlagsChangedHandler;
                 mailKitFolder.MessageExpunged += MessageExpungedHandler;
 
+                if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.GoogleDefault) {
+                    // https://github.com/jstedfast/MailKit/issues/276#issuecomment-168759657
+                    // IMAP servers are supposed to keep the connection open for at least 30 minutes with no activity from the client, 
+                    // but I've found that Google Mail will drop connections after a little under 10, so my recommendation is that you
+                    // cancel the doneToken within roughly 9-10 minutes and then loop back to calling Idle() again.
+                    done.CancelAfter (new TimeSpan(0, 9, 0));
+                }
+
                 Client.Idle (done.Token, CancellationToken.None);
                 Cts.Token.ThrowIfCancellationRequested ();
             } finally {
@@ -128,8 +136,25 @@ namespace NachoCore.IMAP
             }
         }
 
-        // TODO: Should be tied into power-state
-        uint kNoopSleepTime = 20;
+        /// <summary>
+        /// Number of seconds to sleep between NOOP calls in Foreground
+        /// </summary>
+        const uint kNoopSleepTimeFG = 20;
+
+        /// <summary>
+        /// Number of seconds to sleep between NOOP calls in Background
+        /// </summary>
+        const uint kNoopSleepTimeBG = 300;
+
+        /// <summary>
+        /// Get the Noop Sleep time, depending on ExecutionContext
+        /// </summary>
+        /// <value>The k noop sleep time.</value>
+        uint kNoopSleepTime {
+            get {
+                return NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Foreground ? kNoopSleepTimeFG : kNoopSleepTimeBG;
+            }
+        }
 
         /// <summary>
         /// Servers that do not support Idle need to be polled. We sleep for kNoopSleepTime seconds, and then
