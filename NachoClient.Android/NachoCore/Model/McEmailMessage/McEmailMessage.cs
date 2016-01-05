@@ -954,6 +954,9 @@ namespace NachoCore.Model
 
         public bool IsDeferred ()
         {
+            if (((int)FlagStatusValue.Cleared) == FlagStatus) {
+                return false;
+            }
             if ((DateTime.MinValue == FlagStartDate) && (DateTime.MinValue == FlagUtcStartDate)) {
                 return false;
             }
@@ -969,6 +972,9 @@ namespace NachoCore.Model
 
         public bool HasDueDate ()
         {
+            if (((int)FlagStatusValue.Cleared) == FlagStatus) {
+                return false;
+            }
             if ((DateTime.MinValue == FlagDue) && (DateTime.MinValue == FlagUtcDue)) {
                 return false;
             }
