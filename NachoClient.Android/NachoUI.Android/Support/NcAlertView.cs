@@ -3,6 +3,7 @@
 using System;
 using Android.Support.V7.App;
 using NachoCore.Utils;
+using Android.Content;
 
 namespace NachoClient.AndroidClient
 {
@@ -21,23 +22,31 @@ namespace NachoClient.AndroidClient
         public static void Show (Android.Content.Context context, string title, string message, Action action)
         {
             Telemetry.RecordUiAlertView (title, message);
-            var alert = new AlertDialog.Builder (context).SetTitle (title).SetMessage (message);
-            alert.SetPositiveButton ("OK", (dialog, which) => {
+            var builder = new AlertDialog.Builder (context).SetTitle (title).SetMessage (message);
+            builder.SetPositiveButton ("OK", (dialog, which) => {
                 action ();
             });
+            var alert = builder.Create();
+            alert.CancelEvent += (object sender, EventArgs e) => {
+                action ();
+            };
             alert.Show ();
         }
 
         public static void Show (Android.Content.Context context, string title, string message, Action ok_action, Action cancel_action)
         {
             Telemetry.RecordUiAlertView (title, message);
-            var alert = new AlertDialog.Builder (context).SetTitle (title).SetMessage (message);
-            alert.SetPositiveButton ("OK", (dialog, which) => {
+            var builder = new AlertDialog.Builder (context).SetTitle (title).SetMessage (message);
+            builder.SetPositiveButton ("OK", (dialog, which) => {
                 ok_action ();
             });
-            alert.SetNegativeButton ("Cancel", (dialog, which) => {
+            builder.SetNegativeButton ("Cancel", (dialog, which) => {
                 cancel_action ();
             });
+            var alert = builder.Create ();
+            alert.CancelEvent += (object sender, EventArgs e) => {
+                cancel_action ();
+            };
             alert.Show ();
         }
 
