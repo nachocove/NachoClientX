@@ -369,18 +369,24 @@ namespace NachoCore.IMAP
         public static bool FillInQuickSyncKit (ref McProtocolState protocolState, ref SyncKit Synckit, int AccountId)
         {
             uint span = SpanSizeWithCommStatus (protocolState);
-            var uploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
-            UniqueIdRange uidSet = null;
-            if (uploadMessages.Count < span) {
-                uidSet = QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, (uint)(span - uploadMessages.Count));
+            Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (AccountId, Synckit.Folder.Id, span);
+            span -= (uint)Synckit.UploadMessages.Count;
+            if (span > 0) {
+                var uidSet = QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
+                if (null != uidSet && uidSet.Any ()) {
+                    Synckit.SyncInstructions.Add (SyncInstructionForNewMails (ref protocolState, SyncKit.MustUniqueIdSet (uidSet)));
+                    span -= (uint)uidSet.Count;
+                }
             }
-            if ((null != uidSet && uidSet.Any ()) ||
-                (null != uploadMessages && uploadMessages.Any ())) {
-                Synckit.SyncInstructions.Add (SyncInstructionForNewMails (ref protocolState, SyncKit.MustUniqueIdSet (uidSet)));
-                Synckit.UploadMessages = uploadMessages;
-                return true;
+            if (span > 0) {
+                // don't use the multiplier here, since it's a quicksync.
+                var emails = getCurrentEmailUids (Synckit.Folder, 0, Synckit.Folder.ImapUidNext, span);
+                if (emails.Any ()) {
+                    Synckit.SyncInstructions.Add (SyncInstructionForFlagSync (SyncKit.MustUniqueIdSet (emails)));
+                    span -= (uint)emails.Count;
+                }
             }
-            return false;
+            return Synckit.SyncInstructions.Any () || Synckit.UploadMessages.Any ();
         }
 
         private static UniqueIdSet getCurrentEmailUids (McFolder folder, uint min, uint max, uint span)
