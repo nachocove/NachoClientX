@@ -546,7 +546,7 @@ namespace NachoCore.ActiveSync
                                                        SslPolicyErrors sslPolicyErrors, 
                                                        EventArgs e)
             {
-                if (sender.RequestUri.Equals (ReDirUri)) {
+                if (sender.RequestUri.Host.Equals (ReDirUri.Host)) {
                     // Capture the server cert.
                     ServerCertificate = certificate;
                 }
@@ -710,7 +710,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotGotCert ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: Retrieved sever SSL cert.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: Retrieved server SSL cert.", Step);
                 DoRobotUiCertAsk ();
             }
 
