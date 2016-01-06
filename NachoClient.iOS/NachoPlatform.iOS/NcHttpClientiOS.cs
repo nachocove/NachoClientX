@@ -47,8 +47,6 @@ namespace NachoPlatform
 
         int defaultAuthRetries = 0;
 
-        const bool DEBUG = false;
-
         private NcHttpClient ()
         {
         }
@@ -144,7 +142,9 @@ namespace NachoPlatform
                     task.Cancel ();
                 }
             });
-            if (DEBUG) Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task {0} for {1} {2}", task.TaskDescription, req.HttpMethod, req.Url);
+#if DEBUG
+            Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task {0} for {1} {2}", task.TaskDescription, req.HttpMethod, req.Url);
+#endif
             task.Resume ();
         }
 
@@ -221,7 +221,9 @@ namespace NachoPlatform
 
             public override void DidFinishDownloading (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, NSUrl location)
             {
-                if (DEBUG) Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidFinishDownloading request {1}ms", downloadTask.TaskDescription, sw.ElapsedMilliseconds);
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidFinishDownloading request {1}ms", downloadTask.TaskDescription, sw.ElapsedMilliseconds);
+#endif
 
                 if (!Token.IsCancellationRequested && null != SuccessAction) {
                     NcAssert.True (downloadTask.Response is NSHttpUrlResponse);
@@ -260,9 +262,10 @@ namespace NachoPlatform
                 try {
                     long sent = task.BytesSent;
                     long received = task.BytesReceived;
-                    if (DEBUG) Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", task.TaskDescription, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
+#if DEBUG
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", task.TaskDescription, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
                         error != null ? string.Format (" (Error: {0})", error) : "");
-
+#endif
                     if (Token.IsCancellationRequested) {
                         return;
                     }
@@ -279,7 +282,9 @@ namespace NachoPlatform
 
             public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
             {
-                if (DEBUG) Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidSendBodyData request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidSendBodyData request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+#endif
                 try {
                     if (Token.IsCancellationRequested) {
                         return;
@@ -294,7 +299,9 @@ namespace NachoPlatform
 
             public override void DidWriteData (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long bytesWritten, long totalBytesWritten, long totalBytesExpectedToWrite)
             {
-                if (DEBUG) Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidWriteData request {1}ms", downloadTask.TaskDescription, sw.ElapsedMilliseconds);
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidWriteData request {1}ms", downloadTask.TaskDescription, sw.ElapsedMilliseconds);
+#endif
                 try {
                     if (Token.IsCancellationRequested) {
                         return;
@@ -309,7 +316,9 @@ namespace NachoPlatform
 
             public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
             {
-                if (DEBUG) Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+#endif
                 try {
                     if (Owner.AllowAutoRedirect) {
                         Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection", task.TaskDescription);
@@ -348,7 +357,9 @@ namespace NachoPlatform
 
             public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
             {
-                if (DEBUG) Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): NeedNewBodyStream request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): NeedNewBodyStream request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+#endif
                 if (!string.IsNullOrEmpty (FilePath)) {
                     completionHandler (new NSInputStream (FilePath));
                 } else {
