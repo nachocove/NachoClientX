@@ -16,19 +16,25 @@ using System.Linq;
 
 namespace NachoCore.Utils
 {
+    /// <summary>
+    /// The CRL monitor. Uses an Instance pattern.
+    /// </summary>
     public class CrlMonitor
     {
-        // Keep track of all registered monitors
+        /// <summary>
+        /// Keep track of all registered monitors. The key is the canonical SubjectName of the Certificate.
+        /// The value is a CrlMonitorItem.
+        /// </summary>
         protected Dictionary<string, CrlMonitorItem> Monitors = new Dictionary<string, CrlMonitorItem> ();
 
         protected int NextId = 0;
 
-        // For synchronized access of monitors dictionary
+        /// <summary>
+        /// For synchronized access of monitors dictionary
+        /// </summary>
         private static object LockObj = new object ();
 
         protected CancellationTokenSource Cts;
-
-        const int DefaultRecheckTimeSecs = 60 * 60;
 
         protected static CrlMonitor _Instance;
 
@@ -46,15 +52,30 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// The monitor timer, which is set to the smallest expiration date across all CrlMonitorItem's.
+        /// Polling kills battery life, and we KNOW when CRL's expire. A CA doesn't issue a new CRL until
+        /// the NextUpdate time expires. So there's no need to constantly poll, unless a CRL has expired(*).
+        /// 
+        /// (*)This is one of the downsides of CRL's. If a more immediate validation is required, OCSP must be used.
+        /// </summary>
+        /// <value>The monitor timer.</value>
         public NcTimer MonitorTimer { get; set; }
 
+        /// <summary>
+        /// Path where we cache CRL's (again, since a CRL won't be reissued until it expires, it's safe to cache
+        /// the downloaded CRL's).
+        /// </summary>
+        /// <value>The crl document path.</value>
         public static string CrlDocumentPath { get; protected set; }
 
-        public CrlMonitor ()
+        private CrlMonitor ()
         {
             var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             CrlDocumentPath = Path.Combine (documentsPath, "crl");
             Directory.CreateDirectory (CrlDocumentPath); // checks first, so no need to check here.
+
+            // find all the cached CRL's, and delete the CRL if it is expired already.
             foreach (var crl in Directory.EnumerateFiles (CrlDocumentPath)) {
                 NcCrl theCrl;
                 bool deleteMe = false;
@@ -64,6 +85,7 @@ namespace NachoCore.Utils
                         deleteMe = true;
                     }
                 } catch (ArgumentException ex) {
+                    // it's a badly formatted CRL apparently. Delete it and let upper layers register a new one.
                     Log.Info (Log.LOG_SYS, "{0}: Could not convert crl: {1}", crl, ex);
                     deleteMe = true;
                 }
@@ -78,7 +100,7 @@ namespace NachoCore.Utils
             lock (LockObj) {
                 StopService ();
                 Cts = new CancellationTokenSource ();
-                PossiblyStartTimer ();
+                PossiblyRestartTimer ();
             }
         }
 
@@ -96,6 +118,8 @@ namespace NachoCore.Utils
         /// <summary>
         /// Register a list of certificates with the CRL Monitoring service.
         /// NOTE: It is the caller's responsibility to validate all certs passed in.
+        /// JEFF: Is this a reasonable assumption to make, i.e that all certs passed in have
+        /// been (or assumed to be) valid?
         /// </summary>
         /// <param name="signerCerts">Signer certs.</param>
         public void Register (X509Certificate2Collection signerCerts)
@@ -116,20 +140,6 @@ namespace NachoCore.Utils
             }
         }
 
-        public bool Deregister (X509Certificate2 cert)
-        {
-            lock (LockObj) {
-                CrlMonitorItem monitor;
-                if (!Monitors.TryGetValue (cert.SubjectName.Name, out monitor)) {
-                    return false;
-                }
-                var removed = Monitors.Remove (cert.SubjectName.Name);
-                NcAssert.True (removed);
-                PossiblyStartTimer ();
-                return true;
-            }
-        }
-
         void StopTimer ()
         {
             if (MonitorTimer != null) {
@@ -138,7 +148,10 @@ namespace NachoCore.Utils
             }
         }
 
-        public void PossiblyStartTimer ()
+        /// <summary>
+        /// Find the soonest expiry time over all CrlMonitorItem's andset the timer that that.
+        /// </summary>
+        public void PossiblyRestartTimer ()
         {
             lock (LockObj) {
                 StopTimer ();
@@ -187,9 +200,11 @@ namespace NachoCore.Utils
 
         void StartUpdates ()
         {
-            foreach (var monitor in Monitors.Values) {
-                if (monitor.NeedsUpdate ()) {
-                    monitor.StartUpdate (Cts.Token); // spawns a task
+            lock (LockObj) {
+                foreach (var monitor in Monitors.Values) {
+                    if (monitor.NeedsUpdate ()) {
+                        monitor.StartUpdate (Cts.Token); // spawns a task
+                    }
                 }
             }
         }
@@ -325,7 +340,7 @@ namespace NachoCore.Utils
 
         void FinishUpdate ()
         {
-            CrlMonitor.Instance.PossiblyStartTimer ();
+            CrlMonitor.Instance.PossiblyRestartTimer ();
             UpdateRunning = false;
         }
 
@@ -339,12 +354,18 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Fetchs the CRL. Given a list of URL's in a certificate, try them all in turn until one works.
+        /// If we've tried them all MaxRetries times, give up and fail. Remember to check the cached CRL first.
+        /// </summary>
+        /// <param name="cToken">C token.</param>
         void FetchCRL (CancellationToken cToken)
         {
             if (cToken.IsCancellationRequested) {
                 return;
             }
 
+            // do we have another URL to check? If not, increase retries, and start with the first URL again.
             if (UrlIndex >= Urls.Count) {
                 UrlIndex = 0;
                 Retries++;
@@ -352,6 +373,7 @@ namespace NachoCore.Utils
 
             if (Retries < MaxRetries) {
                 NextUpdate = null;
+                // there may be a cached file from the last time we fetched on. Use it as if this was the download
                 if (File.Exists (crlPath)) {
                     NcTask.Run (() => {
                         var fs = new FileStream (crlPath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -363,6 +385,7 @@ namespace NachoCore.Utils
                         }
                     }, "ProcessCrl");
                 } else {
+                    // there was no file. Just do a download.
                     DownloadCrl (cToken);
                 }
             } else {
@@ -376,6 +399,10 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Starts a download request to fetch the CRL. On success, the request calls DownloadSuccess, otherwise DownloadError.
+        /// </summary>
+        /// <param name="cToken">Cancellation token.</param>
         void DownloadCrl (CancellationToken cToken)
         {
             var request = new NcHttpRequest (HttpMethod.Get, Urls [UrlIndex]);
@@ -383,6 +410,12 @@ namespace NachoCore.Utils
             HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, cToken);
         }
 
+        /// <summary>
+        /// Called if the request was successfull (note the response code may still not be a 200).
+        /// First, write the downloaded data to the Cache, then process and check it.
+        /// </summary>
+        /// <param name="response">Response.</param>
+        /// <param name="token">Token.</param>
         void DownloadSuccess (NcHttpResponse response, CancellationToken token)
         {
             if (token.IsCancellationRequested) {
@@ -393,9 +426,13 @@ namespace NachoCore.Utils
                 if (HttpStatusCode.OK == response.StatusCode) {
                     NcAssert.True (null != response.Content, "content should not be null");
                     Log.Info (Log.LOG_PUSH, "{0}: CRL pull response: statusCode={1}", Name, response.StatusCode);
+
+                    // copy the downloaded data to cache crlPath
                     using (var fs = new FileStream (crlPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
                         response.Content.CopyTo (fs);
                     }
+
+                    // Process the CRL, checking its validity period as well as checking the signature.
                     bool processSuccess;
                     using (var fs = new FileStream (crlPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                         processSuccess = ProcessCrl (fs, token);
@@ -417,6 +454,11 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Connection failed. Log the errors and start a new request
+        /// </summary>
+        /// <param name="ex">Exception</param>
+        /// <param name="cToken">token.</param>
         void DownloadError (Exception ex, CancellationToken cToken)
         {
             if (cToken.IsCancellationRequested) {
@@ -439,6 +481,12 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Process the CRL.
+        /// </summary>
+        /// <returns><c>true</c>, if crl was processed, <c>false</c> otherwise.</returns>
+        /// <param name="crl">Crl.</param>
+        /// <param name="cToken">token.</param>
         protected bool ProcessCrl (Stream crl, CancellationToken cToken)
         {
             if (ExtractCrl (crl)) {
@@ -483,6 +531,8 @@ namespace NachoCore.Utils
 
             var crlIssuerDn = new X500DistinguishedName (theCrl.IssuerDnDer);
             X509Certificate2 signerCert = null;
+            // find the signer certificate. It'll have a subject-name that matches the CRl IssuerDn,
+            // which we decoded above.
             foreach (var cert in CrlSignerCerts) {
                 if (crlIssuerDn.Name == cert.SubjectName.Name) {
                     signerCert = cert;
@@ -493,6 +543,8 @@ namespace NachoCore.Utils
                 Log.Info (Log.LOG_SYS, "{0}: No CRL signer certificate found");
                 return false;
             }
+
+            // verify it.
             string errorMsg;
             if (!theCrl.Verify (signerCert, out errorMsg)) {
                 Log.Error (Log.LOG_SYS, "Could not validate crl {0}: {1}", Name, errorMsg);
@@ -503,6 +555,9 @@ namespace NachoCore.Utils
             return true;
         }
 
+        /// <summary>
+        /// Copy the revoked certificate information into Revoked for later use.
+        /// </summary>
         protected void CrlGetRevoked ()
         {
             NcAssert.NotNull (Crl);
@@ -511,7 +566,8 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Checks to see if this certificate is revoked. Both Issuer and SerialNumber must be checked.
+        /// Checks to see if this certificate is revoked. Issuer MUST match the subject-name of the issuing certificate,
+        /// and SerialNumber must be checked against the list of revoked certs.
         /// </summary>
         /// <returns><c>true</c> if this certificate is revoked; otherwise, <c>false</c>.</returns>
         /// <param name="cert">Cert.</param>
@@ -525,17 +581,6 @@ namespace NachoCore.Utils
             return cert.IssuerName.Name == Cert.SubjectName.Name && Revoked.Contains (cert.SerialNumber.ToUpperInvariant ());
         }
 
-        public static string ExportToPEM (X509Certificate2 cert)
-        {
-            StringBuilder builder = new StringBuilder ();            
-
-            builder.AppendLine ("-----BEGIN CERTIFICATE-----");
-            builder.AppendLine (Convert.ToBase64String (cert.Export (X509ContentType.Cert), Base64FormattingOptions.InsertLineBreaks));
-            builder.AppendLine ("-----END CERTIFICATE-----");
-
-            return builder.ToString ();
-        }
-
         public DateTime CrlNextUpdate ()
         {
             if (null != Crl) {
@@ -545,10 +590,21 @@ namespace NachoCore.Utils
         }
     }
 
+    /// <summary>
+    /// An abstraction so we can replace the CRL decoding functions as we need to (i.e. from BC to Openssl, for example)
+    /// </summary>
     public class NcCrl
     {
         protected object LockObj = new object ();
+
+        /// <summary>
+        /// The internal copy of the CRL. In this case, this is a BouncyCastle structure, but could be anything.
+        /// </summary>
         protected X509Crl Crl;
+
+        /// <summary>
+        /// The expired certs, indexed by serialnumber (as a string).
+        /// </summary>
         protected HashSet<string> _ExpiredCerts;
 
         public NcCrl (Stream crlStream)
@@ -559,6 +615,10 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Gets the expired cert information in a HashSet
+        /// </summary>
+        /// <value>The expired certs.</value>
         public HashSet<string> ExpiredCerts {
             get {
                 if (null == _ExpiredCerts) {
@@ -578,23 +638,40 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Is this CRL expired?
+        /// </summary>
+        /// <returns><c>true</c> if this instance is expired; otherwise, <c>false</c>.</returns>
         public bool IsExpired ()
         {
             return IsExpired (Crl);
         }
 
+        /// <summary>
+        /// Expiration time and date of this CRL.
+        /// </summary>
+        /// <value>The next update as a DateTime object.</value>
         public DateTime NextUpdate {
             get {
                 return Crl.NextUpdate.Value;
             }
         }
 
+        /// <summary>
+        /// The issuer x.500 DN in DER format byte array.
+        /// </summary>
         public byte[] IssuerDnDer {
             get {
                 return Crl.IssuerDN.GetDerEncoded ();
             }
         }
 
+        /// <summary>
+        /// Verify the CRL using the specified cert and return an error message, if needed.
+        /// </summary>
+        /// <param name="cert">Cert.</param>
+        /// <param name="errorMsg">Error message.</param>
+        /// <returns>true if the crl validated, false otherwise.</returns>
         public bool Verify (X509Certificate2 cert, out string errorMsg)
         {
             errorMsg = null;
@@ -613,6 +690,11 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Parses the crl from a stream
+        /// </summary>
+        /// <returns>The crl.</returns>
+        /// <param name="stream">Stream.</param>
         public static X509Crl ParseCrl (Stream stream)
         {
             X509CrlParser parser = new X509CrlParser (true);
@@ -620,12 +702,15 @@ namespace NachoCore.Utils
             return theCrl;
         }
 
+        /// <summary>
+        /// is the CRL expired? This is a static function.
+        /// </summary>
+        /// <returns><c>true</c> if is expired the specified crl; otherwise, <c>false</c>.</returns>
+        /// <param name="crl">Crl.</param>
         public static bool IsExpired (X509Crl crl)
         {
             return crl.NextUpdate.Value >= DateTime.UtcNow;
         }
-
-
     }
 }
 
