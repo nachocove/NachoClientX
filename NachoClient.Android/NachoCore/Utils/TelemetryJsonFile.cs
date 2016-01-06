@@ -91,6 +91,9 @@ namespace NachoCore.Utils
             } catch (IOException e) {
                 Log.Warn (Log.LOG_UTILS, "fail to write a telemetry JSON event ({0})", e);
                 succeeded = false;
+            } catch (UnauthorizedAccessException ex) {
+                Log.Error (Log.LOG_UTILS, "Could not write telemetry JSON file: {0}", ex);
+                succeeded = false;
             }
             return succeeded;
         }
