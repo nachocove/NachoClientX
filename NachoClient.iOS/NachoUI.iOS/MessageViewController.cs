@@ -430,6 +430,17 @@ namespace NachoClient.iOS
                 // Therefore, we want to skip a duplicate call from base.ViewWillAppear
                 return;
             }
+            // It appears that sometimes we get here during a pop to root view controller,
+            // and nothing is setup as it would be during an intentional segue.  Can't figure
+            // out the root cause, but adding these couple checks should prevent crashes.
+            if (this.NavigationController == null) {
+                Log.Error (Log.LOG_UI, "MessageViewController ConfigureAndLayout null NavigationController");
+                return;
+            }
+            if (thread == null) {
+                Log.Error (Log.LOG_UI, "MessageViewController ConfigureAndLayout null thread");
+                return;
+            }
             if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
                 this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
