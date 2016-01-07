@@ -22,11 +22,12 @@ namespace NachoCore.Utils
             ASWBXML encoder = new ASWBXML (cToken);
             encoder.XmlDoc = doc;
             var tmp = NcModel.Instance.TmpPath (accountId, "wbxml-stream");
-            var fileStream = new FileStream (tmp, FileMode.Create);
-            var writer = new BinaryWriter (fileStream);
-            encoder.EmitToStream (writer);
-            writer.Close ();
-            return new FileStream (tmp, FileMode.Open, FileAccess.Read);
+            using (var fileStream = new FileStream (tmp, FileMode.Create, FileAccess.Write, FileShare.None)) {
+                using (var writer = new BinaryWriter (fileStream)) {
+                    encoder.EmitToStream (writer);
+                }
+            }
+            return new FileStream (tmp, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
     }
 }
