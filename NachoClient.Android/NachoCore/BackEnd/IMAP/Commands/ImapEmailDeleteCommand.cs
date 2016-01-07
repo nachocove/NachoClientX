@@ -70,9 +70,13 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELOPEN");
             }
 
-            mailKitFolder.SetFlags (uids, MessageFlags.Deleted, true, Cts.Token);
-            if (Client.Capabilities.HasFlag (ImapCapabilities.UidPlus)) {
-                mailKitFolder.Expunge (uids, Cts.Token);
+            try {
+                mailKitFolder.SetFlags (uids, MessageFlags.Deleted, true, Cts.Token);
+                if (Client.Capabilities.HasFlag (ImapCapabilities.UidPlus)) {
+                    mailKitFolder.Expunge (uids, Cts.Token);
+                }
+            } catch (MessageNotFoundException) {
+                // ignore. We are deleting it anyway.
             }
             // TODO The set flags reply contains information we can use (S: * 5 FETCH (UID 8631 MODSEQ (948373) FLAGS (\Deleted))).
             // save it. That being said, if we increment the MODSEQ, then that will basically

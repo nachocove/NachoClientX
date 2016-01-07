@@ -155,6 +155,9 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
+        private bool refreshInProgress = false;
+        private bool refreshWaitingToStart = false;
+
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
@@ -164,10 +167,20 @@ namespace NachoClient.iOS
             // When the events change, or when the time zone changes, refresh the UI to reflect the changes.
             case NcResult.SubKindEnum.Info_EventSetChanged:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                calendarSource.Refresh (delegate {
-                    ReloadDataWithoutScrolling ();
-                    UpdateDateDotView ();
-                });
+                // Don't queue up a whole bunch refresh tasks.  If there is one running and one waiting to
+                // run, there is no point in starting yet another refresh task.
+                if (!refreshWaitingToStart) {
+                    if (refreshInProgress) {
+                        refreshWaitingToStart = true;
+                    }
+                    refreshInProgress = true;
+                    calendarSource.Refresh (delegate {
+                        refreshWaitingToStart = false;
+                        refreshInProgress = false;
+                        ReloadDataWithoutScrolling ();
+                        UpdateDateDotView ();
+                    });
+                }
                 break;
 
             case NcResult.SubKindEnum.Info_ExecutionContextChanged:

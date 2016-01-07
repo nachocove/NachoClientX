@@ -91,8 +91,32 @@ namespace NachoCore.Utils
             } catch (IOException e) {
                 Log.Warn (Log.LOG_UTILS, "fail to write a telemetry JSON event ({0})", e);
                 succeeded = false;
+            } catch (UnauthorizedAccessException ex) {
+                Console.WriteLine ("UnauthorizedAccessException: {0}\n{1}", JsonFile.Name, ex);
+                dumpCrashInfo ();
+                throw;
             }
             return succeeded;
+        }
+
+        void dumpCrashInfo ()
+        {
+            if (!File.Exists (JsonFile.Name)) {
+                Console.WriteLine ("TelemetryJsonFile {0} has disappeared", JsonFile.Name);
+                string dirName = Path.GetDirectoryName (JsonFile.Name);
+                if (!Directory.Exists (dirName)) {
+                    Console.WriteLine ("TelemetryJsonFile parent dir {0} has disappeared", dirName);
+                } else {
+                    DirectoryInfo d = new DirectoryInfo(dirName);
+                    FileInfo[] Files = d.GetFiles();
+                    foreach(FileInfo file in Files)
+                    {
+                        Console.WriteLine ("File in {0}: {1} size {2}", dirName, file.Name, file.Length);
+                    }
+                }
+            } else {
+                Console.WriteLine ("TelemetryJsonFile {0} has size {1}", JsonFile.Name, new FileInfo (JsonFile.Name).Length);
+            }
         }
 
         public void Close ()

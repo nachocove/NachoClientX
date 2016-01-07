@@ -61,9 +61,16 @@ namespace NachoCore.IMAP
         {
             var mailKitFolder = GetOpenMailkitFolder (folder);
             var uid = email.GetImapUid (folder);
-            var part = attachmentBodyPart (uid, mailKitFolder, attachment.FileReference);
+            UpdateImapSetting (mailKitFolder, ref folder);
+            BodyPartBasic part;
+            try {
+                part = attachmentBodyPart (uid, mailKitFolder, attachment.FileReference);
+            } catch (MessageNotFoundException) {
+                part = null;
+            }
             if (null == part) {
                 Log.Error (Log.LOG_IMAP, "Could not find part with PartSpecifier {0} in summary", attachment.FileReference);
+                email.Delete ();
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.MissingOnServer);
             }
 
@@ -84,10 +91,10 @@ namespace NachoCore.IMAP
                 attachment.Truncated = false;
                 attachment.UpdateSaveFinish ();
                 return NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate);
-            } catch (Exception e) {
-                Log.Error (Log.LOG_IMAP, "Could not GetBodyPart: {0}", e);
+            } catch (MessageNotFoundException) {
                 attachment.DeleteFile ();
-                throw;
+                email.Delete ();
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.MissingOnServer);
             } finally {
                 mailKitFolder.UnsetStreamContext ();
             }

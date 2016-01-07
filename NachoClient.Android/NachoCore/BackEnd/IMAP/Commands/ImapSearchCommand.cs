@@ -66,6 +66,10 @@ namespace NachoCore.IMAP
                     continue;
                 }
                 var mailKitFolder = GetOpenMailkitFolder (folder);
+                var tmpFolder = folder;
+                // this code will soon be rewritten, so we won't worry about the possibly changed tmpFolder
+                UpdateImapSetting (mailKitFolder, ref tmpFolder);
+
                 if (mailKitFolder.Count > 0) {
                     IList<UniqueId> uids;
                     if (Client.Capabilities.HasFlag (ImapCapabilities.Sort)) {

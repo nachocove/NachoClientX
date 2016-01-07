@@ -58,8 +58,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL2");
             }
 
-            var emails = new List<McEmailMessage> ();
-            var uids = new List<UniqueId> ();
+            var emailUidMapping = new Dictionary<UniqueId, McEmailMessage> ();
             var removeList = new List<McPending> ();
             foreach (var pending in PendingList) {
                 NcAssert.True (pending.ItemId > 0);
@@ -70,18 +69,16 @@ namespace NachoCore.IMAP
                     removeList.Add (pending);
                     continue;
                 }
-                emails.Add (emailMessage);
-                uids.Add (new UniqueId ((uint)(pending.ItemId)));
+                emailUidMapping [new UniqueId ((uint)(pending.ItemId))] = emailMessage;
             }
             foreach (var pending in removeList) {
                 PendingList.Remove (pending);
             }
 
-            if (!emails.Any ()) {
+            if (!emailUidMapping.Any ()) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMOVHARD");
-
             }
-            var result = MoveEmails (emails, uids, src, dst, Cts.Token);
+            var result = MoveEmails (emailUidMapping, src, dst, Cts.Token);
             if (result.isOK ()) {
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMoveSucceeded));
@@ -98,12 +95,11 @@ namespace NachoCore.IMAP
         /// Moves the emails.
         /// </summary>
         /// <returns>The emails.</returns>
-        /// <param name="emails">Emails.</param>
-        /// <param name="uids">Uids. Order must match the emails</param>
+        /// <param name="emailUidMapping">Emails in a dictionary based on the Imap Uid of the message in the src folder.</param>
         /// <param name="src">Source.</param>
         /// <param name="dst">Dst.</param>
         /// <param name="Token">Token.</param>
-        public NcResult MoveEmails (List<McEmailMessage> emails, List<UniqueId> uids, McFolder src, McFolder dst, CancellationToken Token)
+        public NcResult MoveEmails (Dictionary<UniqueId, McEmailMessage> emailUidMapping, McFolder src, McFolder dst, CancellationToken Token)
         {
             NcResult result;
             var srcFolder = Client.GetFolder (src.ServerId, Token);
@@ -111,17 +107,50 @@ namespace NachoCore.IMAP
             var dstFolder = Client.GetFolder (dst.ServerId, Token);
             NcAssert.NotNull (dstFolder);
 
+            var uids = emailUidMapping.Keys.ToList ();
             srcFolder.Open (FolderAccess.ReadWrite, Token);
             try {
-                var newUids = srcFolder.MoveTo (uids, dstFolder, Token);
-                if (newUids.Any ()) {
-                    NcModel.Instance.RunInTransaction (() => {
-                        for (var i=0; i<newUids.Count; i++) {
-                            emails[i].SetImapUid (dst, new UniqueId (newUids[i].Id));
+                // in order to protect against messages having been deleted, let's get a list of messages
+                // that exist in the folder, based on the list of uid's we want to move.
+                var summaries = srcFolder.Fetch (uids, MessageSummaryItems.UniqueId, Token);
+                var existingUids = new List<UniqueId> ();
+                foreach (var sum in summaries) {
+                    existingUids.Add (sum.UniqueId);
+                }
+                // then move the ones we know exist
+                // Note: There's still a tiny window where something might have deleted
+                // one of these messages, too. We can't prevent it. MailKit doesn't pass back 
+                // the necessary information we need from the COPYUID response to accomplish this.
+                var newUids = srcFolder.MoveTo (existingUids, dstFolder, Token);
+                if (existingUids.Count != newUids.Count) {
+                    Log.Warn (Log.LOG_IMAP, "Messages seem to have disappeared during move! Wanted to move: {0}, found existing UIDS {1}, and new UIDS {2}", uids, existingUids, newUids);
+                }
+
+                NcModel.Instance.RunInTransaction (() => {
+                    for (var i = 0; i < existingUids.Count; i++) {
+                        McEmailMessage email;
+                        if (emailUidMapping.TryGetValue (existingUids [i], out email)) {
+                            email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.SetImapUid(dst, newUids [i]);
+                                return true;
+                            });
+                        } else {
+                            Log.Error (Log.LOG_IMAP, "Could not match UID {0} to email", existingUids [i]);
                         }
-                    });
-                } else {
-                    // FIXME How do we determine the new ID? This can happen with servers that don't support UIDPLUS.
+                    }
+                });
+
+                // deal with the deleted emails
+                var toDelete = uids.Except (existingUids).ToList ();
+                if (toDelete.Any ()) {
+                    foreach (var uid in toDelete) {
+                        McEmailMessage email;
+                        if (emailUidMapping.TryGetValue (uid, out email)) {
+                            email.Delete ();
+                        }
+                    }
+                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 }
                 result = NcResult.OK ();
                 result.Value = Event.Create ((uint)SmEvt.E.Success, "IMAPMOVSUC");

@@ -26,6 +26,7 @@ namespace Test.iOS
         McAccount Account;
         uint defaultSpan;
         uint resyncDefaultSpan;
+        uint quickSyncSpan;
 
         McFolder TestFolder { get; set; }
         McProtocolState ProtocolState { get; set; }
@@ -45,6 +46,7 @@ namespace Test.iOS
             ProtocolState = p;
             NcCommStatus.Instance.Speed = NetStatusSpeedEnum.WiFi_0;
             defaultSpan = ImapStrategy.KBaseFetchSize * 3 * ImapStrategy.KInboxWindowMultiplier;
+            quickSyncSpan = ImapStrategy.KBaseFetchSize * 3;
             resyncDefaultSpan = defaultSpan * ImapStrategy.KResyncMultiplier;
         }
 
@@ -344,7 +346,7 @@ namespace Test.iOS
             ImapStrategy.resetLastSyncPoint (ref testFolder);
             TestFolder = testFolder;
             expected_max = 502;
-            expected_min = expected_max - newMessages + 1;
+            expected_min = expected_max - quickSyncSpan + 1;
 
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.NotNull (syncKit);
@@ -352,12 +354,19 @@ namespace Test.iOS
             Assert.NotNull (syncKit.SyncInstructions);
             Assert.AreEqual (0, syncKit.SyncInstructions.Count);
             ImapStrategy.FillInQuickSyncKit (ref protocolState, ref syncKit, TestFolder.AccountId);
-            Assert.AreEqual (1, syncKit.SyncInstructions.Count); // 1 for new mails
-            syncInst = syncKit.SyncInstructions.First ();
+            Assert.AreEqual (2, syncKit.SyncInstructions.Count); // 1 for new mails, 1 for resyncs
+
+            // check the new mails
+            syncInst = syncKit.SyncInstructions[0];
             Assert.NotNull (syncInst.UidSet);
-            Assert.AreEqual (newMessages, syncKit.CombinedUidSet.Count);
+            Assert.AreEqual (newMessages, syncInst.UidSet.Count);
+            Assert.AreEqual (expected_max, syncInst.UidSet.Max ().Id);
+            Assert.AreEqual (expected_max - newMessages + 1, syncInst.UidSet.Min ().Id);
+
+            Assert.AreEqual (quickSyncSpan, syncKit.CombinedUidSet.Count);
             Assert.AreEqual (expected_max, syncKit.MaxSynced);
             Assert.AreEqual (expected_min, syncKit.MinSynced);
+
             TestFolder = DoFakeSync (TestFolder, syncKit);
 
             expected_max = expected_min - 1;

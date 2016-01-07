@@ -48,6 +48,11 @@ namespace NachoClient.AndroidClient
             var moreImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
             moreImage.SetImageResource (Resource.Drawable.nav_more_active);
 
+            if (activity.Intent.HasExtra (SupportActivity.HIDE_TOOLBAR)) {
+                var toolbar = view.FindViewById (Resource.Id.navigation_toolbar);
+                toolbar.Visibility = ViewStates.Gone;
+            }
+
             return view;
         }
 

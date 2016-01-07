@@ -77,18 +77,41 @@ namespace NachoCore.Model
 
         #region IMAP Sync helper variables
 
-        // DateTime we last examined the folder.
+        /// <summary>
+        /// DateTime we last examined the folder.
+        /// </summary>
+        /// <value>DateTime we last examined the folder.</value>
         public DateTime ImapLastExamine { get; set; }
 
+        /// <summary>
+        /// Tells us that we need to start at the top and work our way down again. This usually gets set
+        /// if we detect a new message or a change in HighestModSeq.
+        /// </summary>
+        /// <value><c>true</c> if imap need full sync; otherwise, <c>false</c>.</value>
         public bool ImapNeedFullSync { get; set; }
 
-        // The lowest UID we've synced in the current round of syncing
+        /// <summary>
+        /// The lowest UID we've synced in the current round of syncing
+        /// </summary>
+        /// <value>The lowest uid synced.</value>
         public uint ImapUidLowestUidSynced { get; set; }
-        // The highest UID we've synced in the current round of syncing
+
+        /// <summary>
+        /// The highest UID we've synced in the current round of syncing
+        /// </summary>
+        /// <value>The highest uid synced.</value>
         public uint ImapUidHighestUidSynced { get; set; }
-        // The current sync-point in the current round of syncing
+
+        /// <summary>
+        /// The current sync-point in the current round of syncing
+        /// </summary>
+        /// <value>The last uid synced.</value>
         public uint ImapLastUidSynced { get; set; }
-        // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
+
+        /// <summary>
+        /// The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
+        /// </summary>
+        /// <value>The imap uid set.</value>
         public string ImapUidSet { get; set; }
 
         #endregion

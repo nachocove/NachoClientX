@@ -34,12 +34,22 @@ namespace NachoCore.IMAP
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADOPEN");
             }
-            mailKitFolder.SetFlags (email.GetImapUid (folder), MessageFlags.Seen, true, Cts.Token);
-            PendingResolveApply ((pending) => {
-                pending.ResolveAsSuccess (BEContext.ProtoControl, 
-                    NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));
-            });
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPMARKREADSUC");
+            UpdateImapSetting (mailKitFolder, ref folder);
+            try {
+                mailKitFolder.SetFlags (email.GetImapUid (folder), MessageFlags.Seen, true, Cts.Token);
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl, 
+                        NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));
+                });
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPMARKREADSUC");
+            } catch (MessageNotFoundException) {
+                email.Delete ();
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageMarkedReadFailed, NcResult.WhyEnum.MissingOnServer));
+                });
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADMISS");
+            }
         }
     }
 }

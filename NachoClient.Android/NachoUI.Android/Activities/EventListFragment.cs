@@ -244,6 +244,8 @@ namespace NachoClient.AndroidClient
             ScrollToPosition (position);
         }
 
+        const int MAX_SCROLL = 20;
+
         void ScrollToPosition (int position)
         {
             // The internet says that we might not always get a ScrollState.Idle event in ListView_ScrollStateChanged,
@@ -253,6 +255,14 @@ namespace NachoClient.AndroidClient
             if (isTouchScrolling) {
                 listView.Scroll -= ListView_Scroll;
                 isTouchScrolling = false;
+            }
+            // The duration parameter for SmoothScrollToPositionFromTop is a lower bound, not a hard value.
+            // If there is a long way to scroll, jump most of the way there and then scroll the rest of the way.
+            int existingPosition = listView.FirstVisiblePosition;
+            if (existingPosition + MAX_SCROLL < position) {
+                listView.SetSelection (position - MAX_SCROLL);
+            } else if (existingPosition - MAX_SCROLL > position) {
+                listView.SetSelection (position + MAX_SCROLL);
             }
             listView.SmoothScrollToPositionFromTop (position, offset: 0, duration: 200);
         }
@@ -320,14 +330,29 @@ namespace NachoClient.AndroidClient
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
         }
 
+        private bool refreshInProgress = false;
+        private bool refreshWaitingToStart = false;
+
         void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
 
             switch (s.Status.SubKind) {
+
             case NcResult.SubKindEnum.Info_EventSetChanged:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                eventListAdapter.Refresh ();
+                // Don't queue up a whole bunch of refresh tasks.  If there is one running and one waiting to
+                // run, there is no point in starting yet another refresh task.
+                if (!refreshWaitingToStart) {
+                    if (refreshInProgress) {
+                        refreshWaitingToStart = true;
+                    }
+                    refreshInProgress = true;
+                    eventListAdapter.Refresh (() => {
+                        refreshWaitingToStart = false;
+                        refreshInProgress = false;
+                    });
+                }
                 break;
 
             case NcResult.SubKindEnum.Info_ExecutionContextChanged:

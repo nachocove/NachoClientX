@@ -21,6 +21,16 @@ namespace NachoClient.AndroidClient
     {
         private const string SUPPORT_FRAGMENT_TAG = "SupportFragment";
 
+        public static string HIDE_TOOLBAR = "HideToolbar";
+
+        public static Intent IntentWithoutToolbar(Context context)
+        {
+            var intent = new Intent ();
+            intent.SetClass (context, typeof(SupportActivity));
+            intent.PutExtra (HIDE_TOOLBAR, true);
+            return intent;
+        }
+
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.SupportActivity);
