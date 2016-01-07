@@ -541,7 +541,6 @@ namespace Test.iOS
                             From = "test@example.com",
                             ServerId = ServerId,
                             IsIncomplete = true,
-                            ImapUid = id,
                         };
                         emailMessage.Insert ();
                         var map = new McMapFolderFolderEntry (Account.Id) {
@@ -550,6 +549,7 @@ namespace Test.iOS
                             FolderEntryId = emailMessage.Id,
                             ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email,
                             AsSyncEpoch = 1,
+                            ImapUid = id,
                         };
                         map.Insert ();
                     }

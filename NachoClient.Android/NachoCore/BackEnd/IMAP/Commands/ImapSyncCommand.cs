@@ -489,36 +489,38 @@ namespace NachoCore.IMAP
         static bool ParseGmailLabels (McEmailMessage emailMessage, MessageSummary summary)
         {
             bool changed = false;
-            foreach (var label in summary.GMailLabels) {
-                if (!label.StartsWith ("\\")) {
-                    // these are user-labels. ignore these
-                    continue;
-                }
-                    
-                switch (label) {
-                case "\\Starred":
-                    changed |= emailMessage.UserAction == 1;
-                    emailMessage.UserAction = 1;
-                    break;
+            if (null != summary.GMailLabels) {
+                foreach (var label in summary.GMailLabels) {
+                    if (!label.StartsWith ("\\")) {
+                        // these are user-labels. ignore these
+                        continue;
+                    }
+                        
+                    switch (label) {
+                    case "\\Starred":
+                        changed |= emailMessage.UserAction == 1;
+                        emailMessage.UserAction = 1;
+                        break;
 
-                case "\\Deleted":
-                    // TODO we really ought to stop here and delete the message!
-                    break;
+                    case "\\Deleted":
+                        // TODO we really ought to stop here and delete the message!
+                        break;
 
-                case "\\Important":
-                    // TODO Should we honor this? It's from google's 'brain'.
-                    break;
+                    case "\\Important":
+                        // TODO Should we honor this? It's from google's 'brain'.
+                        break;
 
-                case "\\Inbox":
-                case "\\Sent":
-                case "\\Drafts":
-                case "\\Trash":
-                    // various standard folder types (i.e. labels in gmail-land)
-                    break;
+                    case "\\Inbox":
+                    case "\\Sent":
+                    case "\\Drafts":
+                    case "\\Trash":
+                        // various standard folder types (i.e. labels in gmail-land)
+                        break;
 
-                default:
-                    Log.Warn (Log.LOG_IMAP, "Unhandled Gmail message label {0}", label);
-                    break;
+                    default:
+                        Log.Warn (Log.LOG_IMAP, "Unhandled Gmail message label {0}", label);
+                        break;
+                    }
                 }
             }
             return changed;

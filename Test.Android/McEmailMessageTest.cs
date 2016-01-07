@@ -1045,26 +1045,28 @@ namespace Test.Common
         [Test]
         public void TestQueryByImapUidRange ()
         {
+            List <MailKit.UniqueId> uids = new List <MailKit.UniqueId> ();
             var messages = new List<McEmailMessage> ();
             for (uint i = 1; i <= 10; i++) { // 0 is not a valid UID.
                 var message = new McEmailMessage () {
                     AccountId = Folder.AccountId,
                     ServerId = i.ToString (),
                     Subject = string.Format ("Subject {0}", i),
-                    ImapUid = i, 
                     From = "bob@company.net",
                 };
                 Assert.AreEqual (1, message.Insert ());
                 Assert.True (0 < message.Id);
-                Folder.Link (message);
+                var uid = new MailKit.UniqueId (i);
+                uids.Add (uid);
+                Folder.Link (message, uid);
                 messages.Add (message);
             }
-            var SortedList = messages.OrderByDescending (x => x.ImapUid).ToList ();
+            var SortedList = uids.OrderByDescending (x => x).ToList ();
 
             var results1 = McEmailMessage.QueryByImapUidRange (Folder.AccountId, Folder.Id, 0, 11, 30);
             Assert.AreEqual (SortedList.Count, results1.Count);
             for (int i = 0; i < SortedList.Count; i++) {
-                Assert.AreEqual (SortedList [i].ImapUid, results1 [i].Id);
+                Assert.AreEqual (SortedList [i].Id, (uint)(results1 [i].Id));
             }
 
             for (uint i = 11; i <= 50; i++) {
@@ -1072,19 +1074,20 @@ namespace Test.Common
                     AccountId = Folder.AccountId,
                     ServerId = i.ToString (),
                     Subject = string.Format ("Subject {0}", i),
-                    ImapUid = i, 
                     From = "bob@company.net",
                 };
                 Assert.AreEqual (1, message.Insert ());
                 Assert.True (0 < message.Id);
-                Folder.Link (message);
+                var uid = new MailKit.UniqueId (i);
+                uids.Add (uid);
+                Folder.Link (message, uid);
                 messages.Add (message);
             }
-            SortedList = messages.OrderByDescending (x => x.ImapUid).Take (30).ToList ();
+            SortedList = uids.OrderByDescending (x => x).Take (30).ToList ();
             var results2 = McEmailMessage.QueryByImapUidRange (Folder.AccountId, Folder.Id, 0, 51, 30);
             Assert.AreEqual (SortedList.Count, results2.Count);
             for (int i = 0; i < SortedList.Count; i++) {
-                Assert.AreEqual (SortedList [i].ImapUid, results2 [i].Id);
+                Assert.AreEqual (SortedList [i].Id, (uint)(results2 [i].Id));
             }
         }
 
@@ -1097,7 +1100,6 @@ namespace Test.Common
                     AccountId = Folder.AccountId,
                     ServerId = i.ToString (),
                     Subject = string.Format ("Subject {0}", i),
-                    ImapUid = 0,
                     From = "bob@company.net",
                 };
                 Assert.AreEqual (1, message.Insert ());

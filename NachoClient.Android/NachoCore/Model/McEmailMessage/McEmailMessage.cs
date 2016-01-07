@@ -923,7 +923,6 @@ namespace NachoCore.Model
         {
             var mapping = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId, folder.Id, Id, GetClassCode ());
             NcAssert.NotNull (mapping);
-            NcAssert.True (mapping.ImapUid > 0);
             return new UniqueId (mapping.ImapUid);
         }
 

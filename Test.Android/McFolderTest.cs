@@ -1019,7 +1019,8 @@ namespace Test.iOS
                 folder.Link (email);
 
                 result = folder.Unlink (email);
-                Assert.AreEqual (NcResult.KindEnum.OK, result.Kind, "Result should be okay when unlink succeeds");
+                Assert.AreEqual (NcResult.KindEnum.Info, result.Kind, "Result should be Info when unlink succeeds and there are no more links");
+                Assert.AreEqual (NcResult.SubKindEnum.Info_ItemOrphaned, result.SubKind, "Item is orphaned");
                 List<McMapFolderFolderEntry> folderEntries = McMapFolderFolderEntry.QueryByFolderId (accountId, folder.Id);
                 var folderEntry = folderEntries.FirstOrDefault ();
                 Assert.AreEqual (folderEntry, null, "Folder was not unlinked correctly");
