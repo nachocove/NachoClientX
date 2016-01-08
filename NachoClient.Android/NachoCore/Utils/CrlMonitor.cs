@@ -240,8 +240,8 @@ namespace NachoCore.Utils
     }
 
     /// <summary>
-    /// Crl monitor item. This represents one URL found in the list of CDP's (CRL Distribution Points), and will
-    /// monitor that URL periodically and fetch the CRL, validate it, and extract the list of revoked certificates.
+    /// Crl monitor item. This represents one CA Certificate, and will monitor the CDP Url's contained therein, 
+    /// fetch the CRL, validate it, and extract the list of revoked certificates.
     /// 
     /// Note this approach has a few flaws, but it works for our current environment:
     /// 1) CRL's can be signed by any valid CA certificate in the chain for a given cert. For example our pinger
@@ -252,7 +252,8 @@ namespace NachoCore.Utils
     ///   to do it in whatever way they chose.
     /// 
     /// 2) The CRL's listed in a CDP-list may be the same CRL (for fault tolerance), or they could be different CRL's.
-    ///   Again the RFC's don't really say.
+    ///   Again the RFC's don't really say. We will treat them as the same CRL, because that's the most common use-case
+    ///  out there.
     /// </summary>
     public class CrlMonitorItem
     {
