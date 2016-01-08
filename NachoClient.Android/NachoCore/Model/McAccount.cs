@@ -17,6 +17,7 @@ namespace NachoCore.Model
             Exchange,
             Device,
             IMAP_SMTP,
+            Unified
         };
 
         public enum AccountServiceEnum
@@ -339,6 +340,55 @@ namespace NachoCore.Model
         // Cache it!
         static McAccount _deviceAccount;
 
+        public static McAccount GetDefaultAccount (AccountCapabilityEnum capability)
+        {
+            var accounts = McAccount.GetAllAccounts ();
+            foreach (var account in accounts) {
+                if (account.AccountType != AccountTypeEnum.Device && account.AccountType != AccountTypeEnum.Unified) {
+                    if (account.ConfigurationInProgress == ConfigurationInProgressEnum.Done) {
+                        if (account.HasCapability (capability)) {
+                            return account;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        public static McAccount EmailAccountForMessage (McEmailMessage message)
+        {
+            return EmailAccountForAccountId (message.AccountId);
+        }
+
+        public static McAccount EmailAccountForEvent (McEvent e)
+        {
+            return EmailAccountForAccountId (e.AccountId);
+        }
+
+        public static McAccount EmailAccountForCalendar (McCalendar calendar)
+        {
+            return EmailAccountForAccountId (calendar.AccountId);
+        }
+
+        public static McAccount EmailAccountForContact (McContact contact)
+        {
+            return EmailAccountForAccountId (contact.AccountId);
+        }
+
+        public static McAccount EmailAccountForAccount (McAccount account)
+        {
+            return EmailAccountForAccountId (account.Id);
+        }
+
+        private static McAccount EmailAccountForAccountId (int accountId)
+        {
+            var account = McAccount.QueryById<McAccount> (accountId);
+            if (account.HasCapability (AccountCapabilityEnum.EmailSender) && account.AccountType != AccountTypeEnum.Unified) {
+                return account;
+            }
+            return McAccount.GetDefaultAccount (AccountCapabilityEnum.EmailSender);
+        }
+
         public static List<McAccount> GetAllAccounts ()
         {
             return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");
@@ -504,6 +554,13 @@ namespace NachoCore.Model
             } catch (Exception e) {
                 Log.Info (Log.LOG_DB, "McAccount: PopulateProfilePhotoFromURL exception: {0}", e);
             }
+        }
+
+        public bool ContainsAccount (int accountId){
+            if (AccountType == AccountTypeEnum.Unified) {
+                return true;
+            }
+            return Id == accountId;
         }
     }
 

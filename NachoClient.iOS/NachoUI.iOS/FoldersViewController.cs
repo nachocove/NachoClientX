@@ -955,7 +955,8 @@ namespace NachoClient.iOS
 
         private void ComposeMessage ()
         {
-            var composeViewController = new MessageComposeViewController ();
+            var account = McAccount.EmailAccountForAccount (currentAccount);
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Present ();
         }
 

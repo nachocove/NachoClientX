@@ -470,7 +470,7 @@ namespace NachoClient.iOS
             if (shortcutItem.Type.Equals ("com.nachocove.nachomail.newmessage")) {
                 // TODO: verify that we're not setting up an account
                 // TODO: check if another compose is already up
-                var composeViewController = new MessageComposeViewController ();
+                var composeViewController = new MessageComposeViewController (NcApplication.Instance.DefaultEmailAccount);
                 composeViewController.Present (false, () => {
                     completionHandler (true);
                 });
@@ -514,7 +514,7 @@ namespace NachoClient.iOS
         void OpenFiles (string[] paths, string source = null)
         {
             if (NcApplication.ReadyToStartUI ()) {
-                var account = NcApplication.Instance.Account;
+                var account = NcApplication.Instance.DefaultEmailAccount;
                 var attachments = new List<McAttachment> ();
                 foreach (var path in paths) {
                     // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
@@ -528,7 +528,7 @@ namespace NachoClient.iOS
                     attachments.Add (attachment);
                 }
                 if (attachments.Count > 0) {
-                    var composeViewController = new MessageComposeViewController ();
+                    var composeViewController = new MessageComposeViewController (account);
                     composeViewController.Composer.InitialAttachments = attachments;
                     composeViewController.Present ();
                 }
@@ -976,8 +976,10 @@ namespace NachoClient.iOS
                 thread.MessageCount = 1;
                 if (actionIdentifier == NotificationActionIdentifierReply) {
                     if (Window.RootViewController is NachoTabBarController) {
+                        var message = thread.FirstMessageSpecialCase ();
+                        var account = McAccount.EmailAccountForMessage (message);
                         EmailHelper.MarkAsRead (thread, force: true);
-                        var composeViewController = new MessageComposeViewController ();
+                        var composeViewController = new MessageComposeViewController (account);
                         composeViewController.Composer.RelatedThread = thread;
                         composeViewController.Composer.Kind = EmailHelper.Action.Reply;
                         composeViewController.Present (false, null);

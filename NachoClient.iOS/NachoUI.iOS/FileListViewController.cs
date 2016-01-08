@@ -548,7 +548,8 @@ namespace NachoClient.iOS
 
         public void ForwardAttachments (List<McAttachment> attachments)
         {
-            var composeViewController = new MessageComposeViewController ();
+            var account = NcApplication.Instance.DefaultEmailAccount;
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.InitialAttachments = attachments;
             composeViewController.Present ();
         }

@@ -197,6 +197,30 @@ namespace NachoCore
 
         private McAccount _Account;
 
+        public McAccount DefaultEmailAccount {
+            get {
+                if (Account == null) {
+                    return null;
+                }
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability(McAccount.AccountCapabilityEnum.EmailSender)) {
+                    return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                }
+                return Account;
+            }
+        }
+
+        public McAccount DefaultCalendarAccount {
+            get {
+                if (Account == null) {
+                    return null;
+                }
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability(McAccount.AccountCapabilityEnum.CalWriter)) {
+                    return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                }
+                return Account;
+            }
+        }
+
         public delegate void CredReqCallbackDele (int accountId);
 
         /// <summary>

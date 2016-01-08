@@ -291,9 +291,9 @@ namespace NachoClient.iOS
 
         protected string GetEmailAddress ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                return Account.EmailAddr;
+            var account = NcApplication.Instance.DefaultEmailAccount;
+            if (account != null) {
+                return account.EmailAddr;
             } else {
                 return "";
             }
