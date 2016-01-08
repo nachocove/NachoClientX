@@ -388,21 +388,24 @@ namespace NachoCore.IMAP
             if (span > 0) {
                 var uidSet = SyncKit.MustUniqueIdSet (QuickSyncSet (startingPoint, Synckit.Folder, span));
                 if (uidSet.Any ()) {
-                    if (startingPointMustBeInSet) {
-                        uidSet.Add (new UniqueId (startingPoint));
-                        startingPointMustBeInSet = false;
+                    var startingUid = new UniqueId (startingPoint - 1);
+                    if (startingPointMustBeInSet && !uidSet.Contains (startingUid)) {
+                        uidSet.Add (startingUid);
                     }
+                    startingPointMustBeInSet = false;
                     var syncInst = SyncInstructionForNewMails (ref protocolState, OrderedSetWithSpan (uidSet, span));
                     Synckit.SyncInstructions.Add (syncInst);
                     span -= (uint)syncInst.UidSet.Count;
+                    startingPoint = syncInst.UidSet.Min ().Id;
                 }
             }
             if (span > 0) {
                 // don't use the multiplier here, since it's a quicksync.
                 var emails = getCurrentEmailUids (Synckit.Folder, 0, startingPoint, span);
                 if (emails.Any ()) {
-                    if (startingPointMustBeInSet) {
-                        emails.Add (new UniqueId (startingPoint));
+                    var startingUid = new UniqueId (startingPoint - 1);
+                    if (startingPointMustBeInSet && !emails.Contains(startingUid)) {
+                        emails.Add (startingUid);
                         startingPointMustBeInSet = false;
                     }
                     var syncInst = SyncInstructionForFlagSync (OrderedSetWithSpan (emails, span));
