@@ -18,7 +18,12 @@ LIST="MimeKit \
     TTTAttributedLabel \
     UIImageEffects \
     protobuf-c \
-    registered-domain-libs"
+    registered-domain-libs \
+    sqlite-net \
+    MailKit \
+    CSharp-Name-Parser \
+    JetBlack.Caching \
+    ios-openssl"
 
 FILE=LegalInfo.txt
 
