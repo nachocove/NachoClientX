@@ -20,8 +20,8 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public delegate void CalendarDateSelected (DateTime date);
-    public delegate bool CalendarHasEvents (DateTime date);
+    public delegate void CalendarDateActionDelegate (DateTime date);
+    public delegate bool CalendarDateCheckDelegate (DateTime date);
 
     public class CalendarPagerView : ViewGroup, GestureDetector.IOnGestureListener
     {
@@ -30,8 +30,9 @@ namespace NachoClient.AndroidClient
         List<PageView> PageViews;
         TextView MonthLabelA;
         TextView MonthLabelB;
-        public CalendarDateSelected DateSelected;
-        public CalendarHasEvents HasEvents;
+        public CalendarDateActionDelegate DateSelected;
+        public CalendarDateCheckDelegate HasEvents;
+        public CalendarDateCheckDelegate IsSupportedDate;
         Calendar Calendar;
         DateTime FocusDate;
         DateTime HighlightedDate;
@@ -585,9 +586,11 @@ namespace NachoClient.AndroidClient
 
         public void DateClicked (DateTime date)
         {
-            SetHighlightedDate (date);
-            if (DateSelected != null) {
-                DateSelected (date);
+            if (null != IsSupportedDate && IsSupportedDate (date)) {
+                SetHighlightedDate (date);
+                if (DateSelected != null) {
+                    DateSelected (date);
+                }
             }
         }
 
