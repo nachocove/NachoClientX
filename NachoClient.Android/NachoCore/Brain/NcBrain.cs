@@ -134,10 +134,15 @@ namespace NachoCore.Brain
         {
             NcContactGleaner.Stop ();
             var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
-            EventQueue.UndequeueIfNot (pause, (obj) => {
-                NcBrainEvent evt = obj;
-                return evt.Type == NcBrainEventType.PAUSE;
-            });
+            try {
+                EventQueue.UndequeueIfNot (pause, (obj) => {
+                    NcBrainEvent evt = obj;
+                    return evt.Type == NcBrainEventType.PAUSE;
+                });
+            } catch (OperationCanceledException) {
+                // apparently the service is already paused. Ignore this.
+                Log.Info (Log.LOG_BRAIN, "Tried to stop brain, but it seems it already is");
+            }
         }
 
         public void UnPauseService ()
