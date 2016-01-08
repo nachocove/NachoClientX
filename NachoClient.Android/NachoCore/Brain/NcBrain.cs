@@ -142,32 +142,36 @@ namespace NachoCore.Brain
 
         public void PauseService ()
         {
-            if (IsRunning) {
-                NcContactGleaner.Stop ();
-                var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
-                try {
-                    EventQueue.UndequeueIfNot (pause, (obj) => {
-                        NcBrainEvent evt = obj;
-                        return evt.Type == NcBrainEventType.PAUSE;
-                    });
-                } catch (OperationCanceledException) {
-                    // This means brain is stopped, so ignore this
+            lock (SyncRoot) {
+                if (IsRunning) {
+                    NcContactGleaner.Stop ();
+                    var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
+                    try {
+                        EventQueue.UndequeueIfNot (pause, (obj) => {
+                            NcBrainEvent evt = obj;
+                            return evt.Type == NcBrainEventType.PAUSE;
+                        });
+                    } catch (OperationCanceledException) {
+                        // This means brain is stopped, so ignore this
+                    }
                 }
             }
         }
 
         public void UnPauseService ()
         {
-            if (IsRunning) {
-                try {
-                    EventQueue.DequeueIf ((obj) => {
-                        NcBrainEvent evt = obj;
-                        return evt.Type == NcBrainEventType.PAUSE;
-                    });
-                } catch (OperationCanceledException) {
-                    // This means brain is stopped, so ignore this
+            lock (SyncRoot) {
+                if (IsRunning) {
+                    try {
+                        EventQueue.DequeueIf ((obj) => {
+                            NcBrainEvent evt = obj;
+                            return evt.Type == NcBrainEventType.PAUSE;
+                        });
+                    } catch (OperationCanceledException) {
+                        // This means brain is stopped, so ignore this
+                    }
+                    NcContactGleaner.Start ();
                 }
-                NcContactGleaner.Start ();
             }
         }
 
