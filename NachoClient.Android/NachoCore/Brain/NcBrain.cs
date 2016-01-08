@@ -140,17 +140,20 @@ namespace NachoCore.Brain
                     return evt.Type == NcBrainEventType.PAUSE;
                 });
             } catch (OperationCanceledException) {
-                // apparently the service is already paused. Ignore this.
-                Log.Info (Log.LOG_BRAIN, "Tried to stop brain, but it seems it already is");
+                // This means brain is stopped, so ignore this
             }
         }
 
         public void UnPauseService ()
         {
-            EventQueue.DequeueIf ((obj) => {
-                NcBrainEvent evt = obj;
-                return evt.Type == NcBrainEventType.PAUSE;
-            });
+            try {
+                EventQueue.DequeueIf ((obj) => {
+                    NcBrainEvent evt = obj;
+                    return evt.Type == NcBrainEventType.PAUSE;
+                });
+            } catch (OperationCanceledException) {
+                // This means brain is stopped, so ignore this
+            }
             NcContactGleaner.Start ();
         }
 
