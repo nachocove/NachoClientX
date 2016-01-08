@@ -386,12 +386,19 @@ namespace NachoCore.IMAP
             if (folder.ImapNoSelect != mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) ||
                 (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id))
             {
+                bool needFullSync = ((folder.ImapExists != mailKitFolder.Count) ||
+                    (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id));
+                
                 // update.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                     target.ImapUidNext = mailKitFolder.UidNext.HasValue ? mailKitFolder.UidNext.Value.Id : 0;
                     target.ImapExists = mailKitFolder.Count;
+                    if (needFullSync) {
+                        // don't reset to false, if someone else said we need one.
+                        target.ImapNeedFullSync = needFullSync;
+                    }
                     return true;
                 });
                 changed = true;

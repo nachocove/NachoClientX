@@ -52,23 +52,42 @@ namespace NachoCore.IMAP
 
         private NcResult FetchOneBody (FetchKit.FetchBody fetchBody)
         {
-            NcResult result;
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, fetchBody.ServerId);
             if (null == email) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", fetchBody.ServerId);
                 return NcResult.Error ("Unknown email ServerId");
             }
+            NcResult result = FetchOneBodyInternal (fetchBody, email);
+            if (result.isError ()) {
+                if (result.Why == NcResult.WhyEnum.MissingOnServer) {
+                    // The message doesn't exist. Delete it locally.
+                    email.Delete ();
+                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                }
+            }
+            return result;
+        }
+
+        private NcResult FetchOneBodyInternal (FetchKit.FetchBody fetchBody, McEmailMessage email)
+        {
+            NcResult result;
             Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
             McFolder folder = McFolder.QueryByServerId (AccountId, fetchBody.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
+            UpdateImapSetting (mailKitFolder, ref folder);
             var uid = new UniqueId (email.ImapUid);
 
             Cts.Token.ThrowIfCancellationRequested ();
 
             if (string.IsNullOrEmpty (email.ImapBodyStructure)) {
                 // backwards compatibility: Current code fills this in, but older code didn't. So fetch it now.
-                email = FillInBodyStructure (email, mailKitFolder, Cts.Token);
+                try {
+                    email = FillInBodyStructure (email, mailKitFolder, Cts.Token);
+                } catch (MessageNotFoundException ex) {
+                    Log.Info (Log.LOG_IMAP, "FillInBodyStructure error: {0}", ex);
+                    email = null;
+                }
                 if (email == null) {
                     return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
                         NcResult.WhyEnum.MissingOnServer);
@@ -76,10 +95,15 @@ namespace NachoCore.IMAP
             }
 
             Cts.Token.ThrowIfCancellationRequested ();
-
             if (string.IsNullOrEmpty (email.Headers)) {
-                // sync didn't fetch them for us. Do it now.
-                email = ImapSyncCommand.FetchHeaders (email, mailKitFolder, Cts.Token);
+                try {
+                    // sync didn't fetch them for us. Do it now.
+                    email = ImapSyncCommand.FetchHeaders (email, mailKitFolder, Cts.Token);
+                } catch (MessageNotFoundException ex) {
+                    Log.Info (Log.LOG_IMAP, "FillInBodyStructure error: {0}", ex);
+                    return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                        NcResult.WhyEnum.MissingOnServer);
+                }
             }
 
             BodyPart imapBody;
@@ -129,14 +153,11 @@ namespace NachoCore.IMAP
                 } else {
                     result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, fetchBody.Parts, imapBody.ContentType.Boundary);
                 }
-            } catch (MessageNotFoundException ex) {
-                result = NcResult.Error (ex.Message);
+            } catch (MessageNotFoundException) {
+                result = NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed, NcResult.WhyEnum.MissingOnServer);
             }
 
-            Cts.Token.ThrowIfCancellationRequested ();
             if (!result.isOK ()) {
-                // The message doesn't exist. Delete it locally.
-                email.Delete ();
                 return result;
             }
 
@@ -260,17 +281,10 @@ namespace NachoCore.IMAP
                 }
                 body.UpdateSaveFinish ();
                 body.Truncated = false;
-            } catch (ImapCommandException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand ImapCommandException: {0}", ex.Message);
-                // TODO Probably want to narrow this down. Pull in latest MailKit and make it compile.
-                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
-                if (!string.IsNullOrEmpty (tmp)) {
-                    File.Delete (tmp);
-                }
+            } catch {
                 body.DeleteFile ();
                 body.Delete ();
-                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                return NcResult.Error ("No Body found");
+                throw;
             } finally {
                 mailKitFolder.UnsetStreamContext ();
             }
@@ -310,19 +324,12 @@ namespace NachoCore.IMAP
                 body.Truncated = false;
                 body.UpdateFileMove (tmp);
                 tmp = null;
-            } catch (ImapCommandException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand ImapCommandException: {0}", ex.Message);
-                // TODO Probably want to narrow this down. Pull in latest MailKit and make it compile.
-                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
-                if (!string.IsNullOrEmpty (tmp)) {
-                    File.Delete (tmp);
-                }
+            } catch {
                 body.DeleteFile ();
                 body.Delete ();
-                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                return NcResult.Error ("No Body found");
+                throw;
             } finally {
-                if (null != tmp) {
+                if (!string.IsNullOrEmpty (tmp)) {
                     File.Delete (tmp);
                 }
             }

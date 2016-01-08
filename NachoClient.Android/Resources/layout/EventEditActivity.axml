@@ -69,16 +69,30 @@
                     android:padding="4dp"
                     android:text="Starts" />
                 <TextView
-                    android:id="@+id/event_edit_start"
+                    android:id="@+id/event_edit_start_date"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_gravity="center_vertical"
                     android:padding="4dp"
-                    android:text="Jan 1 - 12:00 am"
+                    android:text="Jan 1"
                     android:gravity="right" />
                 <ImageView
-                    android:id="@+id/event_edit_start_arrow"
+                    android:id="@+id/event_edit_start_date_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@drawable/gen_more_arrow" />
+                <TextView
+                    android:id="@+id/event_edit_start_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:padding="4dp"
+                    android:text="12:00 am"
+                    android:gravity="right" />
+                <ImageView
+                    android:id="@+id/event_edit_start_time_arrow"
                     android:layout_width="wrap_content"
                     android:layout_height="15dp"
                     android:layout_gravity="center_vertical"
@@ -99,16 +113,30 @@
                     android:padding="4dp"
                     android:text="Until" />
                 <TextView
-                    android:id="@+id/event_edit_end"
+                    android:id="@+id/event_edit_end_date"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_gravity="center_vertical"
                     android:padding="4dp"
-                    android:text="Dec 31 - 11:59 pm"
+                    android:text="Dec 31"
                     android:gravity="right" />
                 <ImageView
-                    android:id="@+id/event_edit_end_arrow"
+                    android:id="@+id/event_edit_end_date_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@drawable/gen_more_arrow" />
+                <TextView
+                    android:id="@+id/event_edit_end_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:padding="4dp"
+                    android:text="11:59 pm"
+                    android:gravity="right" />
+                <ImageView
+                    android:id="@+id/event_edit_end_time_arrow"
                     android:layout_width="wrap_content"
                     android:layout_height="15dp"
                     android:layout_gravity="center_vertical"

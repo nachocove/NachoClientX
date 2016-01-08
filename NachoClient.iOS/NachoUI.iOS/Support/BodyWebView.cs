@@ -66,7 +66,7 @@ namespace NachoClient.iOS
         private BodyWebView (CGRect frame)
             : base (frame)
         {
-            this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
+            this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber | UIDataDetectorType.Address;
             ScrollView.ScrollEnabled = false;
             loadingComplete = false;
             InitListeners ();
@@ -163,7 +163,9 @@ namespace NachoClient.iOS
         private bool OnShouldStartLoad (UIWebView webView, NSUrlRequest request,
             UIWebViewNavigationType navigationType)
         {
-            if (UIWebViewNavigationType.LinkClicked == navigationType) {
+            if (request.Url.Scheme.Equals ("x-apple-data-detectors")) {
+                return true;
+            }else if (UIWebViewNavigationType.LinkClicked == navigationType) {
                 if (null != OnLinkSelected) {
                     OnLinkSelected (request.Url);
                 }

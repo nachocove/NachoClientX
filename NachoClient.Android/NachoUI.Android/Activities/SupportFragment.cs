@@ -12,6 +12,7 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using NachoCore;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -47,7 +48,23 @@ namespace NachoClient.AndroidClient
             var moreImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
             moreImage.SetImageResource (Resource.Drawable.nav_more_active);
 
+            if (activity.Intent.HasExtra (SupportActivity.HIDE_TOOLBAR)) {
+                var toolbar = view.FindViewById (Resource.Id.navigation_toolbar);
+                toolbar.Visibility = ViewStates.Gone;
+            }
+
             return view;
+        }
+
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);
+            if (LoginHelpers.ShouldAlertUser ()) {
+                moreImage.SetImageResource (Resource.Drawable.gen_avatar_alert);
+            } else {
+                moreImage.SetImageResource (Resource.Drawable.nav_more);
+            }
         }
 
         void CallSupport_Click (object sender, EventArgs e)

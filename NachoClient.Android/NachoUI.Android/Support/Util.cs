@@ -154,7 +154,7 @@ namespace NachoClient.AndroidClient
             return activities != null && activities.Count > 0;
         }
 
-        public static Android.Net.Uri TakePhoto (Activity context, int requestCode)
+        public static Android.Net.Uri TakePhoto (Fragment fragment, int requestCode)
         {
             var dir = new Java.IO.File (Android.OS.Environment.GetExternalStoragePublicDirectory (Android.OS.Environment.DirectoryPictures), "NachoAttachmentCamera");
             if (!dir.Exists ()) {
@@ -164,7 +164,7 @@ namespace NachoClient.AndroidClient
             var file = new Java.IO.File (dir, String.Format ("photo_{0}.jpg", Guid.NewGuid ()));
             var outputUri = Android.Net.Uri.FromFile (file);
             intent.PutExtra (MediaStore.ExtraOutput, outputUri);
-            context.StartActivityForResult (intent, requestCode);
+            fragment.StartActivityForResult (intent, requestCode);
             return outputUri;
         }
     }

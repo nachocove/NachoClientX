@@ -142,7 +142,9 @@ namespace NachoPlatform
                     task.Cancel ();
                 }
             });
-            Log.Debug (Log.LOG_HTTP, "NcHttpClient: Starting task {0} for {1}", task.TaskDescription, req.Url);
+#if DEBUG
+            Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task {0} for {1} {2}", task.TaskDescription, req.HttpMethod, req.Url);
+#endif
             task.Resume ();
         }
 
@@ -219,23 +221,39 @@ namespace NachoPlatform
 
             public override void DidFinishDownloading (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, NSUrl location)
             {
-                if (Token.IsCancellationRequested) {
-                    return;
-                }
-                if (null != SuccessAction) {
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidFinishDownloading request {1}ms", downloadTask.TaskDescription, sw.ElapsedMilliseconds);
+#endif
+
+                if (!Token.IsCancellationRequested && null != SuccessAction) {
                     NcAssert.True (downloadTask.Response is NSHttpUrlResponse);
-                    var resp = downloadTask.Response as NSHttpUrlResponse;
                     NcAssert.True (location.IsFileUrl);
-                    using (var fileStream = new FileStream (location.Path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+
+                    // https://developer.apple.com/library/ios/documentation/Foundation/Reference/NSURLSessionDownloadDelegate_protocol/index.html#//apple_ref/occ/intfm/NSURLSessionDownloadDelegate/URLSession:downloadTask:didFinishDownloadingToURL:
+                    // location 
+                    // A file URL for the temporary file. Because the file is temporary, you must either open the file for reading or move it
+                    // to a permanent location in your app’s sandbox container directory before returning from this delegate method.
+                    //
+                    // If you choose to open the file for reading, you should do the actual reading in another thread to avoid blocking the delegate queue.
+
+                    var fileStream = new FileStream (location.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    var resp = downloadTask.Response as NSHttpUrlResponse;
+                    int status = (int)resp.StatusCode;
+
+                    NcTask.Run (() => {
                         try {
-                            int status = (int)resp.StatusCode;
                             using (var response = new NcHttpResponse (downloadTask.CurrentRequest.HttpMethod, (HttpStatusCode)status, fileStream, resp.MimeType, FromNsHeaders (resp.AllHeaderFields))) {
                                 SuccessAction (response, Token);
                             }
                         } catch (Exception ex) {
                             Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): Error running SuccessAction: {1}", downloadTask.TaskDescription, ex);
+                        } finally {
+                            fileStream.Dispose ();
+                            if (File.Exists (location.Path)) {
+                                File.Delete (location.Path);
+                            }
                         }
-                    }
+                    }, "NsUrlSession_DidFinishDownloading_SuccessAction");
                 }
             }
 
@@ -244,9 +262,10 @@ namespace NachoPlatform
                 try {
                     long sent = task.BytesSent;
                     long received = task.BytesReceived;
-                    Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", task.TaskDescription, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
+#if DEBUG
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", task.TaskDescription, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
                         error != null ? string.Format (" (Error: {0})", error) : "");
-
+#endif
                     if (Token.IsCancellationRequested) {
                         return;
                     }
@@ -263,6 +282,9 @@ namespace NachoPlatform
 
             public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
             {
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidSendBodyData request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+#endif
                 try {
                     if (Token.IsCancellationRequested) {
                         return;
@@ -277,6 +299,9 @@ namespace NachoPlatform
 
             public override void DidWriteData (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long bytesWritten, long totalBytesWritten, long totalBytesExpectedToWrite)
             {
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidWriteData request {1}ms", downloadTask.TaskDescription, sw.ElapsedMilliseconds);
+#endif
                 try {
                     if (Token.IsCancellationRequested) {
                         return;
@@ -291,6 +316,9 @@ namespace NachoPlatform
 
             public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
             {
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+#endif
                 try {
                     if (Owner.AllowAutoRedirect) {
                         Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection", task.TaskDescription);
@@ -329,6 +357,9 @@ namespace NachoPlatform
 
             public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
             {
+#if DEBUG
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): NeedNewBodyStream request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+#endif
                 if (!string.IsNullOrEmpty (FilePath)) {
                     completionHandler (new NSInputStream (FilePath));
                 } else {
@@ -446,7 +477,7 @@ namespace NachoPlatform
         public static Exception createExceptionForNSError (NSError error)
         {
             var ret = default(Exception);
-            var urlError = default(NSUrlError);
+            NSUrlError urlError;
             var webExceptionStatus = WebExceptionStatus.UnknownError;
 
             // If the domain is something other than NSUrlErrorDomain, 

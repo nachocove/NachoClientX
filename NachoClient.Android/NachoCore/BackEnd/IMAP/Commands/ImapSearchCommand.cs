@@ -52,7 +52,7 @@ namespace NachoCore.IMAP
                 .Or (SearchQuery.BccContains (PendingSingle.Search_Prefix))
                 .Or (SearchQuery.MessageContains (PendingSingle.Search_Prefix))
                 .Or (SearchQuery.CcContains (PendingSingle.Search_Prefix));
-            if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.GMailExt1)) {
+            if (Client.Capabilities.HasFlag (ImapCapabilities.GMailExt1)) {
                 query = query.Or (SearchQuery.GMailRawSearch (PendingSingle.Search_Prefix));
             }
             if (TimeSpan.Zero != timespan) {
@@ -66,9 +66,13 @@ namespace NachoCore.IMAP
                     continue;
                 }
                 var mailKitFolder = GetOpenMailkitFolder (folder);
+                var tmpFolder = folder;
+                // this code will soon be rewritten, so we won't worry about the possibly changed tmpFolder
+                UpdateImapSetting (mailKitFolder, ref tmpFolder);
+
                 if (mailKitFolder.Count > 0) {
                     IList<UniqueId> uids;
-                    if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.Sort)) {
+                    if (Client.Capabilities.HasFlag (ImapCapabilities.Sort)) {
                         uids = mailKitFolder.Search (query, orderBy);
                     } else {
                         uids = mailKitFolder.Search (query);

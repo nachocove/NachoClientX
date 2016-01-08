@@ -135,8 +135,8 @@ namespace NachoCore
 
         public int NumberOfEvents()
         {
-            // Events before the starting date are not counted.
-            return events.Count - days [0];
+            // Events before the starting date or after the ending date are not counted.
+            return days [days.Length - 1] - days [0];
         }
 
         public DateTime GetDateUsingDayIndex (int day)
