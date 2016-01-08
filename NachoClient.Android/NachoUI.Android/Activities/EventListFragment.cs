@@ -258,13 +258,15 @@ namespace NachoClient.AndroidClient
             }
             // The duration parameter for SmoothScrollToPositionFromTop is a lower bound, not a hard value.
             // If there is a long way to scroll, jump most of the way there and then scroll the rest of the way.
-            int existingPosition = listView.FirstVisiblePosition;
-            if (existingPosition + MAX_SCROLL < position) {
-                listView.SetSelection (position - MAX_SCROLL);
-            } else if (existingPosition - MAX_SCROLL > position) {
-                listView.SetSelection (position + MAX_SCROLL);
-            }
-            listView.SmoothScrollToPositionFromTop (position, offset: 0, duration: 200);
+            listView.Post (() => {
+                int existingPosition = listView.FirstVisiblePosition;
+                if (existingPosition + MAX_SCROLL < position) {
+                    listView.SetSelection (position - MAX_SCROLL);
+                } else if (existingPosition - MAX_SCROLL > position) {
+                    listView.SetSelection (position + MAX_SCROLL);
+                }
+                listView.SmoothScrollToPositionFromTop (position, offset: 0, duration: 200);
+            });
         }
 
         bool PagerHasEvents (DateTime date)
