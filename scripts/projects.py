@@ -24,7 +24,7 @@ projects = {
             'display_name': '[dev] Nacho Mail'
         },
         'android': {
-            'package_name': 'com.nachocove.nachomail',
+            'package_name': 'com.nachocove.nachomail.dev',
             'label': '[dev] Nacho Mail',
             'hockeyapp': {'app_id': '6308748f44bb7da155f7c44c076e8201', 'api_token': 'd7565337373147299f4b75adfacd6efa'},
             'keystore': {'filename': '',
@@ -155,7 +155,7 @@ projects = {
             'display_name': 'Nacho Mail'
         },
         'android': {
-            'package_name': 'com.nachocove.mail',
+            'package_name': 'com.nachocove.nachomail',
             'label': 'Nacho Mail',
             'icon_script': 'appstore/copy.sh',
             'hockeyapp': {'app_id': 'a62575b6e71e118ecc44e775d6f5db88', 'api_token': 'c1c7e717a6da4ba7b4a3408c9ec60418'},
