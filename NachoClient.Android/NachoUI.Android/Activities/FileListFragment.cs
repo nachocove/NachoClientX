@@ -22,9 +22,12 @@ namespace NachoClient.AndroidClient
 {
     public class FileListFragment : Fragment, AttachmentDownloaderDelegate
     {
-        public static FileListFragment newInstance ()
+        int accountId;
+
+        public static FileListFragment newInstance (int accountId)
         {
             var fragment = new FileListFragment ();
+            fragment.accountId = accountId;
             return fragment;
         }
 
@@ -77,7 +80,7 @@ namespace NachoClient.AndroidClient
 
         void SetupFileListAdapter (View view)
         {
-            FileListAdapter = new FilePickerAdapter (this);
+            FileListAdapter = new FilePickerAdapter (accountId, this);
             FileListView.Adapter = FileListAdapter;
 
             FileListView.setMenuCreator ((menu) => {
@@ -247,7 +250,7 @@ namespace NachoClient.AndroidClient
                 var note = McNote.QueryById<McNote> (item.Id);
                 if (null != note) {
                     var attachment = EmailHelper.NoteToAttachment (note);
-                    var intent = MessageComposeActivity.ForwardAttachmentIntent (Activity, attachment.Id);
+                    var intent = MessageComposeActivity.ForwardAttachmentIntent (Activity, attachment.AccountId, attachment.Id);
                     StartActivity (intent);
                 }
                 break;
@@ -303,7 +306,7 @@ namespace NachoClient.AndroidClient
                 AttachmentHelper.OpenAttachment (Activity, attachment);
                 break;
             case FORWARD_TAG:
-                var intent = MessageComposeActivity.ForwardAttachmentIntent (Activity, attachment.Id);
+                var intent = MessageComposeActivity.ForwardAttachmentIntent (Activity, attachment.AccountId, attachment.Id);
                 StartActivity (intent);
                 break;
             default:

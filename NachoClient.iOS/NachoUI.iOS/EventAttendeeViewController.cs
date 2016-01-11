@@ -680,10 +680,10 @@ namespace NachoClient.iOS
 
         private void ComposeMessage (string address)
         {
-            var account = McAccount.EmailAccountForAccount (account);
-            var message = McEmailMessage.MessageWithSubject (account, "");
+            var emailAccount = McAccount.EmailAccountForAccount (account);
+            var message = McEmailMessage.MessageWithSubject (emailAccount, "");
             message.To = address;
-            var composeViewController = new MessageComposeViewController (account);
+            var composeViewController = new MessageComposeViewController (emailAccount);
             composeViewController.Composer.Message = message;
             composeViewController.Present ();
         }

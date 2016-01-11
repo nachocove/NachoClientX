@@ -1007,6 +1007,11 @@ namespace NachoCore.Model
         // Filled on demand
         List<McEmailMessageThread> thread;
 
+        public McEmailMessage FirstMessage ()
+        { 
+            return McEmailMessage.QueryById<McEmailMessage> (FirstMessageId);
+        }
+
         public McEmailMessage FirstMessageSpecialCase ()
         { 
             return McEmailMessage.QueryById<McEmailMessage> (FirstMessageId);

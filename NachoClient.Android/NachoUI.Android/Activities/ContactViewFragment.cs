@@ -300,7 +300,7 @@ namespace NachoClient.AndroidClient
 
         void ContactViewAdapter_OnSendMessage (object sender, string emailAddress)
         {
-            Util.SendEmail (Activity, contact, emailAddress);
+            Util.SendEmail (Activity, contact.AccountId, contact, emailAddress);
         }
 
         void ContactViewAdapter_OnDialNumber (object sender, string phoneNumber)
@@ -310,7 +310,7 @@ namespace NachoClient.AndroidClient
 
         void EmailButton_Click (object sender, EventArgs e)
         {
-            Util.SendEmail (Activity, contact, null);
+            Util.SendEmail (Activity, contact.AccountId, contact, null);
         }
 
         void CallButton_Click (object sender, EventArgs e)

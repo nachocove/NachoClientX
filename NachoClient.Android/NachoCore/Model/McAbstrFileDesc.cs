@@ -13,6 +13,8 @@ namespace NachoCore.Model
     {
         public int Id { set; get; }
 
+        public int AccountId { set; get; }
+
         public string DisplayName { set; get; }
 
         public int FileType { set; get; }
@@ -310,20 +312,20 @@ namespace NachoCore.Model
         public static List<NcFileIndex> GetAllFiles (int accountId)
         {
             return (NcModel.Instance.Db.Query<NcFileIndex> (
-                "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType, t1.Contact " +
-                "FROM(SELECT a.Id, a.DisplayName, e.DateReceived AS CreatedAt, 0 AS FileType, e.[From] AS Contact " +
+                "SELECT t1.Id, t1.AccountId, t1.DisplayName, t1.CreatedAt, t1.FileType, t1.Contact " +
+                "FROM(SELECT a.Id, a.AccountId, a.DisplayName, e.DateReceived AS CreatedAt, 0 AS FileType, e.[From] AS Contact " +
                 "FROM McAttachment a, McEmailMessage e, McMapAttachmentItem m " +
                 "WHERE m.ItemId=e.Id AND m.AttachmentId=a.Id AND a.AccountId=? AND a.IsInline = 0 AND m.ClassCode = ?" +
                 "UNION " +
-                "SELECT a.Id, a.DisplayName, c.CreatedAt AS CreatedAt, 0 AS FileType, c.OrganizerName AS Contact " +
+                "SELECT a.Id, a.AccountId, a.DisplayName, c.CreatedAt AS CreatedAt, 0 AS FileType, c.OrganizerName AS Contact " +
                 "FROM McAttachment a, McCalendar c, McMapAttachmentItem m " +
                 "WHERE m.ItemId=c.Id AND m.AttachmentId=a.Id AND a.AccountId=? AND a.IsInline = 0 AND m.ClassCode = ? " +
                 "UNION " +
-                "SELECT Id, DisplayName, CreatedAt, 1 AS FileType, 'Me' AS Contact " +
+                "SELECT Id, AccountId, DisplayName, CreatedAt, 1 AS FileType, 'Me' AS Contact " +
                 "FROM McNote " +
                 "WHERE AccountId = ? " +
                 "UNION " +
-                "SELECT Id, DisplayName, CreatedAt, 2 AS FileType, 'Me' AS Contact " +
+                "SELECT Id, AccountId, DisplayName, CreatedAt, 2 AS FileType, 'Me' AS Contact " +
                 "FROM McDocument " +
                 "WHERE AccountId=?) " +
                 "t1 WHERE t1.DisplayName NOT LIKE 'ATT00%' ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)",

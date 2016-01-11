@@ -21,6 +21,7 @@ namespace NachoClient.AndroidClient
         public int MessageId;
         public bool MessageSaved;
         public List<Action> MessageSavedEvents = new List<Action> ();
+
         public void FireEvent ()
         {
             foreach (var action in MessageSavedEvents) {
@@ -34,6 +35,7 @@ namespace NachoClient.AndroidClient
     public class MessageComposeActivity : NcActivityWithData<MessageComposeActivityData>
     {
         public const string EXTRA_ACTION = "com.nachocove.nachomail.action";
+        public const string EXTRA_ACCOUNT_ID = "com.nachocove.nachomail.accountId";
         public const string EXTRA_RELATED_MESSAGE_ID = "com.nachocove.nachomail.relatedMessageId";
         public const string EXTRA_RELATED_CALENDAR_ID = "com.nachocove.nachomail.relatedCalendarId";
         public const string EXTRA_MESSAGE = "com.nachocove.nachomail.message";
@@ -59,7 +61,9 @@ namespace NachoClient.AndroidClient
                 composeFragment = FragmentManager.FindFragmentByTag<ComposeFragment> (COMPOSE_FRAGMENT_TAG);
             }
             if (null == composeFragment) {
-                composeFragment = new ComposeFragment ();
+                NcAssert.True (Intent.HasExtra (EXTRA_ACCOUNT_ID));
+                var account = McAccount.QueryById<McAccount> (Intent.GetIntExtra (EXTRA_ACCOUNT_ID, 0));
+                composeFragment = new ComposeFragment (account);
                 FragmentManager.BeginTransaction ().Replace (Resource.Id.content, composeFragment, COMPOSE_FRAGMENT_TAG).Commit ();
             }
 
@@ -87,7 +91,7 @@ namespace NachoClient.AndroidClient
                     relatedThread.MessageCount = 1;
                     composeFragment.Composer.RelatedThread = relatedThread;
                 }
-                if (Intent.HasExtra(EXTRA_MESSAGE)) {
+                if (Intent.HasExtra (EXTRA_MESSAGE)) {
                     var message = IntentHelper.RetrieveValue<McEmailMessage> (Intent.GetStringExtra (EXTRA_MESSAGE));
                     composeFragment.Composer.Message = message;
                 }
@@ -136,30 +140,33 @@ namespace NachoClient.AndroidClient
             });
         }
 
-        public static Intent NewMessageIntent (Context context, string recipient = null)
+        public static Intent NewMessageIntent (Context context, int accountId, string recipient = null)
         {
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             if (!String.IsNullOrEmpty (recipient)) {
                 intent.PutExtra (EXTRA_INITIAL_RECIPIENT, recipient);
             }
+            intent.PutExtra (EXTRA_ACCOUNT_ID, accountId);
             return intent;
         }
 
-        public static Intent ForwardAttachmentIntent (Context context, int attachmentId)
+        public static Intent ForwardAttachmentIntent (Context context, int accountId, int attachmentId)
         {
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_INITIAL_ATTACHMENT, attachmentId);
+            intent.PutExtra (EXTRA_ACCOUNT_ID, accountId);
             return intent;
         }
 
-        public static Intent RespondIntent (Context context, EmailHelper.Action action, int relatedMessageId, bool quickReply = false)
+        public static Intent RespondIntent (Context context, EmailHelper.Action action, McEmailMessage relatedMessage, bool quickReply = false)
         {
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_ACTION, (int)action);
-            intent.PutExtra (EXTRA_RELATED_MESSAGE_ID, relatedMessageId);
+            intent.PutExtra (EXTRA_RELATED_MESSAGE_ID, relatedMessage.Id);
+            intent.PutExtra (EXTRA_ACCOUNT_ID, relatedMessage.AccountId);
             intent.PutExtra (EXTRA_INITIAL_QUICK_REPLY, quickReply);
             return intent;
         }
@@ -169,6 +176,7 @@ namespace NachoClient.AndroidClient
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
+            intent.PutExtra (EXTRA_ACCOUNT_ID, message.Id);
             intent.PutExtra (EXTRA_INITIAL_TEXT, text);
             return intent;
         }
@@ -178,6 +186,7 @@ namespace NachoClient.AndroidClient
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
+            intent.PutExtra (EXTRA_ACCOUNT_ID, message.AccountId);
             intent.PutExtra (EXTRA_INITIAL_TEXT, text);
             int[] attachmentIds = new int[attachments.Count];
             int a = 0;
@@ -195,6 +204,7 @@ namespace NachoClient.AndroidClient
             intent.PutExtra (EXTRA_ACTION, (int)EmailHelper.Action.Forward);
             intent.PutExtra (EXTRA_RELATED_CALENDAR_ID, calendarId);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
+            intent.PutExtra (EXTRA_ACCOUNT_ID, message.AccountId);
             return intent;
         }
 
@@ -203,6 +213,7 @@ namespace NachoClient.AndroidClient
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
+            intent.PutExtra (EXTRA_ACCOUNT_ID, message.AccountId);
             return intent;
         }
 

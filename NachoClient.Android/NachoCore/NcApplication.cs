@@ -202,8 +202,20 @@ namespace NachoCore
                 if (Account == null) {
                     return null;
                 }
-                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability(McAccount.AccountCapabilityEnum.EmailSender)) {
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender)) {
                     return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                }
+                return Account;
+            }
+        }
+
+        public McAccount DefaultContactAccount {
+            get {
+                if (Account == null) {
+                    return null;
+                }
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability (McAccount.AccountCapabilityEnum.ContactWriter)) {
+                    return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.ContactWriter);
                 }
                 return Account;
             }
@@ -214,10 +226,20 @@ namespace NachoCore
                 if (Account == null) {
                     return null;
                 }
-                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability(McAccount.AccountCapabilityEnum.CalWriter)) {
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                     return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
                 }
                 return Account;
+            }
+        }
+
+        public McAccount EffectiveEmailAccount {
+            get {
+                if ((null != Account) && (McAccount.AccountTypeEnum.Unified != Account.AccountType)) {
+                    return Account;
+                } else {
+                    return DefaultEmailAccount;
+                }
             }
         }
 
@@ -685,7 +707,7 @@ namespace NachoCore
             }
             serviceHasBeenEstablished = true;
 
-            var deviceAccount = McAccount.GetDeviceAccount();
+            var deviceAccount = McAccount.GetDeviceAccount ();
 
             // Create file directories.
             NcModel.Instance.InitializeDirs (deviceAccount.Id);

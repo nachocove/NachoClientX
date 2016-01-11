@@ -26,7 +26,7 @@ namespace NachoClient.AndroidClient
             base.OnCreate (bundle, Resource.Layout.FileListActivity);
 
             if (null == bundle || null == FragmentManager.FindFragmentByTag<FileListFragment> (FILE_LIST_FRAGMENT_TAG)) {
-                var fileListFragment = FileListFragment.newInstance ();
+                var fileListFragment = FileListFragment.newInstance (NcApplication.Instance.Account.Id);
                 FragmentManager.BeginTransaction ().Replace (Resource.Id.content, fileListFragment, FILE_LIST_FRAGMENT_TAG).Commit ();
             }
         }
