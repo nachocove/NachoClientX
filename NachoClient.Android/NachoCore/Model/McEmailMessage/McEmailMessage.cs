@@ -489,8 +489,11 @@ namespace NachoCore.Model
 
         public static string SingleAccountString (string formatString, int accountId)
         {
-            // FIXME: Return empty string for unified
-            return String.Format (formatString, accountId);
+            if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                return String.Empty;
+            } else {
+                return String.Format (formatString, accountId);
+            }
         }
 
         public static List<McEmailMessageThread> QueryInteractions (int accountId, McContact contact)
@@ -896,9 +899,8 @@ namespace NachoCore.Model
 
         public static List<McEmailMessage> QueryUnnotified (int accountId = 0)
         {
-            // FIXME unified account
             var emailMessageList = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => false == x.HasBeenNotified);
-            if (0 != accountId) {
+            if ((0 != accountId) && (McAccount.GetUnifiedAccount().Id != accountId)) {
                 emailMessageList = emailMessageList.Where (x => x.AccountId == accountId);
             }
             return emailMessageList.ToList ();
