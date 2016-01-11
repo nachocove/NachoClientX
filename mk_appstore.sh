@@ -57,6 +57,8 @@ if [ ${PIPESTATUS[0]} -eq 0 ]
 then
     (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/AppStore) || die "Failed to upload ipa"
 
+	$(XBUILD) "/p:Configuration=Release" "NachoClient.Android/NachoClient.Android.csproj" "/t:SignAndroidPackage"
+
     (cd NachoClient.Android; 
         ../scripts/android_sign.py sign --release $release --keystore-path=$HOME/.ssh ./bin/Release/$EXPECTED_APK ./bin/Release/$RESIGNED_APK || die "Failed to re-sign apk";
         mv ./bin/Release/$RESIGNED_APK ./bin/Release/$EXPECTED_APK || die "Failed to move apk";
