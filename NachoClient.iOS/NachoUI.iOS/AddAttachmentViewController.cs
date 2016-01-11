@@ -55,7 +55,7 @@ namespace NachoClient.iOS
             void ShowBrowseAttachments ()
             {
                 var fileListViewController = storyboard.InstantiateViewController ("FileListViewController") as FileListViewController;
-                fileListViewController.SetOwner (owner);
+                fileListViewController.SetOwner (owner, account);
                 fileListViewController.SetModal (true);
                 owner.PresentFileChooserViewController (fileListViewController);
             }
@@ -252,7 +252,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("AddAttachmentToAttachments")) {
                 var dc = (FileListViewController)segue.DestinationViewController;
-                dc.SetOwner (owner);
+                dc.SetOwner (owner, account);
                 dc.SetModal (true);
                 return;
             }
