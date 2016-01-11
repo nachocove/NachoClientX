@@ -140,6 +140,9 @@ namespace NachoCore.Model
             case AccountTypeEnum.IMAP_SMTP:
                 AccountCapability = (ImapCapabilities | SmtpCapabilities);
                 break;
+            case AccountTypeEnum.Unified:
+                AccountCapability = ActiveSyncCapabilities;
+                break;
             default:
                 NcAssert.CaseError (value.ToString ());
                 break;
@@ -339,6 +342,24 @@ namespace NachoCore.Model
         }
         // Cache it!
         static McAccount _deviceAccount;
+
+        // Create on first reference
+        public static McAccount GetUnifiedAccount ()
+        {
+            if (null == _unifiedAccount) {
+                NcModel.Instance.RunInTransaction (() => {
+                    _unifiedAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Unified).SingleOrDefault ();
+                    if (null == _unifiedAccount) {
+                        _unifiedAccount = new McAccount ();
+                        _unifiedAccount.DisplayName = "All Accounts";
+                        _unifiedAccount.SetAccountType (McAccount.AccountTypeEnum.Unified);
+                        _unifiedAccount.Insert ();
+                    }
+                });
+            }
+            return _unifiedAccount;
+        }
+        static McAccount _unifiedAccount;
 
         public static McAccount GetDefaultAccount (AccountCapabilityEnum capability)
         {

@@ -302,6 +302,10 @@ namespace NachoCore
                 services.Enqueue (new SmtpProtoControl (this, accountId));
                 break;
 
+            case McAccount.AccountTypeEnum.Unified:
+                // TODO: what should happen here?
+                break;
+
             default:
                 NcAssert.True (false);
                 break;
