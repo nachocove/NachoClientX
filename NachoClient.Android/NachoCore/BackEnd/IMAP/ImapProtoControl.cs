@@ -433,13 +433,13 @@ namespace NachoCore.IMAP
                             (uint)SmEvt.E.HardFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.ReFSync,
-                            (uint)ImapEvt.E.Wait,
                             (uint)ImapEvt.E.GetServConf,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoNop, State = (uint)Lst.Parked },
                         }
                     }
                 }
@@ -569,6 +569,9 @@ namespace NachoCore.IMAP
             ExecuteCmd ();
         }
 
+        /// <summary>
+        /// Number of consecutive Discovery retries.
+        /// </summary>
         private int DiscoveryRetries = 0;
 
         private void DoDiscTempFail ()
