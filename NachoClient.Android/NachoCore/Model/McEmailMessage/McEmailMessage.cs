@@ -1022,7 +1022,6 @@ namespace NachoCore.Model
 
                 return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
                     query, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
->>>>>>> master
                     min, max, folderId, limit);
             }
         }
