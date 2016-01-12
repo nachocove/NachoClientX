@@ -23,11 +23,13 @@ namespace NachoClient.AndroidClient
     {
         public event EventHandler<McFolder> OnFolderSelected;
 
+        int accountId;
         FolderListAdapter folderListAdapter;
 
-        public static FolderListFragment newInstance ()
+        public static FolderListFragment newInstance (int accountId)
         {
             var fragment = new FolderListFragment ();
+            fragment.accountId = accountId;
             return fragment;
         }
 
@@ -46,7 +48,7 @@ namespace NachoClient.AndroidClient
             var SwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
             SwipeRefreshLayout.Enabled = false;
 
-            folderListAdapter = new FolderListAdapter (NcApplication.Instance.Account, hideFakeFolders: false);
+            folderListAdapter = new FolderListAdapter (accountId, hideFakeFolders: false);
             var layoutManager = new LinearLayoutManager (Activity);
 
             var recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
@@ -80,10 +82,10 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public void SwitchAccount ()
+        public void SwitchAccount (McAccount account)
         {
             if (null != folderListAdapter) {
-                folderListAdapter.SwitchAccount (NcApplication.Instance.Account);
+                folderListAdapter.SwitchAccount (account);
             }
         }
     }
@@ -124,16 +126,16 @@ namespace NachoClient.AndroidClient
         bool hideFakeFolders;
         FolderLists folderLists;
 
-        public FolderListAdapter (McAccount account, bool hideFakeFolders)
+        public FolderListAdapter (int accountId, bool hideFakeFolders)
         {
             HasStableIds = true;
             this.hideFakeFolders = hideFakeFolders;
-            folderLists = new FolderLists (account, hideFakeFolders);
+            folderLists = new FolderLists (accountId, hideFakeFolders);
         }
 
         public void SwitchAccount (McAccount account)
         {
-            folderLists = new FolderLists (account, hideFakeFolders);
+            folderLists = new FolderLists (account.Id, hideFakeFolders);
             NotifyDataSetChanged ();
         }
 

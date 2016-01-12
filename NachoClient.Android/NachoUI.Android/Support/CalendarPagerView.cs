@@ -20,8 +20,8 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    public delegate void CalendarDateSelected (DateTime date);
-    public delegate bool CalendarHasEvents (DateTime date);
+    public delegate void CalendarDateActionDelegate (DateTime date);
+    public delegate bool CalendarDateCheckDelegate (DateTime date);
 
     public class CalendarPagerView : ViewGroup, GestureDetector.IOnGestureListener
     {
@@ -30,8 +30,9 @@ namespace NachoClient.AndroidClient
         List<PageView> PageViews;
         TextView MonthLabelA;
         TextView MonthLabelB;
-        public CalendarDateSelected DateSelected;
-        public CalendarHasEvents HasEvents;
+        public CalendarDateActionDelegate DateSelected;
+        public CalendarDateCheckDelegate HasEvents;
+        public CalendarDateCheckDelegate IsSupportedDate;
         Calendar Calendar;
         DateTime FocusDate;
         DateTime HighlightedDate;
@@ -100,7 +101,14 @@ namespace NachoClient.AndroidClient
         int BufferedPageCount = 1;
         float PageTransitionProgress;
         int FirstDayOfWeek = 0;
-        bool IsScrollingHorizontally;
+        enum PagerScrollDirection {
+            None,
+            Horizontal,
+            Vertical
+        };
+        PagerScrollDirection ScrollDirection;
+        int FlingY = 0;
+        float LastY = 0.0f;
         bool IsPaging;
         enum PagerDisplayMode {
             Weeks,
@@ -220,11 +228,12 @@ namespace NachoClient.AndroidClient
 
         public override bool OnInterceptTouchEvent (MotionEvent ev)
         {
-            if (IsScrollingHorizontally) {
+            if (ScrollDirection != PagerScrollDirection.None) {
                 // If we're scrolling, we want all the events so nothing gets to child click listeners
                 return true;
             }
             if (ev.Action == MotionEventActions.Down) {
+                LastY = ev.GetY ();
                 // If it's a down event (and we're not scrolling), our GestureDetector needs to know about it,
                 // but we need to let the event reach child click listeners because a down starts a click.
                 // Since a child view may or may not handle the event, we may or may not get an OnTouchEvent call.
@@ -237,23 +246,46 @@ namespace NachoClient.AndroidClient
                 // because the click happens on up after a down.
                 return false;
             }
+            if (ev.Action == MotionEventActions.Move && ScrollDirection == PagerScrollDirection.None) {
+                GestureDetector.OnTouchEvent (ev);
+                return ScrollDirection != PagerScrollDirection.None;
+            }
             // If it's some other event like a move, we'll take it becaue no children care about these other events.
             return true;
         }
 
         public override bool OnTouchEvent (MotionEvent e)
         {
-            if (IsScrollingHorizontally && e.Action == MotionEventActions.Up) {
-                // If we're scrolling and there's an up, the scroll is finished and we need to snap to a page boundary
-                IsScrollingHorizontally = false;
-                if (PageTransitionProgress < 0.0f) {
-                    PageFocusDateNext ();
-                    PageViewsNext ();
-                } else if (PageTransitionProgress > 0.0f) {
-                    PageFocusDatePrevious ();
-                    PageViewsPrevious ();
+            if (e.Action == MotionEventActions.Up) {
+                if (ScrollDirection == PagerScrollDirection.Horizontal) {
+                    // If we're scrolling and there's an up, the scroll is finished and we need to snap to a page boundary
+                    ScrollDirection = PagerScrollDirection.None;
+                    if (PageTransitionProgress < 0.0f) {
+                        PageFocusDateNext ();
+                        PageViewsNext ();
+                    } else if (PageTransitionProgress > 0.0f) {
+                        PageFocusDatePrevious ();
+                        PageViewsPrevious ();
+                    }
+                    return true;
+                } else if (ScrollDirection == PagerScrollDirection.Vertical) {
+                    ScrollDirection = PagerScrollDirection.None;
+                    if (FlingY < 0 && DisplayMode == PagerDisplayMode.Months) {
+                        // TODO: animate to weeks
+                        Weeks = 1;
+                        ConfigurePageViews ();
+                        RequestLayout ();
+                        FlingY = 0;
+                        return true;
+                    } else if (FlingY > 0 && DisplayMode == PagerDisplayMode.Weeks) {
+                        // TODO: animate to months
+                        Weeks = 0;
+                        ConfigurePageViews ();
+                        RequestLayout ();
+                        FlingY = 0;
+                        return true;
+                    }
                 }
-                return true;
             }
             if (e.Action == MotionEventActions.Down) {
                 // If there's a down event, we've already told our GestureDetector about it in OnInterceptTouchEvent,
@@ -276,8 +308,8 @@ namespace NachoClient.AndroidClient
             var totalDistanceY = e2.GetY () - e1.GetY ();
             var absX = Math.Abs (totalDistanceX);
             var absY = Math.Abs (totalDistanceY);
-            if (IsScrollingHorizontally || absX >= absY) {
-                IsScrollingHorizontally = true;
+            if (ScrollDirection == PagerScrollDirection.Horizontal || (absX >= absY && absX > (float)Width / 21.0f)) {
+                ScrollDirection = PagerScrollDirection.Horizontal;
                 var newProgress = totalDistanceX / (float)Width;
                 if (newProgress > 0.0f && PageTransitionProgress <= 0.0f) {
                     UpdateMonthLabels (-1);
@@ -287,30 +319,23 @@ namespace NachoClient.AndroidClient
                 PageTransitionProgress = newProgress;
                 RequestLayout ();
                 return true;
-            } else {
-                return false;
             }
+            if (ScrollDirection == PagerScrollDirection.Vertical || (absY > absX && absY > (float)Width / 21.0f)) {
+                ScrollDirection = PagerScrollDirection.Vertical;
+                var delta = e2.GetY () - LastY;
+                if (delta > 0) {
+                    FlingY = 1;
+                } else if (delta < 0) {
+                    FlingY = -1;
+                }
+                LastY = e2.GetY ();
+                return true;
+            }
+            return false;
         }
 
         public bool OnFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
         {
-            if (IsScrollingHorizontally) {
-                return false;
-            } else {
-                if (velocityY < 0.0f && DisplayMode == PagerDisplayMode.Months) {
-                    // TODO: animate to weeks
-                    Weeks = 1;
-                    ConfigurePageViews ();
-                    RequestLayout ();
-                    return true;
-                } else if (velocityY > 0.0f && DisplayMode == PagerDisplayMode.Weeks) {
-                    // TODO: animate to months
-                    Weeks = 0;
-                    ConfigurePageViews ();
-                    RequestLayout ();
-                    return true;
-                }
-            }
             return false;
         }
 
@@ -561,9 +586,11 @@ namespace NachoClient.AndroidClient
 
         public void DateClicked (DateTime date)
         {
-            SetHighlightedDate (date);
-            if (DateSelected != null) {
-                DateSelected (date);
+            if (null != IsSupportedDate && IsSupportedDate (date)) {
+                SetHighlightedDate (date);
+                if (DateSelected != null) {
+                    DateSelected (date);
+                }
             }
         }
 

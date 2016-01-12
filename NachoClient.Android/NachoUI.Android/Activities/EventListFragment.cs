@@ -110,6 +110,7 @@ namespace NachoClient.AndroidClient
             calendarPager = view.FindViewById<CalendarPagerView> (Resource.Id.calendar_pager);
             calendarPager.DateSelected = PagerSelectedDate;
             calendarPager.HasEvents = PagerHasEvents;
+            calendarPager.IsSupportedDate = PagerIsSupportedDate;
 
             // Highlight the tab bar icon of this activity
             var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.calendar_image);
@@ -258,18 +259,25 @@ namespace NachoClient.AndroidClient
             }
             // The duration parameter for SmoothScrollToPositionFromTop is a lower bound, not a hard value.
             // If there is a long way to scroll, jump most of the way there and then scroll the rest of the way.
-            int existingPosition = listView.FirstVisiblePosition;
-            if (existingPosition + MAX_SCROLL < position) {
-                listView.SetSelection (position - MAX_SCROLL);
-            } else if (existingPosition - MAX_SCROLL > position) {
-                listView.SetSelection (position + MAX_SCROLL);
-            }
-            listView.SmoothScrollToPositionFromTop (position, offset: 0, duration: 200);
+            listView.Post (() => {
+                int existingPosition = listView.FirstVisiblePosition;
+                if (existingPosition + MAX_SCROLL < position) {
+                    listView.SetSelection (position - MAX_SCROLL);
+                } else if (existingPosition - MAX_SCROLL > position) {
+                    listView.SetSelection (position + MAX_SCROLL);
+                }
+                listView.SmoothScrollToPositionFromTop (position, offset: 0, duration: 200);
+            });
         }
 
         bool PagerHasEvents (DateTime date)
         {
             return eventListAdapter.HasEvents (date);
+        }
+
+        bool PagerIsSupportedDate (DateTime date)
+        {
+            return eventListAdapter.IsSupportedDate (date);
         }
 
         void TodayButton_Click (object sender, EventArgs e)
@@ -482,7 +490,10 @@ namespace NachoClient.AndroidClient
         public int PositionForDate (DateTime date)
         {
             var day = eventCalendarMap.IndexOfDate (date);
-            return eventCalendarMap.IndexFromDayItem (day, -1);
+            if (0 <= day) {
+                return eventCalendarMap.IndexFromDayItem (day, -1);
+            }
+            return -1;
         }
 
         public DateTime DateForPosition (int position)
@@ -497,12 +508,17 @@ namespace NachoClient.AndroidClient
         {
             if ((date.Month >= DateTime.UtcNow.Month && date.Year == DateTime.UtcNow.Year) || date.Year > DateTime.UtcNow.Year) {
                 var index = eventCalendarMap.IndexOfDate (date);
-                if ((eventCalendarMap.NumberOfDays () - 1) >= index) {
+                if (0 <= index) {
                     return eventCalendarMap.NumberOfItemsForDay (index) > 0;
                 }
                 return false;
             }
             return false;
+        }
+
+        public bool IsSupportedDate (DateTime date)
+        {
+            return 0 <= eventCalendarMap.IndexOfDate (date);
         }
 
         private class AndroidEventsCalendarMap : NcEventsCalendarMapCommon

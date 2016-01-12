@@ -1477,8 +1477,9 @@ namespace NachoClient.iOS
         private void ComposeMessage (NSUrl url)
         {
             string body;
-            var composeViewController = new MessageComposeViewController ();
-            composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (NcApplication.Instance.Account, url.AbsoluteString, out body);
+            var account = McAccount.EmailAccountForEvent (e);
+            var composeViewController = new MessageComposeViewController (account);
+            composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
             composeViewController.Composer.InitialText = body;
             composeViewController.Present ();
         }

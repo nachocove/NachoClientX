@@ -665,7 +665,7 @@ namespace NachoCore.Utils
                             }
                         }
                         if (!excluded) {
-                            addressList.Add (new NcEmailAddress (kind, address.ToString()));
+                            addressList.Add (new NcEmailAddress (kind, address.ToString ()));
                         }
                     }
                 }
@@ -812,23 +812,21 @@ namespace NachoCore.Utils
 
         public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount)
         {
-            var inboxFolder = NcEmailManager.InboxFolder (account.Id);
             unreadMessageCount = 0;
-            if (null != inboxFolder) {
-                unreadMessageCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
-            }
             deadlineMessageCount = 0;
-            if (null != inboxFolder) {
-                deadlineMessageCount = McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
-            }
             deferredMessageCount = 0;
-            if (null != inboxFolder) {
-                deferredMessageCount = new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
-            }
             likelyMessageCount = 0;
-            if (null != inboxFolder) {
-                // FIXME
-                likelyMessageCount = new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
+
+            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+                if (account.ContainsAccount (accountId)) {
+                    var inboxFolder = NcEmailManager.InboxFolder (accountId);
+                    if (null != inboxFolder) {
+                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+                        deadlineMessageCount += McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
+                        deferredMessageCount += new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
+                        likelyMessageCount += new NachoLikelyToReadEmailMessages (inboxFolder).Count ();
+                    }
+                }
             }
         }
 

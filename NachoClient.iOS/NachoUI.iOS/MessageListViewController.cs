@@ -81,8 +81,8 @@ namespace NachoClient.iOS
             messageSource = new MessageTableViewSource (this);
             searcher = new SearchHelper ("MessageListViewController", (searchString) => {
                 if (String.IsNullOrEmpty (searchString)) {
+                    searchResultsMessages.ClearServerMatches ();
                     searchResultsMessages.UpdateMatches (null);
-                    searchResultsMessages.UpdateServerMatches (null);
                     return; 
                 }
                 // On-device index
@@ -107,11 +107,11 @@ namespace NachoClient.iOS
                 DumpMatches ("cooked", curVersion, searchString, matches);
 
                 if (curVersion == searcher.Version) {
+                    searchResultsMessages.UpdateMatches (matches);
+                    List<int> adds;
+                    List<int> deletes;
+                    searchResultsSource.RefreshEmailMessages (out adds, out deletes);
                     InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResultsMessages.UpdateMatches (matches);
-                        List<int> adds;
-                        List<int> deletes;
-                        searchResultsSource.RefreshEmailMessages (out adds, out deletes);
                         if (null != searchDisplayController.SearchResultsTableView) {
                             searchDisplayController.SearchResultsTableView.ReloadData ();
                         }
@@ -502,7 +502,7 @@ namespace NachoClient.iOS
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
                 var vc = (MessageListViewController)segue.DestinationViewController;
-                vc.SetEmailMessages (messageSource.GetNachoEmailMessages ().GetAdapterForThread (thread.GetThreadId ()));
+                vc.SetEmailMessages (messageSource.GetNachoEmailMessages ().GetAdapterForThread (thread));
                 return;
             }
             if (segue.Identifier == "NachoNowToMessagePriority") {
@@ -536,7 +536,7 @@ namespace NachoClient.iOS
         {
             PerformSegue (identifier, sender);
         }
-   
+
         ///  IMessageTableViewSourceDelegate
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
@@ -663,19 +663,14 @@ namespace NachoClient.iOS
 
         protected void Search (UISearchBar searchBar)
         {
-            if (String.IsNullOrEmpty (searchBar.Text)) {
-                searchResultsMessages.UpdateServerMatches (null);
-            } else {
-                // Ask the server
-                KickoffSearchApi (0, searchBar.Text);
-            }
             searcher.Search (searchBar.Text);
+            KickoffSearchApi (0, searchBar.Text);
         }
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
             if (String.IsNullOrEmpty (forSearchString) || (4 > forSearchString.Length)) {
-                searchResultsMessages.UpdateServerMatches (null);
+                searchResultsMessages.ClearServerMatches ();
                 return;
             }
             if (String.IsNullOrEmpty (searchToken)) {
@@ -687,21 +682,26 @@ namespace NachoClient.iOS
 
         protected void UpdateSearchResultsFromServer (List<NcEmailMessageIndex> indexList)
         {
-            var threadList = new List<McEmailMessageThread> ();
-            foreach (var i in indexList) {
-                var thread = new McEmailMessageThread ();
-                thread.FirstMessageId = i.Id;
-                thread.MessageCount = 1;
-                threadList.Add (thread);
-            }
-            DumpMatches ("svr", 0, "", threadList);
-            searchResultsMessages.UpdateServerMatches (threadList);
-            List<int> adds;
-            List<int> deletes;
-            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
-            if (null != searchDisplayController.SearchResultsTableView) {
-                searchDisplayController.SearchResultsTableView.ReloadData ();
-            }
+            NcTask.Run (delegate {
+                var threadList = new List<McEmailMessageThread> ();
+                foreach (var i in indexList) {
+                    var thread = new McEmailMessageThread ();
+                    thread.FirstMessageId = i.Id;
+                    thread.MessageCount = 1;
+                    threadList.Add (thread);
+                }
+                DumpMatches ("svr", 0, "", threadList);
+                searchResultsMessages.UpdateServerMatches (threadList);
+                List<int> adds;
+                List<int> deletes;
+                searchResultsSource.RefreshEmailMessages (out adds, out deletes);
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    if (null != searchDisplayController.SearchResultsTableView) {
+                        searchDisplayController.SearchResultsTableView.ReloadData ();
+                    }
+                });
+
+            }, "UpdateSearchResultsFromServer");
         }
 
         // After status ind
@@ -752,13 +752,14 @@ namespace NachoClient.iOS
 
         void ComposeMessage ()
         {
-            var composeViewController = new MessageComposeViewController ();
+            var composeViewController = new MessageComposeViewController (NcApplication.Instance.DefaultEmailAccount);
             composeViewController.Present ();
         }
 
         void ComposeDraft (McEmailMessage draft)
         {
-            var composeViewController = new MessageComposeViewController ();
+            var account = McAccount.EmailAccountForMessage (draft);
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.Message = draft;
             composeViewController.Present ();
         }
@@ -770,7 +771,9 @@ namespace NachoClient.iOS
 
         private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
         {
-            var composeViewController = new MessageComposeViewController ();
+            var message = thread.FirstMessageSpecialCase ();
+            var account = McAccount.EmailAccountForMessage (message);
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.Kind = action;
             composeViewController.Composer.RelatedThread = thread;
             composeViewController.Present ();
