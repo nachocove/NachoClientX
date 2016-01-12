@@ -54,6 +54,15 @@ namespace NachoCore
 
         public int IndexOfDate (DateTime date)
         {
+            if (firstDay <= date && date < finalDay) {
+                return UnsafeIndexOfDate (date);
+            } else {
+                return -1;
+            }
+        }
+
+        private int UnsafeIndexOfDate (DateTime date)
+        {
             return (date.ToLocalTime () - firstDay).Days;
         }
 
@@ -73,7 +82,7 @@ namespace NachoCore
                 NcEventManager.AddEventWindow (this, untilDate.ToUniversalTime ());
             }
 
-            int numDays = IndexOfDate (untilDate);
+            int numDays = UnsafeIndexOfDate (untilDate);
             int numNewDays = numDays - NumberOfDays ();
 
             int[] newDays = new int[numDays + 1];
@@ -89,7 +98,7 @@ namespace NachoCore
                     break;
                 }
                 if (firstDay <= start) {
-                    for (int day = IndexOfDate (start); 0 <= day && int.MaxValue == newDays [day]; --day) {
+                    for (int day = UnsafeIndexOfDate (start); 0 <= day && int.MaxValue == newDays [day]; --day) {
                         newDays [day] = e;
                     }
                 }
@@ -163,14 +172,16 @@ namespace NachoCore
         {
             date = date.ToLocalTime ();
             int day = IndexOfDate (date);
-            for (int i = days [day]; i < events.Count; ++i) {
-                if (date <= events [i].GetStartTimeLocal ()) {
-                    while (days [day + 1] <= i) {
-                        ++day;
+            if (0 <= day) {
+                for (int i = days [day]; i < events.Count; ++i) {
+                    if (date <= events [i].GetStartTimeLocal ()) {
+                        while (days [day + 1] <= i) {
+                            ++day;
+                        }
+                        section = day;
+                        item = i - days [day];
+                        return true;
                     }
-                    section = day;
-                    item = i - days [day];
-                    return true;
                 }
             }
             section = -1;
@@ -224,7 +235,7 @@ namespace NachoCore
                     // Make a copy of the end date, in case it changes while the events are being processed.
                     DateTime untilDate = finalDay;
 
-                    int numDays = IndexOfDate (untilDate);
+                    int numDays = UnsafeIndexOfDate (untilDate);
                     int[] newDays = new int[numDays + 1];
                     for (int day = 0; day < newDays.Length; ++day) {
                         newDays [day] = int.MaxValue;

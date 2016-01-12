@@ -26,7 +26,7 @@ namespace NachoCore
 
         NcResult StartSync ();
 
-        INachoEmailMessages GetAdapterForThread (string threadId);
+        INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread);
 
         bool HasOutboxSemantics ();
 

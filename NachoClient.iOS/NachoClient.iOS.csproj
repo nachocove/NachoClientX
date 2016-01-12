@@ -43,7 +43,6 @@
     <CodesignKey>iPhone Developer</CodesignKey>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
     <MtouchProfiling>true</MtouchProfiling>
-    <CodesignProvision>f7693f50-1b33-4711-8cff-07b6ae8d9d0a</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <Optimize>true</Optimize>
@@ -1731,6 +1730,15 @@
       <Link>NachoCore\Model\McBuildInfo.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\PushAssistiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedInbox.cs">
+      <Link>NachoCore\Adapters\NachoUnifiedInbox.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedHotList.cs">
+      <Link>NachoCore\Adapters\NachoUnifiedHotList.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedLikelyToRead.cs">
+      <Link>NachoCore\Adapters\NachoUnifiedLikelyToRead.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

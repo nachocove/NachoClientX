@@ -197,6 +197,52 @@ namespace NachoCore
 
         private McAccount _Account;
 
+        public McAccount DefaultEmailAccount {
+            get {
+                if (Account == null) {
+                    return null;
+                }
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender)) {
+                    return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                }
+                return Account;
+            }
+        }
+
+        public McAccount DefaultContactAccount {
+            get {
+                if (Account == null) {
+                    return null;
+                }
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability (McAccount.AccountCapabilityEnum.ContactWriter)) {
+                    return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.ContactWriter);
+                }
+                return Account;
+            }
+        }
+
+        public McAccount DefaultCalendarAccount {
+            get {
+                if (Account == null) {
+                    return null;
+                }
+                if (Account.AccountType == McAccount.AccountTypeEnum.Unified || !Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                    return McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                }
+                return Account;
+            }
+        }
+
+        public McAccount EffectiveEmailAccount {
+            get {
+                if ((null != Account) && (McAccount.AccountTypeEnum.Unified != Account.AccountType)) {
+                    return Account;
+                } else {
+                    return DefaultEmailAccount;
+                }
+            }
+        }
+
         public delegate void CredReqCallbackDele (int accountId);
 
         /// <summary>
@@ -661,7 +707,7 @@ namespace NachoCore
             }
             serviceHasBeenEstablished = true;
 
-            var deviceAccount = McAccount.GetDeviceAccount();
+            var deviceAccount = McAccount.GetDeviceAccount ();
 
             // Create file directories.
             NcModel.Instance.InitializeDirs (deviceAccount.Id);

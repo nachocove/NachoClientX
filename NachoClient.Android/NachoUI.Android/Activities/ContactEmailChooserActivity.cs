@@ -13,6 +13,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -29,7 +30,9 @@ namespace NachoClient.AndroidClient
             base.OnCreate (bundle);
             SetContentView (Resource.Layout.ContactEmailchooserActivity);
 
-            int accountId = Intent.GetIntExtra (EXTRA_ACCOUNT, NachoCore.NcApplication.Instance.Account.Id);
+            int accountId = Intent.GetIntExtra (EXTRA_ACCOUNT, 0);
+            NcAssert.True (0 != accountId);
+
             string initialSearch = "";
             if (Intent.HasExtra (EXTRA_SEARCH_STRING)) {
                 initialSearch = Intent.GetStringExtra (EXTRA_SEARCH_STRING);

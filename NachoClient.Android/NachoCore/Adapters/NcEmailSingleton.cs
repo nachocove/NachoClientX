@@ -99,12 +99,11 @@ namespace NachoClient.AndroidClient
             {
                 var s = (StatusIndEventArgs)e;
 
-                if (null == s.Account || null == NcApplication.Instance.Account || NcApplication.Instance.Account.Id != s.Account.Id) {
+                if (null == s.Account || null == NcApplication.Instance.Account || !NcApplication.Instance.Account.ContainsAccount(s.Account.Id)) {
                     return;
                 }
 
                 switch (s.Status.SubKind) {
-
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
                 case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
                     lastChangeStatusIndTime = DateTime.UtcNow;

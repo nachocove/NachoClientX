@@ -959,9 +959,10 @@ namespace NachoClient.iOS
         {
             var calendarInvite = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != calendarInvite) {
-                var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, calendarInvite.Subject);
+                var account = McAccount.EmailAccountForCalendar (calendarInvite);
+                var message = McEmailMessage.MessageWithSubject (account, calendarInvite.Subject);
                 message.To = calendarInvite.OrganizerEmail;
-                var composeViewController = new MessageComposeViewController ();
+                var composeViewController = new MessageComposeViewController (account);
                 composeViewController.Composer.InitialText = "Running late";
                 composeViewController.Composer.Message = message;
                 composeViewController.Present ();
@@ -973,9 +974,10 @@ namespace NachoClient.iOS
         {
             var calendarInvite = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != calendarInvite) {
-                var composeViewController = new MessageComposeViewController ();
+                var account = McAccount.EmailAccountForCalendar (calendarInvite);
+                var composeViewController = new MessageComposeViewController (account);
                 composeViewController.Composer.RelatedCalendarItem  = calendarInvite;
-                composeViewController.Composer.Message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + calendarInvite.Subject);
+                composeViewController.Composer.Message = McEmailMessage.MessageWithSubject (account, "Fwd: " + calendarInvite.Subject);
                 composeViewController.Present ();
             }
         }

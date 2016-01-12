@@ -94,20 +94,20 @@ namespace NachoClient.AndroidClient
 
         #endregion
 
-        public static int ColorResourceForEmail (string email)
+        public static int ColorResourceForEmail (int accountId, string email)
         {
             McEmailAddress address;
-            if (McEmailAddress.Get (NcApplication.Instance.Account.Id, email, out address)) {
+            if (McEmailAddress.Get (accountId, email, out address)) {
                 return Bind.ColorForUser (address.ColorIndex);
             } else {
                 return Resource.Drawable.UserColor0;
             }
         }
 
-        public static void SendEmail (Context context, McContact contact, string alternateEmailAddress)
+        public static void SendEmail (Context context, int accountId, McContact contact, string alternateEmailAddress)
         {
             if (null != alternateEmailAddress) {
-                var intent = MessageComposeActivity.NewMessageIntent (context, alternateEmailAddress);
+                var intent = MessageComposeActivity.NewMessageIntent (context, accountId, alternateEmailAddress);
                 context.StartActivity (intent);
                 return;
             }
@@ -120,7 +120,7 @@ namespace NachoClient.AndroidClient
                 NcAlertView.ShowMessage (context, "Contact has multiple addresses", "Please send an email address to use.");
                 return;
             }
-            context.StartActivity (MessageComposeActivity.NewMessageIntent (context, emailAddress));
+            context.StartActivity (MessageComposeActivity.NewMessageIntent (context, accountId, emailAddress));
         }
 
         public static void CallNumber (Context context, McContact contact, string alternatePhoneNumber)

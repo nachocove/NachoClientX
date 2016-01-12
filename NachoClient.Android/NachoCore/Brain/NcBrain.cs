@@ -64,7 +64,8 @@ namespace NachoCore.Brain
         private DateTime LastPeriodicGlean;
         private DateTime LastPeriodicGleanRestart;
 
-        private object LockObj;
+        private object ProcessLoopLockObj;
+        private object SyncRoot;
 
         private NcBrainNotification NotificationRateLimiter;
 
@@ -82,7 +83,8 @@ namespace NachoCore.Brain
             RootCounter.AutoReset = true;
             RootCounter.ReportPeriod = 5 * 60; // report once every 5 min
 
-            LockObj = new object ();
+            ProcessLoopLockObj = new object ();
+            SyncRoot = new object ();
 
             InitializeEventHandler ();
         }
@@ -111,47 +113,66 @@ namespace NachoCore.Brain
             return index;
         }
 
+        public bool IsRunning { get; protected set; }
+
         public static void StartService ()
         {
             // Set up the logging functions for IndexLib
             NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
-                var token = NcTask.Cts.Token;
-                token.Register (NcContactGleaner.Stop);
-                brain.EventQueue.Token = token;
-                NcContactGleaner.Start ();
+                lock (brain.SyncRoot) {
+                    var token = NcTask.Cts.Token;
+                    token.Register (NcContactGleaner.Stop);
+                    brain.EventQueue.Token = token;
+                    NcContactGleaner.Start ();
+                    brain.IsRunning = true;
+                }
                 brain.Process ();
             }, "Brain");
         }
 
         public static void StopService ()
         {
-            NcContactGleaner.Stop ();
-            NcBrain.SharedInstance.SignalTermination ();
+            lock (NcBrain.SharedInstance.SyncRoot) {
+                NcBrain.SharedInstance.IsRunning = false;
+                NcContactGleaner.Stop ();
+                NcBrain.SharedInstance.EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+            }
         }
 
         public void PauseService ()
         {
-            NcContactGleaner.Stop ();
-            var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
-            EventQueue.UndequeueIfNot (pause, (obj) => {
-                NcBrainEvent evt = obj;
-                return evt.Type == NcBrainEventType.PAUSE;
-            });
+            lock (SyncRoot) {
+                if (IsRunning) {
+                    NcContactGleaner.Stop ();
+                    var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
+                    try {
+                        EventQueue.UndequeueIfNot (pause, (obj) => {
+                            NcBrainEvent evt = obj;
+                            return evt.Type == NcBrainEventType.PAUSE;
+                        });
+                    } catch (OperationCanceledException) {
+                        // This means brain is stopped, so ignore this
+                    }
+                }
+            }
         }
 
         public void UnPauseService ()
         {
-            EventQueue.DequeueIf ((obj) => {
-                NcBrainEvent evt = obj;
-                return evt.Type == NcBrainEventType.PAUSE;
-            });
-            NcContactGleaner.Start ();
-        }
-
-        protected void SignalTermination ()
-        {
-            EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+            lock (SyncRoot) {
+                if (IsRunning) {
+                    try {
+                        EventQueue.DequeueIf ((obj) => {
+                            NcBrainEvent evt = obj;
+                            return evt.Type == NcBrainEventType.PAUSE;
+                        });
+                    } catch (OperationCanceledException) {
+                        // This means brain is stopped, so ignore this
+                    }
+                    NcContactGleaner.Start ();
+                }
+            }
         }
 
         private bool IsInUnitTest ()
@@ -179,7 +200,7 @@ namespace NachoCore.Brain
                     NcBrain.RegisterStatusIndHandler = true;
                 }
             }
-            lock (LockObj) {
+            lock (ProcessLoopLockObj) {
                 while (true) {
                     var brainEvent = EventQueue.Dequeue ();
                     if (NcBrainEventType.TERMINATE == brainEvent.Type) {

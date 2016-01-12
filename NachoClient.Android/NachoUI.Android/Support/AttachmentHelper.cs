@@ -22,9 +22,9 @@ namespace NachoClient.AndroidClient
             Android.Provider.MediaStore.MediaColumns.DisplayName
         };
 
-        private static McAttachment MakeAttachment (string filePath, string displayName, string type)
+        private static McAttachment MakeAttachment (int accountId, string filePath, string displayName, string type)
         {
-            var attachment = McAttachment.InsertSaveStart (NcApplication.Instance.Account.Id);
+            var attachment = McAttachment.InsertSaveStart (accountId);
             attachment.ContentType = type;
             attachment.DisplayName = displayName;
             attachment.UpdateFileCopy (filePath);
@@ -32,9 +32,9 @@ namespace NachoClient.AndroidClient
             return attachment;
         }
 
-        private static McAttachment MakeAttachment (System.IO.Stream iStream, string displayName, string type)
+        private static McAttachment MakeAttachment (int accountId, System.IO.Stream iStream, string displayName, string type)
         {
-            var attachment = McAttachment.InsertSaveStart (NcApplication.Instance.Account.Id);
+            var attachment = McAttachment.InsertSaveStart (accountId);
             attachment.ContentType = type;
             attachment.DisplayName = displayName;
             attachment.UpdateData ((oStream) => {
@@ -44,18 +44,18 @@ namespace NachoClient.AndroidClient
             return attachment;
         }
 
-        public static McAttachment UriToAttachment (Context context, Android.Net.Uri uri, string mimeType)
+        public static McAttachment UriToAttachment (int accountId, Context context, Android.Net.Uri uri, string mimeType)
         {
             try {
                 if ("file" == uri.Scheme) {
-                    return MakeAttachment (uri.Path, new System.IO.FileInfo (uri.Path).Name, mimeType);
+                    return MakeAttachment (accountId, uri.Path, new System.IO.FileInfo (uri.Path).Name, mimeType);
                 } else if ("content" == uri.Scheme) {
                     var contentResolver = context.ContentResolver;
                     mimeType = contentResolver.GetType (uri);
                     using (var stream = contentResolver.OpenTypedAssetFileDescriptor (uri, mimeType, null).CreateInputStream ()) {
                         var cursor = contentResolver.Query (uri, dataColumnProjection, null, null, null);
                         if (cursor.MoveToNext ()) {
-                            return MakeAttachment (stream, cursor.GetString (0), mimeType);
+                            return MakeAttachment (accountId, stream, cursor.GetString (0), mimeType);
                         }
                     }
                 }
@@ -118,12 +118,12 @@ namespace NachoClient.AndroidClient
                 var intent = new Intent (Intent.ActionView);
                 intent.AddFlags (ActivityFlags.GrantReadUriPermission);
                 string fileType;
-                if(!String.IsNullOrEmpty(attachment.ContentType)) {
+                if (!String.IsNullOrEmpty (attachment.ContentType)) {
                     fileType = attachment.ContentType;
                 } else {
                     fileType = context.ContentResolver.GetType (fileUri);
                 }
-                intent.SetDataAndType (fileUri, fileType.ToLower());
+                intent.SetDataAndType (fileUri, fileType.ToLower ());
                 // Look for potential handlers
                 var packageManager = context.PackageManager;
                 var activities = packageManager.QueryIntentActivities (intent, PackageInfoFlags.MatchDefaultOnly);

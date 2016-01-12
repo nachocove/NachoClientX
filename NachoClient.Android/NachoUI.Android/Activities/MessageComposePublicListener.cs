@@ -36,7 +36,7 @@ namespace NachoClient.AndroidClient
                 MainApplication.OneTimeStartup ("MessageComposePublicListener");
 
                 var message = new McEmailMessage ();
-                message.AccountId = NcApplication.Instance.Account.Id;
+                message.AccountId = NcApplication.Instance.DefaultEmailAccount.Id;
 
                 string initialText = "";
 
@@ -62,14 +62,14 @@ namespace NachoClient.AndroidClient
                         if (Intent.ActionSendMultiple == Intent.Action) {
                             var uris = Intent.GetParcelableArrayListExtra (Intent.ExtraStream);
                             foreach (var uriObject in uris) {
-                                var attachment = AttachmentHelper.UriToAttachment (this, (Android.Net.Uri)uriObject, Intent.Type);
+                                var attachment = AttachmentHelper.UriToAttachment (message.AccountId, this, (Android.Net.Uri)uriObject, Intent.Type);
                                 if (null != attachment) {
                                     attachments.Add (attachment);
                                 }
                             }
                         } else {
                             var uri = (Android.Net.Uri)Intent.GetParcelableExtra (Intent.ExtraStream);
-                            var attachment = AttachmentHelper.UriToAttachment (this, uri, Intent.Type);
+                            var attachment = AttachmentHelper.UriToAttachment (message.AccountId, this, uri, Intent.Type);
                             if (null != attachment) {
                                 attachments.Add (attachment);
                             }

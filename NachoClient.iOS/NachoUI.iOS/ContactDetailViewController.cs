@@ -1051,9 +1051,10 @@ namespace NachoClient.iOS
                 ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
-            var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
+            var account = McAccount.EmailAccountForContact (contact);
+            var message = McEmailMessage.MessageWithSubject (account, "");
             message.To = address;
-            var composeViewController = new MessageComposeViewController ();
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.Message = message;
             composeViewController.Present ();
         }
@@ -1225,9 +1226,10 @@ namespace NachoClient.iOS
 
         private void ComposeMessage (string address)
         {
-            var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "");
+            var account = McAccount.EmailAccountForContact (contact);
+            var message = McEmailMessage.MessageWithSubject (account, "");
             message.To = address;
-            var composeViewController = new MessageComposeViewController ();
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.Message = message;
             composeViewController.Present ();
         }
@@ -1270,7 +1272,9 @@ namespace NachoClient.iOS
 
         private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
         {
-            var composeViewController = new MessageComposeViewController ();
+            var messsage = thread.FirstMessageSpecialCase ();
+            var account = McAccount.EmailAccountForMessage (messsage);
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.Kind = action;
             composeViewController.Composer.RelatedThread = thread;
             composeViewController.Present ();
