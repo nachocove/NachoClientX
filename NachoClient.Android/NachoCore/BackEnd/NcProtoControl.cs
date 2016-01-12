@@ -209,17 +209,17 @@ namespace NachoCore
             if (e.ServerId == Server.Id) {
                 switch (e.Quality) {
                 case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality OK.", Server.Host);
+                    Log.Info (Log.LOG_BACKEND, "Server ({0}) {1} communication quality OK.", Server.Id, Server.Host);
                     Execute ();
                     break;
 
                 default:
                 case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality degraded.", Server.Host);
+                    Log.Info (Log.LOG_BACKEND, "Server ({0}) {1} communication quality degraded.", Server.Id, Server.Host);
                     break;
 
                 case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality unusable.", Server.Host);
+                    Log.Info (Log.LOG_BACKEND, "Server ({0}) {1} communication quality unusable.", Server.Id, Server.Host);
                     Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
                     break;
                 }
@@ -388,6 +388,10 @@ namespace NachoCore
         {
             // don't allow us to execute, if the App/UI told us to stop.
             if (ForceStopped) {
+                return false;
+            }
+            if (NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
+                // When the server transitions back to Ok, a callback will call Execute.
                 return false;
             }
             if (Cts.IsCancellationRequested) {
