@@ -27,7 +27,7 @@ namespace NachoClient.AndroidClient
 
             this.RequestedOrientation = Android.Content.PM.ScreenOrientation.Nosensor;
 
-            folderListFragment = FolderListFragment.newInstance ();
+            folderListFragment = FolderListFragment.newInstance (NcApplication.Instance.Account.Id);
             folderListFragment.OnFolderSelected += FolderListFragment_OnFolderSelected;
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, folderListFragment).Commit ();
         }
@@ -79,7 +79,7 @@ namespace NachoClient.AndroidClient
             base.MaybeSwitchAccount ();
 
             if (null != folderListFragment) {
-                folderListFragment.SwitchAccount ();
+                folderListFragment.SwitchAccount (NcApplication.Instance.Account);
             }
         }
     }

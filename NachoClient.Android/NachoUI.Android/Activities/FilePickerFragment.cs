@@ -31,10 +31,17 @@ namespace NachoClient.AndroidClient
     {
 
         public FilePickerFragmentDelegate Delegate;
+
+        int accountId;
         ListView FileListView;
         TextView SortSegmentByName;
         TextView SortSegmentByDate;
         TextView SortSegmentByContact;
+
+        public FilePickerFragment(int accountId) : base()
+        {
+            this.accountId = accountId;
+        }
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
         {
@@ -42,7 +49,7 @@ namespace NachoClient.AndroidClient
             var inflater = Activity.LayoutInflater;
             var view = inflater.Inflate (Resource.Layout.FilePickerFragment, null);
             FileListView = view.FindViewById<ListView> (Resource.Id.file_picker_list);
-            FileListView.Adapter = new FilePickerAdapter (this);
+            FileListView.Adapter = new FilePickerAdapter (accountId, this);
             FileListView.ItemClick += FileClicked;
             SortSegmentByName = view.FindViewById<TextView> (Resource.Id.file_picker_by_name);
             SortSegmentByDate = view.FindViewById<TextView> (Resource.Id.file_picker_by_date);
@@ -166,10 +173,10 @@ namespace NachoClient.AndroidClient
         Fragment Parent;
         bool ShowContactHeaders;
 
-        public FilePickerAdapter (Fragment parent) : base ()
+        public FilePickerAdapter (int accountId, Fragment parent) : base ()
         {
             Parent = parent;
-            Files = McAbstrFileDesc.GetAllFiles (NcApplication.Instance.Account.Id);
+            Files = McAbstrFileDesc.GetAllFiles (accountId);
             SortByName ();
         }
 
@@ -310,8 +317,8 @@ namespace NachoClient.AndroidClient
                     var userPhotoView = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
                     int colorIndex;
                     string initials;
-                    EmailColorAndInitials (file.Contact, NcApplication.Instance.Account.Id, out colorIndex, out initials); 
-                    userPhotoView.SetEmailAddress (NcApplication.Instance.Account.Id, file.Contact, initials, colorIndex);
+                    EmailColorAndInitials (file.Contact, file.AccountId, out colorIndex, out initials); 
+                    userPhotoView.SetEmailAddress (file.AccountId, file.Contact, initials, colorIndex);
                 } else {
                     header.Visibility = ViewStates.Gone;
                 }

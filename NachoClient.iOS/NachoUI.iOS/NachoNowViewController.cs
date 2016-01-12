@@ -228,7 +228,7 @@ namespace NachoClient.iOS
                 Log.Error (Log.LOG_UI, "MaybeSwitchToNotificationAccount: no account for {0}", obj.Id);
                 return false;
             }
-            if (notificationAccount.Id == NcApplication.Instance.Account.Id) {
+            if (NcApplication.Instance.Account.ContainsAccount(notificationAccount.Id)){
                 return true;
             }
             NcApplication.Instance.Account = notificationAccount;
@@ -270,7 +270,7 @@ namespace NachoClient.iOS
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
                 var vc = (MessageListViewController)segue.DestinationViewController;
-                vc.SetEmailMessages (priorityInbox.GetAdapterForThread (thread.GetThreadId ()));
+                vc.SetEmailMessages (priorityInbox.GetAdapterForThread (thread));
             } else if (segue.Identifier == "NachoNowToMessagePriority") {
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
@@ -412,9 +412,10 @@ namespace NachoClient.iOS
                 if (String.IsNullOrEmpty (calendarInvite.OrganizerEmail)) {
                     // maybe we should do a pop up or hide the swipe
                 } else {
-                    var message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, calendarInvite.Subject);
+                    var account = McAccount.EmailAccountForCalendar (calendarInvite);
+                    var message = McEmailMessage.MessageWithSubject (account, calendarInvite.Subject);
                     message.To = calendarInvite.OrganizerEmail;
-                    var composeViewController = new MessageComposeViewController ();
+                    var composeViewController = new MessageComposeViewController (account);
                     composeViewController.Composer.Message = message;
                     composeViewController.Composer.InitialText = "Running late";
                     composeViewController.Present ();
@@ -426,9 +427,10 @@ namespace NachoClient.iOS
         {
             var calendarInvite = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != calendarInvite) {
-                var composeViewController = new MessageComposeViewController ();
+                var account = McAccount.EmailAccountForCalendar (calendarInvite);
+                var composeViewController = new MessageComposeViewController (account);
                 composeViewController.Composer.RelatedCalendarItem  = calendarInvite;
-                composeViewController.Composer.Message = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + calendarInvite.Subject);
+                composeViewController.Composer.Message = McEmailMessage.MessageWithSubject (account, "Fwd: " + calendarInvite.Subject);
                 composeViewController.Present ();
 
             }
@@ -491,13 +493,15 @@ namespace NachoClient.iOS
 
         private void ComposeMessage ()
         {
-            var composeViewController = new MessageComposeViewController ();
+            var composeViewController = new MessageComposeViewController (NcApplication.Instance.DefaultEmailAccount);
             composeViewController.Present ();
         }
 
         private void ComposeResponse (McEmailMessageThread thread, EmailHelper.Action action)
         {
-            var composeViewController = new MessageComposeViewController ();
+            var message = thread.FirstMessageSpecialCase ();
+            var account = McAccount.EmailAccountForMessage (message);
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.Kind = action;
             composeViewController.Composer.RelatedThread = thread;
             composeViewController.Present ();

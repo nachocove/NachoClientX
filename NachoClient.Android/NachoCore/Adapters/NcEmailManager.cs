@@ -22,6 +22,9 @@ namespace NachoCore
 
         public static INachoEmailMessages Inbox (int accountId)
         {
+            if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                return new NachoUnifiedInbox ();
+            }
             var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Inbox");
@@ -32,6 +35,9 @@ namespace NachoCore
 
         public static INachoEmailMessages PriorityInbox (int accountId)
         {
+            if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                return new NachoUnifiedHotList ();
+            }
             var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Hot List");
@@ -42,6 +48,9 @@ namespace NachoCore
 
         public static INachoEmailMessages LikelyToReadInbox (int accountId)
         {
+            if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                return new NachoUnifiedLikelyToRead ();
+            }
             var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Likely To Read");
@@ -103,7 +112,7 @@ namespace NachoCore
                 return NachoSyncResult.DoesNotSync ();
             }
 
-            public INachoEmailMessages GetAdapterForThread (string threadId)
+            public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
             {
                 return null;
             }

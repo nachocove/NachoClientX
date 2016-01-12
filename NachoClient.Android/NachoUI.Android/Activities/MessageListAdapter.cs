@@ -424,7 +424,7 @@ namespace NachoClient.AndroidClient
                 } else {
                     initials = ContactsHelper.NameToLetters (email);
                 }
-                var color = Util.ColorResourceForEmail (email);
+                var color = Util.ColorResourceForEmail (message.AccountId, email);
                 var imageView = view.FindViewById<ContactPhotoView> (Resource.Id.event_organizer_initials);
                 imageView.SetEmailAddress (meeting.AccountId, email, initials, color);
             } else {
@@ -444,7 +444,7 @@ namespace NachoClient.AndroidClient
                     } else if (a < attendeesFromMessage.Count) {
                         var attendee = attendeesFromMessage [a] as MimeKit.MailboxAddress;
                         var initials = ContactsHelper.NameToLetters (attendee.Name);
-                        var color = Util.ColorResourceForEmail (attendee.Address);
+                        var color = Util.ColorResourceForEmail (message.AccountId, attendee.Address);
                         attendeePhotoView.SetEmailAddress (message.AccountId, attendee.Address, initials, color);
                         attendeeNameView.Text = GetFirstName (attendee.Name);
                     } else {
@@ -700,7 +700,7 @@ namespace NachoClient.AndroidClient
         void StartComposeActivity (EmailHelper.Action action, McEmailMessageThread thread, McEmailMessage message)
         {
             var activity = owner.Activity;
-            owner.StartActivity (MessageComposeActivity.RespondIntent (activity, action, thread.FirstMessageId));
+            owner.StartActivity (MessageComposeActivity.RespondIntent (activity, action, thread.FirstMessage()));
         }
 
         void DeadlinesView_Click ()

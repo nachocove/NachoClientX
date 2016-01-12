@@ -708,7 +708,7 @@ namespace NachoClient.AndroidClient
         protected McContact CreateNewContact ()
         {
             var c = new McContact ();
-            c.AccountId = NcApplication.Instance.Account.Id;
+            c.AccountId = NcApplication.Instance.DefaultContactAccount.Id;
             c.Source = McAbstrItem.ItemSource.ActiveSync;
             return c;
         }

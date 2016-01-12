@@ -686,8 +686,10 @@ namespace NachoClient.iOS
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 string body;
-                var composeViewController = new MessageComposeViewController ();
-                composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (NcApplication.Instance.Account, url.AbsoluteString, out body);
+                // would be best to use the account from the message that was selected, but we don't have that info here
+                var account = NcApplication.Instance.DefaultEmailAccount;
+                var composeViewController = new MessageComposeViewController (account);
+                composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
                 composeViewController.Composer.InitialText = body;
                 composeViewController.Present ();
             } else {

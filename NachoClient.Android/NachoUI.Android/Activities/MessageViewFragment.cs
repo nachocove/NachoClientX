@@ -373,7 +373,7 @@ namespace NachoClient.AndroidClient
                 } else {
                     initials = ContactsHelper.NameToLetters (email);
                 }
-                var color = Util.ColorResourceForEmail (email);
+                var color = Util.ColorResourceForEmail (meeting.AccountId, email);
                 var imageView = View.FindViewById<ContactPhotoView> (Resource.Id.event_organizer_initials);
                 imageView.SetEmailAddress (meeting.AccountId, email, initials, color);
             } else {
@@ -397,7 +397,7 @@ namespace NachoClient.AndroidClient
                             displayName = attendee.Address;
                         }
                         var initials = ContactsHelper.NameToLetters (displayName);
-                        var color = Util.ColorResourceForEmail (attendee.Address);
+                        var color = Util.ColorResourceForEmail (message.AccountId, attendee.Address);
                         attendeePhotoView.SetEmailAddress (message.AccountId, attendee.Address, initials, color);
                         attendeeNameView.Text = GetFirstName (displayName);
                     } else {
@@ -794,13 +794,13 @@ namespace NachoClient.AndroidClient
 
         void StartComposeActivity (EmailHelper.Action action, bool quickReply = false)
         {
-            StartActivity (MessageComposeActivity.RespondIntent (this.Activity, action, message.Id, quickReply));
+            StartActivity (MessageComposeActivity.RespondIntent (this.Activity, action, message, quickReply));
         }
 
         public void ShowFolderChooser ()
         {
             Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", message);
-            var folderFragment = ChooseFolderFragment.newInstance (null);
+            var folderFragment = ChooseFolderFragment.newInstance (message.AccountId, null);
             folderFragment.SetOnFolderSelected (OnFolderSelected);
             folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }

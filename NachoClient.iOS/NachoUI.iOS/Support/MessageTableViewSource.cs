@@ -175,11 +175,6 @@ namespace NachoClient.iOS
             this.messageWhenEmpty = messageWhenEmpty;
         }
 
-        public INachoEmailMessages GetAdapterForThread (string threadId)
-        {
-            return messageThreads.GetAdapterForThread (threadId);
-        }
-
         public bool RefreshEmailMessages (out List<int> adds, out List<int> deletes)
         {
             RefreshCapture.Start ();

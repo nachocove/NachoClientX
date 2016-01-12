@@ -18,6 +18,7 @@ namespace NachoClient.iOS
     {
         public FileListViewController (IntPtr handle) : base (handle)
         {
+            Account = NcApplication.Instance.Account;
         }
 
         INachoFileChooserParent Owner;
@@ -54,12 +55,15 @@ namespace NachoClient.iOS
 
         UINavigationBar navbar = new UINavigationBar ();
 
+        McAccount Account;
+
         /// <summary>
         /// INachoFileChooser delegate
         /// </summary>
-        public void SetOwner (INachoFileChooserParent owner)
+        public void SetOwner (INachoFileChooserParent owner, McAccount account)
         {
             this.Owner = owner;
+            Account = account;
         }
 
         /// <summary>
@@ -181,7 +185,7 @@ namespace NachoClient.iOS
             tableView.AccessibilityLabel = "Attachments";
 
             InitializeSearchDisplayController ();
-            AttachmentsSource = new FilesTableViewSource (this, NcApplication.Instance.Account);
+            AttachmentsSource = new FilesTableViewSource (this, Account);
             AttachmentsSource.SetOwner (this, SearchDisplayController);
 
             View.AddSubview (tableView);
@@ -363,6 +367,7 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
+            Account = account;
             switchAccountButton.SetAccountImage (account);
             RefreshTableSource ();
         }
@@ -396,7 +401,7 @@ namespace NachoClient.iOS
         {
             // show most recent attachments first
             AttachmentsSource.Items = new List<NcFileIndex> ();
-            AttachmentsSource.Items = McAbstrFileDesc.GetAllFiles (NcApplication.Instance.Account.Id);
+            AttachmentsSource.Items = McAbstrFileDesc.GetAllFiles (Account.Id);
 
             switch (segmentedControl.SelectedSegment) {
             case 0:
@@ -548,7 +553,8 @@ namespace NachoClient.iOS
 
         public void ForwardAttachments (List<McAttachment> attachments)
         {
-            var composeViewController = new MessageComposeViewController ();
+            var account = NcApplication.Instance.DefaultEmailAccount;
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.InitialAttachments = attachments;
             composeViewController.Present ();
         }

@@ -84,9 +84,9 @@ namespace NachoCore
             }
         }
 
-        public INachoEmailMessages GetAdapterForThread (string threadId)
+        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
-            return new NachoThreadedEmailMessages (folder, threadId);
+            return new NachoThreadedEmailMessages (folder, thread.GetThreadId ());
         }
 
         public bool IsCompatibleWithAccount (McAccount account)

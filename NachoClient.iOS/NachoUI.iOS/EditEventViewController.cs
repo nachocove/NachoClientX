@@ -216,7 +216,7 @@ namespace NachoClient.iOS
             if (null != item && CalendarItemEditorAction.edit == action) {
                 account = McAccount.QueryById<McAccount> (item.AccountId);
             } else {
-                account = NcApplication.Instance.Account;
+                account = NcApplication.Instance.DefaultCalendarAccount;
             }
             var accountCalendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
             if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == accountCalendars.Count ()) {

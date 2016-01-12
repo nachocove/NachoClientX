@@ -63,15 +63,15 @@ namespace NachoClient.AndroidClient
 
         HashSet<int> openList;
 
-        public FolderLists (McAccount account, bool hideFakeFolders)
+        public FolderLists (int accountId, bool hideFakeFolders)
         {
-            Create (account, hideFakeFolders);
+            Create (accountId, hideFakeFolders);
         }
 
-        public void Create (McAccount account, bool hideFakeFolders)
+        public void Create (int accountId, bool hideFakeFolders)
         {
             // sort list of folders
-            var folders = new NachoFolders (account.Id, NachoFolders.FilterForEmail);
+            var folders = new NachoFolders (accountId, NachoFolders.FilterForEmail);
 
             openList = new HashSet<int> ();
             displayList = new List<DisplayElement> ();
@@ -99,7 +99,7 @@ namespace NachoClient.AndroidClient
             }
 
             // Well-known folders
-            var inbox = McFolder.GetDefaultInboxFolder (account.Id);
+            var inbox = McFolder.GetDefaultInboxFolder (accountId);
             if (null != inbox) {
                 displayList.Add (new DisplayElement (new Node ().Copy (inbox), 0));
             }
@@ -107,12 +107,13 @@ namespace NachoClient.AndroidClient
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetHotFakeFolder ()), 0));
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetLtrFakeFolder ()), 0));
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeferredFakeFolder ()), 0));
+                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeadlineFakeFolder ()), 0));
             }
 
             MarkLastInSection ();
 
             // Max 3 recents
-            var recents = McFolder.QueryByMostRecentlyAccessedVisibleFolders (account.Id);
+            var recents = McFolder.QueryByMostRecentlyAccessedVisibleFolders (accountId);
             foreach (var folder in recents) {
                 recentsList.Add (new DisplayElement (new Node ().Copy (folder), 0));
                 if (3 == recentsList.Count) {
