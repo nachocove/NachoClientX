@@ -158,7 +158,7 @@ namespace NachoCore
             return NachoSyncResult.DoesNotSync ();
         }
 
-        public INachoEmailMessages GetAdapterForThread (string threadId)
+        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             return null;
         }

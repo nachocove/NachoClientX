@@ -628,6 +628,9 @@
     <Compile Include="NachoUI.Android\Support\AttachmentHelper.cs" />
     <Compile Include="NachoUI.Android\Support\DatePicker.cs" />
     <Compile Include="NachoUI.Android\Support\TimePicker.cs" />
+    <Compile Include="NachoCore\Adapters\NachoUnifiedInbox.cs" />
+    <Compile Include="NachoCore\Adapters\NachoUnifiedHotList.cs" />
+    <Compile Include="NachoCore\Adapters\NachoUnifiedLikelyToRead.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

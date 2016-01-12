@@ -437,7 +437,7 @@ namespace NachoClient.AndroidClient
                     onMessageClick (this, thread);
                 }
             } else {
-                var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
+                var threadMessages = messages.GetAdapterForThread (thread);
                 if (null != onThreadClick) {
                     onThreadClick (this, threadMessages);
                 }

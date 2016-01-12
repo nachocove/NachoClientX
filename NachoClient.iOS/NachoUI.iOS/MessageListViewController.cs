@@ -502,7 +502,7 @@ namespace NachoClient.iOS
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
                 var vc = (MessageListViewController)segue.DestinationViewController;
-                vc.SetEmailMessages (messageSource.GetNachoEmailMessages ().GetAdapterForThread (thread.GetThreadId ()));
+                vc.SetEmailMessages (messageSource.GetNachoEmailMessages ().GetAdapterForThread (thread));
                 return;
             }
             if (segue.Identifier == "NachoNowToMessagePriority") {
