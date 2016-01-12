@@ -17,7 +17,7 @@ namespace NachoCore.Model
             Exchange,
             Device,
             IMAP_SMTP,
-            Unified
+            Unified,
         };
 
         public enum AccountServiceEnum
@@ -359,6 +359,7 @@ namespace NachoCore.Model
             }
             return _unifiedAccount;
         }
+
         static McAccount _unifiedAccount;
 
         public static McAccount GetDefaultAccount (AccountCapabilityEnum capability)
@@ -425,6 +426,7 @@ namespace NachoCore.Model
             return (from account in McAccount.GetAllAccounts ()
                              where
                                  McAccount.AccountTypeEnum.Device != account.AccountType &&
+                                 McAccount.AccountTypeEnum.Unified != account.AccountType &&
                                  McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
                              select account.Id).ToList ();
         }
@@ -577,7 +579,8 @@ namespace NachoCore.Model
             }
         }
 
-        public bool ContainsAccount (int accountId){
+        public bool ContainsAccount (int accountId)
+        {
             if (AccountType == AccountTypeEnum.Unified) {
                 return true;
             }

@@ -107,6 +107,7 @@ namespace NachoClient.AndroidClient
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetHotFakeFolder ()), 0));
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetLtrFakeFolder ()), 0));
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeferredFakeFolder ()), 0));
+                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeadlineFakeFolder ()), 0));
             }
 
             MarkLastInSection ();
