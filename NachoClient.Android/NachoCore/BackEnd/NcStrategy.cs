@@ -10,6 +10,11 @@ namespace NachoCore
 {
     public class NcStrategy
     {
+        /// <summary>
+        /// Number of seconds to Idle when strategy calls a throttle-idle
+        /// </summary>
+        protected int KThrottleSeconds = 3;
+
         protected IBEContext BEContext;
         protected int AccountId { get; set; }
 
