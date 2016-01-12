@@ -324,8 +324,9 @@ namespace NachoCore
 
         public void Start (int accountId)
         {
-            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) called", accountId);
-            NcCommStatus.Instance.Refresh ();
+            string tag = string.Format ("BackEnd.Start({0})", accountId);
+            Log.Info (Log.LOG_BACKEND, "{0} called", tag);
+            NcCommStatus.Instance.Refresh (tag);
             if (!AccountHasServices (accountId)) {
                 CreateServices (accountId);
             }
