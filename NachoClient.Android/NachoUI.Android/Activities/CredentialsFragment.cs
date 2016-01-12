@@ -197,10 +197,6 @@ namespace NachoClient.AndroidClient
                 LoginEvents.CheckBackendState ();
             }
                 
-            emailField.KeyPress += EmailField_KeyPress; 
-
-            passwordField.KeyPress += PasswordField_KeyPress;
-
             return view;
         }
 
@@ -216,25 +212,13 @@ namespace NachoClient.AndroidClient
             outState.PutBoolean (ACCEPT_CERT_KEY, AcceptCertOnNextReq);
         }
 
-        void EmailField_KeyPress (object sender, View.KeyEventArgs e)
+        public override void OnResume ()
         {
-            if ((KeyEventActions.Down == e.Event.Action) && (Keycode.Enter == e.KeyCode)) {
-                e.Handled = true;
-                emailField.ClearFocus ();
-                passwordField.RequestFocus ();
-            } else {
-                e.Handled = false;
-            }
-        }
-
-        void PasswordField_KeyPress (object sender, View.KeyEventArgs e)
-        {
-            if ((KeyEventActions.Down == e.Event.Action) && (Keycode.Enter == e.KeyCode)) {
-                e.Handled = true;
-                passwordField.ClearFocus ();
-                submitButton.RequestFocus ();
-            } else {
-                e.Handled = false;
+            base.OnResume ();
+            if (!IsSubmitting && !LockEmailField) {
+                emailField.RequestFocus ();
+                var imm = (Android.Views.InputMethods.InputMethodManager)this.Activity.GetSystemService (Context.InputMethodService);
+                imm.ShowSoftInput (emailField, Android.Views.InputMethods.ShowFlags.Implicit);
             }
         }
 
