@@ -84,6 +84,12 @@ namespace NachoCore.IMAP
                 return userDemand;
             }
 
+            if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
+                Log.Info (Log.LOG_IMAP, "Strategy:QS:Throttle");
+                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Wait,
+                    new ImapWaitCommand (BEContext, Client, KThrottleSeconds, true));
+            }
+
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 SyncKit syncKit = GenSyncKit (ref protocolState, exeCtxt, null);
                 if (null != syncKit) {
