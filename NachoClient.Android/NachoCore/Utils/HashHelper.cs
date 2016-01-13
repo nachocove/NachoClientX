@@ -36,9 +36,14 @@ namespace NachoCore.Utils
             return hashed;
         }
 
-        public static string HashEmailAddressesInUrl (string value)
+        public static string HashUserInASUrl (string value)
         {
-            return HashEmailAddressesGeneric (value, @"User=", @"&");
+            RegexOptions options = RegexOptions.IgnoreCase;
+            var prefix = @"User=";
+            var suffix = @"&";
+            return Regex.Replace (value,
+                prefix + @"[^&]*" + suffix,
+                (match) => (prefix + "REDACTED" + suffix), options);
         }
 
         public static string HashEmailAddressesInImapId (string value)
