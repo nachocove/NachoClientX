@@ -12,6 +12,14 @@ using System.Threading;
 
 namespace NachoCore.Utils
 {
+
+    public class GoogleOAuthConstants
+    {
+        public static string ClientId = "135541750674-3bmfkmlm767ipe0ih0trqf9o4jgum27h.apps.googleusercontent.com";
+        public static string ClientSecret = "T08VVinKbAPiXjIlV3U5O12S";
+        public static string RefreshUrl = "https://www.googleapis.com/oauth2/v3/token";
+    }
+
     public class GoogleOAuth2Authenticator : OAuth2Authenticator
     {
 

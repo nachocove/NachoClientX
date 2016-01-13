@@ -208,7 +208,7 @@ namespace NachoCore.Model
                 break;
 
             case McAccount.AccountServiceEnum.SalesForce:
-                refresh = SFDCOauth2Refresh (this);
+                refresh = new SFDCOauth2Refresh (this);
                 break;
 
             default:

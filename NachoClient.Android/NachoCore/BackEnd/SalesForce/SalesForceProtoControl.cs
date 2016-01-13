@@ -272,7 +272,7 @@ namespace NachoCore
                             (uint)SfdcEvt.E.SyncStart,
                             (uint)SfdcEvt.E.AbateOff,
                         },
-                        Invalid = new [] {
+                        Invalid = new uint[] {
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
