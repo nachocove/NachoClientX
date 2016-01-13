@@ -9,6 +9,17 @@ namespace NachoCore
 {
     public class SalesForceProtoControl : NcProtoControl
     {
+        public static McAccount CreateAccount ()
+        {
+            var fsAccount = new McAccount () {
+                AccountType = McAccount.AccountTypeEnum.SalesForce,
+                AccountCapability = SalesForceProtoControl.SalesForceCapabilities,
+                AccountService = McAccount.AccountServiceEnum.SalesForce,
+                DisplayName = "SalesForce",
+            };
+            return fsAccount;
+        }
+
         public enum Lst : uint
         {
             // Waiting for a SalesForce DB => Nacho DB sync to complete.
