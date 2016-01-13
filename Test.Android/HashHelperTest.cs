@@ -46,23 +46,42 @@ namespace Test.iOS
             foreach (string emailAddress in emailAddresses) {
                 Match match = Regex.Match (emailAddress, HashHelper.EmailRegex);
                 //Console.WriteLine ("Email: {0} match {1}", emailAddress, match.Success);
-                Assert.AreEqual (true, match.Success);
+                Assert.AreEqual (true, match.Success, emailAddress);
                 //dumpMatch (match);
                 Assert.AreEqual (emailAddress, string.Format ("{0}@{1}", match.Groups ["username"].Value, match.Groups ["domain"].Value));
             }
         }
 
+        public static string[] userNames = new string[] { 
+            "david.jones@proseware.com",
+            "d.j@server1.proseware.com",
+            "jones@ms1.proseware.com",
+            "j@proseware.com9",
+            "js#internal@proseware.com",
+            "j_9@129.126.118.1",
+            "j_9@[129.126.118.1]",
+            "js@proseware.com9",
+            "j.s@server1.proseware.com",
+            "\"j\\\"s\\\"\"@proseware.com",
+            "jēn@späm.de",
+            "Jan-Vee@comcast.net",
+            @"D2\jan",
+        };
 
         [Test]
         public void TestEmailAddressInUrlHash ()
         {
             var urlTemplate = "https://mail.d2.officeburrito.com/Microsoft-Server-ActiveSync?Cmd=ItemOperations&User={0}&DeviceId=Nchob8f6b1150c41&DeviceType=iPhone";
-            foreach (string emailAddress in emailAddresses) {
+            foreach (string emailAddress in userNames) {
                 string plainUrl = string.Format (urlTemplate, emailAddress);
                 string expectedUrl = string.Format (urlTemplate, "REDACTED");
-                string hashedUrl = HashHelper.HashEmailAddressesInUrl (plainUrl);
+                string hashedUrl = HashHelper.HashUserInASUrl (plainUrl);
                 Assert.AreEqual (expectedUrl, hashedUrl, "Hashed Email does not match.");
             }
+
+            var errorMsg = "Illegal character in query at index 78: https://mail.d2.officeburrito.com/Microsoft-Server-ActiveSync?Cmd=Sync&User=D2\\janv&DeviceId=Ncho42afd002ba3b&DeviceType=Android";
+            var hashedErrorMsg = HashHelper.HashUserInASUrl (errorMsg);
+            Assert.AreNotEqual (errorMsg, hashedErrorMsg);
         }
 
         [Test]
