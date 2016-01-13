@@ -17,6 +17,7 @@ namespace NachoCore
                 AccountService = McAccount.AccountServiceEnum.SalesForce,
                 DisplayName = "SalesForce",
             };
+            fsAccount.Insert ();
             return fsAccount;
         }
 
