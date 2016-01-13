@@ -599,6 +599,10 @@ namespace NachoClient.AndroidClient
                     cal.BusyStatusIsSet = true;
                 }
 
+                if (string.IsNullOrEmpty(cal.UID)) {
+                    cal.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpperInvariant ();
+                }
+
                 cal.DtStamp = DateTime.UtcNow;
 
                 if (!isAppEvent) {
@@ -627,6 +631,16 @@ namespace NachoClient.AndroidClient
                     BackEnd.Instance.UpdateCalCmd (cal.AccountId, cal.Id, descriptionChanged);
                 }
 
+                if (0 < cal.attendees.Count) {
+                    string plainTextDescription = "";
+                    if (McBody.BodyTypeEnum.PlainText_1 == cal.DescriptionType) {
+                        plainTextDescription = cal.Description;
+                    }
+                    var iCalPart = CalendarHelper.MimeRequestFromCalendar (cal);
+                    var mimeBody = CalendarHelper.CreateMime (plainTextDescription, iCalPart, cal.attachments);
+                    CalendarHelper.SendInvites (account, cal, null, null, mimeBody, null);
+                }
+
                 SetResult (Result.Ok);
                 Finish ();
             }
@@ -643,8 +657,8 @@ namespace NachoClient.AndroidClient
                 // The user changed the event be an all-day event.  The event is no more than
                 // an hour long, its start and end times are on different days, and the user
                 // hasn't explicitly changed the end time.  It is more likely that the user
-                // wants the event to be a single day rather than an multi-day all-day event.
-                // If the app is guessing incorrectly, the user can still correct the times
+                // wants the event to be a single day rather than a multi-day all-day event.
+                // If the app is guessing incorrectly, the user can still correct the dates
                 // before saving the event.
                 endTime = startTime;
             }
