@@ -631,10 +631,10 @@
     <Compile Include="NachoCore\Adapters\NachoUnifiedHotList.cs" />
     <Compile Include="NachoCore\Adapters\NachoUnifiedLikelyToRead.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs" />
-    <Compile Include="NachoCore\BackEnd\Device\SalesForceApi.cs" />
     <Compile Include="NachoCore\Utils\Oauth2\Oauth2Refresh.cs" />
     <Compile Include="NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs" />
     <Compile Include="NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceApi.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

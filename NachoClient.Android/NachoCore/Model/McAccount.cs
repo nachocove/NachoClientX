@@ -18,6 +18,7 @@ namespace NachoCore.Model
             Device,
             IMAP_SMTP,
             Unified,
+            SalesForce,
         };
 
         public enum AccountServiceEnum
@@ -570,6 +571,7 @@ namespace NachoCore.Model
         public async void PopulateProfilePhotoFromURL (Uri imageUrl)
         {
             try {
+                // FIXME: Need to transition to NcHttpClient
                 var httpClient = new System.Net.Http.HttpClient ();
                 byte[] contents = await httpClient.GetByteArrayAsync (imageUrl);
                 var portrait = McPortrait.InsertFile (Id, contents);

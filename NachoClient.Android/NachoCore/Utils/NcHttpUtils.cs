@@ -48,6 +48,13 @@ namespace NachoCore.Utils
                 }
                 return null;
             }
+
+            set {
+                if (Headers.Contains ("Content-Type")) {
+                    throw new ArgumentException ("ContentType is already set.");
+                }
+                Headers.Add ("Content-Type", value);
+            }
         }
 
         public Uri RequestUri { get; protected set; }
