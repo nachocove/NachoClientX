@@ -493,7 +493,6 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration39.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration40.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration41.cs" />
-    <Compile Include="NachoCore\Utils\GoogleOAuth2Authenticator.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs" />
@@ -631,6 +630,11 @@
     <Compile Include="NachoCore\Adapters\NachoUnifiedInbox.cs" />
     <Compile Include="NachoCore\Adapters\NachoUnifiedHotList.cs" />
     <Compile Include="NachoCore\Adapters\NachoUnifiedLikelyToRead.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs" />
+    <Compile Include="NachoCore\BackEnd\Device\SalesForceApi.cs" />
+    <Compile Include="NachoCore\Utils\Oauth2\Oauth2Refresh.cs" />
+    <Compile Include="NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs" />
+    <Compile Include="NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -696,6 +700,8 @@
     <Folder Include="NachoCore\Model\McEmailAddress\" />
     <Folder Include="Resources\anim\" />
     <Folder Include="Resources\xml\" />
+    <Folder Include="NachoCore\BackEnd\SalesForce\" />
+    <Folder Include="NachoCore\Utils\Oauth2\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

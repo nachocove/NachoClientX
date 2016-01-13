@@ -1606,9 +1606,6 @@
       <DependentUpon>ExchangeAdvancedFieldsViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AccountAdvancedFieldsViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\GoogleOAuth2Authenticator.cs">
-      <Link>NachoCore\Utils\GoogleOAuth2Authenticator.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs</Link>
     </Compile>
@@ -1738,6 +1735,15 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedLikelyToRead.cs">
       <Link>NachoCore\Adapters\NachoUnifiedLikelyToRead.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs">
+      <Link>NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\Oauth2Refresh.cs">
+      <Link>NachoCore\Utils\Oauth2\Oauth2Refresh.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs">
+      <Link>NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

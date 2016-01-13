@@ -35,6 +35,7 @@ namespace NachoCore.Model
             Yahoo,
             iCloud,
             Office365Exchange,
+            SalesForce,
         };
 
         [Flags]

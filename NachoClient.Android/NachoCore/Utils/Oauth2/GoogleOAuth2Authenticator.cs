@@ -3,15 +3,15 @@
 using System;
 using Xamarin.Auth;
 using System.Threading.Tasks;
+using NachoCore.Model;
+using System.Net.Http;
+using NachoPlatform;
+using Newtonsoft.Json;
+using System.Text;
+using System.Threading;
 
 namespace NachoCore.Utils
 {
-    public class GoogleOAuthConstants
-    {
-        public static string ClientId = "135541750674-3bmfkmlm767ipe0ih0trqf9o4jgum27h.apps.googleusercontent.com";
-        public static string ClientSecret = "T08VVinKbAPiXjIlV3U5O12S";
-    }
-
     public class GoogleOAuth2Authenticator : OAuth2Authenticator
     {
 
@@ -46,6 +46,13 @@ namespace NachoCore.Utils
 
             var url = new Uri (uriString);
             return Task.FromResult (url);
+        }
+    }
+
+    public class GoogleOauth2Refresh : Oauth2Refresh
+    {
+        public GoogleOauth2Refresh (McCred cred) : base (cred, GoogleOAuthConstants.RefreshUrl, GoogleOAuthConstants.ClientSecret, GoogleOAuthConstants.ClientId)
+        {
         }
     }
 }

@@ -536,7 +536,7 @@ namespace NachoCore
 
         protected override bool Execute ()
         {
-            // Ignore base.Execute() we don't care about the nextwork.
+            // Ignore base.Execute() we don't care about the network.
             // We're letting the app use Start() to trigger a re-sync. TODO - consider using Sync command.
             Sm.PostEvent ((uint)SmEvt.E.Launch, "DEVICELAUNCH");
             return true;
