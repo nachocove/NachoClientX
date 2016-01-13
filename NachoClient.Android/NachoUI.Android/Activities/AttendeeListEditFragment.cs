@@ -56,7 +56,7 @@ namespace NachoClient.AndroidClient
                 string email;
                 McContact contact;
                 ContactEmailChooserActivity.GetSearchResults (data, out email, out contact);
-                string name = contact == null ? null : contact.GetDisplayName ();
+                string name = contact == null ? email : contact.GetDisplayName ();
                 var attendee = new McAttendee (accountId, name, email, CurrentTab.Optional == state ? NcAttendeeType.Optional : NcAttendeeType.Required);
                 adapter.AddItem (attendee);
             }
