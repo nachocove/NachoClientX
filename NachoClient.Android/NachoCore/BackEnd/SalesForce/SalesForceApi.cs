@@ -147,6 +147,7 @@ namespace NachoCore
                 if (fsServer == null) {
                     var version = versions.OrderByDescending (x => x.version).First ();
                     fsServer = new McServer () {
+                        AccountId = fsAccount.Id,
                         Host = SFDCApiServicesHost,
                         Scheme = "https",
                         Port = 443,
