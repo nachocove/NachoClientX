@@ -306,6 +306,10 @@ namespace NachoCore
                 // TODO: what should happen here?
                 break;
 
+            case McAccount.AccountTypeEnum.SalesForce:
+                services.Enqueue (new SalesForceProtoControl (this, accountId));
+                break;
+
             default:
                 NcAssert.True (false);
                 break;
