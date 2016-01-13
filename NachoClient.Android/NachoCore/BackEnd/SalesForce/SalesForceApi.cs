@@ -107,15 +107,21 @@ namespace NachoCore
                 if (string.IsNullOrEmpty (jsonResponse)) {
                     throw new System.Net.WebException("No data returned");
                 }
-                var versions = JsonConvert.DeserializeObject<List<SFDCVersion>> (jsonResponse);
-                Log.Info (Log.LOG_SFDC, "Versions: {0}", string.Join ("\n", versions));
-                SetServer (versions);
-            }), (ex, token) => {
-                if (token.IsCancellationRequested) {
-                    return;
+                try {
+                    var versions = JsonConvert.DeserializeObject<List<SFDCVersion>> (jsonResponse);
+                    SetServer (versions);
+                } catch (Exception ex) {
+                    GetVersionsError(ex, token);
                 }
-                Log.Error (Log.LOG_SFDC, "Could not do SFDC request: {0}", ex);
-            }, CToken);
+            }), GetVersionsError, CToken);
+        }
+
+        protected void GetVersionsError (Exception ex, CancellationToken token)
+        {
+            if (token.IsCancellationRequested) {
+                return;
+            }
+            Log.Error (Log.LOG_SFDC, "Could not get SFDC Versions request: {0}", ex);
         }
 
         public static void PossiblyCreateServer (int accountId, CancellationToken cToken)
@@ -147,6 +153,7 @@ namespace NachoCore
                         Path = version.url, // they call it 'url' but it's really the path.
                         Capabilities = fsAccount.AccountCapability,
                     };
+                    fsServer.Insert ();
                 }
             });
         }
