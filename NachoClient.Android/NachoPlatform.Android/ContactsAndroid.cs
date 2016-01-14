@@ -307,7 +307,12 @@ namespace NachoPlatform
                                null);
                 while (pCur.MoveToNext ()) {
                     var birthday = GetField (pCur, ContactsContract.CommonDataKinds.Event.StartDate);
-                    Contact.AddDateAttribute (Contact.AccountId, "Birthday", null, DateTime.Parse (birthday));
+                    try {
+                        Contact.AddDateAttribute (Contact.AccountId, "Birthday", null, DateTime.Parse (birthday));
+                    } catch (FormatException ex) {
+                        // FIXME saw a birthday of "--03-18". Need to be able to handle this.
+                        Log.Warn (Log.LOG_CONTACTS, "Badly formatted birthday: {1}", ex.Message);
+                    }
                 }
                 pCur.Close ();
             }
@@ -422,7 +427,10 @@ namespace NachoPlatform
                             Log.Warn (Log.LOG_SYS, "More than one note");
                         } else {
                             var note = GetFieldByte (pCur, ContactsContract.CommonDataKinds.Note.NoteColumnId);
-                            if (note.Length > 0) {
+                            if (null == note) {
+                                Log.Warn (Log.LOG_CONTACTS, "Note found with no note!");
+                            }
+                            if (null != note && note.Length > 0) {
                                 McBody body = null;
                                 if (0 != Contact.BodyId) {
                                     body = McBody.QueryById<McBody> (Contact.BodyId);
