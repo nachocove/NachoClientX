@@ -223,7 +223,6 @@
     <Folder Include="NachoUI.iOS\Interfaces\" />
     <Folder Include="NachoUI.iOS\Tables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
-    <Folder Include="Content\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\" />
     <Folder Include="NachoCore\Mockables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
@@ -1791,10 +1790,6 @@
     <BundleResource Include="Resources\icn-file-complete%402x.png" />
     <BundleResource Include="Resources\icn-file-complete.png" />
     <BundleResource Include="Resources\iPhoneIcon.png" />
-    <BundleResource Include="Content\Tutorial-Page1.png" />
-    <BundleResource Include="Content\Tutorial-Page2.png" />
-    <BundleResource Include="Content\Tutorial-Page3.png" />
-    <BundleResource Include="Content\Tutorial-Page4.png" />
     <BundleResource Include="Resources\Launch%402x.png" />
     <BundleResource Include="Resources\Launch.png" />
     <BundleResource Include="Resources\Launch-568h%402x.png" />
@@ -2734,15 +2729,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\Welcome to Taco Mail.pdf" />
-    <Content Include="Content\TacoMailDoc.pdf" />
-    <Content Include="Content\HomePage1.png" />
-    <Content Include="Content\PageTwo.png" />
-    <Content Include="Content\PageThree.png" />
-    <Content Include="Content\PageFour.png" />
-    <Content Include="Content\PageFive.png" />
-    <Content Include="Content\PageSix.png" />
-    <Content Include="Content\PageSeven.png" />
     <Content Include="GoogleService-Info.plist">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
