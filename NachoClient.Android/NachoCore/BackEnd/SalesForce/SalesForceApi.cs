@@ -190,11 +190,10 @@ namespace NachoCore
             var request = new NcHttpRequest (HttpMethod.Post, new Uri(LoginUrl));
             string clientId = "foo";
             string clientSecret = "bar";
-            string userToken = "jO6iGkkyD5AywB5zIJh96nSY3";
 //            string postData = string.Format ("grant_type={0}&client_id={1}&client_secret={2}&username={3}&password={4}{5}",
 //                                  "password", clientId, clientSecret, BEContext.Cred.Username, BEContext.Cred.GetPassword (), userToken);
             string postData = string.Format ("grant_type={0}&username={3}&password={4}{5}",
-                "password", clientId, clientSecret, BEContext.Cred.Username, BEContext.Cred.GetPassword (), userToken);
+                "password", clientId, clientSecret, BEContext.Cred.Username, BEContext.Cred.GetPassword (), BEContext.Cred.GetAccessToken ());
             
             request.SetContent (Encoding.UTF8.GetBytes (postData), "application/json");
             SendRequest (request);
@@ -208,6 +207,7 @@ namespace NachoCore
             }
             try {
                 var loginResponse = JsonConvert.DeserializeObject<Dictionary<string, string>> (jsonResponse);
+                Log.Info (Log.LOG_SFDC, "Login response: {0}", loginResponse);
             } catch (Exception ex) {
                 ErrorAction (ex, Cts.Token);
             }
