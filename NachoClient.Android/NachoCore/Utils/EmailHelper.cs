@@ -893,7 +893,7 @@ namespace NachoCore.Utils
             if ((null != message) && !message.IsRead) {
                 var body = McBody.QueryById<McBody> (message.BodyId);
                 if (force || McBody.IsComplete (body)) {
-                    BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
+                    BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
                 }
             }
         }
@@ -902,8 +902,9 @@ namespace NachoCore.Utils
         {
             message.IsRead = !message.IsRead;
             if (message.IsRead) {
-                BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
+                BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
             } else {
+                BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, false);
             }
         }
 

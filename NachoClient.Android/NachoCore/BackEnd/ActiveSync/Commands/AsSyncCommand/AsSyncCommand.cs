@@ -82,7 +82,7 @@ namespace NachoCore.ActiveSync
             return new XElement (m_ns + Xml.AirSync.Change,
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
                 new XElement (m_ns + Xml.AirSync.ApplicationData,
-                    new XElement (EmailNs + Xml.Email.Read, "1")));
+                    new XElement (EmailNs + Xml.Email.Read, pending.EmailSetFlag_FlagType == McPending.MarkReadFlag ? "1" : "0")));
         }
 
         private XElement ToEmailSetFlag (McPending pending)

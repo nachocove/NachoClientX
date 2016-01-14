@@ -36,7 +36,11 @@ namespace NachoCore.IMAP
             }
             UpdateImapSetting (mailKitFolder, ref folder);
             try {
-                mailKitFolder.SetFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
+                if (PendingSingle.EmailSetFlag_FlagType == McPending.MarkReadFlag) {
+                    mailKitFolder.SetFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
+                } else {
+                    mailKitFolder.RemoveFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
+                }
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, 
                         NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));
