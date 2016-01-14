@@ -213,6 +213,23 @@ namespace NachoCore
             }
             return Event.Create ((uint)SmEvt.E.Success, "SFDCLOGINBOGUSSUCCESS");
         }
+
+        public static McCred SetupTestCredentials (int accountId, string username, string password, string token)
+        {
+            var cred = new McCred () {
+                AccountId = accountId,
+                CredType = McCred.CredTypeEnum.OAuth2,
+                Username = username,
+
+            };
+            cred.Insert ();
+            cred.UpdateOauth2 (token, "NONE", 36000);
+            cred.CredType = McCred.CredTypeEnum.Password;
+            cred.UpdatePassword (password);
+            cred.CredType = McCred.CredTypeEnum.OAuth2;
+            cred.Update ();
+            return cred;
+        }
     }
 
     public class SFDCGetApiVersions
