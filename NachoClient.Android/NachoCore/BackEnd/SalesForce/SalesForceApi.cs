@@ -207,7 +207,7 @@ namespace NachoCore
             }
             try {
                 var loginResponse = JsonConvert.DeserializeObject<Dictionary<string, string>> (jsonResponse);
-                Log.Info (Log.LOG_SFDC, "Login response: {0}", loginResponse);
+                Log.Info (Log.LOG_SFDC, "Login response: {0}", string.Join (", ", loginResponse.ToList ()));
             } catch (Exception ex) {
                 ErrorAction (ex, Cts.Token);
             }
