@@ -898,6 +898,15 @@ namespace NachoCore.Utils
             }
         }
 
+        public static void ToggleRead (McEmailMessage message)
+        {
+            message.IsRead = !message.IsRead;
+            if (message.IsRead) {
+                BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
+            } else {
+            }
+        }
+
         public static McAttachment NoteToAttachment (McNote note)
         {
             var attachment = McAttachment.InsertFile (NcApplication.Instance.Account.Id, ((FileStream stream) => {
