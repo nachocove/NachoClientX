@@ -207,11 +207,28 @@ namespace NachoCore
             }
             try {
                 var loginResponse = JsonConvert.DeserializeObject<Dictionary<string, string>> (jsonResponse);
-                Log.Info (Log.LOG_SFDC, "Login response: {0}", loginResponse);
+                Log.Info (Log.LOG_SFDC, "Login response: {0}", string.Join (", ", loginResponse.ToList ()));
             } catch (Exception ex) {
                 ErrorAction (ex, Cts.Token);
             }
             return Event.Create ((uint)SmEvt.E.Success, "SFDCLOGINBOGUSSUCCESS");
+        }
+
+        public static McCred SetupTestCredentials (int accountId, string username, string password, string token)
+        {
+            var cred = new McCred () {
+                AccountId = accountId,
+                CredType = McCred.CredTypeEnum.OAuth2,
+                Username = username,
+
+            };
+            cred.Insert ();
+            cred.UpdateOauth2 (token, "NONE", 36000);
+            cred.CredType = McCred.CredTypeEnum.Password;
+            cred.UpdatePassword (password);
+            cred.CredType = McCred.CredTypeEnum.OAuth2;
+            cred.Update ();
+            return cred;
         }
     }
 
