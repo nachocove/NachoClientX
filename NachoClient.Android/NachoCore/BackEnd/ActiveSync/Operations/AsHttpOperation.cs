@@ -434,7 +434,7 @@ namespace NachoCore.ActiveSync
 
             MimeKit.ContentType cType;
             if (!string.IsNullOrEmpty (response.ContentType)) {
-                if (MimeKit.ContentType.TryParse (Encoding.ASCII.GetBytes (response.ContentType), out cType)) {
+                if (MimeKit.ContentType.TryParse (response.ContentType, out cType)) {
                     ContentType = cType.MimeType;
                 } else {
                     ContentType = null;
