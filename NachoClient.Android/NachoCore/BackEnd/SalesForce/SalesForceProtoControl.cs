@@ -7,7 +7,7 @@ using System;
 
 namespace NachoCore
 {
-    public class SalesForceProtoControl : NcProtoControl
+    public class SalesForceProtoControl : NcProtoControl, IBEContext
     {
         public static McAccount CreateAccount ()
         {
@@ -66,6 +66,13 @@ namespace NachoCore
             McAccount.AccountCapabilityEnum.ContactReader |
             McAccount.AccountCapabilityEnum.ContactWriter);
 
+        /// <summary>
+        /// The API-based query path. We store it with the controller in memory, because it may change and
+        /// we should query for it each time.
+        /// </summary>
+        /// <value>The query path.</value>
+        public string QueryPath { get; set; }
+
         public SalesForceProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
@@ -84,6 +91,11 @@ namespace NachoCore
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
+                            (uint)SfdcEvt.E.SyncCancelled,
+                            (uint)SfdcEvt.E.SyncStopped,
+                            (uint)SfdcEvt.E.SyncDone,
+                            (uint)PcEvt.E.PendQOrHint,
+                            (uint)PcEvt.E.PendQHot,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
@@ -345,7 +357,6 @@ namespace NachoCore
             // Process the pending Q until empty. Can't be that many, because it is human generated.
             var pendings = McPending.QueryEligible (AccountId, SalesForceCapabilities);
             McContact contact = null;
-            McCalendar cal = null;
             foreach (var pending in pendings) {
                 pending.MarkDispached ();
                 switch (pending.Operation) {
@@ -391,7 +402,8 @@ namespace NachoCore
 
         protected override bool Execute ()
         {
-            // Ignore base.Execute() we don't care about the network.
+            base.Execute ();
+
             // We're letting the app use Start() to trigger a re-sync. TODO - consider using Sync command.
             Sm.PostEvent ((uint)SmEvt.E.Launch, "SFDCLAUNCH");
             return true;
