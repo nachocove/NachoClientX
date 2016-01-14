@@ -432,7 +432,18 @@ namespace NachoCore.ActiveSync
                 return;
             }
 
-            ContentType = response.ContentType;
+            MimeKit.ContentType cType;
+            if (!string.IsNullOrEmpty (response.ContentType)) {
+                if (MimeKit.ContentType.TryParse (Encoding.ASCII.GetBytes (response.ContentType), out cType)) {
+                    ContentType = cType.MimeType;
+                } else {
+                    ContentType = null;
+                    Log.Warn (Log.LOG_AS, "Could not parse Content Type {0}", response.ContentType);
+                }
+            } else {
+                ContentType = null;
+            }
+
             if (null == response.Content || !(response.Content is FileStream)) {
                 CancelTimeoutTimer ("response.Content");
                 Log.Error (Log.LOG_HTTP, "Unable to get response: {0}, response.ContentType: {1}", response.Content, response.ContentType);
