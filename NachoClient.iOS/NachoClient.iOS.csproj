@@ -1745,6 +1745,16 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs">
       <Link>NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.designer.cs">
+      <DependentUpon>SalesforceCredentialsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceApi.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceApi.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

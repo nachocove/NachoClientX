@@ -145,6 +145,9 @@ namespace NachoCore.Model
             case AccountTypeEnum.Unified:
                 AccountCapability = ActiveSyncCapabilities;
                 break;
+            case AccountTypeEnum.SalesForce:
+                AccountCapability = SalesForceProtoControl.SalesForceCapabilities;
+                break;
             default:
                 NcAssert.CaseError (value.ToString ());
                 break;
@@ -206,6 +209,8 @@ namespace NachoCore.Model
             case AccountServiceEnum.Device:
                 // FIXME: Do we need anything here?
                 return AccountTypeEnum.Device;
+            case AccountServiceEnum.SalesForce:
+                return AccountTypeEnum.SalesForce;
             default:
                 NcAssert.CaseError (value.ToString ());
                 return AccountTypeEnum.Device;

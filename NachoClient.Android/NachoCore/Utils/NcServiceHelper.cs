@@ -69,6 +69,8 @@ namespace NachoCore.Utils
                 return "Yahoo!";
             case McAccount.AccountServiceEnum.iCloud:
                 return "iCloud";
+            case McAccount.AccountServiceEnum.SalesForce:
+                return "Salesforce";
             default:
                 NcAssert.CaseError (String.Format ("AccountServiceName: unknown {0}", service));
                 return "";
