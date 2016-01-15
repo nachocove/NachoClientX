@@ -59,27 +59,25 @@ namespace NachoCore
             if (string.IsNullOrEmpty (jsonResponse)) {
                 throw new WebException("No data returned");
             }
-            List<SFDCVersion> versions;
             try {
-                versions = JsonConvert.DeserializeObject<List<SFDCVersion>> (jsonResponse);
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_SFDC, "Could not parse json: {0}", ex);
-                return Event.Create ((uint)SmEvt.E.HardFail, "JSONFAIL");
+                var versions = JsonConvert.DeserializeObject<List<SFDCVersion>> (jsonResponse);
+                var apiDict = new Dictionary<double, SFDCVersion> ();
+                foreach (var version in versions) {
+                    apiDict[version.version] = version;
+                }
+                if (!apiDict.ContainsKey (SFDCApiVersionWanted)) {
+                    Log.Error (Log.LOG_SFDC, "Could not find wanted version {0}: {1}", SFDCApiVersionWanted, string.Join (", ", versions));
+                    return Event.Create ((uint)SmEvt.E.HardFail, "APIVERSIONNOTFOUND");
+                }
+                BEContext.Server.UpdateWithOCApply<McServer> ((record) => {
+                    var target = (McServer)record;
+                    target.Path = apiDict[SFDCApiVersionWanted].url; // they call it 'url' but it's really the path.
+                    return true;
+                });
+                return Event.Create ((uint)SmEvt.E.Success, "SFDCVERSIONSSUCC");
+            } catch (JsonReaderException) {
+                return ProcessErrorResponse (jsonResponse);
             }
-            var apiDict = new Dictionary<double, SFDCVersion> ();
-            foreach (var version in versions) {
-                apiDict[version.version] = version;
-            }
-            if (!apiDict.ContainsKey (SFDCApiVersionWanted)) {
-                Log.Error (Log.LOG_SFDC, "Could not find wanted version {0}: {1}", SFDCApiVersionWanted, string.Join (", ", versions));
-                return Event.Create ((uint)SmEvt.E.HardFail, "APIVERSIONNOTFOUND");
-            }
-            BEContext.Server.UpdateWithOCApply<McServer> ((record) => {
-                var target = (McServer)record;
-                target.Path = apiDict[SFDCApiVersionWanted].url; // they call it 'url' but it's really the path.
-                return true;
-            });
-            return Event.Create ((uint)SmEvt.E.Success, "SFDCVERSIONSSUCC");
         }
     }
 }

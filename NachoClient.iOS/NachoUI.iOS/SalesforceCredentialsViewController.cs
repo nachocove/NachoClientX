@@ -55,9 +55,9 @@ namespace NachoClient.iOS
                 clientId: SFDCOAuth2Constants.ClientId,
                 clientSecret: SFDCOAuth2Constants.ClientSecret,
                 scope: String.Join (" ", scopes.ToArray ()),
-                accessTokenUrl: new Uri ("https://login.salesforce.com/services/oauth2/token"),
-                authorizeUrl: new Uri ("https://login.salesforce.com/services/oauth2/authorize"),
-                redirectUrl: new Uri ("https://www.nachocove.com/authorization_callback"),
+                accessTokenUrl: new Uri (SFDCOAuth2Constants.TokenUrl),
+                authorizeUrl: new Uri (SFDCOAuth2Constants.AuthorizeUrl),
+                redirectUrl: new Uri (SFDCOAuth2Constants.Redirecturi),
                 loginHint: loginHint);
             Authenticator.AllowCancel = true;
             Authenticator.Completed += AuthCompleted;

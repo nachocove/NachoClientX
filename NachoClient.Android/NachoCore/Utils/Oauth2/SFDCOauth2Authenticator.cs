@@ -5,6 +5,7 @@ using Xamarin.Auth;
 using NachoCore;
 using NachoCore.Model;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace NachoCore.Utils
 {
@@ -12,7 +13,10 @@ namespace NachoCore.Utils
     {
         public static string ClientId = "3MVG9A2kN3Bn17huFKGUr4DK_fibJkZoULYNvjpRnEYo5C86mVzgPwZiKyHw0STBXZCf5ItwbmzhQwX_ud7i6";
         public static string ClientSecret = "2617653871112860670";
-        public static string RefreshUrl = "https://login.salesforce.com/services/oauth2/authorize";
+        public static string TokenUrl = "https://login.salesforce.com/services/oauth2/token";
+        public static string AuthorizeUrl = "https://login.salesforce.com/services/oauth2/authorize";
+        public static string RefreshUrl = "https://login.salesforce.com/services/oauth2/token";
+        public static string Redirecturi = "https://www.nachocove.com/authorization_callback";
     }
 
 
@@ -34,6 +38,19 @@ namespace NachoCore.Utils
     {
         public SFDCOauth2Refresh (McCred cred) : base (cred, SFDCOAuth2Constants.RefreshUrl, SFDCOAuth2Constants.ClientSecret, SFDCOAuth2Constants.ClientId)
         {
+        }
+
+        protected override void RefreshAction (McCred cred, Newtonsoft.Json.Linq.JObject jsonObject)
+        {
+            Newtonsoft.Json.Linq.JToken instanceUrl;
+            if (jsonObject.TryGetValue ("instance_url", out instanceUrl)) {
+                var server = McServer.QueryByAccountIdAndCapabilities (cred.AccountId, SalesForceProtoControl.SalesForceCapabilities);
+                NcAssert.NotNull (server);
+                var serverUri = new Uri ((string)instanceUrl);
+                if (serverUri != server.BaseUri ()) {
+                    SalesForceProtoControl.PopulateServer (cred.AccountId, serverUri);
+                }
+            }
         }
     }
 }

@@ -635,9 +635,10 @@
     <Compile Include="NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetPathsCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetApiVersionsCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetContactsCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetResourcesCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetObjectsCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

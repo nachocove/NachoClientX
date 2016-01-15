@@ -170,12 +170,6 @@ namespace NachoCore.Model
         public bool SmtpDiscoveryDone { get; set; }
 
         /*
-         * "SFDC" SalesForce properties go here:
-         */
-        public uint SfdcProtoControlState { get; set; }
-
-
-        /*
          * common methods go here:
          */
 

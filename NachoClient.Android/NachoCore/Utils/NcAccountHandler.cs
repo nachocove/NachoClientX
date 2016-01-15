@@ -139,15 +139,7 @@ namespace NachoCore.Model
             if (null != server) {
                 server.Delete ();
             }
-            server = new McServer () {
-                AccountId = account.Id,
-                Capabilities = account.AccountCapability,
-                Host = serverUri.Host,
-                Port = serverUri.Port >= 0 ? serverUri.Port : 443,
-                Scheme = serverUri.Scheme,
-                Path = "",
-            };
-            server.Insert ();
+            SalesForceProtoControl.PopulateServer (account.Id, serverUri);
             return account;
         }
 

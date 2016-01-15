@@ -26,7 +26,9 @@ namespace NachoCore
         {
             InitW = (St.Last + 1),
             // wait for the fetch of the endpoint query paths.
-            SetupW,
+            ResourceW,
+            ObjectsW,
+            UiCrdW,
             // Waiting for a SalesForce DB => Nacho DB sync to complete.
             SyncW,
             // We've been told to chill, and are waiting for the current sync to notice the cancel request.
@@ -60,6 +62,8 @@ namespace NachoCore
                 SyncCancelled,
                 SyncStopped,
                 SyncDone,
+                AuthFail,
+                UiSetCred,
                 AbateOn,
                 AbateOff,
                 Last = AbateOff,
@@ -70,12 +74,37 @@ namespace NachoCore
             McAccount.AccountCapabilityEnum.ContactReader |
             McAccount.AccountCapabilityEnum.ContactWriter);
 
+        public static void PopulateServer (int accountId, Uri serverUri)
+        {
+            var server = McServer.QueryByAccountIdAndCapabilities (accountId, SalesForceProtoControl.SalesForceCapabilities);
+            if (server == null) {
+                server = new McServer () {
+                    AccountId = accountId,
+                    Capabilities = SalesForceProtoControl.SalesForceCapabilities,
+                };
+                server.Insert ();
+            }
+            server = server.UpdateWithOCApply<McServer> (((record) => {
+                var target = (McServer)record;
+                target.Host = serverUri.Host;
+                target.Port = serverUri.Port >= 0 ? serverUri.Port : 443;
+                target.Scheme = serverUri.Scheme;
+                target.Path = "";
+                return true;
+            }));
+        }
         /// <summary>
         /// The API-based query path. We store it with the controller in memory, because it may change and
         /// we should query for it each time.
         /// </summary>
         /// <value>The query path.</value>
-        public Dictionary<string, string> ApiPaths { get; set; }
+        public Dictionary<string, string> ResourcePaths { get; set; }
+
+        /// <summary>
+        /// SObject URL's
+        /// </summary>
+        /// <value>The object urls.</value>
+        public Dictionary<string, string> ObjectUrls { get; set; }
 
         public SalesForceProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
@@ -86,7 +115,6 @@ namespace NachoCore
                 Name = string.Format ("SFDCPC({0})", AccountId),
                 LocalEventType = typeof(SfdcEvt),
                 LocalStateType = typeof(Lst),
-                TransIndication = UpdateSavedState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
@@ -104,12 +132,38 @@ namespace NachoCore
                             (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)SfdcEvt.E.SyncStart,
+                            (uint)SfdcEvt.E.AuthFail,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetVersion, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
-                    },       
+                    },     
+                    new Node {
+                        State = (uint)Lst.UiCrdW,
+                        Drop = new [] {
+                            (uint)SfdcEvt.E.AbateOn,
+                            (uint)SfdcEvt.E.AbateOff,
+                            (uint)PcEvt.E.PendQOrHint,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)SfdcEvt.E.SyncStart,
+                        },
+                        Invalid = new [] {
+                            (uint)SfdcEvt.E.SyncCancelled,
+                            (uint)SfdcEvt.E.SyncStopped,
+                            (uint)SfdcEvt.E.SyncDone,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SfdcEvt.E.AuthFail,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoDisc, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                        }
+                    },
                     new Node {
                         State = (uint)Lst.InitW,
                         Drop = new [] {
@@ -125,15 +179,17 @@ namespace NachoCore
                             (uint)SfdcEvt.E.SyncDone,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.InitW },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSetup, State = (uint)Lst.SetupW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetVersion, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoGetResources, State = (uint)Lst.ResourceW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSetup, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetVersion, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                         }
                     },
                     new Node {
-                        State = (uint)Lst.SetupW,
+                        State = (uint)Lst.ResourceW,
                         Drop = new [] {
                             (uint)SfdcEvt.E.AbateOn,
                             (uint)SfdcEvt.E.AbateOff,
@@ -147,10 +203,36 @@ namespace NachoCore
                             (uint)SfdcEvt.E.SyncDone,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SetupW },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetResources, State = (uint)Lst.ResourceW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoGetObjects, State = (uint)Lst.ObjectsW },
+                            new Trans { Event = (uint)SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetResources, State = (uint)Lst.ResourceW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                        }
+                    },
+                    new Node {
+                        State = (uint)Lst.ObjectsW,
+                        Drop = new [] {
+                            (uint)SfdcEvt.E.AbateOn,
+                            (uint)SfdcEvt.E.AbateOff,
+                            (uint)PcEvt.E.PendQOrHint,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)SfdcEvt.E.SyncStart,
+                        },
+                        Invalid = new [] {
+                            (uint)SfdcEvt.E.SyncCancelled,
+                            (uint)SfdcEvt.E.SyncStopped,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetObjects, State = (uint)Lst.ObjectsW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SfdcEvt.E.SyncDone, Act = DoNop, State = (uint)Lst.Idle },
+                            new Trans { Event = (uint)SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetObjects, State = (uint)Lst.ObjectsW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
                     },
@@ -160,13 +242,11 @@ namespace NachoCore
                             (uint)SfdcEvt.E.AbateOff,
                         },
                         Invalid = new [] {
-                            (uint)SmEvt.E.HardFail,
-                            (uint)SmEvt.E.Success,
-                            (uint)SmEvt.E.TempFail,
                             (uint)SfdcEvt.E.SyncCancelled,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -174,6 +254,10 @@ namespace NachoCore
                             new Trans { Event = (uint)SfdcEvt.E.SyncStopped, Act = DoNop, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)SfdcEvt.E.SyncDone, Act = DoNop, State = (uint)Lst.Idle },
                             new Trans { Event = (uint)SfdcEvt.E.AbateOn, Act = DoAbate, State = (uint)Lst.Cancelling },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                         }
                     },
                     new Node {
@@ -185,9 +269,11 @@ namespace NachoCore
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
+                            (uint)SfdcEvt.E.AuthFail,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SyncWQd },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.Cancelling },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.Cancelling },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -210,9 +296,11 @@ namespace NachoCore
                             (uint)SfdcEvt.E.SyncCancelled,
                             (uint)SfdcEvt.E.SyncStopped,
                             (uint)SfdcEvt.E.SyncDone,
+                            (uint)SfdcEvt.E.AuthFail,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -233,6 +321,7 @@ namespace NachoCore
                             (uint)SmEvt.E.TempFail,
                         },
                         On = new [] {
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.SyncWQd },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.SyncWQd },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -240,6 +329,7 @@ namespace NachoCore
                             new Trans { Event = (uint)SfdcEvt.E.SyncStopped, Act = DoNop, State = (uint)Lst.AbatedQd },
                             new Trans { Event = (uint)SfdcEvt.E.SyncDone, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)SfdcEvt.E.AbateOn, Act = DoAbate, State = (uint)Lst.CancellingQd },
+                            new Trans { Event = (uint)SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                         }
                     },
                     new Node {
@@ -252,9 +342,11 @@ namespace NachoCore
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
+                            (uint)SfdcEvt.E.AuthFail,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SyncWQd },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.CancellingQd },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.CancellingQd },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -277,9 +369,11 @@ namespace NachoCore
                             (uint)SfdcEvt.E.SyncCancelled,
                             (uint)SfdcEvt.E.SyncStopped,
                             (uint)SfdcEvt.E.SyncDone,
+                            (uint)SfdcEvt.E.AuthFail,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncWQd },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.AbatedQd },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.AbatedQd },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -298,9 +392,11 @@ namespace NachoCore
                             (uint)SfdcEvt.E.SyncDone,
                             (uint)SfdcEvt.E.SyncCancelled,
                             (uint)SfdcEvt.E.SyncStopped,
+                            (uint)SfdcEvt.E.AuthFail,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.Idle },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.Idle },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -320,9 +416,11 @@ namespace NachoCore
                             (uint)SfdcEvt.E.SyncDone,
                             (uint)SfdcEvt.E.SyncCancelled,
                             (uint)SfdcEvt.E.SyncStopped,
+                            (uint)SfdcEvt.E.AuthFail,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoProcQ, State = (uint)Lst.AbateIdle },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.AbateIdle },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -346,33 +444,18 @@ namespace NachoCore
                             (uint)SfdcEvt.E.SyncStart,
                             (uint)SfdcEvt.E.AbateOff,
                         },
-                        Invalid = new uint[] {
+                        Invalid = new [] {
+                            (uint)SfdcEvt.E.AuthFail,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.InitW },
                         }
                     }         
                 }
             };
             Sm.Validate ();
-            Sm.State = ProtocolState.SfdcProtoControlState;
             NcApplication.Instance.StatusIndEvent += AbateChange;
-        }
-
-        // State-machine's state persistance callback.
-        private void UpdateSavedState ()
-        {
-            var protocolState = ProtocolState;
-            uint stateToSave = Sm.State;
-            if ((uint)Lst.Parked != stateToSave &&
-                // We never save Parked.
-                protocolState.SfdcProtoControlState != stateToSave) {
-                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                    var target = (McProtocolState)record;
-                    target.SfdcProtoControlState = stateToSave;
-                    return true;
-                });
-            }
         }
 
         public override void Remove ()
@@ -413,30 +496,32 @@ namespace NachoCore
             Cmd.Execute (Sm);
         }
 
+        private void DoDisc ()
+        {
+            ResourcePaths = null;
+            DoGetVersion ();
+        }
+
         private void DoGetVersion ()
         {
-            if (string.IsNullOrEmpty (Server.Path)) {
-                SetCmd (new SFDCGetApiVersionsCommand (this));
-                ExecuteCmd ();
-            } else {
-                Sm.PostEvent ((uint)SmEvt.E.Success, "DONINITNOOP");
-            }
+            SetCmd (new SFDCGetApiVersionsCommand (this));
+            ExecuteCmd ();
         }
 
-        private void DoSetup ()
+        private void DoGetResources ()
         {
-            if (null == ApiPaths) {
-                SetCmd (new SFDCGetPathsCommand (this));
-                ExecuteCmd ();
-            } else {
-                Sm.PostEvent ((uint)SmEvt.E.Success, "DOSETUPNOOP");
-
-            }
+            SetCmd (new SFDCGetResourcesCommand (this));
+            ExecuteCmd ();
         }
 
+        private void DoGetObjects ()
+        {
+            SetCmd (new SFDCGetObjectsCommand (this));
+            ExecuteCmd ();
+        }
         private void DoSync ()
         {
-            SetCmd (new SFDCGetContactsCommand (this));
+            SetCmd (new SFDCGetContactIdsCommand (this));
             ExecuteCmd ();
         }
 
@@ -459,6 +544,21 @@ namespace NachoCore
         private void DoPark ()
         {
             DoAbate ();
+        }
+
+        private void DoUiCredReq ()
+        {
+            CancelCmd ();
+            BackEndStatePreset = BackEndStateEnum.CredWait;
+            // Send the request toward the UI.
+            Owner.CredReq (this);
+        }
+
+        public override void CredResp ()
+        {
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)SfdcEvt.E.UiSetCred, "SFDCPCUSC");
+            }, "SfdcCredResp");
         }
 
         private void DoProcQ ()
@@ -514,7 +614,7 @@ namespace NachoCore
             base.Execute ();
 
             // We're letting the app use Start() to trigger a re-sync. TODO - consider using Sync command.
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "SFDCLAUNCH");
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "SFDCPCLAUNCH");
             return true;
         }
     }

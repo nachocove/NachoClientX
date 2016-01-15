@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using Newtonsoft.Json;
 
 namespace NachoCore
 {
@@ -15,12 +16,12 @@ namespace NachoCore
         public SFDCGetContactsCommand (IBEContext beContext) : base (beContext)
         {
         }
+
         protected override void MakeAndSendRequest ()
         {
             var protoControl = BEContext.ProtoControl as SalesForceProtoControl;
             NcAssert.NotNull (protoControl);
-
-            var request = NewRequest (HttpMethod.Get, string.Format ("{0}/Contact/", protoControl.ApiPaths["sobjects"]));
+            var request = NewRequest (HttpMethod.Get, string.Format ("{0}/Contact/", protoControl.ObjectUrls ["sobjects"]), jsonContentType);
             GetRequest (request);
         }
 
@@ -46,8 +47,8 @@ namespace NachoCore
             var protoControl = BEContext.ProtoControl as SalesForceProtoControl;
             NcAssert.NotNull (protoControl);
 
-            var query = "SELECT+Id+Contact";
-            var request = NewRequest (HttpMethod.Get, string.Format ("{0}?q={1}", protoControl.ApiPaths["query"], query));
+            var query = Uri.EscapeUriString ("SELECT Id FROM Contact");
+            var request = NewRequest (HttpMethod.Get, string.Format ("{0}?q={1}", protoControl.ResourcePaths ["query"], query), jsonContentType);
             GetRequest (request);
         }
 
@@ -58,6 +59,14 @@ namespace NachoCore
             if (string.IsNullOrEmpty (jsonResponse)) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCCONTFAIL1");
             }
+            try {
+                var contactIds = JsonConvert.DeserializeObject <Dictionary<string,string>> (jsonResponse);
+                Log.Info (Log.LOG_SFDC, "Contact ID response: {0}", string.Join ("\n", contactIds.ToList ()));
+            } catch (JsonSerializationException) {
+                return ProcessErrorResponse (jsonResponse);
+            } catch (JsonReaderException) {
+                return ProcessErrorResponse (jsonResponse);
+            }
             return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTACSUCC1");
         }
     }
@@ -67,12 +76,13 @@ namespace NachoCore
         public SFDCGetContactCommand2 (IBEContext beContext) : base (beContext)
         {
         }
+
         protected override void MakeAndSendRequest ()
         {
             var protoControl = BEContext.ProtoControl as SalesForceProtoControl;
             NcAssert.NotNull (protoControl);
 
-            var request = NewRequest (HttpMethod.Get, string.Format ("{0}/Contact/{1}", protoControl.ApiPaths["sobjects"], 1));
+            var request = NewRequest (HttpMethod.Get, string.Format ("{0}/Contact/{1}", protoControl.ResourcePaths ["sobjects"], 1), jsonContentType);
             GetRequest (request);
         }
 

@@ -7,6 +7,7 @@ using System.Net.Http;
 using NachoPlatform;
 using System.IO;
 using System.Net;
+using Newtonsoft.Json;
 
 namespace NachoCore
 {
@@ -56,12 +57,30 @@ namespace NachoCore
             HttpClient.SendRequest (request, KDefaultTimeout, SuccessAction, ErrorAction, Cts.Token);
         }
 
-        protected NcHttpRequest NewRequest (HttpMethod method, string commandPath, string contentType = "application/json")
+        public const string jsonContentType = "application/json";
+
+        protected NcHttpRequest NewRequest (HttpMethod method, string contentType)
         {
-            var request = new NcHttpRequest (method, new Uri (Path.Combine (BEContext.Server.BaseUriString (), commandPath)));
+            var request = new NcHttpRequest (method, BEContext.Server.BaseUri ());
             request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
             request.Headers.Add ("Authorization", string.Format ("Bearer {0}", BEContext.Cred.GetAccessToken ()));
-            request.ContentType = contentType;
+            //Log.Info (Log.LOG_SFDC, "Bearer Token: {0}", BEContext.Cred.GetAccessToken ());
+            if (!string.IsNullOrEmpty (contentType)) {
+                request.ContentType = contentType;
+            }
+            return request;
+
+        }
+        protected NcHttpRequest NewRequest (HttpMethod method, string commandPath, string contentType)
+        {
+            var sfServer = BEContext.Server;
+            sfServer.Path = commandPath; // DO NOT SAVE THIS.
+            var request = new NcHttpRequest (method, sfServer.BaseUri ());
+            request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
+            if (!string.IsNullOrEmpty (contentType)) {
+                request.ContentType = contentType;
+            }
+            request.Headers.Add ("Authorization", string.Format ("Bearer {0}", BEContext.Cred.GetAccessToken ()));
             return request;
         }
 
@@ -70,8 +89,36 @@ namespace NachoCore
             if (token.IsCancellationRequested) {
                 return;
             }
-            Event evt = ProcessSuccessResponse (response, token);
-            Finish (evt, false);
+            try {
+                Event evt = ProcessSuccessResponse (response, token);
+                Finish (evt, false);
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SFDC, "{0}: Could not process json: {1}", CmdName, ex);
+                Finish (Event.Create ((uint)SmEvt.E.HardFail, "SFDCVERSUNKERROR"), true);
+            }
+        }
+
+        protected Event ProcessErrorResponse (string jsonResponse)
+        {
+            try {
+                var errorList = Newtonsoft.Json.Linq.JArray.Parse (jsonResponse);
+                foreach (var error in errorList) {
+                    var code = (string)error.SelectToken ("errorCode");
+                    switch (code) {
+                    case "INVALID_SESSION_ID":
+                        return Event.Create ((uint)SalesForceProtoControl.SfdcEvt.E.AuthFail, "ERRORAUTHFAIL");
+
+                    default:
+                        var message = error.SelectToken ("message");
+                        Log.Error (Log.LOG_SFDC, "{0}: unknown error code: {1}: {2}", CmdName, code, null != message ? (string)message : "UNKNOWN");
+                        return Event.Create ((uint)SmEvt.E.HardFail, "SFDCUNKERROR");
+                    }
+                }
+                return Event.Create ((uint)SmEvt.E.HardFail, "SFDCNOERROR");
+            } catch (JsonReaderException ex) {
+                Log.Warn (Log.LOG_SFDC, "{0}: Could not process json response: {1}", jsonResponse);
+                return Event.Create ((uint)SmEvt.E.HardFail, "SFDCNOJSON");
+            }
         }
 
         protected virtual Event ProcessSuccessResponse (NcHttpResponse response, CancellationToken token)

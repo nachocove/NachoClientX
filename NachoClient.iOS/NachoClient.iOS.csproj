@@ -1761,8 +1761,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetContactsCommand.cs">
       <Link>NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetContactsCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetPathsCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetPathsCommand.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetObjectsCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetObjectsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetResourcesCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetResourcesCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

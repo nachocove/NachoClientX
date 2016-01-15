@@ -17,7 +17,10 @@ namespace NachoCore.Utils
     {
         public static string ClientId = "135541750674-3bmfkmlm767ipe0ih0trqf9o4jgum27h.apps.googleusercontent.com";
         public static string ClientSecret = "T08VVinKbAPiXjIlV3U5O12S";
+        public static string TokenUrl = "https://accounts.google.com/o/oauth2/token";
+        public static string AuthorizeUrl = "https://accounts.google.com/o/oauth2/auth";
         public static string RefreshUrl = "https://www.googleapis.com/oauth2/v3/token";
+        public static string Redirecturi = "http://www.nachocove.com/authorization_callback";
     }
 
     public class GoogleOAuth2Authenticator : OAuth2Authenticator
