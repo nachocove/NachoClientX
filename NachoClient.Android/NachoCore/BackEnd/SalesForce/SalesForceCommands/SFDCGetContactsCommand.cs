@@ -29,9 +29,9 @@ namespace NachoCore
             byte[] contentBytes = response.GetContent ();
             string jsonResponse = (null != contentBytes && contentBytes.Length > 0) ? Encoding.UTF8.GetString (contentBytes) : null;
             if (string.IsNullOrEmpty (jsonResponse)) {
-                return Event.Create ((uint)SmEvt.E.HardFail, "SFDCCONTFAIL1");
+                return Event.Create ((uint)SmEvt.E.HardFail, "SFDCCONTFAIL");
             }
-            return Event.Create ((uint)SmEvt.E.Success, "SFDCBOGUSSUCCESS");
+            return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTACSUCC");
         }
     }
 
@@ -58,7 +58,7 @@ namespace NachoCore
             if (string.IsNullOrEmpty (jsonResponse)) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCCONTFAIL1");
             }
-            return Event.Create ((uint)SmEvt.E.Success, "SFDCBOGUSSUCCESS");
+            return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTACSUCC1");
         }
     }
 
@@ -81,9 +81,9 @@ namespace NachoCore
             byte[] contentBytes = response.GetContent ();
             string jsonResponse = (null != contentBytes && contentBytes.Length > 0) ? Encoding.UTF8.GetString (contentBytes) : null;
             if (string.IsNullOrEmpty (jsonResponse)) {
-                return Event.Create ((uint)SmEvt.E.HardFail, "SFDCCONTFAIL1");
+                return Event.Create ((uint)SmEvt.E.HardFail, "SFDCCONTFAIL2");
             }
-            return Event.Create ((uint)SmEvt.E.Success, "SFDCBOGUSSUCCESS");
+            return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTACSUCC2");
         }
     }
 }
