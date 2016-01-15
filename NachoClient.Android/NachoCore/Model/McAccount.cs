@@ -381,15 +381,30 @@ namespace NachoCore.Model
 
         public static McAccount GetDefaultAccount (AccountCapabilityEnum capability)
         {
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            var mutablesModule = "DefaultAccounts";
+            var mutablesKey = String.Format ("Capability.{0}", (int)capability);
+            var preferredId = McMutables.GetInt (deviceAccount.Id, mutablesModule, mutablesKey, 0);
+            McAccount preferredAccount;
+            if (preferredId != 0) {
+                preferredAccount = McAccount.QueryById<McAccount> (preferredId);
+                if (preferredAccount != null) {
+                    return preferredAccount;
+                }
+            }
             var accounts = McAccount.GetAllAccounts ();
             foreach (var account in accounts) {
                 if (account.AccountType != AccountTypeEnum.Device && account.AccountType != AccountTypeEnum.Unified) {
                     if (account.ConfigurationInProgress == ConfigurationInProgressEnum.Done) {
                         if (account.HasCapability (capability)) {
+                            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
                             return account;
                         }
                     }
                 }
+            }
+            if (deviceAccount.HasCapability (capability)) {
+                return deviceAccount;
             }
             return null;
         }

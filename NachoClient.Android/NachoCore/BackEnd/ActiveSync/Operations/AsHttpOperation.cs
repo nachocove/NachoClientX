@@ -432,7 +432,18 @@ namespace NachoCore.ActiveSync
                 return;
             }
 
-            ContentType = response.ContentType;
+            MimeKit.ContentType cType;
+            if (!string.IsNullOrEmpty (response.ContentType)) {
+                if (MimeKit.ContentType.TryParse (response.ContentType, out cType)) {
+                    ContentType = cType.MimeType;
+                } else {
+                    ContentType = null;
+                    Log.Warn (Log.LOG_AS, "Could not parse Content Type {0}", response.ContentType);
+                }
+            } else {
+                ContentType = null;
+            }
+
             if (null == response.Content || !(response.Content is FileStream)) {
                 CancelTimeoutTimer ("response.Content");
                 Log.Error (Log.LOG_HTTP, "Unable to get response: {0}, response.ContentType: {1}", response.Content, response.ContentType);
@@ -467,13 +478,14 @@ namespace NachoCore.ActiveSync
                     HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                 }
             } else if (ex is WebException) {
-                Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", RedactedServerUri, ex.Message);
+                var redactedMessage = HashHelper.HashUserInASUrl (ex.Message);
+                Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", RedactedServerUri, redactedMessage);
                 if (!cToken.IsCancellationRequested) {
                     CancelTimeoutTimer ("WebException");
                     ReportCommResult (ServerUri.Host, true);
                     // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
                     // TODO: I have seen an expired server cert get us here. We need to catch that case specifically, and alert user/admin.
-                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, RedactedServerUri));
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", redactedMessage, RedactedServerUri));
                 }
             } else if (ex is NullReferenceException) {
                 Log.Info (Log.LOG_HTTP, "AttemptHttp NullReferenceException {0}: exception {1}", RedactedServerUri, ex.Message);
@@ -786,7 +798,7 @@ namespace NachoCore.ActiveSync
                         var dummy = McServer.Create (AccountId, McAccount.ActiveSyncCapabilities, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
                         ServerUri = new Uri (dummy.BaseUri (), query);
-                        RedactedServerUri = string.Format ("{0}:{1}", Owner.Method (this), HashHelper.HashEmailAddressesInUrl (ServerUri.ToString ()));
+                        RedactedServerUri = string.Format ("{0}:{1}", Owner.Method (this), HashHelper.HashUserInASUrl (ServerUri.ToString ()));
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, RedactedServerUri, ex.Message);
