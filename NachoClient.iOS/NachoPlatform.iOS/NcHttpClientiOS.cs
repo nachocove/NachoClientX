@@ -114,7 +114,7 @@ namespace NachoPlatform
                 CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
                 Headers = nsHeaders,
                 HttpMethod = request.Method.ToString ().ToUpperInvariant (),
-                Url = NSUrl.FromString (request.RequestUri.ToString ()),
+                Url = NSUrl.FromString (request.RequestUri.AbsoluteUri),
                 TimeoutInterval = timeout,
             };
             if (RequestBody != null) {
