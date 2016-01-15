@@ -115,7 +115,7 @@ namespace NachoCore
                     }
                 }
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCNOERROR");
-            } catch (JsonReaderException ex) {
+            } catch (JsonReaderException) {
                 Log.Warn (Log.LOG_SFDC, "{0}: Could not process json response: {1}", jsonResponse);
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCNOJSON");
             }
