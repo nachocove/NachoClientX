@@ -45,6 +45,7 @@ namespace NachoCore
                 if (objects.ContainsKey ("Contact")) {
                     return Event.Create ((uint)SmEvt.E.Success, "SFDCOBJSUCC");
                 } else {
+                    // FIXME: Tell the UI We don't have any contacts
                     Log.Warn (Log.LOG_SFDC, "{0}: No Contact type in sobjects. Can't sync", CmdName);
                     return Event.Create ((uint)SalesForceProtoControl.SfdcEvt.E.SyncDone, "SFDCOBJIDLE");
                 }

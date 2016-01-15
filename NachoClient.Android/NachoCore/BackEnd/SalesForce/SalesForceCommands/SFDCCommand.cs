@@ -8,6 +8,7 @@ using NachoPlatform;
 using System.IO;
 using System.Net;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace NachoCore
 {
@@ -15,7 +16,7 @@ namespace NachoCore
     {
         protected const int KDefaultTimeout = 2;
         protected string CmdName;
-        NcStateMachine OwnerSm;
+        protected NcStateMachine OwnerSm;
 
         public SFDCCommand (IBEContext beContext) : base (beContext)
         {
@@ -36,6 +37,9 @@ namespace NachoCore
 
         public override void Execute (NcStateMachine sm)
         {
+            if (Cts.IsCancellationRequested) {
+                return;
+            }
             OwnerSm = sm;
             NcTask.Run (() => MakeAndSendRequest (), CmdName);
         }
@@ -47,12 +51,18 @@ namespace NachoCore
 
         protected void GetRequest (NcHttpRequest request)
         {
+            if (Cts.IsCancellationRequested) {
+                return;
+            }
             Log.Info (Log.LOG_SFDC, "Url: {0}:{1}", request.Method, request.RequestUri);
             HttpClient.GetRequest (request, KDefaultTimeout, SuccessAction, ErrorAction, Cts.Token);
         }
 
         protected void SendRequest (NcHttpRequest request)
         {
+            if (Cts.IsCancellationRequested) {
+                return;
+            }
             Log.Info (Log.LOG_SFDC, "Url: {0}:{1}", request.Method, request.RequestUri);
             HttpClient.SendRequest (request, KDefaultTimeout, SuccessAction, ErrorAction, Cts.Token);
         }
@@ -90,12 +100,27 @@ namespace NachoCore
                 return;
             }
             try {
-                Event evt = ProcessSuccessResponse (response, token);
+                Event evt;
+                if (response.StatusCode == HttpStatusCode.OK) {
+                    evt = ProcessSuccessResponse (response, token);
+                } else {
+                    evt = ProcessErrorResponse (response, token);
+                }
                 Finish (evt, false);
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SFDC, "{0}: Could not process json: {1}", CmdName, ex);
                 Finish (Event.Create ((uint)SmEvt.E.HardFail, "SFDCVERSUNKERROR"), true);
             }
+        }
+
+        protected Event ProcessErrorResponse (NcHttpResponse response, CancellationToken token)
+        {
+            byte[] contentBytes = response.GetContent ();
+            string jsonResponse = (null != contentBytes && contentBytes.Length > 0) ? Encoding.UTF8.GetString (contentBytes) : null;
+            if (string.IsNullOrEmpty (jsonResponse)) {
+                return Event.Create ((uint)SmEvt.E.HardFail, "SFDCERRORERROR");
+            }
+            return ProcessErrorResponse (jsonResponse);
         }
 
         protected Event ProcessErrorResponse (string jsonResponse)
@@ -116,7 +141,7 @@ namespace NachoCore
                 }
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCNOERROR");
             } catch (JsonReaderException) {
-                Log.Warn (Log.LOG_SFDC, "{0}: Could not process json response: {1}", jsonResponse);
+                Log.Warn (Log.LOG_SFDC, "{0}: Could not process json response: {1}", CmdName, jsonResponse);
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCNOJSON");
             }
         }

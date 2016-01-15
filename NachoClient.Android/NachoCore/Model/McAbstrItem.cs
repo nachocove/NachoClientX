@@ -50,6 +50,7 @@ namespace NachoCore.Model
             Device,
             User,
             Internal,
+            SalesForce,
         };
 
         public virtual void DeleteAncillary ()

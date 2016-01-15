@@ -184,7 +184,7 @@ namespace NachoCore.Model
                 break;
 
             case AccountTypeEnum.SalesForce:
-                // No protocols.
+                Protocols = McProtocolState.ProtocolEnum.SalesForce;
                 break;
 
             default:
