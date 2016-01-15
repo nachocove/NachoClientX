@@ -707,7 +707,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
                 emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                     var target = (McEmailMessage)record;
-                    target.IsRead = true;
+                    target.IsRead = read;
                     return true;
                 });
             });
