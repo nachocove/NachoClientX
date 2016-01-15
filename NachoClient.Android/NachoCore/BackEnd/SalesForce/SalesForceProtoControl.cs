@@ -4,10 +4,11 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using System.Threading;
 using System;
+using System.Collections.Generic;
 
 namespace NachoCore
 {
-    public class SalesForceProtoControl : NcProtoControl, IBEContext
+    public class SalesForceProtoControl : NcProtoControl
     {
         public static McAccount CreateAccount ()
         {
@@ -23,8 +24,11 @@ namespace NachoCore
 
         public enum Lst : uint
         {
+            InitW = (St.Last + 1),
+            // wait for the fetch of the endpoint query paths.
+            SetupW,
             // Waiting for a SalesForce DB => Nacho DB sync to complete.
-            SyncW = (St.Last + 1),
+            SyncW,
             // We've been told to chill, and are waiting for the current sync to notice the cancel request.
             Cancelling,
             // We've been told to chill, and the current sync has stopped.
@@ -71,21 +75,24 @@ namespace NachoCore
         /// we should query for it each time.
         /// </summary>
         /// <value>The query path.</value>
-        public string QueryPath { get; set; }
+        public Dictionary<string, string> ApiPaths { get; set; }
 
         public SalesForceProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
             Capabilities = SalesForceCapabilities;
-            Sm = new NcStateMachine ("SFDC") { 
-                Name = string.Format ("SFDC({0})", AccountId),
+            SetupAccount ();
+            Sm = new NcStateMachine ("SFDCPC") { 
+                Name = string.Format ("SFDCPC({0})", AccountId),
                 LocalEventType = typeof(SfdcEvt),
                 LocalStateType = typeof(Lst),
+                TransIndication = UpdateSavedState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
                         Drop = new [] {
                             (uint)SfdcEvt.E.AbateOff,
+                            (uint)SfdcEvt.E.AbateOn,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.HardFail,
@@ -96,14 +103,57 @@ namespace NachoCore
                             (uint)SfdcEvt.E.SyncDone,
                             (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
+                            (uint)SfdcEvt.E.SyncStart,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetVersion, State = (uint)Lst.InitW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)SfdcEvt.E.SyncStart, Act = DoSync, State = (uint)Lst.SyncW },
-                            new Trans { Event = (uint)SfdcEvt.E.AbateOn, Act = DoAbate, State = (uint)Lst.AbateIdle },
                         }
-                    },          
+                    },       
+                    new Node {
+                        State = (uint)Lst.InitW,
+                        Drop = new [] {
+                            (uint)SfdcEvt.E.AbateOn,
+                            (uint)SfdcEvt.E.AbateOff,
+                            (uint)PcEvt.E.PendQOrHint,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)SfdcEvt.E.SyncStart,
+                        },
+                        Invalid = new [] {
+                            (uint)SfdcEvt.E.SyncCancelled,
+                            (uint)SfdcEvt.E.SyncStopped,
+                            (uint)SfdcEvt.E.SyncDone,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSetup, State = (uint)Lst.SetupW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSetup, State = (uint)Lst.InitW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                        }
+                    },
+                    new Node {
+                        State = (uint)Lst.SetupW,
+                        Drop = new [] {
+                            (uint)SfdcEvt.E.AbateOn,
+                            (uint)SfdcEvt.E.AbateOff,
+                            (uint)PcEvt.E.PendQOrHint,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)SfdcEvt.E.SyncStart,
+                        },
+                        Invalid = new [] {
+                            (uint)SfdcEvt.E.SyncCancelled,
+                            (uint)SfdcEvt.E.SyncStopped,
+                            (uint)SfdcEvt.E.SyncDone,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SetupW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                        }
+                    },
                     new Node {
                         State = (uint)Lst.SyncW,
                         Drop = new [] {
@@ -305,7 +355,24 @@ namespace NachoCore
                 }
             };
             Sm.Validate ();
+            Sm.State = ProtocolState.SfdcProtoControlState;
             NcApplication.Instance.StatusIndEvent += AbateChange;
+        }
+
+        // State-machine's state persistance callback.
+        private void UpdateSavedState ()
+        {
+            var protocolState = ProtocolState;
+            uint stateToSave = Sm.State;
+            if ((uint)Lst.Parked != stateToSave &&
+                // We never save Parked.
+                protocolState.SfdcProtoControlState != stateToSave) {
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.SfdcProtoControlState = stateToSave;
+                    return true;
+                });
+            }
         }
 
         public override void Remove ()
@@ -325,10 +392,52 @@ namespace NachoCore
             }
         }
 
+        SFDCCommand Cmd;
+        void SetCmd (SFDCCommand cmd)
+        {
+            CancelCmd ();
+            Cmd = cmd;
+        }
+
+        void CancelCmd ()
+        {
+            if (Cmd != null) {
+                Cmd.Cancel ();
+            }
+            Cmd = null;
+        }
+
+        void ExecuteCmd ()
+        {
+            NcAssert.NotNull (Cmd);
+            Cmd.Execute (Sm);
+        }
+
+        private void DoGetVersion ()
+        {
+            if (string.IsNullOrEmpty (Server.Path)) {
+                SetCmd (new SFDCGetApiVersionsCommand (this));
+                ExecuteCmd ();
+            } else {
+                Sm.PostEvent ((uint)SmEvt.E.Success, "DONINITNOOP");
+            }
+        }
+
+        private void DoSetup ()
+        {
+            if (null == ApiPaths) {
+                SetCmd (new SFDCGetPathsCommand (this));
+                ExecuteCmd ();
+            } else {
+                Sm.PostEvent ((uint)SmEvt.E.Success, "DOSETUPNOOP");
+
+            }
+        }
 
         private void DoSync ()
         {
-            
+            SetCmd (new SFDCGetContactsCommand (this));
+            ExecuteCmd ();
         }
 
         private CancellationTokenSource DPCts = null;

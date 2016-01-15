@@ -11,7 +11,7 @@ namespace NachoCore
 {
     public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait, FSync };
 
-    public class NcProtoControl
+    public class NcProtoControl: IBEContext
     {
         public class PcEvt : SmEvt
         {

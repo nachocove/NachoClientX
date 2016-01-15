@@ -218,6 +218,16 @@ namespace NachoCore.Utils
             return McAccount.GetDeviceAccount ();
         }
 
+        public static bool ConfiguredAccountExists (string emailAddress, McAccount.AccountServiceEnum service)
+        {
+            var existingAccount = McAccount.QueryByEmailAddrAndService (emailAddress, service).SingleOrDefault ();
+            if (null != existingAccount) {
+                return (McAccount.ConfigurationInProgressEnum.Done == existingAccount.ConfigurationInProgress);
+            } else {
+                return false;
+            }
+        }
+
         public static bool ConfiguredAccountExists (string emailAddress)
         {
             var existingAccount = McAccount.QueryByEmailAddr (emailAddress).SingleOrDefault ();

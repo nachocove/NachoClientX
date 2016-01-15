@@ -131,6 +131,26 @@ namespace NachoCore.Model
             return account;
         }
 
+        public McAccount CreateAccountAndServerForSalesForce (McAccount.AccountServiceEnum service, string emailAddress,
+            string accessToken, string refreshToken, uint expireSecs, Uri serverUri)
+        {
+            var account = CreateAccount (service, emailAddress, accessToken, refreshToken, expireSecs);
+            var server = McServer.QueryByAccountIdAndCapabilities (account.Id, account.AccountCapability);
+            if (null != server) {
+                server.Delete ();
+            }
+            server = new McServer () {
+                AccountId = account.Id,
+                Capabilities = account.AccountCapability,
+                Host = serverUri.Host,
+                Port = serverUri.Port >= 0 ? serverUri.Port : 443,
+                Scheme = serverUri.Scheme,
+                Path = "",
+            };
+            server.Insert ();
+            return account;
+        }
+
         public bool MaybeCreateServersForIMAP (McAccount account, McAccount.AccountServiceEnum service)
         {
             int imapServerPort;

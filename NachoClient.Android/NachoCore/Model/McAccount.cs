@@ -182,6 +182,11 @@ namespace NachoCore.Model
             case AccountTypeEnum.Device:
                 // No protocols.
                 break;
+
+            case AccountTypeEnum.SalesForce:
+                // No protocols.
+                break;
+
             default:
                 NcAssert.CaseError (value.ToString ());
                 break;
@@ -312,6 +317,11 @@ namespace NachoCore.Model
         public static IEnumerable<McAccount> QueryByEmailAddr (string emailAddr)
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.EmailAddr == emailAddr);
+        }
+
+        public static IEnumerable<McAccount> QueryByEmailAddrAndService (string emailAddr, AccountServiceEnum service)
+        {
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.EmailAddr == emailAddr && x.AccountService == service);
         }
 
         public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)

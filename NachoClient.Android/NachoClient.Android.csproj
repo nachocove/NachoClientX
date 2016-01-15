@@ -630,11 +630,14 @@
     <Compile Include="NachoCore\Adapters\NachoUnifiedInbox.cs" />
     <Compile Include="NachoCore\Adapters\NachoUnifiedHotList.cs" />
     <Compile Include="NachoCore\Adapters\NachoUnifiedLikelyToRead.cs" />
-    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs" />
     <Compile Include="NachoCore\Utils\Oauth2\Oauth2Refresh.cs" />
     <Compile Include="NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs" />
     <Compile Include="NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs" />
-    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceApi.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetPathsCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetApiVersionsCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetContactsCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -700,8 +703,9 @@
     <Folder Include="NachoCore\Model\McEmailAddress\" />
     <Folder Include="Resources\anim\" />
     <Folder Include="Resources\xml\" />
-    <Folder Include="NachoCore\BackEnd\SalesForce\" />
     <Folder Include="NachoCore\Utils\Oauth2\" />
+    <Folder Include="NachoCore\BackEnd\SalesForce\" />
+    <Folder Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

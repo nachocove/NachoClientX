@@ -106,7 +106,7 @@ namespace NachoClient.iOS
 //                Log.Info (Log.LOG_SYS, "OAUTH2 Token acquired. expires_in={0}", expires_in);
 //
 //                string expiresString = "0";
-                uint expireSecs = 0;
+                uint expireSecs = 3600;
 //                if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
 //                    if (!uint.TryParse (expiresString, out expireSecs)) {
 //                        Log.Info (Log.LOG_UI, "AuthCompleted: Could not convert expires value {0} to int", expiresString);
@@ -123,7 +123,7 @@ namespace NachoClient.iOS
 
                 var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
 
-                if (LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"])) {
+                if (LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"], Service)) {
                     Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController existing account: {0}", userInfo.Property ("email"));
                     NcAlertView.ShowMessage (this, "Account Exists", "An account with that email address already exists. Duplicate accounts are not supported.");
                     RestartAuthenticator ();
@@ -133,12 +133,14 @@ namespace NachoClient.iOS
                         NcAccountHandler.Instance.RemoveAccount (Account.Id);
                         Account = null;
                     }
-                    Account = NcAccountHandler.Instance.CreateAccount (Service,
+                    string instanceUrl;
+                    e.Account.Properties.TryGetValue ("instance_url", out instanceUrl);
+                    Account = NcAccountHandler.Instance.CreateAccountAndServerForSalesForce (Service,
                         (string)userInfo ["email"],
                         access_token,
                         refresh_token,
-                        expireSecs);
-//                    NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
+                        expireSecs,
+                        new Uri (instanceUrl));
                     Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController created account ID{0}", Account.Id);
 
 //                    Newtonsoft.Json.Linq.JObject photos;
