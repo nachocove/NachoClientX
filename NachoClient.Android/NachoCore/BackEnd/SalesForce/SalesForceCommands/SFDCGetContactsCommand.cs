@@ -47,7 +47,7 @@ namespace NachoCore
             var protoControl = BEContext.ProtoControl as SalesForceProtoControl;
             NcAssert.NotNull (protoControl);
 
-            var query = Uri.EscapeUriString ("SELECT Id FROM Contact");
+            var query = "SELECT+Id+FROM+Contact";
             var request = NewRequest (HttpMethod.Get, string.Format ("{0}?q={1}", protoControl.ResourcePaths ["query"], query), jsonContentType);
             GetRequest (request);
         }
