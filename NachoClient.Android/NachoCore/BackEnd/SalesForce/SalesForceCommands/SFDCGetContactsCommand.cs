@@ -127,7 +127,7 @@ namespace NachoCore
                     target.SFDCLastContactsSynced = DateTime.UtcNow;
                     return true;
                 }));
-                sm.PostEvent (Event.Create ((uint)SmEvt.E.Success, "SFDCCONTSUMSUCC"));
+                sm.PostEvent (Event.Create ((uint)SalesForceProtoControl.SfdcEvt.E.SyncDone, "SFDCCONTSUMDONE"));
             }
         }
 
