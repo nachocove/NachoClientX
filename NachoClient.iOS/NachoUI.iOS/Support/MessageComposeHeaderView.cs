@@ -349,6 +349,7 @@ namespace NachoClient.iOS
                 CcFieldsAreCollapsed = false;
                 UpdateCcCollapsed ();
                 SetNeedsLayout ();
+                CcView.SetEditFieldAsFirstResponder ();
                 UIView.Animate(0.2, () => {
                     CcView.LayoutIfNeeded ();
                     FromView.LayoutIfNeeded ();
