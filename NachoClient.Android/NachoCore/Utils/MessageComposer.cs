@@ -154,6 +154,20 @@ namespace NachoCore.Utils
         {
             Account = account;
             if (Message != null) {
+                Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
+                    var message = record as McEmailMessage;
+                    message.Subject = Message.Subject;
+                    message.To = Message.To;
+                    message.Cc = Message.Cc;
+                    message.Bcc = Message.Bcc;
+                    message.Intent = Message.Intent;
+                    message.IntentDate = Message.IntentDate;
+                    message.IntentDateType = Message.IntentDateType;
+                    message.BodyId = Message.BodyId;
+                    message.BodyPreview = Message.BodyPreview;
+                    message.DateReceived = message.DateReceived;
+                    return true;
+                });
                 Message = EmailHelper.MoveDraftToAccount (Message, Account);
                 Body = null;
             }
