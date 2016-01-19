@@ -212,11 +212,59 @@ namespace NachoCore.Utils
             });
         }
 
+        public static void UnlinkEmailMessageFromDrafts (McEmailMessage message)
+        {
+            var draftsFolder = McFolder.GetClientOwnedDraftsFolder (message.AccountId);
+            if (null != draftsFolder) {
+                draftsFolder.Unlink (message);
+            } else {
+                Log.Warn (Log.LOG_EMAIL, "GetEmailDraftsFolder returned null");
+            }
+            // Send status ind after the message is deleted (and unlinked).
+            var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = result,
+                Account = McAccount.QueryById<McAccount> (message.AccountId),
+            });
+        }
+
         public static void DeleteEmailThreadFromDrafts (McEmailMessageThread thread)
         {
             foreach (var message in thread) {
                 DeleteEmailMessageFromDrafts (message);
             }
+        }
+
+        public static McEmailMessage MoveDraftToAccount (McEmailMessage message, McAccount account)
+        {
+            UnlinkEmailMessageFromDrafts (message);
+            message = message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
+                var message_ = record as McEmailMessage;
+                message_.AccountId = account.Id;
+                return true;
+            });
+            if (message.BodyId > 0) {
+                var body = McBody.QueryById<McBody> (message.BodyId);
+                var path = body.GetFilePath ();
+                body.AccountId = account.Id;
+                if (body.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                    body.UpdateFileMove (path);
+                } else {
+                    body.Update ();
+                }
+            }
+            var attachments = McAttachment.QueryByItem (message);
+            foreach (var attachment in attachments) {
+                var path = attachment.GetFilePath ();
+                attachment.AccountId = account.Id;
+                if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                    attachment.UpdateFileMove(path);
+                } else {
+                    attachment.Update ();
+                }
+            }
+            SaveEmailMessageInDrafts (message);
+            return message;
         }
 
         public static bool IsSendAction (Action action)

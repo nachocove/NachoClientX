@@ -148,6 +148,19 @@ namespace NachoCore.Utils
 
         #endregion
 
+        #region Switching Account
+
+        public void SetAccount(McAccount account)
+        {
+            Account = account;
+            if (Message != null) {
+                Message = EmailHelper.MoveDraftToAccount (Message, Account);
+                Body = null;
+            }
+        }
+
+        #endregion
+
         #region Prepare Message for Compose
 
         public void StartPreparingMessage ()
@@ -157,9 +170,6 @@ namespace NachoCore.Utils
             }
             if (RelatedThread != null) {
                 RelatedMessage = RelatedThread.FirstMessageSpecialCase ();
-                if (RelatedMessage.AccountId != Account.Id) {
-                    Account = McAccount.QueryById<McAccount> (RelatedMessage.AccountId);
-                }
             }
             MessagePreparationState = MessagePreparationStatus.Preparing;
             // We can be given a Message beforehand, but it's not required.

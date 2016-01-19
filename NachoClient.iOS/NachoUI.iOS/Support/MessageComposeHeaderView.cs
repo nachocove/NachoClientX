@@ -19,6 +19,7 @@ namespace NachoClient.iOS
         void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address);
         void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address);
         void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address);
+        void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view);
     }
 
     public class MessageComposeHeaderView : UIView, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate
@@ -91,18 +92,20 @@ namespace NachoClient.iOS
         public readonly UcAddressBlock ToView;
         public readonly UcAddressBlock CcView;
         public readonly UcAddressBlock BccView;
+        public readonly MessageFieldLabel FromView;
         public readonly NcAdjustableLayoutTextField SubjectField;
         public readonly MessageFieldLabel IntentView;
         public readonly UcAttachmentBlock AttachmentsView;
         UIView ToSeparator;
         UIView CcSeparator;
         UIView BccSeparator;
+        UIView FromSeparator;
         UIView SubjectSeparator;
         UIView IntentSeparator;
         UIView AttachmentsSeparator;
         UcAddressBlock ActiveAddressView;
-        bool HasOpenedCc;
         bool HasOpenedSubject;
+        bool CcFieldsAreCollapsed;
         nfloat preferredHeight = 0.0f;
 
         private nfloat LineHeight = 42.0f;
@@ -111,17 +114,13 @@ namespace NachoClient.iOS
         private UIFont LabelFont = A.Font_AvenirNextMedium14;
         private UIColor LabelColor = A.Color_NachoDarkText;
 
-        bool ShouldHideBcc {
-            get {
-                return (!HasOpenedCc) && CcView.IsEmpty () && BccView.IsEmpty ();
-            }
-        }
-
         bool ShouldHideIntent {
             get {
                 return !HasOpenedSubject && String.IsNullOrEmpty(SubjectField.Text);
             }
         }
+
+        public bool ShouldHideFrom;
 
         #endregion
 
@@ -129,6 +128,8 @@ namespace NachoClient.iOS
 
         public MessageComposeHeaderView (CGRect frame) : base (frame)
         {
+            CcFieldsAreCollapsed = true;
+
             ToView = new UcAddressBlock (this, "To:", null, Bounds.Width);
             CcView = new UcAddressBlock (this, "Cc:", "Cc/Bcc:", Bounds.Width);
             BccView = new UcAddressBlock (this, "Bcc:", null, Bounds.Width);
@@ -144,6 +145,18 @@ namespace NachoClient.iOS
             ToView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             CcView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             BccView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+
+            FromView = new MessageFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
+            FromView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            FromView.NameLabel.Font = LabelFont;
+            FromView.ValueLabel.Font = LabelFont;
+            FromView.NameLabel.TextColor = LabelColor;
+            FromView.ValueLabel.TextColor = LabelColor;
+            FromView.NameLabel.Text = "Cc/Bcc/From: ";
+            FromView.Action = SelectFrom;
+            FromView.LeftPadding = LeftPadding;
+            FromView.RightPadding = RightPadding;
+            FromView.SetNeedsLayout ();
 
             var label = FieldLabel ("Subject:");
             SubjectField = new NcAdjustableLayoutTextField (new CGRect (0, 0, Bounds.Width, LineHeight));
@@ -185,6 +198,7 @@ namespace NachoClient.iOS
             ToSeparator = SeparatorView ();
             CcSeparator = SeparatorView ();
             BccSeparator = SeparatorView ();
+            FromSeparator = SeparatorView ();
             SubjectSeparator = SeparatorView ();
             IntentSeparator = SeparatorView ();
             AttachmentsSeparator = SeparatorView ();
@@ -195,6 +209,8 @@ namespace NachoClient.iOS
             AddSubview (CcSeparator);
             AddSubview (BccView);
             AddSubview (BccSeparator);
+            AddSubview (FromView);
+            AddSubview (FromSeparator);
             AddSubview (SubjectField);
             AddSubview (SubjectSeparator);
             AddSubview (IntentView);
@@ -212,7 +228,7 @@ namespace NachoClient.iOS
         public void AddressBlockWillBecomeActive (UcAddressBlock view)
         {
             if (view == CcView) {
-                HasOpenedCc = true;
+                CcFieldsAreCollapsed = false;
             }
             view.SetNeedsLayout ();
             view.SetCompact (false, -1);
@@ -327,6 +343,22 @@ namespace NachoClient.iOS
             }
         }
 
+        private void SelectFrom ()
+        {
+            if (CcFieldsAreCollapsed) {
+                CcFieldsAreCollapsed = false;
+                UpdateCcCollapsed ();
+                SetNeedsLayout ();
+                UIView.Animate(0.2, () => {
+                    CcView.LayoutIfNeeded ();
+                    FromView.LayoutIfNeeded ();
+                    LayoutIfNeeded ();
+                });
+            } else {
+                HeaderDelegate.MessageComposeHeaderViewDidSelectFromField (this);
+            }
+        }
+
         #endregion
 
         #region Layout
@@ -347,13 +379,30 @@ namespace NachoClient.iOS
             SetNeedsLayout ();
         }
 
+        public void UpdateCcCollapsed ()
+        {
+            CcFieldsAreCollapsed = CcFieldsAreCollapsed && CcView.IsEmpty () && BccView.IsEmpty ();
+            if (CcFieldsAreCollapsed) {
+                FromView.NameLabel.Text = "Cc/Bcc/From: ";
+                CcView.SetCompact (true, -1, true);
+            } else {
+                CcView.SetCompact (true, -1);
+                FromView.NameLabel.Text = "From: ";
+            }
+            CcView.ConfigureView ();
+            CcView.SetNeedsLayout ();
+            FromView.SetNeedsLayout ();
+        }
+
         public override void LayoutSubviews ()
         {
             base.LayoutSubviews ();
             nfloat y = 0.0f;
             nfloat previousPreferredHeight = PreferredHeight;
 
-            BccView.Hidden = BccSeparator.Hidden = ShouldHideBcc;
+            CcView.Hidden = CcSeparator.Hidden = !ShouldHideFrom && CcFieldsAreCollapsed;
+            BccView.Hidden = BccSeparator.Hidden = CcFieldsAreCollapsed;
+            FromView.Hidden = FromSeparator.Hidden = ShouldHideFrom;
             IntentView.Hidden = IntentSeparator.Hidden = ShouldHideIntent;
             AttachmentsView.Hidden = AttachmentsSeparator.Hidden = !AttachmentsAllowed;
 
@@ -363,6 +412,8 @@ namespace NachoClient.iOS
             y += LayoutSubviewAtYPosition (CcSeparator, y);
             y += LayoutSubviewAtYPosition (BccView, y);
             y += LayoutSubviewAtYPosition (BccSeparator, y);
+            y += LayoutSubviewAtYPosition (FromView, y);
+            y += LayoutSubviewAtYPosition (FromSeparator, y);
             y += LayoutSubviewAtYPosition (SubjectField, y);
             y += LayoutSubviewAtYPosition (SubjectSeparator, y);
             y += LayoutSubviewAtYPosition (IntentView, y);
