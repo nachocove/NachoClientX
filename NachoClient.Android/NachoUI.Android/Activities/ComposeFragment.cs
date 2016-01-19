@@ -59,16 +59,16 @@ namespace NachoClient.AndroidClient
 
         #region Constructor/Factory
 
-        public ComposeFragment () : base ()
+        public ComposeFragment (McAccount account) : base ()
         {
-            Composer = new MessageComposer (NcApplication.Instance.Account);
+            Composer = new MessageComposer (account);
             Composer.Delegate = this;
             JavaScriptQueue = new List<Tuple<string, JavascriptCallback>> ();
         }
 
-        public static ComposeFragment newInstance ()
+        public static ComposeFragment newInstance (McAccount account)
         {
-            var fragment = new ComposeFragment ();
+            var fragment = new ComposeFragment (account);
             return fragment;
         }
 
@@ -281,7 +281,7 @@ namespace NachoClient.AndroidClient
                 return;
             }
             if (ChooserArrayAdapter.ADD_FILE == packageName) {
-                var filePicker = new FilePickerFragment ();
+                var filePicker = new FilePickerFragment (Composer.Account.Id);
                 filePicker.Delegate = this;
                 filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
                 return;
@@ -306,7 +306,7 @@ namespace NachoClient.AndroidClient
                 var mediaScanIntent = new Intent (Intent.ActionMediaScannerScanFile);
                 mediaScanIntent.SetData (CameraOutputUri);
                 Activity.SendBroadcast (mediaScanIntent);
-                var attachment = McAttachment.InsertSaveStart (NcApplication.Instance.Account.Id);
+                var attachment = McAttachment.InsertSaveStart (Composer.Account.Id);
                 var filename = Path.GetFileName (CameraOutputUri.Path);
                 attachment.SetDisplayName (filename);
                 attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
@@ -318,7 +318,7 @@ namespace NachoClient.AndroidClient
                 try {
                     var clipData = data.ClipData;
                     if (null == clipData) {
-                        var attachment = AttachmentHelper.UriToAttachment (Activity, data.Data, data.Type);
+                        var attachment = AttachmentHelper.UriToAttachment (Composer.Account.Id, Activity, data.Data, data.Type);
                         if (null != attachment) {
                             attachment.Link (Composer.Message);
                             HeaderView.AttachmentsView.AddAttachment (attachment);
@@ -326,7 +326,7 @@ namespace NachoClient.AndroidClient
                     } else {
                         for (int i = 0; i < clipData.ItemCount; i++) {
                             var uri = clipData.GetItemAt (i).Uri;
-                            var attachment = AttachmentHelper.UriToAttachment (Activity, uri, data.Type);
+                            var attachment = AttachmentHelper.UriToAttachment (Composer.Account.Id, Activity, uri, data.Type);
                             if (null != attachment) {
                                 attachment.Link (Composer.Message);
                                 HeaderView.AttachmentsView.AddAttachment (attachment);

@@ -9,14 +9,12 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoLikelyToReadEmailMessages : INachoEmailMessages
+    public class NachoUnifiedLikelyToRead : INachoEmailMessages
     {
         List<McEmailMessageThread> ThreadList;
-        McFolder Folder;
 
-        public NachoLikelyToReadEmailMessages (McFolder folder)
+        public NachoUnifiedLikelyToRead ()
         {
-            Folder = folder;
             List<int> adds;
             List<int> deletes;
             Refresh (out adds, out deletes);
@@ -24,8 +22,7 @@ namespace NachoCore
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryActiveMessageItemsByScore2 (Folder.AccountId, Folder.Id, 
-                           McEmailMessage.minHotScore, McEmailMessage.minLikelyToReadScore);
+            var list = McEmailMessage.QueryUnifiedItemsByScore2 (McEmailMessage.minHotScore, McEmailMessage.minLikelyToReadScore);
             var threads = NcMessageThreads.ThreadByConversation (list);
             if (NcMessageThreads.AreDifferent (ThreadList, threads, out adds, out deletes)) {
                 ThreadList = threads;
@@ -51,10 +48,15 @@ namespace NachoCore
             var message = McEmailMessage.QueryById<McEmailMessage> (id);
             if (null == message) {
                 return new List<McEmailMessageThread> ();
-            } else {
-                var thread = McEmailMessage.QueryActiveMessageItemsByThreadId (Folder.AccountId, Folder.Id, message.ConversationId);
-                return thread;
             }
+
+            var inbox = McFolder.GetDefaultInboxFolder (message.AccountId);
+            if (null == inbox) {
+                return new List<McEmailMessageThread> ();
+            }
+
+            var thread = McEmailMessage.QueryActiveMessageItemsByThreadId (inbox.AccountId, inbox.Id, message.ConversationId);
+            return thread;
         }
 
         public string DisplayName ()
@@ -71,24 +73,28 @@ namespace NachoCore
         {
             return false;
         }
-       
+
         public NcResult StartSync ()
         {
-            if (null != Folder) {
-                return BackEnd.Instance.SyncCmd (Folder.AccountId, Folder.Id);
-            } else {
-                return NachoSyncResult.DoesNotSync ();
-            }
+//            if (null != Folder) {
+//                return BackEnd.Instance.SyncCmd (Folder.AccountId, Folder.Id);
+//            } else {
+//                return NachoSyncResult.DoesNotSync ();
+//            }
+            // FIXME Sync
+            return NachoSyncResult.DoesNotSync ();
         }
 
         public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
-            return new NachoThreadedEmailMessages (Folder, thread.GetThreadId());
+            var firstMessage = thread.FirstMessage ();
+            var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
+            return new NachoThreadedEmailMessages (inbox, thread.GetThreadId ());
         }
 
         public bool IsCompatibleWithAccount (McAccount account)
         {
-            return account.Id == Folder.AccountId;
+            return NcApplication.Instance.Account.ContainsAccount (account.Id);
         }
     }
 }

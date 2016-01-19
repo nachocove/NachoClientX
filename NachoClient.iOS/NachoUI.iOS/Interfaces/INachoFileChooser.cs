@@ -9,7 +9,7 @@ namespace NachoClient.iOS
 {
     public interface INachoFileChooser
     {
-        void SetOwner (INachoFileChooserParent o);
+        void SetOwner (INachoFileChooserParent o, McAccount account);
 
         void DismissFileChooser (bool animated, Action action);
     }

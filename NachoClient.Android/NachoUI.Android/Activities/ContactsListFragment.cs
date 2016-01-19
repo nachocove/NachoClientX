@@ -148,7 +148,7 @@ namespace NachoClient.AndroidClient
                         Util.CallNumber (Activity, contact, null);
                         break;
                     case EMAIL_TAG:
-                        Util.SendEmail (Activity, contact, alternateEmailAddress);
+                        Util.SendEmail (Activity, McAccount.EmailAccountForContact(contact).Id, contact, alternateEmailAddress);
                         break;
                     default:
                         throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));

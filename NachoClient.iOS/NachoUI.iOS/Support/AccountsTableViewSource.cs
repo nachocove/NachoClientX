@@ -18,15 +18,17 @@ namespace NachoClient.iOS
 
         bool showAccessory;
         bool showUnreadCount;
+        bool showUnified;
         INachoAccountsTableDelegate owner;
 
         nfloat ROW_HEIGHT;
 
-        public void Setup (INachoAccountsTableDelegate owner, bool showAccessory, bool showUnreadCount)
+        public void Setup (INachoAccountsTableDelegate owner, bool showAccessory, bool showUnreadCount, bool showUnified = true)
         {
             this.owner = owner;
             this.showAccessory = showAccessory;
             this.showUnreadCount = showUnreadCount;
+            this.showUnified = showUnified;
 
             Refresh ();
         }
@@ -35,8 +37,12 @@ namespace NachoClient.iOS
         {
             accounts = new List<McAccount> ();
 
+            McAccount unifiedAccount = null;
+
             foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
+                if (account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                    unifiedAccount = account;
+                }else if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     accounts.Add (account);
                 }
             }
@@ -45,6 +51,13 @@ namespace NachoClient.iOS
             var deviceAccount = McAccount.GetDeviceAccount();
             if (null != deviceAccount) {
                 accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
+            }
+
+            if (showUnified && accounts.Count > 1) {
+                if (unifiedAccount == null) {
+                    unifiedAccount = McAccount.GetUnifiedAccount ();
+                }
+                accounts.Insert (0, unifiedAccount);
             }
 
             // Remove the current account from the switcher view.

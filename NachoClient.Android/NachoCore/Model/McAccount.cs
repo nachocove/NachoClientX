@@ -17,6 +17,7 @@ namespace NachoCore.Model
             Exchange,
             Device,
             IMAP_SMTP,
+            Unified,
         };
 
         public enum AccountServiceEnum
@@ -138,6 +139,9 @@ namespace NachoCore.Model
                 break;
             case AccountTypeEnum.IMAP_SMTP:
                 AccountCapability = (ImapCapabilities | SmtpCapabilities);
+                break;
+            case AccountTypeEnum.Unified:
+                AccountCapability = ActiveSyncCapabilities;
                 break;
             default:
                 NcAssert.CaseError (value.ToString ());
@@ -339,6 +343,89 @@ namespace NachoCore.Model
         // Cache it!
         static McAccount _deviceAccount;
 
+        // Create on first reference
+        public static McAccount GetUnifiedAccount ()
+        {
+            if (null == _unifiedAccount) {
+                NcModel.Instance.RunInTransaction (() => {
+                    _unifiedAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Unified).SingleOrDefault ();
+                    if (null == _unifiedAccount) {
+                        _unifiedAccount = new McAccount ();
+                        _unifiedAccount.DisplayName = "All Accounts";
+                        _unifiedAccount.SetAccountType (McAccount.AccountTypeEnum.Unified);
+                        _unifiedAccount.Insert ();
+                    }
+                });
+            }
+            return _unifiedAccount;
+        }
+
+        static McAccount _unifiedAccount;
+
+        public static McAccount GetDefaultAccount (AccountCapabilityEnum capability)
+        {
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            var mutablesModule = "DefaultAccounts";
+            var mutablesKey = String.Format ("Capability.{0}", (int)capability);
+            var preferredId = McMutables.GetInt (deviceAccount.Id, mutablesModule, mutablesKey, 0);
+            McAccount preferredAccount;
+            if (preferredId != 0) {
+                preferredAccount = McAccount.QueryById<McAccount> (preferredId);
+                if (preferredAccount != null) {
+                    return preferredAccount;
+                }
+            }
+            var accounts = McAccount.GetAllAccounts ();
+            foreach (var account in accounts) {
+                if (account.AccountType != AccountTypeEnum.Device && account.AccountType != AccountTypeEnum.Unified) {
+                    if (account.ConfigurationInProgress == ConfigurationInProgressEnum.Done) {
+                        if (account.HasCapability (capability)) {
+                            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+                            return account;
+                        }
+                    }
+                }
+            }
+            if (deviceAccount.HasCapability (capability)) {
+                return deviceAccount;
+            }
+            return null;
+        }
+
+        public static McAccount EmailAccountForMessage (McEmailMessage message)
+        {
+            return EmailAccountForAccountId (message.AccountId);
+        }
+
+        public static McAccount EmailAccountForEvent (McEvent e)
+        {
+            return EmailAccountForAccountId (e.AccountId);
+        }
+
+        public static McAccount EmailAccountForCalendar (McCalendar calendar)
+        {
+            return EmailAccountForAccountId (calendar.AccountId);
+        }
+
+        public static McAccount EmailAccountForContact (McContact contact)
+        {
+            return EmailAccountForAccountId (contact.AccountId);
+        }
+
+        public static McAccount EmailAccountForAccount (McAccount account)
+        {
+            return EmailAccountForAccountId (account.Id);
+        }
+
+        private static McAccount EmailAccountForAccountId (int accountId)
+        {
+            var account = McAccount.QueryById<McAccount> (accountId);
+            if (account.HasCapability (AccountCapabilityEnum.EmailSender) && account.AccountType != AccountTypeEnum.Unified) {
+                return account;
+            }
+            return McAccount.GetDefaultAccount (AccountCapabilityEnum.EmailSender);
+        }
+
         public static List<McAccount> GetAllAccounts ()
         {
             return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");
@@ -354,6 +441,7 @@ namespace NachoCore.Model
             return (from account in McAccount.GetAllAccounts ()
                              where
                                  McAccount.AccountTypeEnum.Device != account.AccountType &&
+                                 McAccount.AccountTypeEnum.Unified != account.AccountType &&
                                  McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
                              select account.Id).ToList ();
         }
@@ -504,6 +592,14 @@ namespace NachoCore.Model
             } catch (Exception e) {
                 Log.Info (Log.LOG_DB, "McAccount: PopulateProfilePhotoFromURL exception: {0}", e);
             }
+        }
+
+        public bool ContainsAccount (int accountId)
+        {
+            if (AccountType == AccountTypeEnum.Unified) {
+                return true;
+            }
+            return Id == accountId;
         }
     }
 

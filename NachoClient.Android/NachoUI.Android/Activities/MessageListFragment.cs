@@ -437,7 +437,7 @@ namespace NachoClient.AndroidClient
                     onMessageClick (this, thread);
                 }
             } else {
-                var threadMessages = messages.GetAdapterForThread (thread.GetThreadId ());
+                var threadMessages = messages.GetAdapterForThread (thread);
                 if (null != onThreadClick) {
                     onThreadClick (this, threadMessages);
                 }
@@ -460,7 +460,7 @@ namespace NachoClient.AndroidClient
             if (multiSelectActive) {
                 MultiSelectDelete ();
             } else {
-                StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity));
+                StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity, NcApplication.Instance.EffectiveEmailAccount.Id));
             }
         }
 
@@ -730,7 +730,7 @@ namespace NachoClient.AndroidClient
         public void ShowFolderChooser (McEmailMessageThread messageThread)
         {
             Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
-            var folderFragment = ChooseFolderFragment.newInstance (messageThread);
+            var folderFragment = ChooseFolderFragment.newInstance (messageThread.FirstMessage().AccountId, messageThread);
             folderFragment.SetOnFolderSelected (OnFolderSelected);
             folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }
@@ -797,7 +797,7 @@ namespace NachoClient.AndroidClient
             if (null == s.Account) {
                 return;
             }
-            if (NcApplication.Instance.Account.Id != s.Account.Id) {
+            if (!NcApplication.Instance.Account.ContainsAccount(s.Account.Id)) {
                 return;
             }
 

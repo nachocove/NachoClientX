@@ -28,11 +28,14 @@ namespace NachoClient.AndroidClient
         FolderListAdapter folderListAdapter;
         OnFolderSelectedListener OnFolderSelected;
 
+        int accountId;
+
         // Null is ok; messageThread is just a cookie
-        public static ChooseFolderFragment newInstance (McEmailMessageThread messageThread)
+        public static ChooseFolderFragment newInstance (int accountId, McEmailMessageThread messageThread)
         {
             var fragment = new ChooseFolderFragment ();
             fragment.SetMessageThread (messageThread);
+            fragment.accountId = accountId;
             return fragment;
         }
 
@@ -53,7 +56,7 @@ namespace NachoClient.AndroidClient
 
             var view = inflater.Inflate (Resource.Layout.ChooseFolderFragment, container, false);
 
-            folderListAdapter = new FolderListAdapter (NcApplication.Instance.Account, hideFakeFolders: true);
+            folderListAdapter = new FolderListAdapter (accountId, hideFakeFolders: true);
             var layoutManager = new LinearLayoutManager (Activity);
 
             var recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);

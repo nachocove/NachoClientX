@@ -85,9 +85,10 @@ namespace NachoClient.iOS
 
         #region Constructors
 
-        public MessageComposeViewController () : base ()
+        public MessageComposeViewController (McAccount account) : base ()
         {
-            Composer = new MessageComposer (NcApplication.Instance.Account);
+            NcAssert.False (account.AccountType == McAccount.AccountTypeEnum.Unified, "MessageComposeViewController account must not be unified");
+            Composer = new MessageComposer (account);
             Composer.Delegate = this;
             JavaScriptQueue = new List<string> ();
         }

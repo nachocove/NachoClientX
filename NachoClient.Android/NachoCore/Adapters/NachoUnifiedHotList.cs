@@ -1,29 +1,31 @@
-//  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NachoCore;
 using NachoCore.Model;
 using NachoCore.Brain;
 using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoEmailMessages : INachoEmailMessages
+    public class NachoUnifiedHotList : INachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
-        McFolder folder;
 
-        public NachoEmailMessages (McFolder folder)
+        public NachoUnifiedHotList ()
         {
-            this.folder = folder;
-            threadList = new List<McEmailMessageThread> ();
+            List<int> adds;
+            List<int> deletes;
+            Refresh (out adds, out deletes);
         }
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id);
+            double threshold = McEmailMessage.minHotScore;
+            // Before statistics converge, there may be a period when there is no hot emails.
+            // When that happens, lower the threshold until we found something
+            var list = McEmailMessage.QueryUnifiedInboxItemsByScore (threshold);
             var threads = NcMessageThreads.ThreadByConversation (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
@@ -39,33 +41,31 @@ namespace NachoCore
 
         public McEmailMessageThread GetEmailThread (int i)
         {
-            if (0 > i) {
-                Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
-                return null;
-            }
-            if (threadList.Count <= i) {
-                Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
-                return null;
-            }
             var t = threadList.ElementAt (i);
             t.Source = this;
             return t;
         }
 
+        // Add messages, not just hot ones
         public List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var message = McEmailMessage.QueryById<McEmailMessage> (id);
             if (null == message) {
                 return new List<McEmailMessageThread> ();
-            } else {
-                var thread = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, message.ConversationId);
-                return thread;
             }
+
+            var inbox = McFolder.GetDefaultInboxFolder (message.AccountId);
+            if (null == inbox) {
+                return new List<McEmailMessageThread> ();
+            }
+
+            var thread = McEmailMessage.QueryActiveMessageItemsByThreadId (inbox.AccountId, inbox.Id, message.ConversationId);
+            return thread;
         }
 
         public string DisplayName ()
         {
-            return folder.DisplayName;
+            return "Hot List";
         }
 
         public bool HasOutboxSemantics ()
@@ -80,22 +80,27 @@ namespace NachoCore
 
         public NcResult StartSync ()
         {
-            if (null != folder) {
-                return BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
-            } else {
-                return NachoSyncResult.DoesNotSync ();
-            }
+            // FIXME all acount sync cmd
+//            if (null != folder) {
+//                return BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
+//            } else {
+//                return NachoSyncResult.DoesNotSync ();
+//            }
+            return NachoSyncResult.DoesNotSync ();
         }
 
         public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
-            return new NachoThreadedEmailMessages (folder, thread.GetThreadId());
+            var firstMessage = thread.FirstMessage ();
+            var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
+            return new NachoThreadedEmailMessages (inbox, thread.GetThreadId ());
         }
 
         public bool IsCompatibleWithAccount (McAccount account)
         {
-            return account.Id == folder.AccountId;
+            return NcApplication.Instance.Account.ContainsAccount (account.Id);
         }
-
     }
 }
+
+

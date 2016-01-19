@@ -34,6 +34,8 @@ namespace NachoClient.iOS
         UcNameValuePair DaysToSyncBlock;
         UcNameValuePair NotificationsBlock;
         UISwitch FastNotificationSwitch;
+        UISwitch DefaultEmailSwitch;
+        UISwitch DefaultCalendarSwitch;
         UIButton FixAccountButton;
         UIButton DeleteAccountButton;
         UIView DeleteAccountBackgroundView;
@@ -185,6 +187,52 @@ namespace NachoClient.iOS
 
             yOffset = fastNotificationLabel.Frame.Bottom;
 
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender)) {
+                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
+
+                var defaultEmailLabel = new UILabel (new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT));
+                defaultEmailLabel.Font = A.Font_AvenirNextRegular14;
+                defaultEmailLabel.TextAlignment = UITextAlignment.Left;
+                defaultEmailLabel.TextColor = A.Color_NachoDarkText;
+                defaultEmailLabel.Text = "Default Email Account";
+                defaultEmailLabel.SizeToFit ();
+                ViewFramer.Create (defaultEmailLabel).Height (HEIGHT);
+
+                DefaultEmailSwitch = new UISwitch ();
+                ViewFramer.Create (DefaultEmailSwitch).RightAlignX (contentView.Frame.Width - INDENT);
+                ViewFramer.Create (DefaultEmailSwitch).CenterY (yOffset, HEIGHT);
+
+                DefaultEmailSwitch.ValueChanged += DefaultEmailSwitchChangedHandler;
+
+                contentView.AddSubview (defaultEmailLabel);
+                contentView.AddSubview (DefaultEmailSwitch);
+
+                yOffset = defaultEmailLabel.Frame.Bottom;
+            }
+
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
+
+                var defaultCalendarLabel = new UILabel (new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT));
+                defaultCalendarLabel.Font = A.Font_AvenirNextRegular14;
+                defaultCalendarLabel.TextAlignment = UITextAlignment.Left;
+                defaultCalendarLabel.TextColor = A.Color_NachoDarkText;
+                defaultCalendarLabel.Text = "Default Calendar Account";
+                defaultCalendarLabel.SizeToFit ();
+                ViewFramer.Create (defaultCalendarLabel).Height (HEIGHT);
+
+                DefaultCalendarSwitch = new UISwitch ();
+                ViewFramer.Create (DefaultCalendarSwitch).RightAlignX (contentView.Frame.Width - INDENT);
+                ViewFramer.Create (DefaultCalendarSwitch).CenterY (yOffset, HEIGHT);
+
+                DefaultCalendarSwitch.ValueChanged += DefaultCalendarSwitchChangedHandler;
+
+                contentView.AddSubview (defaultCalendarLabel);
+                contentView.AddSubview (DefaultCalendarSwitch);
+
+                yOffset = defaultCalendarLabel.Frame.Bottom;
+            }
+
             var filler1 = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
             filler1.BackgroundColor = A.Color_NachoBackgroundGray;
             contentView.AddSubview (filler1);
@@ -294,6 +342,20 @@ namespace NachoClient.iOS
 
             FastNotificationSwitch.SetState (account.FastNotificationEnabled, false);
 
+            if (DefaultEmailSwitch != null) {
+                var defaultEmailAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                bool isDefaultEmail = defaultEmailAccount != null && account.Id == defaultEmailAccount.Id;
+                DefaultEmailSwitch.SetState (isDefaultEmail, false);
+                DefaultEmailSwitch.Enabled = !isDefaultEmail;
+            }
+
+            if (DefaultCalendarSwitch != null) {
+                var defaultCalendarAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                bool isDefaultCalendar = defaultCalendarAccount != null && account.Id == defaultCalendarAccount.Id;
+                DefaultCalendarSwitch.SetState (isDefaultCalendar, false);
+                DefaultCalendarSwitch.Enabled = !isDefaultCalendar;
+            }
+
             NotificationsBlock.SetValue (Pretty.NotificationConfiguration (account.NotificationConfiguration));
 
             var contentViewWidth = contentView.Frame.Width;
@@ -319,6 +381,12 @@ namespace NachoClient.iOS
             }
             DeleteAccountButton.TouchUpInside -= onDeleteAccount;
             FastNotificationSwitch.ValueChanged -= FastNotificationSwitchChangedHandler;
+            if (DefaultEmailSwitch != null) {
+                DefaultEmailSwitch.ValueChanged -= DefaultEmailSwitchChangedHandler;
+            }
+            if (DefaultCalendarSwitch != null) {
+                DefaultCalendarSwitch.ValueChanged -= DefaultCalendarSwitchChangedHandler;
+            }
         }
 
         void BackButton_Clicked (object sender, EventArgs e)
@@ -463,6 +531,24 @@ namespace NachoClient.iOS
             account.FastNotificationEnabled = FastNotificationSwitch.On;
             account.Update ();
             NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
+        }
+
+        protected void DefaultEmailSwitchChangedHandler (object sender, EventArgs e)
+        {
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            var mutablesModule = "DefaultAccounts";
+            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.EmailSender);
+            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+            DefaultEmailSwitch.Enabled = false;
+        }
+
+        protected void DefaultCalendarSwitchChangedHandler (object sender, EventArgs e)
+        {
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            var mutablesModule = "DefaultAccounts";
+            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.CalWriter);
+            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+            DefaultCalendarSwitch.Enabled = false;
         }
 
         protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)

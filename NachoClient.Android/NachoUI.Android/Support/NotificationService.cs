@@ -94,7 +94,6 @@ namespace NachoClient.AndroidClient
         {
             if (String.IsNullOrEmpty (message.From)) {
                 // Don't notify or count in badge number from-me messages.
-                Log.Info (Log.LOG_UI, "Not notifying on to-{0} message.", NcApplication.Instance.Account.EmailAddr);
                 return false;
             }
 

@@ -132,7 +132,7 @@ namespace NachoClient.iOS
             // it is about to be popped?  Catch & avoid that case.
             var message = thread.FirstMessageSpecialCase ();
             if (null != message) {
-                if (NcApplication.Instance.Account.Id != message.AccountId) {
+                if (!NcApplication.Instance.Account.ContainsAccount(message.AccountId)) {
                     Log.Error (Log.LOG_UI, "MessageViewController mismatched accounts {0} {1}.", NcApplication.Instance.Account.Id, message.AccountId);
                     if (null != NavigationController) {
                         NavigationController.PopViewController (false);
@@ -974,7 +974,9 @@ namespace NachoClient.iOS
 
         private void ComposeResponse (EmailHelper.Action action, bool startWithQuickResponse = false)
         {
-            var composeViewController = new MessageComposeViewController ();
+            var message = thread.FirstMessageSpecialCase ();
+            var account = McAccount.EmailAccountForMessage (message);
+            var composeViewController = new MessageComposeViewController (account);
             composeViewController.Composer.Kind = action;
             composeViewController.Composer.RelatedThread = thread;
             composeViewController.StartWithQuickResponse = startWithQuickResponse;
@@ -996,8 +998,10 @@ namespace NachoClient.iOS
         {
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 string body;
-                var composeViewController = new MessageComposeViewController ();
-                composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (NcApplication.Instance.Account, url.AbsoluteString, out body);
+                var message = thread.FirstMessageSpecialCase ();
+                var account = McAccount.EmailAccountForMessage (message);
+                var composeViewController = new MessageComposeViewController (account);
+                composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
                 composeViewController.Composer.InitialText = body;
                 composeViewController.Present ();
             } else {
