@@ -6,9 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.IO;
 using NachoClient.Build;
 using NachoCore.Utils;
@@ -425,9 +423,7 @@ namespace NachoCore.Model
             InitializeDb ();
             TeleDbFileName = Path.Combine (GetDataDirPath (), "teledb");
             InitializeTeleDb ();
-            NcApplication.Instance.MonitorEvent += (object sender, EventArgs e) => {
-                Scrub ();
-            };
+            NcApplicationMonitor.Instance.MonitorEvent += (sender, e) => Scrub ();
             //mark all the files for skip backup
             MarkDataDirForSkipBackup ();
         }

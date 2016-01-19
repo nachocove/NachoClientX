@@ -5,18 +5,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
-using System.Text;
 using System.Diagnostics;
 using System.Globalization;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
-using NachoCore.Wbxml;
 using NachoClient.Build;
 using NachoPlatform;
-using NachoPlatformBinding;
 using System.Security.Cryptography.X509Certificates;
-using System.Runtime.CompilerServices;
 
 namespace NachoCore
 {
@@ -62,7 +58,7 @@ namespace NachoCore
                 if (value != _ExecutionContext) {
                     _ExecutionContext = value; 
                     Log.Info (Log.LOG_LIFECYCLE, "ExecutionContext => {0}", _ExecutionContext.ToString ());
-                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged);
+                    var result = NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged);
                     result.Value = _ExecutionContext;
                     InvokeStatusIndEvent (new StatusIndEventArgs () { 
                         Status = result,
@@ -291,7 +287,6 @@ namespace NachoCore
 
         private bool serviceHasBeenEstablished = false;
 
-        private NcSamples ProcessMemory;
 
         private bool IsXammit (Exception ex)
         {
@@ -312,12 +307,12 @@ namespace NachoCore
                 // XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
                 return true;
             }
-            if (ex is System.IO.IOException && message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
+            if (ex is IOException && message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
                 Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: IOException with Tls.RecordProtocol.BeginSendRecord");
                 // XAMMIT. Known bug. AsHttpOperation will time-out and retry. No need to crash.
                 return true;
             }
-            if (ex is System.OperationCanceledException && message.Contains ("Telemetry.Process")) {
+            if (ex is OperationCanceledException && message.Contains ("Telemetry.Process")) {
                 Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: OperationCanceledException with Telemetry.Process");
                 // XAMMIT. Cancel exception should be caught by system when c-token is the Task's c-token.
                 return true;
@@ -346,7 +341,7 @@ namespace NachoCore
             if (!ThreadPool.SetMinThreads (8, 6)) {
                 Console.WriteLine ("ERROR: ThreadPool minimums could not be set.");
             }
-            TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
+            TaskScheduler.UnobservedTaskException += (sender, eargs) => {
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
                 var faulted = NcTask.FindFaulted ();
@@ -363,7 +358,7 @@ namespace NachoCore
                     aex.Handle ((ex) => true);
                 } else {
                     foreach (var ex in aex.InnerExceptions) { 
-                        if (ex is System.IO.IOException && ex.Message.Contains ("Too many open files")) {
+                        if (ex is IOException && ex.Message.Contains ("Too many open files")) {
                             Log.Error (Log.LOG_SYS, "UnobservedTaskException:{0}: Dumping File Descriptors", ex.Message);
                             Log.DumpFileDescriptors ();
                             NcModel.Instance.DumpLastAccess ();
@@ -378,7 +373,7 @@ namespace NachoCore
             };
             UiThreadId = Thread.CurrentThread.ManagedThreadId;
 
-            StatusIndEvent += (object sender, EventArgs ea) => {
+            StatusIndEvent += (sender, ea) => {
                 var siea = (StatusIndEventArgs)ea;
                 TimeSpan deliveryTime;
                 switch (siea.Status.SubKind) {
@@ -391,35 +386,16 @@ namespace NachoCore
                     deliveryTime = NcAbate.DeliveryTime (siea);
                     Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
                     break;
-
-                case NcResult.SubKindEnum.Info_ExecutionContextChanged:
-                    switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
-                    case NcApplication.ExecutionContextEnum.Foreground:
-                        MonitorStart ();
-                        break;
-
-                    default:
-                        MonitorStop ();
-                        break;
-                    }
-                    break;
                 }
             };
-            ProcessMemory = new NcSamples ("Monitor.ProcessMemory");
-            ProcessMemory.MinInput = 0;
-            ProcessMemory.MaxInput = 100000;
-            ProcessMemory.LimitInput = true;
-            ProcessMemory.ReportThreshold = 4;
         }
 
         private static volatile NcApplication instance;
         private static object syncRoot = new Object ();
-        private NcTimer MonitorTimer;
         private NcTimer Class4LateShowTimer;
         private NcTimer StartupUnmarkTimer;
 
         public event EventHandler Class4LateShowEvent;
-        public event EventHandler MonitorEvent;
 
         public static NcApplication Instance {
             get {
@@ -492,7 +468,7 @@ namespace NachoCore
                         NcMigration.StartService (
                             StartBasalServicesCompletion,
                             (percentage) => {
-                                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
+                                var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
                                 result.Value = percentage;
                                 InvokeStatusIndEvent (new StatusIndEventArgs () { 
                                     Status = result,
@@ -500,7 +476,7 @@ namespace NachoCore
                                 });
                             },
                             (description) => {
-                                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
+                                var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
                                 result.Value = description;
                                 InvokeStatusIndEvent (new StatusIndEventArgs () { 
                                     Status = result,
@@ -523,7 +499,7 @@ namespace NachoCore
                 NcMigration.StartService (
                     StartBasalServicesCompletion,
                     (percentage) => {
-                        var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
+                        var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
                         result.Value = percentage;
                         InvokeStatusIndEvent (new StatusIndEventArgs () { 
                             Status = result,
@@ -531,7 +507,7 @@ namespace NachoCore
                         });
                     },
                     (description) => {
-                        var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
+                        var result = NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
                         result.Value = description;
                         InvokeStatusIndEvent (new StatusIndEventArgs () { 
                             Status = result,
@@ -570,7 +546,7 @@ namespace NachoCore
             // Make sure the scheduled notifications are up to date.
             LocalNotificationManager.ScheduleNotifications ();
 
-            MonitorStart (); // Has a deferred timer start inside.
+            NcApplicationMonitor.Instance.Start (); // Has a deferred timer start inside.
             CrlMonitor.StartService ();
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
@@ -596,7 +572,7 @@ namespace NachoCore
         public void StopClass4Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
-            MonitorStop ();
+            NcApplicationMonitor.Instance.Stop ();
             CrlMonitor.StopService ();
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
@@ -643,60 +619,6 @@ namespace NachoCore
             }
         }
 
-        public void MonitorStart ()
-        {
-            if (null == MonitorTimer) {
-                MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
-                    MonitorReport ();
-                }, null, new TimeSpan (0, 0, 30), new TimeSpan (0, 0, 60));
-                MonitorTimer.Stfu = true;
-            }
-        }
-
-        public void MonitorStop ()
-        {
-            if (null != MonitorTimer) {
-                MonitorTimer.Dispose ();
-                MonitorTimer = null;
-            }
-        }
-
-        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-        {
-            if (!String.IsNullOrEmpty (moniker)) {
-                Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);
-            }
-            var processMemory = PlatformProcess.GetUsedMemory () / (1024 * 1024);
-            ProcessMemory.AddSample ((int)processMemory);
-            Log.Info (Log.LOG_SYS, "Monitor: Memory: Process {0} MB, GC {1} MB",
-                processMemory, GC.GetTotalMemory (true) / (1024 * 1024));
-            int minWorker, maxWorker, minCompletion, maxCompletion;
-            ThreadPool.GetMinThreads (out minWorker, out minCompletion);
-            ThreadPool.GetMaxThreads (out maxWorker, out maxCompletion);
-            int systemThreads = PlatformProcess.GetNumberOfSystemThreads ();
-            string message = string.Format ("Monitor: Threads: Min {0}/{1}, Max {2}/{3}, System {4}",
-                                 minWorker, minCompletion, maxWorker, maxCompletion, systemThreads);
-            if (50 > systemThreads) {
-                Log.Info (Log.LOG_SYS, message);
-            } else {
-                Log.Warn (Log.LOG_SYS, message);
-            }
-            Log.Info (Log.LOG_SYS, "Monitor: Status: Comm {0}, Speed {1}, Battery {2:00}% {3}",
-                NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
-                NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
-            Log.Info (Log.LOG_SYS, "Monitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
-            Log.Info (Log.LOG_SYS, "Monitor: Files: Max {0}, Currently open {1}",
-                PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
-            if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
-                Log.DumpFileDescriptors ();
-            }
-            NcModel.Instance.DumpLastAccess ();
-            NcTask.Dump ();
-
-            if (null != MonitorEvent) {
-                MonitorEvent (this, EventArgs.Empty);
-            }
-        }
 
         public void EstablishService ()
         {
@@ -740,14 +662,12 @@ namespace NachoCore
             // to happen right away should go into a background task.
             NcTask.Run (delegate {
 
-                //////////////////////////////////////////////////////////////////////////////////////
                 // Actions that shouldn't be cancelled.  These need to run to completion, even if that
                 // means the task survives across a shutdown.
 
                 NcEventManager.Initialize ();
                 LocalNotificationManager.InitializeLocalNotifications ();
 
-                /////////////////////////////////////////////////////////////////////////////////////
                 // Actions that can be cancelled.  These are not necessary for the correctness of the
                 // running app, or they can be delayed until the next time the app starts.
 
