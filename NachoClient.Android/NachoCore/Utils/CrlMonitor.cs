@@ -100,7 +100,7 @@ namespace NachoCore.Utils
             lock (LockObj) {
                 StopService ();
                 Cts = new CancellationTokenSource ();
-                PossiblyRestartTimer ();
+                SetMonitorTimer ();
             }
         }
 
@@ -149,9 +149,9 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Find the soonest expiry time over all CrlMonitorItem's andset the timer that that.
+        /// Find the soonest expiry time over all CrlMonitorItem's and set the timer that that.
         /// </summary>
-        public void PossiblyRestartTimer ()
+        public void SetMonitorTimer ()
         {
             lock (LockObj) {
                 StopTimer ();
@@ -209,6 +209,12 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// Determines whether the certificate is revoked. Uses the cert's issuer-name to find the relevant
+        /// CRL (or rather CrlMonitorItem), and looks to see if the cert is revoked within that item.
+        /// </summary>
+        /// <returns><c>true</c> if this cert is revoked; otherwise, <c>false</c>.</returns>
+        /// <param name="cert">Cert.</param>
         public bool IsRevoked (X509Certificate2 cert)
         {
             lock (LockObj) {
@@ -253,7 +259,7 @@ namespace NachoCore.Utils
     /// 
     /// 2) The CRL's listed in a CDP-list may be the same CRL (for fault tolerance), or they could be different CRL's.
     ///   Again the RFC's don't really say. We will treat them as the same CRL, because that's the most common use-case
-    ///  out there.
+    ///   out there.
     /// </summary>
     public class CrlMonitorItem
     {
@@ -341,7 +347,7 @@ namespace NachoCore.Utils
 
         void FinishUpdate ()
         {
-            CrlMonitor.Instance.PossiblyRestartTimer ();
+            CrlMonitor.Instance.SetMonitorTimer ();
             UpdateRunning = false;
         }
 
@@ -359,7 +365,7 @@ namespace NachoCore.Utils
         /// Fetchs the CRL. Given a list of URL's in a certificate, try them all in turn until one works.
         /// If we've tried them all MaxRetries times, give up and fail. Remember to check the cached CRL first.
         /// </summary>
-        /// <param name="cToken">C token.</param>
+        /// <param name="cToken">Cancellation token.</param>
         void FetchCRL (CancellationToken cToken)
         {
             if (cToken.IsCancellationRequested) {
@@ -374,7 +380,7 @@ namespace NachoCore.Utils
 
             if (Retries < MaxRetries) {
                 NextUpdate = null;
-                // there may be a cached file from the last time we fetched on. Use it as if this was the download
+                // there may be a cached file from the last time we fetched one. Use it as if this was the download
                 if (File.Exists (crlPath)) {
                     NcTask.Run (() => {
                         var fs = new FileStream (crlPath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -391,9 +397,7 @@ namespace NachoCore.Utils
                 }
             } else {
                 Log.Info (Log.LOG_SYS, "{0}: Could not fetch CRL. Stopping.", Name);
-                var timer = new NcTimer (Name + "Timer", (state) => {
-                    StartUpdate (cToken);
-                }, null, RetryInterval, 0);
+                var timer = new NcTimer (Name + "Timer", (state) => StartUpdate (cToken), null, RetryInterval, 0);
                 cToken.Register (timer.Dispose);
                 FinishUpdate ();
                 Revoked = null;
