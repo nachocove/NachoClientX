@@ -84,12 +84,6 @@ namespace NachoCore.IMAP
                 return userDemand;
             }
 
-            if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
-                Log.Info (Log.LOG_IMAP, "Strategy:QS:Throttle");
-                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Wait,
-                    new ImapWaitCommand (BEContext, Client, KThrottleSeconds, true));
-            }
-
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 SyncKit syncKit = GenSyncKit (ref protocolState, exeCtxt, null);
                 if (null != syncKit) {
@@ -180,6 +174,12 @@ namespace NachoCore.IMAP
                 if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fsync");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext, Client));
+                }
+
+                if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
+                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG.RL:Ping");
+                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
+                        new ImapIdleCommand (BEContext, Client));
                 }
 
                 FetchKit fetchKit;
