@@ -1101,11 +1101,6 @@ namespace NachoCore.ActiveSync
             if (null != userDemand) {
                 return userDemand;
             }
-            if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
-                Log.Info (Log.LOG_IMAP, "Strategy:QS:Throttle");
-                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
-                    new AsWaitCommand (BEContext, KThrottleSeconds, true));
-            }
             // TODO move user-directed Sync up to this priority level in FG.
             // (FG, BG) If there is a SendMail, SmartForward or SmartReply in the pending queue, send it.
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
