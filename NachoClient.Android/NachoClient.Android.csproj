@@ -631,6 +631,7 @@
     <Compile Include="NachoCore\Adapters\NachoUnifiedInbox.cs" />
     <Compile Include="NachoCore\Adapters\NachoUnifiedHotList.cs" />
     <Compile Include="NachoCore\Adapters\NachoUnifiedLikelyToRead.cs" />
+    <Compile Include="NachoCore\Utils\NcApplicationMonitor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
