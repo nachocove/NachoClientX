@@ -797,7 +797,7 @@ namespace NachoClient.AndroidClient
             if (null == s.Account) {
                 return;
             }
-            if (NcApplication.Instance.Account.ContainsAccount(s.Account.Id)) {
+            if (!NcApplication.Instance.Account.ContainsAccount(s.Account.Id)) {
                 return;
             }
 

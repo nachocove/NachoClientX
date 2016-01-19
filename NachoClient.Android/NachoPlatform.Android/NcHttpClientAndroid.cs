@@ -118,7 +118,7 @@ namespace NachoPlatform
             }
 
             var builder = new Request.Builder ()
-                .Url (new Java.Net.URL (request.RequestUri.ToString ()))
+                .Url (new Java.Net.URL (request.RequestUri.AbsoluteUri))
                 .Tag (request.guid);
 
             RequestBody body = null;
