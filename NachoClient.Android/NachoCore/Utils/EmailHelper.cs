@@ -901,8 +901,7 @@ namespace NachoCore.Utils
         public static void ToggleRead (McEmailMessage message)
         {
             bool isRead = !message.IsRead;
-            message.IsRead = isRead;
-            message.UpdateWithOCApply<McEmailMessage> ((record) => {
+            message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
                 var target = (McEmailMessage)record;
                 target.IsRead = isRead;
                 return true;
