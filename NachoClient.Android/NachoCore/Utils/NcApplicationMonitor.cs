@@ -41,6 +41,8 @@ namespace NachoCore
             ProcessMemory.ReportThreshold = 4;
         }
 
+        DateTime? LastStatusIndDetectorReport;
+
         void StatusIndDetector (object sender, EventArgs ea)
         {
             var siea = (StatusIndEventArgs)ea;
@@ -58,6 +60,10 @@ namespace NachoCore
 
                 default:
                     break;
+                }
+                if (!LastStatusIndDetectorReport.HasValue || LastStatusIndDetectorReport.Value.AddSeconds (10) < DateTime.UtcNow) {
+                    Report (); // do a report on any execution context changes.
+                    LastStatusIndDetectorReport = DateTime.UtcNow;
                 }
                 break;
             }
