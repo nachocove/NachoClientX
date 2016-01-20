@@ -236,18 +236,21 @@ namespace NachoCore.Utils
             }
         }
 
+        DateTime? LastRefreshed;
+        const uint RefreshTimeoutSeconds = 10;
+
         /// <summary>
         /// Refresh the network status and speed. Called during Backend start for an account.
         /// </summary>
-        /// <remarks>
-        /// TODO - don't call again if recent (cache).
-        /// </remarks>
         public void Refresh (string tag)
         {
-            NetStatusStatusEnum currStatus;
-            NetStatusSpeedEnum currSpeed;
-            NetStatus.Instance.GetCurrentStatus (out currStatus, out currSpeed);
-            UpdateState (currStatus, currSpeed, tag);
+            if (!LastRefreshed.HasValue || LastRefreshed.Value.AddSeconds (RefreshTimeoutSeconds) < DateTime.UtcNow) {
+                NetStatusStatusEnum currStatus;
+                NetStatusSpeedEnum currSpeed;
+                NetStatus.Instance.GetCurrentStatus (out currStatus, out currSpeed);
+                UpdateState (currStatus, currSpeed, tag);
+                LastRefreshed = DateTime.UtcNow;
+            }
         }
 
         /// <summary>
