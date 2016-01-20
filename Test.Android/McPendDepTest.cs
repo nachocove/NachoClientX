@@ -232,7 +232,7 @@ namespace Test.Common
             {
                 return new List<NcResult> () { NcResult.OK () };
             }
-            public NcResult MarkEmailReadCmd (int accountId, int emailMessageId)
+            public NcResult MarkEmailReadCmd (int accountId, int emailMessageId, bool read)
             {
                 return NcResult.OK ();
             }
