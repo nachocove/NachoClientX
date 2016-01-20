@@ -679,9 +679,9 @@ namespace NachoCore
             return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailSender, (service) => service.ForwardCalCmd (newEmailMessageId, forwardedCalId, folderId));
         }
 
-        public NcResult MarkEmailReadCmd (int accountId, int emailMessageId)
+        public NcResult MarkEmailReadCmd (int accountId, int emailMessageId, bool read)
         {
-            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.MarkEmailReadCmd (emailMessageId));
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.MarkEmailReadCmd (emailMessageId, read));
         }
 
         public NcResult SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 

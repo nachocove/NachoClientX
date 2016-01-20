@@ -541,7 +541,60 @@ namespace NachoClient.AndroidClient
                 result.AddRange (appEvents);
                 result.AddRange (deviceEvents);
                 result.Sort ((x, y) => {
-                    return DateTime.Compare (x.StartTime, y.StartTime);
+                    int startTimeOrder = DateTime.Compare (x.StartTime, y.StartTime);
+                    if (0 == startTimeOrder) {
+                        // If the events have the same start time, put device events before app events.
+                        if (0 != x.DeviceEventId && 0 == y.DeviceEventId) {
+                            return -1;
+                        } else if (0 == x.DeviceEventId && 0 != y.DeviceEventId) {
+                            return 1;
+                        } else {
+                            return 0;
+                        }
+                    }
+                    return startTimeOrder;
+                });
+
+                // The Android calendar item database has a UID field, but in my experience that field
+                // has always been null.  Which renders moot the code that eliminates duplicate events
+                // for the same meeting.  So we have to eliminate duplicates here.  If we see a device
+                // event without a UID, and we find another event with the same start time, end time,
+                // and title, then ignore the UID-less device event.  It is not as accurate as using
+                // the UID, but it is as good as we can do.
+                for (int i = 0; i < result.Count; ++i) {
+                    McEvent e = result [i];
+                    if (0 == e.DeviceEventId || null != e.UID) {
+                        continue;
+                    }
+                    string eTitle = null;
+                    for (int j = i + 1; j < result.Count && result [j].StartTime == e.StartTime; ++j) {
+                        McEvent f = result [j];
+                        if (e.EndTime == f.EndTime) {
+                            if (null == eTitle) {
+                                string dummyLocation;
+                                int dummyColor;
+                                AndroidCalendars.GetEventDetails (e.DeviceEventId, out eTitle, out dummyLocation, out dummyColor);
+                            }
+                            string fTitle = null;
+                            if (0 == f.DeviceEventId) {
+                                var appCal = f.GetCalendarItemforEvent ();
+                                if (null != appCal) {
+                                    fTitle = appCal.GetSubject ();
+                                }
+                            } else {
+                                string dummyLocation;
+                                int dummyColor;
+                                AndroidCalendars.GetEventDetails (f.DeviceEventId, out fTitle, out dummyLocation, out dummyColor);
+                            }
+                            if (null != eTitle && null != fTitle && eTitle == fTitle) {
+                                result [i] = null;
+                                break;
+                            }
+                        }
+                    }
+                }
+                result.RemoveAll ((McEvent obj) => {
+                    return obj == null;
                 });
 
                 return result;

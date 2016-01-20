@@ -148,6 +148,33 @@ namespace NachoCore.Utils
 
         #endregion
 
+        #region Switching Account
+
+        public void SetAccount(McAccount account)
+        {
+            Account = account;
+            if (Message != null) {
+                Message = Message.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
+                    var message = record as McEmailMessage;
+                    message.Subject = Message.Subject;
+                    message.To = Message.To;
+                    message.Cc = Message.Cc;
+                    message.Bcc = Message.Bcc;
+                    message.Intent = Message.Intent;
+                    message.IntentDate = Message.IntentDate;
+                    message.IntentDateType = Message.IntentDateType;
+                    message.BodyId = Message.BodyId;
+                    message.BodyPreview = Message.BodyPreview;
+                    message.DateReceived = Message.DateReceived;
+                    return true;
+                });
+                Message = EmailHelper.MoveDraftToAccount (Message, Account);
+                Body = null;
+            }
+        }
+
+        #endregion
+
         #region Prepare Message for Compose
 
         public void StartPreparingMessage ()
@@ -157,9 +184,6 @@ namespace NachoCore.Utils
             }
             if (RelatedThread != null) {
                 RelatedMessage = RelatedThread.FirstMessageSpecialCase ();
-                if (RelatedMessage.AccountId != Account.Id) {
-                    Account = McAccount.QueryById<McAccount> (RelatedMessage.AccountId);
-                }
             }
             MessagePreparationState = MessagePreparationStatus.Preparing;
             // We can be given a Message beforehand, but it's not required.
