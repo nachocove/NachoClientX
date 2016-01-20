@@ -73,7 +73,11 @@ namespace NachoClient.AndroidClient
 
         private void EnterPressed ()
         {
-            this.Activity.SetResult (Result.Ok, ContactEmailChooserActivity.ResultIntent (searchField.Text, null));
+            if (string.IsNullOrEmpty (searchField.Text)) {
+                this.Activity.SetResult (Result.Canceled);
+            } else {
+                this.Activity.SetResult (Result.Ok, ContactEmailChooserActivity.ResultIntent (searchField.Text, null));
+            }
             this.Activity.Finish ();
         }
 
