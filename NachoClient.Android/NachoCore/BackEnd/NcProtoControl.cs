@@ -197,6 +197,11 @@ namespace NachoCore
         }
 
         private bool ForceStopped;
+        public bool IsStarted {
+            get {
+                return !ForceStopped;
+            }
+        }
 
         #region NcCommStatus
 

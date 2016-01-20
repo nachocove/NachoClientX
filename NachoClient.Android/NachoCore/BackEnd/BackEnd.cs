@@ -109,6 +109,14 @@ namespace NachoCore
             }
         }
 
+        public void DeleteServices (int accountId)
+        {
+            ConcurrentQueue<NcProtoControl> dummy;
+            if (!Services.TryRemove (accountId, out dummy)) {
+                Log.Info (Log.LOG_BACKEND, "Another thread has already called DeleteServices for Account.Id {0}", accountId);
+            }
+        }
+
         #endregion
 
         private NcTimer PendingOnTimeTimer = null;
@@ -189,41 +197,78 @@ namespace NachoCore
 
         private IBackEndOwner Owner { set; get; }
 
+        ConcurrentQueue<NcProtoControl> StartBackendIfNotStarted (int accountId)
+        {
+            var services = GetServices (accountId);
+            if (null == services) {
+                CreateServices (accountId);
+                services = GetServices (accountId);
+                if (services == null) {
+                    Log.Warn (Log.LOG_BACKEND, "StartBackendIfNotStarted ({1}) could not find services.", accountId);
+                    return null;
+                }
+            }
+
+            // see if there's any not-started services. If so, assume the backend is not up, so start it
+            if (services.Any (x => !x.IsStarted) ) {
+                Start (accountId);
+            }
+            return services;
+        }
+
+        /// <summary>
+        /// Applies a func to a service matching the given capabilities
+        /// </summary>
+        /// <returns>An NcResult.Ok if everything went well, NcResult.Error otherwise.</returns>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="capability">Capability.</param>
+        /// <param name="func">Func.</param>
         private NcResult ApplyToService (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> func)
         {
+            if (StartBackendIfNotStarted (accountId) == null) {
+                return NcResult.Error (NcResult.SubKindEnum.Error_NoCapableService);
+            }
+
             var protoControl = GetService (accountId, capability);
             if (null == protoControl) {
-                if (!AccountHasServices (accountId)) {
-                    Start (accountId);
-                    protoControl = GetService (accountId, capability);
-                }
-                if (null == protoControl) {
-                    Log.Error (Log.LOG_BACKEND, "ServiceFromAccountId: can't find controller with desired capability {0}", capability);
-                    return NcResult.Error (NcResult.SubKindEnum.Error_NoCapableService);
-                }
+                Log.Error (Log.LOG_BACKEND, "ApplyToService: can't find controller with desired capability {0}", capability);
+                return NcResult.Error (NcResult.SubKindEnum.Error_NoCapableService);
             }
             return func (protoControl);
         }
 
-        private NcResult ApplyAcrossServices (int accountId, string name, Func<NcProtoControl, NcResult> func)
+        /// <summary>
+        /// Applies a func across all services assciated with this account.
+        /// If services are not created, create them.
+        /// If services are not started, start them.
+        /// </summary>
+        /// <returns>An NcResult.Ok if everything went well, NcResult.Error otherwise.</returns>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="capabilities">Capabilities</param>
+        /// <param name="name">Name.</param>
+        /// <param name="func">Func.</param>
+        private NcResult ApplyAcrossServices (int accountId, McAccount.AccountCapabilityEnum capabilities, string name, Func<NcProtoControl, NcResult> func)
         {
             var result = NcResult.OK ();
             NcResult iterResult = null;
-            var services = GetServices (accountId);
-            if (null != services) {
-                foreach (var service in services) {
-                    iterResult = func (service);
-                    if (iterResult.isError ()) {
-                        result = iterResult;
-                    }
-                }
-                if (result.isOK ()) {
-                    Log.Info (Log.LOG_BACKEND, "{0}({1})", name, accountId);
-                } else {
-                    Log.Warn (Log.LOG_BACKEND, "BackEnd.ApplyAcrossServices {0}({1}):{2}.", name, accountId, result.Message);
-                }
-            } else {
+
+            var services = StartBackendIfNotStarted (accountId);
+            if (services == null) {
                 Log.Warn (Log.LOG_BACKEND, "BackEnd.ApplyAcrossServices {0}({1}) could not find services.", name, accountId);
+                return NcResult.Error ("Could not create services");
+            }
+
+            List<NcProtoControl> matchingServices = services.Where (x => (0 != (capabilities & x.Capabilities))).ToList ();
+            foreach (var service in matchingServices) {
+                iterResult = func (service);
+                if (iterResult.isError ()) {
+                    result = iterResult;
+                }
+            }
+            if (result.isOK ()) {
+                Log.Info (Log.LOG_BACKEND, "{0}({1})", name, accountId);
+            } else {
+                Log.Warn (Log.LOG_BACKEND, "BackEnd.ApplyAcrossServices {0}({1}):{2}.", name, accountId, result.Message);
             }
             return result;
         }
@@ -254,9 +299,7 @@ namespace NachoCore
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start() called");
             Oauth2RefreshCancelSource = new CancellationTokenSource ();
             // The callee does Task.Run.
-            ApplyAcrossAccounts ("Start", (accountId) => {
-                Start (accountId);
-            });
+            ApplyAcrossAccounts ("Start", (accountId) => Start (accountId));
         }
 
         // DON'T PUT Stop in a Task.Run. We want to execute as much as possible immediately.
@@ -277,9 +320,7 @@ namespace NachoCore
                 PendingOnTimeTimer.Dispose ();
                 PendingOnTimeTimer = null;
             }
-            ApplyAcrossAccounts ("Stop", (accountId) => {
-                Stop (accountId);
-            });
+            ApplyAcrossAccounts ("Stop", (accountId) => Stop (accountId));
             BodyFetchHints.Reset ();
         }
 
@@ -288,10 +329,12 @@ namespace NachoCore
             if (!AccountHasServices (accountId)) {
                 CreateServices (accountId);
             }
-            ApplyAcrossServices (accountId, "Stop", (service) => {
+
+            // Don't use ApplyAcrossServices, as that will start the services if they aren't already.
+            var services = GetServices (accountId);
+            foreach (var service in services) {
                 service.Stop ();
-                return NcResult.OK ();
-            });
+            }
             lock (CredReqActive) {
                 CredReqActive.Remove (accountId);
             }
@@ -300,7 +343,7 @@ namespace NachoCore
         public void Remove (int accountId)
         {
             Stop (accountId);
-            RemoveService (accountId);
+            RemoveServices (accountId);
         }
 
         public void CreateServices (int accountId)
@@ -334,12 +377,13 @@ namespace NachoCore
         }
 
         // Service must be Stop()ed before calling RemoveService().
-        public void RemoveService (int accountId)
+        public void RemoveServices (int accountId)
         {
-            ApplyAcrossServices (accountId, "RemoveService", (service) => {
+            ApplyAcrossServices (accountId, McAccount.AccountCapabilityEnum.All, "RemoveService", (service) => {
                 service.Remove ();
                 return NcResult.OK ();
             });
+            DeleteServices (accountId); // free up the memory, too.
         }
 
         public void Start (int accountId)
@@ -355,12 +399,13 @@ namespace NachoCore
                 }, null, 1000, 1000);
                 PendingOnTimeTimer.Stfu = true;
             }
-            ApplyAcrossServices (accountId, "Start", (service) => {
-                NcTask.Run (() => {
-                    service.Start ();
-                }, "Start");
-                return NcResult.OK ();
-            });
+
+            // don't use ApplyAcrossServices, as we'll wind up right back here.
+            var services = GetServices (accountId);
+            foreach (var service in services) {
+                NcTask.Run (() => service.Start (), "Start");
+            }
+
             // See if we have an OAuth2 credential for this account. 
             // If so, make sure the timer is started to refresh the token.
             McCred cred = McCred.QueryByAccountId<McCred> (accountId).FirstOrDefault ();
@@ -394,7 +439,7 @@ namespace NachoCore
         {
             NcTask.Run (() => {
                 // Let every service know about the new creds.
-                ApplyAcrossServices (accountId, "CredResp", (service) => {
+                ApplyAcrossServices (accountId, McAccount.AccountCapabilityEnum.All, "CredResp", (service) => {
                     service.CredResp ();
                     return NcResult.OK ();
                 });
@@ -406,10 +451,8 @@ namespace NachoCore
 
         public void PendQHotInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
-            ApplyAcrossServices (accountId, "PendQHotInd", (service) => {
-                if (0 != (capabilities & service.Capabilities)) {
-                    service.PendQHotInd ();
-                }
+            ApplyAcrossServices (accountId, capabilities, "PendQHotInd", (service) => {
+                service.PendQHotInd ();
                 return NcResult.OK ();
             });
         }
@@ -425,10 +468,8 @@ namespace NachoCore
         /// <param name="capabilities">Capabilities.</param>
         public void PendQInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
-            ApplyAcrossServices (accountId, "PendQInd", (service) => {
-                if (0 != (capabilities & service.Capabilities)) {
-                    service.PendQOrHintInd ();
-                }
+            ApplyAcrossServices (accountId, capabilities, "PendQInd", (service) => {
+                service.PendQOrHintInd ();
                 return NcResult.OK ();
             });
         }
@@ -444,10 +485,8 @@ namespace NachoCore
         /// <param name="capabilities">Capabilities.</param>
         public void HintInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
-            ApplyAcrossServices (accountId, "HintInd", (service) => {
-                if (0 != (capabilities & service.Capabilities)) {
-                    service.PendQOrHintInd ();
-                }
+            ApplyAcrossServices (accountId, capabilities, "HintInd", (service) => {
+                service.PendQOrHintInd ();
                 return NcResult.OK ();
             });
         }
@@ -794,7 +833,7 @@ namespace NachoCore
 
         public void CancelValidateConfig (int accountId)
         {
-            ApplyAcrossServices (accountId, "CancelValidateConfig", (service) => {
+            ApplyAcrossServices (accountId, McAccount.AccountCapabilityEnum.All, "CancelValidateConfig", (service) => {
                 service.CancelValidateConfig ();
                 return NcResult.OK ();
             });
@@ -803,7 +842,7 @@ namespace NachoCore
         public List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> BackEndStates (int accountId)
         {
             var states = new List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> ();
-            ApplyAcrossServices (accountId, "BackEndStates", (service) => {
+            ApplyAcrossServices (accountId, McAccount.AccountCapabilityEnum.All, "BackEndStates", (service) => {
                 states.Add (new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (service.BackEndState, service.Capabilities));
                 return NcResult.OK ();
             });
@@ -812,6 +851,13 @@ namespace NachoCore
 
         public BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
+            // ApplyToService may in some cases start the backend, which we may not want (like at startup
+            // where we want services delayed). So check if the backend is started here first.
+            var svc = GetService (accountId, capabilities);
+            if (null == svc || !svc.IsStarted) {
+                return BackEndStateEnum.NotYetStarted;
+            }
+
             var result = ApplyToService (accountId, capabilities, (service) => {
                 BackEndStateEnum state = service.BackEndState;
                 if (BackEndStateEnum.CredWait == state) {
