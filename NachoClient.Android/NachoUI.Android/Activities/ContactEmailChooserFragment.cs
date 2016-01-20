@@ -25,19 +25,15 @@ namespace NachoClient.AndroidClient
         private EditText searchField;
         private ButtonBar buttonBar;
         private ContactChooserListAdapter adapter;
-        private int accountId;
-        private bool doGalSearch;
-        private string searchToken;
+        private ContactsEmailSearch searcher;
 
-        public void SetInitialValues (int accountId, string initialSearch)
+        public void SetInitialValues (string initialSearch)
         {
-            this.accountId = accountId;
-            var account = McAccount.QueryById<McAccount> (accountId);
-            doGalSearch = null != account && account.HasCapability (McAccount.AccountCapabilityEnum.ContactReader);
-
             searchField.Text = initialSearch;
             searchField.SetSelection (initialSearch.Length);
-            adapter.SetSearchString (initialSearch);
+            if (!string.IsNullOrEmpty (initialSearch)) {
+                searcher.SearchFor (initialSearch);
+            }
         }
 
         public override void OnCreate (Bundle savedInstanceState)
@@ -45,8 +41,9 @@ namespace NachoClient.AndroidClient
             base.OnCreate (savedInstanceState);
 
             adapter = new ContactChooserListAdapter ();
-
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            searcher = new ContactsEmailSearch ((string searchString, List<McContactEmailAddressAttribute> results) => {
+                adapter.SearchResults = results;
+            });
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -70,29 +67,14 @@ namespace NachoClient.AndroidClient
         public override void OnDestroy ()
         {
             base.OnDestroy ();
-            if (null != searchToken) {
-                McPending.Cancel (accountId, searchToken);
-                searchToken = null;
-            }
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            searcher.Dispose ();
+            searcher = null;
         }
 
         private void EnterPressed ()
         {
             this.Activity.SetResult (Result.Ok, ContactEmailChooserActivity.ResultIntent (searchField.Text, null));
             this.Activity.Finish ();
-        }
-
-        private void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-            if (null != searchToken &&
-                NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind &&
-                null != s.Tokens &&
-                s.Tokens.Contains (searchToken))
-            {
-                adapter.SetSearchString (searchField.Text);
-            }
         }
 
         private void ListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
@@ -104,15 +86,7 @@ namespace NachoClient.AndroidClient
 
         private void SearchField_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
         {
-            string searchString = searchField.Text;
-            adapter.SetSearchString (searchString);
-            if (doGalSearch && 0 != accountId && 0 < searchString.Length) {
-                if (null == searchToken) {
-                    searchToken = BackEnd.Instance.StartSearchContactsReq (accountId, searchString, null).GetValue<string> ();
-                } else {
-                    BackEnd.Instance.SearchContactsReq (accountId, searchString, null, searchToken);
-                }
-            }
+            searcher.SearchFor (searchField.Text);
         }
 
         private class KeyListener : Java.Lang.Object, View.IOnKeyListener
@@ -137,30 +111,16 @@ namespace NachoClient.AndroidClient
 
     public class ContactChooserListAdapter : BaseAdapter<McContactEmailAddressAttribute>
     {
-        private SearchHelper searcher;
         private List<McContactEmailAddressAttribute> searchResults = new List<McContactEmailAddressAttribute> ();
 
-        public ContactChooserListAdapter ()
-        {
-            searcher = new SearchHelper ("ContactEmailChooser", (string searchString) => {
-                if (string.IsNullOrEmpty (searchString)) {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResults.Clear ();
-                        NotifyDataSetChanged ();
-                    });
-                } else {
-                    var results = McContact.SearchAllContactsForEmail (searchString);
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResults = results;
-                        NotifyDataSetChanged ();
-                    });
-                }
-            });
-        }
-
-        public void SetSearchString (string searchString)
-        {
-            searcher.Search (searchString);
+        public List<McContactEmailAddressAttribute> SearchResults {
+            private get {
+                return searchResults;
+            }
+            set {
+                searchResults = value;
+                NotifyDataSetChanged ();
+            }
         }
 
         public override long GetItemId (int position)
@@ -170,13 +130,13 @@ namespace NachoClient.AndroidClient
 
         public override int Count {
             get {
-                return searchResults.Count;
+                return SearchResults.Count;
             }
         }
 
         public override McContactEmailAddressAttribute this [int index] {
             get {
-                return searchResults [index];
+                return SearchResults [index];
             }
         }
 

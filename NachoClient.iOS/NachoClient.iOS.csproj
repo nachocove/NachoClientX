@@ -1739,6 +1739,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedLikelyToRead.cs">
       <Link>NachoCore\Adapters\NachoUnifiedLikelyToRead.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsSearch.cs">
+      <Link>NachoCore\Utils\ContactsSearch.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

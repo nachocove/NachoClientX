@@ -30,6 +30,7 @@ namespace NachoClient.iOS
         protected string initialSearchString;
         // Internal state
         ContactsTableViewSource contactTableViewSource;
+        ContactsGeneralSearch searcher;
 
         UIBarButtonItem cancelButton;
         UIBarButtonItem searchButton;
@@ -94,6 +95,8 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            searcher = new ContactsGeneralSearch (UpdateSearchResultsUi);
+            SearchDisplayController.Delegate = new ContactsSearchDisplayDelegate (searcher);
 
             LoadContacts ();
         }
@@ -102,6 +105,9 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            searcher.Dispose ();
+            searcher = null;
+            SearchDisplayController.Delegate = null;
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -116,16 +122,6 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
                 LoadContacts ();
             }
-            if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
-                LoadContacts ();
-                var sb = SearchDisplayController.SearchBar;
-                if (contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false)) {
-                    SearchDisplayController.SearchResultsTableView.ReloadData ();
-                }
-            }
-            if (NcResult.SubKindEnum.Info_ContactLocalSearchComplete == s.Status.SubKind) {
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -133,6 +129,12 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
 
             PermissionManager.DealWithContactsPermission ();
+        }
+
+        void UpdateSearchResultsUi (string searchString, List<McContactEmailAddressAttribute> results)
+        {
+            contactTableViewSource.SetSearchResults (results);
+            SearchDisplayController.SearchResultsTableView.ReloadData ();
         }
 
         protected void LoadContacts ()
