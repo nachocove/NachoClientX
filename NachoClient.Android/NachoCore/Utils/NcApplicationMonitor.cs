@@ -42,6 +42,13 @@ namespace NachoCore
         }
 
         DateTime? LastStatusIndDetectorReport;
+        void DoStatusIndDetectorReport ()
+        {
+            if (!LastStatusIndDetectorReport.HasValue || LastStatusIndDetectorReport.Value.AddSeconds (10) < DateTime.UtcNow) {
+                Report (); // do a report on any execution context changes.
+                LastStatusIndDetectorReport = DateTime.UtcNow;
+            }
+        }
 
         void StatusIndDetector (object sender, EventArgs ea)
         {
@@ -50,20 +57,18 @@ namespace NachoCore
             case NcResult.SubKindEnum.Info_ExecutionContextChanged:
                 switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
                 case NcApplication.ExecutionContextEnum.Foreground:
+                    DoStatusIndDetectorReport ();
                     Start ();
                     break;
 
                 case NcApplication.ExecutionContextEnum.Background:
+                    DoStatusIndDetectorReport ();
                     Start (MonitorTimerDefaultDueSecs * MonitorTimerDefaultBGMultiplier,
                         MonitorTimerDefaultPeriodicSecs * MonitorTimerDefaultBGMultiplier);
                     break;
 
                 default:
                     break;
-                }
-                if (!LastStatusIndDetectorReport.HasValue || LastStatusIndDetectorReport.Value.AddSeconds (10) < DateTime.UtcNow) {
-                    Report (); // do a report on any execution context changes.
-                    LastStatusIndDetectorReport = DateTime.UtcNow;
                 }
                 break;
             }
