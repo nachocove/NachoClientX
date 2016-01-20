@@ -1742,6 +1742,7 @@
     <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountPickerViewController.designer.cs">
       <DependentUpon>AccountPickerViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsSearch.cs">
       <Link>NachoCore\Utils\ContactsSearch.cs</Link>
     </Compile>
