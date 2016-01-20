@@ -165,7 +165,7 @@ namespace NachoCore.Utils
                     message.IntentDateType = Message.IntentDateType;
                     message.BodyId = Message.BodyId;
                     message.BodyPreview = Message.BodyPreview;
-                    message.DateReceived = message.DateReceived;
+                    message.DateReceived = Message.DateReceived;
                     return true;
                 });
                 Message = EmailHelper.MoveDraftToAccount (Message, Account);
