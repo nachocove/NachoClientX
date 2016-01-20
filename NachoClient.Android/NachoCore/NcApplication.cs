@@ -426,6 +426,7 @@ namespace NachoCore
             ExecutionContext = ExecutionContextEnum.Initializing;
             NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
+            NcApplicationMonitor.Instance.Start (); // Has a deferred timer start inside.
             EstablishService ();
             EmailHelper.Setup ();
             BackEnd.Instance.Enable (this);
@@ -526,6 +527,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices called.");
             BackEnd.Instance.Stop ();
 
+            NcApplicationMonitor.Instance.Stop ();
             NcModel.Instance.Stop ();
             StoreHandler.Instance.Stop (); 
             CloudHandler.Instance.Stop (); 
@@ -546,7 +548,6 @@ namespace NachoCore
             // Make sure the scheduled notifications are up to date.
             LocalNotificationManager.ScheduleNotifications ();
 
-            NcApplicationMonitor.Instance.Start (); // Has a deferred timer start inside.
             CrlMonitor.StartService ();
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
@@ -572,7 +573,6 @@ namespace NachoCore
         public void StopClass4Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
-            NcApplicationMonitor.Instance.Stop ();
             CrlMonitor.StopService ();
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
