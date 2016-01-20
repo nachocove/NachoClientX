@@ -75,7 +75,42 @@ namespace NachoCore
             CannotFindServer,
         }
 
+        #region ConcurrentQueue<NcProtoControl>
+
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
+
+        private bool AccountHasServices (int accountId)
+        {
+            NcAssert.True (0 != accountId, "0 != accountId");
+            return Services.ContainsKey (accountId);
+        }
+
+        public NcProtoControl GetService (int accountId, McAccount.AccountCapabilityEnum capability)
+        {
+            var services = GetServices (accountId);
+            return services != null ? services.FirstOrDefault (x => capability == (x.Capabilities & capability)) : null;
+        }
+
+        public ConcurrentQueue<NcProtoControl> GetServices (int accountId)
+        {
+            NcAssert.True (0 != accountId, "0 != accountId");
+            ConcurrentQueue<NcProtoControl> services;
+            if (!Services.TryGetValue (accountId, out services)) {
+                return null;
+            }
+            return services;
+        }
+
+        public void AddServices (int accountId, ConcurrentQueue<NcProtoControl> services)
+        {
+            if (!Services.TryAdd (accountId, services)) {
+                // Concurrency. Another thread has jumped in and done the add.
+                Log.Info (Log.LOG_BACKEND, "Another thread has already called CreateServices for Account.Id {0}", accountId);
+            }
+        }
+
+        #endregion
+
         private NcTimer PendingOnTimeTimer = null;
 
         /// <summary>
@@ -154,12 +189,6 @@ namespace NachoCore
 
         private IBackEndOwner Owner { set; get; }
 
-        private bool AccountHasServices (int accountId)
-        {
-            NcAssert.True (0 != accountId, "0 != accountId");
-            return Services.ContainsKey (accountId);
-        }
-
         private NcResult ApplyToService (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> func)
         {
             var protoControl = GetService (accountId, capability);
@@ -176,22 +205,12 @@ namespace NachoCore
             return func (protoControl);
         }
 
-        public NcProtoControl GetService (int accountId, McAccount.AccountCapabilityEnum capability)
-        {
-            NcAssert.True (0 != accountId, "0 != accountId");
-            ConcurrentQueue<NcProtoControl> services;
-            if (!Services.TryGetValue (accountId, out services)) {
-                return null;
-            }
-            return services.FirstOrDefault (x => capability == (x.Capabilities & capability));
-        }
-
         private NcResult ApplyAcrossServices (int accountId, string name, Func<NcProtoControl, NcResult> func)
         {
             var result = NcResult.OK ();
             NcResult iterResult = null;
-            ConcurrentQueue<NcProtoControl> services = null;
-            if (Services.TryGetValue (accountId, out services)) {
+            var services = GetServices (accountId);
+            if (null != services) {
                 foreach (var service in services) {
                     iterResult = func (service);
                     if (iterResult.isError ()) {
@@ -311,10 +330,7 @@ namespace NachoCore
                 break;
             }
             Log.Info (Log.LOG_BACKEND, "CreateServices {0}", accountId);
-            if (!Services.TryAdd (accountId, services)) {
-                // Concurrency. Another thread has jumped in and done the add.
-                Log.Info (Log.LOG_BACKEND, "Another thread has already called CreateServices for Account.Id {0}", accountId);
-            }
+            AddServices (accountId, services);
         }
 
         // Service must be Stop()ed before calling RemoveService().
