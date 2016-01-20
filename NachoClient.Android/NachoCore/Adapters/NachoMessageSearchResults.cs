@@ -12,20 +12,20 @@ namespace NachoCore
 {
     public class NachoMessageSearchResults : INachoEmailMessages
     {
-        int accountId;
+        McAccount account;
         List<McEmailMessageThread> list;
         List<McEmailMessageThread> threadList;
 
         List<Index.MatchedItem> matches;
-        List<McEmailMessageThread> serverMatches;
+        Dictionary<int, List<McEmailMessageThread>> cachedServerMatches = new Dictionary<int, List<McEmailMessageThread>> ();
 
         bool changed = false;
 
         object syncObj = new object();
 
-        public NachoMessageSearchResults (int accountId)
+        public NachoMessageSearchResults (McAccount account)
         {
-            this.accountId = accountId;
+            this.account = account;
             threadList = new List<McEmailMessageThread> ();
         }
 
@@ -35,15 +35,15 @@ namespace NachoCore
             UpdateResults ();
         }
 
-        public void UpdateServerMatches (List<McEmailMessageThread> serverMatches)
+        public void UpdateServerMatches (int accountId, List<McEmailMessageThread> serverMatches)
         {
-            this.serverMatches = serverMatches;
+            cachedServerMatches [accountId] = serverMatches;
             UpdateResults ();
         }
 
         public void ClearServerMatches()
         {
-            this.serverMatches = null;
+            cachedServerMatches.Clear ();
         }
 
         public void UpdateResults ()
@@ -64,10 +64,11 @@ namespace NachoCore
                         }
                     }
                 }
-                if (null != serverMatches) {
-                    foreach (var serverMatch in serverMatches) {
-                        if (!combined.Contains (serverMatch, new McEmailMessageThreadIndexComparer ())) {
-                            combined.Add (serverMatch);
+                var messageComparer = new McEmailMessageThreadIndexComparer ();
+                foreach (var accountMatches in cachedServerMatches.Values) {
+                    foreach (var match in accountMatches) {
+                        if (!combined.Contains (match, messageComparer)) {
+                            combined.Add (match);
                         }
                     }
                 }
@@ -163,9 +164,9 @@ namespace NachoCore
             return null;
         }
 
-        public bool IsCompatibleWithAccount (McAccount account)
+        public bool IsCompatibleWithAccount (McAccount otherAccount)
         {
-            return account.Id == accountId;
+            return McAccount.AccountTypeEnum.Unified == account.AccountType || account.Id == otherAccount.Id;
         }
 
     }

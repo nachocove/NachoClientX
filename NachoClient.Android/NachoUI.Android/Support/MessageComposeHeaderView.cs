@@ -176,6 +176,15 @@ namespace NachoClient.AndroidClient
             base.OnLayout (changed, l, t, r, b);
         }
 
+        protected override void Dispose (bool disposing)
+        {
+            if (disposing) {
+                ToField.Adapter.Dispose ();
+                CcField.Adapter.Dispose ();
+                BccField.Adapter.Dispose ();
+            }
+            base.Dispose (disposing);
+        }
     }
 
     class ContactAddressAdapter : BaseAdapter<EmailAddressField.TokenObject>, IFilterable {
@@ -186,9 +195,11 @@ namespace NachoClient.AndroidClient
 
         private class ContactsFilter : Filter
         {
-
             public delegate void SearchResultsFound (List<McContactEmailAddressAttribute> searchResults);
             public SearchResultsFound HandleSearch;
+
+            private ContactsEmailSearch searcher;
+            private List<McContactEmailAddressAttribute> cachedResults;
 
             private class ResultsWrapper : Java.Lang.Object
             {
@@ -200,28 +211,48 @@ namespace NachoClient.AndroidClient
                 }
             }
 
+            public ContactsFilter ()
+            {
+                searcher = new ContactsEmailSearch ((string searchString, List<McContactEmailAddressAttribute> results) => {
+                    cachedResults = results;
+                    if (null != HandleSearch) {
+                        HandleSearch (results);
+                    }
+                });
+                cachedResults = new List<McContactEmailAddressAttribute> ();
+            }
+
             protected override FilterResults PerformFiltering (Java.Lang.ICharSequence constraint)
             {
-                var searchString = constraint == null ? "" : constraint.ToString ();
-                List<McContactEmailAddressAttribute> contacts;
-                if (!String.IsNullOrWhiteSpace (searchString)) {
-                    contacts = McContact.SearchAllContactsForEmail (searchString);
+                // ContactsEmailSearch and Filter both want to manage when the searches are run.
+                // This causes a clash that doesn't have an easy resolution.  Let ContactsEmailSearch
+                // manage the searches and UI updates.  This method always returns immediately with
+                // whatever the UI is currently displaying.  (It can't return an empty set of results,
+                // on the list will be temporarily cleared.)
+                if (null == constraint) {
+                    cachedResults = new List<McContactEmailAddressAttribute> ();
                 } else {
-                    contacts = new List<McContactEmailAddressAttribute> ();
+                    searcher.SearchFor (constraint.ToString ());
                 }
-                var filterResults = new FilterResults ();
-                filterResults.Values = new ResultsWrapper (contacts);
-                filterResults.Count = contacts.Count;
-                return filterResults;
+                return new FilterResults () {
+                    Values = new ResultsWrapper (cachedResults),
+                    Count = cachedResults.Count,
+                };
             }
 
             protected override void PublishResults (Java.Lang.ICharSequence constraint, FilterResults results)
             {
-                var wrapper = results.Values as ResultsWrapper;
-                var contacts = wrapper.ContactResults;
-                if (HandleSearch != null) {
-                    HandleSearch (contacts);
+                // Results are sent directly from ContactsEmailSearch to the UI, bypassing PublishResults.
+                return;
+            }
+
+            protected override void Dispose (bool disposing)
+            {
+                if (disposing) {
+                    searcher.Dispose ();
+                    searcher = null;
                 }
+                base.Dispose (disposing);
             }
         }
 
@@ -295,6 +326,14 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        protected override void Dispose (bool disposing)
+        {
+            if (disposing) {
+                filter.Dispose ();
+                filter = null;
+            }
+            base.Dispose (disposing);
+        }
     }
 }
 

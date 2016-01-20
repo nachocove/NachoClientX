@@ -20,6 +20,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
+using NachoCore.Wbxml;
 
 namespace NachoCore.ActiveSync
 {
@@ -957,6 +958,7 @@ namespace NachoCore.ActiveSync
 
             public Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
             {
+                LogRedactedXml ("Autodiscover.xml", doc);
                 var xmlResponse = doc.Root.ElementAnyNs (Xml.Autodisco.Response);
                 var xmlUser = xmlResponse.ElementAnyNs (Xml.Autodisco.User);
                 if (null != xmlUser) {
@@ -985,17 +987,48 @@ namespace NachoCore.ActiveSync
                     if (null != xmlError) {
                         return ProcessXmlError (Sender, xmlError);
                     }
+                    bool circularRedirect = false;
+                    Event redirectEvt = null;
                     var xmlRedirect = xmlAction.ElementAnyNs (Xml.Autodisco.Redirect);
                     if (null != xmlRedirect) {
-                        return ProcessXmlRedirect (Sender, xmlRedirect);
+                        // if we get a circular redirect, but we have settings, let's see if we can process the
+                        // settings, ignoring the circular redirect.
+                        redirectEvt = ProcessXmlRedirect (Sender, xmlRedirect, out circularRedirect);
+                        if (!circularRedirect) {
+                            return redirectEvt;
+                        } else {
+                            Log.Warn (Log.LOG_AS, "Circular Redirect detected. Checking Settings.");
+                        }
                     }
+                    Event settingsEvt = null;
+                    bool settingsError = false;
                     var xmlSettings = xmlAction.ElementAnyNs (Xml.Autodisco.Settings);
                     if (null != xmlSettings) {
-                        return ProcessXmlSettings (Sender, xmlSettings);
+                        settingsEvt = ProcessXmlSettings (Sender, xmlSettings, out settingsError);
+                        if (settingsError && null != redirectEvt && circularRedirect) {
+                            // settings failed, but redirect failed first, so return that error instead.
+                            Log.Warn (Log.LOG_AS, "Settings Failed. Going with Redirect response.");
+                            return redirectEvt;
+                        } else {
+                            // settings worked, so continue with those, ignoring the circular redirect
+                            Log.Warn (Log.LOG_AS, "Settings Succeeded. Ignoring Redirect response.");
+                            return settingsEvt;
+                        }
+                    } else if (null != redirectEvt) {
+                        // there were no settings, and we have a redirect event, so return that.
+                        return redirectEvt;
                     }
                 }
                 // We should never get here. The XML response is missing both Error and Action.
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPR1HARD");
+            }
+
+            void LogRedactedXml (string tag, XDocument doc)
+            {
+                NcXmlFilterSet filter = new NcXmlFilterSet ();
+                filter.Add (new AutoDiscoverXmlFilter ());
+                XDocument docOut = filter.Filter (doc, Cts.Token);
+                Log.Info (Log.LOG_AS, "{0}:\n{1}", tag, docOut.ToString ());
             }
 
             public void PostProcessEvent (Event evt)
@@ -1063,22 +1096,25 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPXEHARD");
             }
 
-            private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect)
+            private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect, out bool circularRedirect)
             {
+                circularRedirect = false;
                 // if email address changed, restart Auto discovery
                 if (!SrEmailAddr.Equals (xmlRedirect.Value, StringComparison.Ordinal)) {
                     SrEmailAddr = xmlRedirect.Value;
                     SrDomain = DomainFromEmailAddr (SrEmailAddr);
                     return Event.Create ((uint)SharedEvt.E.ReStart, "SRPXRHARD");
                 } else { // else fail hard
-                    Log.Error (Log.LOG_AS, "Redirected email address is the same as before so there's no point running auto discovery again. Step = {0}",Step);
+                    Log.Info (Log.LOG_AS, "Circular Redirect Action. Step = {0}",Step);
+                    circularRedirect = true;
                     return Event.Create ((uint)SmEvt.E.HardFail, "SRPXEHARD");
                 }
             }
 
-            private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings)
+            private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings, out bool error)
             {
                 bool haveServerSettings = false;
+                error = false;
                 var xmlServers = xmlSettings.ElementsAnyNs (Xml.Autodisco.Server);
                 foreach (var xmlServer in xmlServers) {
                     var xmlType = xmlServer.ElementAnyNs (Xml.Autodisco.Type);
@@ -1098,9 +1134,11 @@ namespace NachoCore.ActiveSync
                             serverUri = new Uri (xmlUrlValue);
                         } catch (ArgumentNullException) {
                             Log.Error (Log.LOG_AS, "ProcessXmlSettings: illegal value {0}.", xmlUrl.ToString ());
+                            error = true;
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD0");
                         } catch (UriFormatException) {
                             Log.Error (Log.LOG_AS, "ProcessXmlSettings: illegal value {0}.", xmlUrl.ToString ());
+                            error = true;
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD1");
                         }
                         if (Xml.Autodisco.TypeCode.MobileSync == serverType) {
@@ -1130,6 +1168,7 @@ namespace NachoCore.ActiveSync
                 if (haveServerSettings) {
                     return Event.Create ((uint)SmEvt.E.Success, "SRPXRSUCCESS");
                 } else {
+                    error = true;
                     return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD1");
                 }
             }
