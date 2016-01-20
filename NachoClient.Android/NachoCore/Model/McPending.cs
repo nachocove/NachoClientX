@@ -140,6 +140,10 @@ namespace NachoCore.Model
 
         public const double KDefaultDeferDelaySeconds = 60.0;
         public const uint KMaxDeferCount = 5;
+
+        public const string MarkReadFlag = "Read";
+        public const string MarkUnreadFlag = "Unread";
+
         // Always valid.
         [Indexed]
         // FIXME - rename this column - this is for sequencing, not priority.
