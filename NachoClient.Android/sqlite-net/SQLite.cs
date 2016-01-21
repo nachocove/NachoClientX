@@ -653,9 +653,9 @@ namespace SQLite
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
                     if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms/{1} rows for: {2}", span, r, cmd.CommandText);
                     } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms/{1} rows for: {2}", span, r, cmd.CommandText);
                     }
                 }
             }
