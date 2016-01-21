@@ -381,7 +381,6 @@ namespace NachoCore.Model
                 storedBuildInfo.Version != BuildInfo.Version) {
                 Db.RunInTransaction (() => {
                     foreach (var tableType in AllTables) {
-                        Console.WriteLine ("CreateTable({0})", tableType.GetType ().Name);
                         Db.CreateTable(tableType.GetType ());
                     }
                 });
