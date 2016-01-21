@@ -6,6 +6,7 @@ using NachoPlatformBinding;
 using System.Threading;
 using System.Runtime.CompilerServices;
 using NachoCore.Model;
+using System.Linq;
 
 namespace NachoCore
 {
@@ -103,6 +104,8 @@ namespace NachoCore
             }
         }
 
+        DateTime? LastDBRowCounts;
+
         public void Report (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
             if (!String.IsNullOrEmpty (moniker)) {
@@ -127,6 +130,11 @@ namespace NachoCore
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
                 NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
             Log.Info (Log.LOG_SYS, "NcApplicationMonitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
+            if (!LastDBRowCounts.HasValue || LastDBRowCounts.Value.AddHours (4) < DateTime.UtcNow) {
+                var counts = NcModel.Instance.AllTableRowCounts ();
+                Log.Info (Log.LOG_SYS, "NcApplicationMonitor: DB Row Counts (non-zero):\n{0}", string.Join ("\n", counts.Select (x => string.Format ("{0}: {1}", x.Key, x.Value)).ToList ()));
+                LastDBRowCounts = DateTime.UtcNow;
+            }
             Log.Info (Log.LOG_SYS, "NcApplicationMonitor: Files: Max {0}, Currently open {1}",
                 PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
             if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
