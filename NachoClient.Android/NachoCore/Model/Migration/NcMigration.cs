@@ -285,6 +285,7 @@ namespace NachoCore.Model
                         migration.Finished = true;
                     } catch (OperationCanceledException) {
                         migrationRecord.DurationMsec += (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
+                        Log.Info (Log.LOG_DB, "Migration {0} interrupted", version);
                         rows = migrationRecord.Update ();
                         NcAssert.True (1 == rows);
                         throw;
