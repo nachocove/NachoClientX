@@ -274,7 +274,11 @@ namespace NachoCore.Model
                     migrationRecord.Update ();
 
                     // Run the migration
-                    Log.Info (Log.LOG_DB, "Running migration {0}...", version);
+                    if (migrationRecord.NumberOfTimesRan > 1) {
+                        Log.Info (Log.LOG_DB, "Running migration {0} (Attempt #{1})...", version, migrationRecord.NumberOfTimesRan);
+                    } else {
+                        Log.Info (Log.LOG_DB, "Running migration {0}...", version);
+                    }
                     NcTask.Cts.Token.ThrowIfCancellationRequested ();
                     try {
                         migration.Run (NcTask.Cts.Token);
@@ -285,7 +289,7 @@ namespace NachoCore.Model
                         migration.Finished = true;
                     } catch (OperationCanceledException) {
                         migrationRecord.DurationMsec += (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
-                        Log.Info (Log.LOG_DB, "Migration {0} interrupted", version);
+                        Log.Warn (Log.LOG_DB, "Migration {0} interrupted", version);
                         rows = migrationRecord.Update ();
                         NcAssert.True (1 == rows);
                         throw;
