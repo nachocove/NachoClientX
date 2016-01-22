@@ -6,13 +6,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.IO;
 using NachoClient.Build;
 using NachoCore.Utils;
 using NachoPlatform;
+using System.Linq;
 
 namespace NachoCore.Model
 {
@@ -88,6 +87,54 @@ namespace NachoCore.Model
 
     public sealed class NcModel
     {
+        List<Type> AllTables {
+            get {
+                return new List<Type> () {
+                    typeof(McAccount),
+                    typeof(McConference),
+                    typeof(McCred),
+                    typeof(McMapFolderFolderEntry),
+                    typeof(McFolder),
+                    typeof(McEmailAddress),
+                    typeof(McEmailMessage),
+                    typeof(McEmailMessageCategory),
+                    typeof(McEmailMessageDependency),
+                    typeof(McMeetingRequest),
+                    typeof(McAttachment),
+                    typeof(McMapAttachmentItem),
+                    typeof(McContact),
+                    typeof(McContactDateAttribute),
+                    typeof(McContactStringAttribute),
+                    typeof(McContactAddressAttribute),
+                    typeof(McContactEmailAddressAttribute),
+                    typeof(McPolicy),
+                    typeof(McProtocolState),
+                    typeof(McServer),
+                    typeof(McPending),
+                    typeof(McPendDep),
+                    typeof(McCalendar),
+                    typeof(McException),
+                    typeof(McAttendee),
+                    typeof(McCalendarCategory),
+                    typeof(McRecurrence),
+                    typeof(McEvent),
+                    typeof(McTask),
+                    typeof(McBody),
+                    typeof(McDocument),
+                    typeof(McMutables),
+                    typeof(McPath),
+                    typeof(McNote),
+                    typeof(McPortrait),
+                    typeof(McMapEmailAddressEntry),
+                    typeof(McMigration),
+                    typeof(McLicenseInformation),
+                    typeof(McBrainEvent),
+                    typeof(McEmailAddressScore),
+                    typeof(McEmailMessageScore),
+                };
+            }
+        }
+
         // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
@@ -171,6 +218,19 @@ namespace NachoCore.Model
             get {
                 return DbConns.Count;
             }
+        }
+
+        public Dictionary<string, long> AllTableRowCounts (bool includeZeroCounts = false)
+        {
+            Dictionary<string, long> tableCounts = new Dictionary<string, long> ();
+            foreach (var tableType in AllTables) {
+                string name = tableType.Name;
+                var n = Db.ExecuteScalar<long> (string.Format ("SELECT COUNT(Id) FROM {0};", name));
+                if (includeZeroCounts || n > 0) {
+                    tableCounts [name] = n;
+                }
+            }
+            return tableCounts;
         }
 
         public string GetDataDirPath ()
@@ -320,47 +380,9 @@ namespace NachoCore.Model
                 storedBuildInfo.Time != BuildInfo.Time ||
                 storedBuildInfo.Version != BuildInfo.Version) {
                 Db.RunInTransaction (() => {
-                    Db.CreateTable<McAccount> ();
-                    Db.CreateTable<McConference> ();
-                    Db.CreateTable<McCred> ();
-                    Db.CreateTable<McMapFolderFolderEntry> ();
-                    Db.CreateTable<McFolder> ();
-                    Db.CreateTable<McEmailAddress> ();
-                    Db.CreateTable<McEmailMessage> ();
-                    Db.CreateTable<McEmailMessageCategory> ();
-                    Db.CreateTable<McEmailMessageDependency> ();
-                    Db.CreateTable<McMeetingRequest> ();
-                    Db.CreateTable<McAttachment> ();
-                    Db.CreateTable<McMapAttachmentItem> ();
-                    Db.CreateTable<McContact> ();
-                    Db.CreateTable<McContactDateAttribute> ();
-                    Db.CreateTable<McContactStringAttribute> ();
-                    Db.CreateTable<McContactAddressAttribute> ();
-                    Db.CreateTable<McContactEmailAddressAttribute> ();
-                    Db.CreateTable<McPolicy> ();
-                    Db.CreateTable<McProtocolState> ();
-                    Db.CreateTable<McServer> ();
-                    Db.CreateTable<McPending> ();
-                    Db.CreateTable<McPendDep> ();
-                    Db.CreateTable<McCalendar> ();
-                    Db.CreateTable<McException> ();
-                    Db.CreateTable<McAttendee> ();
-                    Db.CreateTable<McCalendarCategory> ();
-                    Db.CreateTable<McRecurrence> ();
-                    Db.CreateTable<McEvent> ();
-                    Db.CreateTable<McTask> ();
-                    Db.CreateTable<McBody> ();
-                    Db.CreateTable<McDocument> ();
-                    Db.CreateTable<McMutables> ();
-                    Db.CreateTable<McPath> ();
-                    Db.CreateTable<McNote> ();
-                    Db.CreateTable<McPortrait> ();
-                    Db.CreateTable<McMapEmailAddressEntry> ();
-                    Db.CreateTable<McMigration> ();
-                    Db.CreateTable<McLicenseInformation> ();
-                    Db.CreateTable<McBrainEvent> ();
-                    Db.CreateTable<McEmailAddressScore> ();
-                    Db.CreateTable<McEmailMessageScore> ();
+                    foreach (var tableType in AllTables) {
+                        Db.CreateTable(tableType);
+                    }
                 });
                 var current = new McBuildInfo () {
                     Version = BuildInfo.Version,
@@ -425,9 +447,7 @@ namespace NachoCore.Model
             InitializeDb ();
             TeleDbFileName = Path.Combine (GetDataDirPath (), "teledb");
             InitializeTeleDb ();
-            NcApplication.Instance.MonitorEvent += (object sender, EventArgs e) => {
-                Scrub ();
-            };
+            NcApplicationMonitor.Instance.MonitorEvent += (sender, e) => Scrub ();
             //mark all the files for skip backup
             MarkDataDirForSkipBackup ();
         }
