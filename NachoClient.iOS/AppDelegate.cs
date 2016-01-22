@@ -1249,7 +1249,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_SYS, "ReceiveMemoryWarning;");
             Log.Info (Log.LOG_SYS, "Monitor: NSURLCache usage {0}", NSUrlCache.SharedCache.CurrentMemoryUsage);
-            NcApplication.Instance.MonitorReport ();
+            NcApplicationMonitor.Instance.Report ();
         }
 
         public override void ApplicationSignificantTimeChange (UIApplication application)

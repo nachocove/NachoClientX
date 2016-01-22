@@ -1746,6 +1746,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsSearch.cs">
       <Link>NachoCore\Utils\ContactsSearch.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcApplicationMonitor.cs">
+      <Link>NachoCore\Utils\NcApplicationMonitor.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
