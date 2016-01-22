@@ -784,7 +784,7 @@ namespace Test.iOS
         public void Reset (int serverId)
         {
         }
-        public void Refresh ()
+        public void Refresh (string tag)
         {
         }
         public bool IsRateLimited (int serverId)

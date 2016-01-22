@@ -371,7 +371,7 @@ namespace Test.iOS
         {
         }
 
-        public void Refresh ()
+        public void Refresh (string tag)
         {
         }
     }
