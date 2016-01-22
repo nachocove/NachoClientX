@@ -400,7 +400,7 @@ namespace NachoCore
                     return false;
                 }
                 if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down ||
-                    NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
+                    (null != Server && NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable)) {
                     // network is down, or the server is bad. Don't start. Callbacks will trigger us
                     // to start later.
                     return false;
