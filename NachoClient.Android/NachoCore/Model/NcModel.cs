@@ -87,50 +87,50 @@ namespace NachoCore.Model
 
     public sealed class NcModel
     {
-        List<McAbstrObject> AllTables {
+        List<Type> AllTables {
             get {
-                return new List<McAbstrObject> () {
-                    new McAccount (),
-                    new McConference (),
-                    new McCred (),
-                    new McMapFolderFolderEntry (),
-                    new McFolder (),
-                    new McEmailAddress (),
-                    new McEmailMessage (),
-                    new McEmailMessageCategory (),
-                    new McEmailMessageDependency (),
-                    new McMeetingRequest (),
-                    new McAttachment (),
-                    new McMapAttachmentItem (),
-                    new McContact (),
-                    new McContactDateAttribute (),
-                    new McContactStringAttribute (),
-                    new McContactAddressAttribute (),
-                    new McContactEmailAddressAttribute (),
-                    new McPolicy (),
-                    new McProtocolState (),
-                    new McServer (),
-                    new McPending (),
-                    new McPendDep (),
-                    new McCalendar (),
-                    new McException (),
-                    new McAttendee (),
-                    new McCalendarCategory (),
-                    new McRecurrence (),
-                    new McEvent (),
-                    new McTask (),
-                    new McBody (),
-                    new McDocument (),
-                    new McMutables (),
-                    new McPath (),
-                    new McNote (),
-                    new McPortrait (),
-                    new McMapEmailAddressEntry (),
-                    new McMigration (),
-                    new McLicenseInformation (),
-                    new McBrainEvent (),
-                    new McEmailAddressScore (),
-                    new McEmailMessageScore (),
+                return new List<Type> () {
+                    typeof(McAccount),
+                    typeof(McConference),
+                    typeof(McCred),
+                    typeof(McMapFolderFolderEntry),
+                    typeof(McFolder),
+                    typeof(McEmailAddress),
+                    typeof(McEmailMessage),
+                    typeof(McEmailMessageCategory),
+                    typeof(McEmailMessageDependency),
+                    typeof(McMeetingRequest),
+                    typeof(McAttachment),
+                    typeof(McMapAttachmentItem),
+                    typeof(McContact),
+                    typeof(McContactDateAttribute),
+                    typeof(McContactStringAttribute),
+                    typeof(McContactAddressAttribute),
+                    typeof(McContactEmailAddressAttribute),
+                    typeof(McPolicy),
+                    typeof(McProtocolState),
+                    typeof(McServer),
+                    typeof(McPending),
+                    typeof(McPendDep),
+                    typeof(McCalendar),
+                    typeof(McException),
+                    typeof(McAttendee),
+                    typeof(McCalendarCategory),
+                    typeof(McRecurrence),
+                    typeof(McEvent),
+                    typeof(McTask),
+                    typeof(McBody),
+                    typeof(McDocument),
+                    typeof(McMutables),
+                    typeof(McPath),
+                    typeof(McNote),
+                    typeof(McPortrait),
+                    typeof(McMapEmailAddressEntry),
+                    typeof(McMigration),
+                    typeof(McLicenseInformation),
+                    typeof(McBrainEvent),
+                    typeof(McEmailAddressScore),
+                    typeof(McEmailMessageScore),
                 };
             }
         }
@@ -224,7 +224,7 @@ namespace NachoCore.Model
         {
             Dictionary<string, long> tableCounts = new Dictionary<string, long> ();
             foreach (var tableType in AllTables) {
-                string name = tableType.GetType ().Name;
+                string name = tableType.Name;
                 var n = Db.ExecuteScalar<long> (string.Format ("SELECT COUNT(Id) FROM {0};", name));
                 if (includeZeroCounts || n > 0) {
                     tableCounts [name] = n;
@@ -381,7 +381,7 @@ namespace NachoCore.Model
                 storedBuildInfo.Version != BuildInfo.Version) {
                 Db.RunInTransaction (() => {
                     foreach (var tableType in AllTables) {
-                        Db.CreateTable(tableType.GetType ());
+                        Db.CreateTable(tableType);
                     }
                 });
                 var current = new McBuildInfo () {
