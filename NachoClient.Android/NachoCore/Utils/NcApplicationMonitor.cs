@@ -42,10 +42,10 @@ namespace NachoCore
             ProcessMemory.ReportThreshold = 4;
         }
 
-        DateTime? LastStatusIndDetectorReport;
+        DateTime LastStatusIndDetectorReport = DateTime.MinValue;
         void DoStatusIndDetectorReport ()
         {
-            if (!LastStatusIndDetectorReport.HasValue || LastStatusIndDetectorReport.Value.AddSeconds (5) < DateTime.UtcNow) {
+            if (LastStatusIndDetectorReport.AddSeconds (5) < DateTime.UtcNow) {
                 Report (); // do a report on any execution context changes.
                 LastStatusIndDetectorReport = DateTime.UtcNow;
             }
@@ -104,7 +104,7 @@ namespace NachoCore
             }
         }
 
-        DateTime? LastDBRowCounts;
+        DateTime LastDBRowCounts = DateTime.MinValue;
 
         public void Report (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
@@ -130,7 +130,7 @@ namespace NachoCore
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
                 NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
             Log.Info (Log.LOG_SYS, "NcApplicationMonitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
-            if (!LastDBRowCounts.HasValue || LastDBRowCounts.Value.AddHours (4) < DateTime.UtcNow) {
+            if (LastDBRowCounts.AddHours (4) < DateTime.UtcNow) {
                 var counts = NcModel.Instance.AllTableRowCounts ();
                 Log.Info (Log.LOG_SYS, "NcApplicationMonitor: DB Row Counts (non-zero):\n{0}", string.Join ("\n", counts.Select (x => string.Format ("{0}: {1}", x.Key, x.Value)).ToList ()));
                 LastDBRowCounts = DateTime.UtcNow;
