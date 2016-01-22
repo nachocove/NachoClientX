@@ -249,18 +249,21 @@ namespace NachoCore.IMAP
                     });
                 }
 
-                ImapImplementation ourId = new ImapImplementation () {
-                    Name = "Nacho Mail",
-                    Version = string.Format ("{0}:{1}", BuildInfo.Version, BuildInfo.BuildNumber),
-                    ReleaseDate = BuildInfo.Time,
-                    SupportUrl = "https://support.nachocove.com/",
-                    Vendor = "Nacho Cove, Inc",
-                    OS = NachoPlatform.Device.Instance.BaseOs ().ToString (),
-                    OSVersion = NachoPlatform.Device.Instance.Os (),
-                };
-                //Log.Info (Log.LOG_IMAP, "Our Id: {0}", dumpImapImplementation(ourId));
-                var serverId = Client.Identify (ourId, Cts.Token);
-                Log.Info (Log.LOG_IMAP, "IMAP Server {0}:{1} capabilities: {2} Id: {3}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString (), dumpImapImplementation (serverId));
+                // if the server supports ID, send one.
+                if ((Client.Capabilities & ImapCapabilities.Id) == ImapCapabilities.Id) {
+                    ImapImplementation ourId = new ImapImplementation () {
+                        Name = "Nacho Mail",
+                        Version = string.Format ("{0}:{1}", BuildInfo.Version, BuildInfo.BuildNumber),
+                        ReleaseDate = BuildInfo.Time,
+                        SupportUrl = "https://support.nachocove.com/",
+                        Vendor = "Nacho Cove, Inc",
+                        OS = NachoPlatform.Device.Instance.BaseOs ().ToString (),
+                        OSVersion = NachoPlatform.Device.Instance.Os (),
+                    };
+                    //Log.Info (Log.LOG_IMAP, "Our Id: {0}", dumpImapImplementation(ourId));
+                    var serverId = Client.Identify (ourId, Cts.Token);
+                    Log.Info (Log.LOG_IMAP, "IMAP Server {0}:{1} capabilities: {2} Id: {3}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString (), dumpImapImplementation (serverId));
+                }
             }
         }
 
