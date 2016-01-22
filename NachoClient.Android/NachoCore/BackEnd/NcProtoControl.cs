@@ -390,22 +390,26 @@ namespace NachoCore
             return Execute ();
         }
 
+        object executeLock = new object();
+
         protected virtual bool Execute ()
         {
-            // don't allow us to execute, if the App/UI told us to stop.
-            if (ForceStopped) {
-                return false;
+            lock (executeLock) {
+                // don't allow us to execute, if the App/UI told us to stop.
+                if (ForceStopped) {
+                    return false;
+                }
+                if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down ||
+                    NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
+                    // network is down, or the server is bad. Don't start. Callbacks will trigger us
+                    // to start later.
+                    return false;
+                }
+                if (Cts.IsCancellationRequested) {
+                    NewCancellation ();
+                }
+                return true;
             }
-            if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down ||
-                NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
-                // network is down, or the server is bad. Don't start. Callbacks will trigger us
-                // to start later.
-                return false;
-            }
-            if (Cts.IsCancellationRequested) {
-                NewCancellation ();
-            }
-            return true;
         }
 
         // Interface to owner.
