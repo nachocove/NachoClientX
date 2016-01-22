@@ -20,7 +20,6 @@ namespace NachoClient.AndroidClient
     [Activity (Label = "ContactEmailChooserActivity")]
     public class ContactEmailChooserActivity : NcActivity
     {
-        private const string EXTRA_ACCOUNT = "com.nachocove.nachomail.EXTRA_ACCOUNT";
         private const string EXTRA_SEARCH_STRING = "com.nachocove.nachomail.EXTRA_SEARCH_STRING";
         private const string EXTRA_RESULT_EMAIL = "com.nachocove.nachomail.EXTRA_RESULT_EMAIL";
         private const string EXTRA_RESULT_CONTACT = "com.nachocove.nachomail.EXTRA_RESULT_CONTACT";
@@ -30,31 +29,26 @@ namespace NachoClient.AndroidClient
             base.OnCreate (bundle);
             SetContentView (Resource.Layout.ContactEmailchooserActivity);
 
-            int accountId = Intent.GetIntExtra (EXTRA_ACCOUNT, 0);
-            NcAssert.True (0 != accountId);
-
             string initialSearch = "";
             if (Intent.HasExtra (EXTRA_SEARCH_STRING)) {
                 initialSearch = Intent.GetStringExtra (EXTRA_SEARCH_STRING);
             }
 
             var fragment = FragmentManager.FindFragmentById<ContactEmailChooserFragment> (Resource.Id.contact_email_chooser_fragment);
-            fragment.SetInitialValues (accountId, initialSearch);
+            fragment.SetInitialValues (initialSearch);
         }
 
-        public static Intent EmptySearchIntent (Context context, int accountId)
+        public static Intent EmptySearchIntent (Context context)
         {
             var intent = new Intent (context, typeof(ContactEmailChooserActivity));
             intent.SetAction (Intent.ActionSearch);
-            intent.PutExtra (EXTRA_ACCOUNT, accountId);
             return intent;
         }
 
-        public static Intent SearchIntent (Context context, int accountId, string initialSearchString)
+        public static Intent SearchIntent (Context context, string initialSearchString)
         {
             var intent = new Intent (context, typeof(ContactEmailChooserActivity));
             intent.SetAction (Intent.ActionSearch);
-            intent.PutExtra (EXTRA_ACCOUNT, accountId);
             intent.PutExtra (EXTRA_SEARCH_STRING, initialSearchString);
             return intent;
         }

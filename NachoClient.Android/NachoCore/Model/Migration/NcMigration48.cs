@@ -2,21 +2,25 @@
 //
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
     public class NcMigration48 : NcMigration
     {
+        List<McAttachment> Atts;
         public override int GetNumberOfObjects ()
         {
-            return Db.Table<McAttachment> ().Count ();
+            Atts = NcModel.Instance.Db.Query<McAttachment> ("SELECT * FROM McAttachment WHERE ItemId > 0");
+            return Atts.Count;
         }
 
         public override void Run (System.Threading.CancellationToken token)
         {
-            var atts = Db.Table<McAttachment> ().Where (x => 0 < x.ItemId);
             McAbstrItem item;
-            foreach (var att in atts) {
+            foreach (var att in Atts) {
+                token.ThrowIfCancellationRequested ();
+
                 switch (att.ClassCode) {
                 case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                     item = McCalendar.QueryById<McCalendar> (att.ItemId);

@@ -342,6 +342,7 @@ namespace NachoCore
                     if (null != emailMessage && !emailMessage.IsRead) {
                         markUpdate = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                             Operation = McPending.Operations.EmailMarkRead,
+                            EmailSetFlag_FlagType = McPending.MarkReadFlag,
                             ServerId = emailMessage.ServerId,
                             ParentId = srcFolder.ServerId,
                         };   
@@ -691,7 +692,7 @@ namespace NachoCore
             return result;
         }
 
-        public virtual NcResult MarkEmailReadCmd (int emailMessageId)
+        public virtual NcResult MarkEmailReadCmd (int emailMessageId, bool read)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcResult.SubKindEnum subKind;
@@ -704,6 +705,7 @@ namespace NachoCore
                 }
                 var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.EmailMarkRead,
+                    EmailSetFlag_FlagType = read ? McPending.MarkReadFlag : McPending.MarkUnreadFlag,
                     ServerId = emailMessage.ServerId,
                     ParentId = folder.ServerId,
                 };   
@@ -711,7 +713,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
                 emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                     var target = (McEmailMessage)record;
-                    target.IsRead = true;
+                    target.IsRead = read;
                     return true;
                 });
             });

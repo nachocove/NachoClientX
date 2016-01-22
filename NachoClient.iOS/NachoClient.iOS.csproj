@@ -1739,6 +1739,13 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedLikelyToRead.cs">
       <Link>NachoCore\Adapters\NachoUnifiedLikelyToRead.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountPickerViewController.designer.cs">
+      <DependentUpon>AccountPickerViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsSearch.cs">
+      <Link>NachoCore\Utils\ContactsSearch.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcApplicationMonitor.cs">
       <Link>NachoCore\Utils\NcApplicationMonitor.cs</Link>
     </Compile>
@@ -2666,6 +2673,9 @@
     <BundleResource Include="Resources\icn-files-wrd%402x.png" />
     <BundleResource Include="Resources\icn-files-xls%402x.png" />
     <BundleResource Include="Resources\icn-files-zip%402x.png" />
+    <BundleResource Include="Resources\MessageRead%402x.png" />
+    <BundleResource Include="Resources\MessageRead%403x.png" />
+    <BundleResource Include="Resources\MessageRead%404x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

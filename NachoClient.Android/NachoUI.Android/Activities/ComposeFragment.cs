@@ -111,6 +111,12 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnDestroyView ()
+        {
+            HeaderView.Dispose ();
+            base.OnDestroyView ();
+        }
+
         private bool messageIsReady = true;
 
         public bool MessageIsReady {

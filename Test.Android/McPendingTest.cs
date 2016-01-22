@@ -331,6 +331,7 @@ namespace Test.iOS
                 // Create an Eligible state McPending and an Eligible McPending successor.
                 var pending = CreatePending ();
                 pending.Operation = Operations.EmailMarkRead;
+                pending.EmailSetFlag_FlagType = McPending.MarkReadFlag;
 
                 var successor = CreatePending ();
                 successor.Operation = Operations.EmailSetFlag;

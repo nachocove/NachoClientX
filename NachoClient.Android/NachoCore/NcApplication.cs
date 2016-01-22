@@ -526,6 +526,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices called.");
             BackEnd.Instance.Stop ();
 
+            NcApplicationMonitor.Instance.Stop ();
             NcModel.Instance.Stop ();
             StoreHandler.Instance.Stop (); 
             CloudHandler.Instance.Stop (); 
@@ -572,7 +573,6 @@ namespace NachoCore
         public void StopClass4Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
-            NcApplicationMonitor.Instance.Stop ();
             CrlMonitor.StopService ();
             if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");

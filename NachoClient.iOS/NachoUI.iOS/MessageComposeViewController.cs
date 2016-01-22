@@ -21,6 +21,8 @@ using WebKit;
 using Photos;
 using MobileCoreServices;
 
+using System.Linq;
+
 namespace NachoClient.iOS
 {
     
@@ -44,7 +46,8 @@ namespace NachoClient.iOS
         INachoFileChooserParent,
         INachoContactChooserDelegate,
         MessageComposerDelegate,
-        NcWebViewMessageHandler
+        NcWebViewMessageHandler,
+        AccountPickerViewControllerDelegate
     {
 
         #region Properties
@@ -62,6 +65,7 @@ namespace NachoClient.iOS
         UIAlertController CloseAlertController;
         UIAlertController SubjectAlertController;
         UIAlertController SizeAlertController;
+        List<McAccount> EmailAccounts;
         bool HasShownOnce;
         UIStoryboard mainStorybaord;
         UIStoryboard MainStoryboard {
@@ -91,6 +95,9 @@ namespace NachoClient.iOS
             Composer = new MessageComposer (account);
             Composer.Delegate = this;
             JavaScriptQueue = new List<string> ();
+            EmailAccounts = new List<McAccount> (McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).Where((McAccount a) => { return a.AccountType != McAccount.AccountTypeEnum.Unified; }));
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
         }
 
         #endregion
@@ -190,6 +197,7 @@ namespace NachoClient.iOS
             if (!HasShownOnce) {
                 Composer.StartPreparingMessage ();
                 UpdateHeaderView ();
+                HeaderView.UpdateCcCollapsed ();
                 UpdateSendEnabled ();
                 if (StartWithQuickResponse) {
                     ShowQuickResponses ();
@@ -483,6 +491,24 @@ namespace NachoClient.iOS
         public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
             // old implementation did nothing
+        }
+
+        // User tapping the from field
+        public void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view)
+        {
+            var picker = new AccountPickerViewController ();
+            picker.PickerDelegate = this;
+            picker.Accounts = EmailAccounts;
+            picker.SelectedAccount = Composer.Account;
+            NavigationController.PushViewController (picker, true);
+        }
+
+        public void AccountPickerDidPickAccount (AccountPickerViewController vc, McAccount account)
+        {
+            NavigationController.PopViewController (true);
+            Composer.SetAccount (account);
+            UpdateHeaderFromView ();
+            UpdateHeaderAttachmentsView ();
         }
 
         // User changing the subject
@@ -888,10 +914,12 @@ namespace NachoClient.iOS
 
         private void UpdateHeaderView ()
         {
+            HeaderView.ShouldHideFrom = EmailAccounts.Count <= 1;
             UpdateHeaderSubjectView ();
             UpdateHeaderToView ();
             UpdateHeaderCcView ();
             UpdateHeaderBccView ();
+            UpdateHeaderFromView ();
             UpdateHeaderIntentView ();
             UpdateHeaderAttachmentsView ();
         }
@@ -921,6 +949,11 @@ namespace NachoClient.iOS
             foreach (var address in addresses) {
                 HeaderView.BccView.Append (address);
             }
+        }
+
+        private void UpdateHeaderFromView ()
+        {
+            HeaderView.FromView.ValueLabel.Text = Composer.Account.EmailAddr;
         }
 
         private void UpdateHeaderSubjectView ()
