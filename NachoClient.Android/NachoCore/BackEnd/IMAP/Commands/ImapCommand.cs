@@ -271,6 +271,10 @@ namespace NachoCore.IMAP
                     };
                     //Log.Info (Log.LOG_IMAP, "Our Id: {0}", dumpImapImplementation(ourId));
                     var serverId = Client.Identify (ourId, Cts.Token);
+                    if (null == serverId) {
+                        // perhaps a bug on some servers (specifically gmx.net)
+                        serverId = Client.Identify (null, Cts.Token);
+                    }
                     Log.Info (Log.LOG_IMAP, "IMAP Server {0}:{1} capabilities: {2} Id: {3}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString (), dumpImapImplementation (serverId));
                 }
             }
@@ -278,7 +282,11 @@ namespace NachoCore.IMAP
 
         private string dumpImapImplementation (ImapImplementation imapId)
         {
-            return HashHelper.HashEmailAddressesInImapId (string.Join (", ", imapId.Properties));
+            if (null != imapId) {
+                return HashHelper.HashEmailAddressesInImapId (string.Join (", ", imapId.Properties));
+            } else {
+                return "Server did not return an ID";
+            }
         }
 
         protected void ProtocolLoggerStopAndPostTelemetry ()
