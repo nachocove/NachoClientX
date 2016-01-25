@@ -140,10 +140,7 @@ namespace NachoCore.IMAP
                 }
                 Log.Info (Log.LOG_IMAP, "Setting IDLE timeout to {0} on folder {1}", timeout, IdleFolder.ImapFolderNameRedacted ());
                 done.CancelAfter (timeout);
-                NcTimeStamp.Add ("Before Idle");
                 Client.Idle (done.Token, CancellationToken.None);
-                NcTimeStamp.Add ("After Idle");
-                NcTimeStamp.Dump ();
                 Cts.Token.ThrowIfCancellationRequested ();
             } finally {
                 mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
