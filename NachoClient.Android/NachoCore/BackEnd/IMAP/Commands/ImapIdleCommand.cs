@@ -16,12 +16,11 @@ namespace NachoCore.IMAP
         McFolder IdleFolder;
         bool ENABLED = true;
 
-        public ImapIdleCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapIdleCommand (IBEContext beContext, NcImapClient imap, McFolder folder) : base (beContext, imap)
         {
             // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
             // for more inspiration
-            IdleFolder = McFolder.GetDefaultInboxFolder(AccountId);
-            NcAssert.NotNull (IdleFolder);
+            IdleFolder = folder;
             RedactProtocolLogFunc = RedactProtocolLog;
         }
 
@@ -119,15 +118,23 @@ namespace NachoCore.IMAP
                 mailKitFolder.MessageFlagsChanged += MessageFlagsChangedHandler;
                 mailKitFolder.MessageExpunged += MessageExpungedHandler;
 
+                TimeSpan timeout;
                 if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.GoogleDefault) {
                     // https://github.com/jstedfast/MailKit/issues/276#issuecomment-168759657
                     // IMAP servers are supposed to keep the connection open for at least 30 minutes with no activity from the client, 
                     // but I've found that Google Mail will drop connections after a little under 10, so my recommendation is that you
                     // cancel the doneToken within roughly 9-10 minutes and then loop back to calling Idle() again.
-                    done.CancelAfter (new TimeSpan(0, 9, 0));
+                    //var timeout = new TimeSpan(0, 9, 0);
+                    timeout = new TimeSpan(0, 9, 0);
+                } else {
+                    timeout = new TimeSpan(0, 30, 0);
                 }
-
+                Log.Info (Log.LOG_IMAP, "Setting IDLE timeout to {0} on folder {1}", timeout, IdleFolder.ImapFolderNameRedacted ());
+                done.CancelAfter (timeout);
+                NcTimeStamp.Add ("Before Idle");
                 Client.Idle (done.Token, CancellationToken.None);
+                NcTimeStamp.Add ("After Idle");
+                NcTimeStamp.Dump ();
                 Cts.Token.ThrowIfCancellationRequested ();
             } finally {
                 mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
@@ -200,7 +207,7 @@ namespace NachoCore.IMAP
                 mailKitFolder.MessageExpunged += MessageExpungedHandler;
                 mailKitFolder.CountChanged += MessageCountChangedHandler;
                 while (!Cts.Token.IsCancellationRequested) {
-                    Log.Info (Log.LOG_IMAP, "ImapIdleCommand: waiting {0}s to call Noop", kNoopSleepTime);
+                    Log.Info (Log.LOG_IMAP, "ImapIdleCommand: waiting {0}s to call Noop on folder {1}", kNoopSleepTime, IdleFolder.ImapFolderNameRedacted ());
                     var cancelled = done.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(kNoopSleepTime));
                     if (cancelled) {
                         break;
