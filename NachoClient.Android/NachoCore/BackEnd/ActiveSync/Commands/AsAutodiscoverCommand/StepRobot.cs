@@ -1010,8 +1010,10 @@ namespace NachoCore.ActiveSync
                             Log.Warn (Log.LOG_AS, "Settings Failed. Going with Redirect response.");
                             return redirectEvt;
                         } else {
-                            // settings worked, so continue with those, ignoring the circular redirect
-                            Log.Warn (Log.LOG_AS, "Settings Succeeded. Ignoring Redirect response.");
+                            if (null != redirectEvt && circularRedirect) {
+                                // settings worked, so continue with those, ignoring the circular redirect
+                                Log.Warn (Log.LOG_AS, "Settings Succeeded. Ignoring Redirect response.");
+                            }
                             return settingsEvt;
                         }
                     } else if (null != redirectEvt) {
