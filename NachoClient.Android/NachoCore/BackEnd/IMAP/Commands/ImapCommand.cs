@@ -115,10 +115,12 @@ namespace NachoCore.IMAP
                 return;
             } catch (KeychainItemNotFoundException ex) {
                 Log.Error (Log.LOG_IMAP, "KeychainItemNotFoundException: {0}", ex.Message);
-                evt = HardFailOrTemp ("IMAPKEYCHFAIL", out action);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPKEYCHFAIL");
             } catch (CommandLockTimeOutException ex) {
                 Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
-                evt = HardFailOrTemp ("IMAPLOKTIME", out action);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
                 Client.DOA = true;
             } catch (ServiceNotConnectedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
@@ -127,21 +129,21 @@ namespace NachoCore.IMAP
                 serverFailedGenerally = true;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_IMAP, "AuthenticationException: {0}", ex.Message);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 if (!HasPasswordChanged ()) {
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
-                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 } else {
                     // credential was updated while we were running the command. Just try again.
-                    evt = HardFailOrTemp ("IMAPAUTH1TEMP", out action);
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTH1TEMP");
                 }
             } catch (ServiceNotAuthenticatedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 if (!HasPasswordChanged ()) {
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
-                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 } else {
                     // credential was updated while we were running the command. Just try again.
-                    evt = HardFailOrTemp ("IMAPAUTH2TEMP", out action);
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTH2TEMP");
                 }
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
@@ -149,20 +151,23 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
             } catch (IOException ex) {
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
-                evt = HardFailOrTemp ("IMAPIO", out action);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIO");
                 serverFailedGenerally = true;
             } catch (ImapProtocolException ex) {
                 // From MailKit: The exception that is thrown when there is an error communicating with an IMAP server. A
                 // <see cref="ImapProtocolException"/> is typically fatal and requires the <see cref="ImapClient"/>
                 // to be reconnected.
                 Log.Info (Log.LOG_IMAP, "ImapProtocolException: {0}", ex.ToString ());
-                evt = HardFailOrTemp ("IMAPPROTOTEMPFAIL", out action);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOTEMPFAIL");
                 serverFailedGenerally = true;
             } catch (SocketException ex) {
                 // We check the server connectivity pretty well in Discovery. If this happens with
                 // other commands, it's probably a temporary failure.
                 Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
-                evt = HardFailOrTemp ("IMAPCONNTEMPAUTH", out action);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
                 serverFailedGenerally = true;
             } catch (InvalidOperationException ex) {
                 Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
@@ -192,20 +197,6 @@ namespace NachoCore.IMAP
                 break;
             }
             sm.PostEvent (evt);
-        }
-
-        Event HardFailOrTemp (string tag, out Tuple<ResolveAction, NcResult.WhyEnum> action)
-        {
-            Event evt;
-            if (null != PendingSingle && PendingSingle.DelayNotAllowed) {
-                // do not delay. fail hard.
-                evt = Event.Create ((uint)SmEvt.E.HardFail, tag);
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
-            } else {
-                evt = Event.Create ((uint)SmEvt.E.TempFail, tag);
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-            }
-            return evt;
         }
 
         public void ConnectAndAuthenticate ()
