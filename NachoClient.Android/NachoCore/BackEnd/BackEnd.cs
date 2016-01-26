@@ -101,6 +101,20 @@ namespace NachoCore
             return services;
         }
 
+        public ConcurrentQueue<NcProtoControl> GetOrCreateServices (int accountId)
+        {
+            var services = GetServices (accountId);
+            if (null == services) {
+                CreateServices (accountId);
+                services = GetServices (accountId);
+                if (services == null) {
+                    Log.Warn (Log.LOG_BACKEND, "StartBackendIfNotStarted ({1}) could not find services.", accountId);
+                    return null;
+                }
+            }
+            return services;
+        }
+
         public void AddServices (int accountId, ConcurrentQueue<NcProtoControl> services)
         {
             if (!Services.TryAdd (accountId, services)) {
@@ -197,16 +211,11 @@ namespace NachoCore
 
         private IBackEndOwner Owner { set; get; }
 
-        ConcurrentQueue<NcProtoControl> StartBackendIfNotStarted (int accountId)
+        ConcurrentQueue<NcProtoControl> GetServicesAndStartBackendIfNotStarted (int accountId)
         {
-            var services = GetServices (accountId);
+            var services = GetOrCreateServices (accountId);
             if (null == services) {
-                CreateServices (accountId);
-                services = GetServices (accountId);
-                if (services == null) {
-                    Log.Warn (Log.LOG_BACKEND, "StartBackendIfNotStarted ({1}) could not find services.", accountId);
-                    return null;
-                }
+                return null; // error was logged in GetOrCreateServices()
             }
 
             // see if there's any not-started services. If so, assume the backend is not up, so start it
@@ -225,7 +234,7 @@ namespace NachoCore
         /// <param name="func">Func.</param>
         private NcResult ApplyToService (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> func)
         {
-            if (StartBackendIfNotStarted (accountId) == null) {
+            if (GetServicesAndStartBackendIfNotStarted (accountId) == null) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_NoCapableService);
             }
 
@@ -247,15 +256,24 @@ namespace NachoCore
         /// <param name="capabilities">Capabilities</param>
         /// <param name="name">Name.</param>
         /// <param name="func">Func.</param>
-        private NcResult ApplyAcrossServices (int accountId, McAccount.AccountCapabilityEnum capabilities, string name, Func<NcProtoControl, NcResult> func)
+        /// <param name="startIfNotStarted">start services if they aren't started yet.</param>
+        private NcResult ApplyAcrossServices (int accountId, McAccount.AccountCapabilityEnum capabilities, string name, Func<NcProtoControl, NcResult> func, bool startIfNotStarted)
         {
             var result = NcResult.OK ();
             NcResult iterResult = null;
 
-            var services = StartBackendIfNotStarted (accountId);
-            if (services == null) {
-                Log.Warn (Log.LOG_BACKEND, "BackEnd.ApplyAcrossServices {0}({1}) could not find services.", name, accountId);
-                return NcResult.Error ("Could not create services");
+            ConcurrentQueue<NcProtoControl> services;
+            if (startIfNotStarted) {
+                services = GetServicesAndStartBackendIfNotStarted (accountId);
+                if (services == null) {
+                    Log.Warn (Log.LOG_BACKEND, "BackEnd.ApplyAcrossServices {0}({1}) could not find services.", name, accountId);
+                    return NcResult.Error ("Could not create services");
+                }
+            } else {
+                services = GetOrCreateServices (accountId);
+                if (null == services) {
+                    return NcResult.Error (NcResult.SubKindEnum.Error_NoCapableService, NcResult.WhyEnum.Unsupported);
+                }
             }
 
             List<NcProtoControl> matchingServices = services.Where (x => (0 != (capabilities & x.Capabilities))).ToList ();
@@ -382,7 +400,7 @@ namespace NachoCore
             ApplyAcrossServices (accountId, McAccount.AccountCapabilityEnum.All, "RemoveService", (service) => {
                 service.Remove ();
                 return NcResult.OK ();
-            });
+            }, false);
             DeleteServices (accountId); // free up the memory, too.
         }
 
@@ -442,7 +460,7 @@ namespace NachoCore
                 ApplyAcrossServices (accountId, McAccount.AccountCapabilityEnum.All, "CredResp", (service) => {
                     service.CredResp ();
                     return NcResult.OK ();
-                });
+                }, true);
                 lock (CredReqActive) {
                     CredReqActive.Remove (accountId);
                 }
@@ -454,7 +472,7 @@ namespace NachoCore
             ApplyAcrossServices (accountId, capabilities, "PendQHotInd", (service) => {
                 service.PendQHotInd ();
                 return NcResult.OK ();
-            });
+            }, true);
         }
 
         /// <summary>
@@ -471,7 +489,7 @@ namespace NachoCore
             ApplyAcrossServices (accountId, capabilities, "PendQInd", (service) => {
                 service.PendQOrHintInd ();
                 return NcResult.OK ();
-            });
+            }, true);
         }
 
         /// <summary>
@@ -488,7 +506,7 @@ namespace NachoCore
             ApplyAcrossServices (accountId, capabilities, "HintInd", (service) => {
                 service.PendQOrHintInd ();
                 return NcResult.OK ();
-            });
+            }, true);
         }
 
         private NcResult CmdInDoNotDelayContext (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> cmd)
@@ -829,7 +847,7 @@ namespace NachoCore
             ApplyAcrossServices (accountId, McAccount.AccountCapabilityEnum.All, "CancelValidateConfig", (service) => {
                 service.CancelValidateConfig ();
                 return NcResult.OK ();
-            });
+            }, false);
         }
 
         public List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> BackEndStates (int accountId)
@@ -838,7 +856,7 @@ namespace NachoCore
             ApplyAcrossServices (accountId, McAccount.AccountCapabilityEnum.All, "BackEndStates", (service) => {
                 states.Add (new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (service.BackEndState, service.Capabilities));
                 return NcResult.OK ();
-            });
+            }, false);
             return states;
         }
 
