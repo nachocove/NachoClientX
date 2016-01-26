@@ -12,6 +12,7 @@ using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
+using MimeKit;
 
 namespace NachoPlatform
 {
@@ -405,8 +406,18 @@ namespace NachoPlatform
                         EmailDataKind type = (EmailDataKind)GetFieldInt (pCur, ContactsContract.CommonDataKinds.Email.InterfaceConsts.Type);
                         String label = GetField (pCur, ContactsContract.CommonDataKinds.Email.InterfaceConsts.Label);
                         string emailType = ContactsContract.CommonDataKinds.Email.GetTypeLabel (MainApplication.Instance.ApplicationContext.Resources, type, label);
-                        var name = string.Format ("EmailAddress{0}", emailType);
-                        Contact.AddEmailAddressAttribute (Contact.AccountId, name, emailType, email); // FIXME what are name and label?
+                        InternetAddressList addresses;
+                        if (!InternetAddressList.TryParse (email, out addresses) || 0 == addresses.Count) {
+                            continue;
+                        }
+                        foreach (var iAddr in addresses) {
+                            var addr = iAddr as MailboxAddress;
+                            if (null == addr) {
+                                continue;
+                            }
+                            var name = string.Format ("EmailAddress{0}-{1}", emailType, addresses.IndexOf (addr));
+                            Contact.AddEmailAddressAttribute (Contact.AccountId, name, emailType, addr.ToString ()); // FIXME what are name and label?
+                        }
                     } while (pCur.MoveToNext ());
                 }
                 pCur.Close ();
