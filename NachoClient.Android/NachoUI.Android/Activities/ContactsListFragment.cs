@@ -195,7 +195,7 @@ namespace NachoClient.AndroidClient
         public override void OnDestroyView ()
         {
             base.OnDestroyView ();
-            contactsListAdapter.Dispose ();
+            // contactsListAdapter.Dispose ();
         }
 
         public override void OnSaveInstanceState (Bundle outState)
