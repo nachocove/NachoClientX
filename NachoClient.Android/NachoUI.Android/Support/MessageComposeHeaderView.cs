@@ -13,19 +13,27 @@ using System.Collections.Generic;
 namespace NachoClient.AndroidClient
 {
 
-    public interface MessageComposeHeaderViewDelegate {
-//        void MessageComposeHeaderViewDidChangeHeight (MessageComposeHeaderView view);
+    public interface MessageComposeHeaderViewDelegate
+    {
+        //        void MessageComposeHeaderViewDidChangeHeight (MessageComposeHeaderView view);
         void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject);
+
         void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to);
+
         void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc);
+
         void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc);
+
         void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
+
         void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
+
         void MessageComposeHeaderViewDidSelectAttachment (MessageComposeHeaderView view, McAttachment attachment);
+
         void MessageComposeHeaderViewDidRemoveAttachment (MessageComposeHeaderView view, McAttachment attachment);
-//        void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address);
-//        void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address);
-//        void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address);
+        //        void MessageComposeHeaderViewDidSelectContactChooser (MessageComposeHeaderView view, NcEmailAddress address);
+        //        void MessageComposeHeaderViewDidSelectContactSearch (MessageComposeHeaderView view, NcEmailAddress address);
+        //        void MessageComposeHeaderViewDidRemoveAddress (MessageComposeHeaderView view, NcEmailAddress address);
     }
 
     public class MessageComposeHeaderView : LinearLayout
@@ -46,7 +54,7 @@ namespace NachoClient.AndroidClient
 
         bool ShouldHideIntent {
             get {
-                return !HasOpenedSubject && String.IsNullOrEmpty(SubjectField.Text);
+                return !HasOpenedSubject && String.IsNullOrEmpty (SubjectField.Text);
             }
         }
 
@@ -55,19 +63,19 @@ namespace NachoClient.AndroidClient
                 return (!HasOpenedCc) && CcField.Objects.Count == 0 && BccField.Objects.Count == 0;
             }
         }
-        
-        public MessageComposeHeaderView (Context context) : base(context)
+
+        public MessageComposeHeaderView (Context context) : base (context)
         {
             CreateSubviews ();
         }
 
-        public MessageComposeHeaderView (Context context, Android.Util.IAttributeSet attrs) : base(context, attrs)
+        public MessageComposeHeaderView (Context context, Android.Util.IAttributeSet attrs) : base (context, attrs)
         {
             // This is the constructor that evidently gets called by the xml
             CreateSubviews ();
         }
 
-        public MessageComposeHeaderView (Context context, Android.Util.IAttributeSet attrs, int defStyle) : base(context, attrs, defStyle)
+        public MessageComposeHeaderView (Context context, Android.Util.IAttributeSet attrs, int defStyle) : base (context, attrs, defStyle)
         {
             CreateSubviews ();
         }
@@ -187,15 +195,19 @@ namespace NachoClient.AndroidClient
         }
     }
 
-    class ContactAddressAdapter : BaseAdapter<EmailAddressField.TokenObject>, IFilterable {
+    class ContactAddressAdapter : BaseAdapter<EmailAddressField.TokenObject>, IFilterable
+    {
 
         List<McContactEmailAddressAttribute> SearchResults;
+
         public SearchHelper Searcher { get; }
+
         Context Context;
 
         private class ContactsFilter : Filter
         {
             public delegate void SearchResultsFound (List<McContactEmailAddressAttribute> searchResults);
+
             public SearchResultsFound HandleSearch;
 
             private ContactsEmailSearch searcher;
@@ -256,7 +268,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public ContactAddressAdapter (Context context) : base()
+        public ContactAddressAdapter (Context context) : base ()
         {
             Context = context;
             SearchResults = new List<McContactEmailAddressAttribute> ();
@@ -270,12 +282,16 @@ namespace NachoClient.AndroidClient
             NotifyDataSetChanged ();
         }
 
-        public override EmailAddressField.TokenObject this[int index] {
+        public override EmailAddressField.TokenObject this [int index] {
             get {
                 var addressAttr = SearchResults [index];
                 var address = McEmailAddress.QueryById<McEmailAddress> (addressAttr.EmailAddress);
                 var contact = addressAttr.GetContact ();
-                return new EmailAddressField.TokenObject (contact, new NcEmailAddress(NcEmailAddress.Kind.Unknown, address.CanonicalEmailAddress));
+                if (null == address) {
+                    NcAssert.True (McEmailAddress.Get (contact.AccountId, contact.GetEmailAddress (), out address));
+                    Log.Error (Log.LOG_CONTACTS, "TokenObject address is null");
+                }
+                return new EmailAddressField.TokenObject (contact, new NcEmailAddress (NcEmailAddress.Kind.Unknown, address.CanonicalEmailAddress));
             }
         }
 
@@ -320,6 +336,7 @@ namespace NachoClient.AndroidClient
         }
 
         ContactsFilter filter;
+
         public Filter Filter {
             get {
                 return filter;
