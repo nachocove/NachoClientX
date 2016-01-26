@@ -210,7 +210,7 @@ namespace NachoCore
             }
 
             // see if there's any not-started services. If so, assume the backend is not up, so start it
-            if (services.Any (x => !x.IsStarted) ) {
+            if (services.Any (x => !x.IsStarted)) {
                 Start (accountId);
             }
             return services;
@@ -495,7 +495,9 @@ namespace NachoCore
         {
             NcCommStatus.Instance.ForceUp ("CmdInDoNotDelayContext");
             return ApplyToService (accountId, capability, (service) => {
-                NcCommStatus.Instance.Reset (service.Server.Id);
+                if (null != service.Server) { // device server is null
+                    NcCommStatus.Instance.Reset (service.Server.Id);
+                }
                 if (!service.IsDoNotDelayOk) {
                     return NcResult.Error (service.DoNotDelaySubKind);
                 }
@@ -926,6 +928,7 @@ namespace NachoCore
         }
 
         #region INcProtoControlOwner
+
         public void StatusInd (NcProtoControl sender, NcResult status)
         {
             InvokeStatusIndEvent (new StatusIndEventArgs () { 
