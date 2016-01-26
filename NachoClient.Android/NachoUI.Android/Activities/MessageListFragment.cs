@@ -779,7 +779,7 @@ namespace NachoClient.AndroidClient
 
         public void MaybeSwitchStyle (int style)
         {
-            if (style != messageListAdapter.currentStyle) {
+            if ((null != messageListAdapter) && (style != messageListAdapter.currentStyle)) {
                 SwitchAccount (messages);
             }
         }
