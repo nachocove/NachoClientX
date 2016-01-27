@@ -292,6 +292,28 @@ namespace NachoClient.iOS
 
         }
 
+        [Foundation.Export ("UnreadViewTapped:")]
+        public void UnreadViewTapped (UIGestureRecognizer sender)
+        {
+            var view = sender.View;
+            while (view != null && !(view is UITableViewCell)) {
+                view = view.Superview;
+            }
+            if (view != null) {
+                var cell = view as UITableViewCell;
+                while (view != null && !(view is UITableView)) {
+                    view = view.Superview;
+                }
+                if (view != null) {
+                    var tableView = view as UITableView;
+                    var indexPath = tableView.IndexPathForCell (cell);
+                    var message = GetCachedMessage (indexPath.Row);
+                    EmailHelper.ToggleRead (message);
+                    tableView.ReloadRows (new NSIndexPath[]{ indexPath }, UITableViewRowAnimation.None);
+                }
+            }
+        }
+
         protected void ConfigureMultiSelectCell (UITableViewCell cell)
         {
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
@@ -407,7 +429,7 @@ namespace NachoClient.iOS
                 userImageView.Layer.CornerRadius = 20;
                 userImageView.Layer.MasksToBounds = true;
                 userImageView.Tag = USER_IMAGE_TAG;
-                imageViews.AddSubview (userImageView);
+                view.AddSubview (userImageView);
 
                 // User userLabelView view, if no image
                 var userLabelView = new UILabel (new CGRect (15, 20, 40, 40));
@@ -422,13 +444,19 @@ namespace NachoClient.iOS
                 userLabelView.BackgroundColor = UIColor.Yellow;
 
                 // Unread message dot
-                var unreadMessageView = new UIImageView (new Rectangle (4, 35, 9, 9));
+                var unreadMessageView = new UIImageView (new Rectangle (15, 60, 40, 27));
+                unreadMessageView.ContentMode = UIViewContentMode.Center;
                 using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
                     unreadMessageView.Image = image;
                 }
                 unreadMessageView.BackgroundColor = UIColor.White;
                 unreadMessageView.Tag = UNREAD_IMAGE_TAG;
-                imageViews.AddSubview (unreadMessageView);
+                unreadMessageView.UserInteractionEnabled = true;
+                view.AddSubview (unreadMessageView);
+                var unreadTap = new UITapGestureRecognizer ();
+                unreadTap.CancelsTouchesInView = true;
+                unreadTap.AddTarget (this, new ObjCRuntime.Selector ("UnreadViewTapped:"));
+                unreadMessageView.AddGestureRecognizer (unreadTap);
 
                 // Set up multi-select on checkmark
                 var imagesViewTap = new UITapGestureRecognizer ();
@@ -618,7 +646,16 @@ namespace NachoClient.iOS
             }
 
             var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
-            unreadMessageView.Hidden = message.IsRead;
+            unreadMessageView.Hidden = false;
+            if (message.IsRead) {
+                using (var image = UIImage.FromBundle ("MessageRead")) {
+                    unreadMessageView.Image = image;
+                }
+            } else {
+                using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
+                    unreadMessageView.Image = image;
+                }
+            }
 
             var messageHeaderView = (MessageHeaderView)cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
             messageHeaderView.ConfigureMessageView (messageThread, message);

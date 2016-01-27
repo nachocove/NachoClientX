@@ -34,26 +34,10 @@ namespace NachoClient.iOS
         protected string searchToken;
         McAccount accountForSearchAPI;
 
-        protected SearchHelper searcher;
-
         public ContactsTableViewSource ()
         {
             owner = null;
             allowSwiping = false;
-            searcher = new SearchHelper ("ContactsTableViewSourceUpdateSearchResults", (searchString) => {
-                if (String.IsNullOrEmpty (searchString)) {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        SetSearchResults (new List<McContactEmailAddressAttribute> ());
-                        NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
-                    });
-                } else {
-                    var results = McContact.SearchIndexAllContacts (searchString);
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        SetSearchResults (results);
-                        NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
-                    });
-                }
-            });
         }
 
         public void SetOwner (IContactsTableViewSourceDelegate owner, McAccount accountForSearchAPI, bool allowSwiping, UISearchDisplayController SearchDisplayController)
@@ -62,7 +46,6 @@ namespace NachoClient.iOS
             this.accountForSearchAPI = accountForSearchAPI;
             this.allowSwiping = allowSwiping;
             this.SearchDisplayController = SearchDisplayController;
-            SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
         }
 
         public void SetContacts (List<NcContactIndex> recent, List<NcContactIndex> contacts, bool multipleSections)
@@ -333,35 +316,6 @@ namespace NachoClient.iOS
             }
         }
 
-        /// <summary>
-        /// Updates the search results.
-        /// Return false if an asynch update is triggers.
-        /// For async, the table and view should be updated in UpdateSearchResultsCallback.  
-        /// </summary>
-        /// <returns><c>true</c>, if search results are updated, <c>false</c> otherwise.</returns>
-        /// <param name="forSearchOption">Index of the selected tab.</param>
-        /// <param name="forSearchString">The prefix string to search for.</param>
-        /// <param name="doGalSearch">True if it should issue a GAL search as well</param>.
-        public bool UpdateSearchResults (nint forSearchOption, string forSearchString, bool doGalSearch = true)
-        {
-            // Issue an asynchronous search.
-            searcher.Search (forSearchString);
-
-            // Issue a backend search command, e.g. GAL search for EAS
-            if ((null != accountForSearchAPI) && accountForSearchAPI.HasCapability (McAccount.AccountCapabilityEnum.ContactReader) && doGalSearch) {
-                // Issue a GAL search. The status indication handler will update the search results
-                // (with doGalSearch = false) to reflect potential matches from GAL.
-                if (String.IsNullOrEmpty (searchToken)) {
-                    // TODO: Think about whether we want to users about errors during GAL search
-                    searchToken = BackEnd.Instance.StartSearchContactsReq (accountForSearchAPI.Id, forSearchString, null).GetValue<string> ();
-                } else {
-                    BackEnd.Instance.SearchContactsReq (accountForSearchAPI.Id, forSearchString, null, searchToken);
-                }
-            }
-
-            return false;
-        }
-
         protected void DumpInfo (McContact contact)
         {
             if (null == contact) {
@@ -375,38 +329,35 @@ namespace NachoClient.iOS
                 }
             }
         }
-
-        public class SearchDisplayDelegate : UISearchDisplayDelegate
-        {
-            ContactsTableViewSource owner;
-
-            private SearchDisplayDelegate ()
-            {
-            }
-
-            public SearchDisplayDelegate (ContactsTableViewSource owner)
-            {
-                this.owner = owner;
-            }
-
-            public override bool ShouldReloadForSearchScope (UISearchDisplayController controller, nint forSearchOption)
-            {
-                // TODO: Trigger asynch search & return false
-                string searchString = controller.SearchBar.Text;
-                return owner.UpdateSearchResults (forSearchOption, searchString);
-            }
-
-            public override bool ShouldReloadForSearchString (UISearchDisplayController controller, string forSearchString)
-            {
-                if (TestMode.Instance.Process (forSearchString)) {
-                    return false;
-                }
-                var searchOption = controller.SearchBar.SelectedScopeButtonIndex;
-                return owner.UpdateSearchResults (searchOption, forSearchString);
-            }
-        }
     }
 
+    public class ContactsSearchDisplayDelegate : UISearchDisplayDelegate
+    {
+        ContactsGeneralSearch searcher;
 
+        private ContactsSearchDisplayDelegate ()
+        {
+        }
+
+        public ContactsSearchDisplayDelegate (ContactsGeneralSearch searcher)
+        {
+            this.searcher = searcher;
+        }
+
+        public override bool ShouldReloadForSearchScope (UISearchDisplayController controller, nint forSearchOption)
+        {
+            searcher.SearchFor (controller.SearchBar.Text);
+            return false;
+        }
+
+        public override bool ShouldReloadForSearchString (UISearchDisplayController controller, string forSearchString)
+        {
+            if (TestMode.Instance.Process (forSearchString)) {
+                return false;
+            }
+            searcher.SearchFor (forSearchString);
+            return false;
+        }
+    }
 }
 

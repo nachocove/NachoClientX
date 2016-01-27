@@ -342,15 +342,8 @@ namespace NachoCore.Utils
             if (emailAddress.LastIndexOf ("@") != index) {
                 return; // malformed email address - more than 1 "@"
             }
-            string obfuscated;
-            if (!(BuildInfoHelper.IsAlpha || BuildInfoHelper.IsDev)) {
-                obfuscated =  "id" + emailAddress.Substring (index);
-
-            } else {
-                obfuscated = HashHelper.Sha256 (emailAddress.Substring (0, index)) + emailAddress.Substring (index);
-            }
             Dictionary<string, string> dict = new Dictionary<string, string> ();
-            dict.Add ("sha256_email_address", obfuscated);
+            dict.Add ("sha256_email_address", HashHelper.Sha256 (emailAddress.Substring (0, index)) + emailAddress.Substring (index));
             RecordSupport (dict);
         }
 

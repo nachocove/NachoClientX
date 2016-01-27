@@ -216,6 +216,14 @@ namespace NachoCore.Wbxml
             node5.Add(node6); // Account -> EmailAddresses
             node4.Add(node5); // Accounts -> Account
             node3.Add(node4); // Get -> Accounts
+            node4 = new NcXmlFilterNode ("EmailAddresses", RedactionType.NONE, RedactionType.NONE);
+            // SMTPAddress
+            node5 = new NcXmlFilterNode ("SMTPAddress", RedactionType.FULL, RedactionType.FULL);
+            node4.Add(node5); // EmailAddresses -> SMTPAddress
+            // PrimarySmtpAddress
+            node5 = new NcXmlFilterNode ("PrimarySmtpAddress", RedactionType.FULL, RedactionType.FULL);
+            node4.Add(node5); // EmailAddresses -> PrimarySmtpAddress
+            node3.Add(node4); // Get -> EmailAddresses
             node2.Add(node3); // UserInformation -> Get
             node1.Add(node2); // Settings -> UserInformation
             // RightsManagementInformation

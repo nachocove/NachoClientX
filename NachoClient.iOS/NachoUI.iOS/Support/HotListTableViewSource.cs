@@ -187,13 +187,19 @@ namespace NachoClient.iOS
             view.AddSubview (userLabelView);
 
             // Unread message dot
-            var unreadMessageView = new UIImageView (new CGRect (5, 30, 9, 9));
+            var unreadMessageView = new UIImageView (new CGRect (15, 60, 40, 27));
+            unreadMessageView.ContentMode = UIViewContentMode.Center;
             using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
                 unreadMessageView.Image = image;
             }
             unreadMessageView.BackgroundColor = UIColor.White;
             unreadMessageView.Tag = UNREAD_IMAGE_TAG;
+            unreadMessageView.UserInteractionEnabled = true;
             view.AddSubview (unreadMessageView);
+            var unreadTap = new UITapGestureRecognizer ();
+            unreadTap.CancelsTouchesInView = true;
+            unreadTap.AddTarget (this, new ObjCRuntime.Selector ("UnreadViewTapped:"));
+            unreadMessageView.AddGestureRecognizer (unreadTap);
 
             var messageHeaderView = new MessageHeaderView (new CGRect (65, 0, frame.Width - 65, 75));
             messageHeaderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -441,7 +447,16 @@ namespace NachoClient.iOS
             }
 
             var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
-            unreadMessageView.Hidden = message.IsRead;
+            unreadMessageView.Hidden = false;
+            if (message.IsRead) {
+                using (var image = UIImage.FromBundle ("MessageRead")) {
+                    unreadMessageView.Image = image;
+                }
+            } else {
+                using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
+                    unreadMessageView.Image = image;
+                }
+            }
 
             var messageHeaderView = view.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
             messageHeaderView.ConfigureMessageView (messageThread, message);
@@ -471,6 +486,29 @@ namespace NachoClient.iOS
         public bool ShouldSwipeCell ()
         {
             return !scrolling;
+        }
+
+        [Foundation.Export ("UnreadViewTapped:")]
+        public void UnreadViewTapped (UIGestureRecognizer sender)
+        {
+            var view = sender.View;
+            while (view != null && !(view is UITableViewCell)) {
+                view = view.Superview;
+            }
+            if (view != null) {
+                var cell = view as UITableViewCell;
+                while (view != null && !(view is UITableView)) {
+                    view = view.Superview;
+                }
+                if (view != null) {
+                    var tableView = view as UITableView;
+                    var indexPath = tableView.IndexPathForCell (cell);
+                    var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+                    var message = messageThread.FirstMessageSpecialCase ();
+                    EmailHelper.ToggleRead (message);
+                    tableView.ReloadRows (new NSIndexPath[]{ indexPath }, UITableViewRowAnimation.None);
+                }
+            }
         }
 
         public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)

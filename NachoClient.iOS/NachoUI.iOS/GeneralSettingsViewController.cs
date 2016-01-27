@@ -75,7 +75,7 @@ namespace NachoClient.iOS
             Util.ConfigureNavBar (false, this.NavigationController);
 
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount: false);
+            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount: false, showUnified: false);
 
             accountsTableView = new UITableView (View.Frame);
             accountsTableView.Source = accountsTableViewSource;

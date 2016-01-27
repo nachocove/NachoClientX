@@ -18,15 +18,17 @@ namespace NachoClient.iOS
 
         bool showAccessory;
         bool showUnreadCount;
+        bool showUnified;
         INachoAccountsTableDelegate owner;
 
         nfloat ROW_HEIGHT;
 
-        public void Setup (INachoAccountsTableDelegate owner, bool showAccessory, bool showUnreadCount)
+        public void Setup (INachoAccountsTableDelegate owner, bool showAccessory, bool showUnreadCount, bool showUnified = true)
         {
             this.owner = owner;
             this.showAccessory = showAccessory;
             this.showUnreadCount = showUnreadCount;
+            this.showUnified = showUnified;
 
             Refresh ();
         }
@@ -51,7 +53,7 @@ namespace NachoClient.iOS
                 accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
             }
 
-            if (accounts.Count > 1) {
+            if (showUnified && accounts.Count > 1) {
                 if (unifiedAccount == null) {
                     unifiedAccount = McAccount.GetUnifiedAccount ();
                 }

@@ -174,7 +174,8 @@ namespace NachoCore.Model
 
         public string ImapFolderNameRedacted ()
         {
-            return string.Format ("{0}<{1}>", ImapGuid, IsDistinguished ? ServerId : "User Folder");
+            bool obfuscate = IsDistinguished || ServerId.StartsWith ("[Gmail]/") ? false : true;
+            return string.Format ("{0}<{1}>", ImapGuid, !obfuscate ? ServerId : "User Folder");
         }
 
         public string ServerIdHashString ()
