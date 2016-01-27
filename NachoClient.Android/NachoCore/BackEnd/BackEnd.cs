@@ -144,9 +144,12 @@ namespace NachoCore
         // For test use only.
         protected CancellationTokenSource Oauth2RefreshCancelSource { 
             set {
-                _Oauth2RefreshCancelSource = value;
+                lock (_Oauth2RefreshCancelSourceLock) {
+                    _Oauth2RefreshCancelSource = value;
+                }
             }
         }
+        object _Oauth2RefreshCancelSourceLock = new object ();
 
         public enum CredReqActiveState
         {
@@ -220,7 +223,7 @@ namespace NachoCore
 
             // see if there's any not-started services. If so, assume the backend is not up, so start it
             if (services.Any (x => !x.IsStarted)) {
-                Start (accountId);
+                NcTask.Run (() => Start (accountId), "GetServicesAndStartBackendIfNotStarted");
             }
             return services;
         }
@@ -315,7 +318,6 @@ namespace NachoCore
         public void Start ()
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start() called");
-            Oauth2RefreshCancelSource = new CancellationTokenSource ();
             NcCommStatus.Instance.CommStatusNetEvent += Oauth2NetStatusEventHandler;
             // The callee does Task.Run.
             ApplyAcrossAccounts ("Start", (accountId) => Start (accountId));
@@ -432,6 +434,13 @@ namespace NachoCore
             // If so, make sure the timer is started to refresh the token.
             McCred cred = McCred.QueryByAccountId<McCred> (accountId).FirstOrDefault ();
             if (null != cred && cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                if (_Oauth2RefreshCancelSource == null) {
+                    lock (_Oauth2RefreshCancelSourceLock) {
+                        if (_Oauth2RefreshCancelSource == null) {
+                            Oauth2RefreshCancelSource = new CancellationTokenSource ();
+                        }
+                    }
+                }
                 StartOauthRefreshTimer ();
             }
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
