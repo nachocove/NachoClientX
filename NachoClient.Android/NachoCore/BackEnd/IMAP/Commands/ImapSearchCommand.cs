@@ -80,7 +80,7 @@ namespace NachoCore.IMAP
                     if (uids.Any ()) {
                         List<string> serverIdList = new List<string> ();
                         foreach (var uid in uids) {
-                            serverIdList.Add ("\"" + ImapProtoControl.MessageServerId (folder, uid) + "\"");
+                            serverIdList.Add (ImapProtoControl.MessageServerId (folder, uid));
                         }
                         var idList = McEmailMessage.QueryByServerIdList (AccountId, serverIdList);
                         if (idList.Any ()) {

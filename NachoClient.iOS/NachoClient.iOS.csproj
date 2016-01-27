@@ -1211,9 +1211,6 @@
       <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoMessageViewer.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoMessageSearchResults.cs">
-      <Link>NachoCore\Adapters\NachoMessageSearchResults.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration7.cs">
       <Link>NachoCore\Model\Migration\NcMigration7.cs</Link>
     </Compile>
@@ -1749,6 +1746,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcApplicationMonitor.cs">
       <Link>NachoCore\Utils\NcApplicationMonitor.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailSearch.cs">
+      <Link>NachoCore\Utils\EmailSearch.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -138,7 +138,9 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-            base.OnBackPressed ();
+            if (null == messageListFragment || !messageListFragment.HandleBackButton ()) {
+                base.OnBackPressed ();
+            }
         }
 
         protected override void OnSaveInstanceState (Bundle outState)

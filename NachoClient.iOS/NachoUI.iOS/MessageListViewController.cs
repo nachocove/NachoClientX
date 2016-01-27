@@ -21,7 +21,7 @@ namespace NachoClient.iOS
     {
         IMessageTableViewSource messageSource;
         IMessageTableViewSource searchResultsSource;
-        NachoMessageSearchResults searchResultsMessages;
+        EmailSearch emailSearcher;
         protected UIBarButtonItem composeMailButton;
         protected UIBarButtonItem multiSelectButton;
         protected UIBarButtonItem cancelSelectedButton;
@@ -31,7 +31,6 @@ namespace NachoClient.iOS
         protected UIBarButtonItem moveButton;
         protected UIBarButtonItem backButton;
 
-        protected Dictionary<int, string> searchTokens = null;
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
 
@@ -44,8 +43,6 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
-        protected SearchHelper searcher;
-
         bool StatusIndCallbackIsSet = false;
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
@@ -53,82 +50,9 @@ namespace NachoClient.iOS
             this.messageSource.SetEmailMessages (messageThreads, "No messages");
         }
 
-        void DumpMatches (string title, int version, string searchString, List<object> matches)
-        {
-            var prefix = String.Format ("{0} search ({1}) {2}:", title, version, searchString);
-            Log.Debug (Log.LOG_SEARCH, "{0} {1}", prefix, String.Join (",", matches));
-        }
-
-        void DumpMatches (string title, int version, string searchString, List<NachoCore.Index.MatchedItem> matches)
-        {
-            var list = new List<object> ();
-            foreach (var m in matches) {
-                list.Add (m.Id);
-            }
-            DumpMatches (title, version, searchString, list);
-        }
-
-        void DumpMatches (string title, int version, string searchString, List<McEmailMessageThread> indexList)
-        {
-            var list = new List<object> ();
-            foreach (var m in indexList) {
-                list.Add (m.FirstMessageId);
-            }
-            DumpMatches (title, version, searchString, list);
-        }
-
         public MessageListViewController (IntPtr handle) : base (handle)
         {
             messageSource = new MessageTableViewSource (this);
-            searcher = new SearchHelper ("MessageListViewController", (searchString) => {
-                if (String.IsNullOrEmpty (searchString)) {
-                    searchResultsMessages.ClearServerMatches ();
-                    searchResultsMessages.UpdateMatches (null);
-                    return; 
-                }
-                int curVersion = searcher.Version;
-                // On-device index
-                var currentAccount = NcApplication.Instance.Account;
-                IEnumerable<McAccount> accountsToSearch;
-                if (McAccount.AccountTypeEnum.Unified == currentAccount.AccountType) {
-                    accountsToSearch = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailReaderWriter);
-                } else {
-                    accountsToSearch = new McAccount[] { currentAccount };
-                }
-                var matches = new List<MatchedItem> ();
-                foreach (var account in accountsToSearch) {
-                    var indexPath = NcModel.Instance.GetIndexPath (account.Id);
-                    var index = new NachoCore.Index.NcIndex (indexPath);
-                    int maxResults = 1000;
-                    if (String.IsNullOrEmpty (searchString) || (4 > searchString.Length)) {
-                        maxResults = 20;
-                    }
-                    matches.AddRange (index.SearchAllEmailMessageFields (searchString, maxResults));
-                }
-
-                DumpMatches ("raw", curVersion, searchString, matches);
-
-                // Cull low scores
-                var maxScore = 0f;
-                foreach (var m in matches) {
-                    maxScore = Math.Max (maxScore, m.Score);
-                }
-                matches.RemoveAll (x => x.Score < (maxScore / 2));
-
-                DumpMatches ("cooked", curVersion, searchString, matches);
-
-                if (curVersion == searcher.Version) {
-                    searchResultsMessages.UpdateMatches (matches);
-                    List<int> adds;
-                    List<int> deletes;
-                    searchResultsSource.RefreshEmailMessages (out adds, out deletes);
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        if (null != searchDisplayController.SearchResultsTableView) {
-                            searchDisplayController.SearchResultsTableView.ReloadData ();
-                        }
-                    });
-                }
-            });
         }
 
         public override void ViewDidLoad ()
@@ -220,9 +144,11 @@ namespace NachoClient.iOS
             searchBar = new UISearchBar ();
             searchBar.Delegate = this;
             searchDisplayController = new UISearchDisplayController (searchBar, this);
-            searchResultsMessages = new NachoMessageSearchResults (NcApplication.Instance.Account);
+            emailSearcher = new EmailSearch ((string searchString, List<McEmailMessageThread> results) => {
+                UpdateSearchResults ();
+            });
             searchResultsSource = new MessageTableViewSource (this);
-            searchResultsSource.SetEmailMessages (searchResultsMessages, "");
+            searchResultsSource.SetEmailMessages (emailSearcher, "");
             searchDisplayController.SearchResultsSource = searchResultsSource.GetTableViewSource ();
             searchDisplayController.SearchResultsTableView.RowHeight = 126;
             searchDisplayController.SearchResultsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
@@ -489,10 +415,6 @@ namespace NachoClient.iOS
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 cancelRefreshTimer ();
                 break;
-            case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
-                UpdateSearchResultsFromServer (s.Account.Id, s.Status.GetValue<List<NcEmailMessageIndex>> ());
-                break;
             }
         }
 
@@ -655,83 +577,27 @@ namespace NachoClient.iOS
         protected void onClickSearchButton (object sender, EventArgs e)
         {
             searchBar.BecomeFirstResponder ();
+            emailSearcher.EnterSearchMode (NcApplication.Instance.Account);
         }
 
         [Export ("searchBar:textDidChange:")]
         public void TextChanged (UISearchBar searchBar, string searchText)
         {
-            Search (searchBar);
+            emailSearcher.SearchFor (searchBar.Text);
         }
 
-        [Foundation.Export ("searchBarSearchButtonClicked:")]
-        public void SearchButtonClicked (UIKit.UISearchBar searchBar)
+        [Export ("searchBarSearchButtonClicked:")]
+        public void SearchButtonClicked (UISearchBar searchBar)
         {
             if (null == NcApplication.Instance.Account) {
                 return;
             }
-            Search (searchBar);
-        }
-
-        protected void Search (UISearchBar searchBar)
-        {
-            searcher.Search (searchBar.Text);
-            KickoffSearchApi (searchBar.Text);
-        }
-
-        protected void KickoffSearchApi (string forSearchString)
-        {
-            if (String.IsNullOrEmpty (forSearchString) || (4 > forSearchString.Length)) {
-                searchResultsMessages.ClearServerMatches ();
-                return;
-            }
-            var currentAccount = NcApplication.Instance.Account;
-            IEnumerable<McAccount> accountsToSearch;
-            if (McAccount.AccountTypeEnum.Unified == currentAccount.AccountType) {
-                accountsToSearch = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailReaderWriter);
-            } else {
-                accountsToSearch = new McAccount[] { currentAccount };
-            }
-            bool firstSearch = (null == searchTokens);
-            if (firstSearch) {
-                searchTokens = new Dictionary<int, string> ();
-            }
-            foreach (var account in accountsToSearch) {
-                if (firstSearch) {
-                    searchTokens [account.Id] = BackEnd.Instance.StartSearchEmailReq (account.Id, forSearchString, null).GetValue<string> ();
-                } else {
-                    BackEnd.Instance.SearchEmailReq (account.Id, forSearchString, null, searchTokens [account.Id]);
-                }
-            }
-        }
-
-        protected void UpdateSearchResultsFromServer (int accountId, List<NcEmailMessageIndex> indexList)
-        {
-            NcTask.Run (delegate {
-                var threadList = new List<McEmailMessageThread> ();
-                foreach (var i in indexList) {
-                    var thread = new McEmailMessageThread ();
-                    thread.FirstMessageId = i.Id;
-                    thread.MessageCount = 1;
-                    threadList.Add (thread);
-                }
-                DumpMatches ("svr", 0, "", threadList);
-                searchResultsMessages.UpdateServerMatches (accountId, threadList);
-                List<int> adds;
-                List<int> deletes;
-                searchResultsSource.RefreshEmailMessages (out adds, out deletes);
-                InvokeOnUIThread.Instance.Invoke (() => {
-                    if (null != searchDisplayController.SearchResultsTableView) {
-                        searchDisplayController.SearchResultsTableView.ReloadData ();
-                    }
-                });
-
-            }, "UpdateSearchResultsFromServer");
+            emailSearcher.StartServerSearch ();
         }
 
         // After status ind
         protected void UpdateSearchResults ()
         {
-            searchResultsMessages.UpdateResults ();
             List<int> adds;
             List<int> deletes;
             searchResultsSource.RefreshEmailMessages (out adds, out deletes);
@@ -742,12 +608,7 @@ namespace NachoClient.iOS
 
         protected void CancelSearchIfActive ()
         {
-            if (null != searchTokens) {
-                foreach (var idTokenPair in searchTokens) {
-                    McPending.Cancel (idTokenPair.Key, idTokenPair.Value);
-                }
-                searchTokens = null;
-            }
+            emailSearcher.ExitSearchMode ();
         }
 
         void SwitchAccountButtonPressed ()

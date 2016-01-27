@@ -958,7 +958,7 @@ namespace NachoCore.ActiveSync
 
             public Event ProcessResponse (AsHttpOperation Sender, NcHttpResponse response, XDocument doc, CancellationToken cToken)
             {
-                LogRedactedXml ("Autodiscover.xml", doc);
+                LogRedactedXml ("Autodiscover.xml", doc, cToken);
                 var xmlResponse = doc.Root.ElementAnyNs (Xml.Autodisco.Response);
                 var xmlUser = xmlResponse.ElementAnyNs (Xml.Autodisco.User);
                 if (null != xmlUser) {
@@ -1010,8 +1010,10 @@ namespace NachoCore.ActiveSync
                             Log.Warn (Log.LOG_AS, "Settings Failed. Going with Redirect response.");
                             return redirectEvt;
                         } else {
-                            // settings worked, so continue with those, ignoring the circular redirect
-                            Log.Warn (Log.LOG_AS, "Settings Succeeded. Ignoring Redirect response.");
+                            if (null != redirectEvt && circularRedirect) {
+                                // settings worked, so continue with those, ignoring the circular redirect
+                                Log.Warn (Log.LOG_AS, "Settings Succeeded. Ignoring Redirect response.");
+                            }
                             return settingsEvt;
                         }
                     } else if (null != redirectEvt) {
@@ -1023,11 +1025,12 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPR1HARD");
             }
 
-            void LogRedactedXml (string tag, XDocument doc)
+            void LogRedactedXml (string tag, XDocument doc, CancellationToken cToken)
             {
+                cToken.ThrowIfCancellationRequested ();
                 NcXmlFilterSet filter = new NcXmlFilterSet ();
                 filter.Add (new AutoDiscoverXmlFilter ());
-                XDocument docOut = filter.Filter (doc, Cts.Token);
+                XDocument docOut = filter.Filter (doc, cToken);
                 Log.Info (Log.LOG_AS, "{0}:\n{1}", tag, docOut.ToString ());
             }
 
