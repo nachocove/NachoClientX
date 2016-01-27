@@ -1,12 +1,8 @@
 // # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
-using System.Threading.Tasks;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -1123,11 +1119,7 @@ namespace NachoCore.ActiveSync
 
         private void DoDrive ()
         {
-            if (null != PushAssist) {
-                if (PushAssist.IsStartOrParked ()) {
-                    PushAssist.Execute ();
-                }
-            }
+            PossiblyKickPushAssist ();
             switch (ProtocolState.ProtoControlState) {
             case (uint)Lst.UiCertOkW:
             case (uint)Lst.UiDCrdW:
@@ -1167,11 +1159,7 @@ namespace NachoCore.ActiveSync
 
         private void ExecuteCmd ()
         {
-            if (null != PushAssist) {
-                if (PushAssist.IsStartOrParked ()) {
-                    PushAssist.Execute ();
-                }
-            }
+            PossiblyKickPushAssist ();
             lock (CmdLockObject) {
                 NcAssert.NotNull (Cmd);
                 Cmd.Execute (Sm);
@@ -1219,9 +1207,30 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        private bool CanStartPushAssist ()
+        {
+            return null != ProtoControl.Server;
+        }
+
+        private void PossiblyKickPushAssist ()
+        {
+            if (null != PushAssist && CanStartPushAssist ()) {
+                // uncomment for testing on the simulator
+                //PushAssist.SetDeviceToken ("SIMULATOR");
+                if (PushAssist.IsStartOrParked ()) {
+                    PushAssist.Execute ();
+                }
+            }
+        }
+
         // PushAssist support.
         public PushAssistParameters PushAssistParameters ()
         {
+            if (!CanStartPushAssist ()) {
+                Log.Error (Log.LOG_AS, "Can't set up protocol parameters yet");
+                return null;
+            }
+
             var pingKit = Strategy.GenPingKit (ProtocolState, true, false, true);
             if (null == pingKit) {
                 return null; // should never happen
@@ -1233,7 +1242,7 @@ namespace NachoCore.ActiveSync
                 return null; // should never happen
             }
             try {
-                return new NachoCore.PushAssistParameters () {
+                return new PushAssistParameters () {
                     RequestUrl = ping.PushAssistRequestUrl (),
                     Protocol = PushAssistProtocol.ACTIVE_SYNC,
                     ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
