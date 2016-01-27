@@ -1124,7 +1124,7 @@ namespace NachoCore
             }
         }
 
-        void ChangeOauthRefreshTimer (long nextUpdate)
+        protected virtual void ChangeOauthRefreshTimer (long nextUpdate)
         {
             NcAssert.NotNull (_Oauth2RefreshCancelSource);
             if (!_Oauth2RefreshCancelSource.IsCancellationRequested) {
@@ -1135,7 +1135,7 @@ namespace NachoCore
             }
         }
 
-        void ResetOauthRefreshTimer ()
+        protected virtual void ResetOauthRefreshTimer ()
         {
             NcAssert.NotNull (_Oauth2RefreshCancelSource);
             if (!_Oauth2RefreshCancelSource.IsCancellationRequested) {
@@ -1206,7 +1206,7 @@ namespace NachoCore
                         Log.Warn (Log.LOG_BACKEND, "RefreshToken ({0}): State should be CredReqActive_AwaitingRefresh", cred.AccountId);
                     }
                     // We've retried too many times. Guess we need the UI afterall.
-                    if (status.RefreshRetries > KOauth2RefreshMaxFailure) {
+                    if (status.RefreshRetries >= KOauth2RefreshMaxFailure) {
                         status.State = CredReqActiveState.CredReqActive_NeedUI;
                         return;
                     }
@@ -1235,17 +1235,21 @@ namespace NachoCore
             lock (CredReqActive) {
                 CredReqActiveStatus status;
                 if (CredReqActive.TryGetValue (cred.AccountId, out status)) {
-                    if (status.RefreshRetries++ > KOauth2RefreshMaxFailure) {
+                    if (++status.RefreshRetries >= KOauth2RefreshMaxFailure) {
                         status.State = CredReqActiveState.CredReqActive_NeedUI;
                     }
                 }
             }
             if (NeedToPassReqToUi (cred.AccountId)) {
-                InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (cred.AccountId));
+                alertUi (cred.AccountId);
             }
             ChangeOauthRefreshTimer (10);
         }
 
+        protected virtual void alertUi (int accountId)
+        {
+            InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (accountId));
+        }
         /// <summary>
         /// Callback called after a successful OAuth2 refresh.
         /// </summary>
