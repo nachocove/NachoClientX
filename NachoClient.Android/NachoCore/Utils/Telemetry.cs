@@ -342,7 +342,6 @@ namespace NachoCore.Utils
             if (emailAddress.LastIndexOf ("@") != index) {
                 return; // malformed email address - more than 1 "@"
             }
-            ;
             Dictionary<string, string> dict = new Dictionary<string, string> ();
             dict.Add ("sha256_email_address", HashHelper.Sha256 (emailAddress.Substring (0, index)) + emailAddress.Substring (index));
             RecordSupport (dict);
