@@ -195,7 +195,7 @@ namespace NachoClient.AndroidClient
         public override void OnDestroyView ()
         {
             base.OnDestroyView ();
-            // contactsListAdapter.Dispose ();
+            contactsListAdapter.Cleanup ();
         }
 
         public override void OnSaveInstanceState (Bundle outState)
@@ -396,14 +396,11 @@ namespace NachoClient.AndroidClient
             });
         }
 
-        protected override void Dispose (bool disposing)
+        public void Cleanup ()
         {
-            if (disposing) {
-                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-                searcher.Dispose ();
-                searcher = null;
-            }
-            base.Dispose (disposing);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            searcher.Dispose ();
+            searcher = null;
         }
 
         public int PositionForSection (int section)

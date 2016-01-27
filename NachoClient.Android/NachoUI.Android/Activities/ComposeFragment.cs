@@ -113,7 +113,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnDestroyView ()
         {
-            HeaderView.Dispose ();
+            HeaderView.Cleanup ();
             base.OnDestroyView ();
         }
 
