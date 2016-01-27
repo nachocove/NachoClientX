@@ -109,7 +109,7 @@ namespace NachoCore.IMAP
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
                 if (Initial) {
-                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL", BackEnd.AutoDFailureReasonEnum.Unknown);
                     evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPUNKTEMP");

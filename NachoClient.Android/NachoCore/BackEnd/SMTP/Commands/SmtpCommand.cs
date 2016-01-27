@@ -152,7 +152,6 @@ namespace NachoCore.SMTP
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPHARD2");
                     serverFailedGenerally = true;
                 } finally {
-                    ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                     Log.Info (Log.LOG_SMTP, "{0}({1}): Finished (failed {2})", cmdname, AccountId, serverFailedGenerally);
                 }
 
@@ -160,6 +159,7 @@ namespace NachoCore.SMTP
                     Log.Info (Log.LOG_SMTP, "{0}({1}): Cancelled", cmdname, AccountId);
                     return;
                 }
+                ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                 switch (action.Item1) {
                 case ResolveAction.None:
                     break;
