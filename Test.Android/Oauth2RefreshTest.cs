@@ -35,16 +35,28 @@ namespace Test.iOS
                 CredRespCalled = false;
             }
 
+            protected override void alertUi (int accountId)
+            {
+            }
+
             protected override void TokenRefreshFailure (McCred cred)
             {
                 TokenRefreshFailureCalled = true;
-                // don't call base method. It's not needed.
+                base.TokenRefreshFailure (cred);
             }
 
             protected override void TokenRefreshSuccess (McCred cred)
             {
                 TokenRefreshSuccessCalled = true;
                 base.TokenRefreshSuccess (cred);
+            }
+
+            protected override void ResetOauthRefreshTimer ()
+            {
+            }
+
+            protected override void ChangeOauthRefreshTimer (long nextUpdate)
+            {
             }
 
             protected override void RefreshMcCred (McCred cred)
@@ -83,6 +95,13 @@ namespace Test.iOS
                 CredReqActiveStatus status;
                 Assert.True (CredReqActive.TryGetValue (accountId, out status));
                 return status.State;
+            }
+
+            public uint GetReqActiveRefreshRetries (int accountId)
+            {
+                CredReqActiveStatus status;
+                Assert.True (CredReqActive.TryGetValue (accountId, out status));
+                return status.RefreshRetries;
             }
 
             public bool GetReqStatusNeedCredResp (int accountId)
@@ -253,7 +272,7 @@ namespace Test.iOS
                 Assert.IsFalse (MockBe.GetReqStatusNeedCredResp(Account.Id));
                 Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
                 Assert.IsFalse (MockBe.TokenRefreshFailureCalled);
-                if (i == BackEnd.KOauth2RefreshMaxFailure) {
+                if (i >= BackEnd.KOauth2RefreshMaxFailure) {
                     Assert.IsFalse (MockBe.RefreshMcCredCalled);
                     Assert.AreEqual (BackEnd.CredReqActiveState.CredReqActive_NeedUI, MockBe.GetReqActiveState (Account.Id));
                 } else {
@@ -266,9 +285,11 @@ namespace Test.iOS
                 MockBe.FinishRequest (Cred, false);
                 Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
                 Assert.IsTrue (MockBe.TokenRefreshFailureCalled);
+                var failedRetries = MockBe.GetReqActiveRefreshRetries (Account.Id);
+                Assert.AreEqual (i+1, failedRetries);
                 Assert.IsFalse (MockBe.CredRespCalled);
 
-                if (i == BackEnd.KOauth2RefreshMaxFailure) {
+                if (failedRetries >= BackEnd.KOauth2RefreshMaxFailure) {
                     Assert.IsTrue (MockBe.NeedToPassUp (Account.Id));
                 } else {
                     Assert.IsFalse (MockBe.NeedToPassUp (Account.Id));

@@ -581,7 +581,7 @@ namespace NachoCore.IMAP
                 var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
                 err.Message = "Too many failures";
                 StatusInd (err);
-                Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC");
+                Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
             } else {
                 DoDisc ();
             }

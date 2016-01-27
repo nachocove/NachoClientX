@@ -256,6 +256,7 @@ namespace NachoCore.IMAP
             NcAssert.True (startingPoint > 0, "Possibly trying to get syncinstructions before the folder has been opened!");
 
             var defInbox = McFolder.GetDefaultInboxFolder (folder.AccountId);
+            NcAssert.NotNull (defInbox, "No default inbox found.");
             if (!hasPending && defInbox.Id == folder.Id) {
                 span *= KInboxWindowMultiplier;
             }
@@ -436,8 +437,9 @@ namespace NachoCore.IMAP
             UniqueIdSet uids;
             if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
                 if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out uids)) {
-                    return null;
+                    throw new ArgumentException (string.Format ("Could not parse folder.ImapUidSet {0}", folder.ImapUidSet));
                 }
+                NcAssert.NotNull (uids, "Parsed uidset is null");
             } else {
                 return new UniqueIdSet ();
             }

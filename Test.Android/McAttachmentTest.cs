@@ -14,12 +14,16 @@ namespace Test.iOS
     [TestFixture]
     public class McAttachmentTest : NcTestBase
     {
+
+        const int Account1 = 1000;
+        const int Account2 = 1001;
+        
         [Test]
         public void GetAllFiles ()
         {
             // includes McNote and McDocument too.
             var att00 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "att00",
             };
             att00.Insert ();
@@ -37,7 +41,7 @@ namespace Test.iOS
 
 
             var keeper1 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper1",
             };
             keeper1.Insert ();
@@ -54,7 +58,7 @@ namespace Test.iOS
             keeper1att.Link (keeper1);
 
             var keeper2 = new McCalendar () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper2",
             };
             keeper2.Insert ();
@@ -71,31 +75,31 @@ namespace Test.iOS
             keeper2att.Link (keeper2);
 
             var doc1 = new McDocument () {
-                AccountId = 1,
+                AccountId = Account1,
                 DisplayName = "doc1",
             };
             doc1.Insert ();
 
             var doc2 = new McDocument () {
-                AccountId = 2,
+                AccountId = Account2,
                 DisplayName = "doc2",
             };
             doc2.Insert ();
 
             var note1 = new McNote () {
-                AccountId = 1,
+                AccountId = Account1,
                 DisplayName = "note1",
             };
             note1.Insert ();
 
             var note2 = new McNote () {
-                AccountId = 2,
+                AccountId = Account2,
                 DisplayName = "note2",
             };
             note2.Insert ();
 
             var fallOff = new McEmailMessage () {
-                AccountId = 2,
+                AccountId = Account2,
                 ServerId = "falloff",
             };
             fallOff.Insert ();
@@ -124,7 +128,7 @@ namespace Test.iOS
         {
             // simple case already covered by CaledarAttachments.
             var keeper1 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper1",
             };
             keeper1.Insert ();
@@ -140,7 +144,7 @@ namespace Test.iOS
             keeper1att.Link (keeper1);
 
             var keeper2 = new McCalendar () {
-                AccountId = 2,
+                AccountId = Account2,
                 ServerId = "keeper2",
             };
             keeper2.Insert ();
@@ -157,7 +161,7 @@ namespace Test.iOS
         public void TestQueryByItemId ()
         {
             var keeper1 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper1",
             };
             keeper1.Insert ();
@@ -173,7 +177,7 @@ namespace Test.iOS
             keeper1att.Link (keeper1);
 
             var keeper2 = new McCalendar () {
-                AccountId = 2,
+                AccountId = Account2,
                 ServerId = "keeper2",
             };
             keeper2.Insert ();
@@ -210,7 +214,7 @@ namespace Test.iOS
         public void TestQueryByAttachmentIdItemIdClassCode ()
         {
             var keeper1 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper1",
             };
             keeper1.Insert ();
@@ -226,7 +230,7 @@ namespace Test.iOS
             keeper1att.Link (keeper1);
 
             var keeper2 = new McCalendar () {
-                AccountId = 2,
+                AccountId = Account2,
                 ServerId = "keeper2",
             };
             keeper2.Insert ();
@@ -242,7 +246,7 @@ namespace Test.iOS
             keeper2att.Link (keeper2, true);
 
             var keeper3 = new McCalendar () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper3",
             };
             keeper3.Insert ();
@@ -288,7 +292,7 @@ namespace Test.iOS
         public void TestQueryNeedsFetch ()
         {
             var keeper1 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper1",
                 IsAwaitingDelete = false,
                 Score = 0.98,
@@ -307,7 +311,7 @@ namespace Test.iOS
             keeper1att.Link (keeper1);
 
             var keeper2 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "keeper2",
                 IsAwaitingDelete = false,
                 Score = 0.98,
@@ -326,7 +330,7 @@ namespace Test.iOS
             keeper2att.Link (keeper2);
 
             var fallOff = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "falloff",
                 IsAwaitingDelete = false,
                 Score = 0.97,
@@ -345,7 +349,7 @@ namespace Test.iOS
             fallOffatt.Link (fallOff);
 
             var trash = new McEmailMessage () {
-                AccountId = 2,
+                AccountId = Account2,
                 ServerId = "other_account",
                 IsAwaitingDelete = false,
                 Score = 0.99,
@@ -364,7 +368,7 @@ namespace Test.iOS
             trashatt.Link (trash);
 
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "is_deleted",
                 IsAwaitingDelete = true,
                 Score = 0.99,
@@ -382,7 +386,7 @@ namespace Test.iOS
             trashatt.Link (trash);
 
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "some_download",
                 IsAwaitingDelete = false,
                 Score = 0.99,
@@ -400,7 +404,7 @@ namespace Test.iOS
             trashatt.Link (trash);
 
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "low_score",
                 IsAwaitingDelete = false,
                 Score = 0.69,
@@ -418,7 +422,7 @@ namespace Test.iOS
             trashatt.Link (trash);
 
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "too_big",
                 IsAwaitingDelete = false,
                 Score = 0.99,
@@ -436,7 +440,7 @@ namespace Test.iOS
             trashatt.Link (trash);
 
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "downloaded",
                 IsAwaitingDelete = false,
                 Score = 0.99,
@@ -454,7 +458,7 @@ namespace Test.iOS
             trashatt.Link (trash);
 
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "error",
                 IsAwaitingDelete = false,
                 Score = 0.99,
@@ -472,7 +476,7 @@ namespace Test.iOS
             trashatt.Link (trash);
 
             trash = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = Account1,
                 ServerId = "partial",
                 IsAwaitingDelete = false,
                 Score = 0.99,
@@ -489,7 +493,7 @@ namespace Test.iOS
             trashatt.Insert ();
             trashatt.Link (trash);
 
-            var result = McAttachment.QueryNeedsFetch (1, 2, 0.9, 100000);
+            var result = McAttachment.QueryNeedsFetch (Account1, 2, 0.9, 100000);
             Assert.AreEqual (2, result.Count ());
             Assert.True (result.Any (x => 50001 == x.FileSize));
             Assert.True (result.Any (x => 50002 == x.FileSize));

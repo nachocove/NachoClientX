@@ -236,7 +236,7 @@ namespace NachoCore.Utils
             }
         }
 
-        DateTime? LastRefreshed;
+        DateTime LastRefreshed = DateTime.MinValue;
         const uint RefreshTimeoutSeconds = 10;
 
         /// <summary>
@@ -244,7 +244,7 @@ namespace NachoCore.Utils
         /// </summary>
         public void Refresh (string tag)
         {
-            if (!LastRefreshed.HasValue || LastRefreshed.Value.AddSeconds (RefreshTimeoutSeconds) < DateTime.UtcNow) {
+            if (LastRefreshed.AddSeconds (RefreshTimeoutSeconds) < DateTime.UtcNow) {
                 NetStatusStatusEnum currStatus;
                 NetStatusSpeedEnum currSpeed;
                 NetStatus.Instance.GetCurrentStatus (out currStatus, out currSpeed);

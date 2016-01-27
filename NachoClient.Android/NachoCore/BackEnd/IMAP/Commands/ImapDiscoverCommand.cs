@@ -109,7 +109,7 @@ namespace NachoCore.IMAP
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
                 if (Initial) {
-                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
+                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL", BackEnd.AutoDFailureReasonEnum.Unknown);
                     evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPUNKTEMP");
@@ -247,11 +247,10 @@ namespace NachoCore.IMAP
             // new discovery statemachine. We'll see if this gets us far enough along.
             if (emailAddress.Contains ("@")) {
                 var domain = emailAddress.Split ('@') [1].ToLowerInvariant ();
-                if (DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix) ||
-                    DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix2) ||
-                    DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix3) ||
-                    DomainIsOrEndsWith (domain, McServer.Yahoo_Suffix4)) {
-                    return true;
+                foreach (var suffix in McServer.Yahoo_Suffixes) {
+                    if (DomainIsOrEndsWith (domain, suffix)) {
+                        return true;
+                    }
                 }
             }
             return false;
