@@ -384,7 +384,7 @@ namespace Test.Common
         public void TestQueryDeferredMessageItems ()
         {
             McEmailMessage message = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = 3,
                 FlagType = "Defer until",
                 FlagStatus = 1,
                 FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
@@ -393,7 +393,7 @@ namespace Test.Common
             message.Insert ();
 
             McEmailMessage message1 = new McEmailMessage () {
-                AccountId = 2,
+                AccountId = 4,
                 FlagType = "Defer until",
                 FlagStatus = 1,
                 FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
@@ -401,7 +401,7 @@ namespace Test.Common
             message1.Insert ();
 
             McEmailMessage message2 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = 3,
                 FlagType = "Defer until",
                 FlagStatus = 1,
                 FlagUtcStartDate = DateTime.UtcNow.AddHours (-1),
@@ -409,7 +409,7 @@ namespace Test.Common
             message2.Insert ();
 
             McEmailMessage message3 = new McEmailMessage () {
-                AccountId = 1,
+                AccountId = 3,
                 FlagType = "Defer until",
                 FlagStatus = 0,
                 FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
@@ -417,7 +417,7 @@ namespace Test.Common
             message3.Insert ();
 
             McEmailMessage message4 = new McEmailMessage () {
-                AccountId = 2,
+                AccountId = 4,
                 FlagStatus = 1,
                 FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
                 IsAwaitingDelete = true,
@@ -425,13 +425,13 @@ namespace Test.Common
             message4.Insert ();
 
             McEmailMessage message5 = new McEmailMessage () {
-                AccountId = 3,
+                AccountId = 5,
                 FlagStatus = 2,
                 FlagUtcStartDate = DateTime.UtcNow.AddHours (100),
             };
             message5.Insert ();
 
-            var deferred = McEmailMessage.QueryDeferredMessageItems (1);
+            var deferred = McEmailMessage.QueryDeferredMessageItems (3);
             foreach (var d in deferred) {
                 Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagStatus);
                 NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagUtcStartDate > DateTime.UtcNow);
@@ -439,7 +439,7 @@ namespace Test.Common
             }
             Assert.AreEqual (1, deferred.Count);
 
-            deferred = McEmailMessage.QueryDeferredMessageItems (2);
+            deferred = McEmailMessage.QueryDeferredMessageItems (4);
             foreach (var d in deferred) {
                 Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagStatus);
                 NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagUtcStartDate > DateTime.UtcNow);
@@ -447,7 +447,7 @@ namespace Test.Common
             }
             Assert.AreEqual (1, deferred.Count);
 
-            deferred = McEmailMessage.QueryDeferredMessageItems (3);
+            deferred = McEmailMessage.QueryDeferredMessageItems (5);
             foreach (var d in deferred) {
                 Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagStatus);
                 NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagUtcStartDate > DateTime.UtcNow);
