@@ -32,7 +32,7 @@ namespace NachoClient.iOS
         string contactSearchToken;
 
         protected const string ContactCellReuseIdentifier = "ContactCell";
-        protected SearchHelper searcher;
+        protected ContactsEmailSearch searcher;
 
         public void SetOwner (INachoContactChooserDelegate owner, McAccount account, NcEmailAddress address, NachoContactType contactType)
         {
@@ -47,34 +47,12 @@ namespace NachoClient.iOS
             this.owner = null;
         }
 
-        protected void SetupSearcher ()
-        {
-            searcher = new SearchHelper ("ContactChooserUpdateAuotCompleteResults", (searchString) => {
-                if (String.IsNullOrEmpty (searchString)) {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResults = null;
-                        resultsTableView.ReloadData ();
-                    });
-                } else {
-                    var results = McContact.SearchAllContactsForEmail (searchString);
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResults = results;
-                        NcAbate.HighPriority ("ContactChooserUpdateAuotCompleteResults");
-                        resultsTableView.ReloadData ();
-                        NcAbate.RegularPriority ("ContactChooserUpdateAuotCompleteResults");
-                    });
-                }
-            });
-        }
-
         public ContactChooserViewController (IntPtr handle) : base (handle)
         {
-            SetupSearcher ();
         }
 
         public ContactChooserViewController () : base ()
         {
-            SetupSearcher ();
         }
 
         public override void ViewDidLoad ()
@@ -95,7 +73,8 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            searcher = new ContactsEmailSearch (UpdateUi);
+            searcher.SearchFor (autoCompleteTextField.Text);
             NachoCore.Utils.NcAbate.HighPriority ("ContactChooser ViewWillAppear");
             resultsTableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser ViewWillAppear");
@@ -105,7 +84,8 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            searcher.Dispose ();
+            searcher = null;
             CancelSearchIfActive ();
         }
 
@@ -161,8 +141,7 @@ namespace NachoClient.iOS
 
             // Update the auto-complete on each keystroke
             autoCompleteTextField.EditingChanged += delegate {
-                KickoffSearchApi (0, autoCompleteTextField.Text);
-                UpdateAutocompleteResults (0, autoCompleteTextField.Text);
+                searcher.SearchFor (autoCompleteTextField.Text);
             };
 
             // Finish up when the Done key is selected
@@ -172,7 +151,6 @@ namespace NachoClient.iOS
             });
 
             autoCompleteTextField.Text = address.address;
-            UpdateAutocompleteResults (0, address.address);
 
             textInputView.AddSubview (autoCompleteTextField);
             inputView.AddSubview (textInputView);
@@ -185,15 +163,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLayoutSubviews ();
             resultsTableView.Frame = new CGRect (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
-        }
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_SearchCommandSucceeded");
-                UpdateAutocompleteResults (0, autoCompleteTextField.Text);
-            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -214,6 +183,12 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        protected void UpdateUi (string searchString, List<McContactEmailAddressAttribute> results)
+        {
+            searchResults = results;
+            resultsTableView.ReloadData ();
         }
 
         protected void UpdateEmailAddress (McContact contact, string address)
@@ -245,28 +220,6 @@ namespace NachoClient.iOS
         {
             if (null != owner) {
                 owner.DismissINachoContactChooser (this);
-            }
-        }
-
-        /// <summary>
-        /// Updates the search results.
-        /// <returns><c>true</c>, if search results are updated, <c>false</c> otherwise.</returns>
-        /// <param name="forSearchOption">Index of the selected tab.</param>
-        /// <param name="forSearchString">The prefix string to search for.</param>
-        public void UpdateAutocompleteResults (int forSearchOption, string forSearchString)
-        {
-            searcher.Search (forSearchString);
-        }
-
-        protected void KickoffSearchApi (int forSearchOption, string forSearchString)
-        {
-            if (account.HasCapability (McAccount.AccountCapabilityEnum.ContactReader)) {
-                // TODO: Think about whether we want to users about errors during GAL search
-                if (String.IsNullOrEmpty (contactSearchToken)) {
-                    contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
-                } else {
-                    BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
-                }
             }
         }
 

@@ -359,7 +359,6 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration5.cs" />
     <Compile Include="NachoCore\Brain\NcBrainActions.cs" />
     <Compile Include="NachoCore\Adapters\NachoThreadedEmailMessages.cs" />
-    <Compile Include="NachoCore\Adapters\NachoMessageSearchResults.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration7.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration6.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration8.cs" />
@@ -639,6 +638,9 @@
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetContactsCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetResourcesCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetObjectsCommand.cs" />
+    <Compile Include="NachoCore\Utils\ContactsSearch.cs" />
+    <Compile Include="NachoCore\Utils\NcApplicationMonitor.cs" />
+    <Compile Include="NachoCore\Utils\EmailSearch.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

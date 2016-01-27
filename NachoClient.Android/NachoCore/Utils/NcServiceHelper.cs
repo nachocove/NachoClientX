@@ -252,7 +252,7 @@ namespace NachoCore.Utils
         {
             public override string[] validSuffixes {
                 get {
-                    return new string[]{ McServer.Yahoo_Suffix };
+                    return McServer.Yahoo_Suffixes;
                 }
             }
         }

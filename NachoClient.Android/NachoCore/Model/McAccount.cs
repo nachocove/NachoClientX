@@ -50,6 +50,7 @@ namespace NachoCore.Model
             ContactWriter = (1 << 5),
             TaskReader = (1 << 6),
             TaskWriter = (1 << 7),
+            All = ~0,
         };
 
         public const AccountCapabilityEnum ActiveSyncCapabilities = (

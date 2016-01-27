@@ -28,6 +28,7 @@ namespace NachoClient.iOS
         protected bool contactsNeedsRefresh;
 
         ContactsTableViewSource contactTableViewSource;
+        ContactsGeneralSearch searcher;
 
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
@@ -43,8 +44,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             ReloadCaptureName = "ContactListViewController.Reload";
             NcCapture.AddKind (ReloadCaptureName);
@@ -146,6 +145,9 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            searcher = new ContactsGeneralSearch (UpdateSearchResultsUi);
+            SearchDisplayController.Delegate = new ContactsSearchDisplayDelegate (searcher);
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             MaybeRefreshContacts ();
         }
@@ -159,6 +161,10 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            searcher.Dispose ();
+            searcher = null;
+            SearchDisplayController.Delegate = null;
         }
 
         void SwitchAccountButtonPressed ()
@@ -180,16 +186,12 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
                 RefreshContactsIfVisible ();
             }
-            if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
-                RefreshContactsIfVisible ();
-                var sb = SearchDisplayController.SearchBar;
-                contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false);
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-            }
-            if (NcResult.SubKindEnum.Info_ContactLocalSearchComplete == s.Status.SubKind) {
-                RefreshContactsIfVisible ();
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-            }
+        }
+
+        void UpdateSearchResultsUi (string searchString, List<McContactEmailAddressAttribute> results)
+        {
+            contactTableViewSource.SetSearchResults (results);
+            SearchDisplayController.SearchResultsTableView.ReloadData ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)

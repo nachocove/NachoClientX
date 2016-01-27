@@ -547,7 +547,7 @@ namespace NachoClient.iOS
         // INachoContactChooser delegate
         public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
-            NcAssert.CaseError ();
+            // This is called when the user presses Enter in an empty search field.  There is nothing to delete.
         }
 
         // INachoContactChooser delegate

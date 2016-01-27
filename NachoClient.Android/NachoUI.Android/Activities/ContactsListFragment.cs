@@ -35,7 +35,6 @@ namespace NachoClient.AndroidClient
         private const string SAVED_SEARCHING_KEY = "ContactsListFragment.searching";
 
         bool searching;
-        string searchToken;
         Android.Widget.EditText searchEditText;
         View letterBar;
         SwipeMenuListView listView;
@@ -193,6 +192,12 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
+        public override void OnDestroyView ()
+        {
+            base.OnDestroyView ();
+            // contactsListAdapter.Dispose ();
+        }
+
         public override void OnSaveInstanceState (Bundle outState)
         {
             base.OnSaveInstanceState (outState);
@@ -263,7 +268,6 @@ namespace NachoClient.AndroidClient
         void CancelSearch ()
         {
             searching = false;
-            searchToken = null;
             contactsListAdapter.CancelSearch ();
 
             searchEditText.ClearFocus ();
@@ -287,14 +291,6 @@ namespace NachoClient.AndroidClient
                 return;
             }
             contactsListAdapter.Search (searchString);
-            var accountForSearchAPI = NcApplication.Instance.Account;
-            if ((null != accountForSearchAPI) && accountForSearchAPI.HasCapability (McAccount.AccountCapabilityEnum.ContactReader)) {
-                if (String.IsNullOrEmpty (searchToken)) {
-                    searchToken = BackEnd.Instance.StartSearchContactsReq (accountForSearchAPI.Id, searchString, null).GetValue<string> ();
-                } else {
-                    BackEnd.Instance.SearchContactsReq (accountForSearchAPI.Id, searchString, null, searchToken);
-                }
-            }
         }
 
         public void OnBackPressed ()
@@ -343,9 +339,6 @@ namespace NachoClient.AndroidClient
             case NcResult.SubKindEnum.Info_ContactChanged:
                 RefreshVisibleContactCells ();
                 break;
-            case NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded:
-                contactsListAdapter.Search (searchEditText.Text);
-                break;
             }
         }
 
@@ -381,10 +374,9 @@ namespace NachoClient.AndroidClient
         List<NcContactIndex> recents;
         List<NcContactIndex> contacts;
         ContactBin[] sections;
-        bool multipleSections;
 
         bool searching;
-        SearchHelper searcher;
+        ContactsGeneralSearch searcher;
         List<McContactEmailAddressAttribute> searchResults = null;
 
         Dictionary<int,int> viewTypeMap;
@@ -398,20 +390,20 @@ namespace NachoClient.AndroidClient
             RefreshContactsIfVisible ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
-            searcher = new SearchHelper ("ContactsTableViewSourceUpdateSearchResults", (searchString) => {
-                if (String.IsNullOrEmpty (searchString)) {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResults = new List<McContactEmailAddressAttribute> ();
-                        RefreshContactsIfVisible ();
-                    });
-                } else {
-                    var results = McContact.SearchIndexAllContacts (searchString);
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResults = results;
-                        RefreshContactsIfVisible ();
-                    });
-                }
+            searcher = new ContactsGeneralSearch ((string searchString, List<McContactEmailAddressAttribute> results) => {
+                searchResults = results;
+                RefreshContactsIfVisible ();
             });
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            if (disposing) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                searcher.Dispose ();
+                searcher = null;
+            }
+            base.Dispose (disposing);
         }
 
         public int PositionForSection (int section)
@@ -440,7 +432,7 @@ namespace NachoClient.AndroidClient
         public void Search (string searchString)
         {
             if (searching) {
-                searcher.Search (searchString);
+                searcher.SearchFor (searchString);
             }
         }
 
