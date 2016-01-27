@@ -61,6 +61,7 @@ namespace NachoClient.iOS
         private string downloadToken = null;
         private bool statusIndicatorIsRegistered = false;
         private bool waitingForAppInForeground = false;
+        private bool disposed = false;
 
         NcEmailMessageBundle Bundle;
 
@@ -170,7 +171,11 @@ namespace NachoClient.iOS
             if (Bundle.NeedsUpdate) {
                 NcTask.Run (delegate {
                     Bundle.Update ();
-                    InvokeOnUIThread.Instance.Invoke (RenderBundle);
+                    // While Bundle.Update() was running, the user may have closed the view,
+                    // causing this BodyView object to be disposed.
+                    if (!disposed) {
+                        InvokeOnUIThread.Instance.Invoke (RenderBundle);
+                    }
                 }, "BodyView_UpdateBundle");
             } else {
                 RenderBundle ();
@@ -413,6 +418,7 @@ namespace NachoClient.iOS
 
         protected override void Dispose (bool disposing)
         {
+            disposed = true;
             if (statusIndicatorIsRegistered) {
                 NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
                 statusIndicatorIsRegistered = false;
@@ -526,6 +532,9 @@ namespace NachoClient.iOS
 
         void  RenderBundle ()
         {
+            if (disposed) {
+                return;
+            }
             var webView = BodyWebView.ResuableWebView (yOffset, preferredWidth, visibleArea.Height);
             webView.OnLinkSelected = onLinkSelected;
             webView.LoadBundle (Bundle, LayoutAndNotifyParent);
