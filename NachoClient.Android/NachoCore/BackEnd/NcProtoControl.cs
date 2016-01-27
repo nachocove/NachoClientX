@@ -196,12 +196,7 @@ namespace NachoCore
             NcModel.Instance.InitializeDirs (AccountId);
         }
 
-        private bool ForceStopped;
-        public bool IsStarted {
-            get {
-                return !ForceStopped;
-            }
-        }
+        public bool IsStarted { get; protected set; }
 
         #region NcCommStatus
 
@@ -386,7 +381,7 @@ namespace NachoCore
         // Returns false if sub-class override should not continue.
         public bool Start ()
         {
-            ForceStopped = false;
+            IsStarted = true;
             return Execute ();
         }
 
@@ -396,7 +391,7 @@ namespace NachoCore
         {
             lock (executeLock) {
                 // don't allow us to execute, if the App/UI told us to stop.
-                if (ForceStopped) {
+                if (!IsStarted) {
                     return false;
                 }
                 if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down ||
@@ -415,7 +410,7 @@ namespace NachoCore
         // Interface to owner.
         public void Stop ()
         {
-            ForceStopped = true;
+            IsStarted = false;
             ForceStop ();
         }
 
