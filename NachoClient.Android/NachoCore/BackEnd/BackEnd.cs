@@ -1082,7 +1082,7 @@ namespace NachoCore
         /// </summary>
         void StartOauthRefreshTimer ()
         {
-            if (null == Oauth2RefreshTimer && NcCommStatus.Instance.Status == NetStatusStatusEnum.Up) {
+            if (null == Oauth2RefreshTimer) {
                 var refreshMsecs = KOauth2RefreshIntervalSecs * 1000;
                 Oauth2RefreshTimer = new NcTimer ("McCred:Oauth2RefreshTimer", state => RefreshAllDueTokens (),
                     null, refreshMsecs, refreshMsecs);
@@ -1145,6 +1145,10 @@ namespace NachoCore
         /// </summary>
         protected void RefreshAllDueTokens ()
         {
+            if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
+                // why bother.. no one listens to me anyway...
+                return;
+            }
             foreach (var cred in McCred.QueryByCredType (McCred.CredTypeEnum.OAuth2)) {
                 if (_Oauth2RefreshCancelSource.IsCancellationRequested) {
                     return;
