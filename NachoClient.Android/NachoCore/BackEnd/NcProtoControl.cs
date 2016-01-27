@@ -197,6 +197,11 @@ namespace NachoCore
         }
 
         private bool ForceStopped;
+        public bool IsStarted {
+            get {
+                return !ForceStopped;
+            }
+        }
 
         #region NcCommStatus
 
@@ -209,17 +214,17 @@ namespace NachoCore
             if (e.ServerId == Server.Id) {
                 switch (e.Quality) {
                 case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality OK.", Server.Host);
+                    Log.Info (Log.LOG_BACKEND, "Server ({0}) {1} communication quality OK.", Server.Id, Server.Host);
                     Execute ();
                     break;
 
                 default:
                 case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality degraded.", Server.Host);
+                    Log.Info (Log.LOG_BACKEND, "Server ({0}) {1} communication quality degraded.", Server.Id, Server.Host);
                     break;
 
                 case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Info (Log.LOG_BACKEND, "Server {0} communication quality unusable.", Server.Host);
+                    Log.Info (Log.LOG_BACKEND, "Server ({0}) {1} communication quality unusable.", Server.Id, Server.Host);
                     Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
                     break;
                 }
@@ -342,6 +347,7 @@ namespace NachoCore
                     if (null != emailMessage && !emailMessage.IsRead) {
                         markUpdate = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                             Operation = McPending.Operations.EmailMarkRead,
+                            EmailSetFlag_FlagType = McPending.MarkReadFlag,
                             ServerId = emailMessage.ServerId,
                             ParentId = srcFolder.ServerId,
                         };   
@@ -384,16 +390,26 @@ namespace NachoCore
             return Execute ();
         }
 
+        object executeLock = new object();
+
         protected virtual bool Execute ()
         {
-            // don't allow us to execute, if the App/UI told us to stop.
-            if (ForceStopped) {
-                return false;
+            lock (executeLock) {
+                // don't allow us to execute, if the App/UI told us to stop.
+                if (ForceStopped) {
+                    return false;
+                }
+                if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down ||
+                    (null != Server && NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable)) {
+                    // network is down, or the server is bad. Don't start. Callbacks will trigger us
+                    // to start later.
+                    return false;
+                }
+                if (Cts.IsCancellationRequested) {
+                    NewCancellation ();
+                }
+                return true;
             }
-            if (Cts.IsCancellationRequested) {
-                NewCancellation ();
-            }
-            return true;
         }
 
         // Interface to owner.
@@ -685,7 +701,7 @@ namespace NachoCore
             return result;
         }
 
-        public virtual NcResult MarkEmailReadCmd (int emailMessageId)
+        public virtual NcResult MarkEmailReadCmd (int emailMessageId, bool read)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcResult.SubKindEnum subKind;
@@ -698,6 +714,7 @@ namespace NachoCore
                 }
                 var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.EmailMarkRead,
+                    EmailSetFlag_FlagType = read ? McPending.MarkReadFlag : McPending.MarkUnreadFlag,
                     ServerId = emailMessage.ServerId,
                     ParentId = folder.ServerId,
                 };   
@@ -705,7 +722,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
                 emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                     var target = (McEmailMessage)record;
-                    target.IsRead = true;
+                    target.IsRead = read;
                     return true;
                 });
             });

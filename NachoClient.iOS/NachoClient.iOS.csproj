@@ -42,7 +42,6 @@
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignKey>iPhone Developer</CodesignKey>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
-    <MtouchProfiling>true</MtouchProfiling>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <Optimize>true</Optimize>
@@ -68,6 +67,7 @@
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignKey>iPhone Developer</CodesignKey>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <MtouchDebug>true</MtouchDebug>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
     <DebugSymbols>true</DebugSymbols>
@@ -124,6 +124,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <MtouchDebug>true</MtouchDebug>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
     <Optimize>true</Optimize>
@@ -1210,9 +1211,6 @@
       <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoMessageViewer.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoMessageSearchResults.cs">
-      <Link>NachoCore\Adapters\NachoMessageSearchResults.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration7.cs">
       <Link>NachoCore\Model\Migration\NcMigration7.cs</Link>
     </Compile>
@@ -1738,6 +1736,19 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedLikelyToRead.cs">
       <Link>NachoCore\Adapters\NachoUnifiedLikelyToRead.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountPickerViewController.designer.cs">
+      <DependentUpon>AccountPickerViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsSearch.cs">
+      <Link>NachoCore\Utils\ContactsSearch.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcApplicationMonitor.cs">
+      <Link>NachoCore\Utils\NcApplicationMonitor.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailSearch.cs">
+      <Link>NachoCore\Utils\EmailSearch.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -2663,6 +2674,9 @@
     <BundleResource Include="Resources\icn-files-wrd%402x.png" />
     <BundleResource Include="Resources\icn-files-xls%402x.png" />
     <BundleResource Include="Resources\icn-files-zip%402x.png" />
+    <BundleResource Include="Resources\MessageRead%402x.png" />
+    <BundleResource Include="Resources\MessageRead%403x.png" />
+    <BundleResource Include="Resources\MessageRead%404x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

@@ -89,5 +89,62 @@ namespace NachoCore.Wbxml
             AsXmlFilterSet._Responses.Add (new AsXmlFilterTasks ());
         }
     }
+
+    public class AutoDiscoverXmlFilter : NcXmlFilter
+    {
+        public AutoDiscoverXmlFilter () : base (new[]{"http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006", "http://schemas.microsoft.com/exchange/autodiscover/responseschema/2006"})
+        {
+            Root = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
+            var autoDRoot = new NcXmlFilterNode ("Autodiscover", RedactionType.NONE, RedactionType.NONE);
+
+            var responseNode = new NcXmlFilterNode ("Response", RedactionType.NONE, RedactionType.NONE);
+            {
+                {
+                    responseNode.Add (new NcXmlFilterNode ("Culture", RedactionType.NONE, RedactionType.NONE));
+                }
+                {
+                    var userNode = new NcXmlFilterNode ("User", RedactionType.NONE, RedactionType.NONE);
+                    {
+                        var emailNode = new NcXmlFilterNode ("EMailAddress", RedactionType.FULL, RedactionType.FULL);
+                        var displayNameNode = new NcXmlFilterNode ("DisplayName", RedactionType.FULL, RedactionType.FULL);
+                        userNode.Add (emailNode);
+                        userNode.Add (displayNameNode);
+                    }
+                    responseNode.Add (userNode);
+                }
+                {
+                    var actionNode = new NcXmlFilterNode ("Action", RedactionType.NONE, RedactionType.NONE);
+                    {
+                        var redirectNode = new NcXmlFilterNode ("Redirect", RedactionType.FULL, RedactionType.FULL);
+                        actionNode.Add (redirectNode);
+                
+                        var settingsNode = new NcXmlFilterNode ("Settings", RedactionType.NONE, RedactionType.NONE);
+                        {
+                            var serverNode = new NcXmlFilterNode ("Server", RedactionType.NONE, RedactionType.NONE);
+                            serverNode.Add (new NcXmlFilterNode ("Type", RedactionType.NONE, RedactionType.NONE));
+                            serverNode.Add (new NcXmlFilterNode ("Url", RedactionType.NONE, RedactionType.NONE));
+                            serverNode.Add (new NcXmlFilterNode ("Name", RedactionType.NONE, RedactionType.NONE));
+                            serverNode.Add (new NcXmlFilterNode ("ServerData", RedactionType.NONE, RedactionType.NONE));
+                            settingsNode.Add (serverNode);
+                        }
+                        actionNode.Add (settingsNode);
+                    }
+                    var errorNode = new NcXmlFilterNode ("Error", RedactionType.NONE, RedactionType.NONE);
+                    {
+                        errorNode.Add (new NcXmlFilterNode ("Status", RedactionType.NONE, RedactionType.NONE));
+                        errorNode.Add (new NcXmlFilterNode ("Message", RedactionType.NONE, RedactionType.NONE));
+                        errorNode.Add (new NcXmlFilterNode ("ErrorCode", RedactionType.NONE, RedactionType.NONE));
+                        errorNode.Add (new NcXmlFilterNode ("DebugData", RedactionType.NONE, RedactionType.NONE));
+                        actionNode.Add (errorNode);
+                    }
+                    responseNode.Add (actionNode);
+                }
+            }
+            autoDRoot.Add (responseNode);
+            Root.Add (autoDRoot);
+        }
+    }
+
+
 }
 

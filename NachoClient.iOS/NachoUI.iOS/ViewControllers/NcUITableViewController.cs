@@ -21,6 +21,11 @@ namespace NachoClient.iOS
             Initialize ();
         }
 
+        public NcUITableViewController (UITableViewStyle style) : base (style)
+        {
+            Initialize ();
+        }
+
         private void Initialize ()
         {
             ClassName = this.GetType ().Name;

@@ -56,12 +56,7 @@ namespace NachoClient.AndroidClient
 
         public bool IsFooterPosition (int position)
         {
-            if (!searching) {
-                if (CARDVIEW_STYLE == currentStyle) {
-                    return (ItemCount == (position + 1));
-                }
-            }
-            return false;
+            return !searching && CARDVIEW_STYLE == currentStyle && ItemCount == position + 1;
         }
 
         public override int GetItemViewType (int position)
@@ -145,11 +140,7 @@ namespace NachoClient.AndroidClient
 
         public McEmailMessageThread this [int position] {  
             get { 
-                if (searching) {
-                    return owner.searchResultsMessages.GetEmailThread (position);
-                } else {
-                    return owner.messages.GetEmailThread (position);
-                }
+                return owner.CurrentMessages.GetEmailThread (position);
             }
         }
 
@@ -158,24 +149,16 @@ namespace NachoClient.AndroidClient
             if (IsFooterPosition (position)) {
                 return 0; // No item has 0 Id
             }
-            if (searching) {
-                return owner.searchResultsMessages.GetEmailThread (position).FirstMessageId;
-            } else {
-                return owner.messages.GetEmailThread (position).FirstMessageId;
-            }
+            return owner.CurrentMessages.GetEmailThread (position).FirstMessageId;
         }
 
         public override int ItemCount {
             get {
-                if (searching) {
-                    return owner.searchResultsMessages.Count ();
-                } else {
-                    if (CARDVIEW_STYLE == currentStyle) { // !searching
-                        return owner.messages.Count () + 1; // for footer
-                    } else {
-                        return owner.messages.Count ();
-                    }
+                int count = owner.CurrentMessages.Count ();
+                if (!searching && CARDVIEW_STYLE == currentStyle) {
+                    count += 1; // extra row for the footer
                 }
+                return count;
             }
         }
 
@@ -254,16 +237,14 @@ namespace NachoClient.AndroidClient
 
         void BindCellView (CellViewHolder vh, int position)
         {
-            McEmailMessageThread thread;
+            var thread = owner.CurrentMessages.GetEmailThread (position);
             McEmailMessage message;
             if (searching) {
-                thread = owner.searchResultsMessages.GetEmailThread (position);
                 message = thread.FirstMessageSpecialCase ();
             } else {
-                thread = owner.messages.GetEmailThread (position);
                 message = owner.GetCachedMessage (position);
             }
-            var isDraft = owner.messages.HasDraftsSemantics () || owner.messages.HasOutboxSemantics ();
+            var isDraft = owner.CurrentMessages.HasDraftsSemantics () || owner.CurrentMessages.HasOutboxSemantics ();
             Bind.BindMessageHeader (thread, message, vh.mvh, isDraft);
 
             NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
@@ -296,11 +277,7 @@ namespace NachoClient.AndroidClient
 
         void MessageFromPosition (int position, out McEmailMessageThread thread, out McEmailMessage message)
         {
-            if (searching) {
-                thread = owner.searchResultsMessages.GetEmailThread (position);
-            } else {
-                thread = owner.messages.GetEmailThread (position);
-            }
+            thread = owner.CurrentMessages.GetEmailThread (position);
             message = thread.FirstMessageSpecialCase ();
         }
 
@@ -741,9 +718,5 @@ namespace NachoClient.AndroidClient
                 });
             }, "UpdateUnreadMessageView");
         }
-
     }
-
-    
 }
-

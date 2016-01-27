@@ -103,6 +103,7 @@ namespace NachoClient.iOS
                         Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "yes");
                         Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
                         if (granted) {
+                            // FIXME: Shouldn't this be BackEnd.Instance.SyncCmd()?
                             BackEnd.Instance.Start (accountId);
                         }
                     });
@@ -145,6 +146,7 @@ namespace NachoClient.iOS
                         Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
                         if (granted) {
                             // Trigger a Sync.
+                            // FIXME: Shouldn't this be BackEnd.Instance.SyncCmd()?
                             BackEnd.Instance.Start (accountId);
                         }
                     });

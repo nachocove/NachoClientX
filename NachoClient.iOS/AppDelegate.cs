@@ -858,10 +858,18 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
                 CompletePerformFetchWithoutShutdown ();
             }
-            NcCommStatus.Instance.ForceUp ("StartFetch");
             CompletionHandler = completionHandler;
+            // check to see if migrations need to run. If so, we shouldn't let the PerformFetch proceed!
+            NcMigration.Setup ();
+            if (NcMigration.WillStartService ()) {
+                Log.Error (Log.LOG_SYS, "PerformFetch called while migrations still need to run.");
+                FinalizePerformFetch (UIBackgroundFetchResult.NoData); // or UIBackgroundFetchResult.Failed?
+                return;
+            }
+            NcCommStatus.Instance.ForceUp ("StartFetch");
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
+
             fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
             if (hasRegisteredForRemoteNotifications) {
                 pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
@@ -1241,7 +1249,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_SYS, "ReceiveMemoryWarning;");
             Log.Info (Log.LOG_SYS, "Monitor: NSURLCache usage {0}", NSUrlCache.SharedCache.CurrentMemoryUsage);
-            NcApplication.Instance.MonitorReport ();
+            NcApplicationMonitor.Instance.Report ();
         }
 
         public override void ApplicationSignificantTimeChange (UIApplication application)

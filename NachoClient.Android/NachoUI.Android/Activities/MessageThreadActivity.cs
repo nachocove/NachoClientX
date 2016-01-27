@@ -29,6 +29,8 @@ namespace NachoClient.AndroidClient
 
         private const string MESSAGE_LIST_FRAGMENT_TAG = "MessageList";
 
+        MessageListFragment messageListFragment;
+
         public static Intent ShowThreadIntent (Context context, INachoEmailMessages threadMessages)
         {
             var intent = new Intent (context, typeof(MessageThreadActivity));
@@ -53,15 +55,15 @@ namespace NachoClient.AndroidClient
             List<int> deletes;
             threadMessages.Refresh (out adds, out deletes);
 
-            MessageListFragment fragment = null;
+            messageListFragment = null;
             if (null != bundle) {
-                fragment = FragmentManager.FindFragmentByTag<MessageListFragment> (MESSAGE_LIST_FRAGMENT_TAG);
+                messageListFragment = FragmentManager.FindFragmentByTag<MessageListFragment> (MESSAGE_LIST_FRAGMENT_TAG);
             }
-            if (null == fragment) {
-                fragment = new MessageListFragment ();
-                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, fragment, MESSAGE_LIST_FRAGMENT_TAG).Commit ();
+            if (null == messageListFragment) {
+                messageListFragment = new MessageListFragment ();
+                FragmentManager.BeginTransaction ().Replace (Resource.Id.content, messageListFragment, MESSAGE_LIST_FRAGMENT_TAG).Commit ();
             }
-            fragment.Initialize (threadMessages, MessageListFragment_onMessageClick);
+            messageListFragment.Initialize (threadMessages, MessageListFragment_onMessageClick);
         }
 
         protected override void OnResume ()
@@ -80,7 +82,9 @@ namespace NachoClient.AndroidClient
 
         public override void OnBackPressed ()
         {
-            base.OnBackPressed ();
+            if (null == messageListFragment || !messageListFragment.HandleBackButton ()) {
+                base.OnBackPressed ();
+            }
         }
 
         protected override void OnSaveInstanceState (Bundle outState)

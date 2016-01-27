@@ -148,7 +148,7 @@ namespace NachoClient.AndroidClient
 
         private void AddButton_Click (object sender, EventArgs e)
         {
-            StartActivityForResult (ContactEmailChooserActivity.EmptySearchIntent (this.Activity, accountId), CONTACT_CHOOSER_REQUEST);
+            StartActivityForResult (ContactEmailChooserActivity.EmptySearchIntent (this.Activity), CONTACT_CHOOSER_REQUEST);
         }
 
         private void CancelButton_Click (object sender, EventArgs e)

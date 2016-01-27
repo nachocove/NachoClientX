@@ -96,7 +96,8 @@ namespace NachoCore
 
         public bool IsCompatibleWithAccount (McAccount account)
         {
-            return NcApplication.Instance.Account.ContainsAccount (account.Id);
+            var currentAccount = NcApplication.Instance.Account;
+            return null != currentAccount && currentAccount.ContainsAccount (account.Id);
         }
 
     }

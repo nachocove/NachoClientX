@@ -26,6 +26,7 @@ using NachoPlatform;
 using Android.Widget;
 using Android.Views.InputMethods;
 using Android.Webkit;
+using NachoCore.Index;
 
 namespace NachoClient.AndroidClient
 {
@@ -58,12 +59,10 @@ namespace NachoClient.AndroidClient
         SwipeRefreshLayout mSwipeRefreshLayout;
 
         bool searching;
-        string searchToken;
-        SearchHelper searcher;
         Android.Widget.EditText searchEditText;
 
-        public INachoEmailMessages messages;
-        public NachoMessageSearchResults searchResultsMessages;
+        INachoEmailMessages messages;
+        EmailSearch emailSearcher;
 
         public bool multiSelectActive = false;
         public HashSet<long> MultiSelectSet = null;
@@ -94,6 +93,12 @@ namespace NachoClient.AndroidClient
         public void Initialize (INachoEmailMessages messages, EventHandler<McEmailMessageThread> messageClickHandler)
         {
             Initialize (messages, null, null, messageClickHandler);
+        }
+
+        public INachoEmailMessages CurrentMessages {
+            get {
+                return searching ? emailSearcher : messages;
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -139,38 +144,10 @@ namespace NachoClient.AndroidClient
 
             searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
             searchEditText.TextChanged += SearchString_TextChanged;
+            searchEditText.EditorAction += SearchString_Enter;
 
-            searchResultsMessages = new NachoMessageSearchResults (NcApplication.Instance.Account.Id);
-
-            searcher = new SearchHelper ("MessageListViewController", (searchString) => {
-                if (String.IsNullOrEmpty (searchString)) {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResultsMessages.UpdateMatches (null);
-                        searchResultsMessages.UpdateServerMatches (null);
-                        messageListAdapter.RefreshSearchMatches ();
-                    });
-                    return; 
-                }
-                // On-device index
-                var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
-                var index = new NachoCore.Index.NcIndex (indexPath);
-                int maxResults = 1000;
-                if (4 > searchString.Length) {
-                    maxResults = 20;
-                }
-                var matches = index.SearchAllEmailMessageFields (searchString, maxResults);
-
-                // Cull low scores
-                var maxScore = 0f;
-                foreach (var m in matches) {
-                    maxScore = Math.Max (maxScore, m.Score);
-                }
-                matches.RemoveAll (x => x.Score < (maxScore / 2));
-
-                InvokeOnUIThread.Instance.Invoke (() => {
-                    searchResultsMessages.UpdateMatches (matches);
-                    messageListAdapter.RefreshSearchMatches ();
-                });
+            emailSearcher = new EmailSearch ((string searchString, List<McEmailMessageThread> results) => {
+                messageListAdapter.RefreshSearchMatches ();
             });
                 
             var hotEvent = view.FindViewById<View> (Resource.Id.hot_event);
@@ -401,9 +378,15 @@ namespace NachoClient.AndroidClient
         public override void OnPause ()
         {
             base.OnPause ();
-            CancelSearchIfActive ();
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment OnPause");
+        }
+
+        public override void OnDestroyView ()
+        {
+            base.OnDestroyView ();
+            if (searching) {
+                CancelSearch ();
+            }
         }
 
         void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
@@ -579,8 +562,8 @@ namespace NachoClient.AndroidClient
         void StartSearching ()
         {
             searching = true;
-            searchResultsMessages.UpdateMatches (null);
-            searchResultsMessages.UpdateServerMatches (null);
+
+            emailSearcher.EnterSearchMode (NcApplication.Instance.Account);
 
             messageListAdapter.StartSearch ();
             messageListAdapter.RefreshSearchMatches ();
@@ -604,6 +587,9 @@ namespace NachoClient.AndroidClient
         void CancelSearch ()
         {
             searching = false;
+
+            emailSearcher.ExitSearchMode ();
+
             messageListAdapter.CancelSearch ();
 
             searchEditText.ClearFocus ();
@@ -625,56 +611,27 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        protected void CancelSearchIfActive ()
-        {
-            if (!String.IsNullOrEmpty (searchToken)) {
-                McPending.Cancel (NcApplication.Instance.Account.Id, searchToken);
-                searchToken = null;
-            }
-        }
-
         void SearchString_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
         {
             if (searching) {
-                var searchString = searchEditText.Text;
-                if (String.IsNullOrEmpty (searchString)) {
-                    searchResultsMessages.UpdateServerMatches (null);
-                    messageListAdapter.RefreshSearchMatches ();
-                } else if (4 > searchString.Length) {
-                    KickoffSearchApi (0, searchString);
-                }
-                searcher.Search (searchString);
+                emailSearcher.SearchFor (searchEditText.Text);
             }
         }
 
-        // Ask the server
-        protected void KickoffSearchApi (int forSearchOption, string forSearchString)
+        void SearchString_Enter (object sender, Android.Widget.TextView.EditorActionEventArgs e)
         {
-            if (String.IsNullOrEmpty (searchToken)) {
-                searchToken = BackEnd.Instance.StartSearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null).GetValue<string> ();
-            } else {
-                BackEnd.Instance.SearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null, searchToken);
+            if (searching) {
+                emailSearcher.StartServerSearch ();
             }
         }
 
-        protected void UpdateSearchResultsFromServer (List<NcEmailMessageIndex> indexList)
-        {
-            var threadList = new List<McEmailMessageThread> ();
-            foreach (var i in indexList) {
-                var thread = new McEmailMessageThread ();
-                thread.FirstMessageId = i.Id;
-                thread.MessageCount = 1;
-                threadList.Add (thread);
-            }
-            searchResultsMessages.UpdateServerMatches (threadList);
-            messageListAdapter.RefreshSearchMatches ();
-        }
-
-        public void OnBackPressed ()
+        public bool HandleBackButton ()
         {
             if (searching) {
                 CancelSearch ();
+                return true;
             }
+            return false;
         }
 
         public void DeleteThisMessage (McEmailMessageThread messageThread)
@@ -752,7 +709,7 @@ namespace NachoClient.AndroidClient
 
         public void MaybeSwitchStyle (int style)
         {
-            if (style != messageListAdapter.currentStyle) {
+            if ((null != messageListAdapter) && (style != messageListAdapter.currentStyle)) {
                 SwitchAccount (messages);
             }
         }
@@ -812,9 +769,6 @@ namespace NachoClient.AndroidClient
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
                 RefreshIfVisible ();
                 RefreshVisibleMessageCells ();
-                break;
-            case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
-                UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
                 break;
             case NcResult.SubKindEnum.Error_SyncFailed:
             case NcResult.SubKindEnum.Info_SyncSucceeded:
@@ -985,4 +939,3 @@ namespace NachoClient.AndroidClient
         }
     }
 }
-
