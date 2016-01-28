@@ -344,6 +344,9 @@ namespace NachoClient.AndroidClient
 
         void RefreshVisibleContactCells ()
         {
+            if (MaybeDisplayNoContactsView (View)) {
+                return;
+            }
             for (var i = listView.FirstVisiblePosition; i <= listView.LastVisiblePosition; i++) {
                 var cell = listView.GetChildAt (i - listView.FirstVisiblePosition);
                 if (null != cell) {
@@ -352,14 +355,16 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public void MaybeDisplayNoContactsView (View view)
+        public bool MaybeDisplayNoContactsView (View view)
         {
             if (null != view) {
                 if (null != contactsListAdapter) {
                     var showEmpty = !searching && (0 == contactsListAdapter.Count);
                     view.FindViewById<Android.Widget.TextView> (Resource.Id.no_contacts).Visibility = (showEmpty ? ViewStates.Visible : ViewStates.Gone);
+                    return true;
                 }
             }
+            return false;
         }
 
         private int dp2px (int dp)
