@@ -149,6 +149,7 @@ namespace NachoCore
                 }
             }
         }
+
         object _Oauth2RefreshCancelSourceLock = new object ();
 
         public enum CredReqActiveState
@@ -1049,6 +1050,22 @@ namespace NachoCore
             }
         }
 
+        public void SendEmailBodyFetchHints (List<Tuple<int,int>> Ids)
+        {
+            HashSet<int> needInd = new HashSet<int> ();
+            foreach (var t in Ids) {
+                if (0 < BodyFetchHints.Count (t.Item1)) {
+                    needInd.Add (t.Item1);
+                }
+            }
+            foreach (var t in Ids) {
+                BodyFetchHints.AddHint (t.Item1, t.Item2);
+            }
+            foreach (var n in needInd) {
+                HintInd (n, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+            }
+        }
+
         #region Oauth2Refresh
 
         /// OAuth2 refresh has the following cases:
@@ -1259,6 +1276,7 @@ namespace NachoCore
         {
             InvokeOnUIThread.Instance.Invoke (() => Owner.CredReq (accountId));
         }
+
         /// <summary>
         /// Callback called after a successful OAuth2 refresh.
         /// </summary>

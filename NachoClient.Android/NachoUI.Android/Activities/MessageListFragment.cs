@@ -223,9 +223,9 @@ namespace NachoClient.AndroidClient
             messageListAdapter = new MessageListAdapter (this, parent.ShowListStyle ());
             messageListAdapter.onMessageClick += MessageListAdapter_OnMessageClick;
 
-            if (MessageListAdapter.CARDVIEW_STYLE == parent.ShowListStyle ()) {
-                recyclerView.AddOnScrollListener (new MessageListScrollListener ());
-            }
+            recyclerView.AddOnScrollListener (new MessageListScrollListener (() => {
+                SendFetchHints ();
+            }));
 
             recyclerView.SetAdapter (messageListAdapter);
 
@@ -315,6 +315,12 @@ namespace NachoClient.AndroidClient
             // Positive means pushing up
             int lastDy;
             bool userInitiated;
+            Action OnStop;
+
+            public MessageListScrollListener (Action OnStop) : base ()
+            {
+                this.OnStop = OnStop;
+            }
 
             public override void OnScrollStateChanged (RecyclerView recyclerView, int newState)
             {
@@ -332,6 +338,9 @@ namespace NachoClient.AndroidClient
                     swipeMenuRecyclerView.EnableSwipe (true);
                     if (NcApplication.Instance.IsBackgroundAbateRequired) {
                         NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment ScrollStateChanged");
+                    }
+                    if (null != OnStop) {
+                        OnStop ();
                     }
                     break;
                 }
@@ -365,6 +374,35 @@ namespace NachoClient.AndroidClient
             public override void OnScrolled (RecyclerView recyclerView, int dx, int dy)
             {
                 lastDy = dy;
+            }
+
+
+        }
+
+        void SendFetchHints ()
+        {
+            if (0 == messages.Count ()) {
+                return;
+            }
+
+            var a = layoutManager.FindFirstVisibleItemPosition ();
+            if (RecyclerView.NoPosition == a) {
+                return;
+            }
+            var z = layoutManager.FindLastVisibleItemPosition ();
+
+            var Ids = new List<Tuple<int,int>> ();
+
+            for (var i = a; i <= z; i++) {
+                if (i < messages.Count ()) { // don't fetch footer
+                    var message = GetCachedMessage (i);
+                    if ((null != message) && (0 == message.BodyId)) {
+                        Ids.Add (new Tuple<int, int> (message.AccountId, message.Id));
+                    }
+                }
+            }
+            if (0 < Ids.Count) {
+                BackEnd.Instance.SendEmailBodyFetchHints (Ids);
             }
         }
 
@@ -687,7 +725,7 @@ namespace NachoClient.AndroidClient
         public void ShowFolderChooser (McEmailMessageThread messageThread)
         {
             Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
-            var folderFragment = ChooseFolderFragment.newInstance (messageThread.FirstMessage().AccountId, messageThread);
+            var folderFragment = ChooseFolderFragment.newInstance (messageThread.FirstMessage ().AccountId, messageThread);
             folderFragment.SetOnFolderSelected (OnFolderSelected);
             folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }
@@ -754,7 +792,7 @@ namespace NachoClient.AndroidClient
             if (null == s.Account) {
                 return;
             }
-            if (!NcApplication.Instance.Account.ContainsAccount(s.Account.Id)) {
+            if (!NcApplication.Instance.Account.ContainsAccount (s.Account.Id)) {
                 return;
             }
 
