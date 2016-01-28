@@ -1042,7 +1042,7 @@ namespace NachoCore
 
         public void SendEmailBodyFetchHint (int accountId, int emailMessageId)
         {
-            bool needInd = BodyFetchHints.Count (accountId) > 0;
+            bool needInd = BodyFetchHints.Count (accountId) == 0;
             Log.Info (Log.LOG_BACKEND, "SendEmailBodyFetchHint: {0} hints in queue", BodyFetchHints.Count (accountId));
             BodyFetchHints.AddHint (accountId, emailMessageId);
             if (needInd) {
@@ -1054,7 +1054,7 @@ namespace NachoCore
         {
             HashSet<int> needInd = new HashSet<int> ();
             foreach (var t in Ids) {
-                if (0 < BodyFetchHints.Count (t.Item1)) {
+                if (0 == BodyFetchHints.Count (t.Item1)) {
                     needInd.Add (t.Item1);
                 }
             }
