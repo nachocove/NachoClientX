@@ -481,7 +481,10 @@ namespace NachoClient.AndroidClient
             if (multiSelectActive) {
                 MultiSelectDelete ();
             } else {
-                StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity, NcApplication.Instance.EffectiveEmailAccount.Id));
+                var defaultEmailAccount = NcApplication.Instance.DefaultEmailAccount;
+                if (null != defaultEmailAccount) {
+                    StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity, defaultEmailAccount.Id));
+                }
             }
         }
 

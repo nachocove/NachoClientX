@@ -229,16 +229,6 @@ namespace NachoCore
             }
         }
 
-        public McAccount EffectiveEmailAccount {
-            get {
-                if ((null != Account) && (McAccount.AccountTypeEnum.Unified != Account.AccountType)) {
-                    return Account;
-                } else {
-                    return DefaultEmailAccount;
-                }
-            }
-        }
-
         public delegate void CredReqCallbackDele (int accountId);
 
         /// <summary>
