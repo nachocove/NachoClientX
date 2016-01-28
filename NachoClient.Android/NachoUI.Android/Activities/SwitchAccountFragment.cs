@@ -76,6 +76,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+            accountAdapter.Refresh ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
