@@ -1410,6 +1410,18 @@ namespace NachoClient.iOS
 
         private void DoneButtonClicked (object sender, EventArgs args)
         {
+            if (CalendarItemEditorAction.edit == action && null != item && 0 != item.Id) {
+                // Make sure the item wasn't deleted while it was being edited.
+                var dbItem = McCalendar.QueryById<McCalendar> (item.Id);
+                if (null == dbItem || dbItem.IsAwaitingDelete) {
+                    NcAlertView.Show (this, "Deleted Event",
+                        "The changes to the event cannot be saved because the event has been deleted.",
+                        new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                            DismissView ();
+                        }));
+                    return;
+                }
+            }
             if (CanBeSaved ()) {
                 ExtractValues ();
                 SyncMeetingRequest ();
