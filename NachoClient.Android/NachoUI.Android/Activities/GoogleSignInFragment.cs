@@ -150,7 +150,7 @@ namespace NachoClient.AndroidClient
                 string refresh_token;
                 e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
 
-                string expiresString = "0";
+                string expiresString;
                 uint expireSecs = 0;
                 if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
                     if (!uint.TryParse (expiresString, out expireSecs)) {
@@ -162,7 +162,7 @@ namespace NachoClient.AndroidClient
 
                 var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
 
-                string userInfoString = null;
+                string userInfoString;
                 try {
                     userInfoString = new System.Net.WebClient ().DownloadString (url);
                 } catch (Exception ex) {
