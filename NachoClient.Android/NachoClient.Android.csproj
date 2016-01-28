@@ -633,14 +633,16 @@
     <Compile Include="NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs" />
     <Compile Include="NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs" />
-    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetApiVersionsCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetContactsCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetResourcesCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetObjectsCommand.cs" />
     <Compile Include="NachoCore\Utils\ContactsSearch.cs" />
     <Compile Include="NachoCore\Utils\NcApplicationMonitor.cs" />
     <Compile Include="NachoCore\Utils\EmailSearch.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SalesForceContactSync.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SFDCGetContactsCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SalesForceSetup.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetApiVersionsCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetObjectsCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetResourcesCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SFDCCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -708,7 +710,8 @@
     <Folder Include="Resources\xml\" />
     <Folder Include="NachoCore\Utils\Oauth2\" />
     <Folder Include="NachoCore\BackEnd\SalesForce\" />
-    <Folder Include="NachoCore\BackEnd\SalesForce\SalesForceCommands\" />
+    <Folder Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\" />
+    <Folder Include="NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

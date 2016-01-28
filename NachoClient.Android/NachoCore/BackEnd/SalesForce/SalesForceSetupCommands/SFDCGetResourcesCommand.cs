@@ -38,7 +38,8 @@ namespace NachoCore
                 }
                 var protoControl = BEContext.ProtoControl as SalesForceProtoControl;
                 NcAssert.NotNull (protoControl);
-                protoControl.ResourcePaths = resourcesResponse;
+                NcAssert.NotNull (protoControl.SFDCSetup);
+                protoControl.SFDCSetup.ResourcePaths = resourcesResponse;
                 return Event.Create ((uint)SmEvt.E.Success, "RESSSUCC");
             } catch (JsonReaderException) {
                 return ProcessErrorResponse (jsonResponse);

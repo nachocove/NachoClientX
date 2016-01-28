@@ -15,9 +15,11 @@ namespace NachoCore
     public class SFDCCommand : NcCommand
     {
         protected const int KDefaultTimeout = 2;
+        protected const int KMaxRetries = 3;
+
         protected string CmdName;
         protected NcStateMachine OwnerSm;
-
+        protected int Attempt { get; set; }
         public SFDCCommand (IBEContext beContext) : base (beContext)
         {
             CmdName = GetType ().Name;
@@ -41,7 +43,7 @@ namespace NachoCore
                 return;
             }
             OwnerSm = sm;
-            NcTask.Run (() => MakeAndSendRequest (), CmdName);
+            NcTask.Run (MakeAndSendRequest, CmdName);
         }
 
         protected virtual void MakeAndSendRequest ()
@@ -49,9 +51,25 @@ namespace NachoCore
             throw new NotImplementedException ();
         }
 
-        protected void GetRequest (NcHttpRequest request)
+        protected class MaxRetriesExceededException : Exception
+        {
+        }
+
+        protected bool CheckRequest ()
         {
             if (Cts.IsCancellationRequested) {
+                return false;
+            }
+            if (++Attempt > KMaxRetries) {
+                ErrorAction (new MaxRetriesExceededException(), Cts.Token);
+                return false;
+            }
+            return true;
+        }
+
+        protected void GetRequest (NcHttpRequest request)
+        {
+            if (!CheckRequest ()) {
                 return;
             }
             Log.Info (Log.LOG_SFDC, "Url: {0}:{1}", request.Method, request.RequestUri);
@@ -60,7 +78,7 @@ namespace NachoCore
 
         protected void SendRequest (NcHttpRequest request)
         {
-            if (Cts.IsCancellationRequested) {
+            if (!CheckRequest ()) {
                 return;
             }
             Log.Info (Log.LOG_SFDC, "Url: {0}:{1}", request.Method, request.RequestUri);
@@ -115,6 +133,9 @@ namespace NachoCore
 
         protected Event ProcessErrorResponse (NcHttpResponse response, CancellationToken token)
         {
+            if (token.IsCancellationRequested) {
+                return Event.Create ((uint)SmEvt.E.HardFail, "SFDCERRORCANCEL");
+            }
             byte[] contentBytes = response.GetContent ();
             string jsonResponse = (null != contentBytes && contentBytes.Length > 0) ? Encoding.UTF8.GetString (contentBytes) : null;
             if (string.IsNullOrEmpty (jsonResponse)) {
@@ -164,6 +185,9 @@ namespace NachoCore
             } else if (ex is WebException) {
                 serverFailedGenerally = true;
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "SFDCWEBEXTEMP");
+            } else if (ex is MaxRetriesExceededException) {
+                serverFailedGenerally = false;
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "SFDCWEBMAXRETR");
             } else {
                 serverFailedGenerally = true;
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "SFDCWEXCHARD");

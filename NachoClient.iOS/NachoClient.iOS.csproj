@@ -1747,24 +1747,6 @@
     <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.designer.cs">
       <DependentUpon>SalesforceCredentialsViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetApiVersionsCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetApiVersionsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetContactsCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetContactsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetObjectsCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetObjectsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetResourcesCommand.cs">
-      <Link>NachoCore\BackEnd\SalesForce\SalesForceCommands\SFDCGetResourcesCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountPickerViewController.designer.cs">
       <DependentUpon>AccountPickerViewController.cs</DependentUpon>
@@ -1777,6 +1759,30 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailSearch.cs">
       <Link>NachoCore\Utils\EmailSearch.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SFDCCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SFDCCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SFDCGetContactsCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SFDCGetContactsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SalesForceContactSync.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SalesForceContactSync.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetApiVersionsCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetApiVersionsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetObjectsCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetObjectsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetResourcesCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetResourcesCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SalesForceSetup.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SalesForceSetup.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

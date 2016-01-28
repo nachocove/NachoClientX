@@ -28,7 +28,7 @@ namespace NachoCore
         {
             var protoControl = BEContext.ProtoControl as SalesForceProtoControl;
             NcAssert.NotNull (protoControl);
-            var request = NewRequest (HttpMethod.Get, string.Format ("{0}{1}", protoControl.ObjectUrls ["Contact"], ContactId), jsonContentType);
+            var request = NewRequest (HttpMethod.Get, string.Format ("{0}{1}", protoControl.SFDCSetup.ObjectUrls ["Contact"], ContactId), jsonContentType);
             GetRequest (request);
         }
 
@@ -72,7 +72,7 @@ namespace NachoCore
                 query += string.Format (" AND LastModifiedDate > {0}", BEContext.ProtocolState.SFDCLastContactsSynced.ToAsUtcString ());
             }
             query = Regex.Replace (query, " ", "+");
-            var request = NewRequest (HttpMethod.Get, string.Format ("{0}?q={1}", protoControl.ResourcePaths ["query"], query), jsonContentType);
+            var request = NewRequest (HttpMethod.Get, string.Format ("{0}?q={1}", protoControl.SFDCSetup.ResourcePaths ["query"], query), jsonContentType);
             GetRequest (request);
         }
 
@@ -98,8 +98,8 @@ namespace NachoCore
                 var responseData = Newtonsoft.Json.Linq.JObject.Parse (jsonResponse);
                 var jsonRecords = responseData.SelectToken ("records");
                 var contactRecords = jsonRecords.ToObject<List<ContactRecord>> ();
-                SFDCGetContactsDataCommand cmd = contactRecords.Any () ? new SFDCGetContactsDataCommand (BEContext, contactRecords.Select (x => x.Id).ToList ()) : null;
-                return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTSUMSUCC", cmd);
+
+                return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTSUMSUCC", contactRecords.Select (x => x.Id).ToList ());
             } catch (JsonSerializationException) {
                 return ProcessErrorResponse (jsonResponse);
             } catch (JsonReaderException) {
@@ -110,36 +110,21 @@ namespace NachoCore
 
     public class SFDCGetContactsDataCommand : SFDCCommand
     {
-        List<string> IdList;
+        string ContactId;
 
-        public SFDCGetContactsDataCommand (IBEContext beContext, List<string> idList) : base (beContext)
+        public SFDCGetContactsDataCommand (IBEContext beContext, string contactId) : base (beContext)
         {
-            IdList = idList;
-        }
-
-        public override void Execute (NcStateMachine sm)
-        {
-            if (IdList.Any ()) {
-                base.Execute (sm);
-            } else {
-                BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> (((record) => {
-                    var target = (McProtocolState)record;
-                    target.SFDCLastContactsSynced = DateTime.UtcNow;
-                    return true;
-                }));
-                sm.PostEvent (Event.Create ((uint)SalesForceProtoControl.SfdcEvt.E.SyncDone, "SFDCCONTSUMDONE"));
-            }
+            ContactId = contactId;
         }
 
         protected override void MakeAndSendRequest ()
         {
             var protoControl = BEContext.ProtoControl as SalesForceProtoControl;
             NcAssert.NotNull (protoControl);
+            NcAssert.NotNull (protoControl.SFDCSetup);
 
-            string id = IdList.First ();
-            IdList.Remove (id);
-            Log.Info (Log.LOG_SFDC, "Fetching data for Contact Id {0}", id);
-            var request = NewRequest (HttpMethod.Get, string.Format ("{0}/{1}", protoControl.ObjectUrls ["Contact"], id), jsonContentType);
+            Log.Info (Log.LOG_SFDC, "Fetching data for Contact Id {0}", ContactId);
+            var request = NewRequest (HttpMethod.Get, string.Format ("{0}/{1}", protoControl.SFDCSetup.ObjectUrls ["Contact"], ContactId), jsonContentType);
             GetRequest (request);
         }
 
@@ -254,9 +239,6 @@ namespace NachoCore
                 }));
 
                 contact.SetVIP (true);
-
-                Execute (OwnerSm);
-
             } catch (JsonSerializationException) {
                 return ProcessErrorResponse (jsonResponse);
             } catch (JsonReaderException) {
