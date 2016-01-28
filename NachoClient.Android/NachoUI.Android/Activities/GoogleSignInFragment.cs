@@ -150,15 +150,13 @@ namespace NachoClient.AndroidClient
                 string refresh_token;
                 e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
 
-                string expires_in;
-                e.Account.Properties.TryGetValue ("expires_in", out expires_in);
-                Log.Info (Log.LOG_SYS, "OAUTH2 Token acquired. expires_in={0}", expires_in);
-
                 string expiresString = "0";
                 uint expireSecs = 0;
-                if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
+                if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
                     if (!uint.TryParse (expiresString, out expireSecs)) {
                         Log.Info (Log.LOG_UI, "AuthCompleted: Could not convert expires value {0} to int", expiresString);
+                    } else {
+                        Log.Info (Log.LOG_SYS, "OAUTH2 Token acquired. expires_in={0}", expireSecs);
                     }
                 }
 
