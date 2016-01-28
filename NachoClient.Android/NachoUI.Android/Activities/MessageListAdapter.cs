@@ -6,7 +6,6 @@ using NachoCore.Utils;
 using Android.Views;
 using Android.Webkit;
 using Android.Widget;
-using NachoCore.Brain;
 using NachoCore;
 using Android.Support.V7.Widget;
 using Android.Content;
@@ -246,8 +245,6 @@ namespace NachoClient.AndroidClient
             }
             var isDraft = owner.CurrentMessages.HasDraftsSemantics () || owner.CurrentMessages.HasOutboxSemantics ();
             Bind.BindMessageHeader (thread, message, vh.mvh, isDraft);
-
-            NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
 
             // Preview label view                
             if (null == message) {
