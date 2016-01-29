@@ -1184,7 +1184,7 @@ namespace NachoClient.iOS
         {
             if (detail.IsRecurring) {
                 if (NcResponseType.Declined == response) {
-                    NcActionSheet.Show (View, this, null,
+                    NcActionSheet.Show (declineButton, this, null,
                         "Declining the meeting will also delete the meeting from your calendar.",
                         new NcAlertAction ("Decline the entire series", NcAlertActionStyle.Destructive, () => {
                             MakeStatusUpdates (response, false);
@@ -1196,7 +1196,7 @@ namespace NachoClient.iOS
                             SelectButtonForResponse (userResponse);
                         }));
                 } else {
-                    NcActionSheet.Show (View, this,
+                    NcActionSheet.Show (acceptButton, this,
                         new NcAlertAction ("Respond for the entire series", () => {
                             MakeStatusUpdates (response, false);
                         }),
@@ -1208,7 +1208,7 @@ namespace NachoClient.iOS
                         }));
                 }
             } else if (NcResponseType.Declined == response) {
-                NcActionSheet.Show (View, this, null,
+                NcActionSheet.Show (declineButton, this, null,
                     "Declining the meeting will also delete the meeting from your calendar.",
                     new NcAlertAction ("Decline the meeting", NcAlertActionStyle.Destructive, () => {
                         MakeStatusUpdates (response, false);
@@ -1371,7 +1371,7 @@ namespace NachoClient.iOS
 
         private void CancelMeetingButtonClicked (object sender, EventArgs args)
         {
-            NcActionSheet.Show (View, this, null,
+            NcActionSheet.Show (cancelMeetingButton, this, null,
                 "Cancel this occurrence of the meeting and send a cancellation notice to all of the attendees.",
                 new NcAlertAction ("Cancel this occurrence", NcAlertActionStyle.Destructive, () => {
                     DateTime occurrenceStartTime;

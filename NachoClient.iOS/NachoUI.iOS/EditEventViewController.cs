@@ -1285,7 +1285,7 @@ namespace NachoClient.iOS
         /// IUcAttachmentBlock delegate
         public void ShowChooserForAttachmentBlock ()
         {
-            var helper = new AddAttachmentViewController.MenuHelper (this, account, Storyboard);
+            var helper = new AddAttachmentViewController.MenuHelper (this, account, Storyboard, attachmentView);
             PresentViewController (helper.MenuViewController, true, null);
         }
 
@@ -1712,7 +1712,7 @@ namespace NachoClient.iOS
 
         private void DeleteTapAction ()
         {
-            NcActionSheet.Show (View, this,
+            NcActionSheet.Show (deleteView, this,
                 new NcAlertAction ("Delete Event", NcAlertActionStyle.Destructive, () => {
                     DeleteEvent ();
                 }),

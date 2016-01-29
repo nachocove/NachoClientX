@@ -465,7 +465,7 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                NcActionSheet.Show (DaysToSyncBlock, this,
+                NcActionSheet.Show (ExpiredPasswordBlock, this,
                     new NcAlertAction ("Clear Notification", () => {
                         LoginHelpers.ClearPasswordExpiration (account.Id);
                         ExpiredPasswordBlock.SetLabel ("Password expiration cleared");
