@@ -977,7 +977,7 @@ namespace NachoCore
         /// <summary>
         /// Initial delay after which we do a first pass at the oauth2 credentials.
         /// </summary>
-        const int KOauth2RefreshDelaySecs = 5;
+        const int KOauth2RefreshDelaySecs = 1;
 
         /// <summary>
         /// The percentage of OAuth2-expiry after which we refresh the token.
@@ -999,7 +999,7 @@ namespace NachoCore
         /// still valid. There's no need to alert the UI (and thus the user) until we run out
         /// of options to refresh the auth-token.
         /// </remarks>
-        public const uint KOauth2RefreshMaxFailure = 5;
+        public const uint KOauth2RefreshMaxFailure = 3;
 
         protected static object lockObj = new object ();
 
@@ -1116,22 +1116,21 @@ namespace NachoCore
                     Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens: cancelled.");
                     return;
                 }
+                CredReqActiveState.CredReqActiveStatus status;
                 var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
-                if (cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
-                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens: token refresh needed. account {0}", cred.AccountId);
-                    CredReqActiveState.CredReqActiveStatus status;
-                    if (Be.CredReqActive.TryGetStatus (cred.AccountId, out status)) {
-                        if (status.State == CredReqActiveState.State.NeedUI) {
-                            // We've decided to give up on this one
-                            continue;
-                        }
+                if (Be.CredReqActive.TryGetStatus (cred.AccountId, out status) ||
+                    cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
+                    if (null != status && status.State == CredReqActiveState.State.NeedUI) {
+                        Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token already needs UI. ", cred.AccountId);
+                        // We've decided to give up on this one
+                        continue;
                     }
+                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh needed.", cred.AccountId);
                     RefreshCredential (cred);
                 } else {
-                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens: token refresh not needed. account {0}, due {1}", cred.AccountId, cred.Expiry);
+                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh not needed. due {1}", cred.AccountId, cred.Expiry);
                 }
             }
-            Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens: done");
         }
 
         /// <summary>
@@ -1186,12 +1185,13 @@ namespace NachoCore
         /// Callback called after a failure to refresh the oauth2 token
         /// </summary>
         /// <param name="cred">Cred.</param>
-        protected virtual void TokenRefreshFailure (McCred cred)
+        /// <param name = "fatalError"></param>
+        protected virtual void TokenRefreshFailure (McCred cred, bool fatalError)
         {
             bool isExpired = cred.IsExpired;
             bool needUi = false;
             if (Be.CredReqActive.Update (cred.AccountId, (status) => {
-                if (isExpired) {
+                if (isExpired || fatalError) {
                     status.PostExpiryRefreshRetries++;
                 }
 
@@ -1213,9 +1213,9 @@ namespace NachoCore
                 alertUi (cred.AccountId, "TokenRefreshFailure2");
                 return;
             }
-            if (isExpired) {
-                // accelerate the update a bit.
-                ChangeOauthRefreshTimer (KOauth2RefreshDelaySecs);
+            if (isExpired || fatalError) {
+                // accelerate the update a bit, by restarting the timer.
+                ChangeOauthRefreshTimer (KOauth2RefreshDelaySecs*2);
             }
         }
 
