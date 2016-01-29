@@ -42,6 +42,7 @@ namespace NachoClient.AndroidClient
             base.OnCreate (savedInstanceState);
 
             adapter = new AttendeeListAdapter (CheckEmptyList);
+            adapter.AccountId = accountId;
             state = CurrentTab.All;
         }
 
@@ -84,6 +85,9 @@ namespace NachoClient.AndroidClient
         public int AccountId {
             set {
                 accountId = value;
+                if (null != adapter) {
+                    adapter.AccountId = value;
+                }
             }
         }
 
@@ -176,6 +180,8 @@ namespace NachoClient.AndroidClient
 
         private Action changedCallback;
 
+        private int accountId;
+
         public List<McAttendee> Attendees {
             get {
                 return allAttendees;
@@ -190,6 +196,12 @@ namespace NachoClient.AndroidClient
         {
             this.changedCallback = changedCallback;
             Attendees = new List<McAttendee> ();
+        }
+
+        public int AccountId {
+            set {
+                accountId = value;
+            }
         }
 
         public void SetState (AttendeeListBaseFragment.CurrentTab newState)
@@ -299,8 +311,8 @@ namespace NachoClient.AndroidClient
             var nameView = cell.FindViewById<TextView> (Resource.Id.attendee_name);
             var emailView = cell.FindViewById<TextView> (Resource.Id.attendee_email);
             var initials = ContactsHelper.NameToLetters (attendee.DisplayName);
-            var color = Util.ColorResourceForEmail (attendee.AccountId, attendee.Email);
-            initialsView.SetEmailAddress (attendee.AccountId, attendee.Email, initials, color);
+            var color = Util.ColorResourceForEmail (accountId, attendee.Email);
+            initialsView.SetEmailAddress (accountId, attendee.Email, initials, color);
             nameView.Text = attendee.DisplayName;
             emailView.Text = attendee.Email;
             return cell;

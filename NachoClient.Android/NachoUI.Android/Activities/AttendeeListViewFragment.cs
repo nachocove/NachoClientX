@@ -94,7 +94,7 @@ namespace NachoClient.AndroidClient
             var attendee = adapter [position];
             switch (index) {
             case EMAIL_SWIPE_TAG:
-                StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity, attendee.AccountId, attendee.Email));
+                StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity, accountId, attendee.Email));
                 break;
             case DIAL_SWIPE_TAG:
                 var contact = McContact.QueryByEmailAddress (accountId, attendee.Email).FirstOrDefault ();
