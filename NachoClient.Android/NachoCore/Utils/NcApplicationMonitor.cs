@@ -43,10 +43,12 @@ namespace NachoCore
         }
 
         DateTime? LastStatusIndDetectorReport;
+
         void DoStatusIndDetectorReport ()
         {
             if (!LastStatusIndDetectorReport.HasValue || LastStatusIndDetectorReport.Value.AddSeconds (5) < DateTime.UtcNow) {
-                Report (); // do a report on any execution context changes.
+                // do a report on any execution context changes.
+                NcTask.Run (() => Report (), "DoStatusIndDetectorReport");
                 LastStatusIndDetectorReport = DateTime.UtcNow;
             }
         }
