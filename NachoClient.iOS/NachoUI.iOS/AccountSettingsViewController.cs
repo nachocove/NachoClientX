@@ -391,6 +391,9 @@ namespace NachoClient.iOS
 
         void BackButton_Clicked (object sender, EventArgs e)
         {
+            if (account.Id == NcApplication.Instance.Account.Id) {
+                NcApplication.Instance.Account = McAccount.QueryById<McAccount> (account.Id);
+            }
             NavigationController.PopViewController (true);
         }
 
@@ -462,7 +465,7 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                NcActionSheet.Show (DaysToSyncBlock, this,
+                NcActionSheet.Show (ExpiredPasswordBlock, this,
                     new NcAlertAction ("Clear Notification", () => {
                         LoginHelpers.ClearPasswordExpiration (account.Id);
                         ExpiredPasswordBlock.SetLabel ("Password expiration cleared");

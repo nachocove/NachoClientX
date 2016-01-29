@@ -136,6 +136,7 @@ namespace NachoCore.Utils
                     new NcTimer ("StartNew workaround", TryAgain, action, 100, 0);
                     return;
                 }
+                Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
                 #endif
                 DateTime startTime = DateTime.UtcNow;
                 double latency = (startTime - spawnTime).TotalMilliseconds;

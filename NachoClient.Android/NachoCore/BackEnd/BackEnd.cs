@@ -932,7 +932,7 @@ namespace NachoCore
 
         public void SendEmailBodyFetchHint (int accountId, int emailMessageId)
         {
-            bool needInd = BodyFetchHints.Count (accountId) > 0;
+            bool needInd = BodyFetchHints.Count (accountId) == 0;
             Log.Info (Log.LOG_BACKEND, "SendEmailBodyFetchHint: {0} hints in queue", BodyFetchHints.Count (accountId));
             BodyFetchHints.AddHint (accountId, emailMessageId);
             if (needInd) {
@@ -940,7 +940,21 @@ namespace NachoCore
             }
         }
 
-
+        public void SendEmailBodyFetchHints (List<Tuple<int,int>> Ids)
+        {
+            HashSet<int> needInd = new HashSet<int> ();
+            foreach (var t in Ids) {
+                if (0 == BodyFetchHints.Count (t.Item1)) {
+                    needInd.Add (t.Item1);
+                }
+            }
+            foreach (var t in Ids) {
+                BodyFetchHints.AddHint (t.Item1, t.Item2);
+            }
+            foreach (var n in needInd) {
+                HintInd (n, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+            }
+        }
     }
 
     /// OAuth2 refresh has the following cases:

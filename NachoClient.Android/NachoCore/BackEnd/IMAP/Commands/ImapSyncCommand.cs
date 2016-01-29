@@ -177,7 +177,7 @@ namespace NachoCore.IMAP
                     } finally {
                         BEContext.Owner.BackendAbateStop ();
                         sw.Stop ();
-                        Log.Info (Log.LOG_IMAP, "{0}: Processing {1} took {2}ms ({3} per uid)", Synckit.Folder.ImapFolderNameRedacted (), syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds/syncInst.UidSet.Count);
+                        Log.Info (Log.LOG_IMAP, "{0}: Processing {1} took {2}ms ({3} per uid)", Synckit.Folder.ImapFolderNameRedacted (), syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds / syncInst.UidSet.Count);
                     }
                 }
             }
@@ -377,24 +377,24 @@ namespace NachoCore.IMAP
                         emailMessage.Insert ();
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
-                        NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                             var target = (McEmailMessage)record;
                             updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                             return true;
                         });
-                        if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
-                            // Another client has remotely read / unread this email.
-                            // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
-                            NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
-                        }
                     }
                 });
             }
 
             if (!emailMessage.IsIncomplete) {
                 // Extra work that needs to be done, but doesn't need to be in the same database transaction.
+                NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
+                if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
+                    // Another client has remotely read / unread this email.
+                    // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
+                    NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
+                }
             }
             created = justCreated;
             return emailMessage;
