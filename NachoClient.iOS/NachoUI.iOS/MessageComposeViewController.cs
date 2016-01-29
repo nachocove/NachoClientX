@@ -308,7 +308,7 @@ namespace NachoClient.iOS
                         new NcAlertAction (string.Format ("Actual size ({0})", Pretty.PrettyFileSize (Composer.MessageSize)), AcknowlegeSizeWarning),
                         new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
                 } else {
-                    NcAlertView.Show (this, "Large Message", string.Format ("This missage is {0}", Pretty.PrettyFileSize (Composer.MessageSize)),
+                    NcAlertView.Show (this, "Large Message", string.Format ("This message is {0}", Pretty.PrettyFileSize (Composer.MessageSize)),
                         new NcAlertAction ("Send Anyway", AcknowlegeSizeWarning),
                         new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
                 }
