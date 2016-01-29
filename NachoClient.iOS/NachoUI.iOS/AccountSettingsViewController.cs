@@ -391,6 +391,9 @@ namespace NachoClient.iOS
 
         void BackButton_Clicked (object sender, EventArgs e)
         {
+            if (account.Id == NcApplication.Instance.Account.Id) {
+                NcApplication.Instance.Account = McAccount.QueryById<McAccount> (account.Id);
+            }
             NavigationController.PopViewController (true);
         }
 
