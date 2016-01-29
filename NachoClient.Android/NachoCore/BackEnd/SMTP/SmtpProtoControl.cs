@@ -682,17 +682,18 @@ namespace NachoCore.SMTP
             }
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_BackEndStateChanged:
-                var senderState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailSender);
-                var readerState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
-                if (!ProtocolState.SmtpDiscoveryDone &&
-                    ((BackEndStateEnum.PostAutoDPreInboxSync == senderState && BackEndStateEnum.PostAutoDPreInboxSync == readerState) ||
-                    (BackEndStateEnum.PostAutoDPostInboxSync == senderState && BackEndStateEnum.PostAutoDPostInboxSync == readerState))) {
-                    var protocolState = ProtocolState;
-                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                        var target = (McProtocolState)record;
-                        target.SmtpDiscoveryDone = true;
-                        return true;
-                    });
+                if (!ProtocolState.SmtpDiscoveryDone) {
+                    var senderState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailSender);
+                    var readerState = BackEnd.Instance.BackEndState (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                    if ((BackEndStateEnum.PostAutoDPreInboxSync == senderState && BackEndStateEnum.PostAutoDPreInboxSync == readerState) ||
+                        (BackEndStateEnum.PostAutoDPostInboxSync == senderState && BackEndStateEnum.PostAutoDPostInboxSync == readerState)) {
+                        var protocolState = ProtocolState;
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.SmtpDiscoveryDone = true;
+                            return true;
+                        });
+                    }
                 }
                 break;
             }
