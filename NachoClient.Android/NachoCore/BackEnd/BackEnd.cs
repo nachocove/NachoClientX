@@ -935,7 +935,7 @@ namespace NachoCore
     }
 
     /// OAuth2 refresh has the following cases:
-    /// 1) Oauth2RefreshTimer callback find a credentials and initiates a refresh.
+    /// 1) Oauth2RefreshTimer callback find all oauth2 credentials and initiates a refresh.
     ///    It creates an entry in CredReqActive to keep track of the refresh. This
     ///    is also needed so that we know we're already working on it, should the controller
     ///    initiate a CredReq. If the timer-initiated refresh finishes without the controller
@@ -947,9 +947,13 @@ namespace NachoCore
     ///    runs and notices it needs to refresh the token (assuming it hasn't finished already),
     ///    it will not restart the refresh, and simply keep track.
     /// 
-    /// Failures:
-    /// 1) If the refresh fails and there was a CredReq, we send a CredReq up the line to the UI.
-    /// 2) If there was no CredReq, we simply try again, until KOauth2RefreshMaxFailure have been tried.
+    /// Alerting the UI:
+    /// We should only alert the UI (and thus the user) if we can absolutely not wait any longer.
+    /// We will retry refreshing the auth-token (using the refresh-token) until the auth-token times
+    /// out, and even then we'll retry a few more times.
+    /// 
+    /// FIXME: Be smarter about network conditions
+    /// FIXME: Be smarter about detecting when the server says the refresh-token is bad.
     /// 
     /// Success:
     /// 1) The refresh succeeds, and there was a CredReq: We need to send a CredResp. The CredResp 
@@ -957,11 +961,12 @@ namespace NachoCore
     /// 2) The refresh succeeds, and there was NO CredReq. We don't send a CredResp, and thus
     ///    need to delete the CredReqActive entry ourselves.
     /// 
-    /// TODO: We currently don't handle the case where the refreshtoken is invalidated somehow. Tokens
-    /// for google are valid forever (Other services may limit this to 2 weeks). The refresh token
-    /// can also be invalidated by the user. Currently we retry KOauth2RefreshMaxFailure times, but
-    /// we can do better if we catch an invalid refresh token in the McCred.RefreshOAuth2() and
-    /// immediately punt up the UI.
+    /// <remarks>
+    /// refresh-tokens for google are valid forever (Other services may limit this to 2 weeks). The 
+    /// refresh token can also be invalidated by the user. Currently we retry KOauth2RefreshMaxFailure
+    /// times, but we can do better if we catch an invalid refresh token in the McCred.RefreshOAuth2()
+    /// and immediately punt up the UI.
+    /// </remarks>
     public class Oauth2Refresh
     {
         /// <summary>
@@ -988,6 +993,12 @@ namespace NachoCore
         /// Number of retries after which we call the attempts failed, and tell the UI
         /// to ask the user to log in anew. Not saved in the DB.
         /// </summary>
+        /// <remarks>
+        /// NOTE: The retries are only counted as failures AFTER the auth-token has expired.
+        /// This means we'll retry as long and as much as necessary while the auth-token is
+        /// still valid. There's no need to alert the UI (and thus the user) until we run out
+        /// of options to refresh the auth-token.
+        /// </remarks>
         public const uint KOauth2RefreshMaxFailure = 5;
 
         protected static object lockObj = new object ();
