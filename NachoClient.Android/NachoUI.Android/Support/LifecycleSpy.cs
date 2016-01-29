@@ -67,13 +67,15 @@ namespace NachoClient.AndroidClient
             lock (BackgroundTimerLock) {
                 if (null == GoToBackgroundTimer) {
                     GoToBackgroundTimer = new NcTimer ("LifecycleSpy:GoToBackgroundTimer", (state) => {
-                        Log.Info (Log.LOG_LIFECYCLE, "LifecycleSpy:GoToBackgroundTimer called.");
-                        GoToBackgroundTimer.Dispose ();
-                        GoToBackgroundTimer = null;
-                        isForeground = false;
-                        NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
-                        McMutables.Set (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", DateTime.UtcNow.ToString ());
-                        Log.Info (Log.LOG_LIFECYCLE, "LifecycleSpy:GoToBackgroundTimer exited.");
+                        lock (BackgroundTimerLock) {
+                            Log.Info (Log.LOG_LIFECYCLE, "LifecycleSpy:GoToBackgroundTimer called.");
+                            GoToBackgroundTimer.Dispose ();
+                            GoToBackgroundTimer = null;
+                            isForeground = false;
+                            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
+                            McMutables.Set (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", DateTime.UtcNow.ToString ());
+                            Log.Info (Log.LOG_LIFECYCLE, "LifecycleSpy:GoToBackgroundTimer exited.");
+                        }
                     }, null, new TimeSpan (0, 0, 5), TimeSpan.Zero);
                 }
             }
