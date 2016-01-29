@@ -189,7 +189,7 @@ namespace NachoClient.AndroidClient
                     switch (index) {
                     case LATE_TAG:
                         if (null != cal) {
-                            var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Re: " + cal.GetSubject ());
+                            var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.DefaultEmailAccount, "Re: " + cal.GetSubject ());
                             outgoingMessage.To = cal.OrganizerEmail;
                             StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, outgoingMessage, "Running late."));
                         }
@@ -197,7 +197,7 @@ namespace NachoClient.AndroidClient
                     case FORWARD_TAG:
                         if (null != cal) {
                             StartActivity (MessageComposeActivity.ForwardCalendarIntent (
-                                this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + cal.GetSubject ())));
+                                this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.DefaultEmailAccount, "Fwd: " + cal.GetSubject ())));
                         }
                         break;
                     default:
