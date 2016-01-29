@@ -55,6 +55,13 @@ namespace NachoCore.Model
         // General-use. The epoch of the Credentials.
         public int Epoch { get; set; }
 
+        [SQLite.Ignore]
+        public bool IsExpired {
+            get {
+                return Expiry <= DateTime.UtcNow;
+            }
+        }
+
         public McCred ()
         {
             Expiry = DateTime.MaxValue;
