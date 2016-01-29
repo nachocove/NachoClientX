@@ -121,7 +121,7 @@ namespace NachoCore
             if ((0 < InsertCount) || (0 < UpdateCount) || (0 < RemovedCount)) {
                 NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_ContactSetChanged);
             }
-            Log.Info (Log.LOG_SYS, "NcDeviceContacts: {0} inserted, {1} updated, {2} deleted (cleaning up {2} dead links.)", InsertCount, UpdateCount, RemovedCount, PresentCount);
+            Log.Info (Log.LOG_SYS, "NcDeviceContacts: {0} inserted, {1} updated, {2} deleted (cleaning up {3} dead links.)", InsertCount, UpdateCount, RemovedCount, PresentCount);
         }
     }
 }
