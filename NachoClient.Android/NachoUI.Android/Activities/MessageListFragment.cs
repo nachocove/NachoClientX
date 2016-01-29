@@ -728,7 +728,17 @@ namespace NachoClient.AndroidClient
         public void ShowFolderChooser (McEmailMessageThread messageThread)
         {
             Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
-            var folderFragment = ChooseFolderFragment.newInstance (messageThread.FirstMessage ().AccountId, messageThread);
+            var messageList = GetSelectedMessages ();
+            HashSet<int> accountIds = new HashSet<int> ();
+            foreach (var message in messageList) {
+                accountIds.Add (message.AccountId);
+            }
+            if (1 != accountIds.Count) {
+                NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "You cannot multi-file from different accounts");
+                return;
+            }
+            var accountId = accountIds.First ();
+            var folderFragment = ChooseFolderFragment.newInstance (accountId, messageThread);
             folderFragment.SetOnFolderSelected (OnFolderSelected);
             folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }
