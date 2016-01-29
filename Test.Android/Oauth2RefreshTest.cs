@@ -5,44 +5,57 @@ using NUnit.Framework;
 using NachoCore;
 using NachoCore.Model;
 using System.Threading;
-using SQLite;
 
 namespace Test.iOS
 {
     public class Oauth2RefreshTest : INcProtoControlOwner
     {
-        public Oauth2RefreshTest ()
+        class TestOauthRefresh : Oauth2Refresh
         {
-        }
-
-        class OauthRefreshMockBE : BackEnd
-        {
-            public OauthRefreshMockBE () : base ()
+            public TestOauthRefresh () : base ()
             {
-                Oauth2RefreshCancelSource = new CancellationTokenSource ();
+                Be.CredReqActive.Clear ();
+                Be.Oauth2RefreshInstance = this;
             }
 
             public bool TokenRefreshSuccessCalled { get; set; }
+
             public bool TokenRefreshFailureCalled { get; set; }
-            public bool RefreshMcCredCalled { get; set; }
+
+            public bool TokenRefreshFailureWasFatal { get; set; }
+
+            public bool RefreshOauth2Called { get; set; }
+
             public bool CredRespCalled { get; set; }
 
-            public void Reset ()
+            public bool alertUiCalled { get; set; }
+
+            public string alertUiCalledFrom { get; set; }
+
+            public bool ChangeOauthRefreshTimerCalled { get; set; }
+
+            public void ResetTest ()
             {
                 TokenRefreshSuccessCalled = false;
                 TokenRefreshFailureCalled = false;
-                RefreshMcCredCalled = false;
+                RefreshOauth2Called = false;
+                alertUiCalled = false;
+                alertUiCalledFrom = null;
                 CredRespCalled = false;
+                ChangeOauthRefreshTimerCalled = false;
             }
 
-            protected override void alertUi (int accountId)
+            protected override void alertUi (int accountId, string message)
             {
+                alertUiCalled = true;
+                alertUiCalledFrom = message;
             }
 
-            protected override void TokenRefreshFailure (McCred cred)
+            protected override void TokenRefreshFailure (McCred cred, bool fatalError)
             {
                 TokenRefreshFailureCalled = true;
-                base.TokenRefreshFailure (cred);
+                TokenRefreshFailureWasFatal = fatalError;
+                base.TokenRefreshFailure (cred, fatalError);
             }
 
             protected override void TokenRefreshSuccess (McCred cred)
@@ -51,32 +64,34 @@ namespace Test.iOS
                 base.TokenRefreshSuccess (cred);
             }
 
-            protected override void ResetOauthRefreshTimer ()
+            protected override void RefreshOauth2 (McCred cred)
             {
+                RefreshOauth2Called = true;
             }
 
-            protected override void ChangeOauthRefreshTimer (long nextUpdate)
+            public void CallCredReq (NcProtoControl sender)
             {
+                Be.CredReq (sender);
             }
 
-            protected override void RefreshMcCred (McCred cred)
+            protected override void CredResp (int accountId)
             {
-                RefreshMcCredCalled = true;
+                CredRespCalled = true;
+                lock (Be.CredReqActive) {
+                    Be.CredReqActive.Remove (accountId);
+                }
+            }
+
+            protected override void Reset ()
+            {
             }
 
             public void FinishRequest (McCred cred, bool success)
             {
                 if (!success) {
-                    TokenRefreshFailure (cred);
+                    TokenRefreshFailure (cred, false);
                 } else {
                     TokenRefreshSuccess (cred);
-                }
-            }
-            public override void CredResp (int accountId)
-            {
-                CredRespCalled = true;
-                lock (CredReqActive) {
-                    CredReqActive.Remove (accountId);
                 }
             }
 
@@ -87,44 +102,49 @@ namespace Test.iOS
 
             public bool RefreshStarted (int accountId)
             {
-                return CredReqActive.ContainsKey (accountId);
+                CredReqActiveState.CredReqActiveStatus status;
+                return Be.CredReqActive.TryGetStatus (accountId, out status);
             }
 
-            public BackEnd.CredReqActiveState GetReqActiveState (int accountId)
+            public CredReqActiveState.State GetReqActiveState (int accountId)
             {
-                CredReqActiveStatus status;
-                Assert.True (CredReqActive.TryGetValue (accountId, out status));
+                CredReqActiveState.CredReqActiveStatus status;
+                Assert.True (Be.CredReqActive.TryGetStatus (accountId, out status));
                 return status.State;
             }
 
             public uint GetReqActiveRefreshRetries (int accountId)
             {
-                CredReqActiveStatus status;
-                Assert.True (CredReqActive.TryGetValue (accountId, out status));
-                return status.RefreshRetries;
+                CredReqActiveState.CredReqActiveStatus status;
+                Assert.True (Be.CredReqActive.TryGetStatus (accountId, out status));
+                return status.PostExpiryRefreshRetries;
             }
 
             public bool GetReqStatusNeedCredResp (int accountId)
             {
-                CredReqActiveStatus status;
-                Assert.True (CredReqActive.TryGetValue (accountId, out status));
+                CredReqActiveState.CredReqActiveStatus status;
+                Assert.True (Be.CredReqActive.TryGetStatus (accountId, out status));
                 return status.NeedCredResp;
             }
 
             public bool HaveCredReqActive (int accountId)
             {
-                return CredReqActive.ContainsKey (accountId);
+                CredReqActiveState.CredReqActiveStatus status;
+                return Be.CredReqActive.TryGetStatus (accountId, out status);
             }
 
-            public bool NeedToPassUp (int accountId)
+            protected override void ChangeOauthRefreshTimer (int nextUpdate)
             {
-                return NeedToPassReqToUi (accountId);
+                ChangeOauthRefreshTimerCalled = true;
             }
         }
 
         #region INcProtoControlOwner implementation
+
         public McAccount Account { get; set; }
+
         public McCred Cred { get; set; }
+
         NcProtoControl ProtoControl { get; set; }
 
         public void StatusInd (NcProtoControl sender, NachoCore.Utils.NcResult status)
@@ -176,24 +196,18 @@ namespace Test.iOS
         #endregion
 
         uint expirySecs = 1;
-        OauthRefreshMockBE MockBe { get; set; }
+
+        TestOauthRefresh MockRefresh { get; set; }
 
         [SetUp]
         public void Setup ()
         {
-            Account = new McAccount () {
-            };
+            Account = new McAccount ();
             Account.Insert ();
-            Cred = new McCred () {
-                AccountId = Account.Id,
-                CredType = McCred.CredTypeEnum.OAuth2,
-                ExpirySecs = expirySecs,
-                Expiry = DateTime.UtcNow.AddSeconds (expirySecs),
-            };
-            Cred.Insert ();
             ProtoControl = new NcProtoControl (this, Account.Id);
-            MockBe = new OauthRefreshMockBE ();
-            MockBe.Reset ();
+
+            MockRefresh = new TestOauthRefresh ();
+            MockRefresh.ResetTest ();
         }
 
         [TearDown]
@@ -203,43 +217,94 @@ namespace Test.iOS
             NcModel.Instance.Db.DeleteAll<McCred> ();
         }
 
+        McCred MakeOauth2Credential ()
+        {
+            var cred = new McCred () {
+                AccountId = Account.Id,
+                CredType = McCred.CredTypeEnum.OAuth2,
+                ExpirySecs = expirySecs,
+                Expiry = DateTime.UtcNow.AddSeconds (expirySecs),
+            };
+            cred.Insert ();
+            return cred;
+        }
+
+        McCred MakePasswordCredential ()
+        {
+            var cred = new McCred () {
+                AccountId = Account.Id,
+                CredType = McCred.CredTypeEnum.Password,
+            };
+            cred.Insert ();
+            return cred;
+        }
+
         [Test]
         public void TestPasswordNoOauth ()
         {
-            var cred = Cred;
-            cred = cred.UpdateWithOCApply<McCred> ((record) => {
-                var target = (McCred)record;
-                target.CredType = McCred.CredTypeEnum.Password;
-                return true;
-            });
+            Cred = MakePasswordCredential ();
             Assert.AreEqual (McCred.CredTypeEnum.Password, Cred.CredType);
-            MockBe.CredReq (ProtoControl);
-            Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
-            Assert.False (MockBe.RefreshMcCredCalled);
-            Assert.IsTrue (MockBe.GetReqStatusNeedCredResp(Account.Id));
-            // finish the request
-            MockBe.FinishRequest (Cred, false);
-            Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
-            Assert.IsTrue (MockBe.TokenRefreshFailureCalled);
-            Assert.IsFalse (MockBe.CredRespCalled);
-            Assert.IsTrue (MockBe.NeedToPassUp (Account.Id));
+            MockRefresh.CallCredReq (ProtoControl);
+            Assert.IsTrue (MockRefresh.HaveCredReqActive (Account.Id));
+            Assert.False (MockRefresh.RefreshOauth2Called);
+            Assert.IsTrue (MockRefresh.GetReqStatusNeedCredResp (Account.Id));
+            Assert.AreEqual ("NotCanRefresh", MockRefresh.alertUiCalledFrom);
         }
 
         [Test]
         public void TestCredReqRefreshFail ()
         {
-            MockBe.CredReq (ProtoControl);
-            Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
-            Assert.IsTrue (MockBe.RefreshMcCredCalled);
-            Assert.IsTrue (MockBe.GetReqStatusNeedCredResp(Account.Id));
-            Assert.AreEqual (BackEnd.CredReqActiveState.CredReqActive_AwaitingRefresh, MockBe.GetReqActiveState (Account.Id));
-            // finish the request
-            MockBe.FinishRequest (Cred, false);
-            Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
-            Assert.IsTrue (MockBe.TokenRefreshFailureCalled);
-            Assert.IsFalse (MockBe.CredRespCalled);
-            Assert.IsTrue (MockBe.NeedToPassUp (Account.Id));
-            Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
+            Cred = MakeOauth2Credential ();
+
+            bool credReqCalled = false;
+            // loop until we decide to pass the request up to the UI, which happens
+            // after KOauth2RefreshMaxFailure iterations.
+            for (var i = 0; i <= TestOauthRefresh.KOauth2RefreshMaxFailure; i++) {
+                if (i == 0) {
+                    Assert.IsTrue (WaitForTimerRefresh (Account.Id));
+                } else {
+                    MockRefresh.TestRefreshAllTokens ();
+                }
+                if (i == 1) {
+                    // ProtoController has also noticed the cred is bad. It calls CredReq.
+                    MockRefresh.CallCredReq (ProtoControl);
+                    credReqCalled = true;
+                    // since we haven't yet exhausted the retries, UI should not be alerted.
+                    Assert.IsFalse (MockRefresh.alertUiCalled);
+                }
+                Assert.IsTrue (MockRefresh.HaveCredReqActive (Account.Id));
+                Assert.AreEqual (credReqCalled, MockRefresh.GetReqStatusNeedCredResp (Account.Id));
+                Assert.IsFalse (MockRefresh.TokenRefreshSuccessCalled);
+                Assert.IsFalse (MockRefresh.TokenRefreshFailureCalled);
+                if (i >= TestOauthRefresh.KOauth2RefreshMaxFailure) {
+                    Assert.IsFalse (MockRefresh.RefreshOauth2Called);
+                    Assert.AreEqual (CredReqActiveState.State.NeedUI, MockRefresh.GetReqActiveState (Account.Id));
+                } else {
+                    Assert.IsTrue (MockRefresh.RefreshOauth2Called);
+                    Assert.AreEqual (CredReqActiveState.State.AwaitingRefresh, MockRefresh.GetReqActiveState (Account.Id));
+                }
+
+                MockRefresh.ResetTest ();
+
+                MockRefresh.FinishRequest (Cred, false);
+                Assert.IsFalse (MockRefresh.TokenRefreshSuccessCalled);
+                Assert.IsTrue (MockRefresh.TokenRefreshFailureCalled);
+                var failedRetries = MockRefresh.GetReqActiveRefreshRetries (Account.Id);
+                Assert.AreEqual (i + 1, failedRetries);
+                Assert.IsFalse (MockRefresh.CredRespCalled);
+
+                if (failedRetries >= TestOauthRefresh.KOauth2RefreshMaxFailure) {
+                    Assert.IsTrue (MockRefresh.alertUiCalled);
+                    Assert.AreEqual ("TokenRefreshFailure1", MockRefresh.alertUiCalledFrom);
+                } else {
+                    Assert.IsFalse (MockRefresh.alertUiCalled);
+                }
+                MockRefresh.ResetTest ();
+            }
+
+            // After we've passed the request up, refreshToken should no longer be called.
+            MockRefresh.TestRefreshAllTokens ();
+            Assert.IsFalse (MockRefresh.RefreshOauth2Called);
         }
 
         private bool WaitForTimerRefresh (int accountId)
@@ -248,117 +313,130 @@ namespace Test.iOS
             // Should be pretty quick, since the credential expiry is set to 1 second
             // (see expirySecs).
             for (var i = 0; i < 6; i++) {
-                MockBe.TestRefreshAllTokens ();
-                if (MockBe.RefreshStarted (accountId)) {
+                MockRefresh.TestRefreshAllTokens ();
+                if (MockRefresh.RefreshStarted (accountId)) {
                     break;
                 }
                 Thread.Sleep (500); // 500 milliseconds
             }
-            return MockBe.RefreshStarted (accountId);
+            return MockRefresh.RefreshStarted (accountId);
         }
 
         [Test]
         public void TestNoCredReqRefreshFail ()
         {
+            Cred = MakeOauth2Credential ();
+
             // loop until we decide to pass the request up to the UI, which happens
             // after KOauth2RefreshMaxFailure iterations.
-            for (var i = 0; i <= BackEnd.KOauth2RefreshMaxFailure; i++) {
+            for (var i = 0; i <= TestOauthRefresh.KOauth2RefreshMaxFailure; i++) {
                 if (i == 0) {
                     Assert.IsTrue (WaitForTimerRefresh (Account.Id));
                 } else {
-                    MockBe.TestRefreshAllTokens ();
+                    MockRefresh.TestRefreshAllTokens ();
                 }
-                Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
-                Assert.IsFalse (MockBe.GetReqStatusNeedCredResp(Account.Id));
-                Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
-                Assert.IsFalse (MockBe.TokenRefreshFailureCalled);
-                if (i >= BackEnd.KOauth2RefreshMaxFailure) {
-                    Assert.IsFalse (MockBe.RefreshMcCredCalled);
-                    Assert.AreEqual (BackEnd.CredReqActiveState.CredReqActive_NeedUI, MockBe.GetReqActiveState (Account.Id));
+                Assert.IsTrue (MockRefresh.HaveCredReqActive (Account.Id));
+                Assert.IsFalse (MockRefresh.GetReqStatusNeedCredResp (Account.Id));
+                Assert.IsFalse (MockRefresh.TokenRefreshSuccessCalled);
+                Assert.IsFalse (MockRefresh.TokenRefreshFailureCalled);
+                if (i >= TestOauthRefresh.KOauth2RefreshMaxFailure) {
+                    Assert.IsFalse (MockRefresh.RefreshOauth2Called);
+                    Assert.AreEqual (CredReqActiveState.State.NeedUI, MockRefresh.GetReqActiveState (Account.Id));
                 } else {
-                    Assert.IsTrue (MockBe.RefreshMcCredCalled);
-                    Assert.AreEqual (BackEnd.CredReqActiveState.CredReqActive_AwaitingRefresh, MockBe.GetReqActiveState (Account.Id));
+                    Assert.IsTrue (MockRefresh.RefreshOauth2Called);
+                    Assert.AreEqual (CredReqActiveState.State.AwaitingRefresh, MockRefresh.GetReqActiveState (Account.Id));
                 }
 
-                MockBe.Reset ();
+                MockRefresh.ResetTest ();
 
-                MockBe.FinishRequest (Cred, false);
-                Assert.IsFalse (MockBe.TokenRefreshSuccessCalled);
-                Assert.IsTrue (MockBe.TokenRefreshFailureCalled);
-                var failedRetries = MockBe.GetReqActiveRefreshRetries (Account.Id);
-                Assert.AreEqual (i+1, failedRetries);
-                Assert.IsFalse (MockBe.CredRespCalled);
+                MockRefresh.FinishRequest (Cred, false);
+                Assert.IsFalse (MockRefresh.TokenRefreshSuccessCalled);
+                Assert.IsTrue (MockRefresh.TokenRefreshFailureCalled);
+                var failedRetries = MockRefresh.GetReqActiveRefreshRetries (Account.Id);
+                Assert.AreEqual (i + 1, failedRetries);
+                Assert.IsFalse (MockRefresh.CredRespCalled);
 
-                if (failedRetries >= BackEnd.KOauth2RefreshMaxFailure) {
-                    Assert.IsTrue (MockBe.NeedToPassUp (Account.Id));
+                if (failedRetries >= TestOauthRefresh.KOauth2RefreshMaxFailure) {
+                    Assert.IsTrue (MockRefresh.alertUiCalled);
+                    Assert.AreEqual ("TokenRefreshFailure1", MockRefresh.alertUiCalledFrom);
                 } else {
-                    Assert.IsFalse (MockBe.NeedToPassUp (Account.Id));
+                    Assert.IsFalse (MockRefresh.alertUiCalled);
                 }
-                MockBe.Reset ();
+                MockRefresh.ResetTest ();
             }
 
             // After we've passed the request up, refreshToken should no longer be called.
-            MockBe.TestRefreshAllTokens ();
-            Assert.IsFalse (MockBe.RefreshMcCredCalled);
-            Assert.IsTrue (MockBe.NeedToPassUp (Account.Id));
+            MockRefresh.TestRefreshAllTokens ();
+            Assert.IsFalse (MockRefresh.RefreshOauth2Called);
         }
 
         [Test]
         public void TestNoCredReqRefreshSuccess ()
         {
+            Cred = MakeOauth2Credential ();
+
             Assert.IsTrue (WaitForTimerRefresh (Account.Id));
-            Assert.IsTrue (MockBe.RefreshMcCredCalled);
-            Assert.IsTrue (MockBe.HaveCredReqActive (Account.Id));
-            Assert.IsFalse (MockBe.GetReqStatusNeedCredResp (Account.Id));
+            Assert.IsTrue (MockRefresh.RefreshOauth2Called);
+            Assert.IsTrue (MockRefresh.HaveCredReqActive (Account.Id));
+            Assert.IsFalse (MockRefresh.GetReqStatusNeedCredResp (Account.Id));
+            Assert.IsFalse (MockRefresh.alertUiCalled);
 
             // finish the request
-            MockBe.FinishRequest (Cred, true);
-            Assert.IsTrue (MockBe.TokenRefreshSuccessCalled);
-            Assert.IsFalse (MockBe.CredRespCalled);
-            Assert.IsFalse (MockBe.HaveCredReqActive(Account.Id));
+            MockRefresh.FinishRequest (Cred, true);
+            Assert.IsTrue (MockRefresh.TokenRefreshSuccessCalled);
+            Assert.IsFalse (MockRefresh.CredRespCalled);
+            Assert.IsFalse (MockRefresh.HaveCredReqActive (Account.Id));
         }
 
         [Test]
         public void TestMultipleCredReq ()
         {
-            MockBe.CredReq (ProtoControl);
-            Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
-            Assert.IsTrue (MockBe.RefreshMcCredCalled);
-            Assert.IsTrue (MockBe.GetReqStatusNeedCredResp(Account.Id));
-            MockBe.Reset ();
+            Cred = MakeOauth2Credential ();
+
+            MockRefresh.CallCredReq (ProtoControl);
+            Assert.IsTrue (MockRefresh.HaveCredReqActive (Account.Id));
+            Assert.AreEqual (CredReqActiveState.State.AwaitingRefresh, MockRefresh.GetReqActiveState (Account.Id));
+            Assert.IsTrue (MockRefresh.RefreshOauth2Called);
+            Assert.IsTrue (MockRefresh.GetReqStatusNeedCredResp (Account.Id));
+            Assert.IsFalse (MockRefresh.alertUiCalled);
+            MockRefresh.ResetTest ();
 
             // Subsequent CredReq gets ignored.
-            MockBe.CredReq (ProtoControl);
-            Assert.IsFalse (MockBe.RefreshMcCredCalled);
-            Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
-            Assert.IsTrue (MockBe.GetReqStatusNeedCredResp(Account.Id));
+            MockRefresh.CallCredReq (ProtoControl);
+            Assert.IsFalse (MockRefresh.RefreshOauth2Called);
+            Assert.IsTrue (MockRefresh.HaveCredReqActive (Account.Id));
+            Assert.IsTrue (MockRefresh.GetReqStatusNeedCredResp (Account.Id));
 
             // finish the request
-            MockBe.FinishRequest (Cred, true);
-            Assert.IsTrue (MockBe.TokenRefreshSuccessCalled);
-            Assert.IsTrue (MockBe.CredRespCalled);
-            Assert.IsFalse (MockBe.HaveCredReqActive(Account.Id));
+            MockRefresh.FinishRequest (Cred, true);
+            Assert.IsTrue (MockRefresh.TokenRefreshSuccessCalled);
+            Assert.IsTrue (MockRefresh.CredRespCalled);
+            Assert.IsFalse (MockRefresh.HaveCredReqActive (Account.Id));
+            Assert.IsFalse (MockRefresh.alertUiCalled);
         }
 
         [Test]
         public void TestTimerAndCredReq ()
         {
-            Assert.IsTrue (WaitForTimerRefresh (Account.Id));
-            Assert.IsTrue (MockBe.RefreshMcCredCalled);
-            Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
-            Assert.IsFalse (MockBe.GetReqStatusNeedCredResp(Account.Id));
+            Cred = MakeOauth2Credential ();
 
-            MockBe.Reset ();
-            MockBe.CredReq (ProtoControl);
-            Assert.IsFalse (MockBe.RefreshMcCredCalled);
-            Assert.IsTrue (MockBe.HaveCredReqActive(Account.Id));
-            Assert.IsTrue (MockBe.GetReqStatusNeedCredResp(Account.Id));
+            Assert.IsTrue (WaitForTimerRefresh (Account.Id));
+            Assert.IsTrue (MockRefresh.RefreshOauth2Called);
+            Assert.IsTrue (MockRefresh.HaveCredReqActive (Account.Id));
+            Assert.IsFalse (MockRefresh.GetReqStatusNeedCredResp (Account.Id));
+
+            MockRefresh.ResetTest ();
+            MockRefresh.CallCredReq (ProtoControl);
+            Assert.IsFalse (MockRefresh.RefreshOauth2Called);
+            Assert.IsTrue (MockRefresh.HaveCredReqActive (Account.Id));
+            Assert.IsTrue (MockRefresh.GetReqStatusNeedCredResp (Account.Id));
 
             // finish the request
-            MockBe.FinishRequest (Cred, true);
-            Assert.IsTrue (MockBe.TokenRefreshSuccessCalled);
-            Assert.IsTrue (MockBe.CredRespCalled);
-            Assert.IsFalse (MockBe.HaveCredReqActive(Account.Id));
+            MockRefresh.FinishRequest (Cred, true);
+            Assert.IsTrue (MockRefresh.TokenRefreshSuccessCalled);
+            Assert.IsTrue (MockRefresh.CredRespCalled);
+            Assert.IsFalse (MockRefresh.HaveCredReqActive (Account.Id));
+            Assert.IsFalse (MockRefresh.alertUiCalled);
         }
     }
 }

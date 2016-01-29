@@ -55,6 +55,13 @@ namespace NachoCore.Model
         // General-use. The epoch of the Credentials.
         public int Epoch { get; set; }
 
+        [SQLite.Ignore]
+        public bool IsExpired {
+            get {
+                return Expiry <= DateTime.UtcNow;
+            }
+        }
+
         public McCred ()
         {
             Expiry = DateTime.MaxValue;
@@ -224,7 +231,9 @@ namespace NachoCore.Model
             }
         }
 
-        public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
+        const int KRefreshOauth2TimeoutSecs = 30;
+
+        public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred, bool> onFailure, CancellationToken Token)
         {
             var account = McAccount.QueryById<McAccount> (AccountId);
             switch (account.AccountService) {
@@ -235,12 +244,23 @@ namespace NachoCore.Model
                             "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
                 var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
                 var request = new NcHttpRequest (HttpMethod.Post, requestUri);
-                int timeoutSecs = 30;
 
-                HttpClient.SendRequest (request, timeoutSecs, ((response, token) => {
+                HttpClient.SendRequest (request, KRefreshOauth2TimeoutSecs, ((response, token) => {
                     if (response.StatusCode != System.Net.HttpStatusCode.OK) {
-                        Log.Error (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", response.StatusCode.ToString ());
-                        onFailure (this);
+                        bool fatalError = false;
+                        switch (response.StatusCode) {
+                        case System.Net.HttpStatusCode.BadRequest:
+                            // This probably means the refresh token is no longer valid. We don't immediately punch
+                            // up to the UI, because we really don't fully trust HTTP response code. Treat it as 'fatal',
+                            // and let the underlying code decide what to do with fatal responses.
+                            Log.Info (Log.LOG_SYS, "OAUTH2 Refresh Status {0}", response.StatusCode.ToString ());
+                            fatalError = true;
+                            break;
+                        default:
+                            Log.Warn (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", response.StatusCode.ToString ());
+                            break;
+                        }
+                        onFailure (this, fatalError);
                         return;
                     }
                     var jsonResponse = response.GetContent ();
@@ -250,7 +270,7 @@ namespace NachoCore.Model
                     }
                     if (null == decodedResponse.access_token || null == decodedResponse.expires_in) {
                         Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token {0} or expires_in {1}", decodedResponse.access_token, decodedResponse.expires_in);
-                        onFailure (this);
+                        onFailure (this, true);
                     }
                     Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", decodedResponse.expires_in);
                     // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
@@ -259,8 +279,10 @@ namespace NachoCore.Model
                         uint.Parse (decodedResponse.expires_in));
                     onSuccess (this);
                 }), ((ex, token) => {
+                    // This usually indicates a network connectivity issue. Any response
+                    // (even non-200 responses) go through the success path.
                     Log.Error (Log.LOG_SYS, "OAUTH2 Exception {0}", ex.ToString ());
-                    onFailure (this);
+                    onFailure (this, false);
                 }), Token);
                 break;
 

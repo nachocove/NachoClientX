@@ -129,12 +129,13 @@ namespace NachoCore.IMAP
                 serverFailedGenerally = true;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_IMAP, "AuthenticationException: {0}", ex.Message);
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 if (!HasPasswordChanged ()) {
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.AccessDeniedOrBlocked);
                 } else {
                     // credential was updated while we were running the command. Just try again.
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTH1TEMP");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 }
             } catch (ServiceNotAuthenticatedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
