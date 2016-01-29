@@ -787,7 +787,7 @@ namespace NachoCore
         {
             var states = new List<Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum>> ();
             ApplyAcrossServices (accountId, McAccount.AccountCapabilityEnum.All, "BackEndStates", (service) => {
-                states.Add (new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (service.BackEndState, service.Capabilities));
+                states.Add (new Tuple<BackEndStateEnum, McAccount.AccountCapabilityEnum> (BackEndStateInternal(service), service.Capabilities));
                 return NcResult.OK ();
             }, false);
             return states;
@@ -802,23 +802,32 @@ namespace NachoCore
                 return BackEndStateEnum.NotYetStarted;
             }
 
-            var result = ApplyToService (accountId, capabilities, (service) => {
-                BackEndStateEnum state = service.BackEndState;
+            var result = ApplyToService (accountId, capabilities, (service) => NcResult.OK (BackEndStateInternal (service)));
+            return result.isOK () ? result.GetValue<BackEndStateEnum> () : BackEndStateEnum.NotYetStarted;
+        }
+
+        BackEndStateEnum BackEndStateInternal (NcProtoControl service)
+        {
+            BackEndStateEnum state;
+            CredReqActiveState.CredReqActiveStatus status;
+            if (CredReqActive.TryGetStatus (service.AccountId, out status) && CredReqActiveState.State.NeedUI == status.State) {
+                // don't bother asking the protoControl. It may not even have noticed yet.
+                Log.Info (Log.LOG_BACKEND, "BackEndState({0}:{1}): Oauth2 refresh failed. Telling UI.", service.GetType ().Name, service.AccountId);
+                state = BackEndStateEnum.CredWait;
+            } else {
+                state = service.BackEndState;
                 if (BackEndStateEnum.CredWait == state) {
-                    // HACK HACK: Lie to the UI, if we're in CredWait, but we're waiting for an OAUTH2 refresh.
-                    CredReqActiveState.CredReqActiveStatus status;
-                    if (CredReqActive.TryGetStatus (accountId, out status)) {
-                        if (CredReqActiveState.State.AwaitingRefresh == status.State) {
-                            Log.Info (Log.LOG_BACKEND, "BackEndState({0}): Waiting for oauth2 refresh. telling UI we're fine.", accountId);
-                            state = (service.ProtocolState.HasSyncedInbox) ? 
-                                BackEndStateEnum.PostAutoDPostInboxSync : 
-                                BackEndStateEnum.PostAutoDPreInboxSync;
-                        }
+                    // check if we have any active credreq's in the queue already.
+                    if (null != status && CredReqActiveState.State.AwaitingRefresh == status.State) {
+                        // lie to the UI. The protoController hasn't noticed yet and we're still retrying.
+                        Log.Info (Log.LOG_BACKEND, "BackEndState({0}:{1}): Waiting for oauth2 refresh. telling UI we're fine.", service.GetType ().Name, service.AccountId);
+                        state = (service.ProtocolState.HasSyncedInbox) ? 
+                            BackEndStateEnum.PostAutoDPostInboxSync : 
+                            BackEndStateEnum.PostAutoDPreInboxSync;
                     }
                 }
-                return NcResult.OK (state);
-            });
-            return result.isOK () ? result.GetValue<BackEndStateEnum> () : BackEndStateEnum.NotYetStarted;
+            }
+            return state;
         }
 
         public AutoDFailureReasonEnum AutoDFailureReason (int accountId, McAccount.AccountCapabilityEnum capabilities)
@@ -1064,7 +1073,7 @@ namespace NachoCore
             }
         }
 
-        void Reset ()
+        protected virtual void Reset ()
         {
             Stop (false);
             Start ();
@@ -1121,7 +1130,7 @@ namespace NachoCore
                 if (Be.CredReqActive.TryGetStatus (cred.AccountId, out status) ||
                     cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
                     if (null != status && status.State == CredReqActiveState.State.NeedUI) {
-                        Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token already needs UI. ", cred.AccountId);
+                        Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token already needs UI. BackEndStates={1}", cred.AccountId, string.Join (",", Be.BackEndStates (cred.AccountId)));
                         // We've decided to give up on this one
                         continue;
                     }
@@ -1147,6 +1156,7 @@ namespace NachoCore
                 })) {
                     Log.Error (Log.LOG_BACKEND, "Expecting a CredReqActiveState, but none found.");
                 }
+                Log.Info (Log.LOG_BACKEND, "RefreshCredential({0}): Sending indication to UI about CredReq.", cred.AccountId);
                 alertUi (cred.AccountId, "NotCanRefresh");
                 return;
             }
@@ -1215,7 +1225,7 @@ namespace NachoCore
             }
             if (isExpired || fatalError) {
                 // accelerate the update a bit, by restarting the timer.
-                ChangeOauthRefreshTimer (KOauth2RefreshDelaySecs*2);
+                ChangeOauthRefreshTimer (KOauth2RefreshDelaySecs * 2);
             }
         }
 
