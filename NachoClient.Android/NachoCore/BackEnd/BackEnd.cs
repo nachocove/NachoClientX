@@ -261,7 +261,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start() called");
             // The callee does Task.Run.
-            ApplyAcrossAccounts ("Start", Start);
+            ApplyAcrossAccounts ("Start", (accountId) => Start (accountId));
         }
 
         // DON'T PUT Stop in a Task.Run. We want to execute as much as possible immediately.
@@ -275,7 +275,7 @@ namespace NachoCore
                 PendingOnTimeTimer.Dispose ();
                 PendingOnTimeTimer = null;
             }
-            ApplyAcrossAccounts ("Stop", Stop);
+            ApplyAcrossAccounts ("Stop", (accountId) => Stop (accountId));
             BodyFetchHints.Reset ();
         }
 
