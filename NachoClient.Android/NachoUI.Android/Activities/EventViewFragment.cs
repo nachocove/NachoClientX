@@ -298,8 +298,8 @@ namespace NachoClient.AndroidClient
                     } else if (a < attendees.Count) {
                         var attendee = attendees [a];
                         var initials = ContactsHelper.NameToLetters (attendee.DisplayName);
-                        var color = Util.ColorResourceForEmail (attendee.AccountId, attendee.Email);
-                        attendeePhotoView.SetEmailAddress (attendee.AccountId, attendee.Email, initials, color);
+                        var color = Util.ColorResourceForEmail (detail.Account.Id, attendee.Email);
+                        attendeePhotoView.SetEmailAddress (detail.Account.Id, attendee.Email, initials, color);
                         attendeeNameView.Text = GetFirstName (attendee.DisplayName);
                     } else {
                         attendeePhotoView.Visibility = ViewStates.Gone;
