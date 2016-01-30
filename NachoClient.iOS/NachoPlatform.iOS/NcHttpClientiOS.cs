@@ -219,10 +219,15 @@ namespace NachoPlatform
                 retries = maxRetries;
             }
 
+            string taskDescriptionOrUnknown (NSUrlSessionTask task)
+            {
+                return task != null && task.TaskDescription != null ? task.TaskDescription : "<unknown>";
+            }
+            
             public override void DidFinishDownloading (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, NSUrl location)
             {
 #if DEBUG
-                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidFinishDownloading request {1}ms", downloadTask.TaskDescription, sw.ElapsedMilliseconds);
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidFinishDownloading request {1}ms", taskDescriptionOrUnknown(downloadTask), sw.ElapsedMilliseconds);
 #endif
 
                 if (!Token.IsCancellationRequested && null != SuccessAction) {
@@ -246,7 +251,7 @@ namespace NachoPlatform
                                 SuccessAction (response, Token);
                             }
                         } catch (Exception ex) {
-                            Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): Error running SuccessAction: {1}", downloadTask.TaskDescription, ex);
+                            Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): Error running SuccessAction: {1}", taskDescriptionOrUnknown(downloadTask), ex);
                         } finally {
                             fileStream.Dispose ();
                             if (File.Exists (location.Path)) {
@@ -263,7 +268,7 @@ namespace NachoPlatform
                     long sent = task.BytesSent;
                     long received = task.BytesReceived;
 #if DEBUG
-                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", task.TaskDescription, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", taskDescriptionOrUnknown(task), sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
                         error != null ? string.Format (" (Error: {0})", error) : "");
 #endif
                     if (Token.IsCancellationRequested) {
@@ -274,7 +279,7 @@ namespace NachoPlatform
                     }
                     session.FinishTasksAndInvalidate ();
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidCompleteWithError exception {1}", task.TaskDescription, ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidCompleteWithError exception {1}", taskDescriptionOrUnknown(task), ex);
                 } finally {
                     OriginalRequest.Dispose ();
                 }
@@ -283,58 +288,77 @@ namespace NachoPlatform
             public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, long bytesSent, long totalBytesSent, long totalBytesExpectedToSend)
             {
 #if DEBUG
-                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidSendBodyData request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidSendBodyData request {1}ms", taskDescriptionOrUnknown(task), sw.ElapsedMilliseconds);
 #endif
                 try {
                     if (Token.IsCancellationRequested) {
                         return;
                     }
                     if (null != ProgressAction) {
-                        ProgressAction (true, task.TaskDescription, bytesSent, totalBytesSent, totalBytesExpectedToSend);
+                        ProgressAction (true, taskDescriptionOrUnknown(task), bytesSent, totalBytesSent, totalBytesExpectedToSend);
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidSendBodyData exception {1}", task.TaskDescription, ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidSendBodyData exception {1}", taskDescriptionOrUnknown(task), ex);
                 }
             }
 
             public override void DidWriteData (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, long bytesWritten, long totalBytesWritten, long totalBytesExpectedToWrite)
             {
 #if DEBUG
-                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidWriteData request {1}ms", downloadTask.TaskDescription, sw.ElapsedMilliseconds);
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidWriteData request {1}ms", taskDescriptionOrUnknown(downloadTask), sw.ElapsedMilliseconds);
 #endif
                 try {
                     if (Token.IsCancellationRequested) {
                         return;
                     }
+
                     if (null != ProgressAction) {
-                        ProgressAction (false, downloadTask.TaskDescription, bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+                        ProgressAction (false, taskDescriptionOrUnknown(downloadTask), bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidWriteData exception {1}", downloadTask.TaskDescription, ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidWriteData exception {1}", taskDescriptionOrUnknown(downloadTask), ex);
                 }
             }
 
             public override void WillPerformHttpRedirection (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
             {
 #if DEBUG
-                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection request {1}ms", taskDescriptionOrUnknown(task), sw.ElapsedMilliseconds);
 #endif
+                if (Token.IsCancellationRequested) {
+                    completionHandler (null);
+                    return;
+                }
+
                 try {
                     if (Owner.AllowAutoRedirect) {
-                        Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection", task.TaskDescription);
+                        Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection", taskDescriptionOrUnknown(task));
                         completionHandler (newRequest);
                     } else {
-                        Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection disallowed", task.TaskDescription);
+                        Log.Debug (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection disallowed", taskDescriptionOrUnknown(task));
                         completionHandler (null);
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection exception {1}", task.TaskDescription, ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): WillPerformHttpRedirection exception {1}", taskDescriptionOrUnknown(task), ex);
                 }
             }
 
             public override void DidReceiveChallenge (NSUrlSession session, NSUrlSessionTask task, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
             {
+                if (Token.IsCancellationRequested || null == challenge || task == null) {
+                    if (null == challenge) {
+                        Log.Error (Log.LOG_HTTP, "DidReceiveChallenge with null challenge");
+                    } else if (task == null) {
+                        Log.Error (Log.LOG_HTTP, "DidReceiveChallenge with null task");
+                    } else if (Token.IsCancellationRequested) {
+                        Log.Info (Log.LOG_HTTP, "DidReceiveChallenge: Cancelled");
+                    }
+                    completionHandler(NSUrlSessionAuthChallengeDisposition.RejectProtectionSpace, null);
+                    return;
+                }
+
                 try {
+                    NcAssert.NotNull (challenge.ProtectionSpace, "challenge.ProtectionSpace is null");
                     if (challenge.ProtectionSpace.AuthenticationMethod != "NSURLAuthenticationMethodServerTrust") {
                         if (retries-- < 1) {
                             Log.Info (Log.LOG_HTTP, "NcDownloadTaskDelegate: retries exceeded");
@@ -345,25 +369,32 @@ namespace NachoPlatform
                         }
                     } else {
                         if (ServicePointManager.ServerCertificateValidationCallback == null) {
+                            NcAssert.NotNull (challenge.ProposedCredential, "challenge.ProposedCredential is null");
                             completionHandler (NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, challenge.ProposedCredential);
                         } else {
+                            NcAssert.NotNull (task.OriginalRequest, "task.OriginalRequest is null");
                             CertValidation (task.OriginalRequest.Url, challenge, completionHandler);
                         }
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidReceiveChallenge exception {1}", task.TaskDescription, ex);
+                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): DidReceiveChallenge exception {1}", taskDescriptionOrUnknown(task), ex);
                 }
             }
 
             public override void NeedNewBodyStream (NSUrlSession session, NSUrlSessionTask task, Action<NSInputStream> completionHandler)
             {
+                if (Token.IsCancellationRequested) {
+                    completionHandler (null);
+                    return;
+                }
 #if DEBUG
-                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): NeedNewBodyStream request {1}ms", task.TaskDescription, sw.ElapsedMilliseconds);
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): NeedNewBodyStream request {1}ms", taskDescriptionOrUnknown(task), sw.ElapsedMilliseconds);
 #endif
+
                 if (!string.IsNullOrEmpty (FilePath)) {
                     completionHandler (new NSInputStream (FilePath));
                 } else {
-                    throw new Exception (string.Format ("NcHttpClient({0}): Can not satisfy NeedNewBodyStream. No FilePath", task.TaskDescription));
+                    throw new Exception (string.Format ("NcHttpClient({0}): Can not satisfy NeedNewBodyStream. No FilePath", taskDescriptionOrUnknown(task)));
                 }
             }
         }
