@@ -63,7 +63,7 @@ namespace NachoClient.AndroidClient
             if (null == composeFragment) {
                 NcAssert.True (Intent.HasExtra (EXTRA_ACCOUNT_ID));
                 var account = McAccount.QueryById<McAccount> (Intent.GetIntExtra (EXTRA_ACCOUNT_ID, 0));
-                composeFragment = new ComposeFragment (account);
+                composeFragment = ComposeFragment.newInstance (account);
                 FragmentManager.BeginTransaction ().Replace (Resource.Id.content, composeFragment, COMPOSE_FRAGMENT_TAG).Commit ();
             }
 

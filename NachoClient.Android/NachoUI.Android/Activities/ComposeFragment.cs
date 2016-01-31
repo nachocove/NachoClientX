@@ -59,16 +59,12 @@ namespace NachoClient.AndroidClient
 
         #region Constructor/Factory
 
-        public ComposeFragment (McAccount account) : base ()
-        {
-            Composer = new MessageComposer (account);
-            Composer.Delegate = this;
-            JavaScriptQueue = new List<Tuple<string, JavascriptCallback>> ();
-        }
-
         public static ComposeFragment newInstance (McAccount account)
         {
-            var fragment = new ComposeFragment (account);
+            var fragment = new ComposeFragment ();
+            fragment.Composer = new MessageComposer (account);
+            fragment.Composer.Delegate = fragment;
+            fragment.JavaScriptQueue = new List<Tuple<string, JavascriptCallback>> ();
             return fragment;
         }
 
@@ -287,7 +283,7 @@ namespace NachoClient.AndroidClient
                 return;
             }
             if (ChooserArrayAdapter.ADD_FILE == packageName) {
-                var filePicker = new FilePickerFragment (Composer.Account.Id);
+                var filePicker = FilePickerFragment.newInstance(Composer.Account.Id);
                 filePicker.Delegate = this;
                 filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
                 return;
