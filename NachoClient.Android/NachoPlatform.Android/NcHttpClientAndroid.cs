@@ -136,7 +136,9 @@ namespace NachoPlatform
                         return;
                     }
                 } else {
-                    builder.Header ("Content-Type", "text/plain");
+                    if (string.IsNullOrEmpty (request.ContentType)) {
+                        builder.Header ("Content-Type", "text/plain");
+                    }
                     body = default(RequestBody);
                 }
                 if (null != callbacks.ProgressAction) {
