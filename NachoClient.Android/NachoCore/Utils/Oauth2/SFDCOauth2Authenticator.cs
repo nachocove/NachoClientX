@@ -26,6 +26,11 @@ namespace NachoCore.Utils
         public SFDCOAuth2Authenticator (string clientId, string clientSecret, string scope, Uri authorizeUrl, Uri redirectUrl, Uri accessTokenUrl, string loginHint, GetUsernameAsyncFunc getUsernameAsync = null)
             : base (clientId, clientSecret, scope, authorizeUrl, redirectUrl, accessTokenUrl, getUsernameAsync)
         {
+            LoginHint = loginHint;
+        }
+        public string LoginHint {
+            get;
+            set;
         }
     }
 
@@ -34,7 +39,7 @@ namespace NachoCore.Utils
     /// </summary>
     /// <remarks>
     /// Note that salesforce does not seem to respond with the same kind of data as google does. In particular no expiration date.
-    public class SFDCOauth2Refresh : Oauth2Refresh
+    public class SFDCOauth2Refresh : Oauth2TokenRefresh
     {
         public SFDCOauth2Refresh (McCred cred) : base (cred, SFDCOAuth2Constants.RefreshUrl, SFDCOAuth2Constants.ClientSecret, SFDCOAuth2Constants.ClientId)
         {

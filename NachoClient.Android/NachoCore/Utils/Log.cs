@@ -225,8 +225,12 @@ namespace NachoCore.Utils
                             mb.DeclaringType.Name, mb.Name);
                     }
                 }
+                try {
                 WriteLine ("{0}", String.Format (new NachoFormatter (),
                     Log.ModuleString (subsystem) + ":" + level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
+                } catch(Exception what) {
+                    Console.WriteLine ("{0}", what);
+                }
             }
             if (settings.ToTelemetry (subsystem)) {
                 Telemetry.RecordLogEvent (threadId, teleType, subsystem, fmt, list);

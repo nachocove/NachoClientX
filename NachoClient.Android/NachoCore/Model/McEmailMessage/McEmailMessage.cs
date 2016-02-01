@@ -1244,12 +1244,14 @@ namespace NachoCore.Model
 
         public string GetThreadId ()
         {
-            return FirstMessageSpecialCase ().ConversationId;
+            var message = FirstMessageSpecialCase ();
+            return (null == message) ? null : message.ConversationId;
         }
 
         public string GetSubject ()
         {
-            return FirstMessageSpecialCase ().Subject;
+            var message = FirstMessageSpecialCase ();
+            return (null == message) ? null : message.Subject;
         }
 
         public IEnumerator<McEmailMessage> GetEnumerator ()

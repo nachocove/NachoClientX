@@ -50,6 +50,13 @@ namespace NachoCore.Model
         // General-use. The epoch of the Credentials.
         public int Epoch { get; set; }
 
+        [SQLite.Ignore]
+        public bool IsExpired {
+            get {
+                return Expiry <= DateTime.UtcNow;
+            }
+        }
+
         public McCred ()
         {
             Expiry = DateTime.MaxValue;
@@ -198,10 +205,10 @@ namespace NachoCore.Model
         }
 
 
-        public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
+        public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred, bool> onFailure, CancellationToken Token)
         {
             var account = McAccount.QueryById<McAccount> (AccountId);
-            Oauth2Refresh refresh;
+            Oauth2TokenRefresh refresh;
             switch (account.AccountService) {
             case McAccount.AccountServiceEnum.GoogleDefault:
                 refresh = new GoogleOauth2Refresh (this);

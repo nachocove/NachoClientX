@@ -6,7 +6,6 @@ using NachoCore.Utils;
 using Android.Views;
 using Android.Webkit;
 using Android.Widget;
-using NachoCore.Brain;
 using NachoCore;
 using Android.Support.V7.Widget;
 using Android.Content;
@@ -247,8 +246,6 @@ namespace NachoClient.AndroidClient
             var isDraft = owner.CurrentMessages.HasDraftsSemantics () || owner.CurrentMessages.HasOutboxSemantics ();
             Bind.BindMessageHeader (thread, message, vh.mvh, isDraft);
 
-            NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
-
             // Preview label view                
             if (null == message) {
                 vh.previewView.Text = "";
@@ -266,12 +263,6 @@ namespace NachoClient.AndroidClient
                 }
             } else {
                 vh.multiSelectView.Visibility = ViewStates.Invisible;
-            }
-
-            // Since there is a decent chance that the user will open this message,
-            // ask the backend to fetch itdownload its body.
-            if ((null != message) && (0 == message.BodyId)) {
-                BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
             }
         }
 
@@ -338,13 +329,6 @@ namespace NachoClient.AndroidClient
                     messageDownloader.Download (message);
                 } else {
                     RenderBody (vh.webview, bundle);
-                }
-
-
-                // Since there is a decent chance that the user will open this message,
-                // ask the backend to fetch itdownload its body.
-                if (0 == message.BodyId) {
-                    BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
                 }
             }
         }

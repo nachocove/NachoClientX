@@ -160,7 +160,7 @@ namespace NachoClient.AndroidClient
                     endTime = cal.EndTime.ToLocalTime ();
 
                     // Figure out the correct account for the new event.
-                    account = NcApplication.Instance.Account;
+                    account = NcApplication.Instance.DefaultCalendarAccount;
                     if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == new NachoFolders (account.Id, NachoFolders.FilterForCalendars).Count ()) {
                         if (AndroidCalendars.DeviceCalendarsExist ()) {
                             isAppEvent = false;

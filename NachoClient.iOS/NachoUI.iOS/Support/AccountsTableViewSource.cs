@@ -53,12 +53,13 @@ namespace NachoClient.iOS
                 accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
             }
 
-            if (showUnified && accounts.Count > 1) {
-                if (unifiedAccount == null) {
-                    unifiedAccount = McAccount.GetUnifiedAccount ();
-                }
-                accounts.Insert (0, unifiedAccount);
-            }
+            // Disable unified for performance push
+            // if (showUnified && accounts.Count > 1) {
+            //     if (unifiedAccount == null) {
+            //         unifiedAccount = McAccount.GetUnifiedAccount ();
+            //     }
+            //     accounts.Insert (0, unifiedAccount);
+            // }
 
             // Remove the current account from the switcher view.
             if (!showAccessory) {

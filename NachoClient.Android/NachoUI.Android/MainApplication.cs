@@ -28,7 +28,7 @@ namespace NachoClient.AndroidClient
         public MainApplication (IntPtr javaReference, JniHandleOwnership transfer) : base (javaReference, transfer)
         {
             _instance = this;
-            Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
+            Thread.CurrentThread.Priority = ThreadPriority.Highest;
             LifecycleSpy.SharedInstance.Init (this);
             CopyAssetsToDocuments ();
             OneTimeStartup ("MainApplication");

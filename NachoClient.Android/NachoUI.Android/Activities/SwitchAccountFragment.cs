@@ -76,6 +76,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+            accountAdapter.Refresh ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -149,6 +150,10 @@ namespace NachoClient.AndroidClient
             accounts = new List<McAccount> ();
 
             foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
+                // Hide unified during performance push
+                if (McAccount.AccountTypeEnum.Unified == account.AccountType) {
+                    continue;
+                }
                 if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     accounts.Add (account);
                 }

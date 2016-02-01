@@ -30,7 +30,7 @@ namespace NachoCore.Utils
         public GoogleOAuth2Authenticator (string clientId, string clientSecret, string scope, Uri authorizeUrl, Uri redirectUrl, Uri accessTokenUrl, string loginHint, GetUsernameAsyncFunc getUsernameAsync = null)
             : base (clientId, clientSecret, scope, authorizeUrl, redirectUrl, accessTokenUrl, getUsernameAsync)
         {
-            this.LoginHint = loginHint;
+            LoginHint = loginHint;
         }
 
         public string LoginHint {
@@ -43,12 +43,12 @@ namespace NachoCore.Utils
         {
             string uriString = string.Format (
                 "{0}?client_id={1}&redirect_uri={2}&response_type={3}&scope={4}&state={5}&access_type=offline&approval_prompt=force",
-                this.AuthorizeUrl.AbsoluteUri,
-                Uri.EscapeDataString (this.ClientId),
-                Uri.EscapeDataString (this.RedirectUrl.AbsoluteUri),
-                this.AccessTokenUrl == null ? "token" : "code",
-                Uri.EscapeDataString (this.Scope),
-                Uri.EscapeDataString (this.RequestState)
+                AuthorizeUrl.AbsoluteUri,
+                Uri.EscapeDataString (ClientId),
+                Uri.EscapeDataString (RedirectUrl.AbsoluteUri),
+                AccessTokenUrl == null ? "token" : "code",
+                Uri.EscapeDataString (Scope),
+                Uri.EscapeDataString (RequestState)
             );
 
             if (!String.IsNullOrEmpty (LoginHint)) {
@@ -60,7 +60,7 @@ namespace NachoCore.Utils
         }
     }
 
-    public class GoogleOauth2Refresh : Oauth2Refresh
+    public class GoogleOauth2Refresh : Oauth2TokenRefresh
     {
         public GoogleOauth2Refresh (McCred cred) : base (cred, GoogleOAuthConstants.RefreshUrl, GoogleOAuthConstants.ClientSecret, GoogleOAuthConstants.ClientId)
         {

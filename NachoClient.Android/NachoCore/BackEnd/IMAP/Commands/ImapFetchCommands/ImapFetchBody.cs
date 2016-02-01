@@ -148,7 +148,7 @@ namespace NachoCore.IMAP
 
             Cts.Token.ThrowIfCancellationRequested ();
             try {
-                if (null == fetchBody.Parts) {
+                if (null == fetchBody.Parts || !fetchBody.Parts.Any ()) {
                     result = DownloadEntireMessage (ref body, mailKitFolder, uid, imapBody);
                 } else {
                     result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, fetchBody.Parts, imapBody.ContentType.Boundary);

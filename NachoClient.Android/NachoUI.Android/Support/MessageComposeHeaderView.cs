@@ -184,14 +184,11 @@ namespace NachoClient.AndroidClient
             base.OnLayout (changed, l, t, r, b);
         }
 
-        protected override void Dispose (bool disposing)
+        public void Cleanup ()
         {
-            if (disposing) {
-                ToField.Adapter.Dispose ();
-                CcField.Adapter.Dispose ();
-                BccField.Adapter.Dispose ();
-            }
-            base.Dispose (disposing);
+            ((ContactAddressAdapter)ToField.Adapter).Cleanup ();
+            ((ContactAddressAdapter)CcField.Adapter).Cleanup ();
+            ((ContactAddressAdapter)BccField.Adapter).Cleanup ();
         }
     }
 
@@ -258,13 +255,10 @@ namespace NachoClient.AndroidClient
                 return;
             }
 
-            protected override void Dispose (bool disposing)
+            public void Cleanup ()
             {
-                if (disposing) {
-                    searcher.Dispose ();
-                    searcher = null;
-                }
-                base.Dispose (disposing);
+                searcher.Dispose ();
+                searcher = null;
             }
         }
 
@@ -343,13 +337,10 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        protected override void Dispose (bool disposing)
+        public void Cleanup ()
         {
-            if (disposing) {
-                filter.Dispose ();
-                filter = null;
-            }
-            base.Dispose (disposing);
+            filter.Cleanup ();
+            filter = null;
         }
     }
 }

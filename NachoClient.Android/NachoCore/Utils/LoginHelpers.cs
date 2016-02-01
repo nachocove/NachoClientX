@@ -201,8 +201,11 @@ namespace NachoCore.Utils
         {
             McAccount account = GetMostRecentAccount ();
             if (null != account) {
-                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
-                    return account;
+                // Disable unified account for performance push
+                if (McAccount.AccountTypeEnum.Unified != account.AccountType) {
+                    if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
+                        return account;
+                    }
                 }
             }
             foreach (var a in NcModel.Instance.Db.Table<McAccount> ()) {
@@ -210,6 +213,10 @@ namespace NachoCore.Utils
                     continue;
                 }
                 if (McAccount.AccountTypeEnum.Device == a.AccountType) {
+                    continue;
+                }
+                // Disable unified account for performance push
+                if (McAccount.AccountTypeEnum.Unified == a.AccountType) {
                     continue;
                 }
                 return a;

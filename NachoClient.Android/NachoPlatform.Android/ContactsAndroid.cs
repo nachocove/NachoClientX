@@ -312,7 +312,7 @@ namespace NachoPlatform
                         Contact.AddDateAttribute (Contact.AccountId, "Birthday", null, DateTime.Parse (birthday));
                     } catch (FormatException ex) {
                         // FIXME saw a birthday of "--03-18". Need to be able to handle this.
-                        Log.Warn (Log.LOG_CONTACTS, "Badly formatted birthday: {1}", ex.Message);
+                        Log.Warn (Log.LOG_CONTACTS, "Badly formatted birthday: {0}", ex.Message);
                     }
                 }
                 pCur.Close ();

@@ -176,7 +176,7 @@ namespace NachoClient.AndroidClient
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
-            intent.PutExtra (EXTRA_ACCOUNT_ID, message.Id);
+            intent.PutExtra (EXTRA_ACCOUNT_ID, message.AccountId);
             intent.PutExtra (EXTRA_INITIAL_TEXT, text);
             return intent;
         }
