@@ -106,7 +106,7 @@ namespace NachoCore.SMTP
             } catch (Exception ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: {0}", ex);
                 if (Initial) {
-                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPSERVFAILUNDEF");
+                    evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPSERVFAILUNDEF", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
                     evt.Arg = BackEnd.AutoDFailureReasonEnum.CannotConnectToServer;
                 } else {
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPUNKTEMP");
