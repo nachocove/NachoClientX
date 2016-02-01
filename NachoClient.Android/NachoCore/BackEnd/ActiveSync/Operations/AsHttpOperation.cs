@@ -479,6 +479,8 @@ namespace NachoCore.ActiveSync
                 }
             } else if (ex is WebException) {
                 var redactedMessage = HashHelper.HashUserInASUrl (ex.Message);
+                // Sometimes we get {:  WebException: unexpected end of stream on Connection{blu403-m.hotmail.com:443
+                redactedMessage = Log.RemoveFormatting (redactedMessage);
                 Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", RedactedServerUri, redactedMessage);
                 if (!cToken.IsCancellationRequested) {
                     CancelTimeoutTimer ("WebException");

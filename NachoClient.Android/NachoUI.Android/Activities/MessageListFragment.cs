@@ -409,7 +409,7 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
-            RefreshIfNeeded ();
+            UpdateChangedMessages ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -877,21 +877,16 @@ namespace NachoClient.AndroidClient
             MaybeDisplayNoMessagesView (View);
         }
 
-        public void RefreshIfNeeded ()
+        public void UpdateChangedMessages ()
         {
-            List<int> adds;
-            List<int> deletes;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfNeeded");
-            if (NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes)) {
-                NotifyChanges (adds, deletes);
-            } else {
-                RefreshVisibleMessageCells ();
+            // RefreshVisibleMessageCells ();
+            var a = layoutManager.FindFirstVisibleItemPosition ();
+            if (RecyclerView.NoPosition != a) {
+                var z = layoutManager.FindLastVisibleItemPosition ();
+                // messageListAdapter.NotifyItemRangeChanged (a, 1 + z - a);
+                messageListAdapter.NotifyItemChanged (a);
+
             }
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfNeeded");
-            if (0 == messages.Count ()) {
-                ((MessageListDelegate)Activity).ListIsEmpty ();
-            }
-            MaybeDisplayNoMessagesView (View);
         }
 
         int[] first = new int[3];
@@ -932,6 +927,9 @@ namespace NachoClient.AndroidClient
             }
             var start = block * CACHEBLOCKSIZE;
             var finish = (messages.Count () < (start + CACHEBLOCKSIZE)) ? messages.Count () : start + CACHEBLOCKSIZE;
+            if (start >= finish) {
+                return;
+            }
             var indexList = new List<int> ();
             for (var i = start; i < finish; i++) {
                 indexList.Add (messages.GetEmailThread (i).FirstMessageSpecialCaseIndex ());
@@ -948,10 +946,15 @@ namespace NachoClient.AndroidClient
             var fromAddressIdList = new List<int> ();
             foreach (var message in cache[cacheIndex]) {
                 if (null != message) {
-                    if ((0 != message.FromEmailAddressId) && !fromAddressIdList.Contains (message.FromEmailAddressId)) {
-                        fromAddressIdList.Add (message.FromEmailAddressId);
+                    if (0 == message.cachedPortraitId) {
+                        if ((0 != message.FromEmailAddressId) && !fromAddressIdList.Contains (message.FromEmailAddressId)) {
+                            fromAddressIdList.Add (message.FromEmailAddressId);
+                        }
                     }
                 }
+            }
+            if (0 == fromAddressIdList.Count) {
+                return;
             }
             // Assign matching portrait ids to email messages
             var portraitIndexList = McContact.QueryForPortraits (fromAddressIdList);

@@ -225,12 +225,8 @@ namespace NachoCore.Utils
                             mb.DeclaringType.Name, mb.Name);
                     }
                 }
-                try {
                 WriteLine ("{0}", String.Format (new NachoFormatter (),
                     Log.ModuleString (subsystem) + ":" + level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
-                } catch(Exception what) {
-                    Console.WriteLine ("{0}", what);
-                }
             }
             if (settings.ToTelemetry (subsystem)) {
                 Telemetry.RecordLogEvent (threadId, teleType, subsystem, fmt, list);
@@ -486,6 +482,11 @@ namespace NachoCore.Utils
         public static void SetLogger (Logger logger)
         {
             DefaultLogger = logger;
+        }
+
+        public static string RemoveFormatting (String S)
+        {
+            return S.Replace ("{", String.Empty).Replace ("}", String.Empty);
         }
 
         public static ConcurrentQueue<LogElement> IndirectQ = new ConcurrentQueue<LogElement> ();
