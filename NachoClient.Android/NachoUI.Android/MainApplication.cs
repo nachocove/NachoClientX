@@ -12,6 +12,7 @@ using Android.App.Backup;
 using Android.Content;
 using System.IO;
 using System.Threading;
+using Android.OS;
 
 namespace NachoClient.AndroidClient
 {
@@ -27,8 +28,17 @@ namespace NachoClient.AndroidClient
 
         public MainApplication (IntPtr javaReference, JniHandleOwnership transfer) : base (javaReference, transfer)
         {
+//           StrictMode.SetThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+//                .DetectAll()
+//                .PenaltyLog()
+//                .PenaltyDialog()
+//                .Build());
+//            StrictMode.SetVmPolicy(new StrictMode.VmPolicy.Builder().DetectAll()
+//                .PenaltyLog()
+//                .Build());
+
             _instance = this;
-            Thread.CurrentThread.Priority = ThreadPriority.Highest;
+            Thread.CurrentThread.Priority = System.Threading.ThreadPriority.Highest;
             LifecycleSpy.SharedInstance.Init (this);
             CopyAssetsToDocuments ();
             OneTimeStartup ("MainApplication");
