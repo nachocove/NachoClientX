@@ -1064,11 +1064,18 @@ namespace NachoCore
         public void Start ()
         {
             if (Cts.IsCancellationRequested) {
+                Cts.Dispose ();
                 Cts = new CancellationTokenSource ();
+            }
+            if (null != RefreshTimer) {
+                Log.Error (Log.LOG_SYS, "McCred:Oauth2RefreshTimer: Starting new timer without having stopped it.");
+                RefreshTimer.Dispose ();
             }
             RefreshTimer = new NcTimer ("McCred:Oauth2RefreshTimer", state => RefreshAllDueTokens (),
                 null, new TimeSpan (0, 0, KOauth2RefreshDelaySecs), new TimeSpan (0, 0, KOauth2RefreshIntervalSecs));
-            NcCommStatus.Instance.CommStatusNetEvent += Oauth2NetStatusEventHandler;
+            if (!Initted) {
+                NcCommStatus.Instance.CommStatusNetEvent += Oauth2NetStatusEventHandler;
+            }
             Initted = true;
         }
 
@@ -1077,7 +1084,6 @@ namespace NachoCore
         /// </summary>
         public void Stop (bool cancel = true)
         {
-            NcCommStatus.Instance.CommStatusNetEvent -= Oauth2NetStatusEventHandler;
             if (null != RefreshTimer) {
                 RefreshTimer.Dispose ();
                 RefreshTimer = null;
@@ -1104,9 +1110,11 @@ namespace NachoCore
                 // If we haven't started it (i.e. never ran through BackEnd.Start(int)),
                 // then don't start it now, either. This is to prevent a network event to start
                 // us sooner than we really want to. We initially delay a lot of services
-                // for performance reasons, 
+                // for performance reasons.
                 if (Initted) {
                     Start ();
+                } else {
+                    Log.Error (Log.LOG_SYS, "Oauth2Refresh not started because not Initted");
                 }
                 break;
             }
@@ -1151,7 +1159,9 @@ namespace NachoCore
                     Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh needed.", cred.AccountId);
                     RefreshCredential (cred);
                 } else {
-                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh not needed. due {1}", cred.AccountId, cred.Expiry);
+                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh not needed. due {1}, is {2}, expiryFractionSecs {3} ({4}), status {5}", 
+                        cred.AccountId, cred.Expiry, DateTime.UtcNow, expiryFractionSecs, cred.Expiry.AddSeconds (-expiryFractionSecs),
+                        status != null ? status.ToString () : "NULL");
                 }
             }
         }
@@ -1346,6 +1356,11 @@ namespace NachoCore
                 State = state;
                 NeedCredResp = needCredResp;
                 PostExpiryRefreshRetries = 0;
+            }
+
+            public override string ToString ()
+            {
+                return string.Format ("[CredReqActiveStatus: State={0}, NeedCredResp={1}, PostExpiryRefreshRetries={2}]", State, NeedCredResp, PostExpiryRefreshRetries);
             }
         }
 
