@@ -59,16 +59,30 @@ namespace NachoClient.AndroidClient
 
         #region Constructor/Factory
 
-        public ComposeFragment (McAccount account) : base ()
+        public ComposeFragment () : base ()
         {
-            Composer = new MessageComposer (account);
-            Composer.Delegate = this;
             JavaScriptQueue = new List<Tuple<string, JavascriptCallback>> ();
+        }
+
+        public McAccount Account {
+            get {
+                if (Composer != null) {
+                    return Composer.Account;
+                }
+                return null;
+            }
+            set {
+                if (Composer == null) {
+                    Composer = new MessageComposer (value);
+                    Composer.Delegate = this;
+                }
+            }
         }
 
         public static ComposeFragment newInstance (McAccount account)
         {
-            var fragment = new ComposeFragment (account);
+            var fragment = new ComposeFragment ();
+            fragment.Account = account;
             return fragment;
         }
 
