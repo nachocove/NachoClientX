@@ -621,10 +621,12 @@ namespace NachoCore.Utils
             }
         }
 
+        /// <summary>
+        /// If the TNEF part contains text in multiple formats, MimeKit will create a multipart/mixed
+        /// instead of a multipart/alternative.  Fix that.
+        /// </summary>
         public static void FixTnefMessage (MimeMessage tnefMessage)
         {
-            // If the TNEF part contains text in multiple formats, MimeKit will create a multipart/mixed
-            // instead of a multipart/alternative.  Fix that.
             if (null == tnefMessage.Body || !tnefMessage.Body.ContentType.Matches ("multipart", "mixed")) {
                 return;
             }
@@ -657,6 +659,32 @@ namespace NachoCore.Utils
                     }
                     mixed.Add (alternative);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Remove any TNEF parts that are within a top-level multipart/mixed part of the given message.
+        /// This should only be used when the MIME message was itself converted from a TNEF part; it is
+        /// not intended to be used for a full MIME message.  When a recurring meeting has exceptions,
+        /// information about the exceptions are included in TNEF parts nested within the main TNEF part
+        /// of the description for the meeting series.  Information about the exceptions also appears
+        /// elsewhere in the Exchange metadata, so these nested TNEF sections just get in the way and
+        /// should be ignored.
+        /// </summary>
+        public static void RemoveNestedTnefParts (MimeMessage tnefMessage)
+        {
+            if (null == tnefMessage.Body || !tnefMessage.Body.ContentType.Matches ("multipart", "mixed")) {
+                return;
+            }
+            var multipart = (Multipart)tnefMessage.Body;
+            var tnefParts = new List<MimeEntity> ();
+            foreach (var part in multipart) {
+                if (part is MimeKit.Tnef.TnefPart) {
+                    tnefParts.Add (part);
+                }
+            }
+            foreach (var tnefPart in tnefParts) {
+                multipart.Remove (tnefPart);
             }
         }
        

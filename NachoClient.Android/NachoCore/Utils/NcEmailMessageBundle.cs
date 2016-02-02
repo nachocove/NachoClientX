@@ -796,6 +796,7 @@ namespace NachoCore.Utils
             MimeMessage message = null;
             try {
                 message = entity.ConvertToMessage ();
+                MimeHelpers.RemoveNestedTnefParts (message);
                 MimeHelpers.FixTnefMessage (message);
             } catch {
             }
