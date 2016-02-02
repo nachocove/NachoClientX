@@ -119,7 +119,7 @@ namespace NachoCore.Utils
 
         public void SetContent (byte[] data, string contentType)
         {
-            SetContent (null, data, data.Length, contentType, false);
+            SetContent (null, data, null != data ? data.Length : 0, contentType, false);
         }
 
         protected void SetContent (FileStream stream, byte[] data, long? contentLength, string contentType, bool deleteFile)

@@ -244,6 +244,9 @@ namespace NachoCore.Model
                             "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
                 var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
                 var request = new NcHttpRequest (HttpMethod.Post, requestUri);
+                request.SetContent (null, "application/x-www-form-urlencoded");
+
+                Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): Attempting Refresh", AccountId);
 
                 HttpClient.SendRequest (request, KRefreshOauth2TimeoutSecs, ((response, token) => {
                     if (response.StatusCode != System.Net.HttpStatusCode.OK) {
@@ -253,11 +256,11 @@ namespace NachoCore.Model
                             // This probably means the refresh token is no longer valid. We don't immediately punch
                             // up to the UI, because we really don't fully trust HTTP response code. Treat it as 'fatal',
                             // and let the underlying code decide what to do with fatal responses.
-                            Log.Info (Log.LOG_SYS, "OAUTH2 Refresh Status {0}", response.StatusCode.ToString ());
+                            Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): Refresh Status {1}", AccountId, response.StatusCode.ToString ());
                             fatalError = true;
                             break;
                         default:
-                            Log.Warn (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", response.StatusCode.ToString ());
+                            Log.Warn (Log.LOG_SYS, "RefreshOAuth2({0}): HTTP Status {1}", AccountId, response.StatusCode.ToString ());
                             break;
                         }
                         onFailure (this, fatalError);
@@ -266,13 +269,13 @@ namespace NachoCore.Model
                     var jsonResponse = response.GetContent ();
                     var decodedResponse = JsonConvert.DeserializeObject<OAuth2RefreshRespose> (Encoding.UTF8.GetString (jsonResponse));
                     if ("Bearer" != decodedResponse.token_type) {
-                        Log.Error (Log.LOG_SYS, "Unknown OAUTH2 token_type {0}", decodedResponse.token_type);
+                        Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Unknown OAUTH2 token_type {1}", AccountId, decodedResponse.token_type);
                     }
                     if (null == decodedResponse.access_token || null == decodedResponse.expires_in) {
-                        Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token {0} or expires_in {1}", decodedResponse.access_token, decodedResponse.expires_in);
+                        Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Missing OAUTH2 access_token {1} or expires_in {2}", AccountId, decodedResponse.access_token, decodedResponse.expires_in);
                         onFailure (this, true);
                     }
-                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", decodedResponse.expires_in);
+                    Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): OAUTH2 Token refreshed. expires_in={1}", AccountId, decodedResponse.expires_in);
                     // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
                     UpdateOauth2 (decodedResponse.access_token, 
                         string.IsNullOrEmpty (decodedResponse.refresh_token) ? GetRefreshToken () : decodedResponse.refresh_token,
@@ -281,13 +284,13 @@ namespace NachoCore.Model
                 }), ((ex, token) => {
                     // This usually indicates a network connectivity issue. Any response
                     // (even non-200 responses) go through the success path.
-                    Log.Error (Log.LOG_SYS, "OAUTH2 Exception {0}", ex.ToString ());
+                    Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Exception {1}", AccountId, ex.ToString ());
                     onFailure (this, false);
                 }), Token);
                 break;
 
             default:
-                Log.Error (Log.LOG_SYS, "Can not refresh {0}:{1}", account.Id, account.AccountService);
+                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Can not refresh {1}", account.Id, account.AccountService);
                 return;
             }
         }

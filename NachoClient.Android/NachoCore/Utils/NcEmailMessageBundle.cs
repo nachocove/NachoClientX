@@ -796,6 +796,7 @@ namespace NachoCore.Utils
             MimeMessage message = null;
             try {
                 message = entity.ConvertToMessage ();
+                MimeHelpers.RemoveNestedTnefParts (message);
                 MimeHelpers.FixTnefMessage (message);
             } catch {
             }
@@ -856,7 +857,7 @@ namespace NachoCore.Utils
                     if (message.Cc.Count > 0) {
                         IncludeText (String.Format ("Cc: {0}\n", message.Cc.ToString ()));
                     }
-                    if (!message.Date.Equals (DateTime.MinValue)) {
+                    if (message.Date != default(DateTimeOffset)) {
                         IncludeText (String.Format ("Sent: {0}\n", message.Date.ToString ()));
                     }
                     if (!String.IsNullOrEmpty (message.Subject)) {
@@ -890,7 +891,7 @@ namespace NachoCore.Utils
                     if (message.Cc.Count > 0) {
                         headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Cc", message.Cc.ToString ()));
                     }
-                    if (!message.Date.Equals (DateTime.MinValue)) {
+                    if (message.Date != default(DateTimeOffset)) {
                         headersElement.AppendChild (SimpleMessageHeaderNode (doc, "Sent", message.Date.ToString ()));
                     }
                     if (!String.IsNullOrEmpty (message.Subject)) {

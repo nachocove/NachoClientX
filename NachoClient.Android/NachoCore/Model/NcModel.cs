@@ -505,6 +505,10 @@ namespace NachoCore.Model
                     }
                 });
             }
+            if (null != DbConnGCTimer) {
+                DbConnGCTimer.Dispose ();
+                DbConnGCTimer = null;
+            }
             // Avoid recurring timer because C# will dump many invocations into the Q and run them concurrently.
             DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
             DbConnGCTimer.Stfu = true;
