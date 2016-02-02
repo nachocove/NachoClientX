@@ -480,7 +480,7 @@ namespace NachoCore.SMTP
                 var err = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
                 err.Message = "Too many failures";
                 StatusInd (err);
-                Sm.PostEvent ((uint)SmtpEvt.E.GetServConf, "SMTPMAXDISC");
+                Sm.PostEvent ((uint)SmtpEvt.E.GetServConf, "SMTPMAXDISC", BackEnd.AutoDFailureReasonEnum.CannotConnectToServer);
             } else {
                 DoDisc ();
             }
