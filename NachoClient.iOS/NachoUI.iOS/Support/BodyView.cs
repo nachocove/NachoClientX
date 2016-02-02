@@ -451,7 +451,7 @@ namespace NachoClient.iOS
             }
             RenderDownloadFailure (message, isUnrecoverableError);
             if (hasPreview) {
-//                RenderTextString (preview);
+                RenderTextString (preview);
             }
             LayoutAndNotifyParent ();
         }
@@ -538,6 +538,29 @@ namespace NachoClient.iOS
             var webView = BodyWebView.ResuableWebView (yOffset, preferredWidth, visibleArea.Height);
             webView.OnLinkSelected = onLinkSelected;
             webView.LoadBundle (Bundle, LayoutAndNotifyParent);
+            AddSubview (webView);
+            childViews.Add (webView);
+            yOffset += webView.ContentSize.Height;
+        }
+
+        void RenderTextString (string text)
+        {
+            var webView = BodyWebView.ResuableWebView (yOffset, preferredWidth, visibleArea.Height);
+            var serializer = new NachoCore.Utils.HtmlTextDeserializer ();
+            var doc = serializer.Deserialize (text);
+            var head = doc.DocumentNode.Element ("html").Element ("head");
+            var style = doc.CreateElement ("link");
+            style.SetAttributeValue ("rel", "stylesheet");
+            style.SetAttributeValue ("type", "text/css");
+            style.SetAttributeValue ("href", "nacho.css");
+            head.AppendChild (style);
+            var baseUrl = new NSUrl (String.Format ("file://{0}/", Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments)));
+            var html = "";
+            using (var writer = new StringWriter ()) {
+                doc.Save (writer);
+                html = writer.ToString ();
+            }
+            webView.LoadHtmlString (html, baseUrl);
             AddSubview (webView);
             childViews.Add (webView);
             yOffset += webView.ContentSize.Height;
