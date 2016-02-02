@@ -31,6 +31,9 @@ namespace NachoClient.AndroidClient
             serverField = view.FindViewById<EditText> (Resource.Id.exchange_server);
             domainField = view.FindViewById<EditText> (Resource.Id.exchange_domain);
             usernameField = view.FindViewById<EditText> (Resource.Id.exchange_username);
+            serverField.TextChanged += TextFieldChanged;
+            domainField.TextChanged += TextFieldChanged;
+            usernameField.TextChanged += TextFieldChanged;
         }
 
         public override bool CanSubmitFields ()
@@ -182,10 +185,10 @@ namespace NachoClient.AndroidClient
             }
         }
 
-//        partial void textFieldChanged (Foundation.NSObject sender)
-//        {
-//            AccountDelegate.AdvancedFieldsControllerDidChange (this);
-//        }
+        void TextFieldChanged (object sender, Android.Text.TextChangedEventArgs e)
+        {
+            AccountDelegate.AdvancedFieldsControllerDidChange (this);
+        }
     }
 }
 

@@ -30,6 +30,16 @@ namespace NachoClient.AndroidClient
             incomingPortField = view.FindViewById<EditText>(Resource.Id.imap_port);
             outgoingServerField = view.FindViewById<EditText>(Resource.Id.smtp_server);
             outgoingPortField = view.FindViewById<EditText>(Resource.Id.smtp_port);
+            usernameField.TextChanged += TextFieldChanged;
+            incomingServerField.TextChanged += TextFieldChanged;
+            incomingPortField.TextChanged += TextFieldChanged;
+            outgoingServerField.TextChanged += TextFieldChanged;
+            outgoingPortField.TextChanged += TextFieldChanged;
+        }
+
+        void TextFieldChanged (object sender, Android.Text.TextChangedEventArgs e)
+        {
+            AccountDelegate.AdvancedFieldsControllerDidChange (this);
         }
 
         public override bool CanSubmitFields ()
