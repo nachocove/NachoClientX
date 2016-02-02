@@ -40,7 +40,7 @@ namespace NachoCore.IMAP
             bool Initial = !BEContext.ProtocolState.ImapDiscoveryDone;
             Tuple<ResolveAction, string> action = new Tuple<ResolveAction, string> (ResolveAction.None, null);
 
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
+            Log.Info (Log.LOG_IMAP, "{0}: Started", CmdNameWithAccount);
             Event evt;
             bool serverFailedGenerally = false;
             try {
@@ -117,11 +117,11 @@ namespace NachoCore.IMAP
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
             } finally {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
+                Log.Info (Log.LOG_IMAP, "{0}: Finished", CmdNameWithAccount);
             }
 
             if (Cts.Token.IsCancellationRequested) {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
+                Log.Info (Log.LOG_IMAP, "{0}: Cancelled", CmdNameWithAccount);
                 return Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOCANCEL1"); // will be ignored by the caller
             }
             ReportCommResult (BEContext.Server.Host, serverFailedGenerally);

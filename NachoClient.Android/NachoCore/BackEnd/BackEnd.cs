@@ -339,31 +339,34 @@ namespace NachoCore
             DeleteServices (accountId); // free up the memory, too.
         }
 
+        object StartLockObj = new object ();
         public void Start (int accountId)
         {
-            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) called", accountId);
-            NcCommStatus.Instance.Refresh ();
-            if (!AccountHasServices (accountId)) {
-                CreateServices (accountId);
-            }
-            if (null == PendingOnTimeTimer) {
-                PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => McPending.MakeEligibleOnTime (), null, 1000, 1000);
-                PendingOnTimeTimer.Stfu = true;
-            }
+            lock (StartLockObj) {
+                Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) called", accountId);
+                NcCommStatus.Instance.Refresh ();
+                if (!AccountHasServices (accountId)) {
+                    CreateServices (accountId);
+                }
+                if (null == PendingOnTimeTimer) {
+                    PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => McPending.MakeEligibleOnTime (), null, 1000, 1000);
+                    PendingOnTimeTimer.Stfu = true;
+                }
 
-            // don't use ApplyAcrossServices, as we'll wind up right back here.
-            var services = GetServices (accountId);
-            foreach (var service in services) {
-                NcTask.Run (() => service.Start (), "Start");
-            }
+                // don't use ApplyAcrossServices, as we'll wind up right back here.
+                var services = GetServices (accountId);
+                foreach (var service in services) {
+                    NcTask.Run (() => service.Start (), "Start");
+                }
 
-            // See if we have an OAuth2 credential for this account. 
-            // If so, make sure the timer is started to refresh the token.
-            McCred cred = McCred.QueryByAccountId<McCred> (accountId).FirstOrDefault ();
-            if (null != cred && cred.CredType == McCred.CredTypeEnum.OAuth2) {
-                Oauth2RefreshInstance.Start ();
+                // See if we have an OAuth2 credential for this account. 
+                // If so, make sure the timer is started to refresh the token.
+                McCred cred = McCred.QueryByAccountId<McCred> (accountId).FirstOrDefault ();
+                if (null != cred && cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                    Oauth2RefreshInstance.Start ();
+                }
+                Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
             }
-            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
         }
 
         public void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay)

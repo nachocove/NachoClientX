@@ -16,23 +16,35 @@ namespace NachoCore.IMAP
 {
     public partial class ImapProtoControl : NcProtoControl, IPushAssistOwner
     {
+        object ClientLockObj = new object ();
         NcImapClient _MainClient;
         public NcImapClient MainClient {
             get {
-                if (null != _MainClient && _MainClient.DOA) {
-                    // Do our best to disconnect and dispose of this client, since it seems to be hosed.
-                    Log.Info (Log.LOG_IMAP, "Client is DOA. Replacing");
-                    var tmpClient = _MainClient;
-                    _MainClient = null;
-                    NcTask.Run (() => {
-                        tmpClient.Disconnect (false);
-                        tmpClient.Dispose ();
-                    }, "ImapProtoControlClientCleanup");
+                lock (ClientLockObj) {
+                    if (null != _MainClient && _MainClient.DOA) {
+                        // Do our best to disconnect and dispose of this client, since it seems to be hosed.
+                        Log.Info (Log.LOG_IMAP, "Client is DOA. Replacing");
+                        var tmpClient = _MainClient;
+                        _MainClient = null;
+                        NcTask.Run (() => {
+                            tmpClient.Disconnect (false);
+                            tmpClient.Dispose ();
+                        }, "ImapProtoControlClientCleanup");
+                    }
+                    if (null == _MainClient) {
+                        _MainClient = new NcImapClient ();
+                    }
+                    return _MainClient;
                 }
-                if (null == _MainClient) {
-                    _MainClient = new NcImapClient ();
+            }
+            set {
+                lock (ClientLockObj) {
+                    if (null != _MainClient) {
+                        _MainClient.Dispose ();
+                        _MainClient = null;
+                    }
+                    _MainClient = value;
                 }
-                return _MainClient;
             }
         }
 
@@ -437,7 +449,7 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.GetServConf,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoParkFinish, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
@@ -454,7 +466,7 @@ namespace NachoCore.IMAP
         }
 
         // State-machine's state persistance callback.
-        private void UpdateSavedState ()
+        void UpdateSavedState ()
         {
             BackEndStatePreset = null;
             var protocolState = ProtocolState;
@@ -549,7 +561,7 @@ namespace NachoCore.IMAP
             return true;
         }
 
-        private void DoDisc ()
+        void DoDisc ()
         {
             // HACK HACK: There appears to be a race-condition when the NcBackend (via UI) 
             // starts this service, and when the state gets properly recognized. This is 
@@ -572,7 +584,7 @@ namespace NachoCore.IMAP
 
         private int DiscoveryRetries = 0;
 
-        private void DoDiscTempFail ()
+        void DoDiscTempFail ()
         {
             Log.Info (Log.LOG_SMTP, "IMAP DoDisc Attempt {0}", DiscoveryRetries++);
             if (DiscoveryRetries >= KDiscoveryMaxRetries && !ProtocolState.ImapDiscoveryDone) {
@@ -585,7 +597,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private void DoUiServConfReq ()
+        void DoUiServConfReq ()
         {
             BackEndStatePreset = BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
@@ -597,19 +609,19 @@ namespace NachoCore.IMAP
             Owner.ServConfReq (this, AutoDFailureReason);
         }
 
-        private void DoConn ()
+        void DoConn ()
         {
             SetCmd (new ImapAuthenticateCommand (this, MainClient));
             ExecuteCmd ();
         }
 
-        private void DoFSync ()
+        void DoFSync ()
         {
             SetCmd (new ImapFolderSyncCommand (this, MainClient));
             ExecuteCmd ();
         }
 
-        private void DoWait ()
+        void DoWait ()
         {
             var waitTime = (int)Sm.Arg;
             SetCmd (new ImapWaitCommand (this, MainClient, waitTime, true));
@@ -631,7 +643,7 @@ namespace NachoCore.IMAP
             return (null != Cmd && Cmd.GetType () == cmdType);
         }
 
-        private void CancelCmd ()
+        void CancelCmd ()
         {
             if (null != Cmd) {
                 Cmd.Cancel ();
@@ -639,13 +651,13 @@ namespace NachoCore.IMAP
             }
         }
 
-        private void SetCmd (ImapCommand nextCmd)
+        void SetCmd (ImapCommand nextCmd)
         {
             CancelCmd ();
             Cmd = nextCmd;
         }
 
-        private void ExecuteCmd ()
+        void ExecuteCmd ()
         {
             if (!(Cmd is ImapDiscoverCommand)) {
                 PossiblyKickPushAssist ();
@@ -653,7 +665,7 @@ namespace NachoCore.IMAP
             Cmd.Execute (Sm);
         }
 
-        private void DoUiCertOkReq ()
+        void DoUiCertOkReq ()
         {
             BackEndStatePreset = BackEndStateEnum.CertAskWait;
             _ServerCertToBeExamined = (X509Certificate2)Sm.Arg;
@@ -680,7 +692,7 @@ namespace NachoCore.IMAP
             Sm.PostEvent ((uint)ImapEvt.E.UiSetServConf, "IMAPPCUSSC");
         }
 
-        private void DoExDone ()
+        void DoExDone ()
         {
             Interlocked.Decrement (ref ConcurrentExtraRequests);
             // Send the PendQHot so that the ProtoControl SM looks to see if there is another hot op
@@ -693,7 +705,7 @@ namespace NachoCore.IMAP
         private const int MaxConcurrentExtraRequests = 4;
         private int ConcurrentExtraRequests = 0;
 
-        private void DoExtraOrDont ()
+        void DoExtraOrDont ()
         {
             /* TODO
              * Move decision logic into strategy.
@@ -783,7 +795,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private void DoPick ()
+        void DoPick ()
         {
             // Having PickCore eliminates fail-to-set-state bugs.
             Sm.State = (uint)PickCore ();
@@ -837,7 +849,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private void DoNopOrPick ()
+        void DoNopOrPick ()
         {
             // If we are parked, the Cmd has been set to null.
             // Otherwise, it has the last command executed (or still executing).
@@ -849,7 +861,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private void SetAndExecute (ImapCommand cmd)
+        void SetAndExecute (ImapCommand cmd)
         {
             if (null != cmd as ImapIdleCommand && null != PushAssist) {
                 PushAssist.Execute ();
@@ -858,7 +870,7 @@ namespace NachoCore.IMAP
             ExecuteCmd ();
         }
 
-        private void DoPark ()
+        void DoPark ()
         {
             if (null != PushAssist) {
                 PushAssist.Park ();
@@ -869,17 +881,22 @@ namespace NachoCore.IMAP
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, AccountId);
 
             var disconnect = new ImapDisconnectCommand (this, MainClient);
-            disconnect.Execute (this.Sm);
+            disconnect.Execute (Sm);
         }
 
-        private void DoDrive ()
+        void DoParkFinish ()
+        {
+            MainClient = null;
+        }
+
+        void DoDrive ()
         {
             PossiblyKickPushAssist ();
             Sm.State = ProtocolState.ImapProtoControlState;
             Sm.PostEvent ((uint)SmEvt.E.Launch, "DRIVE");
         }
 
-        private void DoUiCredReq ()
+        void DoUiCredReq ()
         {
             // our creds are bad. Stop pinger.
             if (null != PushAssist) {
@@ -927,7 +944,7 @@ namespace NachoCore.IMAP
                 McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
         }
 
-        private void PossiblyKickPushAssist ()
+        void PossiblyKickPushAssist ()
         {
             if (null != PushAssist && CanStartPushAssist ()) {
                 // uncomment for testing on the simulator
