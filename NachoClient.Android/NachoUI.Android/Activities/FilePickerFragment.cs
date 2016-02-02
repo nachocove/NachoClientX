@@ -38,9 +38,11 @@ namespace NachoClient.AndroidClient
         TextView SortSegmentByDate;
         TextView SortSegmentByContact;
 
-        public FilePickerFragment(int accountId) : base()
+        public static FilePickerFragment newInstance(int accountId)
         {
-            this.accountId = accountId;
+            var fragment = new FilePickerFragment ();
+            fragment.accountId = accountId;
+            return fragment;
         }
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
