@@ -417,13 +417,6 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-            if (launchOptions != null) {
-                var shortcutItem = launchOptions.ObjectForKey (UIApplication.LaunchOptionsShortcutItemKey) as UIApplicationShortcutItem;
-                if (shortcutItem != null) {
-                    // TODO: handle shortcut on launch
-                }
-            }
-
 //            if (application.RespondsToSelector (new ObjCRuntime.Selector ("shortcutItems"))) {
 //                application.ShortcutItems = new UIApplicationShortcutItem[] {
 //                    new UIApplicationShortcutItem ("com.nachocove.nachomail.newmessage", "New Message", null, UIApplicationShortcutIcon.FromTemplateImageName ("shortcut-compose"), null)
