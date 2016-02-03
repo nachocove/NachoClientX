@@ -269,7 +269,6 @@ namespace NachoCore.Brain
         public void ProcessOneNewEmail (McEmailMessage emailMessage)
         {
             NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
-            QuickScoreEmailMessage (emailMessage);
         }
     }
 }

@@ -492,11 +492,13 @@ namespace NachoCore.Model
                 query = String.Format (
                     "SELECT e.* FROM McEmailMessage AS e " +
                     " WHERE e.NeedUpdate > ? AND e.ScoreVersion = ? " +
+                    " ORDER BY e.DateReceived DESC " +
                     " LIMIT ?");
             } else {
                 query = String.Format (
                     "SELECT e.* FROM McEmailMessage AS e " +
                     " WHERE e.NeedUpdate <= ? AND e.NeedUpdate > 0 AND e.ScoreVersion = ? " +
+                    " ORDER BY e.DateReceived DESC " +
                     " LIMIT ?");
             }
             return NcModel.Instance.Db.Query<McEmailMessage> (query, threshold, Scoring.Version, count);
@@ -518,7 +520,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
                 " WHERE e.ScoreVersion < ? AND e.HasBeenGleaned > 0 " +
-                " ORDER BY Id DESC " +
+                " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?", version, count);
         }
 
@@ -533,7 +535,9 @@ namespace NachoCore.Model
                 "SELECT e.* FROM McEmailMessage AS e " +
                 " WHERE " +
                 " likelihood (HasBeenGleaned < ?, 0.1) " +
-                " AND likelihood (e.AccountId = ?, 1.0) LIMIT ?",
+                " AND likelihood (e.AccountId = ?, 1.0) " +
+                " ORDER BY e.DateReceived DESC " +
+                " LIMIT ?",
                 GleanPhaseEnum.GLEAN_PHASE2, accountId, count);
         }
 
@@ -542,6 +546,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
                 " WHERE e.ScoreVersion = 0 AND e.Score = 0 AND e.AccountId = ? " +
+                " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?", accountId, count);
         }
 
