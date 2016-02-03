@@ -134,7 +134,7 @@ namespace NachoClient.iOS
             yOffset = DisplayNameTextBlock.Frame.Bottom;
 
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if ((null != creds) && (McCred.CredTypeEnum.Password == creds.CredType)) {
+            if ((null != creds) && ((McCred.CredTypeEnum.Password == creds.CredType) || (McCred.CredTypeEnum.OAuth2 == creds.CredType))) {
                 Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
                 ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Update Password", INDENT, 15, ChangePasswordTapHandler);
                 contentView.AddSubview (ChangePasswordBlock);
@@ -457,7 +457,9 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SegueToAccountValidation", this);
+                if (!MaybeStartGmailAuth (account)) {
+                    PerformSegue ("SegueToAccountValidation", this);
+                }
             }
         }
 
@@ -689,7 +691,7 @@ namespace NachoClient.iOS
 
                     string expiresString = "0";
                     uint expirationSecs = 0;
-                    if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
+                    if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
                         if (!uint.TryParse (expiresString, out expirationSecs)) {
                             Log.Info (Log.LOG_UI, "StartGoogleLogin: Could not convert expires value {0} to int", expiresString);
                         }
@@ -727,7 +729,6 @@ namespace NachoClient.iOS
             UIViewController vc = auth.GetUI ();
             this.PresentViewController (vc, true, null);
         }
-
 
     }
 }
