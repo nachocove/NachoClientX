@@ -84,6 +84,7 @@ namespace NachoClient.AndroidClient
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
 
             unreadAndHot.RemoveAll (x => String.IsNullOrEmpty (x.From));
+            unreadAndHot.RemoveAll (x => !NotificationHelper.ShouldNotifyEmailMessage (x));
 
             if (unreadAndHot.Count > 0) {
                 ExpandedNotification (EMAIL_NOTIFICATION_ID, unreadAndHot.Last (), unreadAndHot.Count);

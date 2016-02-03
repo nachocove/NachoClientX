@@ -8,9 +8,9 @@ namespace NachoCore.Utils
 {
     public class NotificationHelper
     {
-        public static bool ShouldNotifyEmailMessage (McEmailMessage emailMessage, McAccount account)
+        public static bool ShouldNotifyEmailMessage (McEmailMessage emailMessage)
         {
-            NcAssert.True (emailMessage.AccountId == account.Id);
+            var account = McAccount.QueryById<McAccount> (emailMessage.AccountId);
 
             var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (account.Id, emailMessage.Id);
             foreach (var folder in folders) {
