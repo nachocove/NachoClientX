@@ -94,6 +94,11 @@ namespace NachoCore.SMTP
                     Log.Error (Log.LOG_SMTP, "{0}: KeychainItemNotFoundException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPKEYCHFAIL");
+                } catch (CommandLockTimeOutException ex) {
+                    Log.Error (Log.LOG_SMTP, "{0}: CommandLockTimeOutException: {0}", cmdname, ex.Message);
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                    evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPLOKTIME");
+                    Client.DOA = true;
                 } catch (SocketException ex) {
                     Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", cmdname, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.InvalidDest);
