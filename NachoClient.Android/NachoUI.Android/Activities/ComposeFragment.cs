@@ -35,6 +35,7 @@ namespace NachoClient.AndroidClient
         QuickResponseFragmentDelegate
     {
         private const string FILE_PICKER_TAG = "FilePickerFragment";
+        private const string CAMERA_OUTPUT_URI_KEY = "cameraOutputUri";
 
         private const int PICK_REQUEST_CODE = 1;
         private const int TAKE_PHOTO_REQUEST_CODE = 2;
@@ -93,6 +94,12 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            if (savedInstanceState != null) {
+                var cameraUriString = savedInstanceState.GetString (CAMERA_OUTPUT_URI_KEY);
+                if (cameraUriString != null) {
+                    CameraOutputUri = Android.Net.Uri.Parse (cameraUriString);
+                }
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -123,6 +130,14 @@ namespace NachoClient.AndroidClient
             }
 
             return view;
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            if (CameraOutputUri != null) {
+                outState.PutString (CAMERA_OUTPUT_URI_KEY, CameraOutputUri.ToString ());
+            }
         }
 
         public override void OnDestroyView ()
