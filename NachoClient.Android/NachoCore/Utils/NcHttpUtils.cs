@@ -150,6 +150,7 @@ namespace NachoCore.Utils
         public void Dispose ()
         {
             if (null != ContentStream) {
+                Log.Info (Log.LOG_HTTP, "NcHttpRequest.Dispose({0}): Disposing filestream with file {1}", guid, ContentStream.Name);
                 try {
                     if (DeleteStreamFile) {
                         if (!File.Exists (ContentStream.Name)) {

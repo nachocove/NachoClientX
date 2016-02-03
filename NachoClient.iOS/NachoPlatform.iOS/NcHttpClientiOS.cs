@@ -86,6 +86,7 @@ namespace NachoPlatform
                     var fileStream = request.Content as FileStream;
                     RequestBodyStream = NSInputStream.FromFile (fileStream.Name);
                     dele.FilePath = fileStream.Name;
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task {0} with file {1}", request.guid, fileStream.Name);
                 } else if (request.Content is byte[]) {
                     RequestBody = NSData.FromArray (request.Content as byte[]);
                 } else {
@@ -387,9 +388,7 @@ namespace NachoPlatform
                     completionHandler (null);
                     return;
                 }
-#if DEBUG
-                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): NeedNewBodyStream request {1}ms", taskDescriptionOrUnknown(task), sw.ElapsedMilliseconds);
-#endif
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): NeedNewBodyStream ({1}) request {2}ms", taskDescriptionOrUnknown(task), FilePath, sw.ElapsedMilliseconds);
 
                 if (!string.IsNullOrEmpty (FilePath)) {
                     completionHandler (new NSInputStream (FilePath));
