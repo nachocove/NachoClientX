@@ -61,11 +61,12 @@ namespace NachoClient.AndroidClient
                 composeFragment = FragmentManager.FindFragmentByTag<ComposeFragment> (COMPOSE_FRAGMENT_TAG);
             }
             if (null == composeFragment) {
-                NcAssert.True (Intent.HasExtra (EXTRA_ACCOUNT_ID));
-                var account = McAccount.QueryById<McAccount> (Intent.GetIntExtra (EXTRA_ACCOUNT_ID, 0));
-                composeFragment = new ComposeFragment (account);
+                composeFragment = new ComposeFragment ();
                 FragmentManager.BeginTransaction ().Replace (Resource.Id.content, composeFragment, COMPOSE_FRAGMENT_TAG).Commit ();
             }
+            NcAssert.True (Intent.HasExtra (EXTRA_ACCOUNT_ID));
+            var account = McAccount.QueryById<McAccount> (Intent.GetIntExtra (EXTRA_ACCOUNT_ID, 0));
+            composeFragment.Account = account;
 
             if (Intent.HasExtra (EXTRA_ACTION)) {
                 composeFragment.Composer.Kind = (NachoCore.Utils.EmailHelper.Action)Intent.GetIntExtra (EXTRA_ACTION, 0);
