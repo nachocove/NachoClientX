@@ -301,7 +301,7 @@ namespace NachoClient.AndroidClient
                 return;
             }
             if (ChooserArrayAdapter.ADD_FILE == packageName) {
-                var filePicker = new FilePickerFragment (Composer.Account.Id);
+                var filePicker = FilePickerFragment.newInstance (Composer.Account.Id);
                 filePicker.Delegate = this;
                 filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
                 return;
@@ -316,7 +316,7 @@ namespace NachoClient.AndroidClient
 
             StartActivityForResult (intent, PICK_REQUEST_CODE);
         }
-            
+
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
         {
             if (Result.Ok != resultCode) {
