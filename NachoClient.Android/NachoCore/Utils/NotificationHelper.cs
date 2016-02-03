@@ -18,6 +18,10 @@ namespace NachoCore.Utils
                     // Don't notify the user about messages that have been deleted.
                     return false;
                 }
+                if (folder.IsJunkFolder ()) {
+                    // Don't notify the user about junk mail or spam
+                    return false;
+                }
             }
 
             var config = account.NotificationConfiguration;
