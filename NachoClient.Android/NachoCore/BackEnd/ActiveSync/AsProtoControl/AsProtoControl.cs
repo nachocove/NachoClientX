@@ -1012,7 +1012,7 @@ namespace NachoCore.ActiveSync
                 }
             } else {
                 // ... and we are capable of processing extra requests, just not now.
-                Log.Error (Log.LOG_AS, "DoExtraOrDont: not starting extra request on top of {0}.", ConcurrentExtraRequests);
+                Log.Info (Log.LOG_AS, "DoExtraOrDont: not starting extra request on top of {0}.", ConcurrentExtraRequests);
             }
         }
 
