@@ -110,7 +110,7 @@ namespace NachoCore
                 CreateServices (accountId);
                 services = GetServices (accountId);
                 if (services == null) {
-                    Log.Warn (Log.LOG_BACKEND, "StartBackendIfNotStarted ({1}) could not find services.", accountId);
+                    Log.Warn (Log.LOG_BACKEND, "StartBackendIfNotStarted ({0}) could not find services.", accountId);
                     return null;
                 }
             }
@@ -303,6 +303,10 @@ namespace NachoCore
         {
             var services = new ConcurrentQueue<NcProtoControl> ();
             var account = McAccount.QueryById<McAccount> (accountId);
+            if (null == account) {
+                Log.Info (Log.LOG_BACKEND, "CreateServices account {0} is null", accountId);
+                return;
+            }
             switch (account.AccountType) {
             case McAccount.AccountTypeEnum.Device:
                 services.Enqueue (new DeviceProtoControl (this, accountId));
