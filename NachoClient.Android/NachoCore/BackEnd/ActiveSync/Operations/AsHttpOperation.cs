@@ -422,7 +422,7 @@ namespace NachoCore.ActiveSync
             request.Cred = cred; // NB: can be null
 
             ServicePointManager.FindServicePoint (request.RequestUri).ConnectionLimit = 25;
-            Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
+            Log.Info (Log.LOG_HTTP, "HTTPOP({0}):URL:{1}", AccountId, RedactedServerUri);
             BEContext.ProtoControl.HttpClient.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, cToken);
         }
 
