@@ -72,7 +72,7 @@ namespace NachoCore.IMAP
         {
             NcResult result;
             if (null != PendingSingle) {
-                Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) {1}/{2} for email {3}", AccountId, PendingSingle.Id, PendingSingle.Token, email.Id);
+                Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) {1} for email {2}", AccountId, PendingSingle, email.Id);
             } else {
                 Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) for email {1}", AccountId, email.Id);
             }
