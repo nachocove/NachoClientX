@@ -76,7 +76,6 @@ namespace NachoCore.IMAP
             } else {
                 Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) for email {1}", AccountId, email.Id);
             }
-            Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
             McFolder folder = McFolder.QueryByServerId (AccountId, fetchBody.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
