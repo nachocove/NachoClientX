@@ -26,7 +26,7 @@ namespace NachoCore.IMAP
                 if (null == folder) {
                     return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
                 }
-                Log.Info (Log.LOG_IMAP, "Processing DnldAttCmd({0}) for email {2} attachment {3}", AccountId, email.Id, attachment.Id);
+                Log.Info (Log.LOG_IMAP, "Processing DnldAttCmd({0}) for email {1} attachment {2}", AccountId, email.Id, attachment.Id);
                 var fetchResult = FetchAttachment (folder, attachment, email);
                 if (fetchResult.isError ()) {
                     Log.Error (Log.LOG_IMAP, "FetchAttachments: {0}", fetchResult);
