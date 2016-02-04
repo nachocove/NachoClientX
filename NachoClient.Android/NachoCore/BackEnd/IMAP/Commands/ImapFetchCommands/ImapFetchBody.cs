@@ -71,6 +71,11 @@ namespace NachoCore.IMAP
         private NcResult FetchOneBodyInternal (FetchKit.FetchBody fetchBody, McEmailMessage email)
         {
             NcResult result;
+            if (null != PendingSingle) {
+                Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) {1}/{2} for email {3}", AccountId, PendingSingle.Id, PendingSingle.Token, email.Id);
+            } else {
+                Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) for email {1}", AccountId, email.Id);
+            }
             Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
             McFolder folder = McFolder.QueryByServerId (AccountId, fetchBody.ParentId);
