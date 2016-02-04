@@ -128,6 +128,7 @@ namespace NachoPlatform
                     if (request.Content is FileStream) {
                         var fileStream = request.Content as FileStream;
                         Java.IO.File file = new Java.IO.File (fileStream.Name);
+                        Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task {0} with file {1}", request.guid, fileStream.Name);
                         body = RequestBody.Create (MediaType.Parse (request.ContentType), file);
                     } else if (request.Content is byte[]) {
                         body = RequestBody.Create (MediaType.Parse (request.ContentType), request.Content as byte[]);

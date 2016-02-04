@@ -1326,7 +1326,9 @@ namespace NachoCore.ActiveSync
             if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
                 return null;
             }
-            return request.Headers;
+            var headers = request.Headers;
+            request.Dispose ();
+            return headers;
         }
 
         public byte[] PushAssistRequestData ()

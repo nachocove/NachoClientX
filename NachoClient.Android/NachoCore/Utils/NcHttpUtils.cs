@@ -137,6 +137,7 @@ namespace NachoCore.Utils
                 } else if (ContentData != null) {
                     len = ContentData.Length;
                 } else if (ContentStream != null) {
+                    Log.Info (Log.LOG_HTTP, "NcHttpRequest.SetContent({0}): set file {1}", guid, ContentStream.Name);
                     len = ContentStream.Length;
                 }
                 if (len.HasValue) {
@@ -150,6 +151,7 @@ namespace NachoCore.Utils
         public void Dispose ()
         {
             if (null != ContentStream) {
+                Log.Info (Log.LOG_HTTP, "NcHttpRequest.Dispose({0}): Disposing filestream with file {1}", guid, ContentStream.Name);
                 try {
                     if (DeleteStreamFile) {
                         if (!File.Exists (ContentStream.Name)) {
