@@ -39,7 +39,7 @@ namespace NachoCore
         /// PendingSingle is for commands that process 1-at-a-time.
         /// Both PendingSingle and PendingList get loaded-up in the class initalizer. During loading, each gets marked as dispatched.
         /// The sublass is responsible for re-writing each from dispatched to something else.
-        /// This base class has a "diaper" to catch any dispached left behind by the subclass. This base class
+        /// This base class has a "diaper" to catch any dispatched left behind by the subclass. This base class
         /// is responsible for clearing PendingSingle/PendingList. 
         /// </summary>
         protected McPending PendingSingle;
@@ -47,7 +47,7 @@ namespace NachoCore
         /// Pending list is for N-at-a-time commands.
         /// Both PendingSingle and PendingList get loaded-up in the class initalizer. During loading, each gets marked as dispatched.
         /// The sublass is responsible for re-writing each from dispatched to something else.
-        /// This base class has a "diaper" to catch any dispached left behind by the subclass. This base class
+        /// This base class has a "diaper" to catch any dispatched left behind by the subclass. This base class
         /// is responsible for clearing PendingSingle/PendingList. 
         /// </summary>
         protected List<McPending> PendingList;

@@ -464,7 +464,7 @@ namespace NachoCore
             McContact contact = null;
             McCalendar cal = null;
             foreach (var pending in pendings) {
-                pending.MarkDispached ();
+                pending.MarkDispatched ();
                 switch (pending.Operation) {
                 case McPending.Operations.CalBodyDownload:
                 case McPending.Operations.CalMove:

@@ -22,7 +22,7 @@ namespace NachoCore.ActiveSync
             FetchKit = fetchKit;
             NcModel.Instance.RunInTransaction (() => {
                 foreach (var pending in fetchKit.Pendings) {
-                    pending.Pending.MarkDispached ();
+                    pending.Pending.MarkDispatched ();
                     PendingList.Add (pending.Pending);
                 }
             });

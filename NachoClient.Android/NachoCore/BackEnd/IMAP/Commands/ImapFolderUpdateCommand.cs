@@ -12,7 +12,7 @@ namespace NachoCore.IMAP
         public ImapFolderUpdateCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
             //RedactProtocolLogFunc = RedactProtocolLog;
         }
 

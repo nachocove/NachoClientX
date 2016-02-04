@@ -14,7 +14,7 @@ namespace NachoCore.ActiveSync
             base (Xml.FolderHierarchy.FolderDelete, Xml.FolderHierarchy.Ns, dataSource)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
         }
 
         protected override bool RequiresPending ()

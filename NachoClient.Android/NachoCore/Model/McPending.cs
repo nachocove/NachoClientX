@@ -362,16 +362,16 @@ namespace NachoCore.Model
                 var target = (McPending)record;
                 target.PriorityStamp = DateTime.UtcNow;
                 target.DelayNotAllowed = true;
-                Log.Info (Log.LOG_BACKEND, "Prioritized Pending {0}/{1}", target.Id, target.Token);
+                Log.Info (Log.LOG_BACKEND, "Pending {0}/{1}: Prioritized", target.Id, target.Token);
                 return true;
             });
         }
 
         // To be used by app/ui when dealing with McPending.
         // To be used by Commands when dealing with McPending.
-        public McPending MarkDispached ()
+        public McPending MarkDispatched ()
         {
-            Log.Info (Log.LOG_SYNC, "Pending:MarkDispached:{0}", Id);
+            Log.Info (Log.LOG_SYNC, "Pending:MarkDispatched:{0}/{1}", Id, Token);
             return UpdateWithOCApply<McPending> ((record) => {
                 var target = (McPending)record;
                 target.State = StateEnum.Dispatched;
@@ -394,7 +394,7 @@ namespace NachoCore.Model
                     return true;
                 });
             }
-            Log.Info (Log.LOG_SYNC, "Pending:MarkPredBlocked:{0}", Id);
+            Log.Info (Log.LOG_SYNC, "Pending:MarkPredBlocked:{0}/{1}", Id, Token);
             return retval;
         }
 
@@ -669,14 +669,14 @@ namespace NachoCore.Model
         {
             var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
             if (null == email) {
-                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/EmailBodyError: can't find McEmailMessage with ServerId {0}", serverId);
+                Log.Warn (Log.LOG_AS, "Pending {0}/{1}: ResolveAsHardFail/EmailBodyError: can't find McEmailMessage with ServerId {2}", Id, Token, serverId);
                 return;
             }
             McBody body = null;
             if (0 != email.BodyId) {
                 body = McBody.QueryById<McBody> (email.BodyId);
                 if (null == body) {
-                    Log.Error (Log.LOG_AS, "ResolveAsHardFail/EmailBodyError: BodyId {0} has no body", email.BodyId);
+                    Log.Error (Log.LOG_AS, "Pending {0}/{1}: ResolveAsHardFail/EmailBodyError: BodyId {2} has no body", Id, Token, email.BodyId);
                 }
             }
             if (null == body) {
@@ -695,7 +695,7 @@ namespace NachoCore.Model
         {
             var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
             if (null == email) {
-                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/EmailBodyClear: can't find McEmailMessage with ServerId {0}", serverId);
+                Log.Warn (Log.LOG_AS, "Pending {0}/{1}: ResolveAsHardFail/EmailBodyClear: can't find McEmailMessage with ServerId {2}", Id, Token, serverId);
                 return;
             }
             if (0 == email.BodyId) {
@@ -703,7 +703,7 @@ namespace NachoCore.Model
             }
             McBody body = McBody.QueryById<McBody> (email.BodyId);
             if (null == body) {
-                Log.Error (Log.LOG_AS, "ResolveAsHardFail/EailBodyClear: BodyId {0} has no body", email.BodyId);
+                Log.Error (Log.LOG_AS, "Pending {0}/{1}: ResolveAsHardFail/EailBodyClear: BodyId {2} has no body", Id, Token, email.BodyId);
                 return;
             }
             body.DeleteFile (); // Sets FilePresence to None and Updates the item
@@ -713,7 +713,7 @@ namespace NachoCore.Model
         {
             var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
             if (null == attachment) {
-                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/AttachmentError: Attachment {0} does not exist", attachmentId);
+                Log.Warn (Log.LOG_AS, "Pending {0}/{1}: ResolveAsHardFail/AttachmentError: Attachment {2} does not exist", Id, Token, attachmentId);
                 return;
             }
             attachment.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
@@ -724,7 +724,7 @@ namespace NachoCore.Model
         {
             var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
             if (null == attachment) {
-                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/AttachmentClear: Attachment {0} does not exist", attachmentId);
+                Log.Warn (Log.LOG_AS, "Pending {0}/{1}: ResolveAsHardFail/AttachmentClear: Attachment {2} does not exist", Id, Token, attachmentId);
                 return;
             }
             attachment.DeleteFile (); // Sets FilePresence to None and Updates the item
@@ -907,7 +907,7 @@ namespace NachoCore.Model
                     }
                     return true;
                 });
-                Log.Info (Log.LOG_SYNC, "Pending:{0}:{1}", methodName, pending.Id);
+                Log.Info (Log.LOG_SYNC, "Pending:{0}:{1}:{2}", methodName, pending.Id, pending.Token);
             }
             if (0 != makeEligible.Count) {
                 foreach (var accountId in eligibleInds.Keys) {
@@ -1006,7 +1006,7 @@ namespace NachoCore.Model
 
         public void ResolveAsDeferredForce (NcProtoControl control)
         {
-            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferredForce:{0}", Id);
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferredForce:{0}:{1}", Id, Token);
             ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.NotSpecified);
         }
 
@@ -1094,7 +1094,7 @@ namespace NachoCore.Model
                                     if (result.isError ()) {
                                         // strip attachment if we can't initate download.
                                         // TODO let recipient/user know.
-                                        Log.Error (Log.LOG_SYNC, "Unable to initiate attachment.");
+                                        Log.Error (Log.LOG_SYNC, "Pending {0}:{1}: Unable to initiate attachment.", Id, Token);
                                         att.Unlink (Item);
                                     } else {
                                         var pend = McPending.QueryByToken (att.AccountId, (string)result.Value).First ();
@@ -1145,9 +1145,9 @@ namespace NachoCore.Model
                 });
 
                 if (null != Item) {
-                    Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount+: {1}", Item.Id, Item.PendingRefCount);
+                    Log.Info (Log.LOG_SYNC, "Pending {0}:{1}: Item {2}: PendingRefCount+: {3}", Id, Token, Item.Id, Item.PendingRefCount);
                 }
-                Log.Info (Log.LOG_SYNC, "Pending:Insert:{0}", Id);
+                Log.Info (Log.LOG_SYNC, "Pending:Insert:{0}:{1}", Id, Token);
                 return 1;
             }
         }
@@ -1230,7 +1230,7 @@ namespace NachoCore.Model
                             break;
 
                         default:
-                            Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
+                            Log.Error (Log.LOG_SYS, "Pending {0}/{1}: ItemId set to {2} for {3}.", Id, Token, ItemId, Operation);
                             NcAssert.True (false);
                             break;
                         }
@@ -1247,14 +1247,14 @@ namespace NachoCore.Model
                             item.PendingRefCount--;
                             item.Update ();
                         }
-                        Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
+                        Log.Info (Log.LOG_SYNC, "Pending {0}/{1}: Item {2}: PendingRefCount-: {3}", Id, Token, item.Id, item.PendingRefCount);
                         if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
                             item.Delete ();
                         }
                         // Deal with any dependent McPending (if there are any, it is an error).
                         var successors = QuerySuccessors (Id);
                         if (0 != successors.Count) {
-                            Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
+                            Log.Error (Log.LOG_SYNC, "Pending {0}/{1}: {2} successors found in McPending.Delete.", Id, Token, successors.Count);
                             foreach (var succ in successors) {
                                 succ.Delete ();
                             }
@@ -1264,7 +1264,7 @@ namespace NachoCore.Model
                     ++_Version;
                 });
             
-                Log.Info (Log.LOG_SYNC, "Pending:Delete:{0}", Id);
+                Log.Info (Log.LOG_SYNC, "Pending:Delete:{0}/{1}", Id, Token);
                 return 1;
             }
         }
@@ -1298,7 +1298,7 @@ namespace NachoCore.Model
             ).OrderBy (x => x.Priority);
         }
 
-        public static IEnumerable<McPending> QueryAllNonDispachedNonFailedDoNotDelay (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        public static IEnumerable<McPending> QueryAllNonDispatchedNonFailedDoNotDelay (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
@@ -1525,7 +1525,7 @@ namespace NachoCore.Model
 
         public void ConvertToEmailSend ()
         {
-            Log.Error (Log.LOG_AS, "SmartForward/Reply not converted to SendMail. Command will likely fail.");
+            Log.Error (Log.LOG_AS, "Pending {0}:{1}: SmartForward/Reply not converted to SendMail. Command will likely fail.", Id, Token);
         }
 
         public bool CommandDominatesParentId (string cmdServerId)
