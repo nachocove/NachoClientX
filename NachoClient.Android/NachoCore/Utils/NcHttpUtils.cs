@@ -137,6 +137,7 @@ namespace NachoCore.Utils
                 } else if (ContentData != null) {
                     len = ContentData.Length;
                 } else if (ContentStream != null) {
+                    Log.Info (Log.LOG_HTTP, "NcHttpRequest.SetContent({0}): set file {1}", guid, ContentStream.Name);
                     len = ContentStream.Length;
                 }
                 if (len.HasValue) {
