@@ -201,7 +201,7 @@ namespace NachoCore.IMAP
                         // time-window (see NeedFolderMetadata()), and skipped the OpenOnly step.
                         // We need to dispatch the pending before ResolveOneSync() so we don't
                         // try to ResolveAsSuccess an eligible pending (which leads to a crash).
-                        pending = pending.MarkDispached ();
+                        pending = pending.MarkDispatched ();
                     }
                     ResolveOneSync (BEContext, ref protocolState, folder, pending);
                 }

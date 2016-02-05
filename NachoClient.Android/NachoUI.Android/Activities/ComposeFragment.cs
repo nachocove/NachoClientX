@@ -35,6 +35,7 @@ namespace NachoClient.AndroidClient
         QuickResponseFragmentDelegate
     {
         private const string FILE_PICKER_TAG = "FilePickerFragment";
+        private const string CAMERA_OUTPUT_URI_KEY = "cameraOutputUri";
 
         private const int PICK_REQUEST_CODE = 1;
         private const int TAKE_PHOTO_REQUEST_CODE = 2;
@@ -59,16 +60,30 @@ namespace NachoClient.AndroidClient
 
         #region Constructor/Factory
 
-        public ComposeFragment (McAccount account) : base ()
+        public ComposeFragment () : base ()
         {
-            Composer = new MessageComposer (account);
-            Composer.Delegate = this;
             JavaScriptQueue = new List<Tuple<string, JavascriptCallback>> ();
+        }
+
+        public McAccount Account {
+            get {
+                if (Composer != null) {
+                    return Composer.Account;
+                }
+                return null;
+            }
+            set {
+                if (Composer == null) {
+                    Composer = new MessageComposer (value);
+                    Composer.Delegate = this;
+                }
+            }
         }
 
         public static ComposeFragment newInstance (McAccount account)
         {
-            var fragment = new ComposeFragment (account);
+            var fragment = new ComposeFragment ();
+            fragment.Account = account;
             return fragment;
         }
 
@@ -79,6 +94,12 @@ namespace NachoClient.AndroidClient
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
+            if (savedInstanceState != null) {
+                var cameraUriString = savedInstanceState.GetString (CAMERA_OUTPUT_URI_KEY);
+                if (cameraUriString != null) {
+                    CameraOutputUri = Android.Net.Uri.Parse (cameraUriString);
+                }
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -109,6 +130,14 @@ namespace NachoClient.AndroidClient
             }
 
             return view;
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            if (CameraOutputUri != null) {
+                outState.PutString (CAMERA_OUTPUT_URI_KEY, CameraOutputUri.ToString ());
+            }
         }
 
         public override void OnDestroyView ()
@@ -287,7 +316,7 @@ namespace NachoClient.AndroidClient
                 return;
             }
             if (ChooserArrayAdapter.ADD_FILE == packageName) {
-                var filePicker = new FilePickerFragment (Composer.Account.Id);
+                var filePicker = FilePickerFragment.newInstance (Composer.Account.Id);
                 filePicker.Delegate = this;
                 filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
                 return;
@@ -302,7 +331,7 @@ namespace NachoClient.AndroidClient
 
             StartActivityForResult (intent, PICK_REQUEST_CODE);
         }
-            
+
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
         {
             if (Result.Ok != resultCode) {

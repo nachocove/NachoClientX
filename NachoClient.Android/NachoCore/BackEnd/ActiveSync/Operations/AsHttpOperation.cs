@@ -348,16 +348,16 @@ namespace NachoCore.ActiveSync
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
                     var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
-                        (state) => {
+                                     (state) => {
                             if (!cToken.IsCancellationRequested) {
                                 Log.Error (Log.LOG_HTTP, "AsHttpOperation:ToWbxmlStream wedged (#1313)");
                             }
                         },
-                        cToken, 
+                                     cToken, 
                         // We only want to see this Error if truly wedged.
                         // This timer doesn't perform any recovery action.
-                        60 * 1000, 
-                        System.Threading.Timeout.Infinite);
+                                     60 * 1000, 
+                                     System.Threading.Timeout.Infinite);
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (AccountId, cToken);
                     capture.Stop ();
@@ -422,7 +422,7 @@ namespace NachoCore.ActiveSync
             request.Cred = cred; // NB: can be null
 
             ServicePointManager.FindServicePoint (request.RequestUri).ConnectionLimit = 25;
-            Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
+            Log.Info (Log.LOG_HTTP, "HTTPOP({0}):URL:{1}", AccountId, RedactedServerUri);
             BEContext.ProtoControl.HttpClient.SendRequest (request, (int)baseTimeout, AttemptHttpSuccess, AttemptHttpError, cToken);
         }
 
@@ -479,6 +479,7 @@ namespace NachoCore.ActiveSync
                 }
             } else if (ex is WebException) {
                 var redactedMessage = HashHelper.HashUserInASUrl (ex.Message);
+                redactedMessage = Log.ReplaceFormatting (redactedMessage);
                 Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", RedactedServerUri, redactedMessage);
                 if (!cToken.IsCancellationRequested) {
                     CancelTimeoutTimer ("WebException");

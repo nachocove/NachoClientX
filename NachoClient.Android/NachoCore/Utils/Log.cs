@@ -225,12 +225,8 @@ namespace NachoCore.Utils
                             mb.DeclaringType.Name, mb.Name);
                     }
                 }
-                try {
                 WriteLine ("{0}", String.Format (new NachoFormatter (),
                     Log.ModuleString (subsystem) + ":" + level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
-                } catch(Exception what) {
-                    Console.WriteLine ("{0}", what);
-                }
             }
             if (settings.ToTelemetry (subsystem)) {
                 Telemetry.RecordLogEvent (threadId, teleType, subsystem, fmt, list);
@@ -483,6 +479,11 @@ namespace NachoCore.Utils
                 }
                 Log.Info (Log.LOG_SYS, "fd {0}: {1}", fd, path);
             }
+        }
+
+        public static String ReplaceFormatting (String s)
+        {
+            return s.Replace ("{", "[").Replace ("}", "]");
         }
 
         // This is for testing only

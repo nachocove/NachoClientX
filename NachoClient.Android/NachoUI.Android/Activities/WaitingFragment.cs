@@ -55,6 +55,7 @@ namespace NachoClient.AndroidClient
         private static AccountSyncingStatusMessage SyncingMessage = new AccountSyncingStatusMessage ("Syncing...", "Syncing your inbox...", true);
         private static AccountSyncingStatusMessage SuccessMessage = new AccountSyncingStatusMessage ("Account Created", "Your account is ready!", false);
         private static AccountSyncingStatusMessage ErrorMessage = new AccountSyncingStatusMessage ("Account Created", "Sorry, we could not fully sync your inbox.  Please see Settings for more information", false);
+        private static AccountSyncingStatusMessage TooManyDevicesMessage = new AccountSyncingStatusMessage ("Cannot Create Account", "You are already using the maximum number of devices for this account.  Please contact your system administrator.", false);
         private static AccountSyncingStatusMessage NetworkMessage = new AccountSyncingStatusMessage ("Account Created", "Syncing will complete when network connectivity is restored", false);
 
         private AccountSyncingStatusMessage Message = SyncingMessage;
@@ -224,10 +225,20 @@ namespace NachoClient.AndroidClient
             CompleteWithMessage (SuccessMessage);
         }
 
-        public void ServerIndTooManyDevices (int acccountId)
+        public void ServerIndTooManyDevices (int accountId)
         {
             LoginEvents.Owner = null;
-            CompleteWithMessage (ErrorMessage);
+            BackEnd.Instance.Stop (accountId);
+            NcAccountHandler.Instance.RemoveAccount (accountId);
+            account = null;
+
+            NcAlertView.Show (this.Activity,
+                "Account Setup Failed",
+                "You are already using the maximum number of devices for this account.  Please contact your system administrator.",
+                () => {
+                    var parent = (WaitingFragmentDelegate)Activity;
+                    parent.WaitingFinished (account);
+                });
         }
 
         public void ServerIndServerErrorRetryLater (int acccountId)

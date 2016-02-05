@@ -11,6 +11,7 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.Index;
 using System.Threading;
+using System.Linq;
 
 namespace NachoCore.Brain
 {
@@ -269,7 +270,11 @@ namespace NachoCore.Brain
         public void ProcessOneNewEmail (McEmailMessage emailMessage)
         {
             NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
-            QuickScoreEmailMessage (emailMessage);
+
+            var folder = McFolder.QueryByFolderEntryId<McEmailMessage> (emailMessage.AccountId, emailMessage.Id).FirstOrDefault ();
+            if (null != folder && !folder.IsJunkFolder () && NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 != folder.Type) {
+                NcBrain.IndexMessage (emailMessage);
+            }
         }
     }
 }

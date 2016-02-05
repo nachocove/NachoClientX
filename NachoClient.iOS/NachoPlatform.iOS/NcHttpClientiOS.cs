@@ -86,6 +86,7 @@ namespace NachoPlatform
                     var fileStream = request.Content as FileStream;
                     RequestBodyStream = NSInputStream.FromFile (fileStream.Name);
                     dele.FilePath = fileStream.Name;
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): using file {1}", request.guid, fileStream.Name);
                 } else if (request.Content is byte[]) {
                     RequestBody = NSData.FromArray (request.Content as byte[]);
                 } else {
@@ -142,9 +143,7 @@ namespace NachoPlatform
                     task.Cancel ();
                 }
             });
-#if DEBUG
-            Log.Info (Log.LOG_HTTP, "NcHttpClient: Starting task {0} for {1} {2}", task.TaskDescription, req.HttpMethod, req.Url);
-#endif
+            Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Starting task", task.TaskDescription);
             task.Resume ();
         }
 
@@ -267,10 +266,8 @@ namespace NachoPlatform
                 try {
                     long sent = task.BytesSent;
                     long received = task.BytesReceived;
-#if DEBUG
                     Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3}){4}", taskDescriptionOrUnknown(task), sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"),
                         error != null ? string.Format (" (Error: {0})", error) : "");
-#endif
                     if (Token.IsCancellationRequested) {
                         return;
                     }
@@ -387,9 +384,7 @@ namespace NachoPlatform
                     completionHandler (null);
                     return;
                 }
-#if DEBUG
-                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): NeedNewBodyStream request {1}ms", taskDescriptionOrUnknown(task), sw.ElapsedMilliseconds);
-#endif
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): NeedNewBodyStream ({1}) request {2}ms", taskDescriptionOrUnknown(task), FilePath, sw.ElapsedMilliseconds);
 
                 if (!string.IsNullOrEmpty (FilePath)) {
                     completionHandler (new NSInputStream (FilePath));

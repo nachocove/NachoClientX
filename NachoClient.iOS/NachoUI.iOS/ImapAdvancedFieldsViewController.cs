@@ -60,9 +60,6 @@ namespace NachoClient.iOS
 
         public override bool CanSubmitFields ()
         {
-            if (usernameField.Text.Trim().Length == 0) {
-                return false;
-            }
             if (incomingServerField.Text.Trim().Length == 0) {
                 return false;
             }
@@ -105,6 +102,9 @@ namespace NachoClient.iOS
         public override void PopulateAccountWithFields (NachoCore.Model.McAccount account)
         {
             var username = usernameField.Text;
+            if (String.IsNullOrWhiteSpace (username)) {
+                username = account.EmailAddr;
+            }
             var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
             cred.Username = username;
             cred.UserSpecifiedUsername = true;

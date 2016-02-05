@@ -8,14 +8,18 @@ namespace NachoCore.Utils
 {
     public class NotificationHelper
     {
-        public static bool ShouldNotifyEmailMessage (McEmailMessage emailMessage, McAccount account)
+        public static bool ShouldNotifyEmailMessage (McEmailMessage emailMessage)
         {
-            NcAssert.True (emailMessage.AccountId == account.Id);
+            var account = McAccount.QueryById<McAccount> (emailMessage.AccountId);
 
             var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (account.Id, emailMessage.Id);
             foreach (var folder in folders) {
                 if (Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 == folder.Type) {
                     // Don't notify the user about messages that have been deleted.
+                    return false;
+                }
+                if (folder.IsJunkFolder ()) {
+                    // Don't notify the user about junk mail or spam
                     return false;
                 }
             }

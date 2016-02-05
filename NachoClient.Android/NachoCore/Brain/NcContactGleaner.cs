@@ -47,6 +47,10 @@ namespace NachoCore.Brain
         {
             if (NcBrain.ENABLED) {
                 if (!NcBrain.SharedInstance.IsCancelled ()) {
+                    if (null != Invoker) {
+                        Invoker.Dispose ();
+                        Invoker = null;
+                    }
                     Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
                         TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
                     Invoker.Stfu = true;

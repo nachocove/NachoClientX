@@ -126,7 +126,7 @@ namespace NachoCore.Utils
 
         public void SetContent (byte[] data, string contentType)
         {
-            SetContent (null, data, data.Length, contentType, false);
+            SetContent (null, data, null != data ? data.Length : 0, contentType, false);
         }
 
         protected void SetContent (FileStream stream, byte[] data, long? contentLength, string contentType, bool deleteFile)
@@ -144,6 +144,7 @@ namespace NachoCore.Utils
                 } else if (ContentData != null) {
                     len = ContentData.Length;
                 } else if (ContentStream != null) {
+                    Log.Info (Log.LOG_HTTP, "NcHttpRequest.SetContent({0}): set file {1}", guid, ContentStream.Name);
                     len = ContentStream.Length;
                 }
                 if (len.HasValue) {
@@ -157,10 +158,11 @@ namespace NachoCore.Utils
         public void Dispose ()
         {
             if (null != ContentStream) {
+                Log.Info (Log.LOG_HTTP, "NcHttpRequest.Dispose({0}): Disposing filestream with file {1}", guid, ContentStream.Name);
                 try {
                     if (DeleteStreamFile) {
                         if (!File.Exists (ContentStream.Name)) {
-                            Log.Error (Log.LOG_HTTP, "NcHttpRequest.Dispose: Can not delete file since it no longer exists: {0}", ContentStream.Name);
+                            Log.Error (Log.LOG_HTTP, "NcHttpRequest.Dispose({0}): Can not delete file since it no longer exists: {1}", guid, ContentStream.Name);
                         } else {
                             File.Delete (ContentStream.Name);
                         }

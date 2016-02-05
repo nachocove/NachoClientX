@@ -26,6 +26,7 @@ namespace NachoCore.Brain
         UPDATE_MESSAGE_READ_STATUS,
         UPDATE_MESSAGE_REPLY_STATUS,
         PAUSE,
+        INDEX_MESSAGE,
     };
 
     [Serializable]
@@ -201,6 +202,15 @@ namespace NachoCore.Brain
     }
 
     [Serializable]
+    public class NcBrainIndexMessageEvent : NcBrainMessageEvent
+    {
+        public NcBrainIndexMessageEvent (Int64 accountId, Int64 emailMessageId)
+            : base (NcBrainEventType.INDEX_MESSAGE, accountId, emailMessageId)
+        {
+        }
+    }
+
+    [Serializable]
     public class NcBrainUnindexMessageEvent : NcBrainMessageEvent
     {
         public NcBrainUnindexMessageEvent (Int64 accountId, Int64 emailMessageId)
@@ -309,19 +319,13 @@ namespace NachoCore.Brain
     // This event is for kickstart processing in the persistent queue. Do not insert this into db.
     public class NcBrainPersistentQueueEvent : NcBrainEvent
     {
-        public int EventCount;
-
-        public NcBrainPersistentQueueEvent (int eventCount = -1) : base (NcBrainEventType.PERSISTENT_QUEUE)
+        public NcBrainPersistentQueueEvent () : base (NcBrainEventType.PERSISTENT_QUEUE)
         {
-            if (-1 == eventCount) {
-                eventCount = McBrainEvent.Count ();
-            }
-            EventCount = eventCount;
         }
 
         public override string ToString ()
         {
-            return String.Format ("[NcBrainPersistentQueueEvent: type={0} eventCount={1}", GetEventType (), EventCount);
+            return String.Format ("[NcBrainPersistentQueueEvent: type={0}", GetEventType ());
         }
     }
 }

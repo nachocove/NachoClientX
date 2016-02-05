@@ -1619,11 +1619,11 @@ namespace NachoCore.Model
             McEmailAddress emailAddress = null;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
             if (null == address) {
-                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address {1}", Id, From);
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address", Id);
             } else {
                 bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
                 if (!found) {
-                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address", Id);
                 }
             }
             return emailAddress;

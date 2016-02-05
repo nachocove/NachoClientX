@@ -55,6 +55,9 @@ namespace NachoCore
             var requestUri = new Uri (RefreshUrl + "?" + queryString);
             var request = new NcHttpRequest (HttpMethod.Post, requestUri);
             request.Headers.Add ("Accept", "application/json");
+            request.SetContent (null, "application/x-www-form-urlencoded");
+
+            Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): Attempting Refresh", Cred.AccountId);
 
             HttpClient.SendRequest (request, TimeoutSecs, ((response, token) => {
                 if (response.StatusCode != System.Net.HttpStatusCode.OK) {
@@ -64,7 +67,7 @@ namespace NachoCore
                         // This probably means the refresh token is no longer valid. We don't immediately punch
                         // up to the UI, because we really don't fully trust HTTP response code. Treat it as 'fatal',
                         // and let the underlying code decide what to do with fatal responses.
-                        Log.Info (Log.LOG_SYS, "OAUTH2 Refresh Status {0}", response.StatusCode.ToString ());
+                        Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): Refresh Status {1}", Cred.AccountId, response.StatusCode.ToString ());
                         fatalError = true;
                         break;
                     default:
@@ -72,7 +75,7 @@ namespace NachoCore
                         if (response.HasBody) {
                             body = Encoding.UTF8.GetString (response.GetContent());
                         }
-                        Log.Warn (Log.LOG_SYS, "OAUTH2 HTTP Status {0}: {1}", response.StatusCode.ToString (), body);
+                        Log.Warn (Log.LOG_SYS, "RefreshOAuth2({0}): HTTP Status {1}\n{2}", Cred.AccountId, response.StatusCode.ToString (), body);
                         break;
                     }
                     onFailure (Cred, fatalError);
@@ -82,23 +85,23 @@ namespace NachoCore
                 var decodedResponse = Newtonsoft.Json.Linq.JObject.Parse (jsonResponse);
 
 #if DEBUG
-                Log.Info (Log.LOG_SYS, "OAUTH2 response: {0}", jsonResponse);
+                Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): : OAUTH2 response: {1}", Cred.AccountId, jsonResponse);
 #endif
                 Newtonsoft.Json.Linq.JToken tokenType;
                 if (!decodedResponse.TryGetValue ("token_type", out tokenType) || (string)tokenType != "Bearer") {
-                    Log.Error (Log.LOG_SYS, "Unknown OAUTH2 token_type {0}", tokenType);
+                    Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Unknown OAUTH2 token_type {1}", Cred.AccountId, tokenType);
                 }
 
                 Newtonsoft.Json.Linq.JToken accessToken;
                 if (!decodedResponse.TryGetValue ("access_token", out accessToken)) {
-                    Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token");
+                    Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Missing OAUTH2 access_token {1}", Cred.AccountId, accessToken);
                     onFailure (Cred, true);
                 }
                 Newtonsoft.Json.Linq.JToken expiresIn;
                 if (!decodedResponse.TryGetValue ("expires_in", out expiresIn)) {
-                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed.");
+                    Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): OAUTH2 Token refreshed.", Cred.AccountId);
                 } else {
-                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", expiresIn);
+                    Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): OAUTH2 Token refreshed. expires_in={1}", Cred.AccountId, expiresIn);
                 }
 
                 Newtonsoft.Json.Linq.JToken refreshToken;
@@ -111,7 +114,7 @@ namespace NachoCore
                 onSuccess (Cred);
                 RefreshAction (Cred, decodedResponse);
             }), ((ex, token) => {
-                Log.Error (Log.LOG_SYS, "OAUTH2 Exception {0}", ex.ToString ());
+                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Exception {1}", Cred.AccountId, ex.ToString ());
                 onFailure (Cred, false);
             }), Token);
         }

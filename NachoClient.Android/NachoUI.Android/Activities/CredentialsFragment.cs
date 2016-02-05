@@ -407,7 +407,6 @@ namespace NachoClient.AndroidClient
             if (IsShowingAdvanced) {
                 isAdvancedComplete = advancedFieldsViewController.CanSubmitFields ();
             }
-            isAdvancedComplete = true; // FIXME
             if (isAdvancedComplete && emailField.Text.Length > 0 && passwordField.Text.Length > 0) {
                 submitButton.Alpha = 1.0f;
                 submitButton.Enabled = true;

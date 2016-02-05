@@ -111,7 +111,7 @@ namespace NachoCore.Model
             if (String.IsNullOrEmpty (domain)) {
                 return username;
             } else {
-                return String.Join ("\\", new string[] { domain, username });
+                return String.Join ("\\", new [] { domain, username });
             }
         }
 
@@ -219,7 +219,7 @@ namespace NachoCore.Model
                 break;
 
             default:
-                Log.Error (Log.LOG_SYS, "Can not refresh {0}:{1}", account.Id, account.AccountService);
+                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Can not refresh {1}", account.Id, account.AccountService);
                 return;
             }
 

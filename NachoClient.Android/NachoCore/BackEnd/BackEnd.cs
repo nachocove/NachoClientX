@@ -110,7 +110,7 @@ namespace NachoCore
                 CreateServices (accountId);
                 services = GetServices (accountId);
                 if (services == null) {
-                    Log.Warn (Log.LOG_BACKEND, "StartBackendIfNotStarted ({1}) could not find services.", accountId);
+                    Log.Warn (Log.LOG_BACKEND, "StartBackendIfNotStarted ({0}) could not find services.", accountId);
                     return null;
                 }
             }
@@ -303,6 +303,10 @@ namespace NachoCore
         {
             var services = new ConcurrentQueue<NcProtoControl> ();
             var account = McAccount.QueryById<McAccount> (accountId);
+            if (null == account) {
+                Log.Info (Log.LOG_BACKEND, "CreateServices account {0} is null", accountId);
+                return;
+            }
             switch (account.AccountType) {
             case McAccount.AccountTypeEnum.Device:
                 services.Enqueue (new DeviceProtoControl (this, accountId));
@@ -343,31 +347,34 @@ namespace NachoCore
             DeleteServices (accountId); // free up the memory, too.
         }
 
+        object StartLockObj = new object ();
         public void Start (int accountId)
         {
-            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) called", accountId);
-            NcCommStatus.Instance.Refresh ();
-            if (!AccountHasServices (accountId)) {
-                CreateServices (accountId);
-            }
-            if (null == PendingOnTimeTimer) {
-                PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => McPending.MakeEligibleOnTime (), null, 1000, 1000);
-                PendingOnTimeTimer.Stfu = true;
-            }
+            lock (StartLockObj) {
+                Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) called", accountId);
+                NcCommStatus.Instance.Refresh ();
+                if (!AccountHasServices (accountId)) {
+                    CreateServices (accountId);
+                }
+                if (null == PendingOnTimeTimer) {
+                    PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => McPending.MakeEligibleOnTime (), null, 1000, 1000);
+                    PendingOnTimeTimer.Stfu = true;
+                }
 
-            // don't use ApplyAcrossServices, as we'll wind up right back here.
-            var services = GetServices (accountId);
-            foreach (var service in services) {
-                NcTask.Run (() => service.Start (), "Start");
-            }
+                // don't use ApplyAcrossServices, as we'll wind up right back here.
+                var services = GetServices (accountId);
+                foreach (var service in services) {
+                    NcTask.Run (() => service.Start (), "Start");
+                }
 
-            // See if we have an OAuth2 credential for this account. 
-            // If so, make sure the timer is started to refresh the token.
-            McCred cred = McCred.QueryByAccountId<McCred> (accountId).FirstOrDefault ();
-            if (null != cred && cred.CredType == McCred.CredTypeEnum.OAuth2) {
-                Oauth2RefreshInstance.Start ();
+                // See if we have an OAuth2 credential for this account. 
+                // If so, make sure the timer is started to refresh the token.
+                McCred cred = McCred.QueryByAccountId<McCred> (accountId).FirstOrDefault ();
+                if (null != cred && cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                    Oauth2RefreshInstance.Start ();
+                }
+                Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
             }
-            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
         }
 
         public void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay)
@@ -1068,11 +1075,18 @@ namespace NachoCore
         public void Start ()
         {
             if (Cts.IsCancellationRequested) {
+                Cts.Dispose ();
                 Cts = new CancellationTokenSource ();
+            }
+            if (null != RefreshTimer) {
+                Log.Error (Log.LOG_SYS, "McCred:Oauth2RefreshTimer: Starting new timer without having stopped it.");
+                RefreshTimer.Dispose ();
             }
             RefreshTimer = new NcTimer ("McCred:Oauth2RefreshTimer", state => RefreshAllDueTokens (),
                 null, new TimeSpan (0, 0, KOauth2RefreshDelaySecs), new TimeSpan (0, 0, KOauth2RefreshIntervalSecs));
-            NcCommStatus.Instance.CommStatusNetEvent += Oauth2NetStatusEventHandler;
+            if (!Initted) {
+                NcCommStatus.Instance.CommStatusNetEvent += Oauth2NetStatusEventHandler;
+            }
             Initted = true;
         }
 
@@ -1081,7 +1095,6 @@ namespace NachoCore
         /// </summary>
         public void Stop (bool cancel = true)
         {
-            NcCommStatus.Instance.CommStatusNetEvent -= Oauth2NetStatusEventHandler;
             if (null != RefreshTimer) {
                 RefreshTimer.Dispose ();
                 RefreshTimer = null;
@@ -1108,9 +1121,11 @@ namespace NachoCore
                 // If we haven't started it (i.e. never ran through BackEnd.Start(int)),
                 // then don't start it now, either. This is to prevent a network event to start
                 // us sooner than we really want to. We initially delay a lot of services
-                // for performance reasons, 
+                // for performance reasons.
                 if (Initted) {
                     Start ();
+                } else {
+                    Log.Error (Log.LOG_SYS, "Oauth2Refresh not started because not Initted");
                 }
                 break;
             }
@@ -1155,7 +1170,9 @@ namespace NachoCore
                     Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh needed.", cred.AccountId);
                     RefreshCredential (cred);
                 } else {
-                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh not needed. due {1}", cred.AccountId, cred.Expiry);
+                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh not needed. due {1}, is {2}, expiryFractionSecs {3} ({4}), status {5}", 
+                        cred.AccountId, cred.Expiry, DateTime.UtcNow, expiryFractionSecs, cred.Expiry.AddSeconds (-expiryFractionSecs),
+                        status != null ? status.ToString () : "NULL");
                 }
             }
         }
@@ -1350,6 +1367,11 @@ namespace NachoCore
                 State = state;
                 NeedCredResp = needCredResp;
                 PostExpiryRefreshRetries = 0;
+            }
+
+            public override string ToString ()
+            {
+                return string.Format ("[CredReqActiveStatus: State={0}, NeedCredResp={1}, PostExpiryRefreshRetries={2}]", State, NeedCredResp, PostExpiryRefreshRetries);
             }
         }
 

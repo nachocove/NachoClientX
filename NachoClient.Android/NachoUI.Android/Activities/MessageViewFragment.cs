@@ -182,6 +182,8 @@ namespace NachoClient.AndroidClient
             webViewClient = new NachoWebViewClient ();
             webView.SetWebViewClient (webViewClient);
             webView.Settings.BuiltInZoomControls = true;
+            webView.Settings.CacheMode = Android.Webkit.CacheModes.NoCache;
+
             scrollView.WebView = webView;
 
             AttachListeners (view);
@@ -219,7 +221,7 @@ namespace NachoClient.AndroidClient
             // completely downloaded, so it is safe to call it unconditionally.  We put the call
             // here, rather than in ConfigureAndLayout(), to handle the case where the body is
             // downloaded long after the message view has been opened.
-            EmailHelper.MarkAsRead (thread);
+            EmailHelper.MarkAsRead (message);
         }
 
         public override void OnStart ()
@@ -609,7 +611,7 @@ namespace NachoClient.AndroidClient
                     webView.LoadDataWithBaseURL (bundle.BaseUrl.AbsoluteUri, html, "text/html", "utf-8", null);
                 }
             }
-            EmailHelper.MarkAsRead (thread);
+            EmailHelper.MarkAsRead (message);
         }
 
         void Finish ()
@@ -767,13 +769,13 @@ namespace NachoClient.AndroidClient
             StartActivity (EventEditActivity.MeetingFromMessageIntent (Activity, message));
         }
 
-        void HeaderFill(TextView view, string rawAddressString, NcEmailAddress.Kind kind)
+        void HeaderFill (TextView view, string rawAddressString, NcEmailAddress.Kind kind)
         {
             if (String.IsNullOrEmpty (rawAddressString)) {
                 view.Visibility = ViewStates.Gone;
             } else {
                 view.Visibility = ViewStates.Visible;
-                view.Text = NcEmailAddress.ToPrefix(kind) + ": " + Pretty.MessageAddressString (rawAddressString, kind);
+                view.Text = NcEmailAddress.ToPrefix (kind) + ": " + Pretty.MessageAddressString (rawAddressString, kind);
             }
         }
 

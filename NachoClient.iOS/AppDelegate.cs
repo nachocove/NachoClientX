@@ -417,13 +417,6 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-            if (launchOptions != null) {
-                var shortcutItem = launchOptions.ObjectForKey (UIApplication.LaunchOptionsShortcutItemKey) as UIApplicationShortcutItem;
-                if (shortcutItem != null) {
-                    // TODO: handle shortcut on launch
-                }
-            }
-
 //            if (application.RespondsToSelector (new ObjCRuntime.Selector ("shortcutItems"))) {
 //                application.ShortcutItems = new UIApplicationShortcutItem[] {
 //                    new UIApplicationShortcutItem ("com.nachocove.nachomail.newmessage", "New Message", null, UIApplicationShortcutIcon.FromTemplateImageName ("shortcut-compose"), null)
@@ -493,7 +486,7 @@ namespace NachoClient.iOS
             if (url.IsFileUrl) {
                 OpenFiles (new string[] { url.Path }, sourceApplication);
                 return true;
-            }else if (url.Scheme.Equals (nachoScheme)) {
+            } else if (url.Scheme.Equals (nachoScheme)) {
                 var components = url.PathComponents;
                 if (components.Length > 1) {
                     if (components [1].Equals ("share") && components.Length > 2) {
@@ -1182,7 +1175,7 @@ namespace NachoClient.iOS
                     accountTable.Add (message.AccountId, newAccount);
                     account = newAccount;
                 }
-                if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message, account)) {
+                if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message)) {
                     --badgeCount;
                     message.MarkHasBeenNotified (false);
                     continue;
