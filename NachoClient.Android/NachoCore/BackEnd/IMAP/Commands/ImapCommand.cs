@@ -206,9 +206,11 @@ namespace NachoCore.IMAP
         public void ConnectAndAuthenticate ()
         {
             if (!Client.IsConnected) {
+                Log.Info (Log.LOG_IMAP, "Connecting to Server {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
                 var capUnauth = McProtocolState.FromImapCapabilities (Client.Capabilities);
 
+                Log.Info (Log.LOG_IMAP, "saving Unauthenticated Capabilities");
                 if (capUnauth != BEContext.ProtocolState.ImapServerCapabilities) {
                     BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                         var target = (McProtocolState)record;
@@ -232,6 +234,7 @@ namespace NachoCore.IMAP
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 try {
+                    Log.Info (Log.LOG_IMAP, "Authenticating to Server {0}:{1} (type {2})", BEContext.Server.Host, BEContext.Server.Port, BEContext.Cred.CredType);
                     BEContext.Account.LogHashedPassword (Log.LOG_IMAP, "ConnectAndAuthenticate", cred);
                     Client.Authenticate (username, cred, Cts.Token);
                 } catch (ImapProtocolException e) {
@@ -244,6 +247,7 @@ namespace NachoCore.IMAP
                     }
                 }
 
+                Log.Info (Log.LOG_IMAP, "saving Authenticated Capabilities");
                 var capAuth = McProtocolState.FromImapCapabilities (Client.Capabilities);
                 if (capAuth != BEContext.ProtocolState.ImapServerCapabilities) {
                     BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
@@ -253,8 +257,10 @@ namespace NachoCore.IMAP
                     });
                 }
 
+                ImapImplementation serverId = null;
                 // if the server supports ID, send one.
                 if ((Client.Capabilities & ImapCapabilities.Id) == ImapCapabilities.Id) {
+                    Log.Info (Log.LOG_IMAP, "ID exchange with server {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
                     ImapImplementation ourId = new ImapImplementation () {
                         Name = "Nacho Mail",
                         Version = string.Format ("{0}:{1}", BuildInfo.Version, BuildInfo.BuildNumber),
@@ -265,13 +271,13 @@ namespace NachoCore.IMAP
                         OSVersion = NachoPlatform.Device.Instance.Os (),
                     };
                     //Log.Info (Log.LOG_IMAP, "Our Id: {0}", dumpImapImplementation(ourId));
-                    var serverId = Client.Identify (ourId, Cts.Token);
+                    serverId = Client.Identify (ourId, Cts.Token);
                     if (null == serverId) {
                         // perhaps a bug on some servers (specifically gmx.net)
                         serverId = Client.Identify (null, Cts.Token);
                     }
-                    Log.Info (Log.LOG_IMAP, "IMAP Server {0}:{1} capabilities: {2} Id: {3}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString (), dumpImapImplementation (serverId));
                 }
+                Log.Info (Log.LOG_IMAP, "IMAP Server {0}:{1} capabilities: {2} Id: {3}", BEContext.Server.Host, BEContext.Server.Port, Client.Capabilities.ToString (), dumpImapImplementation (serverId));
             }
         }
 
@@ -280,7 +286,7 @@ namespace NachoCore.IMAP
             if (null != imapId) {
                 return HashHelper.HashEmailAddressesInImapId (string.Join (", ", imapId.Properties));
             } else {
-                return "Server did not return an ID";
+                return "Server did not return an ID or no ID capability";
             }
         }
 
