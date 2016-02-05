@@ -225,6 +225,7 @@ namespace NachoCore.Brain
 
         protected override void ExtractContent ()
         {
+            _Content = new System.Text.StringBuilder ();
             ExtractContentFromPlainText (Text);
         }
     }
@@ -241,6 +242,7 @@ namespace NachoCore.Brain
 
         protected override void ExtractContent ()
         {
+            _Content = new System.Text.StringBuilder ();
             ExtractContentFromHtml (Html);
         }
     }

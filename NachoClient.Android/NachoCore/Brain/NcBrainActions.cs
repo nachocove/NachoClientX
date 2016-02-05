@@ -231,7 +231,7 @@ namespace NachoCore.Brain
                     OpenedIndexes.Release (emailMessage.AccountId);
                     index.Remove ("message", id);
                     index = OpenedIndexes.Get (emailMessage.AccountId);
-                    Log.Warn (Log.LOG_SEARCH, "IndexEmailMessage: replacing index for {0}", id);
+                    Log.Info (Log.LOG_BRAIN, "IndexEmailMessage: replacing index for {0}", id);
                 }
                 var indexDoc = new EmailMessageIndexDocument (id, parameters);
 
