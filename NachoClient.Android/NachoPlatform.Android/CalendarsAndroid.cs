@@ -53,6 +53,10 @@ namespace NachoPlatform
                 return new List<McEvent> ();
             }
 
+            if (null == eventCursor) {
+                return new List<McEvent> ();
+            }
+
             var deviceAccount = McAccount.GetDeviceAccount ().Id;
 
             var result = new List<McEvent> ();
@@ -107,7 +111,7 @@ namespace NachoPlatform
                 Log.Error (Log.LOG_SYS, "Looking up device details failed with {0}", e.ToString ());
                 return false;
             }
-            if (!eventCursor.MoveToNext ()) {
+            if (null == eventCursor || !eventCursor.MoveToNext ()) {
                 return false;
             }
             title = eventCursor.GetString (EVENT_SUMMARY_TITLE_INDEX);
@@ -197,7 +201,7 @@ namespace NachoPlatform
                 Log.Error (Log.LOG_SYS, "Looking up device details failed with {0}", e.ToString ());
                 return null;
             }
-            if (!eventCursor.MoveToNext ()) {
+            if (null == eventCursor || !eventCursor.MoveToNext ()) {
                 return null;
             }
 
