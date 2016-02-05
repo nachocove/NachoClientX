@@ -14,7 +14,7 @@ namespace NachoCore.IMAP
         public ImapFolderCreateCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
             //RedactProtocolLogFunc = RedactProtocolLog;
         }
 

@@ -155,7 +155,7 @@ namespace NachoCore.Utils
                 try {
                     if (DeleteStreamFile) {
                         if (!File.Exists (ContentStream.Name)) {
-                            Log.Error (Log.LOG_HTTP, "NcHttpRequest.Dispose: Can not delete file since it no longer exists: {0}", ContentStream.Name);
+                            Log.Error (Log.LOG_HTTP, "NcHttpRequest.Dispose({0}): Can not delete file since it no longer exists: {1}", guid, ContentStream.Name);
                         } else {
                             File.Delete (ContentStream.Name);
                         }
