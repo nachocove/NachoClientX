@@ -103,8 +103,8 @@ namespace NachoCore.Brain
                 emailMessage.Score2 = newScores.Item2;
                 Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6},{2:F6}",
                     emailMessage.Id, emailMessage.Score, emailMessage.Score2);
-                emailMessage.NeedUpdate = 0;
-                emailMessage.UpdateScoresAndNeedUpdate ();
+                emailMessage.UpdateScores ();
+                McEmailMessageNeedsUpdate.Update (emailMessage, 0);
             }
             return true;
         }

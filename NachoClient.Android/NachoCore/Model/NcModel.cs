@@ -131,6 +131,7 @@ namespace NachoCore.Model
                     typeof(McBrainEvent),
                     typeof(McEmailAddressScore),
                     typeof(McEmailMessageScore),
+                    typeof(McEmailMessageNeedsUpdate),
                 };
             }
         }
