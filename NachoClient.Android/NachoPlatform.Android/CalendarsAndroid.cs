@@ -21,6 +21,20 @@ namespace NachoPlatform
     /// </summary>
     public static class AndroidCalendars
     {
+        private static List<McEvent> cachedDeviceEvents = new List<McEvent> ();
+        private static DateTime cachedStartRange = DateTime.UtcNow.AddDays (-31);
+        private static DateTime cachedEndRange = DateTime.UtcNow.AddYears (1);
+        private static object deviceEventsLock = new object ();
+
+        public static List<McEvent> GetDeviceEvents (DateTime startRange, DateTime endRange)
+        {
+            lock (deviceEventsLock) {
+                cachedStartRange = startRange;
+                cachedEndRange = endRange;
+                return cachedDeviceEvents;
+            }
+        }
+
         private static string[] instancesProjection = new string[] {
             CalendarContract.Instances.EventId,
             CalendarContract.Instances.Begin,
@@ -34,23 +48,25 @@ namespace NachoPlatform
         private const int INSTANCES_ALL_DAY_INDEX = 3;
         private const int INSTANCES_UID_INDEX = 4;
 
-        /// <summary>
-        /// Create in-memory McEvent objects for all of the device events within the given date range.
-        /// The McEvents that are crated will have a negative CalendarId, which is the negative value
-        /// of the event's ID in the Android database.
-        /// </summary>
-        public static List<McEvent> GetDeviceEvents (DateTime startRange, DateTime endRange)
+        public static void ReloadDeviceEvents ()
         {
+            DateTime startRange;
+            DateTime endRange;
+            lock (deviceEventsLock) {
+                startRange = cachedStartRange;
+                endRange = cachedEndRange;
+            }
             var resolver = MainApplication.Instance.ContentResolver;
-            var uriBuilder = CalendarContract.Instances.ContentSearchUri.BuildUpon ();
-            ContentUris.AppendId (uriBuilder, startRange.MillisecondsSinceEpoch ());
-            ContentUris.AppendId (uriBuilder, endRange.MillisecondsSinceEpoch ());
             ICursor eventCursor;
             try {
-                eventCursor = CalendarContract.Instances.Query (resolver, instancesProjection, startRange.MillisecondsSinceEpoch (), endRange.MillisecondsSinceEpoch ());
+                eventCursor = CalendarContract.Instances.Query (
+                    resolver, instancesProjection, startRange.MillisecondsSinceEpoch (), endRange.MillisecondsSinceEpoch ());
             } catch (Exception e) {
                 Log.Error (Log.LOG_SYS, "Querying device events failed with {0}", e.ToString ());
-                return new List<McEvent> ();
+                lock (deviceEventsLock) {
+                    cachedDeviceEvents = new List<McEvent> ();
+                }
+                return;
             }
 
             if (null == eventCursor) {
@@ -78,7 +94,9 @@ namespace NachoPlatform
                 });
             }
 
-            return result;
+            lock (deviceEventsLock) {
+                cachedDeviceEvents = result;
+            }
         }
 
         private static string[] eventSummaryProjection = new string[] {
@@ -697,7 +715,6 @@ namespace NachoPlatform
 
     public sealed class Calendars : IPlatformCalendars
     {
-        private const int SchemaRev = 0;
         private static volatile Calendars instance;
         private static object syncRoot = new Object ();
 
@@ -720,7 +737,7 @@ namespace NachoPlatform
 
         public void AskForPermission (Action<bool> result)
         {
-            // Permissions are controlled by the app's manifest.  They aren't changed at runtime.
+            // Permissions are controlled by the app's manifest.  They can't be changed at runtime.
         }
 
         public void GetCalendars (out IEnumerable<PlatformCalendarFolderRecord> folders, out IEnumerable<PlatformCalendarRecord> events)
@@ -755,9 +772,15 @@ namespace NachoPlatform
 
         public void DeviceCalendarChanged ()
         {
-            if (null != ChangeIndicator) {
-                ChangeIndicator (this, EventArgs.Empty);
-            }
+            NcTask.Run (() => {
+                AndroidCalendars.ReloadDeviceEvents ();
+                NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_EventSetChanged);
+                if (null != ChangeIndicator) {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        ChangeIndicator (this, EventArgs.Empty);
+                    });
+                }
+            }, "DeviceCalendarChanged");
         }
     }
 
@@ -774,4 +797,3 @@ namespace NachoPlatform
         }
     }
 }
-
