@@ -42,7 +42,7 @@ namespace NachoCore.IMAP
             Synckit = syncKit;
             PendingSingle = Synckit.PendingSingle;
             if (null != PendingSingle) {
-                PendingSingle.MarkDispached ();
+                PendingSingle.MarkDispatched ();
             }
         }
 
