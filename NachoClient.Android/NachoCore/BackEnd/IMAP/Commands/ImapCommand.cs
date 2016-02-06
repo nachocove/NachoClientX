@@ -31,6 +31,27 @@ namespace NachoCore.IMAP
         protected string CmdName;
         protected string CmdNameWithAccount;
         private const string KCaptureFolderMetadata = "ImapCommand.FolderMetadata";
+        protected NcStateMachine Sm;
+        protected NcStateMachine OwnerSm;
+        protected uint RetryCount;
+
+        public enum Lst : uint
+        {
+            ExecuteW = (St.Last + 1),
+        };
+
+        public class ImapCmdEvt : SmEvt
+        {
+            new public enum E : uint
+            {
+                AuthFail = (SmEvt.E.Last + 1),
+                Cancel,
+                ReDisc,
+                Wait,
+                Retry,
+                Last = Cancel,
+            };
+        }
 
         public ImapCommand (IBEContext beContext, NcImapClient imapClient) : base (beContext)
         {
@@ -38,8 +59,64 @@ namespace NachoCore.IMAP
             RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
             DontReportCommResult = false;
-            CmdName = this.GetType ().Name;
+            CmdName = GetType ().Name;
             CmdNameWithAccount = string.Format ("{0}{{{1}}}", CmdName, AccountId);
+
+            Sm = new NcStateMachine ("IMAPPC:CMD") { 
+                Name = string.Format ("IMAPPC:CMD({0})", AccountId),
+                LocalEventType = typeof(ImapCmdEvt),
+                TransTable = new[] {
+                    new Node {
+                        State = (uint)St.Start,
+                        Invalid = new [] {
+                            (uint)ImapCmdEvt.E.Retry,
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)ImapCmdEvt.E.AuthFail,
+                            (uint)ImapCmdEvt.E.Cancel,
+                            (uint)ImapCmdEvt.E.ReDisc,
+                            (uint)ImapCmdEvt.E.Wait,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoExecute, State = (uint)Lst.ExecuteW },
+                        },
+                    },
+                    new Node {
+                        State = (uint)St.Stop,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Launch,
+                            (uint)ImapCmdEvt.E.Retry,
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)ImapCmdEvt.E.AuthFail,
+                            (uint)ImapCmdEvt.E.Cancel,
+                            (uint)ImapCmdEvt.E.ReDisc,
+                            (uint)ImapCmdEvt.E.Wait,
+                        },
+                        On = new Trans[] {
+                        },
+                    },
+                    new Node {
+                        State = (uint)Lst.ExecuteW,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Launch,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)ImapCmdEvt.E.Retry, Act = DoRetry, State = (uint)Lst.ExecuteW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSuccess, State = (uint)St.Stop },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoHardFail, State = (uint)St.Stop },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoTempFail, State = (uint)St.Stop },
+                            new Trans { Event = (uint)ImapCmdEvt.E.AuthFail, Act = DoAuthFail, State = (uint)St.Stop },
+                            new Trans { Event = (uint)ImapCmdEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
+                            new Trans { Event = (uint)ImapCmdEvt.E.ReDisc, Act = DoRetry, State = (uint)St.Stop },
+                            new Trans { Event = (uint)ImapCmdEvt.E.Wait, Act = DoWait, State = (uint)St.Stop },
+                        },
+                    }
+                }
+            };
+            Sm.Validate ();
         }
 
         // MUST be overridden by subclass.
@@ -54,6 +131,17 @@ namespace NachoCore.IMAP
             base.Cancel ();
             // When the back end is being shut down, we can't afford to wait for the cancellation
             // to be processed.
+            Sm.PostEvent ((uint)ImapCmdEvt.E.Cancel, "IMAPCMDCANCEL");
+        }
+
+        public override void Execute (NcStateMachine sm)
+        {
+            OwnerSm = sm;
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPCMDLAUNCH");
+        }
+
+        void DoCancel ()
+        {
             if (!BEContext.ProtoControl.Cts.IsCancellationRequested) {
                 // Wait for the command to notice the cancellation and release the lock.
                 // TODO MailKit is not always good about cancelling in a timely manner.
@@ -67,12 +155,64 @@ namespace NachoCore.IMAP
             }
         }
 
-        public override void Execute (NcStateMachine sm)
+        void DoExecute ()
         {
             NcTask.Run (() => {
-                ExecuteNoTask (sm);
+                ExecuteNoTask (Sm);
             }, CmdName);
         }
+
+        void DoRetry ()
+        {
+            RetryCount++;
+            ExecuteNoTask (Sm);
+        }
+
+        #region Pass signals/events up to the owner
+
+        void DoSuccess ()
+        {
+            if (!Cts.IsCancellationRequested) {
+                OwnerSm.PostEvent ((uint)SmEvt.E.Success, "IMAPCMDSUCCESS");
+            }
+        }
+
+        void DoHardFail ()
+        {
+            if (!Cts.IsCancellationRequested) {
+                OwnerSm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPCMDHARD");
+            }
+        }
+
+        void DoTempFail ()
+        {
+            if (!Cts.IsCancellationRequested) {
+                OwnerSm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPCMDTEMP");
+            }
+        }
+
+        void DoAuthFail ()
+        {
+            if (!Cts.IsCancellationRequested) {
+                OwnerSm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPCMDAUTHFAIL");
+            }
+        }
+
+        void DoReDisc ()
+        {
+            if (!Cts.IsCancellationRequested) {
+                OwnerSm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCMDREDISC");
+            }
+        }
+
+        void DoWait ()
+        {
+            if (!Cts.IsCancellationRequested) {
+                OwnerSm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCMDWAIT");
+            }
+        }
+
+        #endregion
 
         public virtual Event ExecuteConnectAndAuthEvent()
         {
@@ -118,44 +258,45 @@ namespace NachoCore.IMAP
                 return;
             } catch (KeychainItemNotFoundException ex) {
                 Log.Error (Log.LOG_IMAP, "KeychainItemNotFoundException: {0}", ex.Message);
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPKEYCHFAIL");
             } catch (CommandLockTimeOutException ex) {
                 Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
                 Client.DOA = true;
             } catch (ServiceNotConnectedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
+                evt = Event.Create ((uint)ImapCmdEvt.E.ReDisc, "IMAPCONN");
                 serverFailedGenerally = true;
             } catch (AuthenticationException ex) {
                 Log.Info (Log.LOG_IMAP, "AuthenticationException: {0}", ex.Message);
                 if (!HasPasswordChanged ()) {
-                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+                    evt = Event.Create ((uint)ImapCmdEvt.E.AuthFail, "IMAPAUTH1");
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.AccessDeniedOrBlocked);
                 } else {
                     // credential was updated while we were running the command. Just try again.
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTH1TEMP");
-                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
                 }
             } catch (ServiceNotAuthenticatedException) {
                 Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 if (!HasPasswordChanged ()) {
-                    evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
+                    evt = Event.Create ((uint)ImapCmdEvt.E.AuthFail, "IMAPAUTH2");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
                 } else {
                     // credential was updated while we were running the command. Just try again.
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPAUTH2TEMP");
+                    action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
                 }
             } catch (ImapCommandException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
-                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
+                evt = Event.Create ((uint)ImapCmdEvt.E.Wait, "IMAPCOMMWAIT", 60);
             } catch (IOException ex) {
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIO");
                 serverFailedGenerally = true;
             } catch (ImapProtocolException ex) {
@@ -163,14 +304,14 @@ namespace NachoCore.IMAP
                 // <see cref="ImapProtocolException"/> is typically fatal and requires the <see cref="ImapClient"/>
                 // to be reconnected.
                 Log.Info (Log.LOG_IMAP, "ImapProtocolException: {0}", ex.ToString ());
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOTEMPFAIL");
                 serverFailedGenerally = true;
             } catch (SocketException ex) {
                 // We check the server connectivity pretty well in Discovery. If this happens with
                 // other commands, it's probably a temporary failure.
                 Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
-                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
                 serverFailedGenerally = true;
             } catch (InvalidOperationException ex) {
@@ -183,13 +324,13 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD2");
                 serverFailedGenerally = true;
             } finally {
-                Log.Info (Log.LOG_IMAP, "{0}: Finished (failed {1})", CmdNameWithAccount, serverFailedGenerally);
+                Log.Info (Log.LOG_IMAP, "{0}: Finished (failed {1}, action {2})", CmdNameWithAccount, serverFailedGenerally, action.ToString ());
             }
             if (Cts.Token.IsCancellationRequested) {
                 Log.Info (Log.LOG_IMAP, "{0}: Cancelled", CmdNameWithAccount);
                 return;
             }
-            ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
+            ReportCommResult (serverFailedGenerally);
             switch (action.Item1) {
             case ResolveAction.None:
                 break;
@@ -267,8 +408,8 @@ namespace NachoCore.IMAP
                         ReleaseDate = BuildInfo.Time,
                         SupportUrl = "https://support.nachocove.com/",
                         Vendor = "Nacho Cove, Inc",
-                        OS = NachoPlatform.Device.Instance.BaseOs ().ToString (),
-                        OSVersion = NachoPlatform.Device.Instance.Os (),
+                        OS = Device.Instance.BaseOs ().ToString (),
+                        OSVersion = Device.Instance.Os (),
                     };
                     //Log.Info (Log.LOG_IMAP, "Our Id: {0}", dumpImapImplementation(ourId));
                     serverId = Client.Identify (ourId, Cts.Token);
@@ -500,7 +641,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        protected void ReportCommResult (string host, bool didFailGenerally)
+        protected void ReportCommResult (bool didFailGenerally)
         {
             if (!DontReportCommResult) {
                 NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, didFailGenerally);
