@@ -21,9 +21,9 @@ namespace NachoClient.AndroidClient
         public override void Run (System.Threading.CancellationToken token)
         {
             string query =
-                "INSERT INTO McEmailMessageNeedsUpdate (EmailMessageId, NeedsUpdate) " +
-                " SELECT Id, NeedUpdate FROM McEmailMessage";
-            NcModel.Instance.Db.Query<McEmailMessageNeedsUpdate> (query);
+                "INSERT INTO McEmailMessageNeedsUpdate (EmailMessageId, AccountId, NeedsUpdate) " +
+                " SELECT Id, AccountId, NeedUpdate FROM McEmailMessage";
+            NcModel.Instance.Db.Execute (query);
         }
     }
 }

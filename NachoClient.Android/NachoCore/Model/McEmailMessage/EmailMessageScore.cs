@@ -508,7 +508,6 @@ namespace NachoCore.Model
                     " LIMIT ?");
             }
             var list = NcModel.Instance.Db.Query<McEmailMessage> (query, threshold, Scoring.Version, count);
-            Log.Info (Log.LOG_EMAIL, "QueryNeedUpdate: {0} messages found", list.Count);
             return list;
         }
 
