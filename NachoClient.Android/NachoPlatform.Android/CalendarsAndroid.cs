@@ -70,7 +70,10 @@ namespace NachoPlatform
             }
 
             if (null == eventCursor) {
-                return new List<McEvent> ();
+                lock (deviceEventsLock) {
+                    cachedDeviceEvents = new List<McEvent> ();
+                }
+                return;
             }
 
             var deviceAccount = McAccount.GetDeviceAccount ().Id;
