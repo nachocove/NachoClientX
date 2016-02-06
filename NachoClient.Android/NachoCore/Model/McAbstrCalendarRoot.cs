@@ -275,37 +275,44 @@ namespace NachoCore.Model
 
         private void GetDescription ()
         {
-            if (null == cachedDescription) {
-                if (0 == BodyId) {
-                    cachedDescription = "";
-                    cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
-                } else {
-                    McBody body = McBody.QueryById<McBody> (BodyId);
-                    switch (body.BodyType) {
-                    case McAbstrFileDesc.BodyTypeEnum.HTML_2:
-                        cachedDescription = body.GetContentsString ();
-                        cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                        break;
-                    case McAbstrFileDesc.BodyTypeEnum.RTF_3:
-                        cachedDescription = AsHelpers.Base64CompressedRtfToNormalRtf (body.GetContentsString ());
-                        cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.RTF_3;
-                        break;
-                    case McAbstrFileDesc.BodyTypeEnum.MIME_4:
-                        if (!MimeHelpers.FindTextWithType (
+            if (null != cachedDescription) {
+                return;
+            }
+            if (0 == BodyId) {
+                cachedDescription = "";
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
+                return;
+            }
+            McBody body = McBody.QueryById<McBody> (BodyId);
+            if (null == body) {
+                Log.Error (Log.LOG_CALENDAR, "{0} has an invalid BodyId", this.GetType ().Name);
+                cachedDescription = "";
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
+                return;
+            }
+            switch (body.BodyType) {
+            case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                cachedDescription = body.GetContentsString ();
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                break;
+            case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                cachedDescription = AsHelpers.Base64CompressedRtfToNormalRtf (body.GetContentsString ());
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.RTF_3;
+                break;
+            case McAbstrFileDesc.BodyTypeEnum.MIME_4:
+                if (!MimeHelpers.FindTextWithType (
                                 MimeHelpers.LoadMessage (body), out cachedDescription, out cachedDescriptionType,
                                 McAbstrFileDesc.BodyTypeEnum.PlainText_1, McAbstrFileDesc.BodyTypeEnum.HTML_2,
                                 McAbstrFileDesc.BodyTypeEnum.RTF_3)) {
-                            // Couldn't find anything in the message.  Set the description to empty plain text.
-                            cachedDescription = "";
-                            cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                        }
-                        break;
-                    default:
-                        cachedDescription = body.GetContentsString ();
-                        cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                        break;
-                    }
+                    // Couldn't find anything in the message.  Set the description to empty plain text.
+                    cachedDescription = "";
+                    cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
                 }
+                break;
+            default:
+                cachedDescription = body.GetContentsString ();
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                break;
             }
             if (null == cachedDescription) {
                 Log.Error (Log.LOG_CALENDAR, "McAbstrCalendarRoot.GetDescription() completed without setting cachedDescription.");
