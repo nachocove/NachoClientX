@@ -69,7 +69,6 @@ namespace NachoClient.iOS
             this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber | UIDataDetectorType.Address;
             ScrollView.ScrollEnabled = false;
             loadingComplete = false;
-            InitListeners ();
         }
 
         private void InitListeners ()
