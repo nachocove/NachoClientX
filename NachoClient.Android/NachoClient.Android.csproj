@@ -633,6 +633,8 @@
     <Compile Include="NachoCore\Utils\ContactsSearch.cs" />
     <Compile Include="NachoCore\Utils\NcApplicationMonitor.cs" />
     <Compile Include="NachoCore\Utils\EmailSearch.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration51.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
