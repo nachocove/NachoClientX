@@ -272,6 +272,8 @@ namespace NachoCore
         public event EventHandler StatusIndEvent;
         // when true, everything in the background needs to chill.
         public bool IsBackgroundAbateRequired { get; set; }
+        // when true, the brain needs to chill
+        public bool IsBrainAbateRequired { get; set; }
 
         public bool TestOnlyInvokeUseCurrentThread { get; set; }
 
@@ -777,11 +779,13 @@ namespace NachoCore
 
         public void BackendAbateStart ()
         {
+            IsBrainAbateRequired = true;
             NcBrain.SharedInstance.PauseService ();
         }
 
         public void BackendAbateStop ()
         {
+            IsBrainAbateRequired = false;
             NcBrain.SharedInstance.UnPauseService ();
         }
 
