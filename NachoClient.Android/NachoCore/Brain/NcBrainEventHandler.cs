@@ -100,10 +100,6 @@ namespace NachoCore.Brain
             case NcBrainEventType.PERSISTENT_QUEUE:
                 try {
                     ProcessPersistedRequests ();
-                    if (IsInterrupted ()) {
-                        // Not all of the persisted requests were processed.  Make sure they get processed later.
-                        EnqueueIfNotAtTail (new NcBrainPersistentQueueEvent ());
-                    }
                 } finally {
                     OpenedIndexes.Cleanup ();
                 }
@@ -169,6 +165,7 @@ namespace NachoCore.Brain
                     break;
                 }
                 var brainEvent = dbEvent.BrainEvent ();
+                Log.Info (Log.LOG_BRAIN, "Process persisted brain event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
                 switch (brainEvent.Type) {
                 case NcBrainEventType.INDEX_MESSAGE:
                     IndexEmailMessage (McEmailMessage.QueryById<McEmailMessage> ((int)((NcBrainIndexMessageEvent)brainEvent).EmailMessageId));

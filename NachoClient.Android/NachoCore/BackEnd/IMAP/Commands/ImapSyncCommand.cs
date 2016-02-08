@@ -389,7 +389,9 @@ namespace NachoCore.IMAP
 
             if (!emailMessage.IsIncomplete) {
                 // Extra work that needs to be done, but doesn't need to be in the same database transaction.
-                NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
+                if (justCreated) {
+                    NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
+                }
                 if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
                     // Another client has remotely read / unread this email.
                     // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
