@@ -148,7 +148,7 @@ namespace NachoCore.Utils
                     Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawning thread (parent={1})", taskName, tracer.parent);
                 }
                 if (!stfu) {
-                    Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
+                    Log.Info (Log.LOG_SYS, "NcTask {0} started on ManagedThreadId {2}, {1} running", taskName, TaskMap.Count, Thread.CurrentThread.ManagedThreadId);
                 }
                 try {
                     action.Invoke ();
