@@ -64,10 +64,17 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        static NcTimer CheckNotifiedTimer;
+
         public static void OnForeground ()
         {
             // All messages are consider 'notified' once we are in foreground
-            NcTask.Run (NcApplication.Instance.CheckNotified, "CheckNotified");  // FIXME, don't always call, call on a delay
+            if (null != CheckNotifiedTimer) {
+                CheckNotifiedTimer.Dispose ();
+            }
+            CheckNotifiedTimer = new NcTimer ("NotificationService:OnForeground", (state) => {
+                NcApplication.Instance.CheckNotified ();
+            }, null, new TimeSpan (0, 0, 15), TimeSpan.Zero);
 
             // Cancel any notifications that we've issued while in background
             var nMgr = (NotificationManager)MainApplication.Instance.GetSystemService (NotificationService);
@@ -124,12 +131,12 @@ namespace NachoClient.AndroidClient
                 builder.SetContentInfo (String.Format ("{0} more message{1}", count - 1, count > 2 ? "s" : ""));
             }
 
-            var deleteIntent = new Intent (this, typeof (NotificationDeleteMessageReceiver));
+            var deleteIntent = new Intent (this, typeof(NotificationDeleteMessageReceiver));
             deleteIntent.PutExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", message.Id);
             var pendingDeleteIntent = PendingIntent.GetBroadcast (this, 0, deleteIntent, PendingIntentFlags.UpdateCurrent);
             builder.AddAction (Resource.Drawable.email_notification_delete, "Delete", pendingDeleteIntent);
 
-            var archiveIntent = new Intent (this, typeof (NotificationArchiveMessageReceiver));
+            var archiveIntent = new Intent (this, typeof(NotificationArchiveMessageReceiver));
             archiveIntent.PutExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", message.Id);
             var pendingArchiveIntent = PendingIntent.GetBroadcast (this, 0, archiveIntent, PendingIntentFlags.UpdateCurrent);
             builder.AddAction (Resource.Drawable.email_notification_archive, "Archive", pendingArchiveIntent);
@@ -161,7 +168,7 @@ namespace NachoClient.AndroidClient
 
     }
 
-    [BroadcastReceiver (Enabled=true)]
+    [BroadcastReceiver (Enabled = true)]
     class NotificationDeleteMessageReceiver : BroadcastReceiver
     {
 
@@ -183,7 +190,7 @@ namespace NachoClient.AndroidClient
 
     }
 
-    [BroadcastReceiver (Enabled=true)]
+    [BroadcastReceiver (Enabled = true)]
     class NotificationArchiveMessageReceiver : BroadcastReceiver
     {
 
