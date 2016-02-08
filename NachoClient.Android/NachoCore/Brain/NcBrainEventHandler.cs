@@ -52,14 +52,14 @@ namespace NachoCore.Brain
 
         private bool IsInterrupted ()
         {
-            return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired;
+            return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired || NcApplication.Instance.IsBrainAbateRequired;
         }
 
         public bool IsCancelled ()
         {
             return null == EventQueue || EventQueue.Token.IsCancellationRequested;
         }
-
+            
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
             Log.Info (Log.LOG_BRAIN, "Process brain event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
