@@ -73,6 +73,10 @@ namespace NachoClient.AndroidClient
                 // because the click happens on up after a down.
                 return false;
             }
+            if (ev.Action == MotionEventActions.Move && !IsScrolling) {
+                GestureDetector.OnTouchEvent (ev);
+                return IsScrolling;
+            }
             // If it's some other event like a move, we'll take it becaue no children care about these other events.
             return true;
         }
