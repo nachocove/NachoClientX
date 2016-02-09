@@ -139,7 +139,7 @@ namespace NachoCore
             }
             Log.Info (Log.LOG_SYS, "NcApplicationMonitor: Files: Max {0}, Currently open {1}",
                 PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
-            if (200 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
+            if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
                 Log.DumpFileDescriptors ();
             }
             NcModel.Instance.DumpLastAccess ();

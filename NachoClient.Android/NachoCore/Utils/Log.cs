@@ -466,11 +466,10 @@ namespace NachoCore.Utils
 
         public static void DumpFileDescriptors ()
         {
-            int numFd = PlatformProcess.GetCurrentNumberOfFileDescriptors ();
-            int numOpenFd = PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ();
-            Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", numOpenFd);
-            for (int fd = 0; fd < numFd; fd++) {
-                var path = PlatformProcess.GetFileNameForDescriptor (fd);
+            var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
+            Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", openFds.Length);
+            foreach (var fd in openFds) {
+                var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
                 if (null == path) {
                     continue;
                 }
