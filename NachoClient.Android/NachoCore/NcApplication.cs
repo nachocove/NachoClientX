@@ -432,6 +432,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_SYS, "{0}-bit App", 8 * IntPtr.Size);
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
+            NcCommStatus.Instance.Reset ();
             NcTask.StartService ();
             CloudHandler.Instance.Start ();
             Telemetry.StartService ();

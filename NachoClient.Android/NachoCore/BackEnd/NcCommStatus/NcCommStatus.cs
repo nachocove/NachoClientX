@@ -10,13 +10,11 @@ namespace NachoCore.Utils
 {
     public class NcCommStatus : INcCommStatus
     {
-        private List<ServerTracker> Trackers;
+        List<ServerTracker> Trackers;
 
-        #pragma warning disable 414
-        private NcTimer TrackerMonitorTimer;
-        #pragma warning restore 414
+        NcTimer TrackerMonitorTimer;
 
-        private ServerTracker GetTracker (int serverId)
+        ServerTracker GetTracker (int serverId)
         {
             // Mutex so we get an atomic find-or-create tracker.
             lock (syncRoot) {
@@ -29,26 +27,55 @@ namespace NachoCore.Utils
             }
         }
 
-        private static volatile NcCommStatus instance;
-        private static object syncRoot = new Object ();
+        static volatile NcCommStatus instance;
+        static object syncRoot = new Object ();
 
-        private NcCommStatus ()
+        NcCommStatus ()
         {
             Trackers = new List<ServerTracker> ();
             Status = NetStatusStatusEnum.Up;
             Speed = NetStatusSpeedEnum.WiFi_0;
             NetStatus.Instance.NetStatusEvent += NetStatusEventHandler;
+            NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
+
             // TODO: we really only need to run the timer if one or more tracker reports degraded.
-            TrackerMonitorTimer = new NcTimer ("NcCommStatus", status => {
-                lock (syncRoot) {
-                    foreach (var tracker in Trackers) {
-                        var oldQ = tracker.Quality;
-                        tracker.UpdateQuality ();
+            TrackerMonitorTimer = new NcTimer ("NcCommStatus", status => ResetTrackers (true), null, 1000, 1000);
+            TrackerMonitorTimer.Stfu = true;
+        }
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
+                case NcApplication.ExecutionContextEnum.Foreground:
+                case NcApplication.ExecutionContextEnum.QuickSync:
+                    Status = NetStatusStatusEnum.Up;
+                    ResetTrackers (true);
+                    break;
+                }
+                break;
+            }
+        }
+
+        public void Reset ()
+        {
+            Status = NetStatusStatusEnum.Up;
+            ResetTrackers (false);
+        }
+
+        void ResetTrackers (bool alert)
+        {
+            lock (syncRoot) {
+                foreach (var tracker in Trackers) {
+                    var oldQ = tracker.Quality;
+                    tracker.UpdateQuality ();
+                    if (alert) {
                         MaybeEvent (oldQ, tracker);
                     }
                 }
-            }, null, 1000, 1000);
-            TrackerMonitorTimer.Stfu = true;
+            }
         }
 
         public static NcCommStatus Instance {
@@ -64,7 +91,7 @@ namespace NachoCore.Utils
             }
         }
 
-        private void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
+        void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
         {
             UpdateState (e.Status, e.Speed, "NetStatusEventHandler");
         }
@@ -94,7 +121,7 @@ namespace NachoCore.Utils
 
         public event NetStatusEventHandler CommStatusNetEvent;
 
-        private void MaybeEvent (CommQualityEnum oldQ, ServerTracker tracker)
+        void MaybeEvent (CommQualityEnum oldQ, ServerTracker tracker)
         {
             var newQ = tracker.Quality;
             if (oldQ != newQ && null != CommStatusServerEvent) {
@@ -143,14 +170,14 @@ namespace NachoCore.Utils
             }
         }
 
-        private int GetServerId (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        int GetServerId (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             var server = McServer.QueryByAccountIdAndCapabilities (accountId, capabilities);
             // Allow 0 for scenario when we don't yet have a McServer record in DB (ex: auto-d).
             return (null == server) ? 0 : server.Id;
         }
 
-        private int GetServerId (int accountId, string host)
+        int GetServerId (int accountId, string host)
         {
             var server = McServer.QueryByHost (accountId, host);
             // Allow 0 for scenario when we don't yet have a McServer record in DB (ex: auto-d).
@@ -189,7 +216,7 @@ namespace NachoCore.Utils
             return !tracker.Throttle.HasTokens ();
         }
 
-        private void UpdateState (NetStatusStatusEnum status, NetStatusSpeedEnum speed, string source)
+        void UpdateState (NetStatusStatusEnum status, NetStatusSpeedEnum speed, string source)
         {
             lock (syncRoot) {
                 NetStatusStatusEnum oldStatus = Status;
