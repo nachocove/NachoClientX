@@ -118,26 +118,39 @@ namespace NachoCore.Brain
 
         public static void StartService ()
         {
-            // Set up the logging functions for IndexLib
-            NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
+                NcBrain brain = NcBrain.SharedInstance;
                 lock (brain.SyncRoot) {
                     var token = NcTask.Cts.Token;
                     token.Register (NcContactGleaner.Stop);
                     brain.EventQueue.Token = token;
                     NcContactGleaner.Start ();
                     brain.IsRunning = true;
+                    // Remove any TERMINATE or PAUSE events at the front of the queue.  They were intended for
+                    // the previous run of the brain, not this session.
+                    while (null != brain.EventQueue.DequeueIf (evt => { return evt.Type == NcBrainEventType.TERMINATE || evt.Type == NcBrainEventType.PAUSE; }))
+                    {
+                    }
                 }
-                brain.Process ();
+                try {
+                    brain.Process ();
+                } finally {
+                    lock (brain.SyncRoot) {
+                        brain.IsRunning = false;
+                    }
+                }
             }, "Brain");
         }
 
         public static void StopService ()
         {
-            lock (NcBrain.SharedInstance.SyncRoot) {
-                NcBrain.SharedInstance.IsRunning = false;
-                NcContactGleaner.Stop ();
-                NcBrain.SharedInstance.EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+            var brain = NcBrain.SharedInstance;
+            lock (brain.SyncRoot) {
+                if (brain.IsRunning) {
+                    NcContactGleaner.Stop ();
+                    brain.IsRunning = false;
+                    brain.EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+                }
             }
         }
 
