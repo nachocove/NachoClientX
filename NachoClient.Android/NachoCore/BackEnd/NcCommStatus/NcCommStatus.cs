@@ -39,7 +39,7 @@ namespace NachoCore.Utils
             NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
 
             // TODO: we really only need to run the timer if one or more tracker reports degraded.
-            TrackerMonitorTimer = new NcTimer ("NcCommStatus", status => ResetTrackers (true), null, 1000, 1000);
+            TrackerMonitorTimer = new NcTimer ("NcCommStatus", status => ResetTrackers (), null, 1000, 1000);
             TrackerMonitorTimer.Stfu = true;
         }
 
@@ -51,29 +51,21 @@ namespace NachoCore.Utils
                 switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
                 case NcApplication.ExecutionContextEnum.Foreground:
                 case NcApplication.ExecutionContextEnum.QuickSync:
-                    Status = NetStatusStatusEnum.Up;
-                    ResetTrackers (true);
+                    UpdateState (NetStatusStatusEnum.Up, Speed, "NcCommStatus.StatusIndEventHandler");
+                    ResetTrackers ();
                     break;
                 }
                 break;
             }
         }
 
-        public void Reset ()
-        {
-            Status = NetStatusStatusEnum.Up;
-            ResetTrackers (false);
-        }
-
-        void ResetTrackers (bool alert)
+        void ResetTrackers ()
         {
             lock (syncRoot) {
                 foreach (var tracker in Trackers) {
                     var oldQ = tracker.Quality;
                     tracker.UpdateQuality ();
-                    if (alert) {
-                        MaybeEvent (oldQ, tracker);
-                    }
+                    MaybeEvent (oldQ, tracker);
                 }
             }
         }
