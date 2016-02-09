@@ -119,7 +119,8 @@ namespace NachoCore.Utils
                 return null; // an entry exists
             }
 
-            if (LoginRunningTasks.Contains (name)) {
+            bool longRunning = LoginRunningTasks.Contains (name);
+            if (longRunning) {
                 Log.Info (Log.LOG_SYS, "NcTask {0} will be long running", name);
                 option = TaskCreationOptions.LongRunning;
             }
@@ -156,9 +157,11 @@ namespace NachoCore.Utils
                     Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
                 } finally {
                     var count = NcModel.Instance.NumberDbConnections;
-                    if (15 < count) {
+                    if (15 < count || longRunning) {
                         NcModel.Instance.Db = null;
-                        Log.Info (Log.LOG_SYS, "NcTask closing DB, connections: {0}", count);
+                        if (15 < count) {
+                            Log.Info (Log.LOG_SYS, "NcTask closing DB, connections: {0}", count);
+                        }
                     }
                 }
                 if (!stfu) {

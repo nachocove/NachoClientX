@@ -517,7 +517,11 @@ namespace NachoCore.Model
 
         public void Start ()
         {
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
+            int initialGcTimerLength = 15 * 1000;
+            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.PlatformIndication) {
+                initialGcTimerLength = 1 * 1000;
+            }
+            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, initialGcTimerLength, Timeout.Infinite);
             DbConnGCTimer.Stfu = true;
 
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
