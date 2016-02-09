@@ -153,6 +153,10 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
+            } catch (FolderNotFoundException ex) {
+                Log.Info (Log.LOG_IMAP, "FolderNotFoundException {0}", ex.Message);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.ConflictWithServer);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPFOLDRESYNC");
             } catch (IOException ex) {
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
