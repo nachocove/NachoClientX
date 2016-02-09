@@ -60,6 +60,8 @@ namespace NachoCore.IMAP
         /// </summary>
         public const int KInboxWindowMultiplier = 2;
 
+        public const string KXNachoChatId = "X-Nacho-ChatId";
+
         private static uint SpanSizeWithCommStatus (McProtocolState protocolState)
         {
             uint overallWindowSize = KRungSyncWindowSize [protocolState.ImapSyncRung];
@@ -84,16 +86,16 @@ namespace NachoCore.IMAP
 
         private static MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
 
-        private static HashSet<HeaderId> ImapSummaryHeaders ()
+        private static HashSet<string> ImapSummaryHeaders ()
         {
-            HashSet<HeaderId> headers = new HashSet<HeaderId> ();
-            headers.Add (HeaderId.Importance);
-            headers.Add (HeaderId.DkimSignature);
-            headers.Add (HeaderId.ContentClass);
-            headers.Add (HeaderId.XPriority);
-            headers.Add (HeaderId.Priority);
-            headers.Add (HeaderId.XMSMailPriority);
-
+            var headers = new HashSet<string> ();
+            headers.Add (HeaderId.Importance.ToString ());
+            headers.Add (HeaderId.DkimSignature.ToString ());
+            headers.Add (HeaderId.ContentClass.ToString ());
+            headers.Add (HeaderId.XPriority.ToString ());
+            headers.Add (HeaderId.Priority.ToString ());
+            headers.Add (HeaderId.XMSMailPriority.ToString ());
+            headers.Add (KXNachoChatId);
             return headers;
         }
 
@@ -109,7 +111,8 @@ namespace NachoCore.IMAP
                                                   | MessageSummaryItems.Flags
                                                   | MessageSummaryItems.InternalDate
                                                   | MessageSummaryItems.MessageSize
-                                                  | MessageSummaryItems.UniqueId;
+                                                  | MessageSummaryItems.UniqueId
+                                                  | MessageSummaryItems.References;
 
             if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
                 NewMessageFlags |= MessageSummaryItems.GMailMessageId;
@@ -327,7 +330,7 @@ namespace NachoCore.IMAP
 
         public static SyncInstruction SyncInstructionForFlagSync (UniqueIdSet uidSet)
         {
-            return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<HeaderId> (), false, false);
+            return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<string> (), false, false);
         }
 
         #endregion

@@ -625,11 +625,8 @@ namespace NachoCore.IMAP
                     emailMessage.SenderEmailAddressId = fromEmailAddress.Id;
                 }
             }
-            if (null != summary.References && summary.References.Count > 0) {
-                if (summary.References.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} References entries in message.", summary.References.Count);
-                }
-                emailMessage.References = summary.References [0];
+            if (null != summary.References && summary.References.Any ()) {
+                emailMessage.References = string.Join ("\n", summary.References);
             }
 
             if (null != summary.Headers) {
@@ -662,6 +659,12 @@ namespace NachoCore.IMAP
                         break;
 
                     case HeaderId.DkimSignature:
+                        break;
+
+                    case HeaderId.Unknown:
+                        if (header.Field == ImapStrategy.KXNachoChatId) {
+                            //emailMessage.ChatId = header.Value;
+                        }
                         break;
                     }
                 }
