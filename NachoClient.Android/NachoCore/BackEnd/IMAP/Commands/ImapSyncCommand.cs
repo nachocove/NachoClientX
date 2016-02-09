@@ -662,8 +662,8 @@ namespace NachoCore.IMAP
                         break;
 
                     case HeaderId.Unknown:
-                        if (header.Field == ImapStrategy.KXNachoChatId) {
-                            //emailMessage.ChatId = header.Value;
+                        if (header.Field == ImapStrategy.KXNachoChat) {
+                            emailMessage.IsChat = true;
                         }
                         break;
                     }
@@ -675,6 +675,13 @@ namespace NachoCore.IMAP
             }
             SetConversationId (emailMessage, summary);
             emailMessage.IsIncomplete = false;
+            if (!emailMessage.IsChat && !String.IsNullOrEmpty (emailMessage.ConversationId)) {
+                emailMessage.IsChat = McEmailMessage.IsChatConversation (emailMessage.AccountId, emailMessage.ConversationId);
+            }
+
+            if (emailMessage.IsChat) {
+                McChat.AssignMessageToChat (emailMessage);
+            }
 
             return FixupFromInfo (emailMessage, false);
         }
@@ -687,8 +694,25 @@ namespace NachoCore.IMAP
                 changed = true;
             }
             if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
-                emailMessage.ConversationId = Guid.NewGuid ().ToString ();
-                changed = true;
+                var references = new List<string> ();
+                if (!String.IsNullOrEmpty (emailMessage.InReplyTo)){
+                    references.AddRange (MimeKit.Utils.MimeUtils.EnumerateReferences (emailMessage.InReplyTo));
+                }
+                if (!String.IsNullOrEmpty (emailMessage.References)){
+                    references.AddRange (emailMessage.References.Split('\n'));
+                }
+                foreach (var reference in references) {
+                    var referencedMessage = McEmailMessage.QueryByMessageId (emailMessage.AccountId, reference);
+                    if (referencedMessage != null) {
+                        emailMessage.ConversationId = referencedMessage.ConversationId;
+                        changed = true;
+                        break;
+                    }
+                }
+                if (String.IsNullOrEmpty (emailMessage.ConversationId)) {
+                    emailMessage.ConversationId = Guid.NewGuid ().ToString ();
+                    changed = true;
+                }
             }
             return changed;
         }

@@ -60,7 +60,7 @@ namespace NachoCore.IMAP
         /// </summary>
         public const int KInboxWindowMultiplier = 2;
 
-        public const string KXNachoChatId = "X-Nacho-ChatId";
+        public const string KXNachoChat = "X-Nacho-Chat";
 
         private static uint SpanSizeWithCommStatus (McProtocolState protocolState)
         {
@@ -95,7 +95,7 @@ namespace NachoCore.IMAP
             headers.Add (HeaderId.XPriority.ToString ());
             headers.Add (HeaderId.Priority.ToString ());
             headers.Add (HeaderId.XMSMailPriority.ToString ());
-            headers.Add (KXNachoChatId);
+            headers.Add (KXNachoChat);
             return headers;
         }
 

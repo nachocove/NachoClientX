@@ -1365,6 +1365,18 @@ namespace NachoCore.Model
             return contactList;
         }
 
+        public static List<McContact> QueryByEmailAddress (string emailAddress)
+        {
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
+                "SELECT c.* FROM McContact AS c " +
+                " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                " WHERE " +
+                " s.Value = ? AND " +
+                " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                emailAddress);
+            return contactList;
+        }
+
         public static List<NcContactPortraitIndex> QueryForPortraits (List<int> emailAddressIndexList)
         {
             var set = String.Format ("( {0} )", String.Join (",", emailAddressIndexList.ToArray<int> ()));

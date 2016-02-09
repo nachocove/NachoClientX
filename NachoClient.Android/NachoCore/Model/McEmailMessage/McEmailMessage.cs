@@ -174,6 +174,7 @@ namespace NachoCore.Model
         public string ConversationId { set; get; }
 
         /// MIME header Message-ID: unique message identifier (optional)
+        [Indexed]
         public string MessageID { set; get; }
 
         /// MIME header In-Reply-To: message ids, crlf separated (optional)
@@ -321,6 +322,8 @@ namespace NachoCore.Model
         /// True if its InReplyTo matches the MessageID of another McEmailMessage whose From
         /// address matches one of the McAccount. Set by brain.
         public bool IsReply { get; set; }
+
+        public bool IsChat { get; set; }
 
         /// Attachments are separate
 
@@ -1678,6 +1681,12 @@ namespace NachoCore.Model
             var query = String.Format (queryFormat, account0);
 
             return NcModel.Instance.Db.Query<McEmailMessage> (query, messageId).FirstOrDefault ();
+        }
+
+        public static bool IsChatConversation (int accountId, string conversationId)
+        {
+            var query = "SELECT COUNT(*) FROM McEmailMessage WHERE AccountId = ? AND ConversationId = ? AND IsChat = true";
+            return NcModel.Instance.Db.ExecuteScalar<int> (query, accountId, conversationId) > 0;
         }
 
         public McEmailMessage MarkHasBeenNotified (bool shouldNotify)

@@ -844,7 +844,7 @@ namespace NachoCore.Utils
             if (null != referencedMessage) {
                 mimeMessage.InReplyTo = referencedMessage.MessageID;
                 if (null != referencedMessage.References) {
-                    foreach (var reference in MimeKit.Utils.MimeUtils.EnumerateReferences(referencedMessage.References)) {
+                    foreach (var reference in referencedMessage.References.Split('\n')) {
                         mimeMessage.References.Add (reference);
                     }
                 }

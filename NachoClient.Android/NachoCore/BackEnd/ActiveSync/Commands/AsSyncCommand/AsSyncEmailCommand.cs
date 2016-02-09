@@ -97,6 +97,14 @@ namespace NachoCore.ActiveSync
                 }
             }
 
+            if (!emailMessage.IsChat && !String.IsNullOrEmpty (emailMessage.ConversationId)) {
+                emailMessage.IsChat = McEmailMessage.IsChatConversation (emailMessage.AccountId, emailMessage.ConversationId);
+            }
+
+            if (emailMessage.IsChat) {
+                McChat.AssignMessageToChat (emailMessage);
+            }
+
             return emailMessage;
         }
     }

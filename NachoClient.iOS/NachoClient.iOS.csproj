@@ -1756,6 +1756,18 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration51.cs">
       <Link>NachoCore\Model\Migration\NcMigration51.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McChat.cs">
+      <Link>NachoCore\Model\McChat.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McChatMessage.cs">
+      <Link>NachoCore\Model\McChatMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McChatParticipant.cs">
+      <Link>NachoCore\Model\McChatParticipant.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration52.cs">
+      <Link>NachoCore\Model\Migration\NcMigration52.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
