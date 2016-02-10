@@ -7,6 +7,7 @@ using System.Threading;
 using System.Runtime.CompilerServices;
 using NachoCore.Model;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace NachoCore
 {
@@ -139,8 +140,9 @@ namespace NachoCore
             }
             Log.Info (Log.LOG_SYS, "NcApplicationMonitor: Files: Max {0}, Currently open {1}",
                 PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
-            if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
-                Log.DumpFileDescriptors ();
+            DumpFileLeaks ();
+            if (150 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
+                DumpFileDescriptors ();
             }
             NcModel.Instance.DumpLastAccess ();
             NcTask.Dump ();
@@ -149,6 +151,80 @@ namespace NachoCore
                 MonitorEvent (this, EventArgs.Empty);
             }
         }
+
+        public static void DumpFileDescriptors ()
+        {
+            var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
+            Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", openFds.Length);
+            foreach (var fd in openFds) {
+                var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
+                if (null == path) {
+                    continue;
+                }
+                Log.Info (Log.LOG_SYS, "fd {0}: {1}", fd, path);
+            }
+        }
+
+        // FD leak detector
+
+        class FirstSeen
+        {
+            public bool active;
+            public string path;
+            public DateTime firstSeen;
+        }
+
+        static DateTime firstRun = DateTime.MinValue;
+        static Dictionary<string, FirstSeen> FDtracker = new Dictionary<string, FirstSeen> ();
+
+        public static void DumpFileLeaks ()
+        {
+            var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
+            if (DateTime.MinValue == firstRun) {
+                firstRun = DateTime.Now;
+            }
+            foreach (var e in FDtracker) {
+                e.Value.active = false;
+            }
+            foreach (var fd in openFds) {
+                var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
+                FirstSeen firstSeen;
+                if (FDtracker.TryGetValue (fd, out firstSeen)) {
+                    firstSeen.active = true;
+                    if (path != firstSeen.path) {
+                        firstSeen.path = path;
+                        firstSeen.firstSeen = DateTime.Now;
+                    }
+                } else {
+                    var fs = new FirstSeen ();
+                    fs.active = true;
+                    fs.path = path;
+                    fs.firstSeen = DateTime.Now;
+                    FDtracker.Add (fd, fs);
+                }
+            }
+            var toRemove = new List<string> ();
+            foreach (var e in FDtracker) {
+                if (!e.Value.active) {
+                    toRemove.Add (e.Key);
+                }
+            }
+            bool printHeader = true;
+            foreach (var e in FDtracker) {
+                // Don't report files created when the app starts
+                if (firstRun.AddMinutes (5) > e.Value.firstSeen) {
+                    continue;
+                }
+                if (printHeader) {
+                    printHeader = false;
+                    Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping potential file leaks");
+                }
+                if (DateTime.Now.AddMinutes (-2) > e.Value.firstSeen) {
+                    Log.Warn (Log.LOG_SYS, "Monitor: potential leaked FD {0} ({1}): {2}", e.Key, (DateTime.Now - e.Value.firstSeen).TotalSeconds, e.Value.path);
+                }
+            }
+        }
+
     }
 }
 
