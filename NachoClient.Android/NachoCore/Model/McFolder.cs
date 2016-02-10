@@ -465,9 +465,17 @@ namespace NachoCore.Model
 
         public static List<McFolder> QueryByMostRecentlyAccessedVisibleFolders (int accountId)
         {
-            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
-                          "WHERE f.AccountId = ? AND f.LastAccessed > ? AND f.IsHidden = 0 " +
-                          "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears (-1));
+            var queryFormat =
+                "SELECT f.* FROM McFolder AS f " +
+                "WHERE " +
+                "{0}" +
+                "f.LastAccessed > ? AND f.IsHidden = 0 " +
+                "ORDER BY f.LastAccessed DESC";
+
+            var account0 = McEmailMessage.SingleAccountString ("f.AccountId = {0} AND ", accountId);
+
+            var query = String.Format (queryFormat, account0);
+            var folders = NcModel.Instance.Db.Query<McFolder> (query, DateTime.UtcNow.AddYears (-1));
             return folders.ToList ();
         }
 
