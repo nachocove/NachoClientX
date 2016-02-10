@@ -85,6 +85,7 @@ namespace NachoCore.IMAP
                 if (Client.Capabilities.HasFlag (ImapCapabilities.UidPlus)) {
                     mailKitFolder.Expunge (uids, Cts.Token);
                 }
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             } catch (MessageNotFoundException) {
                 // ignore. We are deleting it anyway.
             }
