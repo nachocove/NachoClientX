@@ -38,7 +38,7 @@ namespace NachoCore.Utils
             NetStatus.Instance.NetStatusEvent += NetStatusEventHandler;
 
             // TODO: we really only need to run the timer if one or more tracker reports degraded.
-            TrackerMonitorTimer = new NcTimer ("NcCommStatus", status => ResetTrackers (), null, 1000, 1000);
+            TrackerMonitorTimer = new NcTimer ("NcCommStatus", status => UpdateTrackers (), null, 1000, 1000);
             TrackerMonitorTimer.Stfu = true;
         }
 
@@ -49,6 +49,15 @@ namespace NachoCore.Utils
         }
 
         void ResetTrackers ()
+        {
+            lock (syncRoot) {
+                foreach (var tracker in Trackers) {
+                    tracker.Reset ();
+                }
+            }
+        }
+
+        void UpdateTrackers ()
         {
             lock (syncRoot) {
                 foreach (var tracker in Trackers) {
