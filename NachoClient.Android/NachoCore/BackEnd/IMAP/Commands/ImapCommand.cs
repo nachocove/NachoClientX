@@ -441,12 +441,13 @@ namespace NachoCore.IMAP
         public static bool UpdateImapSetting (IMailFolder mailKitFolder, ref McFolder folder)
         {
             bool changed = false;
-            if (folder.ImapNoSelect != mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) ||
-                (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id))
+
+            bool needFullSync = ((folder.ImapExists != mailKitFolder.Count) ||
+                (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id));
+
+            if (needFullSync ||
+                folder.ImapNoSelect != mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect))
             {
-                bool needFullSync = ((folder.ImapExists != mailKitFolder.Count) ||
-                    (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id));
-                
                 // update.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
