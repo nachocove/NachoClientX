@@ -40,7 +40,7 @@ namespace NachoCore.SMTP
             UiCrdW,
             UiCertOkW,
             UiServConfW,
-            ConnW,
+            ConnW, // DEPRECATED. NOT USED. TODO: Write migration and remove this.
             QOpW,
             IdleW,
             HotQOpW,
@@ -122,7 +122,6 @@ namespace NachoCore.SMTP
             new public enum E : uint
             {
                 ReDisc = (PcEvt.E.Last + 1),
-                ReConn,
                 UiSetCred,
                 GetServConf,
                 UiSetServConf,
@@ -169,7 +168,6 @@ namespace NachoCore.SMTP
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
                     },
@@ -193,7 +191,6 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)SmtpEvt.E.UiCertOkYes, Act = DoCertOkYes, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.UiCertOkNo, Act = DoCertOkNo, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -209,12 +206,11 @@ namespace NachoCore.SMTP
                         },
                         Invalid = new uint[] {
                             (uint)SmtpEvt.E.ReDisc,
-                            (uint)SmtpEvt.E.ReConn,
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
@@ -233,7 +229,6 @@ namespace NachoCore.SMTP
                         },
                         Invalid = new uint[] {
                             (uint)SmtpEvt.E.ReDisc,
-                            (uint)SmtpEvt.E.ReConn,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
@@ -245,7 +240,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.Wait,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -259,7 +254,6 @@ namespace NachoCore.SMTP
                         },
                         Invalid = new uint[] {
                             (uint)SmtpEvt.E.ReDisc,
-                            (uint)SmtpEvt.E.ReConn,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
@@ -282,7 +276,6 @@ namespace NachoCore.SMTP
                         State = (uint)Lst.ConnW,
                         Invalid = new uint[] {
                             (uint)SmtpEvt.E.ReDisc,
-                            (uint)SmtpEvt.E.ReConn,
                             (uint)SmtpEvt.E.GetCertOk,
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
@@ -318,11 +311,10 @@ namespace NachoCore.SMTP
                             (uint)SmEvt.E.TempFail,
                             (uint)SmtpEvt.E.ReDisc,
                             (uint)SmtpEvt.E.AuthFail,
-                            (uint)SmtpEvt.E.ReConn,
                             (uint)SmtpEvt.E.Wait,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.IdleW },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -351,7 +343,6 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
-                            new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
                         },
                     },
                     new Node {
@@ -377,7 +368,6 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
-                            new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
                         }
                     },
                     new Node {
@@ -388,7 +378,6 @@ namespace NachoCore.SMTP
                             (uint)PcEvt.E.Park,
                             (uint)SmtpEvt.E.UiSetCred,
                             (uint)SmtpEvt.E.UiSetServConf,
-                            (uint)SmtpEvt.E.ReConn,
                         },
                         Invalid = new uint[] {
                             (uint)SmEvt.E.HardFail,
@@ -402,7 +391,7 @@ namespace NachoCore.SMTP
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.ConnW }, // TODO FIXME
+                            new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                         }
                     }
@@ -575,6 +564,13 @@ namespace NachoCore.SMTP
             // TODO: find a way to detect already running op and log an error.
             // TODO: couple ClearEventQueue with PostEvent inside SM mutex.
             Sm.ClearEventQueue ();
+            if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.QuickSync) {
+                if (MainClient.IsConnected) {
+                    SetAndExecute (new SmtpDisconnectCommand (this, MainClient));
+                }
+                return Lst.IdleW;
+            }
+
             var send = McPending.QueryEligible (AccountId, McAccount.SmtpCapabilities).
                 Where (x => 
                     McPending.Operations.EmailSend == x.Operation ||
@@ -598,7 +594,9 @@ namespace NachoCore.SMTP
                     return Lst.IdleW;
                 }
             } else {
-                SetAndExecute (new SmtpDisconnectCommand (this, MainClient));
+                if (MainClient.IsConnected) {
+                    SetAndExecute (new SmtpDisconnectCommand (this, MainClient));
+                }
                 return Lst.IdleW;
             }
         }
