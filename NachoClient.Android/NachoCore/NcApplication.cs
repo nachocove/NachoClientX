@@ -352,7 +352,8 @@ namespace NachoCore
                     foreach (var ex in aex.InnerExceptions) { 
                         if (ex is IOException && ex.Message.Contains ("Too many open files")) {
                             Log.Error (Log.LOG_SYS, "UnobservedTaskException:{0}: Dumping File Descriptors", ex.Message);
-                            Log.DumpFileDescriptors ();
+                            NcApplicationMonitor.DumpFileLeaks();
+                            NcApplicationMonitor.DumpFileDescriptors ();
                             NcModel.Instance.DumpLastAccess ();
                         }
                     }

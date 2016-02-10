@@ -464,18 +464,6 @@ namespace NachoCore.Utils
             Log.SharedInstance.Error (subsystem, fmt, list);
         }
 
-        public static void DumpFileDescriptors ()
-        {
-            var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
-            Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", openFds.Length);
-            foreach (var fd in openFds) {
-                var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
-                if (null == path) {
-                    continue;
-                }
-                Log.Info (Log.LOG_SYS, "fd {0}: {1}", fd, path);
-            }
-        }
 
         public static String ReplaceFormatting (String s)
         {
