@@ -36,27 +36,16 @@ namespace NachoCore.Utils
             Status = NetStatusStatusEnum.Up;
             Speed = NetStatusSpeedEnum.WiFi_0;
             NetStatus.Instance.NetStatusEvent += NetStatusEventHandler;
-            NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
 
             // TODO: we really only need to run the timer if one or more tracker reports degraded.
             TrackerMonitorTimer = new NcTimer ("NcCommStatus", status => ResetTrackers (), null, 1000, 1000);
             TrackerMonitorTimer.Stfu = true;
         }
 
-        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        public void Reset ()
         {
-            var siea = (StatusIndEventArgs)ea;
-            switch (siea.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
-                switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
-                case NcApplication.ExecutionContextEnum.Foreground:
-                case NcApplication.ExecutionContextEnum.QuickSync:
-                    UpdateState (NetStatusStatusEnum.Up, Speed, "NcCommStatus.StatusIndEventHandler");
-                    ResetTrackers ();
-                    break;
-                }
-                break;
-            }
+            UpdateState (NetStatusStatusEnum.Up, Speed, "NcCommStatus.Reset");
+            ResetTrackers ();
         }
 
         void ResetTrackers ()
