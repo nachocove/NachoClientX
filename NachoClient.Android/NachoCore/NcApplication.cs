@@ -435,6 +435,7 @@ namespace NachoCore
             NcTask.StartService ();
             CloudHandler.Instance.Start ();
             Telemetry.StartService ();
+            NcCommStatus.Instance.Reset ();
 
             // Pick most recently used account
             Account = LoginHelpers.PickStartupAccount ();
