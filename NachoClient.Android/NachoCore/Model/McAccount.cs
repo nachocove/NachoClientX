@@ -350,17 +350,19 @@ namespace NachoCore.Model
         // Create on first reference
         public static McAccount GetUnifiedAccount ()
         {
-            _unifiedAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Unified).SingleOrDefault ();
             if (null == _unifiedAccount) {
-                NcModel.Instance.RunInTransaction (() => {
-                    _unifiedAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Unified).SingleOrDefault ();
-                    if (null == _unifiedAccount) {
-                        _unifiedAccount = new McAccount ();
-                        _unifiedAccount.DisplayName = "All Accounts";
-                        _unifiedAccount.SetAccountType (McAccount.AccountTypeEnum.Unified);
-                        _unifiedAccount.Insert ();
-                    }
-                });
+                _unifiedAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Unified).SingleOrDefault ();
+                if (null == _unifiedAccount) {
+                    NcModel.Instance.RunInTransaction (() => {
+                        _unifiedAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Unified).SingleOrDefault ();
+                        if (null == _unifiedAccount) {
+                            _unifiedAccount = new McAccount ();
+                            _unifiedAccount.DisplayName = "All Accounts";
+                            _unifiedAccount.SetAccountType (McAccount.AccountTypeEnum.Unified);
+                            _unifiedAccount.Insert ();
+                        }
+                    });
+                }
             }
             return _unifiedAccount;
         }
