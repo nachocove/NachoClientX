@@ -447,6 +447,16 @@ namespace NachoCore.Model
                              select account.Id).ToList ();
         }
 
+        public static List<McAccount> GetAllConfiguredNonDeviceAccounts ()
+        {
+            return (from account in McAccount.GetAllAccounts ()
+                where
+                McAccount.AccountTypeEnum.Device != account.AccountType &&
+                McAccount.AccountTypeEnum.Unified != account.AccountType &&
+                McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
+                select account).ToList ();
+        }
+
         public static McAccount GetAccountBeingConfigured ()
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => McAccount.ConfigurationInProgressEnum.Done != x.ConfigurationInProgress).SingleOrDefault ();

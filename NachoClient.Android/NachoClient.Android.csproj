@@ -1729,6 +1729,8 @@
     <AndroidResource Include="Resources\drawable-hdpi\attachment_take_photo.png" />
     <AndroidResource Include="Resources\drawable-hdpi\email_icn_attachment.png" />
     <AndroidResource Include="Resources\drawable-mdpi\inbox_icn_deadline.png" />
+    <AndroidResource Include="Resources\layout\FolderCellHeader.axml" />
+    <AndroidResource Include="Resources\layout\FolderCellAccount.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
