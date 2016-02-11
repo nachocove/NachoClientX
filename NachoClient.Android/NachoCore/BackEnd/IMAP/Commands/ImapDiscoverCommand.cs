@@ -124,7 +124,7 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "{0}: Cancelled", CmdNameWithAccount);
                 return Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOCANCEL1"); // will be ignored by the caller
             }
-            ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
+            ReportCommResult (serverFailedGenerally);
             switch (action.Item1) {
             case ResolveAction.None:
                 break;
