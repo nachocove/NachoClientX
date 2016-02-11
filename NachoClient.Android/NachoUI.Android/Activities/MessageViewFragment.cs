@@ -214,7 +214,9 @@ namespace NachoClient.AndroidClient
                 bundle = null;
             }
 
-            NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
+            NcTask.Run (() => {
+                NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
+            }, "MessageReadStatusUpdated");
 
             var inflater = Activity.LayoutInflater;
             var attachments = McAttachment.QueryByItem (message);

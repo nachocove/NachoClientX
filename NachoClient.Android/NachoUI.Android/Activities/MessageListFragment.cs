@@ -402,7 +402,9 @@ namespace NachoClient.AndroidClient
                 }
             }
             if (0 < Ids.Count) {
-                BackEnd.Instance.SendEmailBodyFetchHints (Ids);
+                NcTask.Run (() => {
+                    BackEnd.Instance.SendEmailBodyFetchHints (Ids);
+                }, "SendEmailBodyFetchHints");
             }
         }
 

@@ -940,7 +940,10 @@ namespace NachoCore.Utils
             if ((null != message) && !message.IsRead) {
                 var body = McBody.QueryById<McBody> (message.BodyId);
                 if (force || McBody.IsComplete (body)) {
-                    BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
+                    NcTask.Run (() => {
+                        BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
+                    }, "MarkEmailReadCmd");
+
                 }
             }
         }
