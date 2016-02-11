@@ -582,7 +582,7 @@ namespace NachoCore.Model
         void LogWriteFromUIThread(string tag)
         {
             if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
-                Log.Info (Log.LOG_DB, "NcModel: {0} on UI thread\n{1}", tag, NachoPlatformBinding.PlatformProcess.GetStackTrace ());
+                // Log.Info (Log.LOG_DB, "NcModel: {0} on UI thread\n{1}", tag, NachoPlatformBinding.PlatformProcess.GetStackTrace ());
             }
         }
 
