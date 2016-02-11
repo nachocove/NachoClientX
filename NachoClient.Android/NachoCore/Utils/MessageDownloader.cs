@@ -78,7 +78,7 @@ namespace NachoCore.Utils
                     var body = message.GetBody ();
                     if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
                         // we hit the race condition
-                        _Message = message;
+                        _Message.BodyId = message.BodyId;
                         DownloadComplete ();
                     } else {
                         // Download failed
