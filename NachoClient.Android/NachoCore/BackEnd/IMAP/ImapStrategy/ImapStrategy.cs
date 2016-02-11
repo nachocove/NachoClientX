@@ -207,14 +207,8 @@ namespace NachoCore.IMAP
                 }
 
                 Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
-                McFolder idleFolder;
-                if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.GoogleDefault) {
-                    idleFolder = McFolder.QueryByServerId<McFolder> (AccountId, "[Gmail]/All Mail");
-                } else {
-                    idleFolder = McFolder.GetDefaultInboxFolder (AccountId);
-                }
                 return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
-                    new ImapIdleCommand (BEContext, Client, idleFolder));
+                    new ImapIdleCommand (BEContext, Client, McFolder.GetDefaultInboxFolder (AccountId)));
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
