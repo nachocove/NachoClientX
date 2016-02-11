@@ -64,7 +64,9 @@ namespace NachoCore.Utils
         {
             var result = BackEnd.Instance.DnldEmailBodyCmd (Message.AccountId, Message.Id, true);
             if (result.isError ()) {
-                Log.Warn (Log.LOG_UI, "DnldEmailBodyCmd({0}:{1}) failed with error: {2}", Message.Id, Message.AccountId, result);
+                if (result.SubKind != NcResult.SubKindEnum.Error_FilePresenceIsComplete) {
+                    Log.Warn (Log.LOG_UI, "DnldEmailBodyCmd({0}:{1}) failed with error: {2}", Message.Id, Message.AccountId, result);
+                }
                 DownloadToken = null;
             } else {
                 DownloadToken = result.GetValue<string> ();
@@ -73,9 +75,10 @@ namespace NachoCore.Utils
                 // Race condition: need to double check the message is still there & the body is still missing
                 var message = McEmailMessage.QueryById<McEmailMessage> (Message.Id);
                 if (message != null) {
-                    var body = McBody.QueryById<McBody> (Message.BodyId);
+                    var body = message.GetBody ();
                     if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
                         // we hit the race condition
+                        _Message = message;
                         DownloadComplete ();
                     } else {
                         // Download failed
