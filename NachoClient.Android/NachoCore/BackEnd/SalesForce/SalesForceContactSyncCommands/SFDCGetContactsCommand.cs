@@ -45,7 +45,9 @@ namespace NachoCore
         public class RecordAttributes
         {
             public string type { get; set; }
+
             public string url { get; set; }
+
             public override string ToString ()
             {
                 return string.Format ("[type={0}, url={1}]", type, url);
@@ -66,25 +68,49 @@ namespace NachoCore
         {
             var protoControl = BEContext.ProtoControl as SalesForceProtoControl;
             NcAssert.NotNull (protoControl);
-            var query = "SELECT Id FROM Contact WHERE IsDeleted=false";
-
-            if (Resync && BEContext.ProtocolState.SFDCLastContactsSynced > DateTime.MinValue) {
-                query += string.Format (" AND LastModifiedDate > {0}", BEContext.ProtocolState.SFDCLastContactsSynced.ToAsUtcString ());
-            }
-            query = Regex.Replace (query, " ", "+");
-            var request = NewRequest (HttpMethod.Get, string.Format ("{0}?q={1}", protoControl.SFDCSetup.ResourcePaths ["query"], query), jsonContentType);
+            //BEContext.ProtocolState.SFDCLastContactsSynced
+            var request = NewRequest (HttpMethod.Get, string.Format ("{0}?q={1}", protoControl.SFDCSetup.ResourcePaths ["query"], ContactRecord.GetQuery (Resync, DateTime.MinValue)), jsonContentType);
             GetRequest (request);
         }
 
         public class ContactRecord
         {
             public SFDCGetContactsCommand.RecordAttributes attributes { get; set; }
+
             public string Id { get; set; }
+
+            public DateTime LastModifiedDate { get; set; }
 
             public override string ToString ()
             {
-                return string.Format ("[attributes={0}, Id={1}]", attributes, Id);
+                return string.Format ("[attributes={0}, Id={1}, LastModifiedDate={2}]", attributes, Id, LastModifiedDate);
             }
+
+            public static string GetQuery (bool Resync, DateTime LastSynced)
+            {
+                var query = "SELECT Id,LastModifiedDate FROM Contact WHERE IsDeleted=false";
+
+                if (Resync && LastSynced > DateTime.MinValue) {
+                    query += string.Format (" AND LastModifiedDate > {0}", LastSynced.ToAsUtcString ());
+                }
+                return Regex.Replace (query, " ", "+");
+            }
+        }
+
+        public class SFDCMcContactRecord
+        {
+            public int Id { get; set; }
+            public DateTime LastModified { get; set; }
+            public string ServerId { get; set; }
+        }
+
+        public static List<SFDCMcContactRecord> GetContactsByServerIds (List<string> ids)
+        {
+            if (0 == ids.Count) {
+                return new List<SFDCMcContactRecord> ();
+            }
+            var query = string.Format ("SELECT Id,ServerId,LastModified FROM McContact WHERE Source=? AND ServerId IN ('{0}')", string.Join ("','", ids));
+            return NcModel.Instance.Db.Query<SFDCMcContactRecord> (query, McAbstrItem.ItemSource.SalesForce);
         }
 
         protected override Event ProcessSuccessResponse (NcHttpResponse response, CancellationToken token)
@@ -98,8 +124,15 @@ namespace NachoCore
                 var responseData = Newtonsoft.Json.Linq.JObject.Parse (jsonResponse);
                 var jsonRecords = responseData.SelectToken ("records");
                 var contactRecords = jsonRecords.ToObject<List<ContactRecord>> ();
-
-                return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTSUMSUCC", contactRecords.Select (x => x.Id).ToList ());
+                var localContacts = GetContactsByServerIds(contactRecords.Select (x => x.Id).ToList ());
+                var needContacts = new List<string> ();
+                foreach (var contact in contactRecords) {
+                    var local = localContacts.FirstOrDefault (x => x.ServerId == contact.Id);
+                    if (null == local || local.LastModified < contact.LastModifiedDate) {
+                        needContacts.Add (contact.Id);
+                    }
+                }
+                return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTSUMSUCC", needContacts);
             } catch (JsonSerializationException) {
                 return ProcessErrorResponse (jsonResponse);
             } catch (JsonReaderException) {
@@ -131,55 +164,100 @@ namespace NachoCore
         public class AddressInfo
         {
             public string city { get; set; }
+
             public string country { get; set; }
+
             public string countryCode { get; set; }
+
             public string geocodeAccuracy { get; set; }
+
             public string MailingCountry { get; set; }
+
             public string latitude { get; set; }
+
             public string longitude { get; set; }
+
             public string postalCode { get; set; }
+
             public string state { get; set; }
+
             public string stateCode { get; set; }
+
             public string street { get; set; }
         }
 
         public class ContactRecord
         {
             public SFDCGetContactsCommand.RecordAttributes attributes { get; set; }
+
             public string Id { get; set; }
+
             public string LastModifiedDate { get; set; }
+
             public string Salutation { get; set; }
+
             public string Title { get; set; }
+
             public string Department { get; set; }
+
             public string Name { get; set; }
+
             public string FirstName { get; set; }
+
             public string MiddleName { get; set; }
+
             public string LastName { get; set; }
+
             public string Suffix { get; set; }
+
             public string Email { get; set; }
+
             public string Phone { get; set; }
+
             public string Fax { get; set; }
+
             public string HomePhone { get; set; }
+
             public string MobilePhone { get; set; }
+
             public string OtherPhone { get; set; }
+
             public string PhotoUrl { get; set; }
+
             public string MailingStreet { get; set; }
+
             public string MailingCity { get; set; }
+
             public string MailingState { get; set; }
+
             public string MailingPostalCode { get; set; }
+
             public string MailingCountry { get; set; }
+
             public string MailingLatitude { get; set; }
+
             public string MailingLongitude { get; set; }
+
             public AddressInfo MailingAddress { get; set; }
+
             public string MailingGeocodeAccuracy { get; set; }
+
             public string OtherStreet { get; set; }
+
             public string OtherCity { get; set; }
+
             public string OtherState { get; set; }
+
             public string OtherPostalCode { get; set; }
+
             public string OtherCountry { get; set; }
+
             public string OtherLatitude { get; set; }
+
             public string OtherLongitude { get; set; }
+
             public string OtherGeocodeAccuracy { get; set; }
+
             public AddressInfo OtherAddress { get; set; }
         }
 
