@@ -1756,6 +1756,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration51.cs">
       <Link>NachoCore\Model\Migration\NcMigration51.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapSideProtoControl.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapSideProtoControl.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
