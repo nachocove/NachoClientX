@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using NachoPlatform;
 using System.Linq;
 using NachoCore.Brain;
+using NachoCore.SFDC;
 
 namespace NachoCore.Model
 {

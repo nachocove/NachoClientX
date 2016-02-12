@@ -4,8 +4,7 @@ using System;
 using Xamarin.Auth;
 using NachoCore;
 using NachoCore.Model;
-using System.Threading;
-using System.Collections.Generic;
+using NachoCore.SFDC;
 
 namespace NachoCore.Utils
 {

@@ -6,6 +6,7 @@ using NachoCore.Utils;
 using NachoCore.ActiveSync;
 using NachoPlatform;
 using System.Security.Cryptography;
+using NachoCore.SFDC;
 
 namespace NachoCore.Model
 {
