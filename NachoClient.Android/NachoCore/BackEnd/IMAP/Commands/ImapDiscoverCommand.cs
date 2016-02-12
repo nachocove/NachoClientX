@@ -27,6 +27,7 @@ namespace NachoCore.IMAP
 
         public override void Execute (NcStateMachine sm)
         {
+            Sm = sm;
             NcTask.Run (() => {
                 Event evt = ExecuteCommandInternal ();
                 if (!Cts.Token.IsCancellationRequested) {
