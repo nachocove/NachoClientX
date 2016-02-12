@@ -90,6 +90,9 @@ namespace NachoCore.Model
         {
             NcAssert.True (0 != Id);
             NcAssert.AreEqual ((int)CredTypeEnum.OAuth2, (int)CredType, string.Format ("UpdateOauth2:CredType:{0}", CredType));
+            if (0 == expirySecs) {
+                expirySecs = 3600;
+            }
             Expiry = DateTime.UtcNow.AddSeconds (expirySecs);
             ExpirySecs = expirySecs;
             NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
