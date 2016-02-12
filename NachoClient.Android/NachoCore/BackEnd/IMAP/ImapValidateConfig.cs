@@ -30,6 +30,7 @@ namespace NachoCore.IMAP
             NcTask.Run (() => {
                 ExecuteValidation ();
                 Cmd = null;
+                (Sm.Context as ImapStateMachineContext).Client = null;
             }, "ImapValidateConfig");
         }
 
