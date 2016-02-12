@@ -717,6 +717,7 @@ namespace NachoCore.IMAP
 
         public override void Execute (NcStateMachine sm)
         {
+            Sm = sm;
             WaitCommand.Execute (sm);
         }
 
