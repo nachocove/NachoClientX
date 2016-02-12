@@ -171,9 +171,17 @@ namespace NachoCore.IMAP
         public SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync)
         {
             if (null == folder) {
+                Log.Error (Log.LOG_IMAP, "GenSyncKit({0}): no folder given", AccountId);
+                if (null != pending) {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing, NcResult.WhyEnum.NotSpecified));
+                }
                 return null;
             }
             if (folder.ImapNoSelect) {
+                Log.Error (Log.LOG_IMAP, "GenSyncKit({0}): folder is ImapNoSelect ({1})", AccountId, folder.ImapFolderNameRedacted ());
+                if (null != pending) {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing, NcResult.WhyEnum.AccessDeniedOrBlocked));
+                }
                 return null;
             }
             bool havePending = null != pending;
@@ -209,7 +217,7 @@ namespace NachoCore.IMAP
                         // time-window (see NeedFolderMetadata()), and skipped the OpenOnly step.
                         // We need to dispatch the pending before ResolveOneSync() so we don't
                         // try to ResolveAsSuccess an eligible pending (which leads to a crash).
-                        pending = pending.MarkDispached ();
+                        pending = pending.MarkDispatched ();
                     }
                     ResolveOneSync (BEContext, ref protocolState, folder, pending);
                 }

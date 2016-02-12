@@ -103,8 +103,8 @@ namespace NachoCore.Brain
                 emailMessage.Score2 = newScores.Item2;
                 Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6},{2:F6}",
                     emailMessage.Id, emailMessage.Score, emailMessage.Score2);
-                emailMessage.NeedUpdate = 0;
-                emailMessage.UpdateScoresAndNeedUpdate ();
+                emailMessage.UpdateScores ();
+                McEmailMessageNeedsUpdate.Update (emailMessage, 0);
             }
             return true;
         }
@@ -231,7 +231,7 @@ namespace NachoCore.Brain
                     OpenedIndexes.Release (emailMessage.AccountId);
                     index.Remove ("message", id);
                     index = OpenedIndexes.Get (emailMessage.AccountId);
-                    Log.Warn (Log.LOG_SEARCH, "IndexEmailMessage: replacing index for {0}", id);
+                    Log.Info (Log.LOG_BRAIN, "IndexEmailMessage: replacing index for {0}", id);
                 }
                 var indexDoc = new EmailMessageIndexDocument (id, parameters);
 

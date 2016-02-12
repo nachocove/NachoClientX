@@ -262,7 +262,7 @@ namespace NachoCore
 
         protected void ResolveDoNotDelayAsHardFail ()
         {
-            var pendings = McPending.QueryAllNonDispachedNonFailedDoNotDelay (AccountId, Capabilities);
+            var pendings = McPending.QueryAllNonDispatchedNonFailedDoNotDelay (AccountId, Capabilities);
             foreach (var pending in pendings) {
                 pending.ResolveAsHardFail (this, NcResult.Error (DoNotDelaySubKind));
             }
@@ -803,7 +803,7 @@ namespace NachoCore
                 }
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
-                Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})-{1}/{2} for email id {3}", emailMessage.AccountId, pending.Id, pending.Token, emailMessage.Id);
+                Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})- {1} for email id {2}", emailMessage.AccountId, pending, emailMessage.Id);
             });
             if (doNotDelay) {
                 Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD0");
@@ -842,7 +842,7 @@ namespace NachoCore
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
                     // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                    Log.Info (Log.LOG_BACKEND, "DnldAttCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "DnldAttCmd: IsDuplicate of {0}", dup);
                     result = NcResult.OK (dup.Token);
                     return;
                 }
@@ -1340,7 +1340,7 @@ namespace NachoCore
                 };
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
-                    Log.Info (Log.LOG_BACKEND, "SyncCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "SyncCmd: IsDuplicate of Id/Token {0}", dup);
                     result = NcResult.OK (dup.Token);
                     return;
                 }

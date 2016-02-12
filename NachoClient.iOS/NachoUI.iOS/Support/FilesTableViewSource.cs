@@ -606,13 +606,13 @@ namespace NachoClient.iOS
                     case 1:
                         McNote note = McNote.QueryById<McNote> (item.Id);
                         if (null != note) {
-                            vc.NoteAction (note);
+                            vc.NoteAction (note, cell);
                         }
                         break;
                     case 2:
                         McDocument document = McDocument.QueryById<McDocument> (item.Id);
                         if (null != document) {
-                            vc.DocumentAction (document);
+                            vc.DocumentAction (document, cell);
                         }
                         break;
                     }

@@ -1750,6 +1750,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailSearch.cs">
       <Link>NachoCore\Utils\EmailSearch.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs">
+      <Link>NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration51.cs">
+      <Link>NachoCore\Model\Migration\NcMigration51.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

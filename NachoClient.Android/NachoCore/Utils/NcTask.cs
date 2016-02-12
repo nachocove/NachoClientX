@@ -119,7 +119,8 @@ namespace NachoCore.Utils
                 return null; // an entry exists
             }
 
-            if (LoginRunningTasks.Contains (name)) {
+            bool longRunning = LoginRunningTasks.Contains (name);
+            if (longRunning) {
                 Log.Info (Log.LOG_SYS, "NcTask {0} will be long running", name);
                 option = TaskCreationOptions.LongRunning;
             }
@@ -136,6 +137,7 @@ namespace NachoCore.Utils
                     new NcTimer ("StartNew workaround", TryAgain, action, 100, 0);
                     return;
                 }
+                Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
                 #endif
                 DateTime startTime = DateTime.UtcNow;
                 double latency = (startTime - spawnTime).TotalMilliseconds;
@@ -147,7 +149,7 @@ namespace NachoCore.Utils
                     Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawning thread (parent={1})", taskName, tracer.parent);
                 }
                 if (!stfu) {
-                    Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
+                    Log.Info (Log.LOG_SYS, "NcTask {0} started on ManagedThreadId {2}, {1} running", taskName, TaskMap.Count, Thread.CurrentThread.ManagedThreadId);
                 }
                 try {
                     action.Invoke ();
@@ -155,9 +157,11 @@ namespace NachoCore.Utils
                     Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
                 } finally {
                     var count = NcModel.Instance.NumberDbConnections;
-                    if (15 < count) {
+                    if (15 < count || longRunning) {
                         NcModel.Instance.Db = null;
-                        Log.Info (Log.LOG_SYS, "NcTask closing DB, connections: {0}", count);
+                        if (15 < count) {
+                            Log.Info (Log.LOG_SYS, "NcTask closing DB, connections: {0}", count);
+                        }
                     }
                 }
                 if (!stfu) {

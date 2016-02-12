@@ -56,6 +56,7 @@ namespace NachoClient.AndroidClient
             recyclerView.SetLayoutManager (layoutManager);
 
             folderListAdapter.OnFolderSelected += FolderListAdapter_OnFolderSelected;
+            folderListAdapter.OnAccountSelected += FolderListAdapter_OnAccountSelected;
 
             return view;
         }
@@ -82,9 +83,18 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        void FolderListAdapter_OnAccountSelected (object sender, McAccount account)
+        {
+            if (null != folderListAdapter) {
+                FolderLists.SetDefaultAccount (account.Id);
+                folderListAdapter.Refresh (accountId);
+            }
+        }
+
         public void SwitchAccount (McAccount account)
         {
             if (null != folderListAdapter) {
+                accountId = account.Id;
                 folderListAdapter.SwitchAccount (account);
             }
         }
@@ -93,12 +103,63 @@ namespace NachoClient.AndroidClient
     public class FolderListAdapter : RecyclerView.Adapter
     {
         public event EventHandler<McFolder> OnFolderSelected;
+        public event EventHandler<McAccount> OnAccountSelected;
+
+        const int ROW_TYPE = 1;
+        const int HEADER_ROW_TYPE = 2;
+        const int ACCOUNT_ROW_TYPE = 3;
+
+        public override int GetItemViewType (int position)
+        {
+            var d = folderLists.displayList [position];
+            if (null == d.node) {
+                return HEADER_ROW_TYPE;
+            } else {
+                if (null == d.node.account) {
+                    return ROW_TYPE;
+                } else {
+                    return ACCOUNT_ROW_TYPE;
+                }
+            }
+        }
+
+        public class HeaderViewHolder : RecyclerView.ViewHolder
+        {
+            public TextView header { get; private set; }
+
+            public View listHeader { get; private set; }
+
+            public HeaderViewHolder (View itemView) : base (itemView)
+            {
+                header = itemView.FindViewById<TextView> (Resource.Id.header);
+                listHeader = itemView.FindViewById<View> (Resource.Id.list_header);
+            }
+        }
+
+        public class AccountViewHolder : RecyclerView.ViewHolder
+        {
+            public TextView name { get; private set; }
+
+            public ImageView accountSelector { get; private set; }
+
+            public ImageView accountImage { get; private set; }
+
+            public View separator { get; private set; }
+
+            public AccountViewHolder (View itemView, Action<int> listener) : base (itemView)
+            {
+                name = itemView.FindViewById<TextView> (Resource.Id.name);
+                accountSelector = itemView.FindViewById<ImageView> (Resource.Id.account_selector);
+                accountImage = itemView.FindViewById<ImageView> (Resource.Id.account_image);
+                separator = itemView.FindViewById<View> (Resource.Id.separator);
+
+                itemView.Click += (object sender, EventArgs e) => listener (base.Position);
+            }
+        }
 
         public class FolderViewHolder : RecyclerView.ViewHolder
         {
             public TextView name { get; private set; }
-
-            public TextView header { get; private set; }
 
             public ImageView folder { get; private set; }
 
@@ -106,19 +167,14 @@ namespace NachoClient.AndroidClient
 
             public View separator { get; private set; }
 
-            public View listHeader { get; private set; }
-
-            public FolderViewHolder (View itemView, Action<int> listener, Action<int> headerListener, Action<int> toggleListener) : base (itemView)
+            public FolderViewHolder (View itemView, Action<int> listener, Action<int> toggleListener) : base (itemView)
             {
                 name = itemView.FindViewById<TextView> (Resource.Id.name);
-                header = itemView.FindViewById<TextView> (Resource.Id.header);
-                folder = itemView.FindViewById<ImageView> (Resource.Id.folder);
                 toggle = itemView.FindViewById<ImageView> (Resource.Id.toggle);
                 separator = itemView.FindViewById<View> (Resource.Id.separator);
-                listHeader = itemView.FindViewById<View> (Resource.Id.list_header);
+                folder = itemView.FindViewById<ImageView> (Resource.Id.folder);
 
                 itemView.Click += (object sender, EventArgs e) => listener (base.Position);
-                header.Click += (object sender, EventArgs e) => headerListener (base.Position);
                 toggle.Click += (object sender, EventArgs e) => toggleListener (base.Position);
             }
         }
@@ -141,41 +197,99 @@ namespace NachoClient.AndroidClient
 
         public override RecyclerView.ViewHolder OnCreateViewHolder (ViewGroup parent, int viewType)
         {
-            var itemView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.FolderCell, parent, false);
-            var vh = new FolderViewHolder (itemView, OnClick, OnHeader, OnToggle);
-            return vh;
+            switch (viewType) {
+            case HEADER_ROW_TYPE:
+                var headerView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.FolderCellHeader, parent, false);
+                var headerHolder = new HeaderViewHolder (headerView);
+                return headerHolder;
+            case ACCOUNT_ROW_TYPE:
+                var accountView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.FolderCellAccount, parent, false);
+                var accountHolder = new AccountViewHolder (accountView, OnClick);
+                return accountHolder;
+            default:
+                var rowView = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.FolderCell, parent, false);
+                var rowHolder = new FolderViewHolder (rowView, OnClick, OnToggle);
+                return rowHolder;
+            }
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
+        {
+            switch (holder.ItemViewType) {
+            case HEADER_ROW_TYPE:
+                BindHeader (holder, position);
+                break;
+            case ACCOUNT_ROW_TYPE:
+                BindAccount (holder, position);
+                break;
+            default:
+                BindRow (holder, position);
+                break;
+            }
+        }
+
+        void BindHeader (RecyclerView.ViewHolder holder, int position)
+        {
+            var vh = holder as HeaderViewHolder;
+            var d = folderLists.displayList [position];
+            var node = d.node;
+
+            if (0 == position) {
+                vh.header.Visibility = ViewStates.Gone;
+                vh.listHeader.Visibility = ViewStates.Visible;
+                return;
+            }
+
+            vh.header.Visibility = ViewStates.Visible;
+            vh.listHeader.Visibility = ViewStates.Gone;
+
+            switch (d.header) {
+            case FolderLists.Header.None:
+                vh.header.Text = "";
+                break;
+            case FolderLists.Header.Accounts:
+                vh.header.Text = "Accounts";
+                break;
+            case FolderLists.Header.Default:
+                vh.header.Text = "Default Folders";
+                break;
+            case FolderLists.Header.Folders:
+                vh.header.Text = "Your Folders";
+                break;
+            case FolderLists.Header.Recents:
+                vh.header.Text = "Recent Folders";
+                break;
+            }
+        }
+
+        void BindAccount (RecyclerView.ViewHolder holder, int position)
+        {
+            var vh = holder as AccountViewHolder;
+            var d = folderLists.displayList [position];
+            var node = d.node;
+
+            vh.name.Text = node.account.EmailAddr;
+            vh.accountImage.SetImageResource (Util.GetAccountServiceImageId (node.account.AccountService));
+
+            if (node.opened) {
+                vh.accountSelector.SetImageResource (Resource.Drawable.gen_checkbox_checked);
+            } else {
+                vh.accountSelector.SetImageResource (Resource.Drawable.gen_checkbox);
+            }
+
+            if (d.lastInSection) {
+                vh.separator.Visibility = ViewStates.Gone;
+            } else {
+                vh.separator.Visibility = ViewStates.Visible;
+            }
+        }
+
+        void BindRow (RecyclerView.ViewHolder holder, int position)
         {
             var vh = holder as FolderViewHolder;
 
             var d = folderLists.displayList [position];
             var node = d.node;
-
-            if (0 == position) {
-                vh.listHeader.Visibility = ViewStates.Visible;
-            } else {
-                vh.listHeader.Visibility = ViewStates.Gone;
-            }
-
-            switch (d.header) {
-            case FolderLists.Header.Default:
-                vh.header.Visibility = ViewStates.Visible;
-                vh.header.Text = "Default Folders";
-                break;
-            case FolderLists.Header.Folders:
-                vh.header.Visibility = ViewStates.Visible;
-                vh.header.Text = "Your Folders";
-                break;
-            case FolderLists.Header.Recents:
-                vh.header.Visibility = ViewStates.Visible;
-                vh.header.Text = "Recent Folders";
-                break;
-            case FolderLists.Header.None:
-                vh.header.Visibility = ViewStates.Gone;
-                break;
-            }
 
             vh.name.Text = node.folder.DisplayName;
 
@@ -199,6 +313,7 @@ namespace NachoClient.AndroidClient
             } else {
                 vh.separator.Visibility = ViewStates.Visible;
             }
+
         }
 
         private int dp2px (int dp)
@@ -214,14 +329,25 @@ namespace NachoClient.AndroidClient
 
         public override long GetItemId (int position)
         {
-            var folder = folderLists.displayList [position].node.folder;
-            return folder.Id;
+            var displayItem = folderLists.displayList [position];
+
+            if (displayItem.header != FolderLists.Header.None) {
+                return ((int)displayItem.header) - 100;
+            } else {
+                return displayItem.node.UniqueId;
+            }
         }
 
         void OnClick (int position)
         {
-            if (null != OnFolderSelected) {
-                OnFolderSelected (this, folderLists.displayList [position].node.folder);
+            var node = folderLists.displayList [position].node;
+
+            if (null != node) {
+                if (null != node.account) {
+                    OnAccountSelected (this, node.account);
+                } else if (null != OnFolderSelected) {
+                    OnFolderSelected (this, folderLists.displayList [position].node.folder);
+                }
             }
         }
 
@@ -231,11 +357,12 @@ namespace NachoClient.AndroidClient
             NotifyDataSetChanged ();
         }
 
-        void OnHeader (int position)
+        public void Refresh (int accountId)
         {
-            // ignore clicks on the header
+            folderLists.Create (accountId, hideFakeFolders);
+            NotifyDataSetChanged ();
         }
-    }
 
+    }
 }
 

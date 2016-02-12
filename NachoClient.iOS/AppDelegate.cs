@@ -373,10 +373,7 @@ namespace NachoClient.iOS
                 UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
                 UIApplication.SharedApplication.RegisterForRemoteNotifications ();
             } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
-                // iOS 7 and before
-                // TODO: revist why we need the sound.
-                UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
-                    UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
+                UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (UIRemoteNotificationType.NewsstandContentAvailability);
             } else {
                 Log.Error (Log.LOG_PUSH, "notification not registered!");
             }
@@ -416,13 +413,6 @@ namespace NachoClient.iOS
             }
 
             NcKeyboardSpy.Instance.Init ();
-
-            if (launchOptions != null) {
-                var shortcutItem = launchOptions.ObjectForKey (UIApplication.LaunchOptionsShortcutItemKey) as UIApplicationShortcutItem;
-                if (shortcutItem != null) {
-                    // TODO: handle shortcut on launch
-                }
-            }
 
 //            if (application.RespondsToSelector (new ObjCRuntime.Selector ("shortcutItems"))) {
 //                application.ShortcutItems = new UIApplicationShortcutItem[] {
@@ -493,7 +483,7 @@ namespace NachoClient.iOS
             if (url.IsFileUrl) {
                 OpenFiles (new string[] { url.Path }, sourceApplication);
                 return true;
-            }else if (url.Scheme.Equals (nachoScheme)) {
+            } else if (url.Scheme.Equals (nachoScheme)) {
                 var components = url.PathComponents;
                 if (components.Length > 1) {
                     if (components [1].Equals ("share") && components.Length > 2) {
@@ -882,6 +872,7 @@ namespace NachoClient.iOS
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
                 BackEnd.Instance.Start ();
+                NcApplicationMonitor.Instance.Start (1, 60);
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
             // iOS only allows a limited amount of time to fetch data in the background.
@@ -1182,7 +1173,7 @@ namespace NachoClient.iOS
                     accountTable.Add (message.AccountId, newAccount);
                     account = newAccount;
                 }
-                if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message, account)) {
+                if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message)) {
                     --badgeCount;
                     message.MarkHasBeenNotified (false);
                     continue;

@@ -194,7 +194,7 @@ namespace NachoCore.Model
                 imapServer.Insert ();
                 smtpServer.Insert ();
             });
-            Log.Info (Log.LOG_UI, "CreateServersForIMAP: {0}/{1}:{2}/{3}:{4}", account.Id, imapServerName, imapServerPort, smtpServer, smtpServerPort);
+            Log.Info (Log.LOG_UI, "CreateServersForIMAP: {0}/{1}:{2}/{3}:{4}", account.Id, imapServerName, imapServerPort, smtpServerName, smtpServerPort);
             return true;
         }
 

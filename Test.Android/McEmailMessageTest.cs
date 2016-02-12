@@ -462,7 +462,9 @@ namespace Test.Common
             Assert.True (null != message);
 
             Assert.AreEqual (expectedScore, message.Score);
-            Assert.AreEqual (expectedNeedUpdate, message.NeedUpdate);
+
+            var needsUpdate = McEmailMessageNeedsUpdate.Get (message);
+            Assert.AreEqual (expectedNeedUpdate, needsUpdate);
         }
 
         [Test]
@@ -475,19 +477,19 @@ namespace Test.Common
             NcAssert.True (0 < message.Id);
 
             Assert.AreEqual (0.0, message.Score);
-            Assert.AreEqual (0, message.NeedUpdate);
+            Assert.AreEqual (0, McEmailMessageNeedsUpdate.Get (message));
 
             message.Score = 1.0;
-            message.UpdateScoresAndNeedUpdate ();
+            message.UpdateScores ();
             CheckScoreAndUpdate (message.Id, 1.0, 0);
 
-            message.NeedUpdate = 1;
-            message.UpdateScoresAndNeedUpdate ();
+            McEmailMessageNeedsUpdate.Update (message, 1);
+            message.UpdateScores ();
             CheckScoreAndUpdate (message.Id, 1.0, 1);
 
             message.Score = 0.5;
-            message.NeedUpdate = 0;
-            message.UpdateScoresAndNeedUpdate ();
+            McEmailMessageNeedsUpdate.Update (message, 0);
+            message.UpdateScores ();
             CheckScoreAndUpdate (message.Id, 0.5, 0);
         }
 
@@ -1013,9 +1015,12 @@ namespace Test.Common
             foreach (var message in messages) {
                 message.AccountId = 1;
                 message.From = "bob@company.net";
+                int needsUpdate = message.NeedUpdate;
+                message.NeedUpdate = 0;
                 int rows = message.Insert ();
                 Assert.AreEqual (1, rows);
                 Assert.True (0 < message.Id);
+                McEmailMessageNeedsUpdate.Update (message, needsUpdate);
             }
 
             // Query for 5 above. Should get 2
@@ -1170,7 +1175,7 @@ namespace Test.Common
             for (uint i = 1; i <= 10; i++) { 
                 var message = new McEmailMessage () {
                     AccountId = Folder.AccountId,
-                    ServerId = string.Format("EmailServerId{0}", i),
+                    ServerId = string.Format ("EmailServerId{0}", i),
                     Subject = string.Format ("Subject {0}", i),
                     From = "bob@company.net",
                 };

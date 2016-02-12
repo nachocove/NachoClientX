@@ -21,7 +21,7 @@ namespace NachoCore.IMAP
             PendingList = pendingList;
             NcModel.Instance.RunInTransaction (() => {
                 foreach (var pending in pendingList) {
-                    pending.MarkDispached ();
+                    pending.MarkDispatched ();
                 }
             });
             RedactProtocolLogFunc = RedactProtocolLog;

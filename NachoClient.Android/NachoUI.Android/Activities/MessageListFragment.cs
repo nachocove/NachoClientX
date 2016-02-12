@@ -189,7 +189,7 @@ namespace NachoClient.AndroidClient
                     switch (index) {
                     case LATE_TAG:
                         if (null != cal) {
-                            var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Re: " + cal.GetSubject ());
+                            var outgoingMessage = McEmailMessage.MessageWithSubject (NcApplication.Instance.DefaultEmailAccount, "Re: " + cal.GetSubject ());
                             outgoingMessage.To = cal.OrganizerEmail;
                             StartActivity (MessageComposeActivity.InitialTextIntent (this.Activity, outgoingMessage, "Running late."));
                         }
@@ -197,7 +197,7 @@ namespace NachoClient.AndroidClient
                     case FORWARD_TAG:
                         if (null != cal) {
                             StartActivity (MessageComposeActivity.ForwardCalendarIntent (
-                                this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.Account, "Fwd: " + cal.GetSubject ())));
+                                this.Activity, cal.Id, McEmailMessage.MessageWithSubject (NcApplication.Instance.DefaultEmailAccount, "Fwd: " + cal.GetSubject ())));
                         }
                         break;
                     default:
@@ -223,9 +223,9 @@ namespace NachoClient.AndroidClient
             messageListAdapter = new MessageListAdapter (this, parent.ShowListStyle ());
             messageListAdapter.onMessageClick += MessageListAdapter_OnMessageClick;
 
-            if (MessageListAdapter.CARDVIEW_STYLE == parent.ShowListStyle ()) {
-                recyclerView.AddOnScrollListener (new MessageListScrollListener ());
-            }
+            recyclerView.AddOnScrollListener (new MessageListScrollListener (() => {
+                SendFetchHints ();
+            }));
 
             recyclerView.SetAdapter (messageListAdapter);
 
@@ -315,6 +315,12 @@ namespace NachoClient.AndroidClient
             // Positive means pushing up
             int lastDy;
             bool userInitiated;
+            Action OnStop;
+
+            public MessageListScrollListener (Action OnStop) : base ()
+            {
+                this.OnStop = OnStop;
+            }
 
             public override void OnScrollStateChanged (RecyclerView recyclerView, int newState)
             {
@@ -332,6 +338,9 @@ namespace NachoClient.AndroidClient
                     swipeMenuRecyclerView.EnableSwipe (true);
                     if (NcApplication.Instance.IsBackgroundAbateRequired) {
                         NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment ScrollStateChanged");
+                    }
+                    if (null != OnStop) {
+                        OnStop ();
                     }
                     break;
                 }
@@ -365,6 +374,37 @@ namespace NachoClient.AndroidClient
             public override void OnScrolled (RecyclerView recyclerView, int dx, int dy)
             {
                 lastDy = dy;
+            }
+
+
+        }
+
+        void SendFetchHints ()
+        {
+            if (0 == messages.Count ()) {
+                return;
+            }
+
+            var a = layoutManager.FindFirstVisibleItemPosition ();
+            if (RecyclerView.NoPosition == a) {
+                return;
+            }
+            var z = layoutManager.FindLastVisibleItemPosition ();
+
+            var Ids = new List<Tuple<int,int>> ();
+
+            for (var i = a; i <= z; i++) {
+                if (i < messages.Count ()) { // don't fetch footer
+                    var message = GetCachedMessage (i);
+                    if ((null != message) && (0 == message.BodyId)) {
+                        Ids.Add (new Tuple<int, int> (message.AccountId, message.Id));
+                    }
+                }
+            }
+            if (0 < Ids.Count) {
+                NcTask.Run (() => {
+                    BackEnd.Instance.SendEmailBodyFetchHints (Ids);
+                }, "SendEmailBodyFetchHints");
             }
         }
 
@@ -443,7 +483,10 @@ namespace NachoClient.AndroidClient
             if (multiSelectActive) {
                 MultiSelectDelete ();
             } else {
-                StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity, NcApplication.Instance.EffectiveEmailAccount.Id));
+                var defaultEmailAccount = NcApplication.Instance.DefaultEmailAccount;
+                if (null != defaultEmailAccount) {
+                    StartActivity (MessageComposeActivity.NewMessageIntent (this.Activity, defaultEmailAccount.Id));
+                }
             }
         }
 
@@ -686,8 +729,23 @@ namespace NachoClient.AndroidClient
 
         public void ShowFolderChooser (McEmailMessageThread messageThread)
         {
-            Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
-            var folderFragment = ChooseFolderFragment.newInstance (messageThread.FirstMessage().AccountId, messageThread);
+            int accountId;
+            if (null == messageThread) {
+                Log.Info (Log.LOG_UI, "ShowFolderChooser: {0}", messageThread);
+                var messageList = GetSelectedMessages ();
+                HashSet<int> accountIds = new HashSet<int> ();
+                foreach (var message in messageList) {
+                    accountIds.Add (message.AccountId);
+                }
+                if (1 != accountIds.Count) {
+                    NcAlertView.ShowMessage (this.Activity, "Not yet implemented", "You cannot multi-file from different accounts");
+                    return;
+                }
+                accountId = accountIds.First ();
+            } else {
+                accountId = messageThread.FirstMessage ().AccountId;
+            }
+            var folderFragment = ChooseFolderFragment.newInstance (accountId, messageThread);
             folderFragment.SetOnFolderSelected (OnFolderSelected);
             folderFragment.Show (FragmentManager, "ChooseFolderFragment");
         }
@@ -754,7 +812,7 @@ namespace NachoClient.AndroidClient
             if (null == s.Account) {
                 return;
             }
-            if (!NcApplication.Instance.Account.ContainsAccount(s.Account.Id)) {
+            if (!NcApplication.Instance.Account.ContainsAccount (s.Account.Id)) {
                 return;
             }
 

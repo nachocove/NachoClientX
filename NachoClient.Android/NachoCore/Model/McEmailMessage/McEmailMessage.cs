@@ -171,6 +171,7 @@ namespace NachoCore.Model
         public bool ReceivedAsBcc { set; get; }
 
         /// Conversation id, from Exchange
+        [Indexed]
         public string ConversationId { set; get; }
 
         /// MIME header Message-ID: unique message identifier (optional)
@@ -1313,12 +1314,14 @@ namespace NachoCore.Model
 
         public string GetThreadId ()
         {
-            return FirstMessageSpecialCase ().ConversationId;
+            var message = FirstMessageSpecialCase ();
+            return (null == message) ? null : message.ConversationId;
         }
 
         public string GetSubject ()
         {
-            return FirstMessageSpecialCase ().Subject;
+            var message = FirstMessageSpecialCase ();
+            return (null == message) ? null : message.Subject;
         }
 
         public IEnumerator<McEmailMessage> GetEnumerator ()
@@ -1592,6 +1595,7 @@ namespace NachoCore.Model
                     InsertMeetingRequest ();
                     InsertCategories ();
                     InsertScoreStates ();
+                    McEmailMessageNeedsUpdate.Insert(this, 0);
                 });
               
                 return returnVal;
@@ -1676,6 +1680,7 @@ namespace NachoCore.Model
                     // FIXME: Do we need to delete associated records like Attachments?
                     NcBrain.UnindexEmailMessage (this);
                     DeleteScoreStates ();
+                    McEmailMessageNeedsUpdate.Delete(this);
                 });
                 return returnVal;
             }
@@ -1686,11 +1691,11 @@ namespace NachoCore.Model
             McEmailAddress emailAddress = null;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
             if (null == address) {
-                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address {1}", Id, From);
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address", Id);
             } else {
                 bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
                 if (!found) {
-                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address", Id);
                 }
             }
             return emailAddress;

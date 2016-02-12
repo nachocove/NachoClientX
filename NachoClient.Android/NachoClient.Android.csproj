@@ -633,6 +633,8 @@
     <Compile Include="NachoCore\Utils\ContactsSearch.cs" />
     <Compile Include="NachoCore\Utils\NcApplicationMonitor.cs" />
     <Compile Include="NachoCore\Utils\EmailSearch.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration51.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1727,6 +1729,8 @@
     <AndroidResource Include="Resources\drawable-hdpi\attachment_take_photo.png" />
     <AndroidResource Include="Resources\drawable-hdpi\email_icn_attachment.png" />
     <AndroidResource Include="Resources\drawable-mdpi\inbox_icn_deadline.png" />
+    <AndroidResource Include="Resources\layout\FolderCellHeader.axml" />
+    <AndroidResource Include="Resources\layout\FolderCellAccount.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

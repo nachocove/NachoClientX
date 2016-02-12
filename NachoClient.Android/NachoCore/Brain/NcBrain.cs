@@ -11,6 +11,7 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.Index;
 using System.Threading;
+using System.Linq;
 
 namespace NachoCore.Brain
 {
@@ -117,26 +118,39 @@ namespace NachoCore.Brain
 
         public static void StartService ()
         {
-            // Set up the logging functions for IndexLib
-            NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
+                NcBrain brain = NcBrain.SharedInstance;
                 lock (brain.SyncRoot) {
                     var token = NcTask.Cts.Token;
                     token.Register (NcContactGleaner.Stop);
                     brain.EventQueue.Token = token;
                     NcContactGleaner.Start ();
                     brain.IsRunning = true;
+                    // Remove any TERMINATE or PAUSE events at the front of the queue.  They were intended for
+                    // the previous run of the brain, not this session.
+                    while (null != brain.EventQueue.DequeueIf (evt => { return evt.Type == NcBrainEventType.TERMINATE || evt.Type == NcBrainEventType.PAUSE; }))
+                    {
+                    }
                 }
-                brain.Process ();
+                try {
+                    brain.Process ();
+                } finally {
+                    lock (brain.SyncRoot) {
+                        brain.IsRunning = false;
+                    }
+                }
             }, "Brain");
         }
 
         public static void StopService ()
         {
-            lock (NcBrain.SharedInstance.SyncRoot) {
-                NcBrain.SharedInstance.IsRunning = false;
-                NcContactGleaner.Stop ();
-                NcBrain.SharedInstance.EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+            var brain = NcBrain.SharedInstance;
+            lock (brain.SyncRoot) {
+                if (brain.IsRunning) {
+                    NcContactGleaner.Stop ();
+                    brain.IsRunning = false;
+                    brain.EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+                }
             }
         }
 
@@ -269,7 +283,11 @@ namespace NachoCore.Brain
         public void ProcessOneNewEmail (McEmailMessage emailMessage)
         {
             NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
-            QuickScoreEmailMessage (emailMessage);
+
+            var folder = McFolder.QueryByFolderEntryId<McEmailMessage> (emailMessage.AccountId, emailMessage.Id).FirstOrDefault ();
+            if (null != folder && !folder.IsJunkFolder () && NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 != folder.Type) {
+                NcBrain.IndexMessage (emailMessage);
+            }
         }
     }
 }

@@ -1285,7 +1285,7 @@ namespace NachoClient.iOS
         /// IUcAttachmentBlock delegate
         public void ShowChooserForAttachmentBlock ()
         {
-            var helper = new AddAttachmentViewController.MenuHelper (this, account, Storyboard);
+            var helper = new AddAttachmentViewController.MenuHelper (this, account, Storyboard, attachmentView);
             PresentViewController (helper.MenuViewController, true, null);
         }
 
@@ -1410,6 +1410,18 @@ namespace NachoClient.iOS
 
         private void DoneButtonClicked (object sender, EventArgs args)
         {
+            if (CalendarItemEditorAction.edit == action && null != item && 0 != item.Id) {
+                // Make sure the item wasn't deleted while it was being edited.
+                var dbItem = McCalendar.QueryById<McCalendar> (item.Id);
+                if (null == dbItem || dbItem.IsAwaitingDelete) {
+                    NcAlertView.Show (this, "Deleted Event",
+                        "The changes to the event cannot be saved because the event has been deleted.",
+                        new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                            DismissView ();
+                        }));
+                    return;
+                }
+            }
             if (CanBeSaved ()) {
                 ExtractValues ();
                 SyncMeetingRequest ();
@@ -1700,7 +1712,7 @@ namespace NachoClient.iOS
 
         private void DeleteTapAction ()
         {
-            NcActionSheet.Show (View, this,
+            NcActionSheet.Show (deleteView, this,
                 new NcAlertAction ("Delete Event", NcAlertActionStyle.Destructive, () => {
                     DeleteEvent ();
                 }),

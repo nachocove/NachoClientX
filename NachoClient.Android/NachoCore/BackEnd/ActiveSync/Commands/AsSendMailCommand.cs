@@ -18,7 +18,7 @@ namespace NachoCore.ActiveSync
             base (Xml.ComposeMail.SendMail, Xml.ComposeMail.Ns, dataSource)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
             EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
         }
 

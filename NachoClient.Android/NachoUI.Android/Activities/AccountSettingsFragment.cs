@@ -8,13 +8,13 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
 using NachoPlatform;
+using Xamarin.Auth;
 
 namespace NachoClient.AndroidClient
 {
@@ -158,7 +158,7 @@ namespace NachoClient.AndroidClient
             accountDescription.Text = account.DisplayName;
 
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if ((null != creds) && (McCred.CredTypeEnum.Password == creds.CredType)) {
+            if ((null != creds) && ((McCred.CredTypeEnum.Password == creds.CredType) || (McCred.CredTypeEnum.OAuth2 == creds.CredType))) {
                 updatePasswordView.Visibility = ViewStates.Visible;
             } else {
                 updatePasswordView.Visibility = ViewStates.Gone;
@@ -267,9 +267,11 @@ namespace NachoClient.AndroidClient
 
         void UpdatePasswordView_Click (object sender, EventArgs e)
         {
-            StartActivityForResult (
-                ValidationActivity.ValidationIntent (this.Activity, account, showAdvanced: false),
-                PASSWORD_REQUEST_CODE);
+            if (!MaybeStartGmailAuth (account)) {
+                StartActivityForResult (
+                    ValidationActivity.ValidationIntent (this.Activity, account, showAdvanced: false),
+                    PASSWORD_REQUEST_CODE);
+            }
         }
 
         void DeleteAccountView_Click (object sender, EventArgs e)
@@ -355,8 +357,101 @@ namespace NachoClient.AndroidClient
                 NoteActivity.EditNoteIntent (this.Activity, title, instructions, account.DisplayName, insertDate: false),
                 DESCRIPTION_REQUEST_CODE);
         }
-      
 
+        bool MaybeStartGmailAuth (McAccount account)
+        {
+            if (McAccount.AccountServiceEnum.GoogleDefault != account.AccountService) {
+                return false;
+            }
+            var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
+            if (null == cred) {
+                return false;
+            }
+            if (McCred.CredTypeEnum.OAuth2 != cred.CredType) {
+                return false;
+            }
+
+            StartGoogleLogin ();
+
+            return true;
+        }
+
+
+        public void StartGoogleLogin ()
+        {
+            var scopes = new List<string> ();
+            scopes.Add ("email");
+            scopes.Add ("profile");
+            scopes.Add ("https://mail.google.com");
+            scopes.Add ("https://www.googleapis.com/auth/calendar");
+            scopes.Add ("https://www.google.com/m8/feeds/");
+            var auth = new NachoCore.Utils.GoogleOAuth2Authenticator (
+                           clientId: GoogleOAuthConstants.ClientId,
+                           clientSecret: GoogleOAuthConstants.ClientSecret,
+                           scope: String.Join (" ", scopes.ToArray ()),
+                           accessTokenUrl: new Uri ("https://accounts.google.com/o/oauth2/token"),
+                           authorizeUrl: new Uri ("https://accounts.google.com/o/oauth2/auth"),
+                           redirectUrl: new Uri ("http://www.nachocove.com/authorization_callback"),
+                           loginHint: account.EmailAddr);
+
+            auth.AllowCancel = true;
+
+            // If authorization succeeds or is canceled, .Completed will be fired.
+            auth.Completed += (s, e) => {
+                if (e.IsAuthenticated) {
+
+
+                    string access_token;
+                    e.Account.Properties.TryGetValue ("access_token", out access_token);
+
+                    string refresh_token;
+                    e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
+
+                    string expiresString = "0";
+                    uint expirationSecs = 0;
+                    if (e.Account.Properties.TryGetValue ("expires_in", out expiresString)) {
+                        if (!uint.TryParse (expiresString, out expirationSecs)) {
+                            Log.Info (Log.LOG_UI, "StartGoogleLogin: Could not convert expires value {0} to int", expiresString);
+                        }
+                    }
+
+                    var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
+
+                    string userInfoString;
+                    try {
+                        userInfoString = new System.Net.WebClient ().DownloadString (url);
+                    } catch (Exception ex) {
+                        Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info {0}", ex);
+                        NcAlertView.ShowMessage (Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                        return;
+                    }
+                    var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+
+                    if (!String.Equals (account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
+                        // Can't change your email address
+                        NcAlertView.ShowMessage (this.Activity, "Settings", "You may not change your email address.  Create a new account to use a new email address.");
+                        return;
+                    }
+
+                    var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
+                    cred.UpdateOauth2 (access_token, refresh_token, expirationSecs);
+
+                    BackEnd.Instance.CredResp (account.Id);
+
+                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_McCredPasswordChanged);
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        Status = result,
+                        Account = account,
+                    });
+                }
+            };
+
+            auth.Error += (object sender, AuthenticatorErrorEventArgs e) => {
+
+            };
+            var vc = auth.GetUI (Activity);
+            StartActivity (vc);
+        }
     }
 }
 

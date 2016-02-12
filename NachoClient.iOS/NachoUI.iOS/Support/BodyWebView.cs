@@ -69,7 +69,6 @@ namespace NachoClient.iOS
             this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber | UIDataDetectorType.Address;
             ScrollView.ScrollEnabled = false;
             loadingComplete = false;
-            InitListeners ();
         }
 
         private void InitListeners ()
@@ -90,8 +89,10 @@ namespace NachoClient.iOS
         {
             if (Bundle != null) {
                 if (Bundle.FullHtmlUrl == null) {
-                    var baseUrl = new NSUrl (Bundle.BaseUrl.ToString ());
-                    LoadHtmlString (Bundle.FullHtml, baseUrl);
+                    if (Bundle.FullHtml != null) {
+                        var baseUrl = new NSUrl (Bundle.BaseUrl.ToString ());
+                        LoadHtmlString (Bundle.FullHtml, baseUrl);
+                    }
                 } else {
                     var url = new NSUrl (Bundle.FullHtmlUrl.ToString ());
                     var request = new NSUrlRequest (url);

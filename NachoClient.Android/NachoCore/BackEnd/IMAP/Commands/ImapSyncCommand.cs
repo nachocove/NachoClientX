@@ -42,7 +42,7 @@ namespace NachoCore.IMAP
             Synckit = syncKit;
             PendingSingle = Synckit.PendingSingle;
             if (null != PendingSingle) {
-                PendingSingle.MarkDispached ();
+                PendingSingle.MarkDispatched ();
             }
         }
 
@@ -177,7 +177,7 @@ namespace NachoCore.IMAP
                     } finally {
                         BEContext.Owner.BackendAbateStop ();
                         sw.Stop ();
-                        Log.Info (Log.LOG_IMAP, "{0}: Processing {1} took {2}ms ({3} per uid)", Synckit.Folder.ImapFolderNameRedacted (), syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds/syncInst.UidSet.Count);
+                        Log.Info (Log.LOG_IMAP, "{0}: Processing {1} took {2}ms ({3} per uid)", Synckit.Folder.ImapFolderNameRedacted (), syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds / syncInst.UidSet.Count);
                     }
                 }
             }
@@ -374,19 +374,14 @@ namespace NachoCore.IMAP
                     if (justCreated) {
                         emailMessage.IsJunk = folder.IsJunkFolder ();
                         emailMessage.Insert ();
-                        InsertAttachments (emailMessage, imapSummary);
-                        NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
+                        folder.Link (emailMessage);
+                        InsertAttachments (emailMessage, imapSummary as MessageSummary);
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                             var target = (McEmailMessage)record;
                             updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                             return true;
                         });
-                        if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
-                            // Another client has remotely read / unread this email.
-                            // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
-                            NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
-                        }
                     }
                     var result = folder.Link (emailMessage, imapSummary.UniqueId);
                     if (!result.isOK () && result.SubKind != NcResult.SubKindEnum.Error_AlreadyInFolder) {
@@ -397,6 +392,14 @@ namespace NachoCore.IMAP
 
             if (!emailMessage.IsIncomplete) {
                 // Extra work that needs to be done, but doesn't need to be in the same database transaction.
+                if (justCreated) {
+                    NcBrain.SharedInstance.ProcessOneNewEmail (emailMessage);
+                }
+                if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
+                    // Another client has remotely read / unread this email.
+                    // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
+                    NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
+                }
             }
             created = justCreated;
             return emailMessage;

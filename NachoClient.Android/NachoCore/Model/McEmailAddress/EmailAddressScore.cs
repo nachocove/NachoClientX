@@ -280,13 +280,17 @@ namespace NachoCore.Model
             if (1 > delta) {
                 delta = 1;
             }
-            var queryString = String.Format (
-                                  "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + {0}, RowVersion = RowVersion + 1 WHERE Id IN " +
-                                  " (SELECT m.ObjectId FROM McMapEmailAddressEntry AS m " +
-                                  "  WHERE m.EmailAddressId = ? AND m.AddressType = ?)", delta);
+
+            var queryString2 = String.Format (
+                "UPDATE McEmailMessageNeedsUpdate SET NeedsUpdate = NeedsUpdate + {0} " +
+                " WHERE " +
+                " EmailMessageId IN " +
+                " (SELECT m.ObjectId FROM McMapEmailAddressEntry AS m WHERE m.EmailAddressId = ? AND m.AddressType = ?)",
+                delta);
             NcModel.Instance.RunInLock (() => {
-                NcModel.Instance.Db.Execute (queryString, Id, (int)addressKind);
+                NcModel.Instance.Db.Execute (queryString2, Id, (int)addressKind);
             });
+
         }
 
         public override int Insert ()

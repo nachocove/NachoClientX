@@ -18,7 +18,7 @@ namespace NachoCore.ActiveSync
             base (Xml.Search.Ns, Xml.Search.Ns, beContext)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
             ErrorSubKind = (McPending.Operations.ContactSearch == PendingSingle.Operation) ?
                 NcResult.SubKindEnum.Error_ContactSearchCommandFailed : NcResult.SubKindEnum.Error_EmailSearchCommandFailed;
             InfoSubKind = (McPending.Operations.ContactSearch == PendingSingle.Operation) ?

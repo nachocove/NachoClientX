@@ -47,6 +47,10 @@ namespace NachoCore.Brain
         {
             if (NcBrain.ENABLED) {
                 if (!NcBrain.SharedInstance.IsCancelled ()) {
+                    if (null != Invoker) {
+                        Invoker.Dispose ();
+                        Invoker = null;
+                    }
                     Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
                         TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
                     Invoker.Stfu = true;
@@ -136,6 +140,10 @@ namespace NachoCore.Brain
             });
         }
 
+        private static bool IsAbateRequired()
+        {
+            return (NcApplication.Instance.IsBackgroundAbateRequired || NcApplication.Instance.IsBrainAbateRequired);
+        }
 
         public static void GleanContacts (string address, int accountId, bool obeyAbatement)
         {
@@ -145,7 +153,7 @@ namespace NachoCore.Brain
             var addressList = NcEmailAddress.ParseAddressListString (address);
             var gleanedFolder = McFolder.GetGleanedFolder (accountId);
             foreach (var mbAddr in addressList) {
-                if (NcApplication.Instance.IsBackgroundAbateRequired && obeyAbatement) {
+                if (IsAbateRequired() && obeyAbatement) {
                     throw new NcGleaningInterruptedException ();
                 }
                 if (mbAddr is MailboxAddress) {

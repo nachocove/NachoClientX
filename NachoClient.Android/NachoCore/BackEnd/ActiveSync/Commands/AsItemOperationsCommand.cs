@@ -22,7 +22,7 @@ namespace NachoCore.ActiveSync
             FetchKit = fetchKit;
             NcModel.Instance.RunInTransaction (() => {
                 foreach (var pending in fetchKit.Pendings) {
-                    pending.Pending.MarkDispached ();
+                    pending.Pending.MarkDispatched ();
                     PendingList.Add (pending.Pending);
                 }
             });
@@ -278,7 +278,7 @@ namespace NachoCore.ActiveSync
                                     successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
                                 }
                                 if (null != pending) {
-                                    Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) {1}/{2} for email {3}", item.AccountId, pending.Id, pending.Token, item.Id);
+                                    Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) {1} for email {2}", item.AccountId, pending, item.Id);
                                 } else {
                                     Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) for email {1}", item.AccountId, item.Id);
                                 }

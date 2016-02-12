@@ -24,7 +24,7 @@ namespace NachoCore.IMAP
         }
         public ImapFetchCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
-            pending.MarkDispached ();
+            pending.MarkDispatched ();
             PendingSingle = pending;
 
             SetupLogRedaction ();
@@ -106,7 +106,7 @@ namespace NachoCore.IMAP
         ~ImapFetchCommand ()
         {
             if (!string.IsNullOrEmpty (lastIncompleteLine)) {
-                Log.Error (Log.LOG_IMAP, "{0}: Line left dangling on exit: {1}", this.GetType ().Name, lastIncompleteLine);
+                Log.Error (Log.LOG_IMAP, "{0}: Line left dangling on exit: {1}", CmdNameWithAccount, lastIncompleteLine);
             }
         }
 
@@ -217,13 +217,13 @@ namespace NachoCore.IMAP
                 ReportWatch.Start ();
                 if (totalSize > 0) {
                     Log.Info (Log.LOG_IMAP, "{0} Download progress {1:0.0}%: bytesTransferred {2} totalSize {3}",
-                        this.GetType ().Name,
+                        CmdNameWithAccount,
                         percentTransferred,
                         bytesTransferred,
                         totalSize);
                 } else {
                     Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {1}",
-                        this.GetType ().Name,
+                        CmdNameWithAccount,
                         bytesTransferred);
                 }
             } else {
@@ -234,7 +234,7 @@ namespace NachoCore.IMAP
                 if (lastReportBytes == 0 || bytesTransferred - lastReportBytes > kProgressReportBatchingBytes) {
                     if (totalSize > 0) {
                         Log.Info (Log.LOG_IMAP, "{0} Download progress {1:0.0}%: bytesTransferred {2} totalSize {3} ({4:0.000} k/sec / {5:0.000} k/sec)",
-                                         this.GetType ().Name,
+                                         CmdNameWithAccount,
                                          percentTransferred,
                                          bytesTransferred,
                                          totalSize,
@@ -242,7 +242,7 @@ namespace NachoCore.IMAP
                                          kSecTotal);
                     } else {
                         Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {2} ({3:0.000} k/sec / {4:0.000} k/sec)",
-                            this.GetType ().Name,
+                            CmdNameWithAccount,
                             bytesTransferred,
                             kSecSinceLast,
                             kSecTotal);

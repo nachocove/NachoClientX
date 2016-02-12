@@ -29,6 +29,7 @@ namespace NachoClient.AndroidClient
 
     public class FilePickerFragment : DialogFragment, AttachmentDownloaderDelegate
     {
+        private const string SAVED_ACCOUNT_ID_KEY = "FilePickerFragment.accountId";
 
         public FilePickerFragmentDelegate Delegate;
 
@@ -38,13 +39,18 @@ namespace NachoClient.AndroidClient
         TextView SortSegmentByDate;
         TextView SortSegmentByContact;
 
-        public FilePickerFragment(int accountId) : base()
+        public static FilePickerFragment newInstance(int accountId)
         {
-            this.accountId = accountId;
+            var fragment = new FilePickerFragment ();
+            fragment.accountId = accountId;
+            return fragment;
         }
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
         {
+            if (null != savedInstanceState) {
+                accountId = savedInstanceState.GetInt (SAVED_ACCOUNT_ID_KEY);
+            }
             var builder = new AlertDialog.Builder (Activity);
             var inflater = Activity.LayoutInflater;
             var view = inflater.Inflate (Resource.Layout.FilePickerFragment, null);
@@ -62,6 +68,12 @@ namespace NachoClient.AndroidClient
             var dialog = builder.Create ();
             dialog.Window.RequestFeature (WindowFeatures.NoTitle);
             return dialog;
+        }
+
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            base.OnSaveInstanceState (outState);
+            outState.PutInt (SAVED_ACCOUNT_ID_KEY, accountId);
         }
 
         void ClickContactSegment (object sender, EventArgs e)

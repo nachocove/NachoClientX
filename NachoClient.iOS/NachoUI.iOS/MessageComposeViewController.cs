@@ -62,9 +62,6 @@ namespace NachoClient.iOS
         NcUIBarButtonItem SendButton;
         NcUIBarButtonItem QuickResponseButton;
         NcUIBarButtonItem AddAttachmentButton;
-        UIAlertController CloseAlertController;
-        UIAlertController SubjectAlertController;
-        UIAlertController SizeAlertController;
         List<McAccount> EmailAccounts;
         bool HasShownOnce;
         UIStoryboard mainStorybaord;
@@ -78,7 +75,6 @@ namespace NachoClient.iOS
 
         }
 
-        NSObject BackgroundNotification;
         NSObject ContentSizeCategoryChangedNotification;
         string ContentHtml;
         bool IsWebViewLoaded = false;
@@ -279,25 +275,22 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (String.IsNullOrWhiteSpace (Composer.Message.Subject)) {
-                SubjectAlertController = UIAlertController.Create ("Empty Subject", "This message does not have a subject.  How would you like to proceed?", UIAlertControllerStyle.Alert);
-                SubjectAlertController.AddAction (UIAlertAction.Create ("Send Anyway", UIAlertActionStyle.Default, SendWithoutSubject));
-                SubjectAlertController.AddAction (UIAlertAction.Create ("Add Subject", UIAlertActionStyle.Default, AddSubject));
-                SubjectAlertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction obj) => { SubjectAlertController = null; }));
-                PresentViewController (SubjectAlertController, true, null);
+                NcAlertView.Show (this, "Empty Subject", "This message does not have a subject. How would you like to proceed?",
+                    new NcAlertAction ("Send Anyway", SendWithoutSubject),
+                    new NcAlertAction ("Add Subject", AddSubject),
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
             } else {
                 CheckSizeBeforeSending ();
             }
         }
 
-        void SendWithoutSubject (UIAlertAction obj)
+        void SendWithoutSubject ()
         {
-            SubjectAlertController = null;
             CheckSizeBeforeSending ();
         }
 
-        void AddSubject (UIAlertAction obj)
+        void AddSubject ()
         {
-            SubjectAlertController = null;
             HeaderView.SubjectField.BecomeFirstResponder ();
         }
 
@@ -307,45 +300,40 @@ namespace NachoClient.iOS
             Composer.Save (ContentHtml);
             if (Composer.IsOversize) {
                 if (Composer.CanResize) {
-                    SizeAlertController = UIAlertController.Create ("Large Message", String.Format ("This message is {0}.  You can make it smaller by sizing down the attached images.", Pretty.PrettyFileSize(Composer.MessageSize)), UIAlertControllerStyle.Alert);
-                    SizeAlertController.AddAction (UIAlertAction.Create (String.Format ("Small Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedSmallSize)), UIAlertActionStyle.Default, ResizeImagesSmall));
-                    SizeAlertController.AddAction (UIAlertAction.Create (String.Format ("Medium Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedMediumSize)), UIAlertActionStyle.Default, ResizeImagesMedium));
-                    SizeAlertController.AddAction (UIAlertAction.Create (String.Format ("Large Images ({0})", Pretty.PrettyFileSize(Composer.EstimatedLargeSize)), UIAlertActionStyle.Default, ResizeImagesLarge));
-                    SizeAlertController.AddAction (UIAlertAction.Create (String.Format ("Actual Size ({0})", Pretty.PrettyFileSize(Composer.MessageSize)), UIAlertActionStyle.Default, AcknowlegeSizeWarning));
-                    SizeAlertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction obj) => { SizeAlertController = null; }));
-                    PresentViewController (SizeAlertController, true, null);
+                    NcAlertView.Show (this, "Large Message",
+                        string.Format ("This message is {0}. You can make it smaller by reducing the size of the attached images.", Pretty.PrettyFileSize (Composer.MessageSize)),
+                        new NcAlertAction (string.Format ("Small images ({0})", Pretty.PrettyFileSize (Composer.EstimatedSmallSize)), ResizeImagesSmall),
+                        new NcAlertAction (string.Format ("Medium images ({0})", Pretty.PrettyFileSize (Composer.EstimatedMediumSize)), ResizeImagesMedium),
+                        new NcAlertAction (string.Format ("Large images ({0})", Pretty.PrettyFileSize (Composer.EstimatedLargeSize)), ResizeImagesLarge),
+                        new NcAlertAction (string.Format ("Actual size ({0})", Pretty.PrettyFileSize (Composer.MessageSize)), AcknowlegeSizeWarning),
+                        new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
                 } else {
-                    SizeAlertController = UIAlertController.Create ("Large Message", String.Format ("This message is {0}", Pretty.PrettyFileSize(Composer.MessageSize)), UIAlertControllerStyle.Alert);
-                    SizeAlertController.AddAction (UIAlertAction.Create ("Send Anyway", UIAlertActionStyle.Default, AcknowlegeSizeWarning));
-                    SizeAlertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction obj) => { SizeAlertController = null; }));
-                    PresentViewController (SizeAlertController, true, null);
+                    NcAlertView.Show (this, "Large Message", string.Format ("This message is {0}", Pretty.PrettyFileSize (Composer.MessageSize)),
+                        new NcAlertAction ("Send Anyway", AcknowlegeSizeWarning),
+                        new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
                 }
             } else {
                 Send ();
             }
         }
 
-        void AcknowlegeSizeWarning (UIAlertAction obj)
+        void AcknowlegeSizeWarning ()
         {
-            SizeAlertController = null;
             Send ();
         }
 
-        void ResizeImagesLarge (UIAlertAction obj)
+        void ResizeImagesLarge ()
         {
-            SizeAlertController = null;
             ResizeImagesAndSend (Composer.LargeImageLengths);
         }
 
-        void ResizeImagesMedium (UIAlertAction obj)
+        void ResizeImagesMedium ()
         {
-            SizeAlertController = null;
             ResizeImagesAndSend (Composer.MediumImageLengths);
         }
 
-        void ResizeImagesSmall (UIAlertAction obj)
+        void ResizeImagesSmall ()
         {
-            SizeAlertController = null;
             ResizeImagesAndSend (Composer.SmallImageLengths);
         }
 
@@ -382,17 +370,15 @@ namespace NachoClient.iOS
         public void Close (object sender, EventArgs e)
         {
             View.EndEditing (true);
-            CloseAlertController = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
-            CloseAlertController.AddAction (UIAlertAction.Create ("Discard Draft", UIAlertActionStyle.Destructive, Discard));
-            CloseAlertController.AddAction (UIAlertAction.Create ("Save Draft", UIAlertActionStyle.Default, Save));
-            CloseAlertController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, (UIAlertAction obj) => { CloseAlertController = null; }));
-            PresentViewController (CloseAlertController, true, null);
+            NcActionSheet.Show (CloseButton, this, null, null, 
+                new NcAlertAction ("Discard Draft", NcAlertActionStyle.Destructive, DiscardDraft),
+                new NcAlertAction ("Save Draft", NcAlertActionStyle.Default, SaveDraft),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
         }
 
         // User opting to discard while closing
-        public void Discard (UIAlertAction obj)
+        private void DiscardDraft ()
         {
-            CloseAlertController = null;
             Composer.Message.Delete ();
             if (ComposeDelegate != null) {
                 ComposeDelegate.MessageComposeViewDidCancel (this);
@@ -401,9 +387,8 @@ namespace NachoClient.iOS
         }
 
         // User opting to save while closing
-        public void Save (UIAlertAction obj)
+        private void SaveDraft ()
         {
-            CloseAlertController = null;
             var html = GetHtmlContent ();
             Composer.Save (html);
             if (ComposeDelegate != null) {
@@ -697,11 +682,10 @@ namespace NachoClient.iOS
 
         public void MessageComposerDidFailToLoadMessage (MessageComposer composer)
         {
-            var alertController = UIAlertController.Create ("Could not load message", "Sorry, we could not load your message.  Please try again.", UIAlertControllerStyle.Alert);
-            alertController.AddAction (UIAlertAction.Create ("OK", UIAlertActionStyle.Default, (UIAlertAction obj) => { 
-                DismissViewController (true, null);
-            }));
-            PresentViewController (alertController, true, null);
+            NcAlertView.Show (this, "Could not load message", "Sorry, the message could not be loaded. Please try again.",
+                new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                    DismissViewController (true, null);
+                }));
         }
 
         public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
@@ -881,7 +865,7 @@ namespace NachoClient.iOS
 
         private void ShowAddAttachment (bool inline = false)
         {
-            var helper = new AddAttachmentViewController.MenuHelper (this, Composer.Account, MainStoryboard);
+            var helper = new AddAttachmentViewController.MenuHelper (this, Composer.Account, MainStoryboard, AddAttachmentButton);
             PresentViewController (helper.MenuViewController, true, null);
         }
 
@@ -981,21 +965,12 @@ namespace NachoClient.iOS
 
         private void RegisterForNotifications ()
         {
-            BackgroundNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
             ContentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
         }
 
         private void UnregisterNotifications ()
         {
-            NSNotificationCenter.DefaultCenter.RemoveObserver (BackgroundNotification);
             NSNotificationCenter.DefaultCenter.RemoveObserver (ContentSizeCategoryChangedNotification);
-        }
-
-        private void OnBackgroundNotification (NSNotification notification)
-        {
-            if (null != CloseAlertController) {
-                CloseAlertController.DismissViewController (false, null);
-            }
         }
 
         void OnContentSizeCategoryChangedNotification (NSNotification notification)

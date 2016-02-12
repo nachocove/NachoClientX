@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:versionCode="1"
     android:versionName="1.0"
-    package="com.nachocove.nachomail">
+    package="com.nachocove.nachomail.dev">
     <uses-sdk
         android:minSdkVersion="16"
         android:targetSdkVersion="21" />
@@ -13,23 +13,18 @@
         android:theme="@style/Theme.NachoMail"
         android:icon="@drawable/icon">
         android:allowBackup="true"
-	android:backupAgent="nachoplatform.NcBackupAgentHelper"
-	android:restoreAnyVersion="true"
+    android:backupAgent="nachoplatform.NcBackupAgentHelper"
+    android:restoreAnyVersion="true"
         <activity
-            android:name="net.hockeyapp.android.UpdateActivity" />
-        <meta-data
+            android:name="net.hockeyapp.android.UpdateActivity" /><meta-data
             android:name="com.google.android.backup.api_key"
-            android:value="AEdPqrEAAAAIHhu7nvviRVUbM-wMP0XfbO1OAPy579Irm97hJw" />
-        <provider
+            android:value="AEdPqrEAAAAIHhu7nvviRVUbM-wMP0XfbO1OAPy579Irm97hJw" /><provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="com.nachocove.dev.fileprovider"
             android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
+            android:grantUriPermissions="true"><meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/exported_paths" />
-        </provider>
-    </application>
+                android:resource="@xml/exported_paths" /></provider></application>
     <uses-permission
         android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission

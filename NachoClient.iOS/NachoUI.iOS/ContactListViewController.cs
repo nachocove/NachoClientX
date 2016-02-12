@@ -116,7 +116,7 @@ namespace NachoClient.iOS
                             PerformSegue ("ContactsToContactEdit", new SegueHolder (account));
                         });
                     }
-                    NcActionSheet.Show (this.View, this, null,
+                    NcActionSheet.Show (addContactButton, this, null,
                         "Cannot add contacts to the current account. Select other account for the new contact.", actions);
                 }
             };
