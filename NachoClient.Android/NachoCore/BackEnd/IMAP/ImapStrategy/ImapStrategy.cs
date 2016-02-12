@@ -98,6 +98,7 @@ namespace NachoCore.IMAP
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities).FirstOrDefault ();
                 if (null != next) {
+                    // Analysis disable once ConditionIsAlwaysTrueOrFalse
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:{0}:{1}", next.DelayNotAllowed ? "HotQOp" : "QOp", next.Operation.ToString ());
                     ImapCommand cmd = null;

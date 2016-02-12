@@ -16,7 +16,7 @@ namespace NachoCore.IMAP
         public ImapDiscoverCommand (IBEContext beContext) : base (beContext)
         {
             RedactProtocolLogFunc = RedactProtocolLog;
-            DontReportCommResult = BEContext.ProtocolState.ImapDiscoveryDone ? false : true;
+            DontReportCommResult = !BEContext.ProtocolState.ImapDiscoveryDone;
         }
 
         public string RedactProtocolLog (bool isRequest, string logData)
@@ -50,7 +50,7 @@ namespace NachoCore.IMAP
                     if (Client.IsConnected) {
                         Client.Disconnect (false, Cts.Token);
                     }
-                    return base.ExecuteConnectAndAuthEvent ();
+                    return ExecuteConnectAndAuthEvent ();
                 });
                 Cts.Token.ThrowIfCancellationRequested ();
             } catch (CommandLockTimeOutException ex) {
@@ -87,11 +87,11 @@ namespace NachoCore.IMAP
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (ServiceNotAuthenticatedException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ServiceNotAuthenticatedException: {0}", ex.Message);
-                evt =  Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (InvalidOperationException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
-                evt =  Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (ImapProtocolException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapProtocolException {0}", ex.Message);
@@ -208,10 +208,6 @@ namespace NachoCore.IMAP
                     }
                 }
                 break;
-
-            default:
-                break;
-
             }
             if (BEContext.Cred.Username != username) {
                 BEContext.Cred.UpdateWithOCApply<McCred> ((record) => {
