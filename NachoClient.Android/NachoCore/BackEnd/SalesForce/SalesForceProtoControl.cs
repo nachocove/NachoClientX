@@ -8,6 +8,12 @@ namespace NachoCore
 {
     public class SalesForceProtoControl : NcProtoControl
     {
+        public const int KDefaultResyncSeconds = 60*30;
+
+        public const McAccount.AccountCapabilityEnum SalesForceCapabilities = (
+            McAccount.AccountCapabilityEnum.ContactReader |
+            McAccount.AccountCapabilityEnum.ContactWriter);
+
         public static McAccount CreateAccount ()
         {
             var fsAccount = new McAccount () {
@@ -26,7 +32,6 @@ namespace NachoCore
             // wait for the fetch of the endpoint query paths.
             UiCrdW,
             SyncW,
-            Idle,
             Parked,
         };
 
@@ -45,10 +50,6 @@ namespace NachoCore
                 Last = UiSetCred,
             };
         }
-
-        public const McAccount.AccountCapabilityEnum SalesForceCapabilities = (
-            McAccount.AccountCapabilityEnum.ContactReader |
-            McAccount.AccountCapabilityEnum.ContactWriter);
 
         public static void PopulateServer (int accountId, Uri serverUri)
         {
@@ -71,8 +72,10 @@ namespace NachoCore
         }
 
         public SalesForceSetup SFDCSetup { get; protected set; }
+
         protected SFDCCommand Cmd;
-        protected NcTimer RefreshTimer;
+
+        protected bool DiscoveryDone { get; set; }
 
         public SalesForceProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
@@ -150,28 +153,10 @@ namespace NachoCore
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, ActSetsState = true },
                             new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSyncSuccess, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSyncSuccess, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
-                        }
-                    },
-                    new Node {
-                        State = (uint)Lst.Idle,
-                        Drop = new uint[] {
-                        },
-                        Invalid = new [] {
-                            (uint)SmEvt.E.HardFail,
-                            (uint)SmEvt.E.Success,
-                            (uint)SmEvt.E.TempFail,
-                            (uint)SfdcEvt.E.AuthFail,
-                            (uint)PcEvt.E.PendQOrHint,
-                            (uint)PcEvt.E.PendQHot,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
-                            new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
                     },
                     new Node {
@@ -188,7 +173,7 @@ namespace NachoCore
                             (uint)SfdcEvt.E.AuthFail,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                             new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
                     }         
@@ -214,25 +199,48 @@ namespace NachoCore
         }
 
         SalesForceContactSync Sync;
+
         void DoSync ()
         {
+            if (null != ReSyncTimer) {
+                ReSyncTimer.Dispose ();
+                ReSyncTimer = null;
+            }
+            DiscoveryDone = true;
             if (null != Sync) {
-                Log.Error (Log.LOG_SFDC, "Can not initiate a sync on top of a running one.");
-                return;
+                Sync.Cancel ();
+                Sync = null;
             }
             Sync = new SalesForceContactSync (this, AccountId);
             Sync.Execute ();
         }
 
+        NcTimer ReSyncTimer;
+
         void DoSyncSuccess ()
         {
             Sync.Cancel ();
             Sync = null;
+            if (null != ReSyncTimer) {
+                ReSyncTimer.Dispose ();
+            }
+            ReSyncTimer = new NcTimer ("SFDCResyncTimer", (state) => Execute (), null, new TimeSpan (0, 0, KDefaultResyncSeconds), TimeSpan.Zero);
         }
 
         void DoPark ()
         {
             CancelCmd ();
+        }
+
+        void DoDrive ()
+        {
+            if (DiscoveryDone) {
+                DoSync ();
+                Sm.State = (uint)Lst.SyncW;
+            } else {
+                DoDisc ();
+                Sm.State = (uint)Lst.DiscW;
+            }
         }
 
         void DoUiCredReq ()
@@ -255,10 +263,17 @@ namespace NachoCore
             if (!base.Execute ()) {
                 return false;
             }
-            TimeSpan t = new TimeSpan (10, 0, 0);
-            RefreshTimer = new NcTimer ("SFDCRefreshTimer", (state) => Execute (), null, t, t);
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "SFDCPCLAUNCH");
+            NcTask.Run (() => Sm.PostEvent ((uint)SmEvt.E.Launch, "SFDCPCLAUNCH"), "SFDCExecute");
             return true;
+        }
+
+        protected override void ForceStop ()
+        {
+            if (null != ReSyncTimer) {
+                ReSyncTimer.Dispose ();
+                ReSyncTimer = null;
+            }
+            base.ForceStop ();
         }
 
         void CancelCmd ()
