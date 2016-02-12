@@ -64,7 +64,11 @@ namespace NachoCore.ActiveSync
                 }
                 if (justCreated) {
                     emailMessage.IsJunk = folder.IsJunkFolder ();
+                    emailMessage.DetermineIfIsChat ();
                     emailMessage.Insert ();
+                    if (emailMessage.IsChat) {
+                        McChat.AssignMessageToChat (emailMessage);
+                    }
                     folder.Link (emailMessage);
                     aHelp.InsertAttachments (emailMessage);
                 } else {
@@ -95,14 +99,6 @@ namespace NachoCore.ActiveSync
                 if (emailMessage.IsMeetingCancelation && null != emailMessage.MeetingRequest) {
                     CalendarHelper.MarkEventAsCancelled (emailMessage.MeetingRequest);
                 }
-            }
-
-            if (!emailMessage.IsChat && !String.IsNullOrEmpty (emailMessage.ConversationId)) {
-                emailMessage.IsChat = McEmailMessage.IsChatConversation (emailMessage.AccountId, emailMessage.ConversationId);
-            }
-
-            if (emailMessage.IsChat) {
-                McChat.AssignMessageToChat (emailMessage);
             }
 
             return emailMessage;

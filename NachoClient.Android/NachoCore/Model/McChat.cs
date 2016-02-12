@@ -39,13 +39,13 @@ namespace NachoCore.Model
                 var hash = sha1.ComputeHash (bytes);
                 var builder = new System.Text.StringBuilder ();
                 foreach (var x in hash) {
-                    builder.AppendFormat ("{x2}", x);
+                    builder.AppendFormat ("{0:X2}", x);
                 }
                 return builder.ToString ();
             }
         }
 
-        static McChat ChatForAddresses (int accountId, List<McEmailAddress> addresses)
+        public static McChat ChatForAddresses (int accountId, List<McEmailAddress> addresses)
         {
             var participantHash = HashAddresses (addresses);
             McChat chat = null;
@@ -84,7 +84,9 @@ namespace NachoCore.Model
             var chat = ChatForAddresses (message.AccountId, mcaddresses);
             var chatMessage = new McChatMessage ();
             chatMessage.ChatId = chat.Id;
+            chatMessage.AccountId = chat.AccountId;
             chatMessage.MessageId = message.Id;
+            chatMessage.Insert ();
             return chat;
         }
 
@@ -94,6 +96,7 @@ namespace NachoCore.Model
                 var contacts = McContact.QueryByEmailAddress (AccountId, address.CanonicalEmailAddress);
                 var participant = new McChatParticipant ();
                 participant.ChatId = Id;
+                participant.AccountId = AccountId;
                 participant.EmailAddrId = address.Id;
                 if (contacts.Count > 0) {
                     participant.ContactId = contacts [0].Id;

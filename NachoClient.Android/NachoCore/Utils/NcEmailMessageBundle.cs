@@ -191,7 +191,7 @@ namespace NachoCore.Utils
         private BundleManifest Manifest;
         private int SubmessageCount = 0;
 
-        private static int LastestVersion = 3;
+        private static int LastestVersion = 4;
 
         private static string FullTextEntryName = "full-text";
         private static string TopTextEntryName = "top-text";
@@ -444,9 +444,7 @@ namespace NachoCore.Utils
 
         public void SetFullText (string text)
         {
-            parsed = new ParseResult ();
-            parsed.FullText = text;
-            CompleteBundleAfterParse ();
+            SetParsed (fullText: text);
         }
 
         public void SetFullHtml (HtmlDocument doc, NcEmailMessageBundle sourceBundle)
@@ -454,6 +452,16 @@ namespace NachoCore.Utils
             parsed = new ParseResult ();
             parsed.FullHtmlDocument = doc;
             ResolveRelativeReferences (doc, sourceBundle);
+            CompleteBundleAfterParse ();
+        }
+
+        public void SetParsed (HtmlDocument fullHtml = null, string fullText = null, HtmlDocument topHtml = null, string topText = null)
+        {
+            parsed = new ParseResult ();
+            parsed.FullHtmlDocument = fullHtml;
+            parsed.FullText = fullText;
+            parsed.TopText = topText;
+            parsed.TopHtmlDocument = topHtml;
             CompleteBundleAfterParse ();
         }
 
@@ -503,6 +511,14 @@ namespace NachoCore.Utils
             } else if (parsed.FullText == null) {
                 IncludeHtmlDocumentAsText (parsed.FullHtmlDocument);
             }
+            if (parsed.TopHtmlDocument == null) {
+                if (parsed.TopText != null) {
+                    var serializer = new HtmlTextDeserializer ();
+                    parsed.TopHtmlDocument = serializer.Deserialize (parsed.TopText);
+                }
+            } else if (parsed.TopText == null) {
+                parsed.TopText = parsed.TopHtmlDocument.TextContents ();
+            }
         }
 
         private void StoreFullEntries ()
@@ -524,22 +540,19 @@ namespace NachoCore.Utils
 
         private void StoreTopEntries ()
         {
-            // TODO: figure out if the message has quoted text that should be removed from the top entries
-
-            bool HasQuote = false;
             string topTextPath = null;
             string topHtmlPath = null;
 
-            if (HasQuote) {
-                // If there's no quoted content, then the top text is identical to the full text
-                // Therefore, we can point the top entries to the paths for the full entries and save space
+            if (parsed.TopText != null && parsed.TopHtmlDocument != null) {
                 topTextPath = TopTextPath;
                 topHtmlPath = TopHtmlPath;
-                Storage.StoreStringContentsForPath (TopText, topTextPath);
+                Storage.StoreStringContentsForPath (parsed.TopText, topTextPath);
                 using (var writer = Storage.TextWriterForPath (topHtmlPath)) {
                     parsed.TopHtmlDocument.Save (writer);
                 }
             } else {
+                // If there's no quoted content, then the top text is identical to the full text
+                // Therefore, we can point the top entries to the paths for the full entries and save space
                 topTextPath = FullTextPath;
                 topHtmlPath = FullHtmlPath;
             }
@@ -671,6 +684,9 @@ namespace NachoCore.Utils
                         parsed.AlternateTypeInfo.PopulatingText = false;
                         foundText = true;
                     }
+                    if (contentType.Matches ("text", "x-nacho-chat")) {
+                        part.Accept (this);
+                    }
                 }
                 // If it turns out we had an RTF, but no HTML part, go ahead and get the RTF
                 if (rtfPart != null && foundHtml == false){
@@ -765,6 +781,9 @@ namespace NachoCore.Utils
                     } else if (entity.IsRichText) {
                         IncludeRtfAsText (entity.Text);
                     }
+                }
+                if (entity.ContentType.Matches ("text", "x-nacho-chat")) {
+                    parsed.TopText = entity.Text;
                 }
             }
         }
@@ -1147,6 +1166,10 @@ namespace NachoCore.Utils
                                 node.SetAttributeValue ("nacho-original-src", src);
                             }
                         }
+                    }
+                    if (node.GetAttributeValue("id", "") == "nacho-chat" && parsed.TopText == null) {
+                        var serializer = new HtmlTextSerializer (node);
+                        parsed.TopText = serializer.Serialize ();
                     }
                 }
                 if (node.ParentNode != null){

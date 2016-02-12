@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class McChatParticipant : McAbstrObject
+    public class McChatParticipant : McAbstrObjectPerAcc
     {
 
         [Indexed]

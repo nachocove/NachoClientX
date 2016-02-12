@@ -1585,6 +1585,14 @@ namespace NachoCore.Model
             });
         }
 
+        void DeleteChatMessages ()
+        {
+            var messages = McChatMessage.QueryByMessageId (Id);
+            foreach (var message in messages) {
+                message.Delete ();
+            }
+        }
+
         public override void DeleteAncillary ()
         {
             NcAssert.True (0 != Id);
@@ -1603,6 +1611,7 @@ namespace NachoCore.Model
             DeleteDbCategories ();
             DeleteAttachments ();
             DeleteAddressMaps ();
+            DeleteChatMessages ();
         }
 
         public override int Delete ()
@@ -1683,10 +1692,18 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessage> (query, messageId).FirstOrDefault ();
         }
 
-        public static bool IsChatConversation (int accountId, string conversationId)
+        public void DetermineIfIsChat ()
         {
-            var query = "SELECT COUNT(*) FROM McEmailMessage WHERE AccountId = ? AND ConversationId = ? AND IsChat = true";
-            return NcModel.Instance.Db.ExecuteScalar<int> (query, accountId, conversationId) > 0;
+            if (!String.IsNullOrEmpty (MessageID)) {
+                IsChat = MessageID.StartsWith ("NachoChat.");
+            }
+            if (!IsChat && !String.IsNullOrEmpty (Subject)) {
+                IsChat = Subject.EndsWith ("[Nacho Chat]");
+            }
+            if (!IsChat && !String.IsNullOrEmpty (ConversationId)) {
+                var query = "SELECT COUNT(*) FROM McEmailMessage WHERE AccountId = ? AND ConversationId = ? AND IsChat = 1";
+                IsChat = NcModel.Instance.Db.ExecuteScalar<int> (query, AccountId, ConversationId) > 0;
+            }
         }
 
         public McEmailMessage MarkHasBeenNotified (bool shouldNotify)

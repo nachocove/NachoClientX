@@ -375,6 +375,9 @@ namespace NachoCore.IMAP
                     if (justCreated) {
                         emailMessage.IsJunk = folder.IsJunkFolder ();
                         emailMessage.Insert ();
+                        if (emailMessage.IsChat){
+                            McChat.AssignMessageToChat (emailMessage);
+                        }
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
                     } else {
@@ -660,12 +663,6 @@ namespace NachoCore.IMAP
 
                     case HeaderId.DkimSignature:
                         break;
-
-                    case HeaderId.Unknown:
-                        if (header.Field == ImapStrategy.KXNachoChat) {
-                            emailMessage.IsChat = true;
-                        }
-                        break;
                     }
                 }
             }
@@ -675,13 +672,7 @@ namespace NachoCore.IMAP
             }
             SetConversationId (emailMessage, summary);
             emailMessage.IsIncomplete = false;
-            if (!emailMessage.IsChat && !String.IsNullOrEmpty (emailMessage.ConversationId)) {
-                emailMessage.IsChat = McEmailMessage.IsChatConversation (emailMessage.AccountId, emailMessage.ConversationId);
-            }
-
-            if (emailMessage.IsChat) {
-                McChat.AssignMessageToChat (emailMessage);
-            }
+            emailMessage.DetermineIfIsChat ();
 
             return FixupFromInfo (emailMessage, false);
         }

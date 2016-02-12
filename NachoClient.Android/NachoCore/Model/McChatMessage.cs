@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class McChatMessage : McAbstrObject
+    public class McChatMessage : McAbstrObjectPerAcc
     {
 
         [Indexed]
@@ -24,6 +24,11 @@ namespace NachoCore.Model
                 "JOIN McEmailMessage m ON cm.MessageId = m.MessageId " +
                 "WHERE cm.ChatId = ? " +
                 "ORDER BY m.DateReceived DESC OFFSET ? LIMIT ?", chatId, offset, limit);
+        }
+
+        public static List<McChatMessage> QueryByMessageId (int messageId)
+        {
+            return NcModel.Instance.Db.Query<McChatMessage> ("SELECT * FROM McChatMessage WHERE MessageId = ?", messageId);
         }
     }
 }

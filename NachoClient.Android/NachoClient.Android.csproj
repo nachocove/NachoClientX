@@ -639,6 +639,7 @@
     <Compile Include="NachoCore\Model\McChatParticipant.cs" />
     <Compile Include="NachoCore\Model\McChatMessage.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration52.cs" />
+    <Compile Include="NachoCore\Utils\ChatMessageComposer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

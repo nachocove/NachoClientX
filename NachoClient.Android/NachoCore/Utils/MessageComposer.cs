@@ -132,7 +132,8 @@ namespace NachoCore.Utils
         MessageDownloader MainMessageDownloader;
         MessageDownloader RelatedMessageDownloader;
         List<BinaryReader> OpenReaders;
-        MimeMessage Mime;
+        protected MimeMessage Mime;
+        protected MultipartAlternative AlternativePart;
         Dictionary <string, McAttachment> AttachmentsBySrc;
         Dictionary <int, bool> AttachmentsInHtml;
 
@@ -143,6 +144,12 @@ namespace NachoCore.Utils
         public MessageComposer (McAccount account)
         {
             Account = account;
+            InitialAttachments = new List<McAttachment> ();
+        }
+
+        public MessageComposer (int accountId)
+        {
+            Account = McAccount.QueryById<McAccount> (accountId);
             InitialAttachments = new List<McAttachment> ();
         }
 
@@ -210,8 +217,10 @@ namespace NachoCore.Utils
                 Message.ReferencedEmailId = RelatedMessage.Id;
                 Message.ReferencedIsForward = Kind == EmailHelper.Action.Forward;
                 Message.ReferencedBodyIsIncluded = true;
-                Message.Subject = EmailHelper.CreateInitialSubjectLine (Kind, RelatedMessage.Subject);
-                if (EmailHelper.IsReplyAction (Kind)) {
+                if (String.IsNullOrEmpty (Message.Subject)) {
+                    Message.Subject = EmailHelper.CreateInitialSubjectLine (Kind, RelatedMessage.Subject);
+                }
+                if (EmailHelper.IsReplyAction (Kind) && String.IsNullOrEmpty(Message.To)) {
                     EmailHelper.PopulateMessageRecipients (Account, Message, Kind, RelatedMessage);
                 }
                 var now = DateTime.UtcNow;
@@ -443,7 +452,7 @@ namespace NachoCore.Utils
             }
         }
 
-        void PrepareMessageBody ()
+        protected virtual void PrepareMessageBody ()
         {
             string messageText = "";
             if (!String.IsNullOrWhiteSpace (InitialText)) {
@@ -458,7 +467,7 @@ namespace NachoCore.Utils
             }, "MessageComposer_SetFullText");
         }
 
-        void FinishPreparingMessage ()
+        protected virtual void FinishPreparingMessage ()
         {
             MessagePreparationState = MessagePreparationStatus.Done;
             if (Delegate != null) {
@@ -525,7 +534,7 @@ namespace NachoCore.Utils
             }
         }
 
-        void BuildMimeMessage (string html)
+        protected virtual void BuildMimeMessage (string html)
         {
             _EstimatedLargeSizeDelta = 0;
             _EstimatedMediumSizeDelta = 0;
@@ -546,19 +555,19 @@ namespace NachoCore.Utils
             var doc = new HtmlDocument ();
             doc.LoadHtml (html);
             var serializer = new HtmlTextSerializer (doc);
-            var alternative = new MultipartAlternative ();
+            AlternativePart = new MultipartAlternative ();
             var plainPart = new TextPart ("plain");
             plainPart.Text = serializer.Serialize ();
-            alternative.Add (plainPart);
+            AlternativePart.Add (plainPart);
             var htmlPart = HtmlPart (doc);
-            alternative.Add (htmlPart);
+            AlternativePart.Add (htmlPart);
             Multipart mixed = null;
             foreach (var attachment in attachments) {
                 if (!AttachmentsInHtml.ContainsKey (attachment.Id)) {
                     if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
                         if (mixed == null) {
                             mixed = new Multipart ();
-                            mixed.Add (alternative);
+                            mixed.Add (AlternativePart);
                         }
                         var attachmentPart = new MimePart (attachment.ContentType ?? "application/octet-stream");
                         attachmentPart.FileName = attachment.DisplayName;
@@ -592,7 +601,7 @@ namespace NachoCore.Utils
             if (mixed != null) {
                 Mime.Body = mixed;
             } else {
-                Mime.Body = alternative;
+                Mime.Body = AlternativePart;
             }
             if (Message.ReferencedEmailId != 0) {
                 var relatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.ReferencedEmailId);

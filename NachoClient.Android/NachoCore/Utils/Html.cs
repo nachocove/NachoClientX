@@ -70,7 +70,7 @@ namespace NachoCore.Utils
 
         }
 
-        HtmlDocument Document;
+        HtmlNode Node;
         bool AtLineStart = true;
         bool AtDocumentStart = true;
         bool AtParagraphBreak = true;
@@ -84,15 +84,22 @@ namespace NachoCore.Utils
 
         public HtmlTextSerializer (string html)
         {
-            Document = new HtmlDocument ();
-            Document.LoadHtml (html);
+            var document = new HtmlDocument ();
+            document.LoadHtml (html);
+            Node = document.DocumentNode;
             CommonInit ();
 
         }
 
         public HtmlTextSerializer (HtmlDocument document)
         {
-            Document = document;
+            Node = document.DocumentNode;
+            CommonInit ();
+        }
+
+        public HtmlTextSerializer (HtmlNode node)
+        {
+            Node = node;
             CommonInit ();
         }
 
@@ -109,7 +116,7 @@ namespace NachoCore.Utils
         public string Serialize ()
         {
             Text = "";
-            VisitNode (Document.DocumentNode);
+            VisitNode (Node);
             return Text;
         }
 
@@ -510,24 +517,38 @@ namespace NachoCore.Utils
 
         public HtmlDocument Deserialize (string text)
         {
-            Document = new HtmlDocument ();
-            var html = Document.CreateElement ("html");
-            var head = Document.CreateElement ("head");
-            var charset = Document.CreateElement ("meta");
+            var document = new HtmlDocument ();
+            var html = document.CreateElement ("html");
+            var head = document.CreateElement ("head");
+            var charset = document.CreateElement ("meta");
             charset.SetAttributeValue ("charset", "utf8");
             head.AppendChild (charset);
             html.AppendChild (head);
-            Node = Document.CreateElement ("body");
-            html.AppendChild (Node);
-            Document.DocumentNode.AppendChild (html);
+            var body = document.CreateElement ("body");
+            html.AppendChild (body);
+            document.DocumentNode.AppendChild (html);
+
+            DeserializeInto (text, body);
+
+            return document;
+        }
+
+        public void DeserializeInto (string text, HtmlNode node)
+        {
+            if (String.IsNullOrEmpty (text)) {
+                return;
+            }
+            
+            LinePrefix = "";
+
+            Document = node.OwnerDocument;
+            Node = node;
 
             Reader = new StringReader (text);
             var readMore = true;
             while (readMore) {
                 readMore = ReadLine ();
             }
-
-            return Document;
         }
 
         public void PushNode (string name)

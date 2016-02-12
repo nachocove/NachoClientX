@@ -1768,6 +1768,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration52.cs">
       <Link>NachoCore\Model\Migration\NcMigration52.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\ChatsViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ChatMessageComposer.cs">
+      <Link>NachoCore\Utils\ChatMessageComposer.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
