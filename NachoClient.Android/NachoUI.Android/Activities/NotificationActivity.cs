@@ -47,6 +47,10 @@ namespace NachoClient.AndroidClient
                 return;
             }
 
+            NcTask.Run (() => {
+                BackEnd.Instance.SendEmailBodyFetchHint(message.AccountId, message.Id);
+            }, "NotificationActivity.SendEmailBodyFetchHint");
+
             // Create show message intent
             var thread = new McEmailMessageThread ();
             thread.FirstMessageId = message.Id;

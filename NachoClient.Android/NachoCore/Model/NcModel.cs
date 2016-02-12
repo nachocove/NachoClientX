@@ -579,9 +579,17 @@ namespace NachoCore.Model
             return (TransDepth.TryGetValue (Thread.CurrentThread.ManagedThreadId, out depth) && depth > 0);
         }
 
+        void LogWriteFromUIThread(string tag)
+        {
+            if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
+                // Log.Info (Log.LOG_DB, "NcModel: {0} on UI thread\n{1}", tag, NachoPlatformBinding.PlatformProcess.GetStackTrace ());
+            }
+        }
+
         public int Update (object obj, Type objType, bool performOC = false, int priorVersion = 0)
         {
             lock (WriteNTransLockObj) {
+                LogWriteFromUIThread ("Update");
                 return Db.Update (obj, objType, performOC, priorVersion);
             }
         }
@@ -599,6 +607,7 @@ namespace NachoCore.Model
             do {
                 try {
                     lock (WriteNTransLockObj) {
+                        LogWriteFromUIThread ("BusyProtect");
                         rc = action ();
                     }
                     return rc;
@@ -629,6 +638,7 @@ namespace NachoCore.Model
         public void RunInLock (Action action)
         {
             lock (WriteNTransLockObj) {
+                LogWriteFromUIThread ("RunInLock");
                 action ();
             }
         }
@@ -665,6 +675,7 @@ namespace NachoCore.Model
                     try {
                         lockWatch.Start ();
                         lock (WriteNTransLockObj) {
+                            LogWriteFromUIThread ("RunInTransaction");
                             lockWatch.Stop ();
                             Db.CommandRecord = new List<string> ();
                             workWatch.Start ();
