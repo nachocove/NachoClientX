@@ -42,9 +42,9 @@ namespace NachoCore.Utils
             TrackerMonitorTimer.Stfu = true;
         }
 
-        public void Reset ()
+        public void Reset (string message)
         {
-            UpdateState (NetStatusStatusEnum.Up, Speed, "NcCommStatus.Reset");
+            ForceUp (message);
             ResetTrackers ();
         }
 
