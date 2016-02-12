@@ -10,23 +10,23 @@ namespace NachoCore.IMAP
 {
     public class ImapValidateConfig : IBEContext
     {
-        private IBEContext BEContext;
-        private McServer ServerCandidate;
-        private McCred CredCandidate;
-        private ImapCommand Cmd;
-        NcImapClient Client;
+        IBEContext BEContext;
+        McServer ServerCandidate;
+        McCred CredCandidate;
+        ImapCommand Cmd;
+        NcStateMachine Sm;
 
         public ImapValidateConfig (IBEContext bEContext)
         {
             BEContext = bEContext;
-            Client = new NcImapClient ();
+            Sm = new NcStateMachine ("DummyValidation", new ImapStateMachineContext ());
         }
 
         public void Execute (McServer server, McCred cred)
         {
             ServerCandidate = server;
             CredCandidate = cred;
-            Cmd = new ImapDiscoverCommand (this, Client);
+            Cmd = new ImapDiscoverCommand (this);
             NcTask.Run (() => {
                 ExecuteValidation ();
                 Cmd = null;
@@ -44,7 +44,7 @@ namespace NachoCore.IMAP
         public void ExecuteValidation()
         {
             try {
-                Cmd.ExecuteConnectAndAuthEvent ();
+                Cmd.ExecuteConnectAndAuthEvent (Sm);
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ValidateConfigSucceeded));
             } catch (OperationCanceledException) {
                 Log.Info (Log.LOG_IMAP, "OperationCanceledException");

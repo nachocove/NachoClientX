@@ -26,7 +26,21 @@ namespace NachoCore.IMAP
         /// The ImapClient for this command.
         /// </summary>
         /// <value>NcImapClient</value>
-        protected NcImapClient Client { get; set; }
+        protected NcImapClient Client {
+            get {
+                NcAssert.NotNull (Sm, "Command.Sm is null");
+                NcAssert.NotNull (Sm.Context, "Command.Sm.Context is null");
+                return (Sm.Context as ImapStateMachineContext).Client;
+            }
+        }
+
+        protected bool HasClient {
+            get {
+                return (null != Sm && null != Sm.Context && null != (Sm.Context as ImapStateMachineContext).Client);
+            }
+        }
+
+        protected NcStateMachine Sm { get; set; }
 
         /// <summary>
         /// Log redaction function. Not used. TODO: Remove log redaction code
@@ -71,9 +85,8 @@ namespace NachoCore.IMAP
         /// <value>The retry count.</value>
         protected int RetryCount { get; set; }
 
-        public ImapCommand (IBEContext beContext, NcImapClient imapClient) : base (beContext)
+        public ImapCommand (IBEContext beContext) : base (beContext)
         {
-            Client = imapClient;
             RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
             DontReportCommResult = false;
@@ -94,7 +107,7 @@ namespace NachoCore.IMAP
             base.Cancel ();
             // When the back end is being shut down, we can't afford to wait for the cancellation
             // to be processed.
-            if (!BEContext.ProtoControl.Cts.IsCancellationRequested) {
+            if (HasClient && !BEContext.ProtoControl.Cts.IsCancellationRequested) {
                 // Wait for the command to notice the cancellation and release the lock.
                 // TODO MailKit is not always good about cancelling in a timely manner.
                 // When MailKit is fixed, this code should be adjusted.
@@ -109,9 +122,16 @@ namespace NachoCore.IMAP
 
         public override void Execute (NcStateMachine sm)
         {
+            Sm = sm;
             NcTask.Run (() => {
-                ExecuteNoTask (sm);
+                ExecuteNoTask ();
             }, CmdName);
+        }
+
+        public virtual Event ExecuteConnectAndAuthEvent (NcStateMachine sm)
+        {
+            Sm = sm;
+            return ExecuteConnectAndAuthEvent ();
         }
 
         public virtual Event ExecuteConnectAndAuthEvent ()
@@ -140,7 +160,7 @@ namespace NachoCore.IMAP
             });
         }
 
-        public void ExecuteNoTask (NcStateMachine sm)
+        public void ExecuteNoTask ()
         {
             Event evt;
             bool serverFailedGenerally;
@@ -153,14 +173,6 @@ namespace NachoCore.IMAP
                 RetryCount++;
                 if (RetryCount > 1) {
                     Log.Warn (Log.LOG_IMAP, "{0}: Retrying command (attempt {1})", CmdNameWithAccount, RetryCount);
-                }
-
-                if (Client.DOA) {
-                    // can happen if we mark the client as DOA and then retry. Otherwise, the client will
-                    // be recycled next time we run a command.
-                    var protoControl = BEContext.ProtoControl as ImapProtoControl;
-                    NcAssert.NotNull (protoControl);
-                    Client = protoControl.MainClient;
                 }
 
                 try {
@@ -268,7 +280,7 @@ namespace NachoCore.IMAP
                 ResolveAllFailed (action.Item2);
                 break;
             }
-            sm.PostEvent (evt);
+            Sm.PostEvent (evt);
         }
 
         public void ConnectAndAuthenticate ()
@@ -698,7 +710,7 @@ namespace NachoCore.IMAP
     {
         NcCommand WaitCommand;
 
-        public ImapWaitCommand (IBEContext dataSource, NcImapClient imap, int duration, bool earlyOnECChange) : base (dataSource, imap)
+        public ImapWaitCommand (IBEContext dataSource, int duration, bool earlyOnECChange) : base (dataSource)
         {
             WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
         }
