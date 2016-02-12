@@ -1760,7 +1760,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailSearch.cs">
       <Link>NachoCore\Utils\EmailSearch.cs</Link>
     </Compile>
-<<<<<<< HEAD
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SFDCCommand.cs">
       <Link>NachoCore\BackEnd\SalesForce\SFDCCommand.cs</Link>
     </Compile>
