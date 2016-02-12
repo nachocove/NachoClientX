@@ -9,7 +9,7 @@ using System.Threading;
 using System.Text;
 using System.Linq;
 
-namespace NachoCore
+namespace NachoCore.SFDC
 {
     public class SFDCGetObjectsCommand : SFDCCommand
     {
@@ -33,6 +33,10 @@ namespace NachoCore
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCOBJNORESP");
             }
             try {
+#if DEBUG
+                Log.Info (Log.LOG_SFDC, "SFDCGetObjectsCommand Response: {0}", jsonResponse);
+#endif
+                    
                 var objectInfo = Newtonsoft.Json.Linq.JObject.Parse (jsonResponse);
                 var sobjects = objectInfo.SelectToken ("sobjects");
                 var objects = new Dictionary<string, string> ();

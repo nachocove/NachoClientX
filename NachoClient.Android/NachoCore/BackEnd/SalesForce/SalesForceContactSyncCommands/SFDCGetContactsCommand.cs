@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
 
-namespace NachoCore
+namespace NachoCore.SFDC
 {
     public class SFDCGetContactsCommand : SFDCCommand
     {

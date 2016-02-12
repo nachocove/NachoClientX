@@ -11,7 +11,7 @@ using System.Threading;
 using System.Net.Http;
 using NachoPlatform;
 
-namespace NachoCore
+namespace NachoCore.SFDC
 {
     public class SFDCGetApiVersionsCommand : SFDCCommand
     {

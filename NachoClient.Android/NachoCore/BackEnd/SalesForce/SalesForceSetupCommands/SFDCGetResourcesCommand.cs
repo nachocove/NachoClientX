@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace NachoCore
+namespace NachoCore.SFDC
 {
     public class SFDCGetResourcesCommand : SFDCCommand
     {
@@ -31,6 +31,9 @@ namespace NachoCore
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCCONTFAIL1");
             }
             try {
+#if DEBUG
+                Log.Info (Log.LOG_SFDC, "SFDCGetResourcesCommand Response: {0}", jsonResponse);
+#endif
                 var resourcesResponse = JsonConvert.DeserializeObject <Dictionary<string,string>> (jsonResponse);
                 if (!resourcesResponse.ContainsKey ("query") || !resourcesResponse.ContainsKey ("sobjects")) {
                     Log.Error (Log.LOG_SFDC, "Resources response does not contain 'query': {0}", string.Join (",", resourcesResponse.ToList ()));

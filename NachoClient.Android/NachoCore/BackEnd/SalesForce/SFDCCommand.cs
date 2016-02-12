@@ -10,7 +10,7 @@ using System.Net;
 using Newtonsoft.Json;
 using System.Text;
 
-namespace NachoCore
+namespace NachoCore.SFDC
 {
     public class SFDCCommand : NcCommand
     {

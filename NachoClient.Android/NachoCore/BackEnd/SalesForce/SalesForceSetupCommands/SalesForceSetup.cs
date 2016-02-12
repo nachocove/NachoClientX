@@ -4,7 +4,7 @@ using System;
 using NachoCore.Utils;
 using System.Collections.Generic;
 
-namespace NachoCore
+namespace NachoCore.SFDC
 {
     public class SalesForceSetup : IBEContext
     {

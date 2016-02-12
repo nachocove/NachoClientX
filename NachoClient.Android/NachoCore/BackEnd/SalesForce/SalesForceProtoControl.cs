@@ -4,7 +4,7 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using System;
 
-namespace NachoCore
+namespace NachoCore.SFDC
 {
     public class SalesForceProtoControl : NcProtoControl
     {
