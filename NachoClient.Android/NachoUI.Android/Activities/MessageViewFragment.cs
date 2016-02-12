@@ -25,7 +25,6 @@ namespace NachoClient.AndroidClient
 
     public class MessageScrollView : ScrollView, GestureDetector.IOnGestureListener
     {
-
         GestureDetectorCompat GestureDetector;
         public Android.Webkit.WebView WebView;
         bool IsScrolling;
@@ -72,6 +71,10 @@ namespace NachoClient.AndroidClient
                 // If it's an up event (and we're not scrolling), we need to let the event reach click click listeners
                 // because the click happens on up after a down.
                 return false;
+            }
+            if (ev.Action == MotionEventActions.Move && !IsScrolling) {
+                GestureDetector.OnTouchEvent (ev);
+                return IsScrolling;
             }
             // If it's some other event like a move, we'll take it becaue no children care about these other events.
             return true;
@@ -158,6 +161,7 @@ namespace NachoClient.AndroidClient
         MessageScrollView scrollView;
         Android.Webkit.WebView webView;
         NachoWebViewClient webViewClient;
+        ProgressBar activityIndicatorView;
 
         public static MessageViewFragment newInstance (McEmailMessageThread thread, McEmailMessage message)
         {
@@ -171,8 +175,10 @@ namespace NachoClient.AndroidClient
         {
             var view = inflater.Inflate (Resource.Layout.MessageViewFragment, container, false);
 
-            buttonBar = new ButtonBar (view);
+            activityIndicatorView = view.FindViewById<ProgressBar> (Resource.Id.spinner);
+            activityIndicatorView.Visibility = ViewStates.Invisible;
 
+            buttonBar = new ButtonBar (view);
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.gen_more, MenuButton_Click);
             buttonBar.SetIconButton (ButtonBar.Button.Right2, Resource.Drawable.email_defer, DeferButton_Click);
             buttonBar.SetIconButton (ButtonBar.Button.Right3, Resource.Drawable.folder_move, SaveButton_Click);
@@ -210,7 +216,9 @@ namespace NachoClient.AndroidClient
                 bundle = null;
             }
 
-            NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
+            NcTask.Run (() => {
+                NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
+            }, "MessageReadStatusUpdated");
 
             var inflater = Activity.LayoutInflater;
             var attachments = McAttachment.QueryByItem (message);
@@ -317,6 +325,7 @@ namespace NachoClient.AndroidClient
                 messageDownloader.Bundle = bundle;
                 messageDownloader.Delegate = this;
                 messageDownloader.Download (message);
+                activityIndicatorView.Visibility = ViewStates.Visible;
             } else {
                 RenderBody ();
             }
@@ -588,12 +597,14 @@ namespace NachoClient.AndroidClient
 
         public void MessageDownloadDidFinish (MessageDownloader downloader)
         {
+            activityIndicatorView.Visibility = ViewStates.Invisible;
             bundle = downloader.Bundle;
             RenderBody ();
         }
 
         public void MessageDownloadDidFail (MessageDownloader downloader, NcResult result)
         {
+            activityIndicatorView.Visibility = ViewStates.Invisible;
             // TODO: show this inline, possibly with message preview (if available)
             // and give the user an option to retry if appropriate
             NcAlertView.ShowMessage (Activity, "Could not download message", "Sorry, we were unable to download the message.");

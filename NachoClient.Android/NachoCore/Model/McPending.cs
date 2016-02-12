@@ -47,7 +47,7 @@ namespace NachoCore.Model
 
         public override string ToString ()
         {
-            return string.Format ("McPending({0}/{1})", Id, Token);
+            return string.Format ("McPending({0}/{1}/{2})", Id, Token, Operation);
         }
 
         // These are the things that we can do.

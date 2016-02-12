@@ -643,6 +643,8 @@
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetObjectsCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetResourcesCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SFDCCommand.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration51.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1741,6 +1743,8 @@
     <AndroidResource Include="Resources\drawable-hdpi\attachment_take_photo.png" />
     <AndroidResource Include="Resources\drawable-hdpi\email_icn_attachment.png" />
     <AndroidResource Include="Resources\drawable-mdpi\inbox_icn_deadline.png" />
+    <AndroidResource Include="Resources\layout\FolderCellHeader.axml" />
+    <AndroidResource Include="Resources\layout\FolderCellAccount.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

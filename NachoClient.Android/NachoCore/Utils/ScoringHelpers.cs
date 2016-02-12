@@ -12,7 +12,7 @@ namespace NachoCore.Utils
     {
         private static int UserActionValue = 1;
 
-        public static void SetTestMode(bool enable)
+        public static void SetTestMode (bool enable)
         {
             UserActionValue = (enable ? 2 : 1);
         }
@@ -40,18 +40,20 @@ namespace NachoCore.Utils
             }
             NcAssert.True (-1 == newUserAction || 1 == newUserAction || -2 == newUserAction || +2 == newUserAction);
             Log.Info (Log.LOG_BRAIN, "HotOrNot: Was = {0}, New = {1}", oldUserAction, newUserAction);
-            message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
-                var target = (McEmailMessage)record;
-                target.UserAction = newUserAction;
-                return true;
-            });
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
-                Account = McAccount.QueryById<McAccount> (message.AccountId),
-            });
-            if (oldUserAction != newUserAction) {
-                NcBrain.UpdateUserAction (message.AccountId, message.Id, message.UserAction);
-            }
+            NcTask.Run (() => {
+                message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.UserAction = newUserAction;
+                    return true;
+                });
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
+                    Account = McAccount.QueryById<McAccount> (message.AccountId),
+                });
+                if (oldUserAction != newUserAction) {
+                    NcBrain.UpdateUserAction (message.AccountId, message.Id, message.UserAction);
+                }
+            }, "ToggleHotOrNot");
         }
 
         public static void ToggleHotOrNot (McEmailMessageThread thread)

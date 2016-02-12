@@ -138,7 +138,9 @@ namespace NachoClient.iOS
                         NavigationController.PopViewController (false);
                     }
                 }
-                NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
+                NcTask.Run (() => {
+                    NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
+                }, "MessageViewController.MessageReadStatusUpdated");
             }
         }
 

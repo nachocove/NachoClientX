@@ -93,8 +93,10 @@ namespace NachoClient.AndroidClient
 
         public override void OnCreate (Bundle savedInstanceState)
         {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnCreate");
             base.OnCreate (savedInstanceState);
             if (savedInstanceState != null) {
+                Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment savedInstanceState != null");
                 var cameraUriString = savedInstanceState.GetString (CAMERA_OUTPUT_URI_KEY);
                 if (cameraUriString != null) {
                     CameraOutputUri = Android.Net.Uri.Parse (cameraUriString);
@@ -104,6 +106,7 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnCreateView");
             var view = inflater.Inflate (Resource.Layout.ComposeFragment, container, false);
 
             buttonBar = new ButtonBar (view);
@@ -134,6 +137,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnSaveInstanceState (Bundle outState)
         {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnSaveInstanceState");
             base.OnSaveInstanceState (outState);
             if (CameraOutputUri != null) {
                 outState.PutString (CAMERA_OUTPUT_URI_KEY, CameraOutputUri.ToString ());
@@ -142,6 +146,7 @@ namespace NachoClient.AndroidClient
 
         public override void OnDestroyView ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnDestroyView");
             HeaderView.Cleanup ();
             base.OnDestroyView ();
         }

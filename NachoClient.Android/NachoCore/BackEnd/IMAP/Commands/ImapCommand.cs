@@ -153,6 +153,10 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
+            } catch (FolderNotFoundException ex) {
+                Log.Info (Log.LOG_IMAP, "FolderNotFoundException {0}", ex.Message);
+                action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.ConflictWithServer);
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPFOLDRESYNC");
             } catch (IOException ex) {
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
                 action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
@@ -336,34 +340,67 @@ namespace NachoCore.IMAP
                 mailKitFolder.ParentFolder.FullName : McFolder.AsRootServerId;
         }
 
+        /// <summary>
+        /// Creates the or update a folder.
+        /// </summary>
+        /// <remarks>
+        /// Folders can be moved in IMAP. The IMAP FullName is the full path for a folder, and we use it as the ServerId.
+        /// If a folder were to be moved, its FullName will no longer match what we have locally. We try our best to find the
+        /// original folder by name or distinguished type.
+        /// </remarks>
+        /// <returns><c>true</c>, if or update folder was created, <c>false</c> otherwise.</returns>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="folderType">Folder type.</param>
+        /// <param name="folderDisplayName">Folder display name.</param>
+        /// <param name="isDisinguished">If set to <c>true</c> is disinguished.</param>
+        /// <param name="doFolderMetadata">If set to <c>true</c> do folder metadata.</param>
+        /// <param name="folder">Folder.</param>
         protected bool CreateOrUpdateFolder (IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType, string folderDisplayName, bool isDisinguished, bool doFolderMetadata, out McFolder folder)
         {
-            bool added_or_changed = false;
-            var ParentId = GetParentId (mailKitFolder);
-            if (isDisinguished) {
-                folder = McFolder.GetDistinguishedFolder (AccountId, folderType);
-            } else {
-                folder = McFolder.GetUserFolders (AccountId, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
-            }
+            NcAssert.NotNull (mailKitFolder, "mailKitFolder is null");
 
+            // if we can, open the folder, so that we get the UidValidity.
             if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
                 mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
             }
 
+            NcAssert.NotNull (mailKitFolder.Attributes, "mailKitFolder.Attributes is null");
+            NcAssert.NotNull (mailKitFolder.UidValidity, "mailKitFolder.UidValidity is null");
+            NcAssert.NotNull (mailKitFolder.FullName, "mailKitFolder.FullName is null");
+            NcAssert.NotNull (mailKitFolder.Name, "mailKitFolder.Name is null");
+
+            bool added_or_changed = false;
+            var ParentId = GetParentId (mailKitFolder);
+
+            folder = McFolder.QueryByServerId<McFolder> (AccountId, mailKitFolder.FullName);
+            if (null == folder) {
+                // perhaps the folder has moved. See if we can find it by folderType (distinguished) or Name.
+                if (isDisinguished) {
+                    folder = McFolder.GetDistinguishedFolder (AccountId, folderType);
+                } else {
+                    folder = McFolder.GetUserFolders (AccountId, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
+                }
+            }
+
             if ((null != folder) && (folder.ImapUidValidity != mailKitFolder.UidValidity)) {
+                // perhaps the folder has been deleted and re-created with the same name. Another possibility
+                // is that the original folder was moved/renamed, and a different folder was moved/renamed to
+                // have the same name. In either case, as per the IMAP specs, we delete this folder, as our
+                // view of it is no longer the server's view of it.
                 Log.Warn (Log.LOG_IMAP, "CreateOrUpdateFolder: Deleting folder {0} due to UidValidity ({1} != {2})", folder.ImapFolderNameRedacted (), folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
                 folder.Delete ();
                 folder = null;
             }
 
             if (null == folder) {
-                // Add it
                 var existing = McFolder.QueryByServerId<McFolder> (AccountId, mailKitFolder.FullName);
                 if (null != existing) {
-                    Log.Warn (Log.LOG_IMAP, "CreateOrUpdateFolder: Could not add folder {0}:{1}: the folder already exists", folder.AccountId, folder.ImapFolderNameRedacted ());
-                    folder = null;
+                    // another folder already exists with this same FullName. This should never happen, since
+                    // we looked up the folder by FullName above.
+                    Log.Error (Log.LOG_IMAP, "CreateOrUpdateFolder: Could not add folder {0}:{1}: the folder already exists", existing.AccountId, existing.ImapFolderNameRedacted ());
                     return false;
                 }
+                // we need to create the folder locally.
                 folder = McFolder.Create (AccountId, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
                 Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Adding folder {0} UidValidity {1}", folder.ImapFolderNameRedacted (), mailKitFolder.UidValidity.ToString ());
                 folder.ImapUidValidity = mailKitFolder.UidValidity;
@@ -378,24 +415,24 @@ namespace NachoCore.IMAP
                 added_or_changed = true;
             } else if (folder.ServerId != mailKitFolder.FullName ||
                 folder.DisplayName != folderDisplayName ||
-                folder.ParentId != ParentId ||
-                folder.ImapUidValidity != mailKitFolder.UidValidity) {
-                // update.
+                folder.ParentId != ParentId) {
+                // We found an existing folder, so now we need to make sure to update any values that may have changed.
                 Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Updating folder {0} UidValidity {1}", folder.ImapFolderNameRedacted (), mailKitFolder.UidValidity.ToString ());
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ServerId = mailKitFolder.FullName;
                     target.DisplayName = folderDisplayName;
                     target.ParentId = ParentId;
-                    target.ImapUidValidity = mailKitFolder.UidValidity;
                     return true;
                 });
                 added_or_changed = true;
             }
-
+            NcAssert.NotNull (folder, "folder should not be null");
             // Get the current list of UID's. Don't set added_or_changed. Sync will notice later.
             if (doFolderMetadata && !mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
-                GetFolderMetaData (ref folder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ());
+                var account = BEContext.Account;
+                NcAssert.NotNull (account, "BEContext.Account is null");
+                GetFolderMetaData (ref folder, mailKitFolder, account.DaysSyncEmailSpan ());
             }
 
             return added_or_changed;
@@ -404,12 +441,13 @@ namespace NachoCore.IMAP
         public static bool UpdateImapSetting (IMailFolder mailKitFolder, ref McFolder folder)
         {
             bool changed = false;
-            if (folder.ImapNoSelect != mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) ||
-                (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id))
+
+            bool needFullSync = ((folder.ImapExists != mailKitFolder.Count) ||
+                (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id));
+
+            if (needFullSync ||
+                folder.ImapNoSelect != mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect))
             {
-                bool needFullSync = ((folder.ImapExists != mailKitFolder.Count) ||
-                    (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id));
-                
                 // update.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;

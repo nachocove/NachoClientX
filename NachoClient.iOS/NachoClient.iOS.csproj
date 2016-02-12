@@ -1760,6 +1760,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailSearch.cs">
       <Link>NachoCore\Utils\EmailSearch.cs</Link>
     </Compile>
+<<<<<<< HEAD
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SFDCCommand.cs">
       <Link>NachoCore\BackEnd\SalesForce\SFDCCommand.cs</Link>
     </Compile>
@@ -1783,6 +1784,12 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SalesForceSetup.cs">
       <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SalesForceSetup.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs">
+      <Link>NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration51.cs">
+      <Link>NachoCore\Model\Migration\NcMigration51.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

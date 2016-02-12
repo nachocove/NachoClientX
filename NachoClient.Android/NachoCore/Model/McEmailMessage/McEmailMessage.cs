@@ -170,6 +170,7 @@ namespace NachoCore.Model
         public bool ReceivedAsBcc { set; get; }
 
         /// Conversation id, from Exchange
+        [Indexed]
         public string ConversationId { set; get; }
 
         /// MIME header Message-ID: unique message identifier (optional)
@@ -1525,6 +1526,7 @@ namespace NachoCore.Model
                     InsertMeetingRequest ();
                     InsertCategories ();
                     InsertScoreStates ();
+                    McEmailMessageNeedsUpdate.Insert(this, 0);
                 });
               
                 return returnVal;
@@ -1609,6 +1611,7 @@ namespace NachoCore.Model
                     // FIXME: Do we need to delete associated records like Attachments?
                     NcBrain.UnindexEmailMessage (this);
                     DeleteScoreStates ();
+                    McEmailMessageNeedsUpdate.Delete(this);
                 });
                 return returnVal;
             }

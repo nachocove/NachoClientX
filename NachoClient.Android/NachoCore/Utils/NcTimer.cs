@@ -53,8 +53,6 @@ namespace NachoCore.Utils
             InstanceLockObj = new object ();
             callback = c;
 
-            Log.Info (Log.LOG_TIMER, "NcTimer {0}/{1} created", Id, Who);
-
             return state => {
                 lock (InstanceLockObj) {
                     if (DateTime.MinValue < DueTime) {
@@ -106,6 +104,11 @@ namespace NachoCore.Utils
                         }
                         callback (state);
                         HasFired = true;
+                        int dbCount = NachoCore.Model.NcModel.Instance.NumberDbConnections;
+                        if (15 < dbCount) {
+                            NachoCore.Model.NcModel.Instance.Db = null;
+                            Log.Info(Log.LOG_SYS, "NcTimer {0}/{1} closing DB, connections: {2}", Id, Who, dbCount);
+                        }
                     }
                 }
             };

@@ -74,6 +74,7 @@ namespace NachoClient.AndroidClient
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
                 Telemetry.SharedInstance.Throttling = false;
+                Calendars.Instance.DeviceCalendarChanged ();
             };
 
             MainApplication.Instance.StartService(new Intent(MainApplication.Instance, typeof(NotificationService)));

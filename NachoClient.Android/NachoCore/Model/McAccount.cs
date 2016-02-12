@@ -346,15 +346,18 @@ namespace NachoCore.Model
         public static McAccount GetDeviceAccount ()
         {
             if (null == _deviceAccount) {
-                NcModel.Instance.RunInTransaction (() => {
-                    _deviceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
-                    if (null == _deviceAccount) {
-                        _deviceAccount = new McAccount ();
-                        _deviceAccount.DisplayName = "Device";
-                        _deviceAccount.SetAccountType (McAccount.AccountTypeEnum.Device);
-                        _deviceAccount.Insert ();
-                    }
-                });
+                _deviceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
+                if (null == _deviceAccount) {
+                    NcModel.Instance.RunInTransaction (() => {
+                        _deviceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
+                        if (null == _deviceAccount) {
+                            _deviceAccount = new McAccount ();
+                            _deviceAccount.DisplayName = "Device";
+                            _deviceAccount.SetAccountType (McAccount.AccountTypeEnum.Device);
+                            _deviceAccount.Insert ();
+                        }
+                    });
+                }
             }
             return _deviceAccount;
         }
@@ -365,15 +368,18 @@ namespace NachoCore.Model
         public static McAccount GetUnifiedAccount ()
         {
             if (null == _unifiedAccount) {
-                NcModel.Instance.RunInTransaction (() => {
-                    _unifiedAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Unified).SingleOrDefault ();
-                    if (null == _unifiedAccount) {
-                        _unifiedAccount = new McAccount ();
-                        _unifiedAccount.DisplayName = "All Accounts";
-                        _unifiedAccount.SetAccountType (McAccount.AccountTypeEnum.Unified);
-                        _unifiedAccount.Insert ();
-                    }
-                });
+                _unifiedAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Unified).SingleOrDefault ();
+                if (null == _unifiedAccount) {
+                    NcModel.Instance.RunInTransaction (() => {
+                        _unifiedAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Unified).SingleOrDefault ();
+                        if (null == _unifiedAccount) {
+                            _unifiedAccount = new McAccount ();
+                            _unifiedAccount.DisplayName = "All Accounts";
+                            _unifiedAccount.SetAccountType (McAccount.AccountTypeEnum.Unified);
+                            _unifiedAccount.Insert ();
+                        }
+                    });
+                }
             }
             return _unifiedAccount;
         }
@@ -462,6 +468,16 @@ namespace NachoCore.Model
                                  McAccount.AccountTypeEnum.Unified != account.AccountType &&
                                  McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
                              select account.Id).ToList ();
+        }
+
+        public static List<McAccount> GetAllConfiguredNonDeviceAccounts ()
+        {
+            return (from account in McAccount.GetAllAccounts ()
+                where
+                McAccount.AccountTypeEnum.Device != account.AccountType &&
+                McAccount.AccountTypeEnum.Unified != account.AccountType &&
+                McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
+                select account).ToList ();
         }
 
         public static McAccount GetAccountBeingConfigured ()

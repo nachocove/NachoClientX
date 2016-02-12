@@ -373,10 +373,7 @@ namespace NachoClient.iOS
                 UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
                 UIApplication.SharedApplication.RegisterForRemoteNotifications ();
             } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
-                // iOS 7 and before
-                // TODO: revist why we need the sound.
-                UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
-                    UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
+                UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (UIRemoteNotificationType.NewsstandContentAvailability);
             } else {
                 Log.Error (Log.LOG_PUSH, "notification not registered!");
             }
@@ -875,6 +872,7 @@ namespace NachoClient.iOS
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
                 BackEnd.Instance.Start ();
+                NcApplicationMonitor.Instance.Start (1, 60);
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
             // iOS only allows a limited amount of time to fetch data in the background.
