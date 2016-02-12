@@ -95,8 +95,8 @@ namespace NachoCore
         public SalesForceSetup (SalesForceProtoControl owner, int accountId)
         {
             SFDCOwner = owner;
-            Sm = new NcStateMachine ("SFDCPCSETUP") { 
-                Name = string.Format ("SFDCPCSETUP({0})", accountId),
+            Sm = new NcStateMachine ("SFDCPC:SETUP") { 
+                Name = string.Format ("SFDCPC:SETUP({0})", accountId),
                 LocalEventType = typeof(SfdcSetupEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {

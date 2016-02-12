@@ -82,8 +82,8 @@ namespace NachoCore
         public SalesForceContactSync (SalesForceProtoControl owner, int accountId)
         {
             SFDCOwner = owner;
-            Sm = new NcStateMachine ("SFDCCONTACTSYNC") { 
-                Name = string.Format ("SFDCCONTACTSYNC({0})", accountId),
+            Sm = new NcStateMachine ("SFDCPC:CONTACTSYNC") { 
+                Name = string.Format ("SFDCPC:CONTACTSYNC({0})", accountId),
                 LocalEventType = typeof(SfdcSyncEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {
@@ -203,6 +203,7 @@ namespace NachoCore
         {
             uint nextState;
             if (NeedFetchIds.Any ()) {
+                Log.Info (Log.LOG_SFDC, "SalesForceContactSync: {0} left to sync", NeedFetchIds.Count);
                 string id = NeedFetchIds.First ();
                 NeedFetchIds.Remove (id);
 
@@ -249,7 +250,7 @@ namespace NachoCore
 
         void SetCmd (SFDCCommand cmd)
         {
-            if (null != Cmd && 
+            if (null != Cmd &&
                 !(cmd is SFDCGetContactsDataCommand) &&
                 cmd.GetType () == Cmd.GetType ()) {
                 // this is a retry. Use the same command to keep track of number of retries.
