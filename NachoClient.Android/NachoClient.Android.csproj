@@ -645,6 +645,7 @@
     <Compile Include="NachoCore\BackEnd\SalesForce\SFDCCommand.cs" />
     <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration51.cs" />
+    <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

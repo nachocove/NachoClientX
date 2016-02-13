@@ -3,6 +3,7 @@
 using System;
 using NachoCore.Utils;
 using System.Collections.Generic;
+using NachoCore.Model;
 
 namespace NachoCore.SFDC
 {
@@ -28,13 +29,13 @@ namespace NachoCore.SFDC
             }
         }
 
-        public NachoCore.Model.McProtocolState ProtocolState {
+        public McProtocolState ProtocolState {
             get {
                 return SFDCOwner.ProtocolState;
             }
         }
 
-        public NachoCore.Model.McServer Server {
+        public McServer Server {
             get {
                 return SFDCOwner.Server;
             }
@@ -43,13 +44,13 @@ namespace NachoCore.SFDC
             }
         }
 
-        public NachoCore.Model.McAccount Account {
+        public McAccount Account {
             get {
                 return SFDCOwner.Account;
             }
         }
 
-        public NachoCore.Model.McCred Cred {
+        public McCred Cred {
             get {
                 return SFDCOwner.Cred;
             }
@@ -63,14 +64,15 @@ namespace NachoCore.SFDC
             // wait for the fetch of the endpoint query paths.
             ResourceW,
             ObjectsW,
+            EmailSetupW,
             Stop,
         };
 
-        public class SfdcSetupEvt : NcProtoControl.PcEvt
+        public class SfdcSetupEvt : SmEvt
         {
             new public enum E : uint
             {
-                AuthFail = (NcProtoControl.PcEvt.E.Last + 1),
+                AuthFail = (SmEvt.E.Last + 1),
                 Last = AuthFail,
             };
         }
@@ -109,9 +111,6 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
                             (uint)SfdcSetupEvt.E.AuthFail,
-                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
-                            (uint)NcProtoControl.PcEvt.E.PendQHot,
-                            (uint)NcProtoControl.PcEvt.E.Park,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.InitW },
@@ -126,9 +125,6 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
                             (uint)SfdcSetupEvt.E.AuthFail,
-                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
-                            (uint)NcProtoControl.PcEvt.E.PendQHot,
-                            (uint)NcProtoControl.PcEvt.E.Park,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.InitW },
@@ -140,9 +136,6 @@ namespace NachoCore.SFDC
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Launch,
-                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
-                            (uint)NcProtoControl.PcEvt.E.PendQHot,
-                            (uint)NcProtoControl.PcEvt.E.Park,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoGetResources, State = (uint)Lst.ResourceW },
@@ -157,9 +150,6 @@ namespace NachoCore.SFDC
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Launch,
-                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
-                            (uint)NcProtoControl.PcEvt.E.PendQHot,
-                            (uint)NcProtoControl.PcEvt.E.Park,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoGetObjects, State = (uint)Lst.ObjectsW },
@@ -174,9 +164,20 @@ namespace NachoCore.SFDC
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Launch,
-                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
-                            (uint)NcProtoControl.PcEvt.E.PendQHot,
-                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoEmailSetupOrStop, ActSetsState = true },
+                            new Trans { Event = (uint)SfdcSetupEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoError, State = (uint)Lst.Stop },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetObjects, State = (uint)Lst.ObjectsW },
+                        }
+                    },
+                    new Node {
+                        State = (uint)Lst.EmailSetupW,
+                        Drop = new uint [] {
+                        },
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Launch,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSuccess, State = (uint)Lst.Stop },
@@ -212,6 +213,18 @@ namespace NachoCore.SFDC
         {
             SetCmd (new SFDCGetObjectsCommand (this));
             ExecuteCmd ();
+        }
+
+        void DoEmailSetupOrStop ()
+        {
+            string email = SalesForceProtoControl.EmailToSalesforceAddress (Account.Id);
+            if (string.IsNullOrEmpty (email)) {
+                SetCmd (new SFDCGetEmailDomainCommand (this));
+                ExecuteCmd ();
+                Sm.State = (uint)Lst.EmailSetupW;
+            } else {
+                Sm.State = (uint)Lst.Stop;
+            }
         }
 
         void DoError ()

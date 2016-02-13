@@ -1790,6 +1790,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration51.cs">
       <Link>NachoCore\Model\Migration\NcMigration51.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

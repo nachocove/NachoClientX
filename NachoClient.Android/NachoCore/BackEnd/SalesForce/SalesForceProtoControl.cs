@@ -9,6 +9,7 @@ namespace NachoCore.SFDC
     public class SalesForceProtoControl : NcProtoControl
     {
         public const int KDefaultResyncSeconds = 60*30;
+        public const string McMutablesModule = "Salesforce";
 
         public const McAccount.AccountCapabilityEnum SalesForceCapabilities = (
             McAccount.AccountCapabilityEnum.ContactReader |
@@ -24,6 +25,11 @@ namespace NachoCore.SFDC
             };
             fsAccount.Insert ();
             return fsAccount;
+        }
+
+        public static string EmailToSalesforceAddress (int accountId)
+        {
+            return McMutables.Get (accountId, McMutablesModule, SFDCGetEmailDomainCommand.McMutablesKey);
         }
 
         public enum Lst : uint

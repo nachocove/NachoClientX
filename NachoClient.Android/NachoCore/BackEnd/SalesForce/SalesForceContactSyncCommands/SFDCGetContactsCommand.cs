@@ -41,18 +41,6 @@ namespace NachoCore.SFDC
             }
             return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTACSUCC");
         }
-
-        public class RecordAttributes
-        {
-            public string type { get; set; }
-
-            public string url { get; set; }
-
-            public override string ToString ()
-            {
-                return string.Format ("[type={0}, url={1}]", type, url);
-            }
-        }
     }
 
     public class SFDCGetContactIdsCommand : SFDCCommand
@@ -75,7 +63,7 @@ namespace NachoCore.SFDC
 
         public class ContactRecord
         {
-            public SFDCGetContactsCommand.RecordAttributes attributes { get; set; }
+            public SFDCCommand.RecordAttributes attributes { get; set; }
 
             public string Id { get; set; }
 
@@ -188,7 +176,7 @@ namespace NachoCore.SFDC
 
         public class ContactRecord
         {
-            public SFDCGetContactsCommand.RecordAttributes attributes { get; set; }
+            public SFDCCommand.RecordAttributes attributes { get; set; }
 
             public string Id { get; set; }
 

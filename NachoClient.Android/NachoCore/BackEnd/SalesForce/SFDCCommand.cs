@@ -214,6 +214,18 @@ namespace NachoCore.SFDC
             ReportCommResult (serverFailedGenerally);
             OwnerSm.PostEvent (evt);
         }
+
+        public class RecordAttributes
+        {
+            public string type { get; set; }
+
+            public string url { get; set; }
+
+            public override string ToString ()
+            {
+                return string.Format ("[type={0}, url={1}]", type, url);
+            }
+        }
     }
 }
 
