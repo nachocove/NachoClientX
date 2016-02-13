@@ -3,6 +3,7 @@
 using NachoCore.Utils;
 using NachoCore.Model;
 using System;
+using System.Linq;
 
 namespace NachoCore.SFDC
 {
@@ -31,6 +32,57 @@ namespace NachoCore.SFDC
         {
             return McMutables.Get (accountId, McMutablesModule, SFDCGetEmailDomainCommand.McMutablesKey);
         }
+
+        static bool isSalesForceContact (int accountId, string emailAddress)
+        {
+            var contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+            foreach (var contact in contacts) {
+                if (contact.Source == McAbstrItem.ItemSource.SalesForce) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static McEmailMessage MaybeAddSFDCEmailToBcc (McEmailMessage emailMessage)
+        {
+            // FIXME: Need to test this.
+            var SalesforceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.SalesForce).FirstOrDefault ();
+            if (SalesforceAccount != null) {
+                string SFDCemail = SalesForceProtoControl.EmailToSalesforceAddress (SalesforceAccount.Id);
+                if (!string.IsNullOrEmpty (SFDCemail)) {
+                    bool addSFDCemail = isSalesForceContact(SalesforceAccount.Id, emailMessage.To);
+                    if (!addSFDCemail) {
+                        foreach (var cc in emailMessage.Cc.Split (new[] {','})) {
+                            if (isSalesForceContact(SalesforceAccount.Id, cc)) {
+                                addSFDCemail = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!addSFDCemail) {
+                        foreach (var bcc in emailMessage.Bcc.Split (new[] {','})) {
+                            if (isSalesForceContact(SalesforceAccount.Id, bcc)) {
+                                addSFDCemail = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (addSFDCemail) {
+                        var bccAddresses = emailMessage.Bcc.Split (new[] { ',' }).ToList ();
+                        bccAddresses.Add (SFDCemail);
+                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> (((record) => {
+                            var target = (McEmailMessage)record;
+                            target.Bcc = string.Join (",", bccAddresses);
+                            return true;
+                        }));
+                    }
+                }
+            }
+            return emailMessage;
+        }
+
 
         public enum Lst : uint
         {
