@@ -216,7 +216,6 @@ namespace NachoClient.iOS
         public async void PrefetchAccountImageUrl (NSUrl url)
         {
             try {
-                // FIXME: Transition to NcHttpClient!
                 var httpClient = new System.Net.Http.HttpClient ();
                 byte[] imageBytes = await httpClient.GetByteArrayAsync (url);
                 // this line will throw an exception if the native UIImage can't be constructed
