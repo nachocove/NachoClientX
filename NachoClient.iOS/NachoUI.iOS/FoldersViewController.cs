@@ -137,7 +137,10 @@ namespace NachoClient.iOS
 
         void FolderTableViewSource_OnFolderSelected (object sender, McFolder folder)
         {
-            switch(folder.Id) {
+            switch (folder.Id) {
+            case McFolder.INBOX_FAKE_FOLDER_ID:
+                PerformSegue ("SegueToInbox", new SegueHolder (null));
+                return;
             case McFolder.HOT_FAKE_FOLDER_ID:
                 PerformSegue ("SegueToHotList", new SegueHolder (null));
                 return;
@@ -190,6 +193,9 @@ namespace NachoClient.iOS
                 var draftsList = new NachoDraftMessages ((McFolder)holder.value);
                 var draftsListViewController = (DraftsViewController)segue.DestinationViewController;
                 draftsListViewController.SetEmailMessages (draftsList);
+                return;
+            }
+            if ("SegueToInbox" == segue.Identifier) {
                 return;
             }
             if ("SegueToHotList" == segue.Identifier) {
