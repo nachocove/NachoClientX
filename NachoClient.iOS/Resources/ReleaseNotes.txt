@@ -1,1 +1,8 @@
-Nacho Mail 3.0 is faster and more responsive in every way.
+Nacho Mail 3.1 is all about performance, getting you to your email quicker.
+
+Nacho Mail supports multiple email accounts, IMAP, and Google 2-factor authentication. You can add all of your Exchange, Gmail, Office 365, Yahoo, or iCloud email accounts to Nacho Mail. Add any email account that supports IMAP like AOL.
+
+It's easy to add or switch accounts -- just press the button in the middle of the top of the screen.
+
+Calendar and Contacts sync with your phone to give you a single unified view of people and events. 
+

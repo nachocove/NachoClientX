@@ -1,4 +1,8 @@
-Nacho Mail 3.0 supports for multiple email accounts, IMAP, and Google 2-factor authentication. You can add all of your Gmail, Yahoo, iCloud email accounts, or any email account that supports IMAP like AOL, to Nacho Mail.  It's easy to add or switch accounts -- just press the button in the middle of the top of the screen.  Of course, Nacho Mail continues to support Exchange, Hotmail, Office 365, and Google Apps for Work.
+Nacho Mail 3.1 is all about performance, getting you to your email quicker.
 
-Calendar and Contacts sync with your phone to give you a single unified view of people and events from Nacho Mail. 
+Nacho Mail supports multiple email accounts, IMAP, and Google 2-factor authentication. You can add all of your Exchange, Gmail, Office 365, Yahoo, or iCloud email accounts to Nacho Mail. Add any email account that supports IMAP like AOL.
+
+It's easy to add or switch accounts -- just press the button in the middle of the top of the screen.
+
+Calendar and Contacts sync with your phone to give you a single unified view of people and events. 
 
