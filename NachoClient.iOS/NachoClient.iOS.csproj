@@ -1756,6 +1756,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration51.cs">
       <Link>NachoCore\Model\Migration\NcMigration51.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\FolderTableViewSource.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\FolderLists.cs">
+      <Link>NachoCore\Utils\FolderLists.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
