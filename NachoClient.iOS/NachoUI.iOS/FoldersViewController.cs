@@ -51,11 +51,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            switchAccountButton = new SwitchAccountButton (switchAccountButtonPressed);
-            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
-            NavigationItem.TitleView = switchAccountButton;
-
-            TableView = new UITableView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), UITableViewStyle.Grouped);
+            TableView = new UITableView (new CGRect (0, modal ? 64 : 0, View.Frame.Width, View.Frame.Height), UITableViewStyle.Grouped);
             TableView.SeparatorColor = A.Color_NachoBackgroundGray;
             TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.TableFooterView = new UIView (new CGRect (0, 0, TableView.Frame.Width, 100));
@@ -68,7 +64,41 @@ namespace NachoClient.iOS
             v.BackgroundColor = UIColor.Clear;
             TableView.TableHeaderView = v;
                 
-            Util.ConfigureNavBar (false, this.NavigationController);
+            if (modal) {
+                var navBar = new UINavigationBar (new CGRect (0, 20, View.Frame.Width, 44));
+                navBar.BarStyle = UIBarStyle.Default;
+                navBar.Translucent = false;
+                navBar.Opaque = true;
+
+                var navItem = new UINavigationItem ();
+                navItem.Title = "Move to Folder";
+                using (var image = UIImage.FromBundle ("modal-close")) {
+                    var dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                    dismissButton.AccessibilityLabel = "Dismiss";
+                    dismissButton.Clicked += (object sender, EventArgs e) => {
+                        DismissViewController (true, null);
+                    };
+                    navItem.LeftBarButtonItem = dismissButton;
+                }
+                navBar.Items = new UINavigationItem[] { navItem };
+
+                var titleView = new UIView (new CGRect (0, 0, View.Frame.Width, 64));
+                titleView.BackgroundColor = A.Color_NachoGreen;
+                titleView.AddSubview (navBar);
+                View.AddSubview (titleView);
+            } else {
+                NavigationController.NavigationBar.Translucent = false;
+                var composeButton = new NcUIBarButtonItem ();
+                Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
+                composeButton.AccessibilityLabel = "New message";
+                composeButton.Clicked += (object sender, EventArgs e) => {
+                    ComposeMessage ();
+                };
+                NavigationItem.RightBarButtonItem = composeButton;
+                switchAccountButton = new SwitchAccountButton (switchAccountButtonPressed);
+                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+                NavigationItem.TitleView = switchAccountButton;
+            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -76,7 +106,7 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
 
             if (null == folderTableViewSource) {
-                folderTableViewSource = new FolderTableViewSource (NcApplication.Instance.Account.Id, false);
+                folderTableViewSource = new FolderTableViewSource (NcApplication.Instance.Account.Id, hideFakeFolders: modal);
                 TableView.Source = folderTableViewSource;
                 TableView.ReloadData ();
             } else {
@@ -159,6 +189,13 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
- 
+
+        private void ComposeMessage ()
+        {
+            var account = McAccount.EmailAccountForAccount (NcApplication.Instance.Account);
+            var composeViewController = new MessageComposeViewController (account);
+            composeViewController.Present ();
+        }
+
     }
 }
