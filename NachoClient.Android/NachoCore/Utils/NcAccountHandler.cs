@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using NachoPlatform;
 using System.Linq;
 using NachoCore.Brain;
+using Foundation;
 
 namespace NachoCore.Model
 {
@@ -304,6 +305,11 @@ namespace NachoCore.Model
 
             BackEnd.Instance.RemoveServices (AccountId);
             RemoveAccountDBAndFilesForAccountId (AccountId);
+            NSHttpCookieStorage cookieStore = NSHttpCookieStorage.SharedStorage;
+            foreach (NSHttpCookie c in cookieStore.Cookies) {
+                Console.WriteLine ("RemoveAccount: Deleting Cookie['" + c.Name + "']: " + c.Value);
+                cookieStore.DeleteCookie (c);
+            }
 
             if (stopStartServices) {
                 NcApplication.Instance.StartBasalServices ();
