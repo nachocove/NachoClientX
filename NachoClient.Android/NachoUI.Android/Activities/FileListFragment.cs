@@ -90,7 +90,7 @@ namespace NachoClient.AndroidClient
                 forwardItem.setTitle ("Forward");
                 forwardItem.setTitleSize (14);
                 forwardItem.setTitleColor (A.Color_White);
-                forwardItem.setIcon (A.Id_NachoSwipeEmailDefer);
+                forwardItem.setIcon (A.Id_NachoSwipeFileForward);
                 forwardItem.setId (FORWARD_TAG);
                 menu.addMenuItem (forwardItem, SwipeMenu.SwipeSide.LEFT);
                 if (0 == menu.getViewType ()) {
@@ -276,7 +276,7 @@ namespace NachoClient.AndroidClient
                 return;
             }
             if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                AttachmentHelper.OpenAttachment (Activity, attachment);
+                TakeAction (action, attachment);
                 return;
             }
             var cell = GetViewByPosition (position);
@@ -301,7 +301,12 @@ namespace NachoClient.AndroidClient
             }
 
             var actionAttachmentDownloader = (ActionAttachmentDownloader)downloader;
-            switch (actionAttachmentDownloader.tag) {
+            TakeAction (actionAttachmentDownloader.tag, attachment);
+        }
+
+        void TakeAction(int tag, McAttachment attachment)
+        {
+            switch (tag) {
             case VIEW_TAG:
                 AttachmentHelper.OpenAttachment (Activity, attachment);
                 break;
