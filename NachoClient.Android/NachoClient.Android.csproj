@@ -635,6 +635,7 @@
     <Compile Include="NachoCore\Utils\EmailSearch.cs" />
     <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration51.cs" />
+    <Compile Include="NachoUI.Android\Activities\InboxFolderActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

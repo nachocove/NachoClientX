@@ -1202,7 +1202,7 @@ namespace NachoCore.Model
         public const int LTR_FAKE_FOLDER_ID = -2;
         public const int DEFERRED_FAKE_FOLDER_ID = -3;
         public const int DEADLINE_FAKE_FOLDER_ID = -4;
-
+        public const int INBOX_FAKE_FOLDER_ID = -5;
 
         public static McFolder GetHotFakeFolder ()
         {
@@ -1233,6 +1233,14 @@ namespace NachoCore.Model
             return new McFolder () {
                 Id = DEADLINE_FAKE_FOLDER_ID,
                 DisplayName = "Deadline",
+            };
+        }
+
+        public static McFolder GetInboxFakeFolder ()
+        {
+            return new McFolder () {
+                Id = INBOX_FAKE_FOLDER_ID,
+                DisplayName = "Inbox",
             };
         }
     }

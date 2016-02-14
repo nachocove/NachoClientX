@@ -47,6 +47,9 @@ namespace NachoClient.AndroidClient
             Intent intent = null;
 
             switch (folder.Id) {
+            case McFolder.INBOX_FAKE_FOLDER_ID:
+                intent = InboxFolderActivity.ShowInboxFolderIntent (this, folder);
+                break;
             case McFolder.HOT_FAKE_FOLDER_ID:
                 intent = HotFolderActivity.ShowHotFolderIntent (this, folder);
                 break;

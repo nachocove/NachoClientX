@@ -110,11 +110,15 @@ namespace NachoCore.Utils
             displayList.Add (new DisplayElement (Header.Common));
 
             // Well-known folders
-            var inbox = McFolder.GetDefaultInboxFolder (displayAccountId);
-            if (null != inbox) {
-                displayList.Add (new DisplayElement (new Node ().Copy (inbox), 0, true));
-            }
             if (!hideFakeFolders) {
+                if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                    displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetInboxFakeFolder ()), 0, true));
+                } else {
+                    var inbox = McFolder.GetDefaultInboxFolder (displayAccountId);
+                    if (null != inbox) {
+                        displayList.Add (new DisplayElement (new Node ().Copy (inbox), 0, true));
+                    }
+                }
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetHotFakeFolder ()), 0, true));
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetLtrFakeFolder ()), 0, true));
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeferredFakeFolder ()), 0, true));
