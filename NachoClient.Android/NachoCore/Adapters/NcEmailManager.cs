@@ -53,7 +53,7 @@ namespace NachoCore
             }
             var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
-                return new MissingFolder ("Likely To Read");
+                return new MissingFolder ("Focused");
             } else {
                 return new NachoLikelyToReadEmailMessages (inboxFolder);
             }

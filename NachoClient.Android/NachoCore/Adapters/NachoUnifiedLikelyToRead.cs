@@ -61,7 +61,7 @@ namespace NachoCore
 
         public string DisplayName ()
         {
-            return "Likely To Read";
+            return "Focused";
         }
 
         public bool HasOutboxSemantics ()

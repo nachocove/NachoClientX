@@ -137,6 +137,21 @@ namespace NachoClient.iOS
 
         void FolderTableViewSource_OnFolderSelected (object sender, McFolder folder)
         {
+            switch(folder.Id) {
+            case McFolder.HOT_FAKE_FOLDER_ID:
+                PerformSegue ("SegueToHotList", new SegueHolder (null));
+                return;
+            case McFolder.LTR_FAKE_FOLDER_ID:
+                PerformSegue ("SegueToLikelyToRead", new SegueHolder (null));
+                return;
+            case McFolder.DEFERRED_FAKE_FOLDER_ID:
+                PerformSegue ("SegueToDeferredList", new SegueHolder (null));
+                return;
+            case McFolder.DEADLINE_FAKE_FOLDER_ID:
+                // TODO SegueToDeadline
+                return;
+            }
+
             folder.UpdateSet_LastAccessed (DateTime.UtcNow);
             if (null == owner) {
                 if (folder.IsClientOwnedDraftsFolder () || folder.IsClientOwnedOutboxFolder ()) {
