@@ -8,7 +8,7 @@ namespace NachoCore.IMAP
 {
     public class ImapAuthenticateCommand : ImapCommand
     {
-        public ImapAuthenticateCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapAuthenticateCommand (IBEContext beContext) : base (beContext)
         {
             RedactProtocolLogFunc = RedactProtocolLog;
         }

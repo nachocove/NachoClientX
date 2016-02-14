@@ -16,38 +16,6 @@ namespace NachoCore.IMAP
 {
     public partial class ImapProtoControl : NcProtoControl, IPushAssistOwner
     {
-        object ClientLockObj = new object ();
-        NcImapClient _MainClient;
-        public NcImapClient MainClient {
-            get {
-                lock (ClientLockObj) {
-                    if (null != _MainClient && _MainClient.DOA) {
-                        // Do our best to disconnect and dispose of this client, since it seems to be hosed.
-                        Log.Info (Log.LOG_IMAP, "Client is DOA. Replacing");
-                        var tmpClient = _MainClient;
-                        _MainClient = null;
-                        NcTask.Run (() => {
-                            tmpClient.Disconnect (false);
-                            tmpClient.Dispose ();
-                        }, "ImapProtoControlClientCleanup");
-                    }
-                    if (null == _MainClient) {
-                        _MainClient = new NcImapClient ();
-                    }
-                    return _MainClient;
-                }
-            }
-            set {
-                lock (ClientLockObj) {
-                    if (null != _MainClient) {
-                        _MainClient.Dispose ();
-                        _MainClient = null;
-                    }
-                    _MainClient = value;
-                }
-            }
-        }
-
         private const int KDiscoveryMaxRetries = 5;
 
         public enum Lst : uint
@@ -170,7 +138,7 @@ namespace NachoCore.IMAP
             SetupAccount ();
             NcCapture.AddKind (KImapStrategyPick);
 
-            Sm = new NcStateMachine ("IMAPPC") { 
+            Sm = new NcStateMachine ("IMAPPC", new ImapStateMachineContext ()) { 
                 Name = string.Format ("IMAPPC({0})", AccountId),
                 LocalEventType = typeof(ImapEvt),
                 LocalStateType = typeof(Lst),
@@ -578,7 +546,7 @@ namespace NachoCore.IMAP
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
             BackEndStatePreset = BackEndStateEnum.Running;
-            SetCmd (new ImapDiscoverCommand (this, MainClient));
+            SetCmd (new ImapDiscoverCommand (this));
             ExecuteCmd ();
         }
 
@@ -611,20 +579,20 @@ namespace NachoCore.IMAP
 
         void DoConn ()
         {
-            SetCmd (new ImapAuthenticateCommand (this, MainClient));
+            SetCmd (new ImapAuthenticateCommand (this));
             ExecuteCmd ();
         }
 
         void DoFSync ()
         {
-            SetCmd (new ImapFolderSyncCommand (this, MainClient));
+            SetCmd (new ImapFolderSyncCommand (this));
             ExecuteCmd ();
         }
 
         void DoWait ()
         {
             var waitTime = (int)Sm.Arg;
-            SetCmd (new ImapWaitCommand (this, MainClient, waitTime, true));
+            SetCmd (new ImapWaitCommand (this, waitTime, true));
             ExecuteCmd ();
         }
 
@@ -715,11 +683,10 @@ namespace NachoCore.IMAP
             if (NcCommStatus.CommQualityEnum.OK == NcCommStatus.Instance.Quality (Server.Id) &&
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
                 MaxConcurrentExtraRequests > ConcurrentExtraRequests) {
-                NcImapClient Client = new NcImapClient ();  // Presumably this will get cleaned up by GC?
                 Interlocked.Increment (ref ConcurrentExtraRequests);
                 Tuple<PickActionEnum, ImapCommand> pack;
                 try {
-                    pack = Strategy.PickUserDemand (Client, Cts.Token);
+                    pack = Strategy.PickUserDemand ();
                 } catch (OperationCanceledException) {
                     pack = null;
                 }
@@ -728,7 +695,7 @@ namespace NachoCore.IMAP
                     Interlocked.Decrement (ref ConcurrentExtraRequests);
                 } else {
                     Log.Info (Log.LOG_IMAP, "DoExtraOrDont: starting extra request.");
-                    var dummySm = new NcStateMachine ("IMAPPC:EXTRA") { 
+                    var dummySm = new NcStateMachine ("IMAPPC:EXTRA", new ImapStateMachineContext ()) { 
                         Name = string.Format ("IMAPPC:EXTRA({0})", AccountId),
                         LocalEventType = typeof(ImapEvt),
                         TransTable = new[] {
@@ -813,7 +780,7 @@ namespace NachoCore.IMAP
             Tuple<PickActionEnum, ImapCommand> pack;
             using (var cap = NcCapture.CreateAndStart (KImapStrategyPick)) {
                 try {
-                    pack = Strategy.Pick (MainClient, Cts.Token);
+                    pack = Strategy.Pick ();
                 } catch (OperationCanceledException) {
                     DoPark ();
                     return Lst.Parked;
@@ -880,13 +847,13 @@ namespace NachoCore.IMAP
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, AccountId);
 
-            var disconnect = new ImapDisconnectCommand (this, MainClient);
+            var disconnect = new ImapDisconnectCommand (this);
             disconnect.Execute (Sm);
         }
 
         void DoParkFinish ()
         {
-            MainClient = null;
+            (Sm.Context as ImapStateMachineContext).Client = null;
         }
 
         void DoDrive ()
@@ -941,7 +908,7 @@ namespace NachoCore.IMAP
             // We need to be able to get the right capabilities, so must have auth'd at least once
             // This happens during discovery, so this shouldn't be an issue.
             return null != ProtoControl.ProtocolState &&
-                McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
+            McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
         }
 
         void PossiblyKickPushAssist ()
@@ -1015,6 +982,42 @@ namespace NachoCore.IMAP
         }
 
         #endregion
+    }
+
+    public class ImapStateMachineContext
+    {
+        object ClientLockObj = new object ();
+        NcImapClient _Client;
+
+        public NcImapClient Client {
+            get {
+                lock (ClientLockObj) {
+                    if (null != _Client && _Client.DOA) {
+                        // Do our best to disconnect and dispose of this client, since it seems to be hosed.
+                        Log.Info (Log.LOG_IMAP, "Client is DOA. Replacing");
+                        var tmpClient = _Client;
+                        _Client = null;
+                        NcTask.Run (() => {
+                            tmpClient.Disconnect (false);
+                            tmpClient.Dispose ();
+                        }, "ImapProtoControlClientCleanup");
+                    }
+                    if (null == _Client) {
+                        _Client = new NcImapClient ();
+                    }
+                    return _Client;
+                }
+            }
+            set {
+                lock (ClientLockObj) {
+                    if (null != _Client) {
+                        _Client.Dispose ();
+                        _Client = null;
+                    }
+                    _Client = value;
+                }
+            }
+        }
     }
 }
 

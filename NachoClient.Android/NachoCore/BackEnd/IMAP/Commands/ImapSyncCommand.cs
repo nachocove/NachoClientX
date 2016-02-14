@@ -37,7 +37,7 @@ namespace NachoCore.IMAP
             public string preview { get; set; }
         }
 
-        public ImapSyncCommand (IBEContext beContext, NcImapClient imap, SyncKit syncKit) : base (beContext, imap)
+        public ImapSyncCommand (IBEContext beContext, SyncKit syncKit) : base (beContext)
         {
             Synckit = syncKit;
             PendingSingle = Synckit.PendingSingle;
@@ -566,7 +566,7 @@ namespace NachoCore.IMAP
 
         public static McEmailMessage ParseEmail (int accountId, string ServerId, MessageSummary summary)
         {
-            NcAssert.NotNull (summary.Envelope);
+            NcAssert.NotNull (summary.Envelope, "Message Envelope is null!");
 
             var emailMessage = new McEmailMessage () {
                 ServerId = ServerId,

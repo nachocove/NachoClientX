@@ -12,7 +12,7 @@ namespace NachoCore.IMAP
 {
     public class ImapEmailDeleteCommand : ImapCommand
     {
-        public ImapEmailDeleteCommand (IBEContext beContext, NcImapClient imap, List<McPending> pendingList) : base (beContext, imap)
+        public ImapEmailDeleteCommand (IBEContext beContext, List<McPending> pendingList) : base (beContext)
         {
             PendingList = pendingList;
             NcModel.Instance.RunInTransaction (() => {
