@@ -298,7 +298,7 @@ namespace NachoCore.SFDC
             return McMutables.Get (accountId, McMutablesModule, SFDCGetEmailDomainCommand.McMutablesKey);
         }
 
-        static bool isSalesForceContact (int accountId, string emailAddress)
+        public static bool IsSalesForceContact (int accountId, string emailAddress)
         {
             var contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
             foreach (var contact in contacts) {
@@ -316,10 +316,10 @@ namespace NachoCore.SFDC
             if (SalesforceAccount != null) {
                 string SFDCemail = SalesForceProtoControl.EmailToSalesforceAddress (SalesforceAccount.Id);
                 if (!string.IsNullOrEmpty (SFDCemail)) {
-                    bool addSFDCemail = isSalesForceContact (SalesforceAccount.Id, emailMessage.To);
+                    bool addSFDCemail = IsSalesForceContact (SalesforceAccount.Id, emailMessage.To);
                     if (!addSFDCemail) {
                         foreach (var cc in emailMessage.Cc.Split (new[] {','})) {
-                            if (isSalesForceContact (SalesforceAccount.Id, cc)) {
+                            if (IsSalesForceContact (SalesforceAccount.Id, cc)) {
                                 addSFDCemail = true;
                                 break;
                             }
@@ -327,7 +327,7 @@ namespace NachoCore.SFDC
                     }
                     if (!addSFDCemail) {
                         foreach (var bcc in emailMessage.Bcc.Split (new[] {','})) {
-                            if (isSalesForceContact (SalesforceAccount.Id, bcc)) {
+                            if (IsSalesForceContact (SalesforceAccount.Id, bcc)) {
                                 addSFDCemail = true;
                                 break;
                             }
