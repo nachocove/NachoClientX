@@ -100,7 +100,7 @@ namespace NachoClient.iOS
                 accountEmailAddress.Text = account.EmailAddr;
 
                 if (showUnreadCount) {
-                    UpdateUnreadMessageCount (account.Id);
+                    UpdateUnreadMessageCount (account);
                 } else if (LoginHelpers.ShouldAlertUser (account.Id)) {
                     HighlightError ();
                 } else {
@@ -109,7 +109,7 @@ namespace NachoClient.iOS
             }
         }
 
-        void UpdateUnreadMessageCount (int accountId)
+        void UpdateUnreadMessageCount (McAccount account)
         {
             unreadCountLabel.Hidden = false;
             unreadCountLabel.Layer.CornerRadius = 4;
@@ -117,11 +117,8 @@ namespace NachoClient.iOS
             SetUnreadCountWidth (UNREAD_COUNT_HEIGHT);
 
             NcTask.Run (() => {
-                var inboxFolder = NcEmailManager.InboxFolder (accountId);
-                var unreadMessageCount = 0;
-                if (null != inboxFolder) {
-                    unreadMessageCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
-                }
+                int unreadMessageCount;
+                EmailHelper.GetUnreadMessageCount(account, out unreadMessageCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     if (100000 > unreadMessageCount) {
                         unreadCountLabel.Text = String.Format("{0:N0}", unreadMessageCount);
