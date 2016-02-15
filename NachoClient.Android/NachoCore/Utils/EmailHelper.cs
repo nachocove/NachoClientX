@@ -981,6 +981,15 @@ namespace NachoCore.Utils
             attachment.UpdateSaveFinish ();
             return attachment;
         }
+
+        public static HashSet<int> AccountSet(List<McEmailMessage> messages)
+        {
+            var set = new HashSet<int> ();
+            foreach (var message in messages) {
+                set.Add (message.AccountId);
+            }
+            return set;
+        }
     }
 }
 

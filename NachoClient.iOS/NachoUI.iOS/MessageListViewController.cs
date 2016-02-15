@@ -288,11 +288,11 @@ namespace NachoClient.iOS
             }
         }
 
-        public void MultiSelectChange (IMessageTableViewSource source, int count)
+        public void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts)
         {
             archiveButton.Enabled = (count != 0);
             deleteButton.Enabled = (count != 0);
-            moveButton.Enabled = (count != 0);
+            moveButton.Enabled = (count != 0) && !multipleAccounts;
         }
 
         public int GetFirstVisibleRow ()
