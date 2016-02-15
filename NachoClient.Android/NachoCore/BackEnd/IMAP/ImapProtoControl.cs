@@ -295,7 +295,7 @@ namespace NachoCore.IMAP
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, ActSetsState = true },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, ActSetsState = true },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoIdleSuccess, State = (uint)Lst.IdleW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoPick, ActSetsState = true },
@@ -593,6 +593,12 @@ namespace NachoCore.IMAP
         {
             var waitTime = (int)Sm.Arg;
             SetCmd (new ImapWaitCommand (this, waitTime, true));
+            ExecuteCmd ();
+        }
+
+        void DoIdleSuccess ()
+        {
+            SetCmd (new ImapIdleCommand(this));
             ExecuteCmd ();
         }
 

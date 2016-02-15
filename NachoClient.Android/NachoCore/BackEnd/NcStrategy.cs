@@ -11,18 +11,94 @@ namespace NachoCore
     public class NcStrategy
     {
         protected IBEContext BEContext;
+
         protected int AccountId { get; set; }
+
+        protected Random CoinToss;
 
         public NcStrategy (IBEContext beContext)
         {
+            CoinToss = new Random ();
             BEContext = beContext;
             AccountId = BEContext.Account.Id;
+            NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
+        }
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            if (null == siea.Account || siea.Account.Id != AccountId) {
+                return;
+            }
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                switch ((NcApplication.ExecutionContextEnum)siea.Status.Value) {
+                case NcApplication.ExecutionContextEnum.Background:
+                    EnteredBG = DateTime.UtcNow;
+                    break;
+
+                default:
+                    EnteredBG = DateTime.MinValue;
+                    break;
+                }
+                break;
+            }
+        }
+
+        DateTime EnteredBG = DateTime.MinValue;
+        protected readonly TimeSpan BGActiveTime = new TimeSpan (0, 20, 0);
+
+        /// <summary>
+        /// See if we're past the time in BG where we should start shutting up. If we're plugged in, we allow it.
+        /// </summary>
+        /// <remarks>
+        /// Note that we also override the result with a coin toss, i.e. some percent of the time
+        /// we will allow a sync anyway.
+        /// </remarks>
+        /// <returns><c>true</c>, if time permits sync was backgrounded, <c>false</c> otherwise.</returns>
+        protected bool BGTimePermitsSync ()
+        {
+            return (Power.Instance.PowerStateIsPlugged () || 
+                CoinToss.NextDouble () > 0.85 || (EnteredBG != DateTime.MinValue && (DateTime.UtcNow - EnteredBG) < BGActiveTime));
+        }
+
+        protected bool SyncPermitted ()
+        {
+            return PowerPermitsSyncs () &&
+                (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Foreground || BGTimePermitsSync ());
+        }
+
+        protected double FetchMailThreshold {
+            get {
+                switch (NcApplication.Instance.ExecutionContext) {
+                case NcApplication.ExecutionContextEnum.Foreground:
+                    return 0.7;
+
+                case NcApplication.ExecutionContextEnum.Background:
+                    if (EnteredBG == DateTime.MinValue || (DateTime.UtcNow - EnteredBG) < BGActiveTime) {
+                        // EnteredBG == DateTime.MinValue just means the status ind hasn't triggered yet, so let's
+                        // assume we're still in the < 3 minute window.
+                        return 0.7;
+                    } else {
+                        return 0.9;
+                    }
+
+                default:
+                    return 1.0;
+                }
+            }
         }
 
         public bool PowerPermitsSpeculation ()
         {
             return (Power.Instance.PowerState != PowerStateEnum.Unknown && Power.Instance.BatteryLevel > 0.7) ||
-                (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2);
+            (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2);
+        }
+
+        public bool PowerPermitsSyncs ()
+        {
+            return (Power.Instance.PowerState != PowerStateEnum.Unknown && Power.Instance.BatteryLevel > 0.4) ||
+            (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2);
         }
 
         public virtual bool ANarrowFolderHasToClientExpected ()

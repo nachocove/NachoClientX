@@ -137,9 +137,6 @@ namespace NachoCore.IMAP
         public SyncKit GenSyncKit (ref McProtocolState protocolState, McPending pending)
         {
             var exeCtxt = NcApplication.Instance.ExecutionContext;
-            if (exeCtxt != NcApplication.ExecutionContextEnum.Foreground) {
-                Log.Warn (Log.LOG_IMAP, "GenSyncKit with Pending (i.e. user-request) but ExecutionContext is {0}", exeCtxt);
-            }
             NcAssert.True (McPending.Operations.Sync == pending.Operation);
             var folder = McFolder.QueryByServerId<McFolder> (protocolState.AccountId, pending.ServerId);
             return GenSyncKit (ref protocolState, folder, pending, true);

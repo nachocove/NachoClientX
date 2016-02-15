@@ -16,13 +16,9 @@ namespace NachoCore.IMAP
 {
     public partial class ImapStrategy : NcStrategy
     {
-        private Random CoinToss;
-
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
-            CoinToss = new Random ();
         }
-
 
         #region Pick
 
@@ -171,45 +167,50 @@ namespace NachoCore.IMAP
                     }
                     return Tuple.Create<PickActionEnum, ImapCommand> (action, cmd);
                 }
-                // (FG, BG) If it has been more than FolderExamineInterval (depends on exeCtxt) since last FolderSync, do a FolderSync.
-                if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fsync");
-                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext));
-                }
 
-                FetchKit fetchKit;
-                // (FG) See if there's bodies to download
-                if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
-                    fetchKit = GenFetchKitHints ();
+                bool syncsPermitted = SyncPermitted ();
+                bool speculationPermitted = PowerPermitsSpeculation ();
+                Log.Info (Log.LOG_IMAP, "Strategy:{0}:Power({1}/{2}) PowerPermitsSpeculation={3}, SyncsPermitted={4}",
+                    exeCtxt, Power.Instance.PowerState, Power.Instance.BatteryLevel, speculationPermitted, syncsPermitted);
+                if (syncsPermitted) {
+                    // (FG, BG) If it has been more than FolderExamineInterval (depends on exeCtxt) since last FolderSync, do a FolderSync.
+                    if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fsync");
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext));
+                    }
+
+                    // (FG) See if there's bodies to download that the UI requested
+                    FetchKit fetchKit = GenFetchKitHints ();
                     if (null != fetchKit) {
+                        NcAssert.NotNull (fetchKit.FetchBodies, "fetchKit.FetchBodies is null");
                         Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Fetch, 
                             new ImapFetchCommand (BEContext, fetchKit));
                     }
-                }
 
-                // (FG, BG) Choose eligible option by priority, split tie randomly...
-                fetchKit = null;
-                if (protocolState.ImapSyncRung >= 2 &&
-                    NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed &&
-                    PowerPermitsSpeculation ()) {
-                    fetchKit = GenFetchKit ();
-                }
-                SyncKit syncKit = GenSyncKit (ref protocolState, exeCtxt, null);
-                if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fetch");
-                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Fetch, 
-                        new ImapFetchCommand (BEContext, fetchKit));
-                }
-                if (null != syncKit) {
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync");
-                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                        new ImapSyncCommand (BEContext, syncKit));
+                    // (FG, BG) Choose eligible option by priority, split tie randomly...
+                    fetchKit = null;
+                    if (protocolState.ImapSyncRung >= 2 &&
+                        NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed &&
+                        speculationPermitted) {
+                        fetchKit = GenFetchKit ();
+                    }
+                    SyncKit syncKit = GenSyncKit (ref protocolState, exeCtxt, null);
+                    NcAssert.NotNull (CoinToss, "CoinToss is null");
+                    if (null != fetchKit && (null == syncKit || FetchMailThreshold < CoinToss.NextDouble ())) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fetch");
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Fetch, 
+                            new ImapFetchCommand (BEContext, fetchKit));
+                    }
+                    if (null != syncKit) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync");
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                            new ImapSyncCommand (BEContext, syncKit));
+                    }
                 }
 
                 Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
-                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
-                    new ImapIdleCommand (BEContext, McFolder.GetDefaultInboxFolder (AccountId)));
+                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping, new ImapIdleCommand (BEContext));
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
