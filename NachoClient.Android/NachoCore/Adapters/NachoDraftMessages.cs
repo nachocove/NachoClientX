@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoDraftMessages : INachoEmailMessages
+    public class NachoDraftMessages : NachoEmailMessagesBase, INachoEmailMessages
     {
         McFolder folder;
 
@@ -24,7 +24,7 @@ namespace NachoCore
             Refresh (out adds, out deletes);
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id, false);
             var threads = NcMessageThreads.ThreadByMessage (list);
@@ -35,19 +35,19 @@ namespace NachoCore
             return false;
         }
 
-        public int Count ()
+        public override int Count ()
         {
             return threadList.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public override McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
             t.Source = this;
             return t;
         }
 
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var thread = new List<McEmailMessageThread> ();
             var m = new McEmailMessageThread ();
@@ -57,7 +57,7 @@ namespace NachoCore
             return thread;
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             if (folder.IsClientOwnedOutboxFolder ()) {
                 return "Outbox";
@@ -69,27 +69,17 @@ namespace NachoCore
             return "";
         }
 
-        public bool HasOutboxSemantics ()
+        public override bool HasOutboxSemantics ()
         {
             return folder.IsClientOwnedOutboxFolder ();
         }
 
-        public bool HasDraftsSemantics ()
+        public override bool HasDraftsSemantics ()
         {
             return folder.IsClientOwnedDraftsFolder ();
         }
 
-        public NcResult StartSync ()
-        {
-            return NachoSyncResult.DoesNotSync ();
-        }
-
-        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
-        {
-            return null;
-        }
-
-        public bool IsCompatibleWithAccount (McAccount account)
+        public override bool IsCompatibleWithAccount (McAccount account)
         {
             return account.Id == folder.AccountId;
         }

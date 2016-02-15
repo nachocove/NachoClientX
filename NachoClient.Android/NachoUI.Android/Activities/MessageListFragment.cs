@@ -59,7 +59,7 @@ namespace NachoClient.AndroidClient
         SwipeRefreshLayout mSwipeRefreshLayout;
 
         bool searching;
-        Android.Widget.EditText searchEditText;
+        EditText searchEditText;
 
         INachoEmailMessages messages;
         EmailSearch emailSearcher;
@@ -67,10 +67,11 @@ namespace NachoClient.AndroidClient
         public bool multiSelectActive = false;
         public HashSet<long> MultiSelectSet = null;
 
-        Android.Widget.ImageView leftButton1;
-        Android.Widget.ImageView rightButton1;
-        Android.Widget.ImageView rightButton2;
-        Android.Widget.ImageView rightButton3;
+        ImageView leftButton1;
+        ImageView leftButton2;
+        ImageView rightButton1;
+        ImageView rightButton2;
+        ImageView rightButton3;
 
         public event EventHandler<McEvent> onEventClick;
         public event EventHandler<INachoEmailMessages> onThreadClick;
@@ -119,16 +120,19 @@ namespace NachoClient.AndroidClient
 
             mSwipeRefreshLayout.Refresh += SwipeRefreshLayout_Refresh;
 
-            leftButton1 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
+            leftButton1 = view.FindViewById<ImageView> (Resource.Id.left_button1);
             leftButton1.Click += LeftButton1_Click;
 
-            rightButton1 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
+            leftButton2 = view.FindViewById<ImageView> (Resource.Id.left_button2);
+            leftButton2.Click += LeftButton2_Click;
+
+            rightButton1 = view.FindViewById<ImageView> (Resource.Id.right_button1);
             rightButton1.Click += RightButton1_Click;
 
-            rightButton2 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button2);
+            rightButton2 = view.FindViewById<ImageView> (Resource.Id.right_button2);
             rightButton2.Click += RightButton2_Click;
 
-            rightButton3 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button3);
+            rightButton3 = view.FindViewById<ImageView> (Resource.Id.right_button3);
             rightButton3.Click += RightButton3_Click;
 
             var cancelButton = view.FindViewById (Resource.Id.cancel);
@@ -142,7 +146,7 @@ namespace NachoClient.AndroidClient
             ClearCache ();
             SetupMessageListAdapter (view);
 
-            searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
+            searchEditText = view.FindViewById<EditText> (Resource.Id.searchstring);
             searchEditText.TextChanged += SearchString_TextChanged;
             searchEditText.EditorAction += SearchString_Enter;
 
@@ -207,6 +211,12 @@ namespace NachoClient.AndroidClient
                 });
             } else {
                 hotEvent.Visibility = ViewStates.Gone;
+            }
+
+            if (messages.HasFilterSemantics ()) {
+                var filterSetting = view.FindViewById<TextView> (Resource.Id.filter_setting);
+                filterSetting.Visibility = ViewStates.Visible;
+                filterSetting.Text = messages.FilterSetting.ToString ();
             }
                 
             ConfigureButtons ();
@@ -477,6 +487,19 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        void LeftButton2_Click (object sender, EventArgs e)
+        {
+            var values = messages.PossibleFilterSettings;
+            for (int i = 0; i < values.Length; ++i) {
+                if (values [i] == messages.FilterSetting) {
+                    messages.FilterSetting = values [(i + 1) % values.Length];
+                    break;
+                }
+            }
+            View.FindViewById<TextView> (Resource.Id.filter_setting).Text = messages.FilterSetting.ToString ();
+            RefreshIfVisible ();
+        }
+
         // Compose or delete (multi-select)
         void RightButton1_Click (object sender, EventArgs e)
         {
@@ -517,6 +540,7 @@ namespace NachoClient.AndroidClient
                 if (messages.HasDraftsSemantics () || messages.HasOutboxSemantics ()) {
                     leftButton1.SetImageResource (Resource.Drawable.gen_close);
                     leftButton1.Visibility = ViewStates.Visible;
+                    leftButton2.Visibility = ViewStates.Invisible;
                     rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
                     rightButton1.Visibility = ViewStates.Visible;
                     rightButton2.Visibility = ViewStates.Invisible;
@@ -524,6 +548,7 @@ namespace NachoClient.AndroidClient
                 } else {
                     leftButton1.SetImageResource (Resource.Drawable.gen_close);
                     leftButton1.Visibility = ViewStates.Visible;
+                    leftButton2.Visibility = ViewStates.Invisible;
                     rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
                     rightButton1.Visibility = ViewStates.Visible;
                     rightButton2.SetImageResource (Resource.Drawable.folder_move);
@@ -535,6 +560,12 @@ namespace NachoClient.AndroidClient
                 recyclerView.EnableSwipe (true);
                 leftButton1.SetImageResource (Resource.Drawable.nav_search);
                 leftButton1.Visibility = ViewStates.Visible;
+                if (messages.HasFilterSemantics ()) {
+                    leftButton2.SetImageResource (Resource.Drawable.gen_read_list);
+                    leftButton2.Visibility = ViewStates.Visible;
+                } else {
+                    leftButton2.Visibility = ViewStates.Invisible;
+                }
                 rightButton1.SetImageResource (Resource.Drawable.contact_newemail);
                 rightButton1.Visibility = ViewStates.Visible;
                 rightButton2.SetImageResource (Resource.Drawable.folder_edit);
@@ -661,7 +692,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void SearchString_Enter (object sender, Android.Widget.TextView.EditorActionEventArgs e)
+        void SearchString_Enter (object sender, TextView.EditorActionEventArgs e)
         {
             if (searching) {
                 emailSearcher.StartServerSearch ();

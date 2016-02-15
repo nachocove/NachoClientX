@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoLikelyToReadEmailMessages : INachoEmailMessages
+    public class NachoLikelyToReadEmailMessages : NachoEmailMessagesBase, INachoEmailMessages
     {
         List<McEmailMessageThread> ThreadList;
         McFolder Folder;
@@ -22,7 +22,7 @@ namespace NachoCore
             Refresh (out adds, out deletes);
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryActiveMessageItemsByScore2 (Folder.AccountId, Folder.Id, 
                            McEmailMessage.minHotScore, McEmailMessage.minLikelyToReadScore);
@@ -34,19 +34,19 @@ namespace NachoCore
             return false;
         }
 
-        public int Count ()
+        public override int Count ()
         {
             return ThreadList.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int idx)
+        public override McEmailMessageThread GetEmailThread (int idx)
         {
             var retval = ThreadList.ElementAt (idx);
             retval.Source = this;
             return retval;
         }
 
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var message = McEmailMessage.QueryById<McEmailMessage> (id);
             if (null == message) {
@@ -57,22 +57,12 @@ namespace NachoCore
             }
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             return "Focused";
         }
 
-        public bool HasOutboxSemantics ()
-        {
-            return false;
-        }
-
-        public bool HasDraftsSemantics ()
-        {
-            return false;
-        }
-       
-        public NcResult StartSync ()
+        public override NcResult StartSync ()
         {
             if (null != Folder) {
                 return BackEnd.Instance.SyncCmd (Folder.AccountId, Folder.Id);
@@ -81,12 +71,12 @@ namespace NachoCore
             }
         }
 
-        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             return new NachoThreadedEmailMessages (Folder, thread.GetThreadId());
         }
 
-        public bool IsCompatibleWithAccount (McAccount account)
+        public override bool IsCompatibleWithAccount (McAccount account)
         {
             return account.Id == Folder.AccountId;
         }
