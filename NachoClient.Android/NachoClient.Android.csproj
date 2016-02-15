@@ -1732,6 +1732,14 @@
     <AndroidResource Include="Resources\drawable-mdpi\inbox_icn_deadline.png" />
     <AndroidResource Include="Resources\layout\FolderCellHeader.axml" />
     <AndroidResource Include="Resources\layout\FolderCellAccount.axml" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_read_list_active.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_read_list.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_read_list_active.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_read_list.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_read_list_active.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_read_list.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_read_list_active.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_read_list.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

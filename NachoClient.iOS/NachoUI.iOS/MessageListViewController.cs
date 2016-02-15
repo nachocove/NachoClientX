@@ -30,6 +30,8 @@ namespace NachoClient.iOS
         protected UIBarButtonItem searchButton;
         protected UIBarButtonItem moveButton;
         protected UIBarButtonItem backButton;
+        protected UIBarButtonItem filterButton;
+        protected UITextView headerView;
 
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
@@ -116,6 +118,23 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageListToFolders", h);
             };
 
+            filterButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (filterButton, "gen-read-list");
+            filterButton.AccessibilityLabel = "Filter";
+            filterButton.Clicked += (object sender, EventArgs e) => {
+                var messages = messageSource.GetNachoEmailMessages ();
+                var values = messages.PossibleFilterSettings;
+                for (int i = 0; i < values.Length; ++i) {
+                    if (values [i] == messages.FilterSetting) {
+                        messages.FilterSetting = values [(i + 1) % values.Length];
+                        break;
+                    }
+                }
+                RefreshThreadsIfVisible();
+                headerView.Text = messages.FilterSetting.ToString ();
+                headerView.SizeToFit ();
+            };
+
             searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.AccessibilityLabel = "Search";
             searchButton.Clicked += onClickSearchButton;
@@ -129,7 +148,15 @@ namespace NachoClient.iOS
             CustomizeBackButton ();
             MultiSelectToggle (messageSource, false);
 
-            TableView.TableHeaderView = null; // beta 1
+            headerView = new UITextView ();
+            headerView.AccessibilityLabel = "MessageListFilterSetting";
+            headerView.Text = messageSource.GetNachoEmailMessages ().FilterSetting.ToString ();
+            headerView.SizeToFit ();
+            if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
+                TableView.TableHeaderView = headerView;
+            } else {
+                TableView.TableHeaderView = null;
+            }
 
             RefreshControl = new UIRefreshControl ();
             RefreshControl.Hidden = true;
@@ -233,15 +260,30 @@ namespace NachoClient.iOS
                 if (null == backButton) {
                     NavigationItem.HidesBackButton = false;
                     NavigationItem.LeftItemsSupplementBackButton = true;
-                    NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                        searchButton,
-                    };
+                    if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
+                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                            searchButton,
+                            filterButton,
+                        };
+                    } else {
+                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                            searchButton,
+                        };
+                    }
                 } else {
                     NavigationItem.HidesBackButton = true;
-                    NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                        backButton,
-                        searchButton,
-                    };
+                    if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
+                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                            backButton,
+                            searchButton,
+                            filterButton,
+                        };
+                    } else {
+                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                            backButton,
+                            searchButton,
+                        };
+                    }
                 }
             }
         }
@@ -576,6 +618,7 @@ namespace NachoClient.iOS
 
         protected void onClickSearchButton (object sender, EventArgs e)
         {
+            searchBar.Hidden = false;
             searchBar.BecomeFirstResponder ();
             emailSearcher.EnterSearchMode (NcApplication.Instance.Account);
         }
@@ -593,6 +636,14 @@ namespace NachoClient.iOS
                 return;
             }
             emailSearcher.StartServerSearch ();
+        }
+
+        [Export ("searchBarCancelButtonClicked:")]
+        public void CancelButtonClicked (UISearchBar searchBar)
+        {
+            emailSearcher.ExitSearchMode ();
+            searchDisplayController.Active = false;
+            searchBar.Hidden = true;
         }
 
         // After status ind
@@ -627,9 +678,14 @@ namespace NachoClient.iOS
                 searchDisplayController.Active = false;
             }
             messageSource.MultiSelectCancel (TableView);
-            MultiSelectToggle (messageSource, false);
             switchAccountButton.SetAccountImage (account);
             SetEmailMessages (GetNachoEmailMessages (account.Id));
+            if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
+                TableView.TableHeaderView = headerView;
+            } else {
+                TableView.TableHeaderView = null;
+            }
+            MultiSelectToggle (messageSource, false);
             List<int> adds;
             List<int> deletes;
             messageSource.RefreshEmailMessages (out adds, out deletes);

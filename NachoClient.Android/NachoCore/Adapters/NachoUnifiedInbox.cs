@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoUnifiedInbox : INachoEmailMessages
+    public class NachoUnifiedInbox : NachoEmailMessagesBase, INachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
 
@@ -19,7 +19,7 @@ namespace NachoCore
             threadList = new List<McEmailMessageThread> ();
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryUnifiedInboxItems ();
             var threads = NcMessageThreads.ThreadByConversation (list);
@@ -30,12 +30,12 @@ namespace NachoCore
             return false;
         }
 
-        public int Count ()
+        public override int Count ()
         {
             return threadList.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public override McEmailMessageThread GetEmailThread (int i)
         {
             if (0 > i) {
                 Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
@@ -50,7 +50,7 @@ namespace NachoCore
             return t;
         }
 
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var message = McEmailMessage.QueryById<McEmailMessage> (id);
             if (null == message) {
@@ -66,35 +66,47 @@ namespace NachoCore
             return thread;
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             return "Inbox";
         }
 
-        public bool HasOutboxSemantics ()
+        // FIXME Filtering for unified inbox is still to be implemented.
+
+        public override bool HasFilterSemantics ()
         {
-            return false;
+            return base.HasFilterSemantics ();
         }
 
-        public bool HasDraftsSemantics ()
-        {
-            return false;
+        public override FolderFilterOptions FilterSetting {
+            get {
+                return base.FilterSetting;
+            }
+            set {
+                base.FilterSetting = value;
+            }
         }
 
-        public NcResult StartSync ()
+        public override FolderFilterOptions[] PossibleFilterSettings {
+            get {
+                return base.PossibleFilterSettings;
+            }
+        }
+
+        public override NcResult StartSync ()
         {
             // FIXME Unfied Sync All
             return NachoSyncResult.DoesNotSync ();
         }
 
-        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             var firstMessage = thread.FirstMessage ();
             var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
             return new NachoThreadedEmailMessages (inbox, thread.GetThreadId());
         }
 
-        public bool IsCompatibleWithAccount (McAccount account)
+        public override bool IsCompatibleWithAccount (McAccount account)
         {
             var currentAccount = NcApplication.Instance.Account;
             return null != currentAccount && currentAccount.ContainsAccount (account.Id);

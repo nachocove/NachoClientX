@@ -10,6 +10,15 @@ using System.Security.Cryptography;
 
 namespace NachoCore.Model
 {
+    [Flags]
+    public enum FolderFilterOptions
+    {
+        All = 0,
+        Hot = 1,
+        Focused = 2,
+        Unread = 4,
+    }
+
     public class McFolder : McAbstrFolderEntry
     {
         [Indexed]
@@ -126,6 +135,8 @@ namespace NachoCore.Model
         public bool IsDistinguished { get; set; }
 
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
+
+        public FolderFilterOptions FilterSetting { get; set; }
 
         // Client-owned distinguised folders.
         public const string ClientOwned_Outbox = "f6a01521-a763-4522-8a13-3df0545f4bdb";

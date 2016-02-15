@@ -38,6 +38,16 @@
     <include
         layout="@layout/HotEvent" />
     <TextView
+        android:id="@+id/filter_setting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:textColor="@android:color/black"
+        android:textSize="14dp"
+        android:text="All"
+        android:background="@android:color/white"
+        android:visibility="gone" />
+    <TextView
         android:id="@+id/no_messages"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
