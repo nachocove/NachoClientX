@@ -1317,7 +1317,7 @@ namespace NachoCore
             return result;
         }
 
-        public virtual NcResult SyncCmd (int folderId)
+        public virtual NcResult SyncCmd (int folderId, bool doNotDelay = true)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McFolder folder;
@@ -1341,13 +1341,15 @@ namespace NachoCore
                     result = NcResult.OK (dup.Token);
                     return;
                 }
-                pending.DoNotDelay ();
+                if (doNotDelay) {
+                    pending.DoNotDelay ();
+                }
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
             });
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSYNC");
-            }, "SyncCmd");
+            if (doNotDelay) {
+                NcTask.Run (() => Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSYNC"), "SyncCmd");
+            }
             return result;
         }
 

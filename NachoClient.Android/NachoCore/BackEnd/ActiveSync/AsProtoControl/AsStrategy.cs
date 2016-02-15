@@ -248,12 +248,9 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private Random CoinToss;
 
         public AsStrategy (IBEContext beContext, LadderChoiceEnum ladder) : base (beContext)
         {
-            BEContext = beContext;
-            CoinToss = new Random ();
             switch (ladder) {
             case LadderChoiceEnum.Test:
                 Scope.Ladder = Scope.TestLadder;
@@ -1260,69 +1257,78 @@ namespace NachoCore.ActiveSync
                     }
                     return Tuple.Create<PickActionEnum, AsCommand> (action, cmd);
                 }
-                // (FG, BG) If it has been more than 5 min since last FolderSync, do a FolderSync.
-                // It seems we can't rely on the server to tell us to do one in all situations.
-                if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddMinutes (-5)) {
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.FSync, null);
-                }
-                // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
-                // current filter setting, execute a narrow Ping command.
-                // Do don't obey rate-limiter if HotMail.
-                if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id) &&
-                    BEContext.ProtocolState.HasBeenRateLimited &&
-                    !BEContext.Server.HostIsAsHotMail () &&
-                    !BEContext.Server.HostIsAsGMail ()) {
-                    var rlPingKit = GenPingKit (protocolState, true, stillHaveUnsyncedFolders, false);
-                    if (null != rlPingKit) {
-                        if (BEContext.Server.HostIsAsGMail ()) { // GoogleExchange use Ping
-                            Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Ping");
-                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
-                                new AsPingCommand (BEContext, rlPingKit));
-                        } else { // use Sync
-                            Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Sync");
-                            SyncKit syncKit = GenSyncKitFromPingKit (protocolState, rlPingKit);
-                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+
+                bool syncsPermitted = SyncPermitted ();
+                bool speculationPermitted = PowerPermitsSpeculation ();
+
+                Log.Info (Log.LOG_IMAP, "Strategy:{0}:Power({1}/{2}) PowerPermitsSpeculation={3}, SyncsPermitted={4}",
+                    exeCtxt, Power.Instance.PowerState, Power.Instance.BatteryLevel, speculationPermitted, syncsPermitted);
+                if (syncsPermitted) {
+                    // (FG, BG) If it has been more than 5 min since last FolderSync, do a FolderSync.
+                    // It seems we can't rely on the server to tell us to do one in all situations.
+                    if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddMinutes (-5)) {
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.FSync, null);
+                    }
+                    // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
+                    // current filter setting, execute a narrow Ping command.
+                    // Do don't obey rate-limiter if HotMail.
+                    if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id) &&
+                        BEContext.ProtocolState.HasBeenRateLimited &&
+                        !BEContext.Server.HostIsAsHotMail () &&
+                        !BEContext.Server.HostIsAsGMail ()) {
+                        var rlPingKit = GenPingKit (protocolState, true, stillHaveUnsyncedFolders, false);
+                        if (null != rlPingKit) {
+                            if (BEContext.Server.HostIsAsGMail ()) { // GoogleExchange use Ping
+                                Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Ping");
+                                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                                    new AsPingCommand (BEContext, rlPingKit));
+                            } else { // use Sync
+                                Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping using EAS Sync");
+                                SyncKit syncKit = GenSyncKitFromPingKit (protocolState, rlPingKit);
+                                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                                    new AsSyncCommand (BEContext, syncKit));
+                            }
+                        }
+                        // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
+                        // at the current filter setting, then wait.
+                        else {
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Wait");
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
+                                new AsWaitCommand (BEContext, 120, false));
+                        }
+                    }
+                    // (FG) See if there's bodies to download
+                    if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                        var fetchKit = GenFetchKitHints ();
+                        if (null != fetchKit) {
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
+                                new AsItemOperationsCommand (BEContext, fetchKit));
+                        }
+                    }
+                    // (FG, BG) Choose eligible option by priority, split tie randomly...
+                    if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.IgnorePower) ||
+                        speculationPermitted ||
+                        NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                        FetchKit fetchKit = null;
+                        SyncKit syncKit = null;
+                        if (NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed && speculationPermitted) {
+                            fetchKit = GenFetchKit ();
+                        }
+                        syncKit = GenSyncKit (protocolState, SyncMode.Wide);
+                        if (null != fetchKit && (null == syncKit || FetchMailThreshold < CoinToss.NextDouble ())) {
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch");
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
+                                new AsItemOperationsCommand (BEContext, fetchKit));
+                        }
+                        if (null != syncKit) {
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG:Sync");
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
                                 new AsSyncCommand (BEContext, syncKit));
                         }
                     }
-                    // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
-                    // at the current filter setting, then wait.
-                    else {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Wait");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
-                            new AsWaitCommand (BEContext, 120, false));
-                    }
                 }
-                // (FG) See if there's bodies to download
-                if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
-                    var fetchKit = GenFetchKitHints ();
-                    if (null != fetchKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
-                            new AsItemOperationsCommand (BEContext, fetchKit));
-                    }
-                }
-                // (FG, BG) Choose eligible option by priority, split tie randomly...
-                if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.IgnorePower) ||
-                    PowerPermitsSpeculation () ||
-                    NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
-                    FetchKit fetchKit = null;
-                    SyncKit syncKit = null;
-                    if (NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed && PowerPermitsSpeculation ()) {
-                        fetchKit = GenFetchKit ();
-                    }
-                    syncKit = GenSyncKit (protocolState, SyncMode.Wide);
-                    if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
-                            new AsItemOperationsCommand (BEContext, fetchKit));
-                    }
-                    if (null != syncKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Sync");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                            new AsSyncCommand (BEContext, syncKit));
-                    }
-                }
+
                 // DEBUG. It seems like the server is slow to respond when there is new email. 
                 // At least it is slower to tell us than other clients. Sniffing touchdown shows 
                 // that they do a narrow Ping and that each add'l folder needs to be manuall added

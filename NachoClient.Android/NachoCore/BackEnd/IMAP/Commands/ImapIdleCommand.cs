@@ -16,11 +16,11 @@ namespace NachoCore.IMAP
         McFolder IdleFolder;
         bool ENABLED = true;
 
-        public ImapIdleCommand (IBEContext beContext, McFolder folder) : base (beContext)
+        public ImapIdleCommand (IBEContext beContext) : base (beContext)
         {
             // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
             // for more inspiration
-            IdleFolder = folder;
+            IdleFolder = McFolder.GetDefaultInboxFolder (AccountId);
             RedactProtocolLogFunc = RedactProtocolLog;
         }
 
@@ -60,8 +60,13 @@ namespace NachoCore.IMAP
                 StatusItems.HighestModSeq |
                 StatusItems.Unread);
             UpdateImapSetting (mailKitFolder, ref IdleFolder);
+            NcResult result = null;
             if (mailArrived || mailDeleted || needResync) {
                 GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ());
+                result = BEContext.ProtoControl.SyncCmd (IdleFolder.Id, false);
+                if (!result.isOK ()) {
+                    Log.Warn (Log.LOG_IMAP, "Couldn't enqueue sync command");
+                }
             }
 
             var protocolState = BEContext.ProtocolState;
@@ -70,7 +75,13 @@ namespace NachoCore.IMAP
                 target.LastPing = DateTime.UtcNow;
                 return true;
             });
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
+            Event evt;
+            if (result != null) {
+                evt = Event.Create ((uint)NcProtoControl.PcEvt.E.PendQOrHint, "IMAPIDLESYNC");
+            } else {
+                evt = Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
+            }
+            return evt;
         }
 
         bool isGoogle ()
