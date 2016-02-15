@@ -357,7 +357,7 @@ namespace NachoCore.IMAP
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception updating: {0}", ex.ToString ());
                 }
-            } else {
+            } else if (imapSummary.Envelope != null) {
                 try {
                     emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary);
                     updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
@@ -367,6 +367,13 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
                     return null;
                 }
+            } else {
+                // We don't have an emailMessage, but we didn't fetch the Envelope. This means we got here
+                // for an email we don't have in our DB, but for which a 'flag-update' was issued. Perhaps 
+                // the email was deleted locally after the SyncKit was created.
+                Log.Info (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Flag-only-update for unknown email message (imap UID {0}) in folder {1}", imapSummary.UniqueId, folder.ImapFolderNameRedacted ());
+                created = false;
+                return null;
             }
 
             if (changed) {
@@ -712,7 +719,7 @@ namespace NachoCore.IMAP
 
         public static void InsertAttachments (McEmailMessage msg, MessageSummary imapSummary)
         {
-            var attachments = imapSummary.BodyParts.Where (part => part.ContentDisposition != null);
+            var attachments = imapSummary.BodyParts.Where (part => part.ContentDisposition != null).ToList ();
             if (attachments.Any ()) {
                 foreach (var att in attachments) {
                     // Create & save the attachment record.
