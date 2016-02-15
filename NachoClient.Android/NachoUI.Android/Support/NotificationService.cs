@@ -141,6 +141,12 @@ namespace NachoClient.AndroidClient
             var pendingArchiveIntent = PendingIntent.GetBroadcast (this, 0, archiveIntent, PendingIntentFlags.UpdateCurrent);
             builder.AddAction (Resource.Drawable.email_notification_archive, "Archive", pendingArchiveIntent);
 
+
+            var notificationDeletedIntent = new Intent (this, typeof(NotificationDeletedReceiver));
+            notificationDeletedIntent.PutExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", message.Id);
+            var pendingNotificationDeletedIntent = PendingIntent.GetBroadcast (this, 0, notificationDeletedIntent, PendingIntentFlags.UpdateCurrent);
+            builder.SetDeleteIntent (pendingNotificationDeletedIntent);
+
             var preview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
 
             if (!String.IsNullOrEmpty (preview)) {
@@ -207,6 +213,24 @@ namespace NachoClient.AndroidClient
                 }
                 var nMgr = (NotificationManager)MainApplication.Instance.GetSystemService (Context.NotificationService);
                 nMgr.Cancel (NotificationService.EMAIL_NOTIFICATION_ID);
+            }
+        }
+    }
+
+    [BroadcastReceiver (Enabled = true)]
+    class NotificationDeletedReceiver : BroadcastReceiver
+    {
+
+        public override void OnReceive (Context context, Intent intent)
+        {
+            // In case notification started the app
+            MainApplication.OneTimeStartup ("NotificationActivity");
+            var messageId = intent.GetIntExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", 0);
+            if (messageId != 0) {
+                var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
+                if (null != message) {
+                    message.MarkHasBeenNotified (false);
+                }
             }
         }
 
