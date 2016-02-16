@@ -878,6 +878,20 @@ namespace NachoCore.Utils
             }
         }
 
+        public static void GetUnreadMessageCount (McAccount account, out int unreadMessageCount)
+        {
+            unreadMessageCount = 0;
+
+            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+                if (account.ContainsAccount (accountId)) {
+                    var inboxFolder = NcEmailManager.InboxFolder (accountId);
+                    if (null != inboxFolder) {
+                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+                    }
+                }
+            }
+        }
+
 
         /// <summary>
         /// Compress the message preview so it is more tightly packed with useful information.
@@ -940,7 +954,10 @@ namespace NachoCore.Utils
             if ((null != message) && !message.IsRead) {
                 var body = McBody.QueryById<McBody> (message.BodyId);
                 if (force || McBody.IsComplete (body)) {
-                    BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
+                    NcTask.Run (() => {
+                        BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
+                    }, "MarkEmailReadCmd");
+
                 }
             }
         }
@@ -977,6 +994,15 @@ namespace NachoCore.Utils
             attachment.SetDisplayName (note.DisplayName + ".txt");
             attachment.UpdateSaveFinish ();
             return attachment;
+        }
+
+        public static HashSet<int> AccountSet(List<McEmailMessage> messages)
+        {
+            var set = new HashSet<int> ();
+            foreach (var message in messages) {
+                set.Add (message.AccountId);
+            }
+            return set;
         }
     }
 }

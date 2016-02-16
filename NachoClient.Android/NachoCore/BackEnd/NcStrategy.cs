@@ -5,6 +5,7 @@ using NachoCore.Utils;
 using NachoPlatform;
 using System.Collections.Generic;
 using NachoCore.Model;
+using System.Linq;
 
 namespace NachoCore
 {
@@ -38,9 +39,19 @@ namespace NachoCore
                 AccountId == NcApplication.Instance.Account.Id &&
                 NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Foreground) {
                 var hints = BackEnd.Instance.BodyFetchHints.GetHints (AccountId, count);
+                var pendings = McPending.QueryByOperation (AccountId, McPending.Operations.EmailBodyDownload);
                 foreach (var id in hints) {
                     var email = McEmailMessage.QueryById<McEmailMessage> (id);
                     if (null != email) {
+                        var existing = pendings.FirstOrDefault (x => x.ServerId == email.ServerId);
+                        if (null != existing) {
+                            Log.Info (Log.LOG_BACKEND, "ignoring hint due to existence of pending");
+                            // there's already a pending for this.
+                            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, id);
+                            // TODO: Do we need to do anything to the existing pending?
+                            continue;
+                        }
+
                         if (0 == email.BodyId) {
                             EmailList.Add (email);
                         } else {

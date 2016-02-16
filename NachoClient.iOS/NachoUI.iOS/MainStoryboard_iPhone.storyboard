@@ -194,6 +194,7 @@
                         <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToCompose" id="urW-p2-x1h"/>
                         <segue destination="Png-41-0bk" kind="push" identifier="SegueToDrafts" id="ob4-Hl-1Og"/>
                         <segue destination="PLY-NH-kiA" kind="push" identifier="SegueToLikelyToRead" id="oUa-Te-1to"/>
+                        <segue destination="2MA-z5-r9e" kind="push" identifier="SegueToInbox" id="Gi8-ik-ZM2"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -523,7 +524,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="C3K-cn-kde">
-                                <rect key="frame" x="0.0" y="33.5" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="34" width="320" height="504"/>
                                 <gestureRecognizers/>
                             </scrollView>
                         </subviews>
@@ -1455,14 +1456,17 @@
         <segue reference="gVj-FW-dv1"/>
         <segue reference="oUa-Te-1to"/>
         <segue reference="H86-lc-tSW"/>
-        <segue reference="szv-KC-TId"/>
         <segue reference="K4H-to-cZ8"/>
+        <segue reference="szv-KC-TId"/>
         <segue reference="B7C-Lk-RW2"/>
         <segue reference="oCQ-GI-yPC"/>
         <segue reference="H7r-gd-Nf5"/>
         <segue reference="zby-Sy-Y3J"/>
         <segue reference="47y-6M-xBI"/>
         <segue reference="B5b-jg-ZNg"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="urW-p2-x1h"/>
+        <segue reference="Gi8-ik-ZM2"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

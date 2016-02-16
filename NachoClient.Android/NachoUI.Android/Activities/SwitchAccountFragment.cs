@@ -134,13 +134,15 @@ namespace NachoClient.AndroidClient
         public event EventHandler<int> AccountShortcut;
         public event EventHandler<McAccount> AccountSelected;
 
+        bool showUnified;
         public DisplayMode displayMode;
 
         List<McAccount> accounts;
 
-        public  AccountAdapter (DisplayMode displayMode)
+        public  AccountAdapter (DisplayMode displayMode, bool showUnified = true)
         {
             this.displayMode = displayMode;
+            this.showUnified = showUnified;
 
             Refresh ();
         }
@@ -149,12 +151,12 @@ namespace NachoClient.AndroidClient
         {
             accounts = new List<McAccount> ();
 
+            McAccount unifiedAccount = null;
+
             foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                // Hide unified during performance push
-                if (McAccount.AccountTypeEnum.Unified == account.AccountType) {
-                    continue;
-                }
-                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
+                if (account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                    unifiedAccount = account;
+                } else if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     accounts.Add (account);
                 }
             }
@@ -163,6 +165,13 @@ namespace NachoClient.AndroidClient
             var deviceAccount = McAccount.GetDeviceAccount ();
             if (null != deviceAccount) {
                 accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
+            }
+
+            if (showUnified && accounts.Count > 1) {
+                if (unifiedAccount == null) {
+                    unifiedAccount = McAccount.GetUnifiedAccount ();
+                }
+                accounts.Insert (0, unifiedAccount);
             }
 
             // Remove the current account from the switcher view.

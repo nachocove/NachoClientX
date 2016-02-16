@@ -16,7 +16,7 @@ namespace NachoCore.IMAP
     {
         private List<Regex> RegexList;
 
-        public ImapSearchCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapSearchCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispatched ();
@@ -38,7 +38,8 @@ namespace NachoCore.IMAP
 
         public override void Execute (NcStateMachine sm)
         {
-            ExecuteNoTask(sm);
+            Sm = sm;
+            ExecuteNoTask();
         }
 
         protected override Event ExecuteCommand ()

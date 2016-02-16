@@ -856,7 +856,6 @@ namespace NachoClient.iOS
                 FinalizePerformFetch (UIBackgroundFetchResult.NoData); // or UIBackgroundFetchResult.Failed?
                 return;
             }
-            NcCommStatus.Instance.ForceUp ("StartFetch");
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
 
@@ -872,6 +871,9 @@ namespace NachoClient.iOS
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
                 BackEnd.Instance.Start ();
+                NcApplicationMonitor.Instance.Start (1, 60);
+            } else {
+                NcCommStatus.Instance.Reset ("StartFetch");
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
             // iOS only allows a limited amount of time to fetch data in the background.

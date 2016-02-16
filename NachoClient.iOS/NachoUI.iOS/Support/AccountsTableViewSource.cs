@@ -33,7 +33,7 @@ namespace NachoClient.iOS
             Refresh ();
         }
 
-        public void Refresh()
+        public void Refresh ()
         {
             accounts = new List<McAccount> ();
 
@@ -42,24 +42,23 @@ namespace NachoClient.iOS
             foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
                 if (account.AccountType == McAccount.AccountTypeEnum.Unified) {
                     unifiedAccount = account;
-                }else if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
+                } else if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     accounts.Add (account);
                 }
             }
 
             // Remove the device account (for now)
-            var deviceAccount = McAccount.GetDeviceAccount();
+            var deviceAccount = McAccount.GetDeviceAccount ();
             if (null != deviceAccount) {
                 accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
             }
 
-            // Disable unified for performance push
-            // if (showUnified && accounts.Count > 1) {
-            //     if (unifiedAccount == null) {
-            //         unifiedAccount = McAccount.GetUnifiedAccount ();
-            //     }
-            //     accounts.Insert (0, unifiedAccount);
-            // }
+            if (showUnified && accounts.Count > 1) {
+                if (unifiedAccount == null) {
+                    unifiedAccount = McAccount.GetUnifiedAccount ();
+                }
+                accounts.Insert (0, unifiedAccount);
+            }
 
             // Remove the current account from the switcher view.
             if (!showAccessory) {

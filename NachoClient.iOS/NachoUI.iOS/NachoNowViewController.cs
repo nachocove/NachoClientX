@@ -448,7 +448,7 @@ namespace NachoClient.iOS
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void MultiSelectChange (IMessageTableViewSource source, int count)
+        public void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts)
         {
         }
 

@@ -1772,6 +1772,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ChatMessageComposer.cs">
       <Link>NachoCore\Utils\ChatMessageComposer.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\FolderTableViewSource.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\FolderLists.cs">
+      <Link>NachoCore\Utils\FolderLists.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2699,6 +2703,15 @@
     <BundleResource Include="Resources\MessageRead%402x.png" />
     <BundleResource Include="Resources\MessageRead%403x.png" />
     <BundleResource Include="Resources\MessageRead%404x.png" />
+    <BundleResource Include="Resources\gen-read-list-active%402x.png" />
+    <BundleResource Include="Resources\gen-read-list-active%403x.png" />
+    <BundleResource Include="Resources\gen-read-list-active%404x.png" />
+    <BundleResource Include="Resources\gen-read-list-active%406x.png" />
+    <BundleResource Include="Resources\gen-read-list%402x.png" />
+    <BundleResource Include="Resources\gen-read-list%403x.png" />
+    <BundleResource Include="Resources\gen-read-list%404x.png" />
+    <BundleResource Include="Resources\gen-read-list%406x.png" />
+    <BundleResource Include="Resources\Icon-83.5%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

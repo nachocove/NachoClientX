@@ -142,6 +142,7 @@ namespace NachoClient.AndroidClient
             typeof(DeadlineActivity),
             typeof(DeferredActivity),
             typeof(FoldersActivity),
+            typeof(FileListActivity),
             typeof(SettingsActivity),
             typeof(SupportActivity),
         };

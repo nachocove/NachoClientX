@@ -27,6 +27,7 @@ using Android.Widget;
 using Android.Views.InputMethods;
 using Android.Webkit;
 using NachoCore.Index;
+using Android.Graphics;
 
 namespace NachoClient.AndroidClient
 {
@@ -59,18 +60,20 @@ namespace NachoClient.AndroidClient
         SwipeRefreshLayout mSwipeRefreshLayout;
 
         bool searching;
-        Android.Widget.EditText searchEditText;
+        EditText searchEditText;
 
         INachoEmailMessages messages;
         EmailSearch emailSearcher;
 
         public bool multiSelectActive = false;
         public HashSet<long> MultiSelectSet = null;
+        public Dictionary<int, int> MultiSelectAccounts = null;
 
-        Android.Widget.ImageView leftButton1;
-        Android.Widget.ImageView rightButton1;
-        Android.Widget.ImageView rightButton2;
-        Android.Widget.ImageView rightButton3;
+        ImageView leftButton1;
+        ImageView leftButton2;
+        ImageView rightButton1;
+        ImageView rightButton2;
+        ImageView rightButton3;
 
         public event EventHandler<McEvent> onEventClick;
         public event EventHandler<INachoEmailMessages> onThreadClick;
@@ -119,16 +122,19 @@ namespace NachoClient.AndroidClient
 
             mSwipeRefreshLayout.Refresh += SwipeRefreshLayout_Refresh;
 
-            leftButton1 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
+            leftButton1 = view.FindViewById<ImageView> (Resource.Id.left_button1);
             leftButton1.Click += LeftButton1_Click;
 
-            rightButton1 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
+            leftButton2 = view.FindViewById<ImageView> (Resource.Id.left_button2);
+            leftButton2.Click += LeftButton2_Click;
+
+            rightButton1 = view.FindViewById<ImageView> (Resource.Id.right_button1);
             rightButton1.Click += RightButton1_Click;
 
-            rightButton2 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button2);
+            rightButton2 = view.FindViewById<ImageView> (Resource.Id.right_button2);
             rightButton2.Click += RightButton2_Click;
 
-            rightButton3 = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button3);
+            rightButton3 = view.FindViewById<ImageView> (Resource.Id.right_button3);
             rightButton3.Click += RightButton3_Click;
 
             var cancelButton = view.FindViewById (Resource.Id.cancel);
@@ -142,7 +148,7 @@ namespace NachoClient.AndroidClient
             ClearCache ();
             SetupMessageListAdapter (view);
 
-            searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
+            searchEditText = view.FindViewById<EditText> (Resource.Id.searchstring);
             searchEditText.TextChanged += SearchString_TextChanged;
             searchEditText.EditorAction += SearchString_Enter;
 
@@ -207,6 +213,12 @@ namespace NachoClient.AndroidClient
                 });
             } else {
                 hotEvent.Visibility = ViewStates.Gone;
+            }
+
+            if (messages.HasFilterSemantics ()) {
+                var filterSetting = view.FindViewById<TextView> (Resource.Id.filter_setting);
+                filterSetting.Visibility = ViewStates.Visible;
+                filterSetting.Text = messages.FilterSetting.ToString ();
             }
                 
             ConfigureButtons ();
@@ -402,7 +414,9 @@ namespace NachoClient.AndroidClient
                 }
             }
             if (0 < Ids.Count) {
-                BackEnd.Instance.SendEmailBodyFetchHints (Ids);
+                NcTask.Run (() => {
+                    BackEnd.Instance.SendEmailBodyFetchHints (Ids);
+                }, "SendEmailBodyFetchHints");
             }
         }
 
@@ -444,10 +458,13 @@ namespace NachoClient.AndroidClient
             if (multiSelectActive) {
                 if (MultiSelectSet.Contains (position)) {
                     MultiSelectSet.Remove (position);
+                    UpdateMultiSelectAccounts (position, -1);
                 } else {
                     MultiSelectSet.Add (position);
+                    UpdateMultiSelectAccounts (position, 1);
                 }
                 RefreshVisibleMessageCells ();
+                ConfigureButtons ();
                 return;
             }
 
@@ -475,6 +492,19 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        void LeftButton2_Click (object sender, EventArgs e)
+        {
+            var values = messages.PossibleFilterSettings;
+            for (int i = 0; i < values.Length; ++i) {
+                if (values [i] == messages.FilterSetting) {
+                    messages.FilterSetting = values [(i + 1) % values.Length];
+                    break;
+                }
+            }
+            View.FindViewById<TextView> (Resource.Id.filter_setting).Text = messages.FilterSetting.ToString ();
+            RefreshIfVisible ();
+        }
+
         // Compose or delete (multi-select)
         void RightButton1_Click (object sender, EventArgs e)
         {
@@ -495,6 +525,7 @@ namespace NachoClient.AndroidClient
                 ShowFolderChooser (null);
             } else {
                 MultiSelectSet = new HashSet<long> ();
+                MultiSelectAccounts = new Dictionary<int, int> ();
                 multiSelectActive = true;
                 ConfigureButtons ();
             }
@@ -508,36 +539,67 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        void SetButtonsToDefault ()
+        {
+            leftButton1.Visibility = ViewStates.Invisible;
+            leftButton2.Visibility = ViewStates.Invisible;
+            rightButton1.Visibility = ViewStates.Invisible;
+            rightButton2.Visibility = ViewStates.Invisible;
+            rightButton3.Visibility = ViewStates.Invisible;
+            leftButton1.Enabled = false;
+            leftButton2.Enabled = false;
+            rightButton1.Enabled = false;
+            rightButton2.Enabled = false;
+            rightButton3.Enabled = false;
+        }
+
+        void SetButtonVisibility (ImageView view, bool enabled)
+        {
+            view.Enabled = enabled;
+            view.Visibility = ViewStates.Visible;
+            if (enabled) {
+                view.SetColorFilter (null);
+            } else {
+                view.SetColorFilter (Color.Argb (200, 220, 220, 220));
+            }
+        }
+
+
         void ConfigureButtons ()
         {
+            SetButtonsToDefault ();
+
             if (multiSelectActive) {
+                var count = MultiSelectSet.Count;
                 recyclerView.EnableSwipe (false);
                 if (messages.HasDraftsSemantics () || messages.HasOutboxSemantics ()) {
                     leftButton1.SetImageResource (Resource.Drawable.gen_close);
-                    leftButton1.Visibility = ViewStates.Visible;
                     rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
-                    rightButton1.Visibility = ViewStates.Visible;
-                    rightButton2.Visibility = ViewStates.Invisible;
-                    rightButton3.Visibility = ViewStates.Invisible;
+                    SetButtonVisibility (leftButton1, true);
+                    SetButtonVisibility (rightButton1, 0 != count);
                 } else {
                     leftButton1.SetImageResource (Resource.Drawable.gen_close);
-                    leftButton1.Visibility = ViewStates.Visible;
                     rightButton1.SetImageResource (Resource.Drawable.gen_delete_all);
-                    rightButton1.Visibility = ViewStates.Visible;
                     rightButton2.SetImageResource (Resource.Drawable.folder_move);
-                    rightButton2.Visibility = ViewStates.Visible;
                     rightButton3.SetImageResource (Resource.Drawable.gen_archive);
-                    rightButton3.Visibility = ViewStates.Visible;
+                    SetButtonVisibility (leftButton1, true);
+                    SetButtonVisibility (rightButton1, 0 != count);
+                    SetButtonVisibility (rightButton2, (0 != count) && (1 == MultiSelectAccounts.Count));
+                    SetButtonVisibility (rightButton3, 0 != count);
                 }
             } else {
                 recyclerView.EnableSwipe (true);
                 leftButton1.SetImageResource (Resource.Drawable.nav_search);
-                leftButton1.Visibility = ViewStates.Visible;
+                SetButtonVisibility (leftButton1, true);
+                if (messages.HasFilterSemantics ()) {
+                    leftButton2.SetImageResource (Resource.Drawable.gen_read_list);
+                    SetButtonVisibility (leftButton2, true);
+                    ;
+                }
                 rightButton1.SetImageResource (Resource.Drawable.contact_newemail);
-                rightButton1.Visibility = ViewStates.Visible;
                 rightButton2.SetImageResource (Resource.Drawable.folder_edit);
-                rightButton2.Visibility = ViewStates.Visible;
-                rightButton3.Visibility = ViewStates.Invisible;
+                SetButtonVisibility (rightButton1, true);
+                SetButtonVisibility (rightButton2, true);
             }
             RefreshVisibleMessageCells ();
         }
@@ -546,7 +608,26 @@ namespace NachoClient.AndroidClient
         {
             multiSelectActive = false;
             MultiSelectSet = null;
+            MultiSelectAccounts = null;
             ConfigureButtons ();
+        }
+
+        void UpdateMultiSelectAccounts (int position, int delta)
+        {
+            var message = GetCachedMessage (position);
+            if (null == message) {
+                return;
+            }
+            int value;
+            if (MultiSelectAccounts.TryGetValue (message.AccountId, out value)) {
+                value += delta;
+                if (0 == value) {
+                    MultiSelectAccounts.Remove (message.AccountId);
+                }
+            } else {
+                NcAssert.True (1 == delta);
+                MultiSelectAccounts.Add (message.AccountId, delta);
+            }
         }
 
         protected void EndRefreshingOnUIThread (object sender)
@@ -659,7 +740,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void SearchString_Enter (object sender, Android.Widget.TextView.EditorActionEventArgs e)
+        void SearchString_Enter (object sender, TextView.EditorActionEventArgs e)
         {
             if (searching) {
                 emailSearcher.StartServerSearch ();
@@ -705,6 +786,7 @@ namespace NachoClient.AndroidClient
 
         public void MultiSelectMove (McFolder folder)
         {
+            NcAssert.True (1 == MultiSelectAccounts.Count);
             var messageList = GetSelectedMessages ();
             NcEmailArchiver.Move (messageList, folder);
             MultiSelectCancel ();

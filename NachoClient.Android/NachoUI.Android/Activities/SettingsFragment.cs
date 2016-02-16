@@ -37,7 +37,7 @@ namespace NachoClient.AndroidClient
             var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
-            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.SettingsListview);
+            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.SettingsListview, false);
             accountAdapter.AddAccount += AccountAdapter_AddAccount;
             accountAdapter.AccountSelected += AccountAdapter_AccountSelected;
 

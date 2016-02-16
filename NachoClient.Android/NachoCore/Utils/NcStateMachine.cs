@@ -125,6 +125,8 @@ namespace NachoCore.Utils
 
         public object Arg { set; get; }
 
+        public object Context { private set; get; }
+
         public string Message { set; get; }
 
         public Action StateChangeIndication { set; get; }
@@ -144,7 +146,7 @@ namespace NachoCore.Utils
             new ConcurrentDictionary<Type, Tuple<Dictionary<string,uint>, Dictionary<uint,string>>> ();
         private static ConcurrentDictionary<string, bool> IsValidated = new ConcurrentDictionary<string, bool> ();
 
-        public NcStateMachine (string pseudoKlass)
+        public NcStateMachine (string pseudoKlass, object context = null)
         {
             lock (StaticLockObj) {
                 Id = ++NextId;
@@ -153,6 +155,7 @@ namespace NachoCore.Utils
             EventQ = new BlockingCollection<Event> ();
             State = (uint)St.Start;
             LockObj = new Object ();
+            Context = context;
         }
 
         public string NameAndId ()

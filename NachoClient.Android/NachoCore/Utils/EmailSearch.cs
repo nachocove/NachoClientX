@@ -8,7 +8,7 @@ using NachoCore.Index;
 
 namespace NachoCore.Utils
 {
-    public class EmailSearch : INachoEmailMessages
+    public class EmailSearch : NachoEmailMessagesBase, INachoEmailMessages
     {
         public delegate void UpdateUiAction (string searchString, List<McEmailMessageThread> results);
 
@@ -101,19 +101,21 @@ namespace NachoCore.Utils
 
         #region INachoEmailMessages
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
+            // TODO  Should this rerun the search??
+
             adds = null;
             deletes = null;
             return false;
         }
 
-        public int Count ()
+        public override int Count ()
         {
             return finalResults.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public override McEmailMessageThread GetEmailThread (int i)
         {
             if (i >= finalResults.Count) {
                 return null;
@@ -123,7 +125,7 @@ namespace NachoCore.Utils
             return thread;
         }
 
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var threads = new List<McEmailMessageThread> ();
             threads.Add (new McEmailMessageThread () {
@@ -133,32 +135,12 @@ namespace NachoCore.Utils
             return threads;
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             return "Search";
         }
 
-        public bool HasOutboxSemantics ()
-        {
-            return false;
-        }
-
-        public bool HasDraftsSemantics ()
-        {
-            return false;
-        }
-
-        public NcResult StartSync ()
-        {
-            return NachoSyncResult.DoesNotSync ();
-        }
-
-        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
-        {
-            return null;
-        }
-
-        public bool IsCompatibleWithAccount (McAccount otherAccount)
+        public override bool IsCompatibleWithAccount (McAccount otherAccount)
         {
             return McAccount.AccountTypeEnum.Unified == otherAccount.AccountType || accounts.Where (x => x.Id == otherAccount.Id).Any ();
         }

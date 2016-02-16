@@ -16,7 +16,7 @@ namespace NachoCore.IMAP
         McFolder IdleFolder;
         bool ENABLED = true;
 
-        public ImapIdleCommand (IBEContext beContext, NcImapClient imap, McFolder folder) : base (beContext, imap)
+        public ImapIdleCommand (IBEContext beContext, McFolder folder) : base (beContext)
         {
             // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
             // for more inspiration

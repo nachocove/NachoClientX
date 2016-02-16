@@ -40,6 +40,10 @@ namespace NachoCore
             if (0 == messages.Count) {
                 return;
             }
+
+            var accountSet = EmailHelper.AccountSet (messages);
+            NcAssert.True (1 == accountSet.Count);
+
             foreach (var message in messages) {
                 RemoveDeferral (message);
             }
@@ -83,13 +87,15 @@ namespace NachoCore
             foreach (var message in messages) {
                 RemoveDeferral (message);
             }
-            var Ids = messages.Select (x => x.Id).ToList ();
-            int accountId = messages [0].AccountId;
-            if (ShouldDeleteInsteadOfArchive (accountId)) {
-                BackEnd.Instance.DeleteEmailsCmd (accountId, Ids, true);
-            } else {
-                McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
-                BackEnd.Instance.MoveEmailsCmd (accountId, Ids, archiveFolder.Id);
+            var accountSet = EmailHelper.AccountSet (messages);
+            foreach (var accountId in accountSet) {
+                var Ids = messages.Where(x => x.AccountId == accountId).Select(x => x.Id).ToList();
+                if (ShouldDeleteInsteadOfArchive (accountId)) {
+                    BackEnd.Instance.DeleteEmailsCmd (accountId, Ids, true);
+                } else {
+                    McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
+                    BackEnd.Instance.MoveEmailsCmd (accountId, Ids, archiveFolder.Id);
+                }
             }
         }
 
@@ -118,9 +124,11 @@ namespace NachoCore
                 RemoveDeferral (message);
                 RemoveDeadline (message);
             }
-            var Ids = messages.Select (x => x.Id).ToList ();
-            int accountId = messages [0].AccountId;
-            BackEnd.Instance.DeleteEmailsCmd (accountId, Ids, justDelete);
+            var accountSet = EmailHelper.AccountSet (messages);
+            foreach (var accountId in accountSet) {
+                var Ids = messages.Where (x => x.AccountId == accountId).Select (x => x.Id).ToList ();
+                BackEnd.Instance.DeleteEmailsCmd (accountId, Ids, justDelete);
+            }
         }
 
         public static void Delete (McEmailMessageThread thread)
