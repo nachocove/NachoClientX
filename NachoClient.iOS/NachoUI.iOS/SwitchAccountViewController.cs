@@ -242,18 +242,6 @@ namespace NachoClient.iOS
             });
         }
 
-        private void LikelyClicked (object sender)
-        {
-            // No double presses
-            switchAccountButton.UserInteractionEnabled = false;
-
-            Deactivate (null, (McAccount account) => {
-                DismissViewController (false, null);
-                var nachoTabBar = Util.GetActiveTabBar ();
-                nachoTabBar.SwitchToLikely ();
-            });
-        }
-
         private void DeadlinesClicked (object sender)
         {
             // No double presses

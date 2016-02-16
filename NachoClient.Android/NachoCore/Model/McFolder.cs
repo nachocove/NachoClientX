@@ -1243,7 +1243,7 @@ namespace NachoCore.Model
         {
             return new McFolder () {
                 Id = DEADLINE_FAKE_FOLDER_ID,
-                DisplayName = "Deadline",
+                DisplayName = "Deadlines",
             };
         }
 
