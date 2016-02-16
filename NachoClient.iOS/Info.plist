@@ -33,6 +33,7 @@
 		<string>Icon-Small@2x</string>
 		<string>Icon-Small-40</string>
 		<string>Icon-Small-40@2x</string>
+		<string>Icon-83.5@2x</string>
 	</array>
 	<key>CFBundleIdentifier</key>
 	<string>com.nachocove.nachomail</string>
