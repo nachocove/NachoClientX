@@ -710,8 +710,13 @@ namespace NachoClient.AndroidClient
             } else {
                 AndroidDeviceCalendarFolder folder;
                 var calItem = AndroidCalendars.GetEventDetails (occurrence.DeviceEventId, out folder);
-                calendarName = (null == folder) ? null : folder.DisplayName;
-                isWritableDeviceCalendar = folder.IsWritable;
+                if (null == folder) {
+                    calendarName = null;
+                    isWritableDeviceCalendar = false;
+                } else {
+                    calendarName = folder.DisplayName;
+                    isWritableDeviceCalendar = folder.IsWritable;
+                }
                 base.Initialize (occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
             }
         }
@@ -729,8 +734,13 @@ namespace NachoClient.AndroidClient
             } else {
                 AndroidDeviceCalendarFolder folder;
                 var calItem = AndroidCalendars.GetEventDetails (Occurrence.DeviceEventId, out folder);
-                calendarName = (null == folder) ? null : folder.DisplayName;
-                isWritableDeviceCalendar = folder.IsWritable;
+                if (null == folder) {
+                    calendarName = null;
+                    isWritableDeviceCalendar = false;
+                } else {
+                    calendarName = folder.DisplayName;
+                    isWritableDeviceCalendar = folder.IsWritable;
+                }
                 base.Initialize (Occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
             }
         }
