@@ -770,6 +770,9 @@ namespace NachoCore
             NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
+            // make sure to delete any hint we may have.
+            Log.Info (Log.LOG_BACKEND, "Removing hint due to addition of pending");
+            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, emailMessageId);
             NcModel.Instance.RunInTransaction (() => {
                 if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
                     result = NcResult.Error (subKind);
