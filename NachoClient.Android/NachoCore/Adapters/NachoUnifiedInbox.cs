@@ -21,7 +21,22 @@ namespace NachoCore
 
         public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryUnifiedInboxItems ();
+            List<McEmailMessageThread> list;
+            switch (FilterSetting) {
+            case FolderFilterOptions.Hot:
+                list = McEmailMessage.QueryUnifiedInboxItemsByScore (McEmailMessage.minHotScore);
+                break;
+            case FolderFilterOptions.Focused:
+                list = McEmailMessage.QueryUnifiedItemsByScore2 (McEmailMessage.minHotScore, McEmailMessage.minLikelyToReadScore);
+                break;
+            case FolderFilterOptions.Unread:
+                list = McEmailMessage.QueryUnreadUnifiedInboxItems ();
+                break;
+            case FolderFilterOptions.All:
+            default:
+                list = McEmailMessage.QueryUnifiedInboxItems ();
+                break;
+            }
             var threads = NcMessageThreads.ThreadByConversation (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
@@ -71,25 +86,31 @@ namespace NachoCore
             return "Inbox";
         }
 
-        // FIXME Filtering for unified inbox is still to be implemented.
-
         public override bool HasFilterSemantics ()
         {
-            return base.HasFilterSemantics ();
+            return true;
         }
+
+        const string FILTER_SETTING_MODULE = "UnifiedAccount";
+        const string FILTER_SETTING_KEY = "FilterSetting";
 
         public override FolderFilterOptions FilterSetting {
             get {
-                return base.FilterSetting;
+                return (FolderFilterOptions)McMutables.GetOrCreateInt (
+                    McAccount.GetUnifiedAccount ().Id, FILTER_SETTING_MODULE, FILTER_SETTING_KEY, (int)FolderFilterOptions.All);
             }
             set {
-                base.FilterSetting = value;
+                McMutables.SetInt (McAccount.GetUnifiedAccount ().Id, FILTER_SETTING_MODULE, FILTER_SETTING_KEY, (int)value);
             }
         }
 
+        private static FolderFilterOptions[] possibleFilters = new FolderFilterOptions[] {
+            FolderFilterOptions.All, FolderFilterOptions.Hot, FolderFilterOptions.Focused, FolderFilterOptions.Unread
+        };
+
         public override FolderFilterOptions[] PossibleFilterSettings {
             get {
-                return base.PossibleFilterSettings;
+                return possibleFilters;
             }
         }
 

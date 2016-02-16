@@ -589,7 +589,7 @@ namespace NachoCore.Model
 
         public static List<McEmailMessageThread> QueryUnifiedInboxItems (bool groupBy = true)
         {
-            var queryFormat = 
+            var query =
                 "SELECT e.Id as FirstMessageId, " +
                 (groupBy ? " MAX(e.DateReceived), Count(e.Id)" : "1") +
                 " as MessageCount FROM McEmailMessage AS e " +
@@ -603,7 +603,26 @@ namespace NachoCore.Model
                 (groupBy ? " GROUP BY e.ConversationId " : "") +
                 " ORDER BY e.DateReceived DESC ";
 
-            var query = String.Format (queryFormat);
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                query, Xml.FolderHierarchy.TypeCode.DefaultInbox_2, McAbstrFolderEntry.ClassCodeEnum.Email, DateTime.UtcNow);
+        }
+
+        public static List<McEmailMessageThread> QueryUnreadUnifiedInboxItems (bool groupBy = true)
+        {
+            var query =
+                "SELECT e.Id as FirstMessageId, " +
+                (groupBy ? " MAX(e.DateReceived), Count(e.Id)" : "1") +
+                " as MessageCount FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McFolder AS f ON f.Id = m.FolderId " +
+                " WHERE " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsRead = 0, 0.05) AND " +
+                " likelihood (f.Type = ?, 0.2) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " e.FlagUtcStartDate < ? " +
+                (groupBy ? " GROUP BY e.ConversationId " : "") +
+                " ORDER BY e.DateReceived DESC ";
 
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
                 query, Xml.FolderHierarchy.TypeCode.DefaultInbox_2, McAbstrFolderEntry.ClassCodeEnum.Email, DateTime.UtcNow);

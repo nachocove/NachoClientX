@@ -681,6 +681,7 @@ namespace NachoClient.iOS
             switchAccountButton.SetAccountImage (account);
             SetEmailMessages (GetNachoEmailMessages (account.Id));
             if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
+                headerView.Text = messageSource.GetNachoEmailMessages ().FilterSetting.ToString ();
                 TableView.TableHeaderView = headerView;
             } else {
                 TableView.TableHeaderView = null;
