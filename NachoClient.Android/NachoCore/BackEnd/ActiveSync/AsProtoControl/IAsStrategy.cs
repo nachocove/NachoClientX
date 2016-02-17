@@ -35,18 +35,24 @@ namespace NachoCore.ActiveSync
     {
         public class FetchBody
         {
-            public string ParentId { get; set; }
-            public string ServerId { get; set; }
-            public Xml.AirSync.TypeCode BodyPref { get; set; }
-        }
-        public class FetchPending
-        {
             public McPending Pending { get; set; }
             public Xml.AirSync.TypeCode BodyPref { get; set; }
         }
-        public List<FetchBody> FetchBodies { get; set; }
-        public List<McAttachment> FetchAttachments { get; set; }
-        public List<FetchPending> Pendings { get; set; }
+
+        public class FetchAttachment
+        {
+            public McPending Pending { get; set; }
+            public McAttachment Attachment { get; set; }
+        }
+
+        public List<FetchAttachment> FetchAttachments { get; protected set; }
+        public List<FetchBody> FetchBodies { get; protected set; }
+
+        public FetchKit (List<FetchBody> fetchBodies, List<FetchAttachment> fetchAttachments = null)
+        {
+            FetchBodies = fetchBodies;
+            FetchAttachments = fetchAttachments ?? new List<FetchAttachment> ();
+        }
     }
 
     public class MoveKit

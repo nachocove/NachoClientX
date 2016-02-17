@@ -21,7 +21,7 @@ namespace NachoCore.ActiveSync
             Attachments = new List<McAttachment> ();
             FetchKit = fetchKit;
             NcModel.Instance.RunInTransaction (() => {
-                foreach (var pending in fetchKit.Pendings) {
+                foreach (var pending in fetchKit.FetchBodies) {
                     pending.Pending.MarkDispatched ();
                     PendingList.Add (pending.Pending);
                 }
@@ -56,7 +56,7 @@ namespace NachoCore.ActiveSync
 
         protected override bool RequiresPending ()
         {
-            return 0 >= FetchKit.FetchBodies.Count && 0 >= FetchKit.FetchAttachments.Count;
+            return true;
         }
 
         protected override XDocument ToXDocument (AsHttpOperation Sender)
@@ -64,7 +64,7 @@ namespace NachoCore.ActiveSync
             var itemOp = new XElement (m_ns + Xml.ItemOperations.Ns);
             XElement fetch = null;
             // Add in the pendings, if any.
-            foreach (var pendingInfo in FetchKit.Pendings) {
+            foreach (var pendingInfo in FetchKit.FetchBodies) {
                 var pending = pendingInfo.Pending;
                 fetch = null;
                 switch (pending.Operation) {
@@ -121,13 +121,9 @@ namespace NachoCore.ActiveSync
                     itemOp.Add (fetch);
                 }
             }
-            // Add in the prefetches if any.
-            foreach (var pfBody in FetchKit.FetchBodies) {
-                itemOp.Add (ToEmailFetch (pfBody.ParentId, pfBody.ServerId, pfBody.BodyPref));
-            }
             foreach (var pfAtta in FetchKit.FetchAttachments) {
-                Attachments.Add (pfAtta);
-                itemOp.Add (ToAttaFetch (pfAtta.FileReference));
+                Attachments.Add (pfAtta.Attachment);
+                itemOp.Add (ToAttaFetch (pfAtta.Attachment.FileReference));
             }
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (itemOp);
@@ -323,7 +319,7 @@ namespace NachoCore.ActiveSync
                                 }
                             }
                             Log.Info (Log.LOG_AS, "ItemOperations item {0} {1}fetched.", serverId, 
-                                (null == pending) ? "pre" : "");
+                                (pending.DelayNotAllowed) ? "" : "pre");
                             if (null != pending) {
                                 var result = NcResult.Info (successInd);
                                 result.Value = item;

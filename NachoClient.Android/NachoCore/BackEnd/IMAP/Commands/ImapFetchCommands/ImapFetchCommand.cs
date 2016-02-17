@@ -13,24 +13,62 @@ namespace NachoCore.IMAP
 {
     public partial class ImapFetchCommand : ImapCommand, ITransferProgress
     {
-        private const string KImapSyncLogRedaction = "IMAP Sync Log Redaction";
-        FetchKit FetchKit;
+        const string KImapSyncLogRedaction = "IMAP Sync Log Redaction";
+        FetchKit Fetchkit;
 
-        public ImapFetchCommand (IBEContext beContext, FetchKit Fetchkit) : base (beContext)
+        public ImapFetchCommand (IBEContext beContext, FetchKit fetchkit) : base (beContext)
         {
-            FetchKit = Fetchkit;
-
+            Fetchkit = fetchkit;
+            SetPendingsDispatched ();
             SetupLogRedaction ();
         }
+
         public ImapFetchCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
-            pending.MarkDispatched ();
-            PendingSingle = pending;
+            Fetchkit = new FetchKit ();
 
+            switch (pending.Operation) {
+            case McPending.Operations.AttachmentDownload:
+                McAttachment attachment = McAttachment.QueryById<McAttachment> (pending.AttachmentId);
+                Fetchkit.FetchAttachments.Add (new FetchKit.FetchAttachment () {
+                    Pending = pending,
+                    Attachment = attachment,
+                });
+                break;
+
+            case McPending.Operations.EmailBodyDownload:
+                McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (pending.AccountId, pending.ServerId);
+                var fetch = new FetchKit.FetchBody () {
+                    Pending = pending,
+                    Parts = ImapStrategy.DownloadBodyParts (emailMessage),
+                };
+                Fetchkit.FetchBodies.Add (fetch);
+                break;
+
+            default:
+                NcAssert.CaseError (string.Format ("ImapFetchCommand called with McPending.Operation={0}", pending.Operation));
+                break;
+            }
+            SetPendingsDispatched ();
             SetupLogRedaction ();
         }
 
-        private void SetupLogRedaction ()
+        void SetPendingsDispatched ()
+        {
+            PendingList = new List<McPending> ();
+            Log.Info (Log.LOG_IMAP, "Processing {0} FetchBodies", Fetchkit.FetchBodies.Count);
+            foreach (var body in Fetchkit.FetchBodies) {
+                body.Pending.MarkDispatched ();
+                PendingList.Add (body.Pending);
+            }
+            Log.Info (Log.LOG_IMAP, "Processing {0} FetchAttachments", Fetchkit.FetchAttachments.Count);
+            foreach (var att in Fetchkit.FetchAttachments) {
+                att.Pending.MarkDispatched ();
+                PendingList.Add (att.Pending);
+            }
+        }
+
+        void SetupLogRedaction ()
         {
             RedactProtocolLogFunc = RedactProtocolLog;
             NcCapture.AddKind (KImapSyncLogRedaction);
@@ -42,54 +80,23 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            NcResult result = null;
-            if (null != PendingSingle) {
-                result = ProcessPending (PendingSingle);
-            } else if (null != FetchKit) {
-                result = ProcessFetchKit (FetchKit);
-            } else {
-                result = NcResult.Error ("Unknown operation");
-            }
-
+            NcResult result = ProcessFetchKit (Fetchkit);
             if (result.isError ()) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result);
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, result);
-                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
             } else {
-                if (result.isInfo ()) {
-                    PendingResolveApply ((pending) => {
-                        pending.ResolveAsSuccess (BEContext.ProtoControl, result);
-                    });
-                }
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
             }
         }
 
-        private NcResult ProcessPending (McPending pending)
-        {
-            switch (pending.Operation) {
-            case McPending.Operations.EmailBodyDownload:
-                return FetchOneBody (pending);
-
-            case McPending.Operations.AttachmentDownload:
-                return FetchAttachment (pending);
-
-            default:
-                NcAssert.True (false, string.Format ("ItemOperations: inappropriate McPending Operation {0}", pending.Operation));
-                return null; // make the compiler happy.
-            }
-        }
-
-        private NcResult ProcessFetchKit (FetchKit fetchkit)
+        NcResult ProcessFetchKit (FetchKit fetchkit)
         {
             NcResult result = null;
-            var fetchresult = FetchBodies (fetchkit);
+            var fetchresult = FetchBodies (fetchkit.FetchBodies);
             if (!fetchresult.isOK ()) {
                 result = fetchresult;
             }
-            var attachmentresult = FetchAttachments (fetchkit);
+            var attachmentresult = FetchAttachments (fetchkit.FetchAttachments);
             if (!attachmentresult.isOK ()) {
                 result = attachmentresult;
             }
@@ -99,9 +106,9 @@ namespace NachoCore.IMAP
             return NcResult.OK ();
         }
 
-        private string lastIncompleteLine;
-        private bool inFetch = false;
-        private Regex FetchCmdRegex;
+        string lastIncompleteLine;
+        bool inFetch = false;
+        Regex FetchCmdRegex;
 
         ~ImapFetchCommand ()
         {

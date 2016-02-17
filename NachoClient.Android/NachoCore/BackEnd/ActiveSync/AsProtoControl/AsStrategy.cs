@@ -888,31 +888,18 @@ namespace NachoCore.ActiveSync
             remaining -= fetchBodies.Count;
 
             var emails = McEmailMessage.QueryNeedsFetch (AccountId, remaining, McEmailMessage.minHotScore).ToList ();
-            foreach (var email in emails) {
-                // TODO: all this can be one SQL JOIN.
-                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (AccountId, email.Id);
-                if (0 == folders.Count) {
-                    // This can happen - we score a message, and then it gets moved to a client-owned folder.
-                    continue;
-                }
-                fetchBodies.Add (new FetchKit.FetchBody () {
-                    ServerId = email.ServerId,
-                    ParentId = folders [0].ServerId,
-                    BodyPref = BodyPref (email, maxAttachmentSize),
-                });
-            }
+            fetchBodies.AddRange (FetchBodiesFromEmailList (emails, maxAttachmentSize));
+
             remaining -= fetchBodies.Count;
-            List<McAttachment> fetchAtts = new List<McAttachment> ();
+            var fetchAtts = new List<FetchKit.FetchAttachment> ();
             if (0 < remaining) {
-                fetchAtts = McAttachment.QueryNeedsFetch (AccountId, remaining, 0.9, (int)maxAttachmentSize).ToList ();
+                var attachments = McAttachment.QueryNeedsFetch (AccountId, remaining, 0.9, (int)maxAttachmentSize).ToList ();
+                fetchAtts.AddRange (FetchAttachmentsFromAttachmentList (attachments));
             }
-            if (0 < fetchBodies.Count || 0 < fetchAtts.Count) {
+
+            if (fetchBodies.Any () || fetchAtts.Any ()) {
                 Log.Info (Log.LOG_AS, "GenFetchKit: {0} emails, {1} attachments.", fetchBodies.Count, fetchAtts.Count);
-                return new FetchKit () {
-                    FetchBodies = fetchBodies,
-                    FetchAttachments = fetchAtts,
-                    Pendings = new List<FetchKit.FetchPending> (),
-                };
+                return new FetchKit (fetchBodies, fetchAtts);
             }
             Log.Info (Log.LOG_AS, "GenFetchKit: nothing to do.");
             return null;
@@ -923,17 +910,13 @@ namespace NachoCore.ActiveSync
             var fetchBodies = FetchBodiesFromEmailList (FetchBodyHintList (KBaseFetchSize), MaxAttachmentSize ());
             if (fetchBodies.Any ()) {
                 Log.Info (Log.LOG_AS, "GenFetchKitHints: {0} emails", fetchBodies.Count);
-                return new FetchKit () {
-                    FetchBodies = fetchBodies,
-                    FetchAttachments = new List<McAttachment> (),
-                    Pendings = new List<FetchKit.FetchPending> (),
-                };
+                return new FetchKit (fetchBodies);
             } else {
                 return null;
             }
         }
 
-        private List<FetchKit.FetchBody> FetchBodiesFromEmailList (List<McEmailMessage> emails, long maxAttachmentSize)
+        List<FetchKit.FetchBody> FetchBodiesFromEmailList (List<McEmailMessage> emails, long maxAttachmentSize)
         {
             var fetchBodies = new List<FetchKit.FetchBody> ();
             foreach (var email in emails) {
@@ -943,15 +926,48 @@ namespace NachoCore.ActiveSync
                     // This can happen - we score a message, and then it gets moved to a client-owned folder.
                     continue;
                 }
-                fetchBodies.Add (new FetchKit.FetchBody () {
-                    ServerId = email.ServerId,
-                    ParentId = folders [0].ServerId,
-                    BodyPref = BodyPref (email, maxAttachmentSize),
-                });
+                var result = BEContext.ProtoControl.CreateDnldBodyPending(email.Id, false);
+                if (result.isOK ()) {
+                    fetchBodies.Add (new FetchKit.FetchBody () {
+                        Pending = result.GetValue<McPending> (),
+                        BodyPref = BodyPref (email, maxAttachmentSize),
+                    });
+                } else if (result.isInfo ()) {
+                    Log.Info (Log.LOG_AS, "FetchBodiesFromEmailList: Ignoring duplicate download");
+                } else if (result.isError ()){
+                    Log.Warn (Log.LOG_AS, "FetchBodiesFromEmailList: Couldn't create pending: {0}", result);
+                }
             }
             return fetchBodies;
         }
 
+        List<FetchKit.FetchAttachment> FetchAttachmentsFromAttachmentList (List<McAttachment> attachments)
+        {
+            var fetchattachments = new List<FetchKit.FetchAttachment> ();
+            foreach (var att in attachments) {
+                var result = BEContext.ProtoControl.CreateDnldAttPending (att.Id, false);
+                switch (result.Kind) {
+                case NcResult.KindEnum.OK:
+                    fetchattachments.Add (new FetchKit.FetchAttachment () {
+                        Pending = result.GetValue<McPending> (),
+                        Attachment = att,
+                    });
+                    break;
+                case NcResult.KindEnum.Error:
+                    Log.Error (Log.LOG_AS, "FetchAttachmentsFromAttachmentList: Could not create attachment pending: {0}", result);
+                    break;
+
+                case NcResult.KindEnum.Info:
+                    Log.Info (Log.LOG_AS, "FetchAttachmentsFromAttachmentList: Skipping duplicated download");
+                    break;
+
+                case NcResult.KindEnum.Warning:
+                    NcAssert.CaseError ("FetchAttachmentsFromAttachmentList: illegal NcResult warning");
+                    break;
+                }
+            }
+            return fetchattachments;
+        }
         private Xml.AirSync.TypeCode BodyPref (McEmailMessage message, long maxAttachmentSize)
         {
             if (0 == message.NativeBodyType) {
@@ -1049,8 +1065,8 @@ namespace NachoCore.ActiveSync
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
                 var search = McPending.QueryEligible (AccountId, McAccount.ActiveSyncCapabilities).
-                    Where (x => McPending.Operations.ContactSearch == x.Operation ||
-                        McPending.Operations.EmailSearch == x.Operation).FirstOrDefault ();
+                    FirstOrDefault (x => McPending.Operations.ContactSearch == x.Operation ||
+                             McPending.Operations.EmailSearch == x.Operation);
                 if (null != search) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Search");
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp, 
@@ -1058,29 +1074,25 @@ namespace NachoCore.ActiveSync
                 }
                 // (FG) If the user has initiated a ItemOperations Fetch (body or attachment), we do that.
                 var fetch = McPending.QueryEligibleOrderByPriorityStamp (AccountId, McAccount.ActiveSyncCapabilities).
-                    Where (x => 
+                    FirstOrDefault (x => 
                         McPending.Operations.AttachmentDownload == x.Operation ||
-                        McPending.Operations.EmailBodyDownload == x.Operation ||
-                        McPending.Operations.CalBodyDownload == x.Operation ||
-                        McPending.Operations.ContactBodyDownload == x.Operation ||
-                        McPending.Operations.TaskBodyDownload == x.Operation
-                    ).FirstOrDefault ();
+                            McPending.Operations.EmailBodyDownload == x.Operation ||
+                            McPending.Operations.CalBodyDownload == x.Operation ||
+                            McPending.Operations.ContactBodyDownload == x.Operation ||
+                            McPending.Operations.TaskBodyDownload == x.Operation
+                            );
                 if (null != fetch) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Fetch");
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp,
                         new AsItemOperationsCommand (BEContext,
-                            new FetchKit () {
-                                FetchBodies = new List<FetchKit.FetchBody> (),
-                                FetchAttachments = new List<McAttachment> (),
-                                Pendings = new List<FetchKit.FetchPending> {
-                                    new FetchKit.FetchPending () {
-                                        Pending = fetch,
-                                        BodyPref = BodyPref (fetch),
-                                    },
-                                },
-                            }) {
-                            DelayNotAllowed = fetch.DelayNotAllowed && 
-                                fetch.Operation == McPending.Operations.EmailBodyDownload,
+                            new FetchKit (new List<FetchKit.FetchBody> {
+                                new FetchKit.FetchBody () {
+                                    Pending = fetch,
+                                    BodyPref = BodyPref (fetch),
+                                }
+                            })) {
+                            DelayNotAllowed = fetch.DelayNotAllowed &&
+                            fetch.Operation == McPending.Operations.EmailBodyDownload,
                         });
                 }
             }
@@ -1219,16 +1231,12 @@ namespace NachoCore.ActiveSync
                     case McPending.Operations.TaskBodyDownload:
                     case McPending.Operations.AttachmentDownload:
                         cmd = new AsItemOperationsCommand (BEContext,
-                            new FetchKit () {
-                                FetchBodies = new List<FetchKit.FetchBody> (),
-                                FetchAttachments = new List<McAttachment> (),
-                                Pendings = new List<FetchKit.FetchPending> {
-                                    new FetchKit.FetchPending () {
-                                        Pending = next,
-                                        BodyPref = BodyPref (next),
-                                    },
+                            new FetchKit (new List<FetchKit.FetchBody> {
+                                new FetchKit.FetchBody () {
+                                    Pending = next,
+                                    BodyPref = BodyPref (next),
                                 },
-                            });
+                            }));
                         break;
                     case McPending.Operations.Sync:
                         var uSyncKit = GenSyncKit (protocolState, SyncMode.Directed, next);

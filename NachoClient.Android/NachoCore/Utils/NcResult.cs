@@ -245,6 +245,11 @@ namespace NachoCore.Utils
             return new NcResult () { Kind = KindEnum.OK, Value = o };
         }
 
+        public static NcResult Info (object o)
+        {
+            return new NcResult () { Kind = KindEnum.OK, Value = o };
+        }
+
         public static NcResult Info (string message)
         {
             return new NcResult () { Kind = KindEnum.Info, Message = message };
@@ -278,6 +283,11 @@ namespace NachoCore.Utils
         public bool isError ()
         {
             return (KindEnum.Error == Kind);
+        }
+
+        public bool isWarn ()
+        {
+            return (KindEnum.Warning == Kind);
         }
 
         public bool isInfo ()

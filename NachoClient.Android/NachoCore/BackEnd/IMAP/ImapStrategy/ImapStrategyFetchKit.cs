@@ -59,16 +59,14 @@ namespace NachoCore.IMAP
             fetchBodies.AddRange (FetchBodiesFromEmailList (McEmailMessage.QueryNeedsFetch (AccountId, remaining, McEmailMessage.minHotScore).ToList ()));
             remaining -= fetchBodies.Count;
 
-            List<McAttachment> fetchAtts = new List<McAttachment> ();
+            var fetchAtts = new List<FetchKit.FetchAttachment> ();
             if (0 < remaining) {
-                fetchAtts = McAttachment.QueryNeedsFetch (AccountId, remaining, 0.9, (int)MaxAttachmentSize ()).ToList ();
+                fetchAtts.AddRange (FetchAttachmentsFromAttachmentList (McAttachment.QueryNeedsFetch (AccountId, remaining, 0.9, (int)MaxAttachmentSize ()).ToList ()));
             }
+
             if (fetchBodies.Any () || fetchAtts.Any ()) {
                 Log.Info (Log.LOG_IMAP, "GenFetchKit: {0} emails, {1} attachments.", fetchBodies.Count, fetchAtts.Count);
-                return new FetchKit () {
-                    FetchBodies = fetchBodies,
-                    FetchAttachments = fetchAtts,
-                };
+                return new FetchKit (fetchBodies, fetchAtts);
             }
             Log.Info (Log.LOG_IMAP, "GenFetchKit: nothing to do.");
             return null;
@@ -79,28 +77,54 @@ namespace NachoCore.IMAP
             var fetchBodies = FetchBodiesFromEmailList (FetchBodyHintList (KBaseFetchSize));
             if (fetchBodies.Any ()) {
                 Log.Info (Log.LOG_IMAP, "GenFetchKitHints: {0} emails", fetchBodies.Count);
-                return new FetchKit () {
-                    FetchBodies = fetchBodies,
-                    FetchAttachments = new List<McAttachment> (),
-                };
+                return new FetchKit (fetchBodies);
             } else {
                 return null;
             }
         }
 
-        private List<FetchKit.FetchBody> FetchBodiesFromEmailList (List<McEmailMessage> emails)
+        List<FetchKit.FetchBody> FetchBodiesFromEmailList (List<McEmailMessage> emails)
         {
-            var fetchBodies = new List<FetchKit.FetchBody> ();
+            var fetchPendings = new List<FetchKit.FetchBody> ();
             foreach (var email in emails) {
                 var body = FetchBodyFromEmail (email);
                 if (null != body) {
-                    fetchBodies.Add (body);
+                    fetchPendings.Add (body);
                 }
             }
-            return fetchBodies;
+            return fetchPendings;
         }
 
-        public static FetchKit.FetchBody FetchBodyFromEmail (McEmailMessage email)
+        List<FetchKit.FetchAttachment> FetchAttachmentsFromAttachmentList (List<McAttachment> attachments)
+        {
+            var fetchAtts = new List<FetchKit.FetchAttachment> ();
+            foreach (var att in attachments) {
+                var result = BEContext.ProtoControl.CreateDnldAttPending (att.Id, false);
+                switch (result.Kind) {
+                case NcResult.KindEnum.OK:
+                    fetchAtts.Add (new FetchKit.FetchAttachment () {
+                        Pending = result.GetValue<McPending> (),
+                        Attachment = att,
+                    });
+                    break;
+                case NcResult.KindEnum.Error:
+                    Log.Error (Log.LOG_AS, "Could not create attachment pending: {0}", result);
+                    break;
+
+                case NcResult.KindEnum.Info:
+                    Log.Info (Log.LOG_AS, "Skipping duplicated download");
+                    break;
+
+                case NcResult.KindEnum.Warning:
+                    NcAssert.CaseError ("illegal NcResult warning");
+                    break;
+
+                }
+            }
+            return fetchAtts;
+        }
+
+        public FetchKit.FetchBody FetchBodyFromEmail (McEmailMessage email)
         {
             // TODO: all this can be one SQL JOIN.
             var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (email.AccountId, email.Id);
@@ -108,11 +132,23 @@ namespace NachoCore.IMAP
                 // This can happen - we score a message, and then it gets moved to a client-owned folder.
                 return null;
             }
-            return new FetchKit.FetchBody () {
-                ServerId = email.ServerId,
-                ParentId = folders [0].ServerId,
-                Parts = DownloadBodyParts (email),
-            };
+            var result = BEContext.ProtoControl.CreateDnldBodyPending (email.Id, false);
+            switch (result.Kind) {
+            case NcResult.KindEnum.Error:
+                Log.Warn (Log.LOG_IMAP, "Could not create pending: {0}", result);
+                return null;
+            case NcResult.KindEnum.Info:
+                Log.Info (Log.LOG_IMAP, "Ignoring Dup download");
+                return null;
+            case NcResult.KindEnum.OK:
+                return new FetchKit.FetchBody () {
+                    Pending = result.GetValue<McPending> (),
+                    Parts = DownloadBodyParts (email),
+                };
+            default:
+                NcAssert.CaseError (string.Format ("Unhandled NcResult.KindEnum {0}", result.Kind));
+                return null;
+            }
         }
 
         public static McAbstrFileDesc.BodyTypeEnum BodyTypeFromBodyPart (BodyPart body)
@@ -167,7 +203,7 @@ namespace NachoCore.IMAP
         /// </summary>
         /// <returns>The body parts or null.</returns>
         /// <param name="email">Email.</param>
-        private static List<FetchKit.DownloadPart> DownloadBodyParts (McEmailMessage email)
+        public static List<FetchKit.DownloadPart> DownloadBodyParts (McEmailMessage email)
         {
             BodyPart imapBody = null;
             if (!string.IsNullOrEmpty (email.ImapBodyStructure)) {

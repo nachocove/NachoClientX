@@ -2,15 +2,11 @@
 //
 using System;
 using System.Linq;
-using MailKit;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoPlatform;
 using System.Collections.Generic;
-using MimeKit;
-using MailKit.Net.Imap;
-using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -53,7 +49,7 @@ namespace NachoCore.IMAP
                 }
                 // (FG) If the user has initiated a body Fetch, we do that.
                 var fetch = McPending.QueryEligibleOrderByPriorityStamp (AccountId, McAccount.ImapCapabilities).
-                    Where (x => McPending.Operations.EmailBodyDownload == x.Operation).FirstOrDefault ();
+                    FirstOrDefault (x => McPending.Operations.EmailBodyDownload == x.Operation);
                 if (null != fetch) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:EmailBodyDownload");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp,
@@ -61,7 +57,7 @@ namespace NachoCore.IMAP
                 }
                 // (FG) If the user has initiated an attachment Fetch, we do that.
                 fetch = McPending.QueryEligibleOrderByPriorityStamp (AccountId, McAccount.ImapCapabilities).
-                    Where (x => McPending.Operations.AttachmentDownload == x.Operation).FirstOrDefault ();
+                    FirstOrDefault (x => McPending.Operations.AttachmentDownload == x.Operation);
                 if (null != fetch) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:AttachmentDownload");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp,

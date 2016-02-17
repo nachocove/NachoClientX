@@ -20,17 +20,28 @@ namespace NachoCore.IMAP
         const string KImapFetchBodyCommandFetch = "ImapFetchBodyCommand.FetchBody";
         const string KImapFetchPartCommandFetch = "ImapFetchBodyCommand.FetchPart";
 
-        private NcResult FetchBodies (FetchKit fetchkit)
+        private NcResult FetchBodies (List<FetchKit.FetchBody> fetchBodies)
         {
             NcResult result = null;
-            foreach (var body in fetchkit.FetchBodies) {
-                var fetchResult = FetchOneBody (body);
+            foreach (var fetchBody in fetchBodies) {
+                McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, fetchBody.Pending.ServerId);
+                if (null == email) {
+                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", fetchBody.Pending.ServerId);
+                    return NcResult.Error ("Unknown email ServerId");
+                }
+                Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) for email {1}", AccountId, email.Id);
+                var fetchResult = FetchOneBodyInternal (fetchBody, email);
                 if (fetchResult.isError ()) {
                     Log.Error (Log.LOG_IMAP, "FetchBodies: {0}", fetchResult);
-                    // TODO perhaps we should accumulate all errors into one, instead of
-                    // just returning the last one. But since we log them here, it should
-                    // be ok.
+                    if (fetchResult.Why == NcResult.WhyEnum.MissingOnServer) {
+                        // The message doesn't exist. Delete it locally.
+                        email.Delete ();
+                        BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                    }
+                    fetchBody.Pending.ResolveAsHardFail (BEContext.ProtoControl, fetchResult);
                     result = fetchResult;
+                } else {
+                    fetchBody.Pending.ResolveAsSuccess (BEContext.ProtoControl, fetchResult);
                 }
             }
             if (null != result) {
@@ -39,49 +50,10 @@ namespace NachoCore.IMAP
             return NcResult.OK ();
         }
 
-        private NcResult FetchOneBody (McPending pending)
-        {
-            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, pending.ServerId);
-            if (null == email) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", pending.ServerId);
-                return NcResult.Error ("Unknown email ServerId");
-            }
-            var fetchBody = ImapStrategy.FetchBodyFromEmail (email);
-            Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) {1} for email {2}", AccountId, pending, email.Id);
-            NcResult result = FetchOneBodyInternal (fetchBody, email);
-            if (result.isError ()) {
-                if (result.Why == NcResult.WhyEnum.MissingOnServer) {
-                    // The message doesn't exist. Delete it locally.
-                    email.Delete ();
-                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                }
-            }
-            return result;
-        }
-
-        private NcResult FetchOneBody (FetchKit.FetchBody fetchBody)
-        {
-            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, fetchBody.ServerId);
-            if (null == email) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", fetchBody.ServerId);
-                return NcResult.Error ("Unknown email ServerId");
-            }
-            Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) for email {1}", AccountId, email.Id);
-            NcResult result = FetchOneBodyInternal (fetchBody, email);
-            if (result.isError ()) {
-                if (result.Why == NcResult.WhyEnum.MissingOnServer) {
-                    // The message doesn't exist. Delete it locally.
-                    email.Delete ();
-                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                }
-            }
-            return result;
-        }
-
         private NcResult FetchOneBodyInternal (FetchKit.FetchBody fetchBody, McEmailMessage email)
         {
             NcResult result;
-            McFolder folder = McFolder.QueryByServerId (AccountId, fetchBody.ParentId);
+            McFolder folder = McFolder.QueryByServerId (AccountId, fetchBody.Pending.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
             UpdateImapSetting (mailKitFolder, ref folder);
             var uid = new UniqueId (email.ImapUid);

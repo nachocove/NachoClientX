@@ -764,101 +764,140 @@ namespace NachoCore
             return null;
         }
 
+        object CreateDnldBodyPendingLockObj = new object ();
+        public NcResult CreateDnldBodyPending (int emailMessageId, bool doNotDelay)
+        {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            lock (CreateDnldBodyPendingLockObj) {
+                McPending pending = null;
+                NcModel.Instance.RunInTransaction (() => {
+                    NcResult.SubKindEnum subKind;
+                    McFolder folder;
+                    McEmailMessage emailMessage;
+                    if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
+                        result = NcResult.Error (subKind);
+                        return;
+                    }
+                    var body = emailMessage.GetBody ();
+                    if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceIsComplete);
+                        return;
+                    }
+                    pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                        Operation = McPending.Operations.EmailBodyDownload,
+                        ServerId = emailMessage.ServerId,
+                        ParentId = folder.ServerId,
+                    };
+                    McPending dup;
+                    if (pending.IsDuplicate (out dup)) {
+                        // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
+                        result = NcResult.Info (dup);
+                        return;
+                    }
+                    if (doNotDelay) {
+                        pending.DoNotDelay ();
+                    }
+                    pending.Insert ();
+                    result = NcResult.OK (pending);
+                });
+                return result;
+            }
+        }
+
         public virtual NcResult DnldEmailBodyCmd (int emailMessageId, bool doNotDelay = false)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
-            NcResult.SubKindEnum subKind;
-            McEmailMessage emailMessage;
-            McFolder folder;
             // make sure to delete any hint we may have.
             Log.Info (Log.LOG_BACKEND, "Removing hint due to addition of pending");
             BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, emailMessageId);
-            NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
-                    result = NcResult.Error (subKind);
-                    return;
-                }
-                var body = emailMessage.GetBody ();
-                if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceIsComplete);
-                    return;
-                }
-                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
-                    Operation = McPending.Operations.EmailBodyDownload,
-                    ServerId = emailMessage.ServerId,
-                    ParentId = folder.ServerId,
-                };
-                McPending dup;
-                if (pending.IsDuplicate (out dup)) {
-                    // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                    Log.Info (Log.LOG_BACKEND, "DnldEmailBodyCmd({0}): IsDuplicate of Id/Token {1}/{2} for email {3}",
-                        emailMessage.AccountId,
-                        dup.Id, dup.Token,
-                        emailMessage.Id);
-                    result = NcResult.OK (dup.Token);
-                    return;
-                }
-                if (doNotDelay) {
-                    pending.DoNotDelay ();
-                }
-                pending.Insert ();
-                result = NcResult.OK (pending.Token);
-                Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})- {1} for email id {2}", emailMessage.AccountId, pending, emailMessage.Id);
-            });
-            if (doNotDelay) {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD0");
+            result = CreateDnldBodyPending(emailMessageId, doNotDelay);
+            if (result.isError ()) {
+                Log.Warn (Log.LOG_BACKEND, "Could not create pending: {0}", result);
+                return result;
             } else {
-                NcTask.Run (delegate {
-                    Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD1");
-                }, "DnldEmailBodyCmd");
+                McPending pending = result.GetValue<McPending> ();
+                if (result.isOK ()) {
+                    Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})- {1} for email id {2}", pending.AccountId, pending, emailMessageId);
+                    if (doNotDelay) {
+                        Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD0");
+                    } else {
+                        NcTask.Run (delegate {
+                            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD1");
+                        }, "DnldEmailBodyCmd");
+                    }
+                } else {
+                    Log.Info (Log.LOG_BACKEND, "DnldEmailBodyCmd({0}): IsDuplicate of Id/Token {1}/{2} for email {3}",
+                        pending.AccountId,
+                        pending.Id, pending.Token,
+                        emailMessageId);
+                }
+                // caller expects only the token, not the full pending, so create a new NcResult.
+                return NcResult.OK (pending.Token);
+            }
+        }
+
+        object CreateDnldAttPendingLockObj = new object ();
+        public NcResult CreateDnldAttPending (int attId, bool doNotDelay)
+        {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            lock (CreateDnldAttPendingLockObj) {
+                NcModel.Instance.RunInTransaction (() => {
+                    var att = McAttachment.QueryById<McAttachment> (attId);
+                    if (null == att) {
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_AttMissing);
+                        return;
+                    }
+                    if (McAbstrFileDesc.FilePresenceEnum.None != att.FilePresence) {
+                            result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceNotNone);                    
+                        return;
+                    }
+                    var emailMessage = McAttachment.QueryItems (att.AccountId, att.Id)
+                        .FirstOrDefault (x => x is McEmailMessage && !x.IsAwaitingCreate);
+                    if (null == emailMessage) {
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                        return;
+                    }
+                    var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                        Operation = McPending.Operations.AttachmentDownload,
+                        ServerId = emailMessage.ServerId,
+                        AttachmentId = attId,
+                    };
+                    McPending dup;
+                    if (pending.IsDuplicate (out dup)) {
+                        // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
+                        result = NcResult.Info (dup);
+                        return;
+                    }
+
+                    if (doNotDelay) {
+                        pending.DoNotDelay ();
+                    }
+                    pending.Insert ();
+                    result = NcResult.OK (pending);
+                    att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
+                    att.Update ();
+                });
             }
             return result;
         }
 
         public virtual NcResult DnldAttCmd (int attId, bool doNotDelay = false)
         {
-            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
-            NcModel.Instance.RunInTransaction (() => {
-                var att = McAttachment.QueryById<McAttachment> (attId);
-                if (null == att) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_AttMissing);
-                    return;
+            NcResult result = CreateDnldAttPending(attId, doNotDelay);
+            if (result.isError () || result.isWarn ()) {
+                return result;
+            } else {
+                McPending pending = result.GetValue<McPending> ();
+                if (result.isOK ()) {
+                    Log.Info (Log.LOG_BACKEND, "Starting DnldAttCmd({0})- {1} for att id {2}", pending.AccountId, pending, attId);
+                    NcTask.Run (delegate {
+                        Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDATT");
+                    }, "DnldAttCmd");
+                } else {
+                    Log.Info (Log.LOG_BACKEND, "DnldAttCmd: IsDuplicate of {0}", pending);
                 }
-                if (McAbstrFileDesc.FilePresenceEnum.None != att.FilePresence) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceNotNone);
-                    return;
-                }
-                var emailMessage = McAttachment.QueryItems (att.AccountId, att.Id)
-                    .Where (x => x is McEmailMessage && !x.IsAwaitingCreate).FirstOrDefault ();
-                if (null == emailMessage) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
-                    return;
-                }
-                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
-                    Operation = McPending.Operations.AttachmentDownload,
-                    ServerId = emailMessage.ServerId,
-                    AttachmentId = attId,
-                };
-                McPending dup;
-                if (pending.IsDuplicate (out dup)) {
-                    // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                    Log.Info (Log.LOG_BACKEND, "DnldAttCmd: IsDuplicate of {0}", dup);
-                    result = NcResult.OK (dup.Token);
-                    return;
-                }
-
-                if (doNotDelay) {
-                    pending.DoNotDelay ();
-                }
-                pending.Insert ();
-                result = NcResult.OK (pending.Token);
-                att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
-                att.Update ();
-            });
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDATT");
-            }, "DnldAttCmd");
-            return result;
+                return NcResult.OK (pending.Token);
+            }
         }
 
         public virtual NcResult CreateCalCmd (int calId, int folderId)

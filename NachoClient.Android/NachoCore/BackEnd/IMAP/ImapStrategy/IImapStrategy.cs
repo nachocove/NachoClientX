@@ -197,16 +197,33 @@ namespace NachoCore.IMAP
     {
         public class FetchBody
         {
-            public string ParentId { get; set; }
-
-            public string ServerId { get; set; }
+            public McPending Pending { get; set; }
 
             public List<DownloadPart>Parts { get; set; }
         }
 
+        public class FetchAttachment
+        {
+            public McPending Pending { get; set; }
+
+            public McAttachment Attachment { get; set; }
+        }
+
         public List<FetchBody> FetchBodies { get; set; }
 
-        public List<McAttachment> FetchAttachments { get; set; }
+        public List<FetchAttachment> FetchAttachments { get; set; }
+
+        public FetchKit ()
+        {
+            FetchBodies = new List<FetchKit.FetchBody> ();
+            FetchAttachments = new List<FetchKit.FetchAttachment> ();
+        }
+
+        public FetchKit (List<FetchKit.FetchBody> fetchBodies, List<FetchKit.FetchAttachment> fetchAttachments = null)
+        {
+            FetchBodies = fetchBodies;
+            FetchAttachments = fetchAttachments ?? new List<FetchAttachment> ();
+        }
 
         public class DownloadPart
         {

@@ -14,23 +14,26 @@ namespace NachoCore.IMAP
 {
     public partial class ImapFetchCommand
     {
-        private NcResult FetchAttachments (FetchKit fetchkit)
+        NcResult FetchAttachments (List<FetchKit.FetchAttachment> fetchAttachments)
         {
             NcResult result = null;
-            foreach (var attachment in fetchkit.FetchAttachments) {
-                var emails = from item in McAttachment.QueryItems (attachment.AccountId, attachment.Id)
+            foreach (var fetchAttach in fetchAttachments) {
+                var emails = from item in McAttachment.QueryItems (fetchAttach.Attachment.AccountId, fetchAttach.Attachment.Id)
                                          where item is McEmailMessage
                                          select (McEmailMessage)item;
-                var email = emails.Where (x => !x.ClientIsSender).First ();
+                var email = emails.First (x => !x.ClientIsSender);
                 McFolder folder = FolderFromEmail (email);
                 if (null == folder) {
                     return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
                 }
-                Log.Info (Log.LOG_IMAP, "Processing DnldAttCmd({0}) for email {1} attachment {2}", AccountId, email.Id, attachment.Id);
-                var fetchResult = FetchAttachment (folder, attachment, email);
+                Log.Info (Log.LOG_IMAP, "Processing DnldAttCmd({0}) for email {1} attachment {2}", AccountId, email.Id, fetchAttach.Attachment.Id);
+                var fetchResult = FetchAttachmentInternal (folder, fetchAttach.Attachment, email);
                 if (fetchResult.isError ()) {
                     Log.Error (Log.LOG_IMAP, "FetchAttachments: {0}", fetchResult);
+                    fetchAttach.Pending.ResolveAsHardFail (BEContext.ProtoControl, result);
                     result = fetchResult;
+                } else {
+                    fetchAttach.Pending.ResolveAsSuccess (BEContext.ProtoControl, result);
                 }
             }
             if (null != result) {
@@ -39,27 +42,7 @@ namespace NachoCore.IMAP
             return NcResult.OK ();
         }
 
-        private NcResult FetchAttachment (McPending pending)
-        {
-            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, pending.ServerId);
-            if (null == email) {
-                Log.Error (Log.LOG_IMAP, "Could not find email for ServerId {0}", pending.ServerId);
-                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.BadOrMalformed);
-            }
-            var attachment = McAttachment.QueryById<McAttachment> (pending.AttachmentId);
-            if (null == attachment) {
-                Log.Error (Log.LOG_IMAP, "Could not find attachment for Id {0}", pending.AttachmentId);
-                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.BadOrMalformed);
-            }
-            McFolder folder = FolderFromEmail (email);
-            if (null == folder) {
-                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.ConflictWithServer);
-            }
-            Log.Info (Log.LOG_IMAP, "Processing DnldAttCmd({0}) {1} for email {2} attachment {3}", AccountId, pending, email.Id, attachment.Id);
-            return FetchAttachment (folder, attachment, email);
-        }
-
-        private NcResult FetchAttachment (McFolder folder, McAttachment attachment, McEmailMessage email)
+        NcResult FetchAttachmentInternal (McFolder folder, McAttachment attachment, McEmailMessage email)
         {
             var mailKitFolder = GetOpenMailkitFolder (folder);
             UpdateImapSetting (mailKitFolder, ref folder);
@@ -101,7 +84,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private BodyPartBasic attachmentBodyPart(UniqueId uid, IMailFolder mailKitFolder, string fileReference)
+        BodyPartBasic attachmentBodyPart(UniqueId uid, IMailFolder mailKitFolder, string fileReference)
         {
             // TODO Perhaps we can store the content transfer encoding in McAttachment,
             // so we don't have to go to the server to get it again.
@@ -117,7 +100,7 @@ namespace NachoCore.IMAP
             return summary.BodyParts.Where (x => x.PartSpecifier == fileReference).FirstOrDefault ();
         }
 
-        private McFolder FolderFromEmail (McEmailMessage email)
+        McFolder FolderFromEmail (McEmailMessage email)
         {
             // We don't really care which folder this email/attachment is in. If it's duplicated in multiple
             // folders, the email and attachment will be the same. So find the first map and from that the folder.
