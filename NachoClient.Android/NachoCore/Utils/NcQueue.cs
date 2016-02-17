@@ -130,6 +130,13 @@ namespace NachoCore.Utils
             }
         }
 
+        public int Count ()
+        {
+            lock (Lock) {
+                return _Queue.Count;
+            }
+        }
+
         public delegate bool QueueItemMatchFunction (T obj1);
 
         /// <summary>

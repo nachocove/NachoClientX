@@ -50,6 +50,13 @@ namespace NachoCore.Brain
             return EventQueue.IsEmpty ();
         }
 
+        public void QueueClear ()
+        {
+            while (EventQueue.Count () > 0) {
+                EventQueue.Dequeue ();
+            }
+        }
+
         private bool IsInterrupted ()
         {
             return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired || NcApplication.Instance.IsBrainAbateRequired;
