@@ -79,6 +79,7 @@ namespace NachoClient.iOS
         public override void ViewDidDisappear (bool animated)
         {
             StopListeningForApplicationStatus ();
+            base.ViewDidDisappear (animated);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

@@ -124,15 +124,15 @@ namespace NachoClient.iOS
             filterButton.Clicked += (object sender, EventArgs e) => {
                 var messages = messageSource.GetNachoEmailMessages ();
                 var values = messages.PossibleFilterSettings;
+                var actions = new List<NcAlertAction> ();
                 for (int i = 0; i < values.Length; ++i) {
-                    if (values [i] == messages.FilterSetting) {
-                        messages.FilterSetting = values [(i + 1) % values.Length];
-                        break;
-                    }
+                    var value = values [i];
+                    actions.Add (new NcAlertAction (value.ToString (), () => {
+                        SetFilter (value);
+                    }));
                 }
-                RefreshThreadsIfVisible();
-                headerView.Text = messages.FilterSetting.ToString ();
-                headerView.SizeToFit ();
+                actions.Add (new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+                NcActionSheet.Show (filterButton, this, "Message Filter", null, actions.ToArray ());
             };
 
             searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
@@ -149,6 +149,7 @@ namespace NachoClient.iOS
             MultiSelectToggle (messageSource, false);
 
             headerView = new UITextView ();
+            headerView.BackgroundColor = A.Color_NachoBackgroundGray;
             headerView.AccessibilityLabel = "MessageListFilterSetting";
             headerView.Text = messageSource.GetNachoEmailMessages ().FilterSetting.ToString ();
             headerView.SizeToFit ();
@@ -192,6 +193,15 @@ namespace NachoClient.iOS
 
             // Load when view becomes visible
             threadsNeedsRefresh = true;
+        }
+
+        void SetFilter (FolderFilterOptions value)
+        {
+            var messages = messageSource.GetNachoEmailMessages ();
+            messages.FilterSetting = value;
+            headerView.Text = messages.FilterSetting.ToString ();
+            headerView.SizeToFit ();
+            RefreshThreadsIfVisible ();
         }
 
         protected virtual void SetRowHeight ()

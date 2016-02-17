@@ -125,6 +125,7 @@ namespace NachoCore.Model
         }
 
         /// ActiveSync or Device
+        [Indexed]
         public McAbstrItem.ItemSource Source { get; set; }
 
         /// Set only for Device contacts

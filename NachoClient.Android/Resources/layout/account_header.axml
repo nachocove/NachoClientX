@@ -8,31 +8,29 @@
         android:background="@android:color/white"
         android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:padding="3dp"
-        android:layout_height="120dp">
+        android:layout_height="wrap_content">
         <ImageView
             android:id="@+id/account_icon"
             android:src="@drawable/avatar_hotmail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_marginRight="10dp"
             android:scaleType="fitXY"
-            android:layout_gravity="center|top"
+            android:layout_gravity="center_vertical"
             android:background="@android:color/white" />
         <LinearLayout
             android:orientation="vertical"
-            android:gravity="center_vertical"
+            android:layout_gravity="center_vertical"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent">
+            android:layout_height="wrap_content">
             <TextView
                 android:id="@+id/account_name"
                 android:text="@string/demo_account"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:gravity="left"
-                android:textSize="14dp"
-                android:textStyle="normal"
+                android:paddingBottom="2dp"
+                android:textSize="17dp"
+                android:textStyle="bold"
                 android:textColor="@android:color/black"
                 android:background="@android:color/white" />
             <TextView
@@ -40,30 +38,31 @@
                 android:text="@string/demo_email"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:gravity="left"
+                android:paddingTop="2dp"
                 android:textSize="14dp"
                 android:textStyle="normal"
                 android:textColor="@android:color/black"
                 android:background="@android:color/white" />
-            <Button
-                android:id="@+id/account_settings"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
-                android:paddingLeft="20dp"
-                android:paddingRight="20dp"
-                android:text="@string/account_settings"
-                android:textSize="17dp"
-                android:textStyle="bold"
-                android:textColor="@android:color/white"
-                android:background="@color/NachoSubmitButton"
-                android:minHeight="40dp"
-                android:maxHeight="40dp"
-                android:layout_marginTop="20dp" />
         </LinearLayout>
     </LinearLayout>
+    <Button
+        android:id="@+id/account_settings"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:layout_marginLeft="85dp"
+        android:text="@string/account_settings"
+        android:textSize="17dp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:background="@color/NachoSubmitButton"
+        android:minHeight="40dp"
+        android:maxHeight="40dp" />
     <View
         android:layout_width="fill_parent"
         android:layout_height="2dp"
+        android:layout_marginTop="20dp"
         android:background="@color/NachoLightGray" />
     <LinearLayout
         android:id="@+id/go_to_inbox"

@@ -109,7 +109,7 @@
 </string>
     <string name="message_support">Message Support</string>
     <string name="deferred">Deferred</string>
-    <string name="deadline">Deadline</string>
+    <string name="deadline">Deadlines</string>
     <string name="likely_to_read">Focused</string>
     <string name="no_hot_event">No upcoming events</string>
     <string name="contact_email">EMAIL</string>

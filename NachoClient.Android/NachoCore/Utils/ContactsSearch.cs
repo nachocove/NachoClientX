@@ -82,26 +82,29 @@ namespace NachoCore.Utils
                         }
                         searchString = currentSearch;
                     }
-                    if (serverOnly) {
-                        IncorporateServerResults (searchString);
-                    } else {
-                        // Start the server-based search.  Since server results are cached, there is little point in repeating
-                        // a search that has already happened in this session.  That is what searchedStrings.Add() checks for.
-                        if (!string.IsNullOrEmpty (searchString) && 0 < accounts.Count && searchedStrings.Add (searchString)) {
-                            bool firstSearch = (null == accountSearchTokens);
-                            if (firstSearch) {
-                                accountSearchTokens = new Dictionary<int, string> (accounts.Count);
-                            }
-                            foreach (var account in accounts) {
+                    // searchString can only be null if Dispose() was called while this task was queued up waiting to start.
+                    if (null != searchString) {
+                        if (serverOnly) {
+                            IncorporateServerResults (searchString);
+                        } else {
+                            // Start the server-based search.  Since server results are cached, there is little point in repeating
+                            // a search that has already happened in this session.  That is what searchedStrings.Add() checks for.
+                            if (!string.IsNullOrEmpty (searchString) && 0 < accounts.Count && searchedStrings.Add (searchString)) {
+                                bool firstSearch = (null == accountSearchTokens);
                                 if (firstSearch) {
-                                    accountSearchTokens [account.Id] = BackEnd.Instance.StartSearchContactsReq (account.Id, searchString, null).GetValue<string> ();
-                                } else {
-                                    BackEnd.Instance.SearchContactsReq (account.Id, searchString, null, accountSearchTokens [account.Id]);
+                                    accountSearchTokens = new Dictionary<int, string> (accounts.Count);
+                                }
+                                foreach (var account in accounts) {
+                                    if (firstSearch) {
+                                        accountSearchTokens [account.Id] = BackEnd.Instance.StartSearchContactsReq (account.Id, searchString, null).GetValue<string> ();
+                                    } else {
+                                        BackEnd.Instance.SearchContactsReq (account.Id, searchString, null, accountSearchTokens [account.Id]);
+                                    }
                                 }
                             }
+                            // Do the local search, which is subclass-specific.
+                            DoSearch (searchString);
                         }
-                        // Do the local search, which is subclass-specific.
-                        DoSearch (searchString);
                     }
                     lock (lockObject) {
                         lastSearch = searchString;

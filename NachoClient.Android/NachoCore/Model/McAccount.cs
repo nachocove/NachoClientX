@@ -6,6 +6,7 @@ using NachoCore.Utils;
 using NachoCore.ActiveSync;
 using NachoPlatform;
 using System.Security.Cryptography;
+using NachoCore.SFDC;
 
 namespace NachoCore.Model
 {
@@ -18,6 +19,7 @@ namespace NachoCore.Model
             Device,
             IMAP_SMTP,
             Unified,
+            SalesForce,
         };
 
         public enum AccountServiceEnum
@@ -35,6 +37,7 @@ namespace NachoCore.Model
             Yahoo,
             iCloud,
             Office365Exchange,
+            SalesForce,
         };
 
         [Flags]
@@ -144,6 +147,9 @@ namespace NachoCore.Model
             case AccountTypeEnum.Unified:
                 AccountCapability = ActiveSyncCapabilities;
                 break;
+            case AccountTypeEnum.SalesForce:
+                AccountCapability = SalesForceProtoControl.SalesForceCapabilities;
+                break;
             default:
                 NcAssert.CaseError (value.ToString ());
                 break;
@@ -178,6 +184,11 @@ namespace NachoCore.Model
             case AccountTypeEnum.Device:
                 // No protocols.
                 break;
+
+            case AccountTypeEnum.SalesForce:
+                Protocols = McProtocolState.ProtocolEnum.SalesForce;
+                break;
+
             default:
                 NcAssert.CaseError (value.ToString ());
                 break;
@@ -205,6 +216,8 @@ namespace NachoCore.Model
             case AccountServiceEnum.Device:
                 // FIXME: Do we need anything here?
                 return AccountTypeEnum.Device;
+            case AccountServiceEnum.SalesForce:
+                return AccountTypeEnum.SalesForce;
             default:
                 NcAssert.CaseError (value.ToString ());
                 return AccountTypeEnum.Device;
@@ -306,6 +319,11 @@ namespace NachoCore.Model
         public static IEnumerable<McAccount> QueryByEmailAddr (string emailAddr)
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.EmailAddr == emailAddr);
+        }
+
+        public static IEnumerable<McAccount> QueryByEmailAddrAndService (string emailAddr, AccountServiceEnum service)
+        {
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.EmailAddr == emailAddr && x.AccountService == service);
         }
 
         public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)

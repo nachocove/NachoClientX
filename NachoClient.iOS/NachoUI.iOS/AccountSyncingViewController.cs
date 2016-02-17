@@ -108,7 +108,7 @@ namespace NachoClient.iOS
 
         public override void ViewWillDisappear (bool animated)
         {
-            base.ViewDidDisappear (animated);
+            base.ViewWillDisappear (animated);
             IsVisible = false;
             activityIndicatorView.StopAnimating ();
         }

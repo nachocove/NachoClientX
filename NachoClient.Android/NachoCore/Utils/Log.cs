@@ -368,6 +368,7 @@ namespace NachoCore.Utils
         public const ulong LOG_SMTP = (1 << 23);
         public const ulong LOG_IMAP = (1 << 24);
         public const ulong LOG_SEARCH = (1 << 25);
+        public const ulong LOG_SFDC = (1 << 26);
 
         public static string ModuleString (ulong subsystem)
         {
@@ -424,6 +425,8 @@ namespace NachoCore.Utils
                 return "IMAP";
             case LOG_SEARCH:
                 return "SEARCH";
+            case LOG_SFDC:
+                return "SFDC";
             default:
                 throw new Exception (string.Format ("Unknown Log subsystem {0}", subsystem));
             }

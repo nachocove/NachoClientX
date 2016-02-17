@@ -1154,6 +1154,9 @@ namespace NachoClient
             case McAccount.AccountServiceEnum.Aol:
                 imageName = "Icon";
                 break;
+            case McAccount.AccountServiceEnum.SalesForce:
+                imageName = "Icon";
+                break;
             default:
                 imageName = "Icon";
                 break;
