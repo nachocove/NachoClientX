@@ -42,7 +42,7 @@ namespace NachoClient.AndroidClient
         void SetActiveImage (View view);
     }
 
-    public class MessageListFragment : Fragment
+    public class MessageListFragment : Fragment, Android.Widget.PopupMenu.IOnMenuItemClickListener
     {
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
@@ -494,15 +494,35 @@ namespace NachoClient.AndroidClient
 
         void LeftButton2_Click (object sender, EventArgs e)
         {
+            Log.Info (Log.LOG_UI, "LeftButton2_Click");
+
+            var view = View.FindViewById (Resource.Id.left_button2);
+            var popup = new Android.Widget.PopupMenu (Activity, view);
+            popup.SetOnMenuItemClickListener (this);
+
+            popup.Menu.Add (1, 0, 0, "Message Filter");
+
             var values = messages.PossibleFilterSettings;
             for (int i = 0; i < values.Length; ++i) {
-                if (values [i] == messages.FilterSetting) {
-                    messages.FilterSetting = values [(i + 1) % values.Length];
-                    break;
+                var item = popup.Menu.Add (0, (int)values[i], i, values[i].ToString ());
+                if (messages.FilterSetting == values [i]) {
+                    item.SetChecked (true);
                 }
             }
+            popup.Menu.SetGroupCheckable (0, true, true);
+            popup.Show ();
+        }
+
+        bool Android.Widget.PopupMenu.IOnMenuItemClickListener.OnMenuItemClick (IMenuItem item)
+        {
+            if (1 == item.GroupId) {
+                // Ignore "Message Filter"
+                return true;
+            }
+            messages.FilterSetting = (FolderFilterOptions)item.ItemId;
             View.FindViewById<TextView> (Resource.Id.filter_setting).Text = messages.FilterSetting.ToString ();
             RefreshIfVisible ();
+            return true;
         }
 
         // Compose or delete (multi-select)
