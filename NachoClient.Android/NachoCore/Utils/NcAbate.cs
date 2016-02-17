@@ -13,7 +13,7 @@ namespace NachoCore.Utils
             }
             NcApplication.Instance.IsBackgroundAbateRequired = true;
             NachoCore.Model.NcModel.Instance.RateLimiter.Enabled = true;
-            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "HighPriority sent Info_BackgroundAbateStarted from {0}", caller);
+            // NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "HighPriority sent Info_BackgroundAbateStarted from {0}", caller);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
                 Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
@@ -29,7 +29,7 @@ namespace NachoCore.Utils
             }
             NcApplication.Instance.IsBackgroundAbateRequired = false;
             NachoCore.Model.NcModel.Instance.RateLimiter.Enabled = false;
-            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "RegularPriority sent Info_BackgroundAbateStopped from {0}", caller);
+            // NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "RegularPriority sent Info_BackgroundAbateStopped from {0}", caller);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                 Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,

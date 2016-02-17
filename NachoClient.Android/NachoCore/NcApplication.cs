@@ -372,12 +372,12 @@ namespace NachoCore
                 switch (siea.Status.SubKind) {
                 case NcResult.SubKindEnum.Info_BackgroundAbateStarted:
                     deliveryTime = NcAbate.DeliveryTime (siea);
-                    Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
+                    // Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
                     break;
 
                 case NcResult.SubKindEnum.Info_BackgroundAbateStopped:
                     deliveryTime = NcAbate.DeliveryTime (siea);
-                    Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
+                    // Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
                     break;
                 }
             };
