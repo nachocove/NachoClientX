@@ -102,6 +102,7 @@ namespace NachoClient.iOS
 
         public override void ViewDidAppear (bool animated)
         {
+            base.ViewDidAppear (animated);
             UpdateNotificationBadge ();
         }
 
