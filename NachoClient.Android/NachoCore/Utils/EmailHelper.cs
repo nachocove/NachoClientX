@@ -9,6 +9,8 @@ using NachoCore.Model;
 using HtmlAgilityPack;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Linq;
+using NachoCore.SFDC;
 
 namespace NachoCore.Utils
 {
@@ -30,6 +32,8 @@ namespace NachoCore.Utils
         // Message is saved into Outbox
         public static void SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
         {
+            messageToSend = SalesForceProtoControl.MaybeAddSFDCEmailToBcc (messageToSend);
+
             var outbox = McFolder.GetClientOwnedOutboxFolder (messageToSend.AccountId);
             if (null != outbox) {
                 outbox.Link (messageToSend);

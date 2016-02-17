@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using NachoPlatform;
 using System.Linq;
 using NachoCore.Brain;
+using NachoCore.SFDC;
 
 namespace NachoCore.Model
 {
@@ -128,6 +129,18 @@ namespace NachoCore.Model
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
                 Telemetry.RecordAccountEmailAddress (account);
             });
+            return account;
+        }
+
+        public McAccount CreateAccountAndServerForSalesForce (McAccount.AccountServiceEnum service, string emailAddress,
+            string accessToken, string refreshToken, uint expireSecs, Uri serverUri)
+        {
+            var account = CreateAccount (service, emailAddress, accessToken, refreshToken, expireSecs);
+            var server = McServer.QueryByAccountIdAndCapabilities (account.Id, account.AccountCapability);
+            if (null != server) {
+                server.Delete ();
+            }
+            SalesForceProtoControl.PopulateServer (account.Id, serverUri);
             return account;
         }
 

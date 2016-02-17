@@ -1,13 +1,8 @@
 using System;
-using System.Net.Http;
 using System.Threading;
-using Newtonsoft.Json;
 using NachoCore.Utils;
 using NachoPlatform;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace NachoCore.Model
 {
@@ -95,6 +90,9 @@ namespace NachoCore.Model
         {
             NcAssert.True (0 != Id);
             NcAssert.AreEqual ((int)CredTypeEnum.OAuth2, (int)CredType, string.Format ("UpdateOauth2:CredType:{0}", CredType));
+            if (0 == expirySecs) {
+                expirySecs = 3600;
+            }
             Expiry = DateTime.UtcNow.AddSeconds (expirySecs);
             ExpirySecs = expirySecs;
             NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
@@ -116,7 +114,7 @@ namespace NachoCore.Model
             if (String.IsNullOrEmpty (domain)) {
                 return username;
             } else {
-                return String.Join ("\\", new string[] { domain, username });
+                return String.Join ("\\", new [] { domain, username });
             }
         }
 
@@ -209,90 +207,26 @@ namespace NachoCore.Model
             }
         }
 
-        private class OAuth2RefreshRespose
-        {
-            public string access_token { get; set; }
-
-            public string expires_in { get; set; }
-
-            public string token_type { get; set; }
-
-            public string refresh_token { get; set; }
-        }
-
-        static public INcHttpClient TestHttpClient { get; set; }
-        public INcHttpClient HttpClient {
-            get {
-                if (TestHttpClient != null) {
-                    return TestHttpClient;
-                } else {
-                    return NcHttpClient.Instance;
-                }
-            }
-        }
-
-        const int KRefreshOauth2TimeoutSecs = 30;
 
         public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred, bool> onFailure, CancellationToken Token)
         {
             var account = McAccount.QueryById<McAccount> (AccountId);
+            Oauth2TokenRefresh refresh;
             switch (account.AccountService) {
             case McAccount.AccountServiceEnum.GoogleDefault:
-                var query = "client_secret=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientSecret) +
-                            "&grant_type=" + "refresh_token" +
-                            "&refresh_token=" + Uri.EscapeDataString (GetRefreshToken ()) +
-                            "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
-                var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
-                var request = new NcHttpRequest (HttpMethod.Post, requestUri);
-                request.SetContent (null, "application/x-www-form-urlencoded");
+                refresh = new GoogleOauth2Refresh (this);
+                break;
 
-                Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): Attempting Refresh", AccountId);
-
-                HttpClient.SendRequest (request, KRefreshOauth2TimeoutSecs, ((response, token) => {
-                    if (response.StatusCode != System.Net.HttpStatusCode.OK) {
-                        bool fatalError = false;
-                        switch (response.StatusCode) {
-                        case System.Net.HttpStatusCode.BadRequest:
-                            // This probably means the refresh token is no longer valid. We don't immediately punch
-                            // up to the UI, because we really don't fully trust HTTP response code. Treat it as 'fatal',
-                            // and let the underlying code decide what to do with fatal responses.
-                            Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): Refresh Status {1}", AccountId, response.StatusCode.ToString ());
-                            fatalError = true;
-                            break;
-                        default:
-                            Log.Warn (Log.LOG_SYS, "RefreshOAuth2({0}): HTTP Status {1}", AccountId, response.StatusCode.ToString ());
-                            break;
-                        }
-                        onFailure (this, fatalError);
-                        return;
-                    }
-                    var jsonResponse = response.GetContent ();
-                    var decodedResponse = JsonConvert.DeserializeObject<OAuth2RefreshRespose> (Encoding.UTF8.GetString (jsonResponse));
-                    if ("Bearer" != decodedResponse.token_type) {
-                        Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Unknown OAUTH2 token_type {1}", AccountId, decodedResponse.token_type);
-                    }
-                    if (null == decodedResponse.access_token || null == decodedResponse.expires_in) {
-                        Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Missing OAUTH2 access_token {1} or expires_in {2}", AccountId, decodedResponse.access_token, decodedResponse.expires_in);
-                        onFailure (this, true);
-                    }
-                    Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): OAUTH2 Token refreshed. expires_in={1}", AccountId, decodedResponse.expires_in);
-                    // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
-                    UpdateOauth2 (decodedResponse.access_token, 
-                        string.IsNullOrEmpty (decodedResponse.refresh_token) ? GetRefreshToken () : decodedResponse.refresh_token,
-                        uint.Parse (decodedResponse.expires_in));
-                    onSuccess (this);
-                }), ((ex, token) => {
-                    // This usually indicates a network connectivity issue. Any response
-                    // (even non-200 responses) go through the success path.
-                    Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Exception {1}", AccountId, ex.ToString ());
-                    onFailure (this, false);
-                }), Token);
+            case McAccount.AccountServiceEnum.SalesForce:
+                refresh = new SFDCOauth2Refresh (this);
                 break;
 
             default:
                 Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Can not refresh {1}", account.Id, account.AccountService);
                 return;
             }
+
+            refresh.Refresh (onSuccess, onFailure, Token);
         }
     }
 }

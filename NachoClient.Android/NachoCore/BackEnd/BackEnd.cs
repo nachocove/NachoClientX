@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using SQLite;
 using NachoCore;
 using NachoCore.ActiveSync;
@@ -15,6 +12,8 @@ using NachoCore.SMTP;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
+using System.Threading;
+using NachoCore.SFDC;
 
 /* Back-End:
  * The BE manages all protocol interaction with all servers (will be
@@ -31,7 +30,6 @@ using NachoPlatform;
  * The UI Must have started all accounts before modding the DB records associated
  * with those accounts - otherwise mod events will get dropped and not end up on the server.
  * */
-using System.Threading;
 
 
 namespace NachoCore
@@ -323,6 +321,10 @@ namespace NachoCore
 
             case McAccount.AccountTypeEnum.Unified:
                 // TODO: what should happen here?
+                break;
+
+            case McAccount.AccountTypeEnum.SalesForce:
+                services.Enqueue (new SalesForceProtoControl (this, accountId));
                 break;
 
             default:
