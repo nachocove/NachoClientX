@@ -119,8 +119,6 @@ namespace NachoCore.Utils
                         displayList.Add (new DisplayElement (new Node ().Copy (inbox), 0, true));
                     }
                 }
-                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetHotFakeFolder ()), 0, true));
-                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetLtrFakeFolder ()), 0, true));
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeferredFakeFolder ()), 0, true));
                 displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeadlineFakeFolder ()), 0, true));
             }
