@@ -7,7 +7,7 @@ using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Utils;
 
-namespace NachoClient.AndroidClient
+namespace NachoCore.Utils
 {
     public class FolderLists
     {
@@ -69,13 +69,15 @@ namespace NachoClient.AndroidClient
             public int level;
             public Header header;
             public bool lastInSection;
+            public bool allowDuplicate;
 
-            public DisplayElement (Node node, int level)
+            public DisplayElement (Node node, int level, bool allowDuplicate)
             {
                 this.node = node;
                 this.level = level;
                 this.header = Header.None;
                 this.lastInSection = false;
+                this.allowDuplicate = allowDuplicate;
             }
 
             public DisplayElement (Header header)
@@ -91,12 +93,12 @@ namespace NachoClient.AndroidClient
 
         public FolderLists (int accountId, bool hideFakeFolders)
         {
+            openList = new HashSet<int> ();
             Create (accountId, hideFakeFolders);
         }
 
         public void Create (int accountId, bool hideFakeFolders)
         {
-            openList = new HashSet<int> ();
             displayList = new List<DisplayElement> ();
 
             var displayAccountId = GetDisplayAccountId (accountId);
@@ -108,15 +110,17 @@ namespace NachoClient.AndroidClient
             displayList.Add (new DisplayElement (Header.Common));
 
             // Well-known folders
-            var inbox = McFolder.GetDefaultInboxFolder (displayAccountId);
-            if (null != inbox) {
-                displayList.Add (new DisplayElement (new Node ().Copy (inbox), 0));
-            }
             if (!hideFakeFolders) {
-                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetHotFakeFolder ()), 0));
-                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetLtrFakeFolder ()), 0));
-                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeferredFakeFolder ()), 0));
-                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeadlineFakeFolder ()), 0));
+                if (McAccount.GetUnifiedAccount ().Id == accountId) {
+                    displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetInboxFakeFolder ()), 0, true));
+                } else {
+                    var inbox = McFolder.GetDefaultInboxFolder (displayAccountId);
+                    if (null != inbox) {
+                        displayList.Add (new DisplayElement (new Node ().Copy (inbox), 0, true));
+                    }
+                }
+                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeferredFakeFolder ()), 0, true));
+                displayList.Add (new DisplayElement (new Node ().Copy (McFolder.GetDeadlineFakeFolder ()), 0, true));
             }
             MarkLastInSection ();
 
@@ -124,7 +128,7 @@ namespace NachoClient.AndroidClient
             if (McAccount.GetUnifiedAccount ().Id == accountId) {
                 displayList.Add (new DisplayElement (Header.Accounts));
                 foreach (var account in McAccount.GetAllConfiguredNonDeviceAccounts()) {
-                    displayList.Add (new DisplayElement (new Node (account, account.Id == displayAccountId), 0));
+                    displayList.Add (new DisplayElement (new Node (account, account.Id == displayAccountId), 0, false));
                 }
                 MarkLastInSection ();
             }
@@ -134,7 +138,7 @@ namespace NachoClient.AndroidClient
                 displayList.Add (new DisplayElement (Header.Recents));
                 for (int i = 0; i < 3; i++) {
                     if (i < recents.Count) {
-                        displayList.Add (new DisplayElement (new Node ().Copy (recents [i]), 0));
+                        displayList.Add (new DisplayElement (new Node ().Copy (recents [i]), 0, true));
                     }
                 }
                 MarkLastInSection ();
@@ -155,7 +159,7 @@ namespace NachoClient.AndroidClient
 
             displayList.Add (new DisplayElement (Header.Default));
             foreach (var node in defaultList) {
-                displayList.Add (new DisplayElement (node, 0));
+                AddToDisplayList (node, 0);
             }
             MarkLastInSection ();
 
@@ -229,12 +233,16 @@ namespace NachoClient.AndroidClient
 
         void AddToDisplayList (Node node, int level)
         {
+            int n = 0;
             foreach (var dn in displayList) {
-                if (node == dn.node) {
-                    return; // no dups
+                if (!dn.allowDuplicate && (null != dn.node)) {
+                    if (node == dn.node) {
+                        return; // only dups in recents
+                    }
                 }
+                n += 1;
             }
-            var d = new DisplayElement (node, level);
+            var d = new DisplayElement (node, level, false);
             displayList.Add (d);
             if (node.opened) {
                 foreach (var child in node.children) {
@@ -319,6 +327,20 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        public void ToggleById (int uniqueId)
+        {
+            int n = 0;
+            foreach (var d in displayList) {
+                if (!d.allowDuplicate && (null != d.node)) {
+                    if (uniqueId == d.node.UniqueId) {
+                        Toggle (n);
+                        return;
+                    }
+                }
+                n += 1;
+            }
+        }
+
         void Open (int position)
         {
             var item = displayList [position];
@@ -336,7 +358,7 @@ namespace NachoClient.AndroidClient
 
             var children = new List<DisplayElement> ();
             foreach (var child in item.node.children) {
-                children.Add (new DisplayElement (child, item.level + 1));
+                children.Add (new DisplayElement (child, item.level + 1, false));
             }
 
             displayList.InsertRange (position + 1, children);
@@ -351,7 +373,7 @@ namespace NachoClient.AndroidClient
             var defaultNodeList = item.node.children [1].children;
 
             foreach (var node in defaultNodeList) {
-                list.Add (new DisplayElement (node, 1));
+                list.Add (new DisplayElement (node, 1, false));
             }
             if (0 < list.Count) {
                 list [0].header = Header.Default;
@@ -360,7 +382,7 @@ namespace NachoClient.AndroidClient
 
             var rootListStart = list.Count;
             foreach (var node in rootNodeList) {
-                list.Add (new DisplayElement (node, 1));
+                list.Add (new DisplayElement (node, 1, false));
             }
             if (rootListStart < list.Count) {
                 list [rootListStart].header = Header.Folders;

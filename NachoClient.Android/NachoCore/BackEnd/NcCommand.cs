@@ -224,7 +224,7 @@ namespace NachoCore
                 }, 
                 null,
                 new TimeSpan (0, 0, Duration), 
-                System.Threading.Timeout.InfiniteTimeSpan);
+                Timeout.InfiniteTimeSpan);
 
             if (EarlyOnECChange) {
                 NcApplication.Instance.StatusIndEvent += Detector;

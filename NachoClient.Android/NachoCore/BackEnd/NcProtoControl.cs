@@ -392,12 +392,18 @@ namespace NachoCore
             lock (executeLock) {
                 // don't allow us to execute, if the App/UI told us to stop.
                 if (!IsStarted) {
+                    Log.Info (Log.LOG_BACKEND, "BackEnd.Execute({0}:{1}): Refusing to start because of IsStarted=false.", AccountId, this.GetType ().Name);
                     return false;
                 }
-                if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down ||
-                    (null != Server && NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable)) {
+                if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down) {
+                    Log.Info (Log.LOG_BACKEND, "BackEnd.Execute({0}:{1}): Refusing to start because of network (Status={2}).", AccountId, this.GetType ().Name, NcCommStatus.Instance.Status);
+                    return false;
+                }
+                if (null != Server && NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
                     // network is down, or the server is bad. Don't start. Callbacks will trigger us
                     // to start later.
+                    Log.Info (Log.LOG_BACKEND, "BackEnd.Execute({0}:{1}): Refusing to start because of server quality (ServerId={2}, Quality={3}).", AccountId, this.GetType ().Name,
+                        Server != null ? Server.Id.ToString () : "null", Server != null ? NcCommStatus.Instance.Quality (Server.Id).ToString () : "");
                     return false;
                 }
                 if (Cts.IsCancellationRequested) {
@@ -764,6 +770,9 @@ namespace NachoCore
             NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
+            // make sure to delete any hint we may have.
+            Log.Info (Log.LOG_BACKEND, "Removing hint due to addition of pending");
+            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, emailMessageId);
             NcModel.Instance.RunInTransaction (() => {
                 if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
                     result = NcResult.Error (subKind);

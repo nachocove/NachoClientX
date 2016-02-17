@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoEmailMessages : INachoEmailMessages
+    public class NachoEmailMessages : NachoEmailMessagesBase, INachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
         McFolder folder;
@@ -21,9 +21,24 @@ namespace NachoCore
             threadList = new List<McEmailMessageThread> ();
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id);
+            List<McEmailMessageThread> list;
+            switch (folder.FilterSetting) {
+            case FolderFilterOptions.Hot:
+                list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, McEmailMessage.minHotScore);
+                break;
+            case FolderFilterOptions.Focused:
+                list = McEmailMessage.QueryActiveMessageItemsByScore2 (folder.AccountId, folder.Id, McEmailMessage.minHotScore, McEmailMessage.minLikelyToReadScore);
+                break;
+            case FolderFilterOptions.Unread:
+                list = McEmailMessage.QueryUnreadMessageItems (folder.AccountId, folder.Id);
+                break;
+            case FolderFilterOptions.All:
+            default:
+                list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id);
+                break;
+            }
             var threads = NcMessageThreads.ThreadByConversation (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
@@ -32,12 +47,12 @@ namespace NachoCore
             return false;
         }
 
-        public int Count ()
+        public override int Count ()
         {
             return threadList.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public override McEmailMessageThread GetEmailThread (int i)
         {
             if (0 > i) {
                 Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
@@ -52,7 +67,7 @@ namespace NachoCore
             return t;
         }
 
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var message = McEmailMessage.QueryById<McEmailMessage> (id);
             if (null == message) {
@@ -63,22 +78,44 @@ namespace NachoCore
             }
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             return folder.DisplayName;
         }
 
-        public bool HasOutboxSemantics ()
+        public override bool HasFilterSemantics ()
         {
-            return false;
+            return true;
         }
 
-        public bool HasDraftsSemantics ()
-        {
-            return false;
+        public override FolderFilterOptions FilterSetting {
+            get {
+                return folder.FilterSetting;
+            }
+            set {
+                // Update the in-memory object in case the background task takes a while to run.
+                folder.FilterSetting = value;
+                NcTask.Run (() => {
+                    folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                        var dbFolder = (McFolder)record;
+                        dbFolder.FilterSetting = value;
+                        return true;
+                    });
+                }, "FolderFilterSetting.Update");
+            }
         }
 
-        public NcResult StartSync ()
+        private static FolderFilterOptions[] possibleFilters = new FolderFilterOptions[] {
+            FolderFilterOptions.All, FolderFilterOptions.Hot, FolderFilterOptions.Focused, FolderFilterOptions.Unread
+        };
+
+        public override FolderFilterOptions[] PossibleFilterSettings {
+            get {
+                return possibleFilters;
+            }
+        }
+
+        public override NcResult StartSync ()
         {
             if (null != folder) {
                 return BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
@@ -87,14 +124,14 @@ namespace NachoCore
             }
         }
 
-        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
-            return new NachoThreadedEmailMessages (folder, thread.GetThreadId());
+            return new NachoThreadedEmailMessages (folder, thread.GetThreadId ());
         }
 
-        public bool IsCompatibleWithAccount (McAccount account)
+        public override bool IsCompatibleWithAccount (McAccount account)
         {
-            return account.Id == folder.AccountId;
+            return account.ContainsAccount (folder.AccountId);
         }
 
     }

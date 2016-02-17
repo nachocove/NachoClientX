@@ -787,7 +787,7 @@ namespace NachoClient.iOS
             foreach (var script in JavaScriptQueue) {
                 EvaluateJavaScript (script);
             }
-            JavaScriptQueue = null;
+            JavaScriptQueue.Clear ();
             if (MakeWebViewFirstResponderOnLoad) {
                 MakeWebViewFirstResponder ();
             }

@@ -646,6 +646,8 @@
     <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration51.cs" />
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs" />
+    <Compile Include="NachoUI.Android\Activities\InboxFolderActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\AccountChooserFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1746,6 +1748,15 @@
     <AndroidResource Include="Resources\drawable-mdpi\inbox_icn_deadline.png" />
     <AndroidResource Include="Resources\layout\FolderCellHeader.axml" />
     <AndroidResource Include="Resources\layout\FolderCellAccount.axml" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_read_list_active.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_read_list.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_read_list_active.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_read_list.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_read_list_active.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_read_list.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_read_list_active.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_read_list.png" />
+    <AndroidResource Include="Resources\layout\AccountChooserCell.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

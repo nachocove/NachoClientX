@@ -16,7 +16,7 @@ namespace NachoCore.IMAP
     {
         private List<Regex> RegexList;
 
-        public ImapEmailMoveCommand (IBEContext beContext, NcImapClient imap, List<McPending> pendingList) : base (beContext, imap)
+        public ImapEmailMoveCommand (IBEContext beContext, List<McPending> pendingList) : base (beContext)
         {
             PendingList = pendingList;
             NcModel.Instance.RunInTransaction (() => {

@@ -16,7 +16,7 @@ namespace NachoCore.IMAP
     {
         private List<Regex> RegexList;
 
-        public ImapFolderSyncCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapFolderSyncCommand (IBEContext beContext) : base (beContext)
         {
             RedactProtocolLogFunc = RedactProtocolLog;
             RegexList = new List<Regex> ();

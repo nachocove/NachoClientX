@@ -16,13 +16,13 @@ namespace NachoCore.IMAP
         private const string KImapSyncLogRedaction = "IMAP Sync Log Redaction";
         FetchKit FetchKit;
 
-        public ImapFetchCommand (IBEContext beContext, NcImapClient imap, FetchKit Fetchkit) : base (beContext, imap)
+        public ImapFetchCommand (IBEContext beContext, FetchKit Fetchkit) : base (beContext)
         {
             FetchKit = Fetchkit;
 
             SetupLogRedaction ();
         }
-        public ImapFetchCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFetchCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
             pending.MarkDispatched ();
             PendingSingle = pending;
