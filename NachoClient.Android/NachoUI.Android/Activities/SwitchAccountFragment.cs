@@ -254,6 +254,12 @@ namespace NachoClient.AndroidClient
                 return;
             case HEADER_TYPE:
                 account = NcApplication.Instance.Account;
+                var settingsButton = holder.ItemView.FindViewById (Resource.Id.account_settings);
+                if (McAccount.GetUnifiedAccount ().Id == account.Id) {
+                    settingsButton.Visibility = ViewStates.Gone;
+                } else {
+                    settingsButton.Visibility = ViewStates.Visible;
+                }
                 break;
             case ROW_TYPE:
                 int accountIndex = (DisplayMode.AccountSwitcher == displayMode ? position - 1 : position);
