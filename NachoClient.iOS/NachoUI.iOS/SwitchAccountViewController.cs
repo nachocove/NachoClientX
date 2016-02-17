@@ -183,18 +183,23 @@ namespace NachoClient.iOS
             accountEmailAddress.TextColor = A.Color_NachoBlack;
             accountInfoView.AddSubview (accountEmailAddress);
 
-            var settingsButton = Util.BlueButton ("Account Settings", 0);
-            settingsButton.Frame = new CGRect (75, 70, 0, LINE_HEIGHT);
-            settingsButton.SizeToFit ();
-            ViewFramer.Create (settingsButton).AdjustWidth (A.Card_Horizontal_Indent);
-            settingsButton.TouchUpInside += SettingsButtonTouchUpInside;
-            accountInfoView.AddSubview (settingsButton);
+            nfloat yOffset = 70;
 
-            var unreadMessagesViewFrame = new CGRect (0, 120, accountInfoView.Frame.Width, 40);
+            if (McAccount.GetUnifiedAccount ().Id != NcApplication.Instance.Account.Id) {
+                var settingsButton = Util.BlueButton ("Account Settings", 0);
+                settingsButton.Frame = new CGRect (75, 70, 0, LINE_HEIGHT);
+                settingsButton.SizeToFit ();
+                ViewFramer.Create (settingsButton).AdjustWidth (A.Card_Horizontal_Indent);
+                settingsButton.TouchUpInside += SettingsButtonTouchUpInside;
+                accountInfoView.AddSubview (settingsButton);
+                yOffset += 50;
+            }
+
+            var unreadMessagesViewFrame = new CGRect (0, yOffset, accountInfoView.Frame.Width, 40);
             var unreadMessagesView = new UnreadMessagesView (unreadMessagesViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked);
             accountInfoView.AddSubview (unreadMessagesView);
 
-            var yOffset = unreadMessagesView.Frame.Bottom;
+            yOffset = unreadMessagesView.Frame.Bottom;
 
             ViewFramer.Create (headerView).Height (yOffset);
             ViewFramer.Create (accountInfoView).Height (yOffset);
