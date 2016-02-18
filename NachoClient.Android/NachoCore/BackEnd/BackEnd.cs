@@ -73,8 +73,6 @@ namespace NachoCore
             CannotFindServer,
         }
 
-        private NcTimer PendingOnTimeTimer = null;
-
         #region ConcurrentQueue<NcProtoControl>
 
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
@@ -260,6 +258,8 @@ namespace NachoCore
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start() called");
             // The callee does Task.Run.
             ApplyAcrossAccounts ("Start", (accountId) => Start (accountId));
+
+            McPendingHelper.Instance.Start ();
         }
 
         // DON'T PUT Stop in a Task.Run. We want to execute as much as possible immediately.
@@ -269,10 +269,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
             Oauth2RefreshInstance.Stop ();
-            if (null != PendingOnTimeTimer) {
-                PendingOnTimeTimer.Dispose ();
-                PendingOnTimeTimer = null;
-            }
+            McPendingHelper.Instance.Stop ();
             ApplyAcrossAccounts ("Stop", (accountId) => Stop (accountId));
             BodyFetchHints.Reset ();
         }
@@ -353,10 +350,6 @@ namespace NachoCore
                 NcCommStatus.Instance.Refresh ();
                 if (!AccountHasServices (accountId)) {
                     CreateServices (accountId);
-                }
-                if (null == PendingOnTimeTimer) {
-                    PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => McPending.MakeEligibleOnTime (), null, 1000, 1000);
-                    PendingOnTimeTimer.Stfu = true;
                 }
 
                 // don't use ApplyAcrossServices, as we'll wind up right back here.

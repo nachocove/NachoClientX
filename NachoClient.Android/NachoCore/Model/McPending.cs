@@ -12,7 +12,7 @@ namespace NachoCore.Model
     public class McPending : McAbstrObjectPerAcc
     {
         // TEST USE ONLY.
-        private static IBackEnd _backEnd;
+        static IBackEnd _backEnd;
         public static IBackEnd _BackEnd {
             get {
                 return _backEnd ?? BackEnd.Instance;
@@ -22,7 +22,7 @@ namespace NachoCore.Model
             }
         }
         // Incremented on every table write.
-        private static int _Version = 0;
+        static int _Version = 0;
 
         public static int Version { get { return _Version; } }
 
@@ -1593,6 +1593,64 @@ namespace NachoCore.Model
                 return McTask.QueryById<McTask> (ItemId);
             default:
                 return null;
+            }
+        }
+    }
+
+    public class McPendingHelper
+    {
+        static McPendingHelper _Instance;
+        static object LockObj = new object ();
+
+        public static McPendingHelper Instance {
+            get {
+                if (_Instance == null) {
+                    lock (LockObj) {
+                        if (_Instance == null) {
+                            _Instance = new McPendingHelper ();
+                        }
+                    }
+                }
+                return _Instance;
+            }
+        }
+
+        public void Start ()
+        {
+            PendingOnTimeTimerStart ();
+        }
+
+        public void Stop ()
+        {
+            PendingOnTimeTimerStop ();
+        }
+
+        public static bool IsUnitTest { get; set; }
+
+        NcTimer PendingOnTimeTimer;
+        object PendingOnTimeTimerLockObj = new object ();
+
+        void PendingOnTimeTimerStart ()
+        {
+            if (IsUnitTest) {
+                return;
+            }
+
+            lock (PendingOnTimeTimerLockObj) {
+                if (null == PendingOnTimeTimer) {
+                    PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => McPending.MakeEligibleOnTime (), null, 1000, 1000);
+                    PendingOnTimeTimer.Stfu = true;
+                }                        
+            }
+        }
+
+        void PendingOnTimeTimerStop ()
+        {
+            lock (PendingOnTimeTimerLockObj) {
+                if (null != PendingOnTimeTimer) {
+                    PendingOnTimeTimer.Dispose ();
+                    PendingOnTimeTimer = null;
+                }
             }
         }
     }
