@@ -31,6 +31,7 @@ namespace NachoClient.iOS
         protected UIBarButtonItem moveButton;
         protected UIBarButtonItem backButton;
         protected UIBarButtonItem filterButton;
+        protected UIView headerWrapper;
         protected UITextView headerView;
 
         protected UISearchBar searchBar;
@@ -148,13 +149,16 @@ namespace NachoClient.iOS
             CustomizeBackButton ();
             MultiSelectToggle (messageSource, false);
 
+            headerWrapper = new UIView (new CGRect (0, 0, TableView.Frame.Width, 10));
             headerView = new UITextView ();
+            headerWrapper.AddSubview (headerView);
             headerView.BackgroundColor = A.Color_NachoBackgroundGray;
             headerView.AccessibilityLabel = "MessageListFilterSetting";
-            headerView.Text = messageSource.GetNachoEmailMessages ().FilterSetting.ToString ();
-            headerView.SizeToFit ();
+            headerView.Font = A.Font_AvenirNextMedium17;
+            headerView.UserInteractionEnabled = false;
+            SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
             if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
-                TableView.TableHeaderView = headerView;
+                TableView.TableHeaderView = headerWrapper;
             } else {
                 TableView.TableHeaderView = null;
             }
@@ -199,9 +203,41 @@ namespace NachoClient.iOS
         {
             var messages = messageSource.GetNachoEmailMessages ();
             messages.FilterSetting = value;
-            headerView.Text = messages.FilterSetting.ToString ();
-            headerView.SizeToFit ();
+            SetHeaderText (value);
             RefreshThreadsIfVisible ();
+        }
+
+        void SetHeaderText (FolderFilterOptions filterSetting)
+        {
+            string textPart;
+            switch (filterSetting) {
+            case FolderFilterOptions.All:
+                textPart = " All messages ";
+                break;
+            case FolderFilterOptions.Hot:
+                textPart = " Hot messages ";
+                break;
+            case FolderFilterOptions.Focused:
+                textPart = " Focused messages ";
+                break;
+            case FolderFilterOptions.Unread:
+                textPart = " Unread messages ";
+                break;
+            default:
+                textPart = " Unknown set of messages ";
+                break;
+            }
+            var filterIcon = new NachoInlineImageTextAttachment ();
+            filterIcon.Image = UIImage.FromBundle ("gen-read-list");
+            var attributedString = new NSMutableAttributedString ("");
+            attributedString.Append (NSAttributedString.CreateFrom (filterIcon));
+            attributedString.Append (new NSAttributedString (textPart, A.Font_AvenirNextMedium17));
+            attributedString.Append (NSAttributedString.CreateFrom (filterIcon));
+            headerView.AttributedText = attributedString;
+            headerView.Frame = new CGRect (0, 0, headerWrapper.Frame.Width, 100);
+            headerView.SizeToFit ();
+            headerWrapper.Frame = new CGRect (0, 0, headerWrapper.Frame.Width, headerView.Frame.Height);
+            headerView.Frame = new CGRect ((headerWrapper.Frame.Width / 2) - (headerView.Frame.Width / 2), 0, headerView.Frame.Width, headerView.Frame.Height);
         }
 
         protected virtual void SetRowHeight ()
@@ -691,8 +727,8 @@ namespace NachoClient.iOS
             switchAccountButton.SetAccountImage (account);
             SetEmailMessages (GetNachoEmailMessages (account.Id));
             if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
-                headerView.Text = messageSource.GetNachoEmailMessages ().FilterSetting.ToString ();
-                TableView.TableHeaderView = headerView;
+                SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
+                TableView.TableHeaderView = headerWrapper;
             } else {
                 TableView.TableHeaderView = null;
             }

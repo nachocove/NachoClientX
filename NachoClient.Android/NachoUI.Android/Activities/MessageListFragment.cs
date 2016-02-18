@@ -216,9 +216,8 @@ namespace NachoClient.AndroidClient
             }
 
             if (messages.HasFilterSemantics ()) {
-                var filterSetting = view.FindViewById<TextView> (Resource.Id.filter_setting);
-                filterSetting.Visibility = ViewStates.Visible;
-                filterSetting.Text = messages.FilterSetting.ToString ();
+                view.FindViewById<View> (Resource.Id.filter_setting_header).Visibility = ViewStates.Visible;
+                SetFilterText (view, messages.FilterSetting);
             }
                 
             ConfigureButtons ();
@@ -441,6 +440,29 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        void SetFilterText (View parentView, FolderFilterOptions filterSetting)
+        {
+            string text;
+            switch (filterSetting) {
+            case FolderFilterOptions.All:
+                text = "All messages";
+                break;
+            case FolderFilterOptions.Hot:
+                text = "Hot messages";
+                break;
+            case FolderFilterOptions.Focused:
+                text = "Focused messages";
+                break;
+            case FolderFilterOptions.Unread:
+                text = "Unread messages";
+                break;
+            default:
+                text = "Unknown set of messages";
+                break;
+            }
+            parentView.FindViewById<TextView> (Resource.Id.filter_setting).Text = text;
+        }
+
         void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
             if (null != onEventClick) {
@@ -519,8 +541,9 @@ namespace NachoClient.AndroidClient
                 // Ignore "Message Filter"
                 return true;
             }
-            messages.FilterSetting = (FolderFilterOptions)item.ItemId;
-            View.FindViewById<TextView> (Resource.Id.filter_setting).Text = messages.FilterSetting.ToString ();
+            var newFilterSetting = (FolderFilterOptions)item.ItemId;
+            messages.FilterSetting = newFilterSetting;
+            SetFilterText (View, newFilterSetting);
             RefreshIfVisible ();
             return true;
         }
