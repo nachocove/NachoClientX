@@ -9,7 +9,7 @@ namespace NachoCore.SFDC
 {
     public class SalesForceProtoControl : NcProtoControl
     {
-        public const int KDefaultResyncSeconds = 30;
+        public const int KDefaultResyncSeconds = 60 * 30;
         public const string McMutablesModule = "Salesforce";
 
         public const McAccount.AccountCapabilityEnum SalesForceCapabilities = (
@@ -184,7 +184,7 @@ namespace NachoCore.SFDC
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoDrive, ActSetsState = true },
                             new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
-                    }         
+                    },
                 }
             };
             Sm.Validate ();
@@ -262,8 +262,7 @@ namespace NachoCore.SFDC
                 ReSyncTimer.Dispose ();
             }
             ReSyncTimer = new NcTimer ("SFDCResyncTimer", (state) => {
-                //Sm.PostEvent ((uint)SmEvt.E.Launch, "SFDCRESYNCTIMER");
-                SyncCmd (0);
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "SFDCRESYNCTIMER");
             }, null, new TimeSpan (0, 0, KDefaultResyncSeconds), TimeSpan.Zero);
         }
 
