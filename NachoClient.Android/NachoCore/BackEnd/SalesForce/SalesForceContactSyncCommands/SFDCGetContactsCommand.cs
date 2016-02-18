@@ -112,6 +112,7 @@ namespace NachoCore.SFDC
                 var responseData = Newtonsoft.Json.Linq.JObject.Parse (jsonResponse);
                 var jsonRecords = responseData.SelectToken ("records");
                 var contactRecords = jsonRecords.ToObject<List<ContactRecord>> ();
+                Log.Info (Log.LOG_SFDC, "SFDCGetContactsCommand: Pulled {0} contacts from server", contactRecords.Count);
                 var localContacts = GetContactsByServerIds(contactRecords.Select (x => x.Id).ToList ());
                 var needContacts = new List<string> ();
                 foreach (var contact in contactRecords) {
@@ -120,6 +121,7 @@ namespace NachoCore.SFDC
                         needContacts.Add (contact.Id);
                     }
                 }
+                Log.Info (Log.LOG_SFDC, "SFDCGetContactsCommand: Need update on {0} contacts", needContacts.Count);
                 return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTSUMSUCC", needContacts);
             } catch (JsonSerializationException) {
                 return ProcessErrorResponse (jsonResponse);

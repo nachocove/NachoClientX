@@ -107,10 +107,14 @@ namespace NachoCore
                 Newtonsoft.Json.Linq.JToken refreshToken;
                 decodedResponse.TryGetValue ("refresh_token", out refreshToken);
 
+                int expires = null != expiresIn ? (int)expiresIn : 0;
+                if (expires <= 0) {
+                    expires = 3600;
+                }
                 // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
                 Cred.UpdateOauth2 ((string)accessToken,
                     string.IsNullOrEmpty ((string)refreshToken) ? Cred.GetRefreshToken () : (string)refreshToken,
-                    string.IsNullOrEmpty ((string)expiresIn) ? 3600 : uint.Parse ((string)expiresIn));
+                    (uint)expires);
                 onSuccess (Cred);
                 RefreshAction (Cred, decodedResponse);
             }), ((ex, token) => {
