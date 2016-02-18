@@ -223,6 +223,7 @@ namespace NachoCore.SFDC
                 ExecuteCmd ();
                 Sm.State = (uint)Lst.EmailSetupW;
             } else {
+                DoSuccess ();
                 Sm.State = (uint)Lst.Stop;
             }
         }
