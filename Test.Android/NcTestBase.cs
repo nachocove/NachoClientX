@@ -4,6 +4,7 @@ using System;
 using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace Test.Common
 {
@@ -17,6 +18,12 @@ namespace Test.Common
             NcModel.Instance.InitializeDirs (1);
             NcModel.Instance.InitializeDirs (2);
             Telemetry.ENABLED = false;
+            McPendingHelper.IsUnitTest = true;
+        }
+
+        [TearDown]
+        public void TearDown ()
+        {
         }
     }
 }
