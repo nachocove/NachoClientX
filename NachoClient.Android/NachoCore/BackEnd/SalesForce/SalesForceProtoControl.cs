@@ -200,11 +200,15 @@ namespace NachoCore.SFDC
 
         void DoDisc ()
         {
-            if (SFDCSetup == null) {
-                SFDCSetup = new SalesForceSetup (this, AccountId);
-            } else {
-                Log.Warn (Log.LOG_SFDC, "Starting a discovery on top of a discovery!");
+            if (SFDCSetup != null) {
+                SFDCSetup.Cancel ();
+                SFDCSetup = null;
             }
+            if (Sync != null) {
+                Sync.Cancel ();
+                Sync = null;
+            }
+            SFDCSetup = new SalesForceSetup (this, AccountId);
             SFDCSetup.Execute ();
         }
 
