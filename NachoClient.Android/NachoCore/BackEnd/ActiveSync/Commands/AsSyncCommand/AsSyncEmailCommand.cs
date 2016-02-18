@@ -66,11 +66,14 @@ namespace NachoCore.ActiveSync
                     emailMessage.IsJunk = folder.IsJunkFolder ();
                     emailMessage.DetermineIfIsChat ();
                     emailMessage.Insert ();
-                    if (emailMessage.IsChat) {
-                        McChat.AssignMessageToChat (emailMessage);
-                    }
                     folder.Link (emailMessage);
                     aHelp.InsertAttachments (emailMessage);
+                    if (emailMessage.IsChat) {
+                        var result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
+                        if (result.isError()){
+                            Log.Error(Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
+                        }
+                    }
                 } else {
                     emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                         var target = (McEmailMessage)record;

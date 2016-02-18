@@ -15,6 +15,7 @@ namespace NachoCore.Utils
         public McChat Chat { get; set; }
         string Text;
         List<McEmailMessage> PreviousMessages;
+        Action<McEmailMessage> MessageReady;
         
         private ChatMessageComposer (McChat chat, string text, List<McEmailMessage> previousMessages) : base(chat.AccountId)
         {
@@ -29,9 +30,10 @@ namespace NachoCore.Utils
             Message.To = EmailHelper.AddressStringFromList (ChatToList ());
         }
 
-        public static void SendChatMessage (McChat chat, string text, List<McEmailMessage> previousMessages)
+        public static void SendChatMessage (McChat chat, string text, List<McEmailMessage> previousMessages, Action<McEmailMessage> callback)
         {
             var composer = new ChatMessageComposer (chat, text, previousMessages);
+            composer.MessageReady = callback;
             composer.PrepareAndSendMessage ();
         }
 
@@ -95,6 +97,9 @@ namespace NachoCore.Utils
             base.FinishPreparingMessage ();
             Save (Bundle.FullHtml);
             Send ();
+            if (MessageReady != null) {
+                MessageReady (Message);
+            }
         }
 
         List<NcEmailAddress> ChatToList ()

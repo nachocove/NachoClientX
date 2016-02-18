@@ -327,7 +327,11 @@ namespace NachoCore.ActiveSync
                             if (null != pending) {
                                 var result = NcResult.Info (successInd);
                                 result.Value = item;
-                                pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                                if (result.isError ()) {
+                                    pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilSync, result);
+                                } else {
+                                    pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                                }
                                 PendingList.Remove (pending);
                             }
                         } else {

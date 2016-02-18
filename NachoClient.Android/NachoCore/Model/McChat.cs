@@ -15,6 +15,8 @@ namespace NachoCore.Model
         public int AccountId { get; set; }
         [Indexed]
         public string ParticipantHash { get; set; }
+        [Indexed]
+        public DateTime LastMessageDate { get; set; }
 
         public McChat () : base ()
         {
@@ -45,6 +47,16 @@ namespace NachoCore.Model
             }
         }
 
+        public static List<McChat> LastestChatsForAccount (int accountId, int offset=0, int limit=50)
+        {
+            return NcModel.Instance.Db.Query<McChat> ("SELECT * FROM McChat WHERE AccountId = ? ORDER BY LastMessageDate DESC LIMIT ? OFFSET ?", accountId, limit, offset);
+        }
+
+        public static List<McChat> LastestChats (int offset=0, int limit=50)
+        {
+            return NcModel.Instance.Db.Query<McChat> ("SELECT * FROM McChat ORDER BY LastMessageDate DESC LIMIT ? OFFSET ?", limit, offset);
+        }
+
         public static McChat ChatForAddresses (int accountId, List<McEmailAddress> addresses)
         {
             var participantHash = HashAddresses (addresses);
@@ -63,6 +75,11 @@ namespace NachoCore.Model
                     chat.AccountId = accountId;
                     chat.Insert ();
                     chat.PopuplateParticipantsFromAddresses (addresses);
+                    var account = McAccount.QueryById<McAccount> (accountId);
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
+                        Account = account,
+                        Status = NcResult.Info (NcResult.SubKindEnum.Info_ChatSetChanged)
+                    });
                 }
             });
             return chat;
@@ -82,12 +99,34 @@ namespace NachoCore.Model
                 }
             }
             var chat = ChatForAddresses (message.AccountId, mcaddresses);
-            var chatMessage = new McChatMessage ();
-            chatMessage.ChatId = chat.Id;
-            chatMessage.AccountId = chat.AccountId;
-            chatMessage.MessageId = message.Id;
-            chatMessage.Insert ();
+            chat.AddMessage (message);
             return chat;
+        }
+
+        public void AddMessage (McEmailMessage message)
+        {
+            var existing = NcModel.Instance.Db.Query<McChatMessage> ("SELECT * FROM McChatMessage WHERE MessageId = ? AND ChatId = ?", message.Id, Id);
+            if (existing.Count == 0) {
+                NcModel.Instance.RunInLock (() => {
+                    existing = NcModel.Instance.Db.Query<McChatMessage> ("SELECT * FROM McChatMessage WHERE MessageId = ? AND ChatId = ?", message.Id, Id);
+                    if (existing.Count == 0) {
+                        var chatMessage = new McChatMessage ();
+                        chatMessage.ChatId = Id;
+                        chatMessage.AccountId = AccountId;
+                        chatMessage.MessageId = message.Id;
+                        chatMessage.Insert ();
+                        if (LastMessageDate == null || message.DateReceived > LastMessageDate) {
+                            LastMessageDate = message.DateReceived;
+                            Update ();
+                        }
+                        var account = McAccount.QueryById<McAccount> (AccountId);
+                        NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                            Account = account,
+                            Status = NcResult.Info (NcResult.SubKindEnum.Info_ChatMessageSetChanged)
+                        });
+                    }
+                });
+            }
         }
 
         void PopuplateParticipantsFromAddresses (List<McEmailAddress> addresses)

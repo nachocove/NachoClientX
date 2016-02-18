@@ -629,6 +629,14 @@ namespace NachoCore.Model
                 Operation == Operations.EmailReply) {
                 control.Owner.SendEmailResp (control, ItemId, true);
             }
+            if (Operation == Operations.EmailBodyDownload) {
+                McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, ServerId);
+                if (email.IsChat) {
+                    var bundle = new NcEmailMessageBundle (email);
+                    bundle.Update ();
+                    McChat.AssignMessageToChat (email);
+                }
+            }
             if (null != result) {
                 NcAssert.True (null != control);
                 control.StatusInd (result, new [] { Token });
