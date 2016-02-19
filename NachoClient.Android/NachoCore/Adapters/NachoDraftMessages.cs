@@ -81,7 +81,7 @@ namespace NachoCore
 
         public override bool IsCompatibleWithAccount (McAccount account)
         {
-            return account.Id == folder.AccountId;
+            return account.ContainsAccount (folder.AccountId);
         }
     }
 }
