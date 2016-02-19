@@ -129,7 +129,7 @@ namespace NachoClient.iOS
                 var messages = messageSource.GetNachoEmailMessages ();
                 var actions = new List<NcAlertAction> ();
                 foreach (var value in messages.PossibleFilterSettings) {
-                    actions.Add (new NcAlertAction (Folder_Helpers.FilterShortString(value), () => {
+                    actions.Add (new NcAlertAction (Folder_Helpers.FilterShortString (value), () => {
                         SetFilter (value);
                     }));
                 }
@@ -413,6 +413,10 @@ namespace NachoClient.iOS
                     NavigationController.PopViewController (true);
                     return;
                 }
+            }
+                
+            if (HasAccountSwitcher ()) {
+                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             }
 
             if (!StatusIndCallbackIsSet) {

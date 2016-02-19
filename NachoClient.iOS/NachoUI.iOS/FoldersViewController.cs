@@ -114,6 +114,8 @@ namespace NachoClient.iOS
                 TableView.ReloadData ();
             }
 
+            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+
             if (!EventHandlersAreSet) {
                 folderTableViewSource.OnFolderSelected += FolderTableViewSource_OnFolderSelected;
                 folderTableViewSource.OnAccountSelected += FolderTableViewSource_OnAccountSelected;
