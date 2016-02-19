@@ -68,15 +68,6 @@ namespace NachoCore.SFDC
             Stop,
         };
 
-        public class SfdcSetupEvt : SmEvt
-        {
-            new public enum E : uint
-            {
-                AuthFail = (SmEvt.E.Last + 1),
-                Last = AuthFail,
-            };
-        }
-
         /// <summary>
         /// The API-based query path. We store it with the controller in memory, because it may change and
         /// we should query for it each time.
@@ -99,7 +90,7 @@ namespace NachoCore.SFDC
             SFDCOwner = owner;
             Sm = new NcStateMachine ("SFDCPC:SETUP") { 
                 Name = string.Format ("SFDCPC:SETUP({0})", accountId),
-                LocalEventType = typeof(SfdcSetupEvt),
+                LocalEventType = typeof(SalesForceProtoControl.SfdcEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {
                     new Node {
@@ -110,7 +101,11 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
-                            (uint)SfdcSetupEvt.E.AuthFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.InitW },
@@ -124,7 +119,11 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
-                            (uint)SfdcSetupEvt.E.AuthFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.InitW },
@@ -136,12 +135,16 @@ namespace NachoCore.SFDC
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Launch,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoGetResources, State = (uint)Lst.ResourceW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoError, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetVersion, State = (uint)Lst.InitW },
-                            new Trans { Event = (uint)SfdcSetupEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
+                            new Trans { Event = (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
                         }
                     },
                     new Node {
@@ -150,10 +153,14 @@ namespace NachoCore.SFDC
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Launch,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoGetObjects, State = (uint)Lst.ObjectsW },
-                            new Trans { Event = (uint)SfdcSetupEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
+                            new Trans { Event = (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoError, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetResources, State = (uint)Lst.ResourceW },
                         }
@@ -164,10 +171,14 @@ namespace NachoCore.SFDC
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Launch,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoEmailSetupOrStop, ActSetsState = true },
-                            new Trans { Event = (uint)SfdcSetupEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
+                            new Trans { Event = (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoError, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetObjects, State = (uint)Lst.ObjectsW },
                         }
@@ -178,10 +189,14 @@ namespace NachoCore.SFDC
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Launch,
+                            (uint)NcProtoControl.PcEvt.E.PendQOrHint,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSuccess, State = (uint)Lst.Stop },
-                            new Trans { Event = (uint)SfdcSetupEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
+                            new Trans { Event = (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoError, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetObjects, State = (uint)Lst.ObjectsW },
                         }

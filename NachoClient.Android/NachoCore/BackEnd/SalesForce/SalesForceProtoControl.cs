@@ -25,6 +25,26 @@ namespace NachoCore.SFDC
             Parked,
         };
 
+        public static string StateName (uint state)
+        {
+            switch (state) {
+            case (uint)St.Start:
+                return "Start";
+            case (uint)St.Stop:
+                return "Stop";
+            case (uint)Lst.DiscW:
+                return "DiscW";
+            case (uint)Lst.UiCrdW:
+                return "UiCrdW";
+            case (uint)Lst.SyncW:
+                return "HotQOpW";
+            case (uint)Lst.Parked:
+                return "Parked";
+            default:
+                return state.ToString ();
+            }
+        }
+
         public override BackEndStateEnum BackEndState {
             get {
                 return BackEndStateEnum.PostAutoDPostInboxSync;
@@ -123,7 +143,7 @@ namespace NachoCore.SFDC
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = FinishDisc, ActSetsState = true },
                             new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -135,17 +155,15 @@ namespace NachoCore.SFDC
                         State = (uint)Lst.SyncW,
                         Drop = new uint[] {
                         },
-                        Invalid = new [] {
-                            (uint)PcEvt.E.PendQOrHint,
-                            (uint)PcEvt.E.PendQHot,
-                        },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, ActSetsState = true },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoPick, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSyncSuccess, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                         }
                     },
@@ -155,8 +173,6 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
-                            (uint)PcEvt.E.PendQOrHint,
-                            (uint)PcEvt.E.PendQHot,
                             (uint)PcEvt.E.Park,
                         },
                         Invalid = new [] {
@@ -164,9 +180,11 @@ namespace NachoCore.SFDC
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.PendQOrHint, Act = DoDrive, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoDrive, ActSetsState = true },
                             new Trans { Event = (uint)SfdcEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
-                    }         
+                    },
                 }
             };
             Sm.Validate ();
@@ -174,47 +192,88 @@ namespace NachoCore.SFDC
 
         public override void Remove ()
         {
-            NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
+            if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
+                Log.Warn (Log.LOG_SMTP, "SalesForceProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
+            }
             base.Remove ();
         }
 
         void DoDisc ()
         {
-            if (SFDCSetup == null) {
-                SFDCSetup = new SalesForceSetup (this, AccountId);
-            } else {
-                Log.Warn (Log.LOG_SFDC, "Starting a discovery on top of a discovery!");
+            if (SFDCSetup != null) {
+                SFDCSetup.Cancel ();
+                SFDCSetup = null;
             }
+            if (Sync != null) {
+                Sync.Cancel ();
+                Sync = null;
+            }
+            SFDCSetup = new SalesForceSetup (this, AccountId);
             SFDCSetup.Execute ();
+        }
+
+        void FinishDisc ()
+        {
+            DiscoveryDone = true;
+            DoPick ();
         }
 
         SalesForceContactSync Sync;
 
-        void DoSync ()
+        void DoPick ()
         {
             if (null != ReSyncTimer) {
                 ReSyncTimer.Dispose ();
                 ReSyncTimer = null;
             }
-            DiscoveryDone = true;
+
             if (null != Sync) {
                 Sync.Cancel ();
                 Sync = null;
             }
-            Sync = new SalesForceContactSync (this, AccountId);
-            Sync.Execute ();
+
+            // TODO: couple ClearEventQueue with PostEvent inside SM mutex.
+            Sm.ClearEventQueue ();
+            var next = McPending.QueryEligible (AccountId, McAccount.SmtpCapabilities).
+                FirstOrDefault (x => McPending.Operations.Sync == x.Operation);
+            if (null != next) {
+                Log.Info (Log.LOG_SFDC, "Strategy:FG/BG:Send");
+                switch (next.Operation) {
+                case McPending.Operations.Sync:
+                    StartSync (next);
+                    Sm.State = (uint)Lst.SyncW;
+                    break;
+                default:
+                    Log.Warn (Log.LOG_SFDC, "Ignoring command {0}", next.Operation);
+                    break;
+                }
+            } else {
+                StartSync (null);
+                Sm.State = (uint)Lst.SyncW;
+            }
         }
 
         NcTimer ReSyncTimer;
 
         void DoSyncSuccess ()
         {
-            Sync.Cancel ();
-            Sync = null;
+            CancelCmd ();
             if (null != ReSyncTimer) {
                 ReSyncTimer.Dispose ();
             }
-            ReSyncTimer = new NcTimer ("SFDCResyncTimer", (state) => Execute (), null, new TimeSpan (0, 0, KDefaultResyncSeconds), TimeSpan.Zero);
+            ReSyncTimer = new NcTimer ("SFDCResyncTimer", (state) => {
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "SFDCRESYNCTIMER");
+            }, null, new TimeSpan (0, 0, KDefaultResyncSeconds), TimeSpan.Zero);
+        }
+
+        void StartSync (McPending pending)
+        {
+            if (null != Sync) {
+                Sync.Cancel ();
+                Sync = null;
+            }
+            Sync = new SalesForceContactSync (this, AccountId, pending);
+            Sync.Execute ();
         }
 
         void DoPark ()
@@ -225,7 +284,7 @@ namespace NachoCore.SFDC
         void DoDrive ()
         {
             if (DiscoveryDone) {
-                DoSync ();
+                DoPick ();
                 Sm.State = (uint)Lst.SyncW;
             } else {
                 DoDisc ();
