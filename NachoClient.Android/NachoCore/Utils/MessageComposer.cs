@@ -487,7 +487,7 @@ namespace NachoCore.Utils
 
         #region Save Message
 
-        public void Save (string html)
+        public void Save (string html, bool invalidateBundle = true)
         {
             if (Bundle.NeedsUpdate) {
                 // If we resized images, it could be the second time through this save.
@@ -513,9 +513,12 @@ namespace NachoCore.Utils
                 message.BodyId = Body.Id;
                 message.BodyPreview = preview;
                 message.DateReceived = Mime.Date.DateTime;
+                message.MessageID = Mime.MessageId;
                 return true;
             });
-            Bundle.Invalidate ();
+            if (invalidateBundle) {
+                Bundle.Invalidate ();
+            }
         }
 
         void WriteBody ()

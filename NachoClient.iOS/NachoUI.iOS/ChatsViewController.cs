@@ -16,6 +16,7 @@ namespace NachoClient.iOS
         ChatsTableViewSource Source;
         SwitchAccountButton SwitchAccountButton;
         UIBarButtonItem NewChatButton;
+        bool needsReload;
 
         public ChatsViewController (IntPtr ptr) : base(ptr)
         {
@@ -24,20 +25,11 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-//            var account = NcApplication.Instance.DefaultEmailAccount;
-//            var addresses = new List<McEmailAddress> (1);
-//            McEmailAddress address;
-//            McEmailAddress.Get (account.Id, "owens@d3.officeburrito.com", out address);
-//            addresses.Add (address);
-//            var chat = McChat.ChatForAddresses (account.Id, addresses);
-
-
             base.ViewDidLoad ();
 
             SwitchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = SwitchAccountButton;
 
-            // Adjust the icon; calendar covers all account
             SwitchToAccount (NcApplication.Instance.Account);
         }
 
@@ -47,6 +39,10 @@ namespace NachoClient.iOS
             if (Source.Account.Id != NcApplication.Instance.Account.Id) {
                 SwitchToAccount (NcApplication.Instance.Account);
             }
+            if (needsReload) {
+                Reload ();
+                needsReload = false;
+            }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             SwitchAccountButton.SetAccountImage (NcApplication.Instance.Account);
         }
@@ -54,6 +50,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            needsReload = true;
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
@@ -63,10 +60,16 @@ namespace NachoClient.iOS
             if (s.Account != null) {
                 if (NcApplication.Instance.Account.AccountType == McAccount.AccountTypeEnum.Unified || NcApplication.Instance.Account.Id == s.Account.Id) {
                     if (s.Status.SubKind == NcResult.SubKindEnum.Info_ChatSetChanged) {
-                        // TODO: show new chat
+                        Reload ();
                     }
                 }
             }
+        }
+
+        void Reload ()
+        {
+            Source.Reset ();
+            TableView.ReloadData ();
         }
 
         void SwitchAccountButtonPressed ()
@@ -80,8 +83,7 @@ namespace NachoClient.iOS
                 TableView.Source = Source = new ChatsTableViewSource (account, this);
             } else {
                 Source.Account = account;
-                Source.Reset ();
-                TableView.ReloadData ();
+                Reload ();
             }
             NewChatButton.Enabled = account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender);
         }
@@ -133,7 +135,6 @@ namespace NachoClient.iOS
 
         public override nint RowsInSection (UITableView tableview, nint section)
         {
-            // TODO: should be count of total chats, not just those loaded
             return Chats.Count;
         }
 

@@ -28,6 +28,7 @@ namespace NachoCore.Utils
             var subject = String.Format ("{0}Chat with {1} [Nacho Chat]", EmailHelper.IsReplyAction(Kind) ? "RE: " : "", !String.IsNullOrEmpty (mailbox.Name) ? mailbox.Name : mailbox.Address);
             Message = McEmailMessage.MessageWithSubject(Account, subject);
             Message.To = EmailHelper.AddressStringFromList (ChatToList ());
+            Message.IsChat = true;
         }
 
         public static void SendChatMessage (McChat chat, string text, List<McEmailMessage> previousMessages, Action<McEmailMessage> callback)
@@ -95,7 +96,7 @@ namespace NachoCore.Utils
         protected override void FinishPreparingMessage ()
         {
             base.FinishPreparingMessage ();
-            Save (Bundle.FullHtml);
+            Save (Bundle.FullHtml, invalidateBundle: false);
             Send ();
             if (MessageReady != null) {
                 MessageReady (Message);

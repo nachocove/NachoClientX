@@ -47,14 +47,14 @@ namespace NachoCore.Model
             }
         }
 
-        public static List<McChat> LastestChatsForAccount (int accountId, int offset=0, int limit=50)
+        public static List<McChat> LastestChatsForAccount (int accountId)
         {
-            return NcModel.Instance.Db.Query<McChat> ("SELECT * FROM McChat WHERE AccountId = ? ORDER BY LastMessageDate DESC LIMIT ? OFFSET ?", accountId, limit, offset);
+            return NcModel.Instance.Db.Query<McChat> ("SELECT * FROM McChat WHERE AccountId = ? ORDER BY LastMessageDate DESC", accountId);
         }
 
-        public static List<McChat> LastestChats (int offset=0, int limit=50)
+        public static List<McChat> LastestChats ()
         {
-            return NcModel.Instance.Db.Query<McChat> ("SELECT * FROM McChat ORDER BY LastMessageDate DESC LIMIT ? OFFSET ?", limit, offset);
+            return NcModel.Instance.Db.Query<McChat> ("SELECT * FROM McChat ORDER BY LastMessageDate DESC");
         }
 
         public static McChat ChatForAddresses (int accountId, List<McEmailAddress> addresses)
@@ -122,11 +122,23 @@ namespace NachoCore.Model
                         var account = McAccount.QueryById<McAccount> (AccountId);
                         NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                             Account = account,
-                            Status = NcResult.Info (NcResult.SubKindEnum.Info_ChatMessageSetChanged)
+                            Status = NcResult.Info (NcResult.SubKindEnum.Info_ChatMessageAdded),
+                            Tokens = new string[] {Id.ToString(), message.Id.ToString()}
                         });
                     }
                 });
             }
+        }
+
+        public List<McEmailMessage> GetMessages (int offset = 0, int limit = 50)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT m.* FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE cm.ChatId = ? " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND m.Id = (SELECT MAX(Id) FROM McEmailMessage m2 WHERE m2.MessageID = m.MessageID AND m2.AccountID = ? AND likelihood (m2.IsAwaitingDelete = 0, 1.0)) " +
+                "ORDER BY m.DateReceived DESC LIMIT ? OFFSET ?", Id, AccountId, limit, offset);
         }
 
         void PopuplateParticipantsFromAddresses (List<McEmailAddress> addresses)

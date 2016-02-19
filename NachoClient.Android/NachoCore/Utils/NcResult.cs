@@ -189,7 +189,7 @@ namespace NachoCore.Utils
             Error_NotAttached,
             Info_AccountSetChanged,
             Info_ChatSetChanged,
-            Info_ChatMessageSetChanged
+            Info_ChatMessageAdded
         };
 
         public enum WhyEnum

@@ -634,7 +634,22 @@ namespace NachoCore.Model
                 if (email.IsChat) {
                     var bundle = new NcEmailMessageBundle (email);
                     bundle.Update ();
-                    McChat.AssignMessageToChat (email);
+                    if (String.IsNullOrEmpty (email.MessageID)) {
+                        var mime = MimeKit.MimeMessage.Load (email.MimePath ());
+                        if (!String.IsNullOrEmpty (mime.MessageId)) {
+                            email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var email_ = record as McEmailMessage;
+                                email_.MessageID = mime.MessageId;
+                                return true;
+                            });
+                        }
+                    }
+                    if (!String.IsNullOrEmpty (email.MessageID)) {
+                        McChat.AssignMessageToChat (email);
+                        email.DeleteMatchingOutboxMessage ();
+                    } else {
+                        Log.Error (Log.LOG_SYNC, "Chat message download did not have MessageID");
+                    }
                 }
             }
             if (null != result) {

@@ -123,7 +123,11 @@ namespace NachoCore.Utils
                         message.Delete ();
                     }
                 } else {
-                    message.Delete ();
+                    if (!message.IsChat) {
+                        // If it's a chat message, we want to keep it around in the db until
+                        // we've got the sent copy fully sync'd
+                        message.Delete ();
+                    }
                     var sentFolder = McFolder.GetDefaultSentFolder (accountId);
                     if (null != sentFolder) {
                         // Best-effort, nothing to do on non-OK retval.

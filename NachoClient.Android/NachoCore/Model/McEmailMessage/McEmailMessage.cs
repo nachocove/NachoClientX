@@ -1243,6 +1243,17 @@ namespace NachoCore.Model
                 return false;
             }
         }
+
+        public void DeleteMatchingOutboxMessage ()
+        {
+            if (IsChat && !String.IsNullOrEmpty(MessageID)) {
+                var outbox = McFolder.GetClientOwnedOutboxFolder (AccountId);
+                var outboxMessages = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT m.* FROM McEmailMessage m JOIN McMapFolderFolderEntry e ON m.Id = e.FolderEntryId WHERE m.AccountId = ? AND m.MessageID = ? AND m.Id != ? AND e.FolderId = ?", AccountId, MessageID, Id, outbox.Id);
+                foreach (var message in outboxMessages){
+                    message.Delete ();
+                }
+            }
+        }
     }
 
     public class McEmailMessageThread
