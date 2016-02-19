@@ -67,7 +67,7 @@ namespace NachoCore.SFDC
         }
 
         protected SFDCCommand Cmd;
-        SalesForceProtoControl SFDCOwner;
+        public SalesForceProtoControl SFDCOwner { get; protected set; }
         protected NcStateMachine Sm;
         McPending Pending;
 
@@ -198,23 +198,30 @@ namespace NachoCore.SFDC
 
         List<string> NeedFetchIds;
 
+        public int ContactsAdded { get; set; }
+        public int ContactsModified { get; set; }
+        public int ContactsDeleted { get; set; }
+
         void DoSync ()
         {
-            NeedFetchIds = Sm.Arg as List<string>;
-            NcAssert.NotNull (NeedFetchIds, "No ids passed back");
+            Tuple<List<string>, List<string>> pack = Sm.Arg as Tuple<List<string>, List<string>>;
+            NcAssert.NotNull (pack, "No ids passed back");
+            NeedFetchIds = pack.Item1;
+            NeedFetchIds.AddRange (pack.Item2);
             DoSyncBase ();
         }
 
         void DoSyncContinue ()
         {
+            string contactId = Sm.Arg as string;
             DoSyncBase ();
         }
 
-        void DoSyncBase ()
+        void DoSyncBase (string contactId = null)
         {
             uint nextState;
             if (NeedFetchIds.Any ()) {
-                Log.Info (Log.LOG_SFDC, "SalesForceContactSync: {0} left to sync", NeedFetchIds.Count);
+                Log.Info (Log.LOG_SFDC, "SalesForceContactSync: left to sync: {0} ", NeedFetchIds.Count);
                 string id = NeedFetchIds.First ();
                 NeedFetchIds.Remove (id);
 
@@ -227,6 +234,9 @@ namespace NachoCore.SFDC
                     target.SFDCLastContactsSynced = DateTime.UtcNow;
                     return true;
                 }));
+                if (ContactsAdded != 0 || ContactsModified != 0 || ContactsDeleted != 0) {
+                    Owner.StatusInd (SFDCOwner.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
+                }
                 Log.Info (Log.LOG_SFDC, "Finished Syncing Contacts");
                 SendCommandToOwnerSm (Event.Create ((uint)SmEvt.E.Success, "SFDCALLCONTACTDONE"), NcResult.OK ());
                 nextState = (uint)Lst.Stop;

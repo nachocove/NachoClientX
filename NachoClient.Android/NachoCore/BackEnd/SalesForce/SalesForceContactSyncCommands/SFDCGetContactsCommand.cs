@@ -92,7 +92,7 @@ namespace NachoCore.SFDC
             public string ServerId { get; set; }
         }
 
-        public static List<SFDCMcContactRecord> GetContactsByServerIds (List<string> ids)
+        public static List<SFDCMcContactRecord> GetContactsByServerIds (List<string> ids, bool In)
         {
             if (0 == ids.Count) {
                 return new List<SFDCMcContactRecord> ();
@@ -113,16 +113,20 @@ namespace NachoCore.SFDC
                 var jsonRecords = responseData.SelectToken ("records");
                 var contactRecords = jsonRecords.ToObject<List<ContactRecord>> ();
                 Log.Info (Log.LOG_SFDC, "SFDCGetContactsCommand: Pulled {0} contacts from server", contactRecords.Count);
-                var localContacts = GetContactsByServerIds(contactRecords.Select (x => x.Id).ToList ());
-                var needContacts = new List<string> ();
+                var localContacts = GetContactsByServerIds(contactRecords.Select (x => x.Id).ToList (), true);
+                var newContacts = new List<string> ();
+                var updatedContacts = new List<string> ();
                 foreach (var contact in contactRecords) {
                     var local = localContacts.FirstOrDefault (x => x.ServerId == contact.Id);
-                    if (null == local || local.LastModified < contact.LastModifiedDate) {
-                        needContacts.Add (contact.Id);
+                    if (null == local) {
+                        newContacts.Add (contact.Id);
+                    }
+                    else if (local.LastModified < contact.LastModifiedDate) {
+                        updatedContacts.Add (contact.Id);
                     }
                 }
-                Log.Info (Log.LOG_SFDC, "SFDCGetContactsCommand: Need update on {0} contacts", needContacts.Count);
-                return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTSUMSUCC", needContacts);
+                Log.Info (Log.LOG_SFDC, "SFDCGetContactsCommand: New Contacts {0} Updated Contacts {1}",  newContacts.Count, updatedContacts.Count);
+                return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTSUMSUCC", new Tuple<List<string>, List<string>> (newContacts, updatedContacts));
             } catch (JsonSerializationException) {
                 return ProcessErrorResponse (jsonResponse);
             } catch (JsonReaderException) {
@@ -134,9 +138,11 @@ namespace NachoCore.SFDC
     public class SFDCGetContactsDataCommand : SFDCCommand
     {
         string ContactId;
+        SalesForceContactSync Owner;
 
         public SFDCGetContactsDataCommand (IBEContext beContext, string contactId) : base (beContext)
         {
+            Owner = beContext as SalesForceContactSync;
             ContactId = contactId;
         }
 
@@ -261,6 +267,7 @@ namespace NachoCore.SFDC
             try {
                 var contactInfo = JsonConvert.DeserializeObject<ContactRecord> (jsonResponse);
                 var contact = McContact.QueryByServerId<McContact> (AccountId, contactInfo.Id);
+                bool newContact = contact == null;
                 if (contact == null) {
                     contact = new McContact () {
                         AccountId = AccountId,
@@ -307,6 +314,14 @@ namespace NachoCore.SFDC
                 }));
 
                 contact.SetVIP (true);
+                if (newContact) {
+                    Owner.ContactsAdded += 1;
+                } else {
+                    Owner.ContactsModified += 1;
+                    var result = NcResult.Info (NcResult.SubKindEnum.Info_ContactChanged);
+                    result.Value = contact.Id;
+                    Owner.SFDCOwner.StatusInd (result);
+                }
             } catch (JsonSerializationException) {
                 return ProcessErrorResponse (jsonResponse);
             } catch (JsonReaderException) {
