@@ -1155,7 +1155,7 @@ namespace NachoClient
                 imageName = "Icon";
                 break;
             case McAccount.AccountServiceEnum.SalesForce:
-                imageName = "Icon";
+                imageName = "salesforce-header-logo";
                 break;
             default:
                 imageName = "Icon";

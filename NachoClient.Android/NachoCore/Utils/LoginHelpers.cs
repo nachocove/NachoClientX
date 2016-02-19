@@ -45,7 +45,7 @@ namespace NachoCore.Utils
 
         static public bool ShouldAlertUser ()
         {
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds()) {
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds()) {
                 if (ShouldAlertUser (accountId)) {
                     return true;
                 }

@@ -225,7 +225,7 @@ namespace NachoClient.iOS
                 if (!Calendars.Instance.AuthorizationStatus || 0 == new NachoFolders (account.Id, NachoFolders.FilterForCalendars).Count ()) {
                     Log.Info (Log.LOG_CALENDAR, "The device calendar is inaccessible or doesn't have any calendars. Looking for another account to use for the new calendar item.");
                     bool foundWritableCalendar = false;
-                    foreach (var candidateAccountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+                    foreach (var candidateAccountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
                         var candidateAccount = McAccount.QueryById<McAccount> (candidateAccountId);
                         if (candidateAccount.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && 0 < new NachoFolders (candidateAccountId, NachoFolders.FilterForCalendars).Count ()) {
                             foundWritableCalendar = true;

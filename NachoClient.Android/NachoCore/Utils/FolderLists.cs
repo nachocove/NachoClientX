@@ -127,7 +127,7 @@ namespace NachoCore.Utils
             // Add accounts in unified mode
             if (McAccount.GetUnifiedAccount ().Id == accountId) {
                 displayList.Add (new DisplayElement (Header.Accounts));
-                foreach (var account in McAccount.GetAllConfiguredNonDeviceAccounts()) {
+                foreach (var account in McAccount.GetAllConfiguredNormalAccounts()) {
                     displayList.Add (new DisplayElement (new Node (account, account.Id == displayAccountId), 0, false));
                 }
                 MarkLastInSection ();

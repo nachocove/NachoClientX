@@ -336,8 +336,10 @@ namespace NachoCore.Model
             List<McAccount> result = new List<McAccount> ();
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (McAccount acc in accounts) {
-                if (acc.HasCapability (accountCapabilities)) {
-                    result.Add (acc);
+                if (acc.ConfigurationInProgress == ConfigurationInProgressEnum.Done) {
+                    if (acc.HasCapability (accountCapabilities)) {
+                        result.Add (acc);
+                    }
                 }
             }
             return result;
@@ -364,6 +366,11 @@ namespace NachoCore.Model
         }
         // Cache it!
         static McAccount _deviceAccount;
+
+        public static McAccount GetSalesForceAccount()
+        {
+            return McAccount.QueryByAccountType (McAccount.AccountTypeEnum.SalesForce).SingleOrDefault ();
+        }
 
         // Create on first reference
         public static McAccount GetUnifiedAccount ()
@@ -461,24 +468,26 @@ namespace NachoCore.Model
             return GetAllAccounts ().Where ((x) => x.CanAddContact ()).ToList ();
         }
 
-        public static List<int> GetAllConfiguredNonDeviceAccountIds ()
+        public static List<int> GetAllConfiguredNormalAccountIds ()
         {
             return (from account in McAccount.GetAllAccounts ()
                              where
                                  McAccount.AccountTypeEnum.Device != account.AccountType &&
                                  McAccount.AccountTypeEnum.Unified != account.AccountType &&
+                                 McAccount.AccountTypeEnum.SalesForce != account.AccountType &&
                                  McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
                              select account.Id).ToList ();
         }
 
-        public static List<McAccount> GetAllConfiguredNonDeviceAccounts ()
+        public static List<McAccount> GetAllConfiguredNormalAccounts ()
         {
             return (from account in McAccount.GetAllAccounts ()
-                where
-                McAccount.AccountTypeEnum.Device != account.AccountType &&
-                McAccount.AccountTypeEnum.Unified != account.AccountType &&
-                McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
-                select account).ToList ();
+                             where
+                                 McAccount.AccountTypeEnum.Device != account.AccountType &&
+                                 McAccount.AccountTypeEnum.Unified != account.AccountType &&
+                                 McAccount.AccountTypeEnum.SalesForce != account.AccountType &&
+                                 McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
+                             select account).ToList ();
         }
 
         public static McAccount GetAccountBeingConfigured ()

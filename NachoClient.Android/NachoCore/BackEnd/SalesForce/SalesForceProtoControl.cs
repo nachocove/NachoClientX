@@ -11,10 +11,11 @@ namespace NachoCore.SFDC
     {
         public const int KDefaultResyncSeconds = 60 * 30;
         public const string McMutablesModule = "Salesforce";
+        public const string McMutablesBccKey = "Salesforce.Bcc";
 
         public const McAccount.AccountCapabilityEnum SalesForceCapabilities = (
-            McAccount.AccountCapabilityEnum.ContactReader |
-            McAccount.AccountCapabilityEnum.ContactWriter);
+                                                                                  McAccount.AccountCapabilityEnum.ContactReader |
+                                                                                  McAccount.AccountCapabilityEnum.ContactWriter);
 
         public enum Lst : uint
         {
@@ -357,6 +358,16 @@ namespace NachoCore.SFDC
             return McMutables.Get (accountId, McMutablesModule, SFDCGetEmailDomainCommand.McMutablesKey);
         }
 
+        public static bool ShouldAddBccToEmail (int accountId)
+        {
+            return McMutables.GetBoolDefault (accountId, McMutablesModule, McMutablesBccKey, false);
+        }
+
+        public static void SetShouldAddBccToEmail (int accountId, bool enabled)
+        {
+            McMutables.SetBool (accountId, McMutablesModule, McMutablesBccKey, enabled);
+        }
+
         public static bool IsSalesForceContact (int accountId, string emailAddress)
         {
             var contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
@@ -370,6 +381,10 @@ namespace NachoCore.SFDC
 
         public static McEmailMessage MaybeAddSFDCEmailToBcc (McEmailMessage emailMessage)
         {
+            if (!ShouldAddBccToEmail (emailMessage.AccountId)) {
+                return emailMessage;
+            }
+
             // FIXME: Need to test this.
             var SalesforceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.SalesForce).FirstOrDefault ();
             if (SalesforceAccount != null) {

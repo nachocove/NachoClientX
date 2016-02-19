@@ -29,7 +29,7 @@ namespace NachoClient.AndroidClient
 
         public override Dialog OnCreateDialog (Bundle savedInstanceState)
         {
-            var accounts = McAccount.GetAllConfiguredNonDeviceAccounts ();
+            var accounts = McAccount.GetAllConfiguredNormalAccounts ();
             adapter = new AccountChooserAdapter (accounts, initialSelection);
 
             var view = new ListView (this.Activity);

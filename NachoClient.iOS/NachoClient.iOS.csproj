@@ -1797,6 +1797,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\FolderLists.cs">
       <Link>NachoCore\Utils\FolderLists.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.designer.cs">
+      <DependentUpon>SalesforceSettingsViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2733,6 +2737,7 @@
     <BundleResource Include="Resources\gen-read-list%404x.png" />
     <BundleResource Include="Resources\gen-read-list%406x.png" />
     <BundleResource Include="Resources\Icon-83.5%402x.png" />
+    <BundleResource Include="Resources\salesforce-header-logo.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
