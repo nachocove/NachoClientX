@@ -31,7 +31,11 @@ namespace NachoClient.iOS
         protected UIBarButtonItem moveButton;
         protected UIBarButtonItem backButton;
         protected UIBarButtonItem filterButton;
-        protected UITextView headerView;
+
+        protected UIView headerWrapper;
+        protected UILabel headerView;
+        protected UIImageView headerIconLeft;
+        protected UIImageView headerIconRight;
 
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
@@ -123,11 +127,9 @@ namespace NachoClient.iOS
             filterButton.AccessibilityLabel = "Filter";
             filterButton.Clicked += (object sender, EventArgs e) => {
                 var messages = messageSource.GetNachoEmailMessages ();
-                var values = messages.PossibleFilterSettings;
                 var actions = new List<NcAlertAction> ();
-                for (int i = 0; i < values.Length; ++i) {
-                    var value = values [i];
-                    actions.Add (new NcAlertAction (value.ToString (), () => {
+                foreach (var value in messages.PossibleFilterSettings) {
+                    actions.Add (new NcAlertAction (Folder_Helpers.FilterShortString(value), () => {
                         SetFilter (value);
                     }));
                 }
@@ -148,13 +150,24 @@ namespace NachoClient.iOS
             CustomizeBackButton ();
             MultiSelectToggle (messageSource, false);
 
-            headerView = new UITextView ();
+            headerWrapper = new UIView (new CGRect (0, 0, TableView.Frame.Width, 10));
+
+            headerIconLeft = new UIImageView (new CGRect (0, 0, 24, 24));
+            headerIconLeft.Image = UIImage.FromBundle ("gen-read-list");
+            headerWrapper.AddSubview (headerIconLeft);
+
+            headerIconRight = new UIImageView (new CGRect (0, 0, 24, 24));
+            headerIconRight.Image = UIImage.FromBundle ("gen-read-list");
+            headerWrapper.AddSubview (headerIconRight);
+
+            headerView = new UILabel ();
+            headerWrapper.AddSubview (headerView);
             headerView.BackgroundColor = A.Color_NachoBackgroundGray;
             headerView.AccessibilityLabel = "MessageListFilterSetting";
-            headerView.Text = messageSource.GetNachoEmailMessages ().FilterSetting.ToString ();
-            headerView.SizeToFit ();
+            headerView.Font = A.Font_AvenirNextMedium17;
+            SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
             if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
-                TableView.TableHeaderView = headerView;
+                TableView.TableHeaderView = headerWrapper;
             } else {
                 TableView.TableHeaderView = null;
             }
@@ -199,9 +212,19 @@ namespace NachoClient.iOS
         {
             var messages = messageSource.GetNachoEmailMessages ();
             messages.FilterSetting = value;
-            headerView.Text = messages.FilterSetting.ToString ();
-            headerView.SizeToFit ();
+            SetHeaderText (value);
             RefreshThreadsIfVisible ();
+        }
+
+        void SetHeaderText (FolderFilterOptions filterSetting)
+        {
+            headerView.Text = Folder_Helpers.FilterString (filterSetting);
+            headerView.Frame = new CGRect (0, 0, headerWrapper.Frame.Width, 100);
+            headerView.SizeToFit ();
+            ViewFramer.Create (headerWrapper).Height (headerView.Frame.Height);
+            ViewFramer.Create (headerView).X ((headerWrapper.Frame.Width / 2) - (headerView.Frame.Width / 2));
+            ViewFramer.Create (headerIconLeft).X (headerView.Frame.X - headerIconLeft.Frame.Width - 15);
+            ViewFramer.Create (headerIconRight).X (headerView.Frame.Right + 15);
         }
 
         protected virtual void SetRowHeight ()
@@ -691,8 +714,8 @@ namespace NachoClient.iOS
             switchAccountButton.SetAccountImage (account);
             SetEmailMessages (GetNachoEmailMessages (account.Id));
             if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
-                headerView.Text = messageSource.GetNachoEmailMessages ().FilterSetting.ToString ();
-                TableView.TableHeaderView = headerView;
+                SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
+                TableView.TableHeaderView = headerWrapper;
             } else {
                 TableView.TableHeaderView = null;
             }

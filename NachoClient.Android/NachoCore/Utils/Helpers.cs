@@ -63,6 +63,40 @@ namespace NachoCore.Utils
             typesAsString += string.Join (",", typesToStringArray) + ")";
             return typesAsString;
         }
+
+        public static string FilterShortString (FolderFilterOptions filterSetting)
+        {
+            switch (filterSetting) {
+            case FolderFilterOptions.All:
+                return "All";
+            case FolderFilterOptions.Hot:
+                return "Hot";
+            case FolderFilterOptions.Focused:
+                return "Focused";
+            case FolderFilterOptions.Unread:
+                return "Unread";
+            default:
+                Log.Error (Log.LOG_UTILS, "Unexpected value for FolderFilterOptions: {0} ({1})", filterSetting.ToString (), (int)filterSetting);
+                return "Unknown";
+            }
+        }
+
+        public static string FilterString (FolderFilterOptions filterSetting)
+        {
+            switch (filterSetting) {
+            case FolderFilterOptions.All:
+                return "All messages";
+            case FolderFilterOptions.Hot:
+                return "Hot messages";
+            case FolderFilterOptions.Focused:
+                return "Focused messages";
+            case FolderFilterOptions.Unread:
+                return "Unread messages";
+            default:
+                Log.Error (Log.LOG_UTILS, "Unexpected value for FolderFilterOptions: {0} ({1})", filterSetting.ToString (), (int)filterSetting);
+                return "Unknown set of messages";
+            }
+        }
     }
 
     public static class DateTime_Helpers

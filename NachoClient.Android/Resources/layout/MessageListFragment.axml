@@ -37,16 +37,32 @@
     </RelativeLayout>
     <include
         layout="@layout/HotEvent" />
-    <TextView
-        android:id="@+id/filter_setting"
+    <LinearLayout
+        android:id="@+id/filter_setting_header"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
-        android:textColor="@android:color/black"
-        android:textSize="14dp"
-        android:text="All"
-        android:background="@android:color/white"
-        android:visibility="gone" />
+        android:background="@android:color/darker_gray"
+        android:visibility="gone">
+        <ImageView
+            android:src="@drawable/gen_read_list"
+            android:layout_width="wrap_content"
+            android:layout_height="17dp" />
+        <TextView
+            android:id="@+id/filter_setting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:textColor="@android:color/black"
+            android:textSize="14dp"
+            android:text="All messages" />
+        <ImageView
+            android:src="@drawable/gen_read_list"
+            android:layout_width="wrap_content"
+            android:layout_height="17dp" />
+    </LinearLayout>
     <TextView
         android:id="@+id/no_messages"
         android:layout_width="match_parent"
