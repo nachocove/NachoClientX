@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="15D21" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="whm-e9-YWX">
     <dependencies>
-        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9530"/>
     </dependencies>
     <scenes>
@@ -101,6 +100,7 @@
                         <outlet property="contentView" destination="73b-MM-u7g" id="Erf-qp-QXw"/>
                         <outlet property="scrollView" destination="R7v-6c-XcH" id="hya-iQ-4du"/>
                         <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="nJv-0g-ewn"/>
+                        <segue destination="Ef5-Gs-Ti8" kind="push" identifier="SegueToSalesforceSettings" id="Io9-QA-erY"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -727,6 +727,21 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="reC-sA-KTw" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-5521" y="2968"/>
+        </scene>
+        <!--Salesforce Settings View Controller-->
+        <scene sceneID="uVd-e3-2MQ">
+            <objects>
+                <viewController storyboardIdentifier="SalesforceSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Ef5-Gs-Ti8" customClass="SalesforceSettingsViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="oK8-a9-Mh6">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="UJX-OJ-OJJ"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="fT6-px-d7J" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-5070" y="3153"/>
         </scene>
         <!--Notes View Controller-->
         <scene sceneID="OcZ-uK-llj">
@@ -1404,34 +1419,34 @@
         <image name="more-nachomail.png" width="24" height="24"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="Kmd-x6-iCJ"/>
         <segue reference="JTo-qU-j7O"/>
-        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="nJv-0g-ewn"/>
+        <segue reference="88w-D9-03c"/>
+        <segue reference="ytC-Oe-29B"/>
+        <segue reference="eyY-I1-wel"/>
         <segue reference="udF-bU-cV6"/>
         <segue reference="tdu-G2-PEp"/>
         <segue reference="HCr-Oa-UHV"/>
+        <segue reference="Tfk-Mt-BlS"/>
         <segue reference="b2R-9j-Kqr"/>
         <segue reference="4M9-UI-9mt"/>
         <segue reference="2D9-t9-ebv"/>
         <segue reference="d1S-bn-Rkc"/>
         <segue reference="z8t-Er-kGd"/>
-        <segue reference="H86-lc-tSW"/>
-        <segue reference="oUa-Te-1to"/>
-        <segue reference="oCQ-GI-yPC"/>
-        <segue reference="B7C-Lk-RW2"/>
-        <segue reference="gVj-FW-dv1"/>
-        <segue reference="H7r-gd-Nf5"/>
         <segue reference="B5b-jg-ZNg"/>
+        <segue reference="H7r-gd-Nf5"/>
+        <segue reference="oUa-Te-1to"/>
+        <segue reference="H86-lc-tSW"/>
         <segue reference="szv-KC-TId"/>
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="urW-p2-x1h"/>
         <segue reference="rEt-DF-c51"/>
         <segue reference="zby-Sy-Y3J"/>
         <segue reference="47y-6M-xBI"/>
-        <segue reference="STf-DG-2qn"/>
-        <segue reference="88w-D9-03c"/>
-        <segue reference="ytC-Oe-29B"/>
-        <segue reference="eyY-I1-wel"/>
+        <segue reference="gVj-FW-dv1"/>
+        <segue reference="B7C-Lk-RW2"/>
+        <segue reference="oCQ-GI-yPC"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

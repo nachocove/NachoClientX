@@ -869,7 +869,7 @@ namespace NachoCore.Utils
             deferredMessageCount = 0;
             likelyMessageCount = 0;
 
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
                 if (account.ContainsAccount (accountId)) {
                     var inboxFolder = NcEmailManager.InboxFolder (accountId);
                     if (null != inboxFolder) {
@@ -886,7 +886,7 @@ namespace NachoCore.Utils
         {
             unreadMessageCount = 0;
 
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
                 if (account.ContainsAccount (accountId)) {
                     var inboxFolder = NcEmailManager.InboxFolder (accountId);
                     if (null != inboxFolder) {

@@ -859,9 +859,9 @@ namespace NachoClient.iOS
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
 
-            fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            fetchAccounts = McAccount.GetAllConfiguredNormalAccountIds ();
             if (hasRegisteredForRemoteNotifications) {
-                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+                pushAccounts = McAccount.GetAllConfiguredNormalAccountIds ();
             } else {
                 pushAccounts = new List<int> ();
             }
