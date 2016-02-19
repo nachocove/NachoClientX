@@ -217,7 +217,7 @@ namespace NachoClient.AndroidClient
 
             if (messages.HasFilterSemantics ()) {
                 view.FindViewById<View> (Resource.Id.filter_setting_header).Visibility = ViewStates.Visible;
-                SetFilterText (view, messages.FilterSetting);
+                view.FindViewById<TextView> (Resource.Id.filter_setting).Text = Folder_Helpers.FilterString (messages.FilterSetting);
             }
                 
             ConfigureButtons ();
@@ -526,7 +526,7 @@ namespace NachoClient.AndroidClient
 
             var values = messages.PossibleFilterSettings;
             for (int i = 0; i < values.Length; ++i) {
-                var item = popup.Menu.Add (0, (int)values[i], i, values[i].ToString ());
+                var item = popup.Menu.Add (0, (int)values [i], i, Folder_Helpers.FilterShortString (values [i]));
                 if (messages.FilterSetting == values [i]) {
                     item.SetChecked (true);
                 }
@@ -543,7 +543,7 @@ namespace NachoClient.AndroidClient
             }
             var newFilterSetting = (FolderFilterOptions)item.ItemId;
             messages.FilterSetting = newFilterSetting;
-            SetFilterText (View, newFilterSetting);
+            View.FindViewById<TextView> (Resource.Id.filter_setting).Text = Folder_Helpers.FilterString (newFilterSetting);
             RefreshIfVisible ();
             return true;
         }

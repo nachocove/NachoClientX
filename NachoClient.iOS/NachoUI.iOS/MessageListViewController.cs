@@ -31,8 +31,11 @@ namespace NachoClient.iOS
         protected UIBarButtonItem moveButton;
         protected UIBarButtonItem backButton;
         protected UIBarButtonItem filterButton;
+
         protected UIView headerWrapper;
-        protected UITextView headerView;
+        protected UILabel headerView;
+        protected UIImageView headerIconLeft;
+        protected UIImageView headerIconRight;
 
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
@@ -124,11 +127,9 @@ namespace NachoClient.iOS
             filterButton.AccessibilityLabel = "Filter";
             filterButton.Clicked += (object sender, EventArgs e) => {
                 var messages = messageSource.GetNachoEmailMessages ();
-                var values = messages.PossibleFilterSettings;
                 var actions = new List<NcAlertAction> ();
-                for (int i = 0; i < values.Length; ++i) {
-                    var value = values [i];
-                    actions.Add (new NcAlertAction (value.ToString (), () => {
+                foreach (var value in messages.PossibleFilterSettings) {
+                    actions.Add (new NcAlertAction (Folder_Helpers.FilterShortString(value), () => {
                         SetFilter (value);
                     }));
                 }
@@ -150,12 +151,20 @@ namespace NachoClient.iOS
             MultiSelectToggle (messageSource, false);
 
             headerWrapper = new UIView (new CGRect (0, 0, TableView.Frame.Width, 10));
-            headerView = new UITextView ();
+
+            headerIconLeft = new UIImageView (new CGRect (0, 0, 24, 24));
+            headerIconLeft.Image = UIImage.FromBundle ("gen-read-list");
+            headerWrapper.AddSubview (headerIconLeft);
+
+            headerIconRight = new UIImageView (new CGRect (0, 0, 24, 24));
+            headerIconRight.Image = UIImage.FromBundle ("gen-read-list");
+            headerWrapper.AddSubview (headerIconRight);
+
+            headerView = new UILabel ();
             headerWrapper.AddSubview (headerView);
             headerView.BackgroundColor = A.Color_NachoBackgroundGray;
             headerView.AccessibilityLabel = "MessageListFilterSetting";
             headerView.Font = A.Font_AvenirNextMedium17;
-            headerView.UserInteractionEnabled = false;
             SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
             if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
                 TableView.TableHeaderView = headerWrapper;
@@ -209,35 +218,13 @@ namespace NachoClient.iOS
 
         void SetHeaderText (FolderFilterOptions filterSetting)
         {
-            string textPart;
-            switch (filterSetting) {
-            case FolderFilterOptions.All:
-                textPart = " All messages ";
-                break;
-            case FolderFilterOptions.Hot:
-                textPart = " Hot messages ";
-                break;
-            case FolderFilterOptions.Focused:
-                textPart = " Focused messages ";
-                break;
-            case FolderFilterOptions.Unread:
-                textPart = " Unread messages ";
-                break;
-            default:
-                textPart = " Unknown set of messages ";
-                break;
-            }
-            var filterIcon = new NachoInlineImageTextAttachment ();
-            filterIcon.Image = UIImage.FromBundle ("gen-read-list");
-            var attributedString = new NSMutableAttributedString ("");
-            attributedString.Append (NSAttributedString.CreateFrom (filterIcon));
-            attributedString.Append (new NSAttributedString (textPart, A.Font_AvenirNextMedium17));
-            attributedString.Append (NSAttributedString.CreateFrom (filterIcon));
-            headerView.AttributedText = attributedString;
+            headerView.Text = Folder_Helpers.FilterString (filterSetting);
             headerView.Frame = new CGRect (0, 0, headerWrapper.Frame.Width, 100);
             headerView.SizeToFit ();
-            headerWrapper.Frame = new CGRect (0, 0, headerWrapper.Frame.Width, headerView.Frame.Height);
-            headerView.Frame = new CGRect ((headerWrapper.Frame.Width / 2) - (headerView.Frame.Width / 2), 0, headerView.Frame.Width, headerView.Frame.Height);
+            ViewFramer.Create (headerWrapper).Height (headerView.Frame.Height);
+            ViewFramer.Create (headerView).X ((headerWrapper.Frame.Width / 2) - (headerView.Frame.Width / 2));
+            ViewFramer.Create (headerIconLeft).X (headerView.Frame.X - headerIconLeft.Frame.Width - 15);
+            ViewFramer.Create (headerIconRight).X (headerView.Frame.Right + 15);
         }
 
         protected virtual void SetRowHeight ()
