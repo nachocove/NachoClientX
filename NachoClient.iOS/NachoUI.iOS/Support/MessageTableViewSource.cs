@@ -688,7 +688,8 @@ namespace NachoClient.iOS
             messageHeaderView.ConfigureMessageView (messageThread, message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
-                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                // Set the value for redraw; status ind will show up soon for permanent action
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 messageHeaderView.ConfigureMessageView (messageThread, message);
             };
 
