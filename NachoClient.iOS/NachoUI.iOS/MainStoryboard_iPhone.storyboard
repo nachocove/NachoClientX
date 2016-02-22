@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="15D21" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="whm-e9-YWX">
     <dependencies>
+        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9530"/>
     </dependencies>
     <scenes>
@@ -196,6 +197,7 @@
                         <segue destination="Png-41-0bk" kind="push" identifier="SegueToDrafts" id="ob4-Hl-1Og"/>
                         <segue destination="PLY-NH-kiA" kind="push" identifier="SegueToLikelyToRead" id="oUa-Te-1to"/>
                         <segue destination="2MA-z5-r9e" kind="push" identifier="SegueToInbox" id="Gi8-ik-ZM2"/>
+                        <segue destination="8ef-DW-GpE" kind="push" identifier="SegueToDeadlines" id="vNg-HB-UMF"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1419,34 +1421,35 @@
         <image name="more-nachomail.png" width="24" height="24"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="JTo-qU-j7O"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="H86-lc-tSW"/>
+        <segue reference="oUa-Te-1to"/>
+        <segue reference="gVj-FW-dv1"/>
+        <segue reference="H7r-gd-Nf5"/>
+        <segue reference="oCQ-GI-yPC"/>
+        <segue reference="B7C-Lk-RW2"/>
+        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="vNg-HB-UMF"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="urW-p2-x1h"/>
+        <segue reference="Gi8-ik-ZM2"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="47y-6M-xBI"/>
+        <segue reference="udF-bU-cV6"/>
         <segue reference="Kmd-x6-iCJ"/>
         <segue reference="nJv-0g-ewn"/>
         <segue reference="88w-D9-03c"/>
         <segue reference="ytC-Oe-29B"/>
         <segue reference="eyY-I1-wel"/>
-        <segue reference="udF-bU-cV6"/>
+        <segue reference="Tfk-Mt-BlS"/>
         <segue reference="tdu-G2-PEp"/>
         <segue reference="HCr-Oa-UHV"/>
-        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="JTo-qU-j7O"/>
         <segue reference="b2R-9j-Kqr"/>
         <segue reference="4M9-UI-9mt"/>
         <segue reference="2D9-t9-ebv"/>
         <segue reference="d1S-bn-Rkc"/>
         <segue reference="z8t-Er-kGd"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="H7r-gd-Nf5"/>
-        <segue reference="oUa-Te-1to"/>
-        <segue reference="H86-lc-tSW"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="Gi8-ik-ZM2"/>
-        <segue reference="urW-p2-x1h"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="47y-6M-xBI"/>
-        <segue reference="gVj-FW-dv1"/>
-        <segue reference="B7C-Lk-RW2"/>
-        <segue reference="oCQ-GI-yPC"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
