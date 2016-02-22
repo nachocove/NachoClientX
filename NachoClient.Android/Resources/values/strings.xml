@@ -202,4 +202,8 @@
     <string name="contact_not_available">Contact not available</string>
     <string name="refresh_contacts">Refresh Contacts</string>
     <string name="add_bcc">Automatically Add Bcc</string>
+    <string name="default_email_account">Default Email Account</string>
+    <string name="default_calendar_account">Default Calendar Account</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>

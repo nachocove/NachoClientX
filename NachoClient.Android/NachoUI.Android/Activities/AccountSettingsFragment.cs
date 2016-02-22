@@ -58,6 +58,9 @@ namespace NachoClient.AndroidClient
 
         Switch fastNotifications;
 
+        Switch defaultEmailSwitch;
+        Switch defaultCalendarSwitch;
+
         View accountIssuesView;
         View accountIssuesSeparator;
         View accountIssuesViewSeparator;
@@ -125,6 +128,22 @@ namespace NachoClient.AndroidClient
             fastNotifications = view.FindViewById<Switch> (Resource.Id.account_fast_notification);
             fastNotifications.CheckedChange += FastNotifications_CheckedChange;
 
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender)) {
+                defaultEmailSwitch = view.FindViewById<Switch> (Resource.Id.default_email_switch);
+                defaultEmailSwitch.CheckedChange += DefaultEmailAccount_CheckedChange;
+            } else {
+                var defaultEmailView = view.FindViewById<View> (Resource.Id.default_email_view);
+                defaultEmailView.Visibility = ViewStates.Gone;
+            }
+
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalReader)) {
+                defaultCalendarSwitch = view.FindViewById<Switch> (Resource.Id.default_calendar_switch);
+                defaultCalendarSwitch.CheckedChange += DefaultCalendarAccount_CheckedChange;
+            } else {
+                var defaultCalendarView = view.FindViewById<View> (Resource.Id.default_calendar_view);
+                defaultCalendarView.Visibility = ViewStates.Gone;
+            }
+
             accountIssuesView = view.FindViewById<View> (Resource.Id.account_issues_view);
             accountIssuesSeparator = view.FindViewById<View> (Resource.Id.account_issues_separator);
             accountIssuesViewSeparator = view.FindViewById<View> (Resource.Id.account_issues_view_separator);
@@ -140,7 +159,6 @@ namespace NachoClient.AndroidClient
             passwordRectification = view.FindViewById<TextView> (Resource.Id.account_password_rectification);
             passwordRectificationView = view.FindViewById<View> (Resource.Id.account_password_rectification_view);
             passwordRectificationView.Click += PasswordRectificationView_Click;
-
 
             deleteAccountView = view.FindViewById<View> (Resource.Id.delete_account_view);
             deleteAccountView.Click += DeleteAccountView_Click;
@@ -177,6 +195,20 @@ namespace NachoClient.AndroidClient
             notifications.Text = Pretty.NotificationConfiguration (account.NotificationConfiguration);
 
             fastNotifications.Checked = account.FastNotificationEnabled;
+
+            if (null != defaultEmailSwitch) {
+                var defaultEmailAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                bool isDefaultEmail = defaultEmailAccount != null && account.Id == defaultEmailAccount.Id;
+                defaultEmailSwitch.Checked = isDefaultEmail;
+                defaultEmailSwitch.Enabled = !isDefaultEmail;
+            }
+
+            if (null != defaultCalendarSwitch) {
+                var defaultCalendarAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                bool isDefaultCalendar = defaultCalendarAccount != null && account.Id == defaultCalendarAccount.Id;
+                defaultCalendarSwitch.Checked = isDefaultCalendar;
+                defaultCalendarSwitch.Enabled = !isDefaultCalendar;
+            }
 
             int issues = 0;
 
@@ -302,6 +334,24 @@ namespace NachoClient.AndroidClient
             account.Update ();
             BindAccount ();
             NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
+        }
+
+        void DefaultCalendarAccount_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
+        {
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            var mutablesModule = "DefaultAccounts";
+            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.CalWriter);
+            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+            defaultCalendarSwitch.Enabled = false;
+        }
+
+        void DefaultEmailAccount_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
+        {
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            var mutablesModule = "DefaultAccounts";
+            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.EmailSender);
+            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+            defaultEmailSwitch.Enabled = false;
         }
 
         void NotificationsView_Click (object sender, EventArgs e)
