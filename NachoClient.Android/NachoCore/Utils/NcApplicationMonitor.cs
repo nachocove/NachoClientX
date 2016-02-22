@@ -140,7 +140,7 @@ namespace NachoCore
             }
             Log.Info (Log.LOG_SYS, "NcApplicationMonitor: Files: Max {0}, Currently open {1}",
                 PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
-            DumpFileLeaks ();
+            // DumpFileLeaks ();
             if (150 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
                 DumpFileDescriptors ();
             }
