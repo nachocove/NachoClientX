@@ -1,4 +1,11 @@
-Nacho Mail 3.0 supports for multiple email accounts, IMAP, and Google 2-factor authentication. You can add all of your Gmail, Yahoo, iCloud email accounts, or any email account that supports IMAP like AOL, to Nacho Mail.  It's easy to add or switch accounts -- just press the button in the middle of the top of the screen.  Of course, Nacho Mail continues to support Exchange, Hotmail, Office 365, and Google Apps for Work.
+Now you can view all of your messages in a single unified Inbox.  Press the round icon at the top of the screen to select All Accounts.
 
-Calendar and Contacts sync with your phone to give you a single unified view of people and events from Nacho Mail. 
+You can filter your messages by Hot, Focused, Unread.  Press the glasses icon to select the filter.
+
+Connect your Salesforce account to Nacho Mail in the Settings tab.  Nacho Mail will mark your Salesforce contacts as VIPs and show their messages in the Hot tab.  Optionally, Nacho Mail will automatically include your Salesforce Bcc address when you compose a message.
+
+Nacho Mail supports multiple email accounts, Exchange, Gmail and IMAP. It's easy to add or switch accounts -- just press the button in the middle of the top of the screen.
+
+Calendar and Contacts sync with your phone calendar and Exchange to give you a single unified view of people and events from Nacho Mail. 
+
 
