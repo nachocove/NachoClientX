@@ -482,6 +482,7 @@ namespace NachoClient.iOS
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshThreadsIfVisible ();
                 break;
