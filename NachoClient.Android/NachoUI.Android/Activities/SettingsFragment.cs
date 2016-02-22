@@ -37,8 +37,9 @@ namespace NachoClient.AndroidClient
             var activity = (NcTabBarActivity)this.Activity;
             activity.HookNavigationToolbar (view);
 
-            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.SettingsListview, false);
+            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.SettingsListview, false, true);
             accountAdapter.AddAccount += AccountAdapter_AddAccount;
+            accountAdapter.ConnectToSalesforce += AccountAdapter_ConnectToSalesforce;
             accountAdapter.AccountSelected += AccountAdapter_AccountSelected;
 
             recyclerView = view.FindViewById<RecyclerView> (Resource.Id.recyclerView);
@@ -59,7 +60,6 @@ namespace NachoClient.AndroidClient
                 tutorialButton.Visibility = ViewStates.Visible;
                 tutorialButton.Click += TutorialButton_Click;
             }
-
             return view;
         }
 
@@ -110,6 +110,12 @@ namespace NachoClient.AndroidClient
         {
             var parent = (AccountListDelegate)Activity;
             parent.AddAccount ();
+        }
+
+        void AccountAdapter_ConnectToSalesforce (object sender, EventArgs e)
+        {
+            var parent = (AccountListDelegate)Activity;
+            parent.ConnectToSalesforce ();
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

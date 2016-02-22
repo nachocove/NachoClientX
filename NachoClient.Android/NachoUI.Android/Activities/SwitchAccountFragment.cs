@@ -25,6 +25,8 @@ namespace NachoClient.AndroidClient
     {
         void AddAccount ();
 
+        void ConnectToSalesforce ();
+
         void AccountSelected (McAccount account);
 
         void AccountShortcut (int destination);
@@ -59,7 +61,7 @@ namespace NachoClient.AndroidClient
             var accountButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.account);
             accountButton.SetImageResource (Resource.Drawable.gen_avatar_backarrow);
 
-            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.AccountSwitcher);
+            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.AccountSwitcher, false);
             accountAdapter.AddAccount += AccountAdapter_AddAccount;
             accountAdapter.AccountShortcut += AccountAdapter_AccountShortcut;
             accountAdapter.AccountSelected += AccountAdapter_AccountSelected;
@@ -131,18 +133,21 @@ namespace NachoClient.AndroidClient
         };
 
         public event EventHandler AddAccount;
+        public event EventHandler ConnectToSalesforce;
         public event EventHandler<int> AccountShortcut;
         public event EventHandler<McAccount> AccountSelected;
 
         bool showUnified;
+        bool showSalesforce;
         public DisplayMode displayMode;
 
         List<McAccount> accounts;
 
-        public  AccountAdapter (DisplayMode displayMode, bool showUnified = true)
+        public  AccountAdapter (DisplayMode displayMode, bool showUnified = true, bool showSalesforce = false)
         {
             this.displayMode = displayMode;
             this.showUnified = showUnified;
+            this.showSalesforce = showSalesforce;
 
             Refresh ();
         }
@@ -151,12 +156,8 @@ namespace NachoClient.AndroidClient
         {
             accounts = new List<McAccount> ();
 
-            McAccount unifiedAccount = null;
-
-            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (account.AccountType == McAccount.AccountTypeEnum.Unified) {
-                    unifiedAccount = account;
-                } else if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
+            foreach (var account in McAccount.GetAllConfiguredNormalAccounts()) {
+                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     accounts.Add (account);
                 }
             }
@@ -168,10 +169,15 @@ namespace NachoClient.AndroidClient
             }
 
             if (showUnified && accounts.Count > 1) {
-                if (unifiedAccount == null) {
-                    unifiedAccount = McAccount.GetUnifiedAccount ();
-                }
+                var unifiedAccount = McAccount.GetUnifiedAccount ();
                 accounts.Insert (0, unifiedAccount);
+            }
+
+            if (showSalesforce) {
+                var salesforceAccount = McAccount.GetSalesForceAccount ();
+                if (null != salesforceAccount) {
+                    accounts.Add (salesforceAccount);
+                }
             }
 
             // Remove the current account from the switcher view.
@@ -186,7 +192,9 @@ namespace NachoClient.AndroidClient
         {
             public AccountHolder (View view, Action<int, int, int> listener, int viewType) : base (view)
             {
-                view.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, 0);
+                if (ROW_TYPE == viewType) {
+                    view.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, 0);
+                }
 
                 if (HEADER_TYPE == viewType) {
                     var settingsButton = view.FindViewById<Android.Widget.Button> (Resource.Id.account_settings);
@@ -197,6 +205,13 @@ namespace NachoClient.AndroidClient
                     deferredButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_deferred);
                     var deadlinesButton = view.FindViewById<View> (Resource.Id.go_to_deadlines);
                     deadlinesButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_deadlines);
+                }
+
+                if (FOOTER_TYPE == viewType) {
+                    var addAccountButton = view.FindViewById (Resource.Id.add_account);
+                    addAccountButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.add_account);
+                    var connectToSalesForceButton = view.FindViewById (Resource.Id.connect_to_salesforce);
+                    connectToSalesForceButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.connect_to_salesforce);
                 }
             }
         }
@@ -251,6 +266,12 @@ namespace NachoClient.AndroidClient
             McAccount account = null;
             switch (holder.ItemViewType) {
             case FOOTER_TYPE:
+                var salesforceView = holder.ItemView.FindViewById (Resource.Id.connect_to_salesforce);
+                if (showSalesforce && (null == McAccount.GetSalesForceAccount ())) {
+                    salesforceView.Visibility = ViewStates.Visible;
+                } else {
+                    salesforceView.Visibility = ViewStates.Gone;
+                }
                 return;
             case HEADER_TYPE:
                 account = NcApplication.Instance.Account;
@@ -309,8 +330,17 @@ namespace NachoClient.AndroidClient
                 }
                 break;
             case FOOTER_TYPE:
-                if (AddAccount != null) {
-                    AddAccount (this, null);
+                switch (resourceId) {
+                case Resource.Id.add_account:
+                    if (AddAccount != null) {
+                        AddAccount (this, null);
+                    }
+                    break;
+                case Resource.Id.connect_to_salesforce:
+                    if (ConnectToSalesforce != null) {
+                        ConnectToSalesforce (this, null);
+                    }
+                    break;
                 }
                 break;
             }

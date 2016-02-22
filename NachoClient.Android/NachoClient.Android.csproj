@@ -648,6 +648,10 @@
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs" />
     <Compile Include="NachoUI.Android\Activities\InboxFolderActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\AccountChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\SalesforceSignInFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\SalesforceSignInActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\SalesforceSettingsActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\SalesforceSettingsFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1757,6 +1761,11 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_read_list_active.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_read_list.png" />
     <AndroidResource Include="Resources\layout\AccountChooserCell.axml" />
+    <AndroidResource Include="Resources\layout\SalesforceSignInFragment.axml" />
+    <AndroidResource Include="Resources\layout\SalesforceSignInActivity.axml" />
+    <AndroidResource Include="Resources\drawable\salesforce_header_logo.png" />
+    <AndroidResource Include="Resources\layout\SalesforceSettingsFragment.axml" />
+    <AndroidResource Include="Resources\layout\SalesforceSettingsActivity.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

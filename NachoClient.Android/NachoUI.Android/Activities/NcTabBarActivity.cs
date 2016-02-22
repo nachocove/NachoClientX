@@ -165,6 +165,11 @@ namespace NachoClient.AndroidClient
             StartActivity (new Intent (this, typeof(AddAccountActivity)));
         }
 
+        public void ConnectToSalesforce()
+        {
+            StartActivity (new Intent (this, typeof(SalesforceSignInActivity)));
+        }
+
         public virtual void MaybeSwitchAccount ()
         {
         }

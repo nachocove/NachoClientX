@@ -212,6 +212,12 @@ namespace NachoCore.Utils
                 if (McAccount.AccountTypeEnum.Device == a.AccountType) {
                     continue;
                 }
+                if (McAccount.AccountTypeEnum.Unified == a.AccountType) {
+                    var normalAccounts = McAccount.GetAllConfiguredNormalAccounts ();
+                    if (1 != normalAccounts.Count) {
+                        continue;
+                    }
+                }
                 return a;
             }
             // Default to device account
