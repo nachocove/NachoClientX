@@ -61,7 +61,7 @@ namespace NachoClient.AndroidClient
             var accountButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.account);
             accountButton.SetImageResource (Resource.Drawable.gen_avatar_backarrow);
 
-            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.AccountSwitcher, false);
+            accountAdapter = new AccountAdapter (AccountAdapter.DisplayMode.AccountSwitcher);
             accountAdapter.AddAccount += AccountAdapter_AddAccount;
             accountAdapter.AccountShortcut += AccountAdapter_AccountShortcut;
             accountAdapter.AccountSelected += AccountAdapter_AccountSelected;
