@@ -267,11 +267,14 @@ namespace NachoClient.AndroidClient
             switch (holder.ItemViewType) {
             case FOOTER_TYPE:
                 var salesforceView = holder.ItemView.FindViewById (Resource.Id.connect_to_salesforce);
-                if (showSalesforce && (null == McAccount.GetSalesForceAccount ())) {
-                    salesforceView.Visibility = ViewStates.Visible;
-                } else {
-                    salesforceView.Visibility = ViewStates.Gone;
-                }
+                // Disable salesforce add account
+//                if (showSalesforce && (null == McAccount.GetSalesForceAccount ())) {
+//                    salesforceView.Visibility = ViewStates.Visible;
+//                } else {
+//                    salesforceView.Visibility = ViewStates.Gone;
+//                }
+                salesforceView.Visibility = ViewStates.Gone;
+
                 return;
             case HEADER_TYPE:
                 account = NcApplication.Instance.Account;
