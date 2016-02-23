@@ -137,6 +137,7 @@ namespace NachoCore.Utils
             private bool populateHtml = true;
             private bool populateText = true;
             public Dictionary<string, string> ImageEntriesBySrc;
+            public bool UsingChatMessageAsTop;
 
             public ParseResult ()
             {
@@ -515,6 +516,13 @@ namespace NachoCore.Utils
                 if (parsed.TopText != null) {
                     var serializer = new HtmlTextDeserializer ();
                     parsed.TopHtmlDocument = serializer.Deserialize (parsed.TopText);
+                } else {
+                    var serializer = new HtmlTextSerializer (parsed.FullHtmlDocument);
+                    serializer.Serialize ();
+                    if (serializer.FoundTop) {
+                        parsed.TopText = serializer.TopText;
+                        parsed.TopHtmlDocument = parsed.FullHtmlDocument.CopyUntilNode (serializer.LastTopTextNode);
+                    }
                 }
             } else if (parsed.TopText == null) {
                 parsed.TopText = parsed.TopHtmlDocument.TextContents ();
@@ -1170,6 +1178,7 @@ namespace NachoCore.Utils
                     if (node.GetAttributeValue("id", "") == "nacho-chat" && parsed.TopText == null) {
                         var serializer = new HtmlTextSerializer (node);
                         parsed.TopText = serializer.Serialize ();
+                        parsed.UsingChatMessageAsTop = true;
                     }
                 }
                 if (node.ParentNode != null){

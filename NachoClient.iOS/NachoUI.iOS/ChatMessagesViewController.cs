@@ -140,7 +140,11 @@ namespace NachoClient.iOS
                 // TODO: update header to be locked
             }
             var text = ComposeView.GetMessage ();
-            ChatMessageComposer.SendChatMessage (Chat, text, null, (McEmailMessage message) => {
+            var previousMessages = new List<McEmailMessage> ();
+            for (int i = Messages.Count - 1; i >= Messages.Count - 3 && i >= 0; --i){
+                previousMessages.Add (Messages [i]);
+            }
+            ChatMessageComposer.SendChatMessage (Chat, text, previousMessages, (McEmailMessage message) => {
                 // TODO: this message is in the outbox.  It will be deleted and replaced by a message from the sent folder
                 Chat.AddMessage (message);
                 ComposeView.Clear ();
@@ -348,8 +352,10 @@ namespace NachoClient.iOS
             SendButton.SetTitle ("Send", UIControlState.Normal);
             SendButton.TouchUpInside += Send;
             SendButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            SendButton.SetTitleColor (A.Color_NachoTextGray, UIControlState.Disabled);
             AddSubview (MessageField);
             AddSubview (SendButton);
+            UpdateSendEnabled ();
         }
 
         void MessageChanged (object sender, EventArgs e)
@@ -563,6 +569,7 @@ namespace NachoClient.iOS
         public ChatMessageView (CGRect frame) : base (frame)
         {
             MessageLabel = new UILabel (Bounds);
+            MessageLabel.Lines = 0;
             MessageLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             AddSubview (MessageLabel);
         }

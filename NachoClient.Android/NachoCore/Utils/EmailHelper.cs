@@ -1012,6 +1012,32 @@ namespace NachoCore.Utils
             }
             return set;
         }
+
+        // Quoted text in an email often comes inside a blockquote (Apple) or after an HR (Outlook).
+        // Therefore, those elements can easily be used to identify the start of quoted text.
+        // Howver, there are a few other scenarios that it helps to check for...
+
+        // Typical attribution line from gmail, comes before the blockquote
+        static Regex QUOTE_SENT = new Regex ("^On .+ wrote:$");
+        // Typical start of quoted message from Outlook(?), comes after an empty DIV with border-top, not an HR
+        static Regex QUOTE_FROM = new Regex ("^From: ");
+        // Typical signature divider
+        static Regex SIG_DIVIDER = new Regex ("^\\-\\-+");
+
+        public static bool IsQuoteLine (string line)
+        {
+            var trimmedLine = line.Trim ();
+            if (QUOTE_SENT.IsMatch (line)) {
+                return true;
+            }
+            if (QUOTE_FROM.IsMatch (line)) {
+                return true;
+            }
+            if (SIG_DIVIDER.IsMatch (line)) {
+                return true;
+            }
+            return false;
+        }
     }
 }
 

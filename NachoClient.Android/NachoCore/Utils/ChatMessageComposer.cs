@@ -29,6 +29,9 @@ namespace NachoCore.Utils
             Message = McEmailMessage.MessageWithSubject(Account, subject);
             Message.To = EmailHelper.AddressStringFromList (ChatToList ());
             Message.IsChat = true;
+            if (previousMessages.Count > 0) {
+                Message.ReferencedEmailId = previousMessages [0].Id;
+            }
         }
 
         public static void SendChatMessage (McChat chat, string text, List<McEmailMessage> previousMessages, Action<McEmailMessage> callback)
@@ -76,6 +79,7 @@ namespace NachoCore.Utils
                     serializer.DeserializeInto ("\n", parent);
                     var blockquote = doc.CreateElement ("blockquote");
                     blockquote.SetAttributeValue ("type", "cite");
+                    parent.AppendChild (blockquote);
                     serializer.DeserializeInto (EmailHelper.AttributionLineForMessage (previousMessage) + "\n", blockquote);
                     var previousBundle = new NcEmailMessageBundle (previousMessage);
                     if (previousBundle.NeedsUpdate) {
