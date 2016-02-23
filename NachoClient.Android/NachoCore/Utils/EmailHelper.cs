@@ -32,7 +32,7 @@ namespace NachoCore.Utils
         // Message is saved into Outbox
         public static void SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
         {
-            messageToSend = SalesForceProtoControl.MaybeAddSFDCEmailToBcc (messageToSend);
+            // messageToSend = SalesForceProtoControl.MaybeAddSFDCEmailToBcc (messageToSend);
 
             var outbox = McFolder.GetClientOwnedOutboxFolder (messageToSend.AccountId);
             if (null != outbox) {
@@ -262,7 +262,7 @@ namespace NachoCore.Utils
                 var path = attachment.GetFilePath ();
                 attachment.AccountId = account.Id;
                 if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                    attachment.UpdateFileMove(path);
+                    attachment.UpdateFileMove (path);
                 } else {
                     attachment.Update ();
                 }
@@ -1000,13 +1000,59 @@ namespace NachoCore.Utils
             return attachment;
         }
 
-        public static HashSet<int> AccountSet(List<McEmailMessage> messages)
+        public static HashSet<int> AccountSet (List<McEmailMessage> messages)
         {
             var set = new HashSet<int> ();
             foreach (var message in messages) {
                 set.Add (message.AccountId);
             }
             return set;
+        }
+
+        static bool CheckForSalesforceContacts (int accountId, Dictionary <string, bool> cache, string addresses)
+        {
+            var list = NcEmailAddress.ParseToAddressListString (addresses);
+            foreach (var address in list) {
+                bool isSalesforceContact;
+                if (!cache.TryGetValue (address.address, out isSalesforceContact)) {
+                    isSalesforceContact = SalesForceProtoControl.IsSalesForceContact (accountId, address.address);
+                    cache.Add (address.address, isSalesforceContact);
+                }
+                if (isSalesforceContact) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool MaybeAddSalesforceBcc (Dictionary <string, bool> cache, McEmailMessage message)
+        {
+            var account = McAccount.GetSalesForceAccount ();
+            if (null == account) {
+                return false;
+            }
+
+            if (!SalesForceProtoControl.ShouldAddBccToEmail (account.Id)) {
+                return false;
+            }
+
+            bool doAdd = CheckForSalesforceContacts (account.Id, cache, message.To);
+            doAdd |= CheckForSalesforceContacts (account.Id, cache, message.Cc);
+            doAdd |= CheckForSalesforceContacts (account.Id, cache, message.Bcc);
+
+            if (doAdd) {
+                if (null != account) {
+                    string bccAddress = SalesForceProtoControl.EmailToSalesforceAddress (account.Id);
+                    if (null == message.Bcc) {
+                        message.Bcc = bccAddress;
+                    } else {
+                        var bccAddresses = message.Bcc.Split (new[] { ',' }).ToList ();
+                        bccAddresses.Add (bccAddress);
+                        message.Bcc = string.Join (",", bccAddresses);
+                    }
+                }
+            }
+            return doAdd;
         }
     }
 }
