@@ -32,9 +32,6 @@ namespace NachoClient.iOS
         protected UIBarButtonItem backButton;
         protected UIBarButtonItem filterButton;
 
-        protected UIView headerWrapper;
-        protected UILabel headerView;
-
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
 
@@ -148,24 +145,6 @@ namespace NachoClient.iOS
             CustomizeBackButton ();
             MultiSelectToggle (messageSource, false);
 
-            headerWrapper = new UIView (new CGRect (0, 0, TableView.Frame.Width, 24));
-
-            var headerIcon = new UIImageView (new CGRect (30, 0, 24, 24));
-            headerIcon.Image = UIImage.FromBundle ("gen-read-list");
-            headerWrapper.AddSubview (headerIcon);
-
-            headerView = new UILabel (new CGRect (65, 0, TableView.Frame.Width - 65, 24));
-            headerWrapper.AddSubview (headerView);
-            headerView.BackgroundColor = A.Color_NachoBackgroundGray;
-            headerView.AccessibilityLabel = "MessageListFilterSetting";
-            headerView.Font = A.Font_AvenirNextDemiBold14;
-            SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
-            if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
-                TableView.TableHeaderView = headerWrapper;
-            } else {
-                TableView.TableHeaderView = null;
-            }
-
             RefreshControl = new UIRefreshControl ();
             RefreshControl.Hidden = true;
             RefreshControl.TintColor = A.Color_NachoGreen;
@@ -206,13 +185,7 @@ namespace NachoClient.iOS
         {
             var messages = messageSource.GetNachoEmailMessages ();
             messages.FilterSetting = value;
-            SetHeaderText (value);
             RefreshThreadsIfVisible ();
-        }
-
-        void SetHeaderText (FolderFilterOptions filterSetting)
-        {
-            headerView.Text = Folder_Helpers.FilterString (filterSetting);
         }
 
         protected virtual void SetRowHeight ()
@@ -706,12 +679,6 @@ namespace NachoClient.iOS
             messageSource.MultiSelectCancel (TableView);
             switchAccountButton.SetAccountImage (account);
             SetEmailMessages (GetNachoEmailMessages (account.Id));
-            if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
-                SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
-                TableView.TableHeaderView = headerWrapper;
-            } else {
-                TableView.TableHeaderView = null;
-            }
             MultiSelectToggle (messageSource, false);
             List<int> adds;
             List<int> deletes;
