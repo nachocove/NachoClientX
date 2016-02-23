@@ -34,8 +34,6 @@ namespace NachoClient.iOS
 
         protected UIView headerWrapper;
         protected UILabel headerView;
-        protected UIImageView headerIconLeft;
-        protected UIImageView headerIconRight;
 
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
@@ -150,21 +148,17 @@ namespace NachoClient.iOS
             CustomizeBackButton ();
             MultiSelectToggle (messageSource, false);
 
-            headerWrapper = new UIView (new CGRect (0, 0, TableView.Frame.Width, 10));
+            headerWrapper = new UIView (new CGRect (0, 0, TableView.Frame.Width, 24));
 
-            headerIconLeft = new UIImageView (new CGRect (0, 0, 24, 24));
-            headerIconLeft.Image = UIImage.FromBundle ("gen-read-list");
-            headerWrapper.AddSubview (headerIconLeft);
+            var headerIcon = new UIImageView (new CGRect (30, 0, 24, 24));
+            headerIcon.Image = UIImage.FromBundle ("gen-read-list");
+            headerWrapper.AddSubview (headerIcon);
 
-            headerIconRight = new UIImageView (new CGRect (0, 0, 24, 24));
-            headerIconRight.Image = UIImage.FromBundle ("gen-read-list");
-            headerWrapper.AddSubview (headerIconRight);
-
-            headerView = new UILabel ();
+            headerView = new UILabel (new CGRect (65, 0, TableView.Frame.Width - 65, 24));
             headerWrapper.AddSubview (headerView);
             headerView.BackgroundColor = A.Color_NachoBackgroundGray;
             headerView.AccessibilityLabel = "MessageListFilterSetting";
-            headerView.Font = A.Font_AvenirNextMedium17;
+            headerView.Font = A.Font_AvenirNextDemiBold14;
             SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
             if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
                 TableView.TableHeaderView = headerWrapper;
@@ -219,12 +213,6 @@ namespace NachoClient.iOS
         void SetHeaderText (FolderFilterOptions filterSetting)
         {
             headerView.Text = Folder_Helpers.FilterString (filterSetting);
-            headerView.Frame = new CGRect (0, 0, headerWrapper.Frame.Width, 100);
-            headerView.SizeToFit ();
-            ViewFramer.Create (headerWrapper).Height (headerView.Frame.Height);
-            ViewFramer.Create (headerView).X ((headerWrapper.Frame.Width / 2) - (headerView.Frame.Width / 2));
-            ViewFramer.Create (headerIconLeft).X (headerView.Frame.X - headerIconLeft.Frame.Width - 15);
-            ViewFramer.Create (headerIconRight).X (headerView.Frame.Right + 15);
         }
 
         protected virtual void SetRowHeight ()
