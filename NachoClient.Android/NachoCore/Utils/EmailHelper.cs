@@ -1013,13 +1013,16 @@ namespace NachoCore.Utils
         {
             var list = NcEmailAddress.ParseToAddressListString (addresses);
             foreach (var address in list) {
-                bool isSalesforceContact;
-                if (!cache.TryGetValue (address.address, out isSalesforceContact)) {
-                    isSalesforceContact = SalesForceProtoControl.IsSalesForceContact (accountId, address.address);
-                    cache.Add (address.address, isSalesforceContact);
-                }
-                if (isSalesforceContact) {
-                    return true;
+                var mailbox = address.ToMailboxAddress (true);
+                if (mailbox != null) {
+                    bool isSalesforceContact;
+                    if (!cache.TryGetValue (mailbox.Address, out isSalesforceContact)) {
+                        isSalesforceContact = SalesForceProtoControl.IsSalesForceContact (accountId, mailbox.Address);
+                        cache.Add (mailbox.Address, isSalesforceContact);
+                    }
+                    if (isSalesforceContact) {
+                        return true;
+                    }
                 }
             }
             return false;

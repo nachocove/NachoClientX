@@ -437,6 +437,18 @@ namespace NachoClient.iOS
             FadeCustomSegue.Transition (this, searchController);
         }
 
+        bool SalesforceBccAdded = false;
+        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool>();
+
+        void MaybeAddSalesforceBcc()
+        {
+            if(!SalesforceBccAdded) {
+                SalesforceBccAdded = EmailHelper.MaybeAddSalesforceBcc(SalesforceAddressCache, Composer.Message);
+                HeaderView.BccView.Clear ();
+                HeaderView.BccView.SetAddressList (Composer.Message.Bcc, NcEmailAddress.Kind.Bcc);
+            }
+        }
+
         // User selecting contact for To/CC/BCC field
         public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
@@ -452,6 +464,7 @@ namespace NachoClient.iOS
             } else {
                 NcAssert.CaseError ();
             }
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
