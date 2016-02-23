@@ -353,6 +353,7 @@ namespace NachoClient.AndroidClient
                 attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
                 attachment.UpdateFileCopy (CameraOutputUri.Path);
                 attachment.UpdateSaveFinish ();
+                File.Delete (CameraOutputUri.Path);
                 attachment.Link (Composer.Message);
                 HeaderView.AttachmentsView.AddAttachment (attachment);
             } else if (PICK_REQUEST_CODE == requestCode) {
