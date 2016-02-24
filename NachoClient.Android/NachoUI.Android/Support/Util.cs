@@ -109,7 +109,7 @@ namespace NachoClient.AndroidClient
 
         public static void SendEmail (Context context, int accountId, McContact contact, string alternateEmailAddress)
         {
-            if (null != alternateEmailAddress) {
+            if (!String.IsNullOrEmpty (alternateEmailAddress)) {
                 var intent = MessageComposeActivity.NewMessageIntent (context, accountId, alternateEmailAddress);
                 context.StartActivity (intent);
                 return;
