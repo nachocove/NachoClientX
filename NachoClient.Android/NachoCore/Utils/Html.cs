@@ -75,6 +75,28 @@ namespace NachoCore.Utils
             return copyDoc;
         }
 
+        public static HtmlNode FindNodeWithId (this HtmlDocument doc, string id)
+        {
+            var stack = new List<HtmlNode> ();
+            stack.Add (doc.DocumentNode);
+            HtmlNode node;
+            while (stack.Count > 0) {
+                node = stack [0];
+                stack.RemoveAt (0);
+                if (node.GetAttributeValue ("id", "").Equals (id)) {
+                    return node;
+                }
+                int i = 0;
+                if (node.NodeType == HtmlNodeType.Document || node.NodeType == HtmlNodeType.Element) {
+                    foreach (var child in node.ChildNodes) {
+                        stack.Insert (i, child);
+                        i += 1;
+                    }
+                }
+            }
+            return null;
+        }
+
     }
 
     public class HtmlTextSerializer {

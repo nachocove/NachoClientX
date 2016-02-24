@@ -523,6 +523,16 @@ namespace NachoCore.Utils
                         parsed.TopText = serializer.TopText;
                         parsed.TopHtmlDocument = parsed.FullHtmlDocument.CopyUntilNode (serializer.LastTopTextNode);
                     }
+                    var node = parsed.TopHtmlDocument.FindNodeWithId ("nacho-chat");
+                    if (node != null) {
+                        var body = parsed.TopHtmlDocument.DocumentNode.Element ("html").Element ("body");
+                        node.ParentNode.RemoveChild (node);
+                        body.AppendChild (node);
+                        for (int i = body.ChildNodes.Count - 2; i >= 0; --i) {
+                            body.RemoveChild (body.ChildNodes [i]);
+                        }
+                        parsed.TopText = parsed.TopHtmlDocument.TextContents ();
+                    }
                 }
             } else if (parsed.TopText == null) {
                 parsed.TopText = parsed.TopHtmlDocument.TextContents ();
@@ -789,9 +799,6 @@ namespace NachoCore.Utils
                     } else if (entity.IsRichText) {
                         IncludeRtfAsText (entity.Text);
                     }
-                }
-                if (entity.ContentType.Matches ("text", "x-nacho-chat")) {
-                    parsed.TopText = entity.Text;
                 }
             }
         }
@@ -1174,11 +1181,6 @@ namespace NachoCore.Utils
                                 node.SetAttributeValue ("nacho-original-src", src);
                             }
                         }
-                    }
-                    if (node.GetAttributeValue("id", "") == "nacho-chat" && parsed.TopText == null) {
-                        var serializer = new HtmlTextSerializer (node);
-                        parsed.TopText = serializer.Serialize ();
-                        parsed.UsingChatMessageAsTop = true;
                     }
                 }
                 if (node.ParentNode != null){
