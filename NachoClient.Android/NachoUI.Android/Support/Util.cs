@@ -53,13 +53,13 @@ namespace NachoClient.AndroidClient
                 imageId = Resource.Drawable.avatar_yahoo;
                 break;
             case McAccount.AccountServiceEnum.Aol:
-                imageId = Resource.Drawable.Icon;
+                imageId = Resource.Drawable.avatar_aol;
                 break;
             case McAccount.AccountServiceEnum.SalesForce:
                 imageId = Resource.Drawable.salesforce_header_logo;
                 break;
             default:
-                imageId = Resource.Drawable.Icon;
+                imageId = Resource.Drawable.avatar_unified;
                 break;
             }
             return imageId;
