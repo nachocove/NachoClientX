@@ -475,7 +475,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public string SignatureText ()
+        public virtual string SignatureText ()
         {
             if (!String.IsNullOrEmpty (Account.Signature)) {
                 return "\n\n" + Account.Signature;

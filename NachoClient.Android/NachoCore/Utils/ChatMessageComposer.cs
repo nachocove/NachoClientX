@@ -80,7 +80,7 @@ namespace NachoCore.Utils
                     var blockquote = doc.CreateElement ("blockquote");
                     blockquote.SetAttributeValue ("type", "cite");
                     parent.AppendChild (blockquote);
-                    serializer.DeserializeInto (EmailHelper.AttributionLineForMessage (previousMessage) + "\n", blockquote);
+                    serializer.DeserializeInto (EmailHelper.AttributionLineForMessage (previousMessage) + "\n\n", blockquote);
                     var previousBundle = new NcEmailMessageBundle (previousMessage);
                     if (previousBundle.NeedsUpdate) {
                         previousBundle.Update ();
@@ -118,6 +118,14 @@ namespace NachoCore.Utils
                 }
             }
             return to;
+        }
+
+        public override string SignatureText ()
+        {
+            if (!String.IsNullOrEmpty (Account.Signature)) {
+                return "\n" + Account.Signature;
+            }
+            return null;
         }
     }
 }

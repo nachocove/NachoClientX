@@ -53,7 +53,7 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             CGRect headerFrame = new CGRect (0.0f, 0.0f, View.Bounds.Width, 44.0f);
-            CGRect composeFrame = new CGRect (0.0f, View.Bounds.Height - 44.0f, View.Bounds.Width, 44.0f);
+            CGRect composeFrame = new CGRect (0.0f, View.Bounds.Height - ChatMessageComposeView.STANDARD_HEIGHT, View.Bounds.Width, ChatMessageComposeView.STANDARD_HEIGHT);
             CGRect tableFrame = new CGRect (0.0f, headerFrame.Height, View.Bounds.Width, View.Bounds.Height - headerFrame.Height - composeFrame.Height);
             HeaderView = new ChatMessagesHeaderView (headerFrame);
             HeaderView.ChatViewController = this;
@@ -92,19 +92,25 @@ namespace NachoClient.iOS
 
         protected override void OnKeyboardChanged ()
         {
+            var scrolledToBottom = ChatView.IsScrolledToBottom;
             base.OnKeyboardChanged ();
+            SubviewChangedHeight ();
+            if (keyboardHeight > 0) {
+                if (scrolledToBottom) {
+                    ChatView.ScrollToBottom ();
+                }
+            }
+        }
+
+        public void SubviewChangedHeight ()
+        {
+            var y = HeaderView.Frame.Top + HeaderView.Frame.Height;
             ComposeView.Frame = new CGRect (
                 ComposeView.Frame.X,
                 View.Bounds.Height - keyboardHeight - ComposeView.Frame.Height,
                 ComposeView.Frame.Width,
                 ComposeView.Frame.Height
             );
-            SubviewChangedHeight ();
-        }
-
-        public void SubviewChangedHeight ()
-        {
-            var y = HeaderView.Frame.Top + HeaderView.Frame.Height;
             ChatView.Frame = new CGRect (
                 ChatView.Frame.X,
                 y,
@@ -119,6 +125,11 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
+        }
+
+        public override void ViewDidLayoutSubviews ()
+        {
+            base.ViewDidLayoutSubviews ();
         }
 
         #endregion
@@ -326,8 +337,14 @@ namespace NachoClient.iOS
         public override void LayoutSubviews ()
         {
             var previousPreferredHeight = Frame.Height;
-            base.LayoutSubviews ();
-            var preferredHeight = (nfloat)Math.Max(42.0f, ToView.Frame.Size.Height);
+            nfloat preferredHeight = 42.0f;
+            if (EditingEnabled) {
+                base.LayoutSubviews ();
+                preferredHeight = (nfloat)Math.Max (42.0f, ToView.Frame.Size.Height);
+                ToView.Hidden = false;
+            } else {
+                ToView.Hidden = true;
+            }
             Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, preferredHeight);
             if ((Math.Abs (preferredHeight - previousPreferredHeight) > 0.5) && ChatViewController != null) {
                 ChatViewController.SubviewChangedHeight ();
@@ -339,21 +356,36 @@ namespace NachoClient.iOS
     {
 
         public ChatMessagesViewController ChatViewController;
-        UITextField MessageField;
+        UITextView MessageField;
         UIButton SendButton;
+        UIView TopBorderView;
+        UILabel MessagePlaceholderLabel;
+        public static readonly nfloat STANDARD_HEIGHT = 41.0f;
 
         public ChatMessageComposeView (CGRect frame) : base (frame)
         {
+            TopBorderView = new UIView (new CGRect (0.0f, 0.0f, Bounds.Size.Width, 1.0f));
+            TopBorderView.BackgroundColor = A.Color_NachoBorderGray;
+            TopBorderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             BackgroundColor = UIColor.White;
-            MessageField = new UITextField (Bounds);
-            MessageField.Placeholder = "Type your message here...";
-            MessageField.EditingChanged += MessageChanged;
+            MessageField = new UITextView (Bounds);
+            MessageField.Changed += MessageChanged;
+            MessageField.Font = A.Font_AvenirNextRegular17;
+            MessagePlaceholderLabel = new UILabel (MessageField.Bounds);
+            MessagePlaceholderLabel.UserInteractionEnabled = false;
+            MessagePlaceholderLabel.Font = MessageField.Font;
+            MessagePlaceholderLabel.TextColor = A.Color_NachoTextGray;
+            MessagePlaceholderLabel.Text = "Type a message...";
             SendButton = new UIButton (UIButtonType.Custom);
             SendButton.SetTitle ("Send", UIControlState.Normal);
             SendButton.TouchUpInside += Send;
             SendButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             SendButton.SetTitleColor (A.Color_NachoTextGray, UIControlState.Disabled);
+            SendButton.TitleEdgeInsets = new UIEdgeInsets (0.0f, 7.0f, 0.5f, 7.0f);
+            SendButton.Font = A.Font_AvenirNextMedium17;
+            AddSubview (TopBorderView);
             AddSubview (MessageField);
+            AddSubview (MessagePlaceholderLabel);
             AddSubview (SendButton);
             UpdateSendEnabled ();
         }
@@ -361,7 +393,14 @@ namespace NachoClient.iOS
         void MessageChanged (object sender, EventArgs e)
         {
             UpdateSendEnabled ();
-            // TODO: size to fit all text, with a max
+            var frame = MessageField.Frame;
+            MessageField.Frame = new CGRect (frame.X, frame.Y, frame.Width, 1.0f);
+            if (MessageField.ContentSize.Height != frame.Height) {
+                SetNeedsLayout ();
+                LayoutIfNeeded ();
+            } else {
+                MessageField.Frame = frame;
+            }
         }
 
         void Send (object sender, EventArgs e)
@@ -378,28 +417,40 @@ namespace NachoClient.iOS
         {
             MessageField.Text = "";
             UpdateSendEnabled ();
+            SetNeedsLayout ();
         }
 
         void UpdateSendEnabled ()
         {
-            SendButton.Enabled = !String.IsNullOrWhiteSpace (MessageField.Text);;
+            SendButton.Enabled = !String.IsNullOrWhiteSpace (MessageField.Text);
+            MessagePlaceholderLabel.Hidden = SendButton.Enabled;
         }
 
         public override void LayoutSubviews ()
         {
+            var preferredHeight = (nfloat)Math.Min (MessageField.ContentSize.Height + 1.0f, 4.0f * STANDARD_HEIGHT);
+            var previousHeight = Frame.Height;
+            Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, preferredHeight);
+            bool changedHeight = (Math.Abs (preferredHeight - previousHeight) > 0.5) && ChatViewController != null;
             SendButton.SizeToFit ();
+            var sendButtonHeight = STANDARD_HEIGHT - 1.0f;
             SendButton.Frame = new CGRect (
-                Bounds.Width - SendButton.Frame.Size.Width,
-                0.0f,
-                SendButton.Frame.Size.Width,
-                Bounds.Height
+                Bounds.Width - SendButton.Frame.Size.Width - SendButton.TitleEdgeInsets.Left - SendButton.TitleEdgeInsets.Right,
+                Bounds.Height - sendButtonHeight,
+                SendButton.Frame.Size.Width + SendButton.TitleEdgeInsets.Left + SendButton.TitleEdgeInsets.Right,
+                sendButtonHeight
             );
             MessageField.Frame = new CGRect (
                 0.0f,
-                0.0f,
+                1.0f,
                 SendButton.Frame.X,
-                Bounds.Height
+                Bounds.Height - 1.0f
             );
+            MessagePlaceholderLabel.SizeToFit ();
+            MessagePlaceholderLabel.Frame = new CGRect (MessageField.Frame.X + 5.0f, MessageField.Frame.Y + 8.0f, MessagePlaceholderLabel.Frame.Width, MessagePlaceholderLabel.Frame.Height);
+            if (changedHeight) {
+                ChatViewController.SubviewChangedHeight ();
+            }
         }
 
     }
@@ -422,6 +473,13 @@ namespace NachoClient.iOS
         List<ChatMessageView> VisibleMessageViews;
         int MessageCount;
         int TopCalculatedIndex;
+        nfloat MessageSpacing = 4.0f;
+
+        public bool IsScrolledToBottom {
+            get {
+                return ScrollView.ContentOffset.Y == Math.Max (0, ScrollView.ContentSize.Height - ScrollView.Bounds.Height);
+            }
+        }
 
         public ChatView (CGRect frame) : base (frame)
         {
@@ -455,7 +513,7 @@ namespace NachoClient.iOS
         {
             MessageCount = DataSource.NumberOfMessagesInChatView (this);
             var index = MessageCount - 1;
-            nfloat height = 0.0f;
+            nfloat height = MessageSpacing;
             ChatMessageView messageView;
             for (int i = VisibleMessageViews.Count - 1; i >= 0; --i) {
                 messageView = VisibleMessageViews [i];
@@ -473,19 +531,20 @@ namespace NachoClient.iOS
                 } else {
                     EnqueueReusableChatMessageView (messageView);
                 }
-                height += messageView.Frame.Height;
+                height += messageView.Frame.Height + MessageSpacing;
                 TopCalculatedIndex = index;
                 --index;
             }
             VisibleMessageViews.Sort (CompareMessageViews);
-            var y = height;
+            var y = height - MessageSpacing;
             for (int i = VisibleMessageViews.Count - 1; i >= 0; --i) {
                 messageView = VisibleMessageViews [i];
                 messageView.Frame = new CGRect (messageView.Frame.X, y - messageView.Frame.Height, messageView.Frame.Width, messageView.Frame.Height);
                 ScrollView.AddSubview (messageView);
-                y -= messageView.Frame.Height;
+                y -= messageView.Frame.Height + MessageSpacing;
             }
             ScrollView.ContentSize = new CGSize (ScrollView.Bounds.Width, height);
+            ScrollToBottom ();
         }
 
         int CompareMessageViews (ChatMessageView a, ChatMessageView b)
@@ -496,20 +555,25 @@ namespace NachoClient.iOS
         public void InsertMessageViewAtEnd ()
         {
             MessageCount += 1;
-            bool isAtBottom = ScrollView.ContentOffset.Y == Math.Max (0, ScrollView.ContentSize.Height - ScrollView.Bounds.Height);
+            bool isAtBottom = IsScrolledToBottom;
             var index = MessageCount - 1;
             var messageView = DataSource.ChatMessageViewAtIndex (this, index);
             messageView.SizeToFit ();
             messageView.Frame = new CGRect (messageView.Frame.X, ScrollView.ContentSize.Height, messageView.Frame.Width, messageView.Frame.Height);
-            ScrollView.ContentSize = new CGSize (ScrollView.Bounds.Width, ScrollView.ContentSize.Height + messageView.Frame.Height);
+            ScrollView.ContentSize = new CGSize (ScrollView.Bounds.Width, ScrollView.ContentSize.Height + messageView.Frame.Height + MessageSpacing);
             if (isAtBottom) {
                 messageView.Index = index;
                 VisibleMessageViews.Add (messageView);
                 ScrollView.AddSubview (messageView);
-                ScrollView.ContentOffset = new CGPoint (0.0f, Math.Max (0, ScrollView.ContentSize.Height - ScrollView.Bounds.Height));
+                ScrollToBottom ();
             } else {
                 EnqueueReusableChatMessageView (messageView);
             }
+        }
+
+        public void ScrollToBottom ()
+        {
+            ScrollView.ContentOffset = new CGPoint (0.0f, Math.Max (0, ScrollView.ContentSize.Height - ScrollView.Bounds.Height));
         }
 
         [Foundation.Export("scrollViewDidScroll:")]
@@ -531,28 +595,30 @@ namespace NachoClient.iOS
             var firstVisibleView = VisibleMessageViews [0];
             var lastVisibleView = VisibleMessageViews [VisibleMessageViews.Count - 1];
             int index;
-            var y = firstVisibleView.Frame.Y;
+            var y = firstVisibleView.Frame.Y - MessageSpacing;
             if (TopCalculatedIndex > 0 && topY < Bounds.Height) {
                 // TODO: calculate a couple more pages
             }
-            while (topY < firstVisibleView.Frame.Y && firstVisibleView.Index > 0) {
+            while (topY < y && firstVisibleView.Index > 0) {
                 index = firstVisibleView.Index - 1;
                 firstVisibleView = DataSource.ChatMessageViewAtIndex(this, index);
                 firstVisibleView.Index = index;
                 VisibleMessageViews.Insert (0, firstVisibleView);
-                ScrollView.AddSubview (firstVisibleView);
+                firstVisibleView.SizeToFit ();
                 firstVisibleView.Frame = new CGRect (firstVisibleView.Frame.X, y - firstVisibleView.Frame.Height, firstVisibleView.Frame.Width, firstVisibleView.Frame.Height);
-                y -= firstVisibleView.Frame.Height;
+                ScrollView.AddSubview (firstVisibleView);
+                y -= firstVisibleView.Frame.Height + MessageSpacing;
             }
-            y = lastVisibleView.Frame.Y + lastVisibleView.Frame.Height;
-            while (bottomY > lastVisibleView.Frame.Y + lastVisibleView.Frame.Height && lastVisibleView.Index < MessageCount - 1) {
+            y = lastVisibleView.Frame.Y + lastVisibleView.Frame.Height + MessageSpacing;
+            while (bottomY > y && lastVisibleView.Index < MessageCount - 1) {
                 index = lastVisibleView.Index + 1;
                 lastVisibleView = DataSource.ChatMessageViewAtIndex(this, index);
                 lastVisibleView.Index = index;
                 VisibleMessageViews.Add (lastVisibleView);
-                ScrollView.AddSubview (lastVisibleView);
+                lastVisibleView.SizeToFit ();
                 lastVisibleView.Frame = new CGRect (lastVisibleView.Frame.X, y, lastVisibleView.Frame.Width, lastVisibleView.Frame.Height);
-                y += lastVisibleView.Frame.Height;
+                ScrollView.AddSubview (lastVisibleView);
+                y += lastVisibleView.Frame.Height + MessageSpacing;
             }
         }
 
@@ -562,16 +628,28 @@ namespace NachoClient.iOS
     {
         bool IsFromMe;
         public ChatView ChatView;
+        public UIView BubbleView;
         McEmailMessage Message;
         UILabel MessageLabel;
         public int Index;
+        UIEdgeInsets MessageInsets;
+        nfloat BubbleSideInset = 15.0f;
+        nfloat MaxBubbleWidthPercent = 0.75f;
 
         public ChatMessageView (CGRect frame) : base (frame)
         {
-            MessageLabel = new UILabel (Bounds);
+            MessageInsets = new UIEdgeInsets (6.0f, 9.0f, 6.0f, 9.0f);
+            BubbleView = new UIView (new CGRect(0.0f, 0.0f, Bounds.Width * 0.75f, Bounds.Height));
+            BubbleView.BackgroundColor = UIColor.White;
+            BubbleView.Layer.MasksToBounds = true;
+            BubbleView.Layer.BorderWidth = 1.0f;
+            BubbleView.Layer.CornerRadius = 4.0f;
+            MessageLabel = new UILabel (new CGRect(MessageInsets.Left, MessageInsets.Top, BubbleView.Bounds.Width - MessageInsets.Left - MessageInsets.Right, BubbleView.Bounds.Height - MessageInsets.Top - MessageInsets.Bottom));
             MessageLabel.Lines = 0;
+            MessageLabel.Font = A.Font_AvenirNextRegular17;
             MessageLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
-            AddSubview (MessageLabel);
+            BubbleView.AddSubview (MessageLabel);
+            AddSubview (BubbleView);
         }
 
         public void SetMessage(McEmailMessage message, bool isFromMe)
@@ -594,16 +672,46 @@ namespace NachoClient.iOS
                 }
             }
             if (IsFromMe) {
-                MessageLabel.TextAlignment = UITextAlignment.Right;
+                BubbleView.BackgroundColor = A.Color_NachoGreen;
+                BubbleView.Layer.BorderColor = A.Color_NachoGreen.CGColor;
+                MessageLabel.TextColor = UIColor.White;
             } else {
-                MessageLabel.TextAlignment = UITextAlignment.Left;
+                BubbleView.BackgroundColor = UIColor.White;
+                BubbleView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+                MessageLabel.TextColor = A.Color_NachoGreen;
+            }
+            MessageLabel.BackgroundColor = BubbleView.BackgroundColor;
+            SetNeedsLayout ();
+        }
+
+        public override void LayoutSubviews ()
+        {
+            base.LayoutSubviews ();
+            LayoutBubbleView ();
+        }
+
+        void LayoutBubbleView ()
+        {
+            var maxMessageWidth = Bounds.Width * MaxBubbleWidthPercent - MessageInsets.Left - MessageInsets.Right;
+            var messageSize = MessageLabel.SizeThatFits (new CGSize (maxMessageWidth, 99999999.0f));
+            var height = messageSize.Height + MessageInsets.Top + MessageInsets.Bottom;
+            nfloat width;
+            if (messageSize.Height > MessageLabel.Font.LineHeight + 5.0f) {
+                width = maxMessageWidth;
+            } else {
+                width = messageSize.Width + MessageInsets.Left + MessageInsets.Right;
+            }
+            if (IsFromMe) {
+                BubbleView.Frame = new CGRect (Bounds.Width - BubbleView.Frame.Width - BubbleSideInset, 0.0f, width, height);
+            } else {
+                BubbleView.Frame = new CGRect (BubbleSideInset, 0.0f, width, height);
             }
         }
 
         public override void SizeToFit ()
         {
-            var messageSize = MessageLabel.SizeThatFits (new CGSize (Bounds.Width, 99999999.0f));
-            Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, messageSize.Height);
+            LayoutBubbleView ();
+            Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, BubbleView.Frame.Size.Height);
         }
 
     }

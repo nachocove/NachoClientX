@@ -1017,24 +1017,24 @@ namespace NachoCore.Utils
         // Therefore, those elements can easily be used to identify the start of quoted text.
         // Howver, there are a few other scenarios that it helps to check for...
 
-        // Typical attribution line from gmail, comes before the blockquote
-        static Regex QUOTE_SENT = new Regex ("^On .+ wrote:$");
-        // Typical start of quoted message from Outlook(?), comes after an empty DIV with border-top, not an HR
-        static Regex QUOTE_FROM = new Regex ("^From: ");
-        // Typical signature divider
-        static Regex SIG_DIVIDER = new Regex ("^\\-\\-+");
+        static Regex[] QuoteLinePatterns = new Regex[] {
+            // Typical attribution line from gmail, comes before the blockquote    
+            new Regex ("^On .+ wrote:$"),
+            // Typical start of quoted message from Outlook(?), comes after an empty DIV with border-top, not an HR
+            new Regex ("^From: "),
+            // Typical signature divider
+            new Regex ("^\\-\\-+"),
+            // Default iPhone, Nacho, or Samsung signature
+            new Regex ("^Sent (from|via) ")
+        };
 
         public static bool IsQuoteLine (string line)
         {
             var trimmedLine = line.Trim ();
-            if (QUOTE_SENT.IsMatch (line)) {
-                return true;
-            }
-            if (QUOTE_FROM.IsMatch (line)) {
-                return true;
-            }
-            if (SIG_DIVIDER.IsMatch (line)) {
-                return true;
+            foreach (var pattern in QuoteLinePatterns) {
+                if (pattern.IsMatch (trimmedLine)) {
+                    return true;
+                }
             }
             return false;
         }
