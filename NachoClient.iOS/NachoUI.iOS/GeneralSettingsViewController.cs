@@ -88,8 +88,9 @@ namespace NachoClient.iOS
             var addAccountView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 60), AddAccountSelected);
             footerView.AddSubview (addAccountView);
 
-            connectToSalesforceView = new ConnectToSalesforceCell (new CGRect (0, 60, accountsTableView.Frame.Width, 80), ConnectToSalesforceSelected);
-            footerView.AddSubview (connectToSalesforceView);
+            // Disable salesforce for appstore push
+//            connectToSalesforceView = new ConnectToSalesforceCell (new CGRect (0, 60, accountsTableView.Frame.Width, 80), ConnectToSalesforceSelected);
+//            footerView.AddSubview (connectToSalesforceView);
 
             accountsTableView.TableFooterView = footerView;
 
@@ -110,7 +111,10 @@ namespace NachoClient.iOS
         {
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             accountsTableView.Frame = new CGRect (0, 0, accountsTableView.Frame.Width, View.Frame.Height);
-            connectToSalesforceView.Hidden = (null != McAccount.GetSalesForceAccount ());
+
+
+            // Disable salesforce for appstore push
+//            connectToSalesforceView.Hidden = (null != McAccount.GetSalesForceAccount ());
         }
 
         public override void ViewDidLayoutSubviews ()
