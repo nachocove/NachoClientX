@@ -41,7 +41,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle);
 
-            SetupHockeyAppUpdateManager ();
+            MainApplication.RegisterHockeyAppUpdateManager (this);
 
             MainApplication.OneTimeStartup ("MainActivity");
 
@@ -52,16 +52,11 @@ namespace NachoClient.AndroidClient
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, startupFragment).Commit ();
         }
 
-        protected override void OnStart ()
-        {
-            base.OnStart ();
-        }
-
         protected override void OnResume ()
         {
             base.OnResume ();
 
-            SetupHockeyAppCrashManager ();
+            MainApplication.SetupHockeyAppCrashManager (this);
 
             if (!NcMigration.IsCompatible ()) {
                 Log.Info (Log.LOG_UI, "MainActivity: found incompatible migration");
@@ -79,13 +74,7 @@ namespace NachoClient.AndroidClient
         protected override void OnPause ()
         {
             base.OnPause ();
-            UnregisterHockeyAppUpdateManager ();
-        }
-
-        protected override void OnDestroy ()
-        {
-            base.OnDestroy ();
-            UnregisterHockeyAppUpdateManager ();
+            MainApplication.UnregisterHockeyAppUpdateManager ();
         }
 
         void ShowScreenForApplicationState ()
@@ -231,126 +220,7 @@ namespace NachoClient.AndroidClient
             base.OnSaveInstanceState (outState);
         }
 
-        #region HockeyApp
 
-        public class MyCustomCrashManagerListener : HockeyApp.CrashManagerListener
-        {
-            public string LastTrace { get; set; }
-
-            public override bool ShouldAutoUploadCrashes ()
-            {
-                return true;
-            }
-
-            public override string Description {
-                get {
-                    var descr = NcApplication.ApplicationLogForCrashManager ();
-                    if (!string.IsNullOrEmpty (LastTrace)) {
-                        descr += "\n" + LastTrace;
-                        LastTrace = null;
-                    }
-                    return descr;
-                }
-            }
-
-            public override bool IncludeDeviceData ()
-            {
-                return true;
-            }
-
-            public override bool IncludeDeviceIdentifier ()
-            {
-                return true;
-            }
-
-            public override int MaxRetryAttempts {
-                get {
-                    return 1000;
-                }
-            }
-        }
-
-        class UnCaughtExceptionHandler : Java.Lang.Object, Java.Lang.Thread.IUncaughtExceptionHandler
-        {
-            MyCustomCrashManagerListener CrashListener;
-
-            public UnCaughtExceptionHandler (MyCustomCrashManagerListener theListener)
-            {
-                CrashListener = theListener;
-            }
-
-            public void UncaughtException (Java.Lang.Thread thread, Java.Lang.Throwable ex)
-            {
-                CrashListener.LastTrace = ex.GetStackTrace ().ToString ();
-                HockeyApp.TraceWriter.WriteTrace (ex);
-            }
-        }
-
-        private void SetupHockeyAppCrashManager ()
-        {
-            if (BuildInfoHelper.IsDev) {
-                return;
-            }
-            var myListener = new MyCustomCrashManagerListener ();
-            // Register the crash manager before Initializing the trace writer
-            HockeyApp.CrashManager.Register (this, BuildInfo.HockeyAppAppId, myListener); 
-
-            // Initialize the Trace Writer
-            HockeyApp.TraceWriter.Initialize (myListener);
-
-            // Wire up Unhandled Expcetion handler from Android
-            AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => {
-                // Use the trace writer to log exceptions so HockeyApp finds them
-                myListener.LastTrace = args.Exception.ToString ();
-                HockeyApp.TraceWriter.WriteTrace (args.Exception);
-                args.Handled = true;
-            };
-
-            // Wire up the .NET Unhandled Exception handler
-            AppDomain.CurrentDomain.UnhandledException += (sender, args) => {
-                myListener.LastTrace = args.ExceptionObject.ToString ();
-                HockeyApp.TraceWriter.WriteTrace (args.ExceptionObject);
-            };
-
-            // Wire up the unobserved task exception handler
-            TaskScheduler.UnobservedTaskException += (sender, args) => {
-                myListener.LastTrace = args.Exception.ToString ();
-                HockeyApp.TraceWriter.WriteTrace (args.Exception);
-            };
-
-            Java.Lang.Thread.DefaultUncaughtExceptionHandler = new UnCaughtExceptionHandler (myListener);
-        }
-
-        public class MyCustomUpdateManagerListener : HockeyApp.UpdateManagerListener
-        {
-            public override void OnUpdateAvailable ()
-            {
-                Log.Info (Log.LOG_SYS, "HA: OnUpdateAvailable");
-                base.OnUpdateAvailable ();
-            }
-
-            public override void OnNoUpdateAvailable ()
-            {
-                Log.Info (Log.LOG_SYS, "HA: OnNoUpdateAvailable");
-                base.OnNoUpdateAvailable ();
-            }
-        }
-
-        private void SetupHockeyAppUpdateManager ()
-        {
-            if (BuildInfoHelper.IsDev) {
-                return;
-            }
-            //Register to with the Update Manager
-            HockeyApp.UpdateManager.Register (this, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener (), true);
-        }
-
-        private void UnregisterHockeyAppUpdateManager ()
-        {
-            HockeyApp.UpdateManager.Unregister ();
-        }
-
-        #endregion
     }
 }
 
