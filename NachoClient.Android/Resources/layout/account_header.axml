@@ -7,17 +7,18 @@
     <LinearLayout
         android:background="@android:color/white"
         android:orientation="horizontal"
+        android:paddingLeft="4dp"
+        android:paddingTop="4dp"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
-        <ImageView
+        <nachoclient.androidclient.RoundedImageView
             android:id="@+id/account_icon"
-            android:src="@drawable/avatar_hotmail"
+            android:src="@drawable/avatar_unified"
             android:layout_width="75dp"
             android:layout_height="75dp"
             android:layout_marginRight="10dp"
             android:scaleType="fitXY"
-            android:layout_gravity="center_vertical"
-            android:background="@android:color/white" />
+            android:layout_gravity="center_vertical" />
         <LinearLayout
             android:orientation="vertical"
             android:layout_gravity="center_vertical"
