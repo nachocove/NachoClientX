@@ -312,8 +312,9 @@ namespace NachoPlatform
                 pCur.Close ();
             }
 
-            const int TYPE_BIRTHDAY = 3;
             // bug in xamarin. This isn't exposed.
+            const int TYPE_BIRTHDAY = 3;
+
             protected void GetContactBirthday ()
             {
                 // Birthday (Not sure how to get this yet. All java examples use Event.TYPE_BIRTHDAY, but that doesn't seem to exist in C#
