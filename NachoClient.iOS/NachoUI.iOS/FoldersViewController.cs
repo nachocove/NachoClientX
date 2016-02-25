@@ -114,6 +114,10 @@ namespace NachoClient.iOS
                 TableView.ReloadData ();
             }
 
+            if (null != switchAccountButton) {
+                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+            }
+
             if (!EventHandlersAreSet) {
                 folderTableViewSource.OnFolderSelected += FolderTableViewSource_OnFolderSelected;
                 folderTableViewSource.OnAccountSelected += FolderTableViewSource_OnAccountSelected;
@@ -151,7 +155,7 @@ namespace NachoClient.iOS
                 PerformSegue ("SegueToDeferredList", new SegueHolder (null));
                 return;
             case McFolder.DEADLINE_FAKE_FOLDER_ID:
-                // TODO SegueToDeadline
+                PerformSegue ("SegueToDeadlines", new SegueHolder (null));
                 return;
             }
 
@@ -205,6 +209,9 @@ namespace NachoClient.iOS
                 return;
             }
             if ("SegueToLikelyToRead" == segue.Identifier) {
+                return;
+            }
+            if ("SegueToDeadlines" == segue.Identifier) {
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

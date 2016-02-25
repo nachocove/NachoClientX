@@ -17,7 +17,7 @@ namespace NachoCore.Model
 {
     public class NcSQLiteConnection : SQLiteConnection
     {
-        private const int KGCSeconds = 60;
+        public const int KGCSeconds = 60;
         private object LockObj;
         private bool DidDispose;
 
@@ -73,11 +73,10 @@ namespace NachoCore.Model
             }
         }
 
-        public void EliminateIfStale (Action action)
+        public void EliminateIfStale (DateTime cutoff, Action action)
         {
             lock (LockObj) {
-                var wayBack = DateTime.UtcNow.AddSeconds (-GCSeconds);
-                if (LastAccess < wayBack) {
+                if (LastAccess < cutoff) {
                     action ();
                     Eliminate ();
                 }
@@ -482,6 +481,7 @@ namespace NachoCore.Model
 
         private NcTimer CheckPointTimer;
         private NcTimer DbConnGCTimer;
+        private DateTime lastDbConnGC = default(DateTime);
 
         private class CheckpointResult
         {
@@ -495,13 +495,20 @@ namespace NachoCore.Model
 
         private void DbConnGCTimerCallback (Object state)
         {
-            Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections");
+            DateTime staleCutoff;
+            if (default(DateTime) == lastDbConnGC) {
+                staleCutoff = DateTime.UtcNow - TimeSpan.FromSeconds (2 * NcSQLiteConnection.KGCSeconds);
+            } else {
+                staleCutoff = lastDbConnGC - TimeSpan.FromSeconds (NcSQLiteConnection.KGCSeconds);
+            }
+            lastDbConnGC = DateTime.UtcNow;
+            Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections older than {0:n0} seconds", (DateTime.UtcNow - staleCutoff).TotalSeconds);
             foreach (var kvp in DbConns) {
                 NcSQLiteConnection dummy;
                 if (kvp.Key == NcApplication.Instance.UiThreadId) {
                     continue;
                 }
-                kvp.Value.EliminateIfStale (() => {
+                kvp.Value.EliminateIfStale (staleCutoff, () => {
                     if (!DbConns.TryRemove (kvp.Key, out dummy)) {
                         Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
                     } else {

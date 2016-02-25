@@ -32,6 +32,9 @@ namespace NachoClient.iOS
         private string ArchiveMessageCaptureName;
         private string RefreshCaptureName;
 
+        private UIView headerWrapper;
+        private UILabel headerText;
+
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
         private const int DELETE_TAG = 3;
@@ -183,6 +186,9 @@ namespace NachoClient.iOS
             ClearCache ();
             var didRefresh = messageThreads.Refresh (out adds, out deletes);
             RefreshCapture.Stop ();
+            if (null != headerText && messageThreads.HasFilterSemantics ()) {
+                headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
+            }
             return didRefresh;
         }
 
@@ -209,6 +215,42 @@ namespace NachoClient.iOS
             } else {
                 return messageThreads.Count ();
             }
+        }
+
+        public override nfloat EstimatedHeightForHeader (UITableView tableView, nint section)
+        {
+            return messageThreads.HasFilterSemantics () ? 24 : 0;
+        }
+
+        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
+        {
+            return EstimatedHeightForHeader (tableView, section);
+        }
+
+        public override UIView GetViewForHeader (UITableView tableView, nint section)
+        {
+            if (!messageThreads.HasFilterSemantics ()) {
+                return null;
+            }
+
+            if (null == headerWrapper) {
+                headerWrapper = new UIView (new CGRect (0, 0, tableView.Frame.Width, 24));
+                headerWrapper.BackgroundColor = A.Color_NachoBackgroundGray;
+
+                var headerIcon = new UIImageView (new CGRect (30, 0, 24, 24));
+                headerIcon.Image = UIImage.FromBundle ("gen-read-list");
+                headerWrapper.AddSubview (headerIcon);
+
+                headerText = new UILabel (new CGRect (65, 0, tableView.Frame.Width - 65, 24));
+                headerWrapper.AddSubview (headerText);
+                headerText.BackgroundColor = A.Color_NachoBackgroundGray;
+                headerText.AccessibilityLabel = "MessageListFilterSetting";
+                headerText.Font = A.Font_AvenirNextDemiBold14;
+            }
+
+            headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
+
+            return headerWrapper;
         }
 
         protected nfloat HeightForMessage (McEmailMessage message)
@@ -688,7 +730,8 @@ namespace NachoClient.iOS
             messageHeaderView.ConfigureMessageView (messageThread, message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
-                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                // Set the value for redraw; status ind will show up soon for permanent action
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 messageHeaderView.ConfigureMessageView (messageThread, message);
             };
 
@@ -858,6 +901,9 @@ namespace NachoClient.iOS
                         ConfigureCell (tableView, cell, path);
                     }
                 }
+            }
+            if (null != headerText && null != messageThreads && messageThreads.HasFilterSemantics()) {
+                headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
             }
         }
 

@@ -18,7 +18,7 @@
             android:orientation="horizontal"
             android:layout_width="fill_parent"
             android:layout_height="80dp">
-            <ImageView
+            <nachoclient.androidclient.RoundedImageView
                 android:id="@+id/account_icon"
                 android:src="@drawable/avatar_hotmail"
                 android:layout_width="75dp"

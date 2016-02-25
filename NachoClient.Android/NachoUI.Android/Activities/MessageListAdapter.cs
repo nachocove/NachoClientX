@@ -86,6 +86,7 @@ namespace NachoClient.AndroidClient
         public class CardViewHolder : RecyclerView.ViewHolder
         {
             public Bind.MessageHeaderViewHolder mvh;
+            public ViewGroup parent;
             public WebView webview;
 
             public CardViewHolder (View itemView, Action<int> click, Action<int,ImageView> chiliClick,
@@ -203,7 +204,9 @@ namespace NachoClient.AndroidClient
             itemView.SetMinimumHeight (parent.MeasuredHeight);
             itemView.LayoutParameters.Height = parent.MeasuredHeight;
 
-            return new CardViewHolder (itemView, ItemView_Click, ChiliView_Click, ReplyButton_Click, ReplyAllButton_Click, ForwardButton_Click, ArchiveButton_Click, DeleteButton_Click);
+            var vh = new CardViewHolder (itemView, ItemView_Click, ChiliView_Click, ReplyButton_Click, ReplyAllButton_Click, ForwardButton_Click, ArchiveButton_Click, DeleteButton_Click);
+            vh.parent = parent;
+            return vh;
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
@@ -331,6 +334,8 @@ namespace NachoClient.AndroidClient
                     RenderBody (vh.webview, bundle);
                 }
             }
+            vh.ItemView.SetMinimumHeight (vh.parent.MeasuredHeight);
+            vh.ItemView.LayoutParameters.Height = vh.parent.MeasuredHeight;
         }
 
         void BindMeetingRequest (View view, McEmailMessage message)

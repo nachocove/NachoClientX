@@ -652,6 +652,10 @@
     <Compile Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs" />
     <Compile Include="NachoUI.Android\Activities\InboxFolderActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\AccountChooserFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\SalesforceSignInFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\SalesforceSignInActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\SalesforceSettingsActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\SalesforceSettingsFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1761,6 +1765,24 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_read_list_active.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\gen_read_list.png" />
     <AndroidResource Include="Resources\layout\AccountChooserCell.axml" />
+    <AndroidResource Include="Resources\layout\SalesforceSignInFragment.axml" />
+    <AndroidResource Include="Resources\layout\SalesforceSignInActivity.axml" />
+    <AndroidResource Include="Resources\drawable\salesforce_header_logo.png" />
+    <AndroidResource Include="Resources\layout\SalesforceSettingsFragment.axml" />
+    <AndroidResource Include="Resources\layout\SalesforceSettingsActivity.axml" />
+    <AndroidResource Include="Resources\drawable-mdpi\avatar_unified.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\avatar_aol.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\avatar_aol.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\avatar_aol.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\avatar_aol.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_filter_active.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\gen_filter.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_filter_active.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\gen_filter.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_filter_active.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\gen_filter.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_filter_active.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\gen_filter.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

@@ -353,6 +353,7 @@ namespace NachoClient.AndroidClient
                 attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
                 attachment.UpdateFileCopy (CameraOutputUri.Path);
                 attachment.UpdateSaveFinish ();
+                File.Delete (CameraOutputUri.Path);
                 attachment.Link (Composer.Message);
                 HeaderView.AttachmentsView.AddAttachment (attachment);
             } else if (PICK_REQUEST_CODE == requestCode) {
@@ -407,21 +408,36 @@ namespace NachoClient.AndroidClient
 
         #region User Action - Header
 
+        bool SalesforceBccAdded = false;
+        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool>();
+
+        void MaybeAddSalesforceBcc()
+        {
+            if(!SalesforceBccAdded) {
+                SalesforceBccAdded = EmailHelper.MaybeAddSalesforceBcc(SalesforceAddressCache, Composer.Message);
+                UpdateHeaderFromBcc ();
+            }
+        }
+                
+
         public void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to)
         {
             Composer.Message.To = to;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc)
         {
             Composer.Message.Cc = cc;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc)
         {
             Composer.Message.Bcc = bcc;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
@@ -632,6 +648,11 @@ namespace NachoClient.AndroidClient
         void UpdateHeaderFromView ()
         {
             HeaderView.FromField.Text = Composer.Message.From;
+        }
+
+        void UpdateHeaderFromBcc()
+        {
+            HeaderView.BccField.AddressString = Composer.Message.Bcc;
         }
 
         void UpdateHeaderSubjectView ()

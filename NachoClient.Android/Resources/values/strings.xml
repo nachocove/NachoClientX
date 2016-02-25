@@ -27,6 +27,7 @@
     <string name="contacts">Contacts</string>
     <string name="more">More</string>
     <string name="add_account">Add Account</string>
+    <string name="connect_to_salesforce">Connect to Salesforce</string>
     <string name="demo_account">Demo Account</string>
     <string name="demo_email">demo@account.com</string>
     <string name="demo_subject">What is the deal with this long subject line?</string>
@@ -48,6 +49,7 @@
     <string name="to_deadline">Go to Deadlines</string>
     <string name="to_deferred">Go to Deferred Messages</string>
     <string name="account_settings">Account Settings</string>
+    <string name="salesforce_settings">Salesforce Settings</string>
     <string name="to">To:</string>
     <string name="cc">Cc:</string>
     <string name="subject">Subject:</string>
@@ -146,7 +148,7 @@
     <string name="tut4_message">Your next meeting is here.  Manage\nyour schedule using Calendar.</string>
     <string name="tut5_title">Just One Last Thing...</string>
     <string name="tut5_message">Sliding right or left elsewhere will get you\nshortcuts and options for the items.</string>
-    <string name="cert_ask">Do you want to alow {0} from {1} to provide information about your account?</string>
+    <string name="cert_ask">Do you want to allow {0} from {1} to provide information about your account?</string>
     <string name="cert_warn">You should only allow sources you know and trust to configure your account.</string>
     <string name="allow">Allow</string>
     <string name="security_warning">Security Warning</string>
@@ -198,4 +200,10 @@
     <string name="zip">Zip Code</string>
     <string name="country">Country</string>
     <string name="contact_not_available">Contact not available</string>
+    <string name="refresh_contacts">Refresh Contacts</string>
+    <string name="add_bcc">Automatically Add Bcc</string>
+    <string name="default_email_account">Default Email Account</string>
+    <string name="default_calendar_account">Default Calendar Account</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>

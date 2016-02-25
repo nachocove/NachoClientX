@@ -484,16 +484,22 @@ namespace NachoCore.Utils
             if (Message != null) {
                 Body = Message.GetBody ();
             }
-            if (Body != null){
-                if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.PlainText_1) {
-                    parsed.FullText = Body.GetContentsString ();
-                } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.HTML_2) {
-                    parsed.FullHtmlDocument = TemplateHtmlDocument ();
-                    IncludeHtml (Body.GetContentsString ());
-                } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4) {
-                    MimeMessage = MimeMessage.Load (Body.GetFilePath ());
-                } else {
-                    parsed.FullText = Body.GetContentsString ();
+            if (Body != null) {
+                try {
+                    if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.PlainText_1) {
+                        parsed.FullText = Body.GetContentsString ();
+                    } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.HTML_2) {
+                        parsed.FullHtmlDocument = TemplateHtmlDocument ();
+                        IncludeHtml (Body.GetContentsString ());
+                    } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4) {
+                        MimeMessage = MimeMessage.Load (Body.GetFilePath ());
+                    } else {
+                        parsed.FullText = Body.GetContentsString ();
+                    }
+                } catch (IOException e) {
+                    // This can happen if the message is deleted while this background task is in progress.
+                    Log.Error (Log.LOG_UI, "I/O exception while parsing the body for an e-mail message or calendar item: {0}", e.Message);
+                    parsed.FullText = "";
                 }
             }
 

@@ -101,6 +101,7 @@
                         <outlet property="contentView" destination="73b-MM-u7g" id="Erf-qp-QXw"/>
                         <outlet property="scrollView" destination="R7v-6c-XcH" id="hya-iQ-4du"/>
                         <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="nJv-0g-ewn"/>
+                        <segue destination="Ef5-Gs-Ti8" kind="push" identifier="SegueToSalesforceSettings" id="Io9-QA-erY"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -196,6 +197,7 @@
                         <segue destination="Png-41-0bk" kind="push" identifier="SegueToDrafts" id="ob4-Hl-1Og"/>
                         <segue destination="PLY-NH-kiA" kind="push" identifier="SegueToLikelyToRead" id="oUa-Te-1to"/>
                         <segue destination="2MA-z5-r9e" kind="push" identifier="SegueToInbox" id="Gi8-ik-ZM2"/>
+                        <segue destination="8ef-DW-GpE" kind="push" identifier="SegueToDeadlines" id="vNg-HB-UMF"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -727,6 +729,21 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="reC-sA-KTw" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-5521" y="2968"/>
+        </scene>
+        <!--Salesforce Settings View Controller-->
+        <scene sceneID="uVd-e3-2MQ">
+            <objects>
+                <viewController storyboardIdentifier="SalesforceSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Ef5-Gs-Ti8" customClass="SalesforceSettingsViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="oK8-a9-Mh6">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="UJX-OJ-OJJ"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="fT6-px-d7J" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-5070" y="3153"/>
         </scene>
         <!--Notes View Controller-->
         <scene sceneID="OcZ-uK-llj">
@@ -1467,6 +1484,8 @@
         <segue reference="rEt-DF-c51"/>
         <segue reference="urW-p2-x1h"/>
         <segue reference="Gi8-ik-ZM2"/>
+        <segue reference="vNg-HB-UMF"/>
+        <segue reference="nJv-0g-ewn"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

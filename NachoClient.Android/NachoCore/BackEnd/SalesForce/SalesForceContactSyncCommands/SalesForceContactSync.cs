@@ -66,25 +66,18 @@ namespace NachoCore.SFDC
             Stop,
         }
 
-        public class SfdcSyncEvt : NcProtoControl.PcEvt
-        {
-            new public enum E : uint
-            {
-                AuthFail = (NcProtoControl.PcEvt.E.Last + 1),
-                Last = AuthFail,
-            };
-        }
-
         protected SFDCCommand Cmd;
         SalesForceProtoControl SFDCOwner;
         protected NcStateMachine Sm;
+        McPending Pending;
 
-        public SalesForceContactSync (SalesForceProtoControl owner, int accountId)
+        public SalesForceContactSync (SalesForceProtoControl owner, int accountId, McPending pending = null)
         {
+            Pending = pending;
             SFDCOwner = owner;
             Sm = new NcStateMachine ("SFDCPC:CONTACTSYNC") { 
                 Name = string.Format ("SFDCPC:CONTACTSYNC({0})", accountId),
-                LocalEventType = typeof(SfdcSyncEvt),
+                LocalEventType = typeof(SalesForceProtoControl.SfdcEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {
                     new Node {
@@ -95,7 +88,8 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
-                            (uint)SfdcSyncEvt.E.AuthFail,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                             (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
@@ -112,7 +106,8 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
-                            (uint)SfdcSyncEvt.E.AuthFail,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                             (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
@@ -130,12 +125,13 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSync, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoError, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSyncIds, State = (uint)Lst.SyncWIds },
-                            new Trans { Event = (uint)SfdcSyncEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
+                            new Trans { Event = (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
                         }
                     },
                     new Node {
@@ -147,10 +143,11 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSyncContinue, ActSetsState = true },
-                            new Trans { Event = (uint)SfdcSyncEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
+                            new Trans { Event = (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoError, State = (uint)Lst.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSyncContinue, ActSetsState = true  },
                         }
@@ -163,20 +160,34 @@ namespace NachoCore.SFDC
         void DoError ()
         {
             CancelCmd ();
-            SFDCOwner.Sm.PostEvent (Event.Create ((uint)SmEvt.E.HardFail, "SETUPHARDFAIL"));
+            SendCommandToOwnerSm (Event.Create ((uint)SmEvt.E.HardFail, "SYNCHARDFAIL"),
+                NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed));
         }
 
         void DoSuccess ()
         {
             CancelCmd ();
-            SFDCOwner.Sm.PostEvent (Event.Create ((uint)SmEvt.E.Success, "SETUPSUCCESS"));
+            SendCommandToOwnerSm (Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS"), NcResult.OK ());
         }
 
         void DoUiCredReq ()
         {
             CancelCmd ();
             // Send the request toward the UI.
-            SFDCOwner.Sm.PostEvent (Event.Create ((uint)SalesForceProtoControl.SfdcEvt.E.AuthFail, "SETUPAUTHFAIL"));
+            SendCommandToOwnerSm (Event.Create ((uint)SalesForceProtoControl.SfdcEvt.E.AuthFail, "SYNCAUTHFAIL"),
+                NcResult.Error (NcResult.SubKindEnum.Error_AuthFailBlocked));
+        }
+
+        void SendCommandToOwnerSm (Event evt, NcResult result)
+        {
+            if (null != Pending) {
+                if (!result.isOK ()) {
+                    Pending.ResolveAsHardFail (SFDCOwner, result);
+                } else {
+                    Pending.ResolveAsSuccess (SFDCOwner);
+                }
+            }
+            SFDCOwner.Sm.PostEvent (evt);
         }
 
         void DoSyncIds ()
@@ -217,7 +228,7 @@ namespace NachoCore.SFDC
                     return true;
                 }));
                 Log.Info (Log.LOG_SFDC, "Finished Syncing Contacts");
-                SFDCOwner.Sm.PostEvent ((uint)SmEvt.E.Success, "SFDCALLCONTACTDONE");
+                SendCommandToOwnerSm (Event.Create ((uint)SmEvt.E.Success, "SFDCALLCONTACTDONE"), NcResult.OK ());
                 nextState = (uint)Lst.Stop;
             }
             Sm.State = nextState;

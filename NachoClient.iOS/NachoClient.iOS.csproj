@@ -1811,6 +1811,10 @@
       <Link>NachoCore\Utils\FolderLists.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\ChatMessagesViewController.cs" />
+    <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.designer.cs">
+      <DependentUpon>SalesforceSettingsViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2834,6 +2838,19 @@
     <BundleResource Include="Resources\nav-chat%402x.png" />
     <BundleResource Include="Resources\nav-chat%403x.png" />
     <BundleResource Include="Resources\nav-chat%404x.png" />
+    <BundleResource Include="Resources\salesforce-header-logo.png" />
+    <BundleResource Include="Resources\avatar-aol%402x.png" />
+    <BundleResource Include="Resources\avatar-aol%403x.png" />
+    <BundleResource Include="Resources\avatar-aol%404x.png" />
+    <BundleResource Include="Resources\avatar-aol%406x.png" />
+    <BundleResource Include="Resources\gen-filter-active%402x.png" />
+    <BundleResource Include="Resources\gen-filter-active%403x.png" />
+    <BundleResource Include="Resources\gen-filter-active%404x.png" />
+    <BundleResource Include="Resources\gen-filter-active%406x.png" />
+    <BundleResource Include="Resources\gen-filter%402x.png" />
+    <BundleResource Include="Resources\gen-filter%403x.png" />
+    <BundleResource Include="Resources\gen-filter%404x.png" />
+    <BundleResource Include="Resources\gen-filter%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
