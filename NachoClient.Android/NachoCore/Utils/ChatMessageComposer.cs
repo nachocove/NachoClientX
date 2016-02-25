@@ -29,6 +29,7 @@ namespace NachoCore.Utils
             Message = McEmailMessage.MessageWithSubject(Account, subject);
             Message.To = EmailHelper.AddressStringFromList (ChatToList ());
             Message.IsChat = true;
+            Message.DateReceived = DateTime.Now;
             if (previousMessages.Count > 0) {
                 Message.ReferencedEmailId = previousMessages [0].Id;
             }

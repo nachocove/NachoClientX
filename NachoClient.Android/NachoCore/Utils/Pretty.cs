@@ -263,6 +263,26 @@ namespace NachoCore.Utils
             return string.Format ("{0} {1}", dateTime.ToLocalTime ().ToString ("dddd"), Time (dateTime));
         }
 
+        static public string TimeWithDecreasingPrecision (DateTime dateTime)
+        {
+            var local = dateTime.ToLocalTime ();
+            var now = DateTime.Now;
+            var diff = now - local;
+            TimeSpan cutoff;
+            if (now.Hour < 12) {
+                cutoff = now.TimeOfDay + TimeSpan.FromHours (12);
+            } else {
+                cutoff = now.TimeOfDay;
+            }
+            if (diff < cutoff) {
+                return Time (dateTime);
+            }
+            if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
+                return local.ToString ("dddd");
+            }
+            return ShortDate (dateTime);
+        }
+
         static public string UniversalFullDateTime (DateTime d)
         {
             return d.ToLocalTime ().ToString ("U");

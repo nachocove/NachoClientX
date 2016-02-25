@@ -17,6 +17,8 @@ namespace NachoCore.Model
         public string ParticipantHash { get; set; }
         [Indexed]
         public DateTime LastMessageDate { get; set; }
+        public string LastMessagePreview { get; set ;}
+        public string CachedParticipantsLabel { get; set; }
 
         public McChat () : base ()
         {
@@ -117,6 +119,16 @@ namespace NachoCore.Model
                         chatMessage.Insert ();
                         if (LastMessageDate == null || message.DateReceived > LastMessageDate) {
                             LastMessageDate = message.DateReceived;
+                            var bundle = new NcEmailMessageBundle (message);
+                            if (bundle.TopText != null){
+                                var text = bundle.TopText;
+                                var whitespacePattern = new System.Text.RegularExpressions.Regex ("\\s+");
+                                text = whitespacePattern.Replace (text, " ");
+                                LastMessagePreview = text;
+                            }else{
+                                LastMessagePreview = null;
+                            }
+                            CachedParticipantsLabel = ParticipantsLabel ();
                             Update ();
                         }
                         var account = McAccount.QueryById<McAccount> (AccountId);
@@ -153,6 +165,49 @@ namespace NachoCore.Model
                     participant.ContactId = contacts [0].Id;
                 }
                 participant.Insert ();
+            }
+            CachedParticipantsLabel = ParticipantsLabel ();
+            Update ();
+        }
+
+        public string ParticipantsLabel ()
+        {
+            var participants = McChatParticipant.GetChatParticipants (Id);
+            if (participants.Count == 0){
+                return "(No Participants)";
+            }else if (participants.Count == 1){
+                var participant = participants [0];
+                var email = McEmailAddress.QueryById<McEmailAddress> (participant.EmailAddrId);
+                string name = null;
+                if (participant.ContactId != 0) {
+                    var contact = McContact.QueryById<McContact> (participant.ContactId);
+                    if (contact != null){
+                        name = contact.GetDisplayName ();
+                    }
+                }
+                if (String.IsNullOrEmpty (name)){
+                    name = email.CanonicalEmailAddress;
+                }
+                return name;
+            }else{
+                var firsts = new List<string>();
+                foreach (var participant in participants){
+                    var email = McEmailAddress.QueryById<McEmailAddress> (participant.EmailAddrId);
+                    string name = null;
+                    if (participant.ContactId != 0) {
+                        var contact = McContact.QueryById<McContact> (participant.ContactId);
+                        if (contact != null) {
+                            name = contact.GetInformalDisplayName ();
+                        }
+                    }
+                    if (String.IsNullOrEmpty (name)) {
+                        name = email.CanonicalEmailAddress.Split ('@')[0];
+                    }
+                    firsts.Add (name);
+                }
+                var final = firsts [firsts.Count - 1];
+                firsts.RemoveAt (firsts.Count - 1);
+                return String.Join(", ", firsts) + " & " + final;
             }
         }
     }

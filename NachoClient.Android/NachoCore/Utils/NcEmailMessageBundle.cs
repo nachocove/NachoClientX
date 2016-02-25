@@ -519,15 +519,26 @@ namespace NachoCore.Utils
                 } else {
                     var serializer = new HtmlTextSerializer (parsed.FullHtmlDocument);
                     serializer.Serialize ();
+                    HtmlNode chatElement = null;
                     if (serializer.FoundTop) {
                         parsed.TopText = serializer.TopText;
                         parsed.TopHtmlDocument = parsed.FullHtmlDocument.CopyUntilNode (serializer.LastTopTextNode);
+                        chatElement = parsed.TopHtmlDocument.FindElementWithId ("nacho-chat");
+                    } else {
+                        chatElement = parsed.FullHtmlDocument.FindElementWithId ("nacho-chat");
+                        if (chatElement != null) {
+                            var copyTarget = chatElement;
+                            while (copyTarget.NodeType == HtmlNodeType.Element && copyTarget.ChildNodes.Count > 0) {
+                                copyTarget = copyTarget.ChildNodes [copyTarget.ChildNodes.Count - 1];
+                            }
+                            parsed.TopHtmlDocument = parsed.FullHtmlDocument.CopyUntilNode (copyTarget);
+                            chatElement = parsed.TopHtmlDocument.FindElementWithId ("nacho-chat");
+                        }
                     }
-                    var node = parsed.TopHtmlDocument.FindNodeWithId ("nacho-chat");
-                    if (node != null) {
+                    if (chatElement != null) {
                         var body = parsed.TopHtmlDocument.DocumentNode.Element ("html").Element ("body");
-                        node.ParentNode.RemoveChild (node);
-                        body.AppendChild (node);
+                        chatElement.ParentNode.RemoveChild (chatElement);
+                        body.AppendChild (chatElement);
                         for (int i = body.ChildNodes.Count - 2; i >= 0; --i) {
                             body.RemoveChild (body.ChildNodes [i]);
                         }

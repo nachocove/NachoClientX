@@ -75,7 +75,7 @@ namespace NachoCore.Utils
             return copyDoc;
         }
 
-        public static HtmlNode FindNodeWithId (this HtmlDocument doc, string id)
+        public static HtmlNode FindElementWithId (this HtmlDocument doc, string id)
         {
             var stack = new List<HtmlNode> ();
             stack.Add (doc.DocumentNode);

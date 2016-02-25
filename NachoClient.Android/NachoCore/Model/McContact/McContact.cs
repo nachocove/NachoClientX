@@ -1704,6 +1704,23 @@ namespace NachoCore.Model
             return name;
         }
 
+        public string GetInformalDisplayName ()
+        {
+            if (!String.IsNullOrEmpty (FirstName)) {
+                return FirstName;
+            }
+            if (!String.IsNullOrEmpty (LastName)) {
+                return LastName;
+            }
+            if (!String.IsNullOrEmpty (MiddleName)) {
+                return MiddleName;
+            }
+            if (!String.IsNullOrEmpty (DisplayName)) {
+                return DisplayName;
+            }
+            return CompanyName;
+        }
+
         public string GetEmailAddress ()
         {
             if (null == EmailAddresses) {

@@ -6,6 +6,7 @@ using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 using System.Collections.Generic;
+using CoreGraphics;
 
 namespace NachoClient.iOS
 {
@@ -20,17 +21,24 @@ namespace NachoClient.iOS
 
         public ChatsViewController (IntPtr ptr) : base(ptr)
         {
-            NavigationItem.RightBarButtonItem = NewChatButton = new UIBarButtonItem ("New", UIBarButtonItemStyle.Plain, NewChat);
+            using (var image = UIImage.FromBundle ("chat-newmsg")) {
+                NavigationItem.RightBarButtonItem = NewChatButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewChat);
+            }
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "Chats";
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+            Util.ConfigureNavBar (false, NavigationController);
 
             SwitchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = SwitchAccountButton;
 
             SwitchToAccount (NcApplication.Instance.Account);
+
+            TableView.RowHeight = ChatTableViewCell.HEIGHT;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -166,46 +174,81 @@ namespace NachoClient.iOS
                 return _Chat;
             }
             set {
-                if (_Chat == null || value == null || _Chat.Id != value.Id) {
-                    _Chat = value;
-                    Update ();
-                }
+                _Chat = value;
+                Update ();
             }
         }
 
-        public ChatTableViewCell (string reuseIdentifier) : base (UITableViewCellStyle.Subtitle, reuseIdentifier)
+        UILabel ParticipantsLabel;
+        UILabel DateLabel;
+        UILabel MessageLabel;
+        UIView PhotoContainerView;
+        nfloat RightSpacing = 7.0f;
+        public static nfloat HEIGHT = 72.0f;
+
+        public ChatTableViewCell (string reuseIdentifier) : base (UITableViewCellStyle.Default, reuseIdentifier)
         {
+            CGSize photoSize = new CGSize (30.0, 30.0);
+            nfloat photoSpacing = (HEIGHT - photoSize.Height) / 2.0f;
+            var participantFont = A.Font_AvenirNextDemiBold17;
+            var messageFont = A.Font_AvenirNextRegular14;
+            var topSpacing = (HEIGHT - participantFont.LineHeight - messageFont.LineHeight * 2.0f) / 2.0f;
+            PhotoContainerView = new UIView (new CGRect(photoSpacing, photoSpacing, photoSize.Width, photoSize.Height));
+            DateLabel = new UILabel (new CGRect(Bounds.Width - 40.0f - RightSpacing, topSpacing, 40.0f, 20.0f));
+            var x = PhotoContainerView.Frame.X + PhotoContainerView.Frame.Width + photoSpacing;
+            ParticipantsLabel = new UILabel (new CGRect(x, topSpacing, DateLabel.Frame.X - x, participantFont.LineHeight));
+            MessageLabel = new UILabel (new CGRect(x, ParticipantsLabel.Frame.Y + ParticipantsLabel.Frame.Height, Bounds.Width - RightSpacing - x, messageFont.LineHeight * 2.0f));
+
+            ParticipantsLabel.Font = participantFont;
+            ParticipantsLabel.TextColor = A.Color_NachoGreen;
+            ParticipantsLabel.Lines = 1;
+            ParticipantsLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+
+            MessageLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            MessageLabel.Font = messageFont;
+            MessageLabel.TextColor = A.Color_NachoTextGray;
+            MessageLabel.Lines = 2;
+            ParticipantsLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+
+            DateLabel.Font = A.Font_AvenirNextRegular14;
+            DateLabel.TextColor = A.Color_NachoTextGray;
+
+            AddSubview (PhotoContainerView);
+            AddSubview (ParticipantsLabel);
+            AddSubview (MessageLabel);
+            AddSubview (DateLabel);
+        }
+
+        public override void LayoutSubviews ()
+        {
+            base.LayoutSubviews ();
+            DateLabel.SizeToFit ();
+            var frame = MessageLabel.Frame;
+            MessageLabel.SizeToFit ();
+            frame.Height = MessageLabel.Frame.Height;
+            MessageLabel.Frame = frame;
+            DateLabel.Frame = new CGRect (Bounds.Width - DateLabel.Frame.Width - RightSpacing, DateLabel.Frame.Y, DateLabel.Frame.Width, DateLabel.Frame.Height);
+            ParticipantsLabel.Frame = new CGRect (ParticipantsLabel.Frame.X, ParticipantsLabel.Frame.Y, DateLabel.Frame.X - ParticipantsLabel.Frame.X, ParticipantsLabel.Frame.Height);
         }
 
         void Update ()
         {
             if (Chat == null) {
-                TextLabel.Text = "";
-                DetailTextLabel.Text = "";
+                ParticipantsLabel.Text = "";
+                MessageLabel.Text = "";
+                DateLabel.Text = "";
+                // TODO: clear picture view(s)
             } else {
-                var participants = McChatParticipant.GetChatParticipants (Chat.Id);
-                if (participants.Count > 0) {
-                    var participant = participants [0];
-                    var email = McEmailAddress.QueryById<McEmailAddress> (participant.EmailAddrId);
-                    if (participant.ContactId != 0) {
-                        var contact = McContact.QueryById<McContact> (participant.ContactId);
-                        var name = contact.GetDisplayName ();
-                        if (!String.IsNullOrEmpty (name)) {
-                            TextLabel.Text = contact.GetDisplayName ();
-                            DetailTextLabel.Text = email.CanonicalEmailAddress;
-                        } else {
-                            TextLabel.Text = email.CanonicalEmailAddress;
-                            DetailTextLabel.Text = "";
-                        }
-                    } else {
-                        TextLabel.Text = email.CanonicalEmailAddress;
-                        DetailTextLabel.Text = "";
-                    }
-                } else {
-                    TextLabel.Text = "(No participants)";
-                    DetailTextLabel.Text = "";
+                // TODO: set picture view(s)
+                ParticipantsLabel.Text = Chat.CachedParticipantsLabel;
+                DateLabel.Text = Pretty.TimeWithDecreasingPrecision (Chat.LastMessageDate);
+                if (Chat.LastMessagePreview == null) {
+                    MessageLabel.Text = "";
+                }else{
+                    MessageLabel.Text = Chat.LastMessagePreview;
                 }
             }
+            SetNeedsLayout ();
         }
     }
 

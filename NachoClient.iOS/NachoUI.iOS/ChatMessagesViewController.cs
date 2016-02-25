@@ -71,6 +71,7 @@ namespace NachoClient.iOS
             if (Chat == null) {
                 HeaderView.EditingEnabled = true;
             } else {
+                HeaderView.ParticipantsLabel.Text = Chat.CachedParticipantsLabel;
                 HeaderView.EditingEnabled = false;
             }
         }
@@ -95,11 +96,7 @@ namespace NachoClient.iOS
             var scrolledToBottom = ChatView.IsScrolledToBottom;
             base.OnKeyboardChanged ();
             SubviewChangedHeight ();
-            if (keyboardHeight > 0) {
-                if (scrolledToBottom) {
-                    ChatView.ScrollToBottom ();
-                }
-            }
+            ChatView.LayoutIfNeeded ();
         }
 
         public void SubviewChangedHeight ()
@@ -127,11 +124,6 @@ namespace NachoClient.iOS
         {
         }
 
-        public override void ViewDidLayoutSubviews ()
-        {
-            base.ViewDidLayoutSubviews ();
-        }
-
         #endregion
 
         #region User Actions
@@ -148,7 +140,8 @@ namespace NachoClient.iOS
                 }
                 Chat = McChat.ChatForAddresses (Account.Id, emailAddresses);
                 ReloadMessages ();
-                // TODO: update header to be locked
+                HeaderView.ParticipantsLabel.Text = Chat.CachedParticipantsLabel;
+                HeaderView.EditingEnabled = false;
             }
             var text = ComposeView.GetMessage ();
             var previousMessages = new List<McEmailMessage> ();
@@ -159,6 +152,7 @@ namespace NachoClient.iOS
                 // TODO: this message is in the outbox.  It will be deleted and replaced by a message from the sent folder
                 Chat.AddMessage (message);
                 ComposeView.Clear ();
+                ChatView.ScrollToBottom ();
             });
         }
 
@@ -196,7 +190,16 @@ namespace NachoClient.iOS
                         if (chatId == Chat.Id) {
                             var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
                             if (message != null) {
-                                if (!LoadedMessageIDs.ContainsKey (message.MessageID)) {
+                                if (LoadedMessageIDs.ContainsKey (message.MessageID)) {
+                                    // Swap out the old message, which was possibly deleted, with the new one.
+                                    for (int i = Messages.Count - 1; i >= 0; --i) {
+                                        var existingMessage = Messages[i];
+                                        if (existingMessage.MessageID == message.MessageID) {
+                                            Messages [i] = message;
+                                            break;
+                                        }
+                                    }
+                                }else{
                                     Messages.Add (message);
                                     LoadedMessageIDs.Add (message.MessageID, true);
                                     ChatView.InsertMessageViewAtEnd ();
@@ -222,6 +225,7 @@ namespace NachoClient.iOS
                     LoadedMessageIDs.Add (message.MessageID, true);
                 }
                 ChatView.ReloadData ();
+                ChatView.ScrollToBottom ();
             }
         }
 
@@ -288,17 +292,41 @@ namespace NachoClient.iOS
     {
 
         public readonly UcAddressBlock ToView;
-        public bool EditingEnabled;
+        bool _EditingEnabled;
+        public bool EditingEnabled {
+            get {
+                return _EditingEnabled;
+            }
+            set {
+                _EditingEnabled = value;
+                SetNeedsLayout ();
+            }
+        }
+
         public ChatMessagesViewController ChatViewController;
+        UIView BottomBorderView;
+        public readonly UILabel ParticipantsLabel;
 
         public ChatMessagesHeaderView (CGRect frame) : base (frame)
         {
             BackgroundColor = UIColor.White;
+            BottomBorderView = new UIView (new CGRect (0.0f, Bounds.Height - 1.0f, Bounds.Size.Width, 1.0f));
+            BottomBorderView.BackgroundColor = A.Color_NachoBorderGray;
+            BottomBorderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleTopMargin;
             ToView = new UcAddressBlock (this, "To:", null, Bounds.Width);
             ToView.SetCompact (false, -1);
             ToView.ConfigureView ();
             ToView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            ParticipantsLabel = new UILabel (Bounds);
+            ParticipantsLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            ParticipantsLabel.Font = A.Font_AvenirNextDemiBold17;
+            ParticipantsLabel.TextAlignment = UITextAlignment.Center;
+            ParticipantsLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            ParticipantsLabel.TextColor = A.Color_NachoGreen;
+            ParticipantsLabel.Lines = 1;
             AddSubview (ToView);
+            AddSubview (ParticipantsLabel);
+            AddSubview (BottomBorderView);
         }
 
         public void AddressBlockNeedsLayout (UcAddressBlock view)
@@ -337,13 +365,15 @@ namespace NachoClient.iOS
         public override void LayoutSubviews ()
         {
             var previousPreferredHeight = Frame.Height;
-            nfloat preferredHeight = 42.0f;
+            nfloat preferredHeight = 43.0f;
             if (EditingEnabled) {
                 base.LayoutSubviews ();
-                preferredHeight = (nfloat)Math.Max (42.0f, ToView.Frame.Size.Height);
+                preferredHeight = (nfloat)Math.Max (43.0f, ToView.Frame.Size.Height + 1.0f);
                 ToView.Hidden = false;
+                ParticipantsLabel.Hidden = true;
             } else {
                 ToView.Hidden = true;
+                ParticipantsLabel.Hidden = false;
             }
             Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, preferredHeight);
             if ((Math.Abs (preferredHeight - previousPreferredHeight) > 0.5) && ChatViewController != null) {
@@ -477,7 +507,7 @@ namespace NachoClient.iOS
 
         public bool IsScrolledToBottom {
             get {
-                return ScrollView.ContentOffset.Y == Math.Max (0, ScrollView.ContentSize.Height - ScrollView.Bounds.Height);
+                return ScrollView.ContentOffset.Y >= Math.Max (0, ScrollView.ContentSize.Height - ScrollView.Bounds.Height - MessageSpacing);
             }
         }
 
@@ -485,7 +515,6 @@ namespace NachoClient.iOS
         {
             BackgroundColor = A.Color_NachoBackgroundGray;
             ScrollView = new UIScrollView (Bounds);
-            ScrollView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             ScrollView.Delegate = this;
             AddSubview (ScrollView);
             ReusableMessageViews = new Queue<ChatMessageView> ();
@@ -544,7 +573,6 @@ namespace NachoClient.iOS
                 y -= messageView.Frame.Height + MessageSpacing;
             }
             ScrollView.ContentSize = new CGSize (ScrollView.Bounds.Width, height);
-            ScrollToBottom ();
         }
 
         int CompareMessageViews (ChatMessageView a, ChatMessageView b)
@@ -565,15 +593,15 @@ namespace NachoClient.iOS
                 messageView.Index = index;
                 VisibleMessageViews.Add (messageView);
                 ScrollView.AddSubview (messageView);
-                ScrollToBottom ();
+                ScrollToBottom (true);
             } else {
                 EnqueueReusableChatMessageView (messageView);
             }
         }
 
-        public void ScrollToBottom ()
+        public void ScrollToBottom (bool animated = false)
         {
-            ScrollView.ContentOffset = new CGPoint (0.0f, Math.Max (0, ScrollView.ContentSize.Height - ScrollView.Bounds.Height));
+            ScrollView.SetContentOffset (new CGPoint (0.0f, Math.Max (0, ScrollView.ContentSize.Height - ScrollView.Bounds.Height)), animated);
         }
 
         [Foundation.Export("scrollViewDidScroll:")]
@@ -591,6 +619,13 @@ namespace NachoClient.iOS
                     VisibleMessageViews.RemoveAt (i);
                     EnqueueReusableChatMessageView (messageView);
                 }
+            }
+            if (VisibleMessageViews.Count == 0) {
+                // This can happen if we've scrolled so far that none of the previously visible messages are in the
+                // window anymore.  It only happens (currently) if we are scrolled far up and a request is made to
+                // scroll to the bottom.  Since we're at the bottom, we can just reload the data, which starts at the bottom.
+                ReloadData ();
+                return;
             }
             var firstVisibleView = VisibleMessageViews [0];
             var lastVisibleView = VisibleMessageViews [VisibleMessageViews.Count - 1];
@@ -622,6 +657,16 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void LayoutSubviews ()
+        {
+            bool scrolledToBottom = IsScrolledToBottom;
+            base.LayoutSubviews ();
+            ScrollView.Frame = Bounds;
+            if (scrolledToBottom) {
+                ScrollToBottom ();
+            }
+        }
+
     }
 
     public class ChatMessageView : UIView
@@ -643,7 +688,7 @@ namespace NachoClient.iOS
             BubbleView.BackgroundColor = UIColor.White;
             BubbleView.Layer.MasksToBounds = true;
             BubbleView.Layer.BorderWidth = 1.0f;
-            BubbleView.Layer.CornerRadius = 4.0f;
+            BubbleView.Layer.CornerRadius = 8.0f;
             MessageLabel = new UILabel (new CGRect(MessageInsets.Left, MessageInsets.Top, BubbleView.Bounds.Width - MessageInsets.Left - MessageInsets.Right, BubbleView.Bounds.Height - MessageInsets.Top - MessageInsets.Bottom));
             MessageLabel.Lines = 0;
             MessageLabel.Font = A.Font_AvenirNextRegular17;

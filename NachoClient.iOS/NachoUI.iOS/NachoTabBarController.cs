@@ -61,7 +61,7 @@ namespace NachoClient.iOS
             RestoreCustomTabBarOrder ();
 
             nachoNowItem = SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Hot", "nav-nachonow", "nav-nachonow-active"); // Done
-            //SetTabBarItem ("NachoClient.iOS.ChatsViewController", "Chats", "nav-chat", "nav-chat-active");
+            SetTabBarItem ("NachoClient.iOS.ChatsViewController", "Chats", "nav-chat", "nav-chat-active");
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
             SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
             inboxItem = SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
@@ -236,9 +236,18 @@ namespace NachoClient.iOS
             if (null == tabBarOrder) {
                 return;
             }
+            var orderedNameList = new List<string> (tabBarOrder);
+            if (!orderedNameList.Contains ("NachoClient.iOS.ChatsViewController")) {
+                if (orderedNameList.Count > 2) {
+                    orderedNameList.Insert (2, "NachoClient.iOS.ChatsViewController");
+                } else {
+                    orderedNameList.Add ("NachoClient.iOS.ChatsViewController");
+                }
+                NSUserDefaults.StandardUserDefaults [TabBarOrderKey] = NSArray.FromStrings (orderedNameList.ToArray ());
+            }
             var initialList = ViewControllers;
             var orderedList = new List<UIViewController> ();
-            foreach (var typeName in tabBarOrder) {
+            foreach (var typeName in orderedNameList) {
                 for (int i = 0; i < initialList.Length; i++) {
                     var vc = initialList [i];
                     if ((null != vc) && (typeName == GetTabBarItemTypeName (vc))) {
