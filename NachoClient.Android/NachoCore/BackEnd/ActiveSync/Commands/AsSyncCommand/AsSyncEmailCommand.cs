@@ -71,7 +71,7 @@ namespace NachoCore.ActiveSync
                     if (emailMessage.IsChat) {
                         var result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
                         if (result.isError()){
-                            Log.Error(Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
+                            Log.Error(Log.LOG_AS, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
                         }
                     }
                 } else {
