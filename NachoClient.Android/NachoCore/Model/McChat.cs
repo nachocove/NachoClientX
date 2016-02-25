@@ -70,11 +70,13 @@ namespace NachoCore.Model
         {
             var account = McAccount.QueryById<McAccount> (accountId);
             var mcaddresses = new List<McEmailAddress> (addresses.Count);
+            var addressesById = new Dictionary<int, McEmailAddress> (addresses.Count);
             foreach (var address in addresses) {
                 McEmailAddress mcaddress;
                 if (McEmailAddress.Get (accountId, address.address, out mcaddress)) {
-                    if (!String.Equals (mcaddress.CanonicalEmailAddress, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
+                    if (!addressesById.ContainsKey(mcaddress.Id) && !String.Equals (mcaddress.CanonicalEmailAddress, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
                         mcaddresses.Add (mcaddress);
+                        addressesById.Add (mcaddress.Id, mcaddress);
                     }
                 }
             }
