@@ -197,7 +197,9 @@ namespace NachoClient.iOS
             this.address.address = address;
             if (owner != null) {
                 owner.UpdateEmailAddress (this, this.address);
-                owner.DismissINachoContactChooser (this);
+                if (PresentedViewController == null) {
+                    owner.DismissINachoContactChooser (this);
+                }
             } else {
                 Log.Error (Log.LOG_UI, "ContactChooserViewController: null in update email address");
             }
@@ -228,7 +230,9 @@ namespace NachoClient.iOS
         {
             vc.Cleanup ();
             owner.UpdateEmailAddress (this, address);
-            owner.DismissINachoContactChooser (this);
+            if (PresentedViewController == null) {
+                owner.DismissINachoContactChooser (this);
+            }
         }
 
         // INachoContactChooser delegate

@@ -67,7 +67,7 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (s.Account != null) {
                 if (NcApplication.Instance.Account.AccountType == McAccount.AccountTypeEnum.Unified || NcApplication.Instance.Account.Id == s.Account.Id) {
-                    if (s.Status.SubKind == NcResult.SubKindEnum.Info_ChatSetChanged) {
+                    if (s.Status.SubKind == NcResult.SubKindEnum.Info_ChatSetChanged || s.Status.SubKind == NcResult.SubKindEnum.Info_ChatMessageAdded) {
                         Reload ();
                     }
                 }

@@ -68,12 +68,18 @@ namespace NachoCore.Model
 
         public static McChat ChatForAddresses (int accountId, List<NcEmailAddress> addresses)
         {
+            var account = McAccount.QueryById<McAccount> (accountId);
             var mcaddresses = new List<McEmailAddress> (addresses.Count);
             foreach (var address in addresses) {
                 McEmailAddress mcaddress;
                 if (McEmailAddress.Get (accountId, address.address, out mcaddress)) {
-                    mcaddresses.Add (mcaddress);
+                    if (!String.Equals (mcaddress.CanonicalEmailAddress, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
+                        mcaddresses.Add (mcaddress);
+                    }
                 }
+            }
+            if (mcaddresses.Count == 0) {
+                return null;
             }
             var participantHash = HashAddresses (mcaddresses);
             McChat chat = null;
@@ -91,7 +97,6 @@ namespace NachoCore.Model
                     chat.AccountId = accountId;
                     chat.Insert ();
                     chat.PopuplateParticipantsFromAddresses (addresses);
-                    var account = McAccount.QueryById<McAccount> (accountId);
                     NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs() {
                         Account = account,
                         Status = NcResult.Info (NcResult.SubKindEnum.Info_ChatSetChanged)
@@ -108,8 +113,11 @@ namespace NachoCore.Model
             exclude.Add (account.EmailAddr);
             var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, exclude, message.From, message.To, message.Cc);
             var chat = ChatForAddresses (message.AccountId, addresses);
-            chat.AddMessage (message);
-            return chat;
+            if (chat != null) {
+                chat.AddMessage (message);
+                return chat;
+            }
+            return null;
         }
 
         public void AddMessage (McEmailMessage message)

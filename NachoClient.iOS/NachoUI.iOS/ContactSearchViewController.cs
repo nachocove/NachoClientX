@@ -165,7 +165,7 @@ namespace NachoClient.iOS
             address.contact = contact;
             address.address = contact.GetEmailAddress ();
             owner.UpdateEmailAddress (this, address);
-            if (null != owner) {
+            if (null != owner && PresentedViewController == null) {
                 owner.DismissINachoContactChooser (this);
             }
         }
