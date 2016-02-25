@@ -1815,6 +1815,7 @@
     <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.designer.cs">
       <DependentUpon>SalesforceSettingsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\PortraitView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

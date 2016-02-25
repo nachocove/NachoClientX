@@ -85,6 +85,14 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            if (Chat == null) {
+                HeaderView.ToView.SetEditFieldAsFirstResponder ();
+            }
+        }
+
         public override void ViewDidDisappear (bool animated)
         {
             StopListeningForStatusChanges ();
@@ -132,13 +140,7 @@ namespace NachoClient.iOS
         {
             if (Chat == null) {
                 var addresses = HeaderView.ToView.AddressList;
-                var emailAddresses = new List<McEmailAddress> (addresses.Count);
-                McEmailAddress emailAddress;
-                foreach (var address in addresses) {
-                    McEmailAddress.Get (Account.Id, address.address, out emailAddress);
-                    emailAddresses.Add (emailAddress);
-                }
-                Chat = McChat.ChatForAddresses (Account.Id, emailAddresses);
+                Chat = McChat.ChatForAddresses (Account.Id, addresses);
                 ReloadMessages ();
                 HeaderView.ParticipantsLabel.Text = Chat.CachedParticipantsLabel;
                 HeaderView.EditingEnabled = false;
@@ -263,6 +265,13 @@ namespace NachoClient.iOS
             FadeCustomSegue.Transition (this, chooserController);
         }
 
+        public void ShowContactSearch (NcEmailAddress address)
+        {
+            ContactSearchViewController searchController = MainStoryboard.InstantiateViewController ("ContactSearchViewController") as ContactSearchViewController;
+            searchController.SetOwner (this, Account, address, NachoContactType.EmailRequired);
+            FadeCustomSegue.Transition (this, searchController);
+        }
+
         public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
             HeaderView.ToView.Append (address);
@@ -278,7 +287,7 @@ namespace NachoClient.iOS
             // So we need to pop it from the stack
             vc.Cleanup ();
             NavigationController.PopViewController (true);
-            HeaderView.ToView.BecomeFirstResponder ();
+            HeaderView.ToView.SetEditFieldAsFirstResponder ();
         }
 
         public void RemoveAddress (NcEmailAddress address)
@@ -353,7 +362,7 @@ namespace NachoClient.iOS
         public void AddressBlockSearchContactClicked(UcAddressBlock view, string prefix)
         {
             var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown, prefix);
-            ChatViewController.ShowContactChooser (address);
+            ChatViewController.ShowContactSearch (address);
         }
 
         public void AddressBlockRemovedAddress (UcAddressBlock view, NcEmailAddress address)

@@ -369,6 +369,7 @@ namespace NachoCore.Utils
         public const ulong LOG_IMAP = (1 << 24);
         public const ulong LOG_SEARCH = (1 << 25);
         public const ulong LOG_SFDC = (1 << 26);
+        public const ulong LOG_CHAT = (1 << 27);
 
         public static string ModuleString (ulong subsystem)
         {

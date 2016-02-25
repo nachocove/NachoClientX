@@ -18,7 +18,14 @@ namespace NachoCore.Model
         [Indexed]
         public DateTime LastMessageDate { get; set; }
         public string LastMessagePreview { get; set ;}
+        public int ParticipantCount { get; set; }
         public string CachedParticipantsLabel { get; set; }
+        public int CachedPortraitId1 { get; set; }
+        public string CachedInitials1 { get; set; }
+        public int CachedPortraitId2 { get; set; }
+        public string CachedInitials2 { get; set; }
+        public int CachedColor1 { get; set; }
+        public int CachedColor2 { get; set; }
 
         public McChat () : base ()
         {
@@ -59,9 +66,16 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McChat> ("SELECT * FROM McChat ORDER BY LastMessageDate DESC");
         }
 
-        public static McChat ChatForAddresses (int accountId, List<McEmailAddress> addresses)
+        public static McChat ChatForAddresses (int accountId, List<NcEmailAddress> addresses)
         {
-            var participantHash = HashAddresses (addresses);
+            var mcaddresses = new List<McEmailAddress> (addresses.Count);
+            foreach (var address in addresses) {
+                McEmailAddress mcaddress;
+                if (McEmailAddress.Get (accountId, address.address, out mcaddress)) {
+                    mcaddresses.Add (mcaddress);
+                }
+            }
+            var participantHash = HashAddresses (mcaddresses);
             McChat chat = null;
             var chats = NcModel.Instance.Db.Query<McChat> ("SELECT * FROM McChat WHERE ParticipantHash = ? AND AccountId = ?", participantHash, accountId);
             if (chats.Count == 1) {
@@ -93,14 +107,7 @@ namespace NachoCore.Model
             var exclude = new List<string> ();
             exclude.Add (account.EmailAddr);
             var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, exclude, message.From, message.To, message.Cc);
-            var mcaddresses = new List<McEmailAddress> (addresses.Count);
-            foreach (var address in addresses) {
-                McEmailAddress mcaddress;
-                if (McEmailAddress.Get (message.AccountId, address.address, out mcaddress)) {
-                    mcaddresses.Add (mcaddress);
-                }
-            }
-            var chat = ChatForAddresses (message.AccountId, mcaddresses);
+            var chat = ChatForAddresses (message.AccountId, addresses);
             chat.AddMessage (message);
             return chat;
         }
@@ -117,7 +124,7 @@ namespace NachoCore.Model
                         chatMessage.AccountId = AccountId;
                         chatMessage.MessageId = message.Id;
                         chatMessage.Insert ();
-                        if (LastMessageDate == null || message.DateReceived > LastMessageDate) {
+                        if (message.DateReceived > LastMessageDate) {
                             LastMessageDate = message.DateReceived;
                             var bundle = new NcEmailMessageBundle (message);
                             if (bundle.TopText != null){
@@ -128,7 +135,7 @@ namespace NachoCore.Model
                             }else{
                                 LastMessagePreview = null;
                             }
-                            CachedParticipantsLabel = ParticipantsLabel ();
+                            UpdateParticipantCache ();
                             Update ();
                         }
                         var account = McAccount.QueryById<McAccount> (AccountId);
@@ -153,61 +160,66 @@ namespace NachoCore.Model
                 "ORDER BY m.DateReceived DESC LIMIT ? OFFSET ?", Id, AccountId, limit, offset);
         }
 
-        void PopuplateParticipantsFromAddresses (List<McEmailAddress> addresses)
+        void PopuplateParticipantsFromAddresses (List<NcEmailAddress> addresses)
         {
+            ParticipantCount = 0;
             foreach (var address in addresses) {
-                var contacts = McContact.QueryByEmailAddress (AccountId, address.CanonicalEmailAddress);
-                var participant = new McChatParticipant ();
-                participant.ChatId = Id;
-                participant.AccountId = AccountId;
-                participant.EmailAddrId = address.Id;
-                if (contacts.Count > 0) {
-                    participant.ContactId = contacts [0].Id;
+                McEmailAddress mcaddress;
+                if (McEmailAddress.Get (AccountId, address.address, out mcaddress)) {
+                    var participant = new McChatParticipant ();
+                    participant.ChatId = Id;
+                    participant.AccountId = AccountId;
+                    participant.EmailAddrId = mcaddress.Id;
+                    participant.EmailAddress = address.address;
+                    participant.PickContact (mcaddress);
+                    participant.Insert ();
+                    ParticipantCount += 1;
                 }
-                participant.Insert ();
             }
-            CachedParticipantsLabel = ParticipantsLabel ();
+            ParticipantCount = addresses.Count;
+            UpdateParticipantCache ();
             Update ();
         }
 
-        public string ParticipantsLabel ()
+        void UpdateParticipantCache ()
         {
+            CachedInitials1 = null;
+            CachedPortraitId1 = 0;
+            CachedInitials2 = null;
+            CachedPortraitId2 = 0;
+            CachedColor1 = 1;
+            CachedColor2 = 1;
             var participants = McChatParticipant.GetChatParticipants (Id);
             if (participants.Count == 0){
-                return "(No Participants)";
+                CachedParticipantsLabel = "(No Participants)";
             }else if (participants.Count == 1){
                 var participant = participants [0];
-                var email = McEmailAddress.QueryById<McEmailAddress> (participant.EmailAddrId);
-                string name = null;
-                if (participant.ContactId != 0) {
-                    var contact = McContact.QueryById<McContact> (participant.ContactId);
-                    if (contact != null){
-                        name = contact.GetDisplayName ();
-                    }
-                }
-                if (String.IsNullOrEmpty (name)){
-                    name = email.CanonicalEmailAddress;
-                }
-                return name;
+                participant.UpdateCachedProperties ();
+                CachedParticipantsLabel = participant.CachedName;
+                CachedInitials1 = participant.CachedInitials;
+                CachedPortraitId1 = participant.CachedPortraitId;
+                CachedColor1 = participant.CachedColor;
             }else{
                 var firsts = new List<string>();
+                int i = 0;
                 foreach (var participant in participants){
-                    var email = McEmailAddress.QueryById<McEmailAddress> (participant.EmailAddrId);
-                    string name = null;
-                    if (participant.ContactId != 0) {
-                        var contact = McContact.QueryById<McContact> (participant.ContactId);
-                        if (contact != null) {
-                            name = contact.GetInformalDisplayName ();
-                        }
+                    participant.UpdateCachedProperties ();
+                    firsts.Add (participant.CachedInformalName);
+                    if (i == 0) {
+                        CachedInitials1 = participant.CachedInitials;
+                        CachedPortraitId1 = participant.CachedPortraitId;
+                        CachedColor1 = participant.CachedColor;
                     }
-                    if (String.IsNullOrEmpty (name)) {
-                        name = email.CanonicalEmailAddress.Split ('@')[0];
+                    if (i == 1) {
+                        CachedInitials2 = participant.CachedInitials;
+                        CachedPortraitId2 = participant.CachedPortraitId;
+                        CachedColor2 = participant.CachedColor;
                     }
-                    firsts.Add (name);
+                    ++i;
                 }
                 var final = firsts [firsts.Count - 1];
                 firsts.RemoveAt (firsts.Count - 1);
-                return String.Join(", ", firsts) + " & " + final;
+                CachedParticipantsLabel = String.Join(", ", firsts) + " & " + final;
             }
         }
     }

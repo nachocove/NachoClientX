@@ -183,12 +183,14 @@ namespace NachoClient.iOS
         UILabel DateLabel;
         UILabel MessageLabel;
         UIView PhotoContainerView;
+        PortraitView PortraitView1;
+        PortraitView PortraitView2;
         nfloat RightSpacing = 7.0f;
         public static nfloat HEIGHT = 72.0f;
 
         public ChatTableViewCell (string reuseIdentifier) : base (UITableViewCellStyle.Default, reuseIdentifier)
         {
-            CGSize photoSize = new CGSize (30.0, 30.0);
+            CGSize photoSize = new CGSize (40.0, 40.0);
             nfloat photoSpacing = (HEIGHT - photoSize.Height) / 2.0f;
             var participantFont = A.Font_AvenirNextDemiBold17;
             var messageFont = A.Font_AvenirNextRegular14;
@@ -213,6 +215,14 @@ namespace NachoClient.iOS
             DateLabel.Font = A.Font_AvenirNextRegular14;
             DateLabel.TextColor = A.Color_NachoTextGray;
 
+            PortraitView1 = new PortraitView (PhotoContainerView.Bounds);
+            PortraitView2 = new PortraitView (PhotoContainerView.Bounds);
+            PortraitView2.Layer.BorderColor = UIColor.White.CGColor;
+            PortraitView2.Layer.BorderWidth = 1.0f;
+
+            PhotoContainerView.AddSubview (PortraitView1);
+            PhotoContainerView.AddSubview (PortraitView2);
+
             AddSubview (PhotoContainerView);
             AddSubview (ParticipantsLabel);
             AddSubview (MessageLabel);
@@ -229,6 +239,13 @@ namespace NachoClient.iOS
             MessageLabel.Frame = frame;
             DateLabel.Frame = new CGRect (Bounds.Width - DateLabel.Frame.Width - RightSpacing, DateLabel.Frame.Y, DateLabel.Frame.Width, DateLabel.Frame.Height);
             ParticipantsLabel.Frame = new CGRect (ParticipantsLabel.Frame.X, ParticipantsLabel.Frame.Y, DateLabel.Frame.X - ParticipantsLabel.Frame.X, ParticipantsLabel.Frame.Height);
+            if (Chat == null || Chat.ParticipantCount <= 1) {
+                PortraitView1.Frame = PhotoContainerView.Bounds;
+            } else {
+                var size = new CGSize (PhotoContainerView.Bounds.Width * 0.67, PhotoContainerView.Bounds.Width * 0.67);
+                PortraitView1.Frame = new CGRect (0.0f, 0.0f, size.Width, size.Height);
+                PortraitView2.Frame = new CGRect (PhotoContainerView.Bounds.Width - size.Width, PhotoContainerView.Bounds.Height - size.Height, size.Width, size.Height);
+            }
         }
 
         void Update ()
@@ -237,9 +254,19 @@ namespace NachoClient.iOS
                 ParticipantsLabel.Text = "";
                 MessageLabel.Text = "";
                 DateLabel.Text = "";
-                // TODO: clear picture view(s)
+                PortraitView1.SetPortrait (0, 1, "");
+                PortraitView2.SetPortrait (0, 1, "");
+                PortraitView2.Hidden = true;
             } else {
-                // TODO: set picture view(s)
+                if (Chat.ParticipantCount <= 1) {
+                    PortraitView1.SetPortrait (Chat.CachedPortraitId1, Chat.CachedColor1, Chat.CachedInitials1);
+                    PortraitView2.SetPortrait (0, 1, "");
+                    PortraitView2.Hidden = true;
+                } else {
+                    PortraitView1.SetPortrait (Chat.CachedPortraitId2, Chat.CachedColor2, Chat.CachedInitials2);
+                    PortraitView2.SetPortrait (Chat.CachedPortraitId1, Chat.CachedColor1, Chat.CachedInitials1);
+                    PortraitView2.Hidden = false;
+                }
                 ParticipantsLabel.Text = Chat.CachedParticipantsLabel;
                 DateLabel.Text = Pretty.TimeWithDecreasingPrecision (Chat.LastMessageDate);
                 if (Chat.LastMessagePreview == null) {
