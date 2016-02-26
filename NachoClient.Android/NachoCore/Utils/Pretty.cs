@@ -277,6 +277,9 @@ namespace NachoCore.Utils
             if (diff < cutoff) {
                 return Time (dateTime);
             }
+            if (diff < now.TimeOfDay + TimeSpan.FromDays (1)) {
+                return "Yesterday";
+            }
             if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
                 return local.ToString ("dddd");
             }
@@ -290,6 +293,9 @@ namespace NachoCore.Utils
             var diff = now - local;
             if (diff < now.TimeOfDay) {
                 return Time (dateTime);
+            }
+            if (diff < now.TimeOfDay + TimeSpan.FromDays (1)) {
+                return String.Format ("Yesterday {0}", Time (dateTime));
             }
             if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
                 return LongDayTime (dateTime);
