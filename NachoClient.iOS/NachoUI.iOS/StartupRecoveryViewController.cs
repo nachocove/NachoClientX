@@ -5,6 +5,7 @@ using System;
 using Foundation;
 using CoreGraphics;
 using UIKit;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -36,6 +37,10 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+            if (!NcApplication.Instance.InSafeMode ()) {
+                DismissViewController (false, null);
+                return;
+            }
             if (AnimateFromLaunchImageFrame != null) {
                 AnimateFromLaunchImageFrame = null;
                 activityWidthConstraint.Constant = originalIndiatorSize.Width;
