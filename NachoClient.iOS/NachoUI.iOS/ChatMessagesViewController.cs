@@ -263,27 +263,26 @@ namespace NachoClient.iOS
             }
             var messageView = chatView.DequeueReusableChatMessageView ();
             messageView.SetMessage (message, particpant);
+            UpdateMessageViewBlockProperties (chatView, index, messageView);
             return messageView;
         }
 
-        public bool ChatMessageHasSameSenderAsPrevious (ChatView chatView, int index)
+        public void UpdateMessageViewBlockProperties (ChatView chatView, int index, ChatMessageView messageView)
         {
-            if (index == 0) {
-                return false;
-            }
             var message = Messages [index];
-            var previous = Messages [index - 1];
-            return message.FromEmailAddressId == previous.FromEmailAddressId;
-        }
-
-        public bool ChatMessageHasSameSenderAsNext (ChatView chatView, int index)
-        {
-            if (index == Messages.Count - 1) {
-                return false;
-            }
-            var message = Messages [index];
-            var next = Messages [index + 1];
-            return message.FromEmailAddressId == next.FromEmailAddressId;
+            var previous = index > 0 ? Messages [index - 1] : null;
+            var next = index < Messages.Count - 1 ? Messages [index + 1] : null;
+            var oneHour = TimeSpan.FromHours (1);
+            var atTimeBlockStart = previous == null || (message.DateReceived - previous.DateReceived > oneHour);
+            var atTimeBlockEnd = next == null || (next.DateReceived - message.DateReceived > oneHour);
+            var atParticipantBlockStart = previous == null || previous.FromEmailAddressId != message.FromEmailAddressId;
+            var atParticipantBlockEnd = next == null || next.FromEmailAddressId != message.FromEmailAddressId;
+            var showName = atTimeBlockStart || atParticipantBlockStart;
+            var showPortrait = atTimeBlockEnd || atParticipantBlockEnd;
+            var showTimestamp = atTimeBlockStart;
+            messageView.SetShowsName (showName);
+            messageView.SetShowsPortrait (showPortrait);
+            messageView.SetShowsTimestamp (showTimestamp);
         }
 
         #endregion
@@ -545,8 +544,7 @@ namespace NachoClient.iOS
     public interface ChatViewDataSource {
         int NumberOfMessagesInChatView (ChatView chatView);
         ChatMessageView ChatMessageViewAtIndex (ChatView chatView, int index);
-        bool ChatMessageHasSameSenderAsPrevious (ChatView chatView, int index);
-        bool ChatMessageHasSameSenderAsNext (ChatView chatView, int index);
+        void UpdateMessageViewBlockProperties (ChatView chatView, int index, ChatMessageView messageView);
     }
 
     public interface ChatViewDelegate {
@@ -564,6 +562,9 @@ namespace NachoClient.iOS
         nfloat MessageSpacing = 4.0f;
         public bool ShowPortraits;
         public bool ShowNameLabels;
+        public nfloat TimestampRevealProgress = 0.0f;
+        public nfloat TimestampRevealWidth = 72.0f;
+        public nfloat LastOffsetX = 0.0f;
 
         public bool IsScrolledToBottom {
             get {
@@ -577,6 +578,9 @@ namespace NachoClient.iOS
             ScrollView = new UIScrollView (Bounds);
             ScrollView.Delegate = this;
             ScrollView.AlwaysBounceVertical = true;
+            ScrollView.ShowsHorizontalScrollIndicator = false;
+            ScrollView.AlwaysBounceHorizontal = false;
+            ScrollView.DirectionalLockEnabled = true;
             AddSubview (ScrollView);
             ReusableMessageViews = new Queue<ChatMessageView> ();
             VisibleMessageViews = new List<ChatMessageView> ();
@@ -614,8 +618,6 @@ namespace NachoClient.iOS
             TopCalculatedIndex = 0;
             while (index >= 0 && height < Bounds.Height * 3.0f) {
                 messageView = DataSource.ChatMessageViewAtIndex (this, index);
-                messageView.SetHasSameSenderAsNext (DataSource.ChatMessageHasSameSenderAsNext (this, index));
-                messageView.SetHasSameSenderAsPrevious (DataSource.ChatMessageHasSameSenderAsPrevious (this, index));
                 messageView.Index = index;
                 messageView.SizeToFit ();
                 if (height < Bounds.Height) {
@@ -635,7 +637,7 @@ namespace NachoClient.iOS
                 ScrollView.AddSubview (messageView);
                 y -= messageView.Frame.Height + MessageSpacing;
             }
-            ScrollView.ContentSize = new CGSize (ScrollView.Bounds.Width, height);
+            ScrollView.ContentSize = new CGSize (ScrollView.Bounds.Width + TimestampRevealWidth, height);
         }
 
         int CompareMessageViews (ChatMessageView a, ChatMessageView b)
@@ -649,10 +651,9 @@ namespace NachoClient.iOS
             bool isAtBottom = IsScrolledToBottom;
             var index = MessageCount - 1;
             var messageView = DataSource.ChatMessageViewAtIndex (this, index);
-            messageView.SetHasSameSenderAsPrevious (DataSource.ChatMessageHasSameSenderAsPrevious (this, index));
             messageView.SizeToFit ();
             messageView.Frame = new CGRect (messageView.Frame.X, ScrollView.ContentSize.Height, messageView.Frame.Width, messageView.Frame.Height);
-            ScrollView.ContentSize = new CGSize (ScrollView.Bounds.Width, ScrollView.ContentSize.Height + messageView.Frame.Height + MessageSpacing);
+            ScrollView.ContentSize = new CGSize (ScrollView.Bounds.Width + TimestampRevealWidth, ScrollView.ContentSize.Height + messageView.Frame.Height + MessageSpacing);
             if (isAtBottom) {
                 messageView.Index = index;
                 VisibleMessageViews.Add (messageView);
@@ -662,7 +663,7 @@ namespace NachoClient.iOS
                 EnqueueReusableChatMessageView (messageView);
             }
             foreach (var visibleView in VisibleMessageViews){
-                visibleView.SetHasSameSenderAsNext (DataSource.ChatMessageHasSameSenderAsNext (this, visibleView.Index));
+                DataSource.UpdateMessageViewBlockProperties (this, visibleView.Index, visibleView);
             }
         }
 
@@ -676,6 +677,12 @@ namespace NachoClient.iOS
         {
             if (MessageCount == 0) {
                 return;
+            }
+            if (scrollView.ContentOffset.X < 0.0f) {
+                scrollView.ContentOffset = new CGPoint (0.0f, scrollView.ContentOffset.Y);
+            }
+            if (scrollView.ContentOffset.X > TimestampRevealWidth) {
+                scrollView.ContentOffset = new CGPoint (TimestampRevealWidth, scrollView.ContentOffset.Y);
             }
             var topY = scrollView.ContentOffset.Y;
             var bottomY = topY + scrollView.Bounds.Height;
@@ -704,8 +711,6 @@ namespace NachoClient.iOS
             while (topY < y && firstVisibleView.Index > 0) {
                 index = firstVisibleView.Index - 1;
                 firstVisibleView = DataSource.ChatMessageViewAtIndex(this, index);
-                firstVisibleView.SetHasSameSenderAsNext (DataSource.ChatMessageHasSameSenderAsNext (this, index));
-                firstVisibleView.SetHasSameSenderAsPrevious (DataSource.ChatMessageHasSameSenderAsPrevious (this, index));
                 firstVisibleView.Index = index;
                 VisibleMessageViews.Insert (0, firstVisibleView);
                 firstVisibleView.SizeToFit ();
@@ -717,8 +722,6 @@ namespace NachoClient.iOS
             while (bottomY > y && lastVisibleView.Index < MessageCount - 1) {
                 index = lastVisibleView.Index + 1;
                 lastVisibleView = DataSource.ChatMessageViewAtIndex(this, index);
-                lastVisibleView.SetHasSameSenderAsNext (DataSource.ChatMessageHasSameSenderAsNext (this, index));
-                lastVisibleView.SetHasSameSenderAsPrevious (DataSource.ChatMessageHasSameSenderAsPrevious (this, index));
                 lastVisibleView.Index = index;
                 VisibleMessageViews.Add (lastVisibleView);
                 lastVisibleView.SizeToFit ();
@@ -726,6 +729,20 @@ namespace NachoClient.iOS
                 ScrollView.AddSubview (lastVisibleView);
                 y += lastVisibleView.Frame.Height + MessageSpacing;
             }
+            if (Math.Abs (LastOffsetX - scrollView.ContentOffset.X) >= 0.5f) {
+                TimestampRevealProgress = (nfloat)Math.Max (0.0f, Math.Min (1.0f, scrollView.ContentOffset.X / TimestampRevealWidth));
+                foreach (var visibleView in VisibleMessageViews) {
+                    visibleView.SetNeedsLayout ();
+                    visibleView.LayoutIfNeeded ();
+                }
+            }
+            LastOffsetX = scrollView.ContentOffset.X;
+        }
+
+        [Export("scrollViewWillEndDragging:withVelocity:targetContentOffset:")]
+        public virtual void WillEndDragging (UIScrollView scrollView, CGPoint velocity, ref CGPoint targetContentOffset)
+        {
+            targetContentOffset.X = 0.0f;
         }
 
         public override void LayoutSubviews ()
@@ -751,7 +768,10 @@ namespace NachoClient.iOS
         UIEdgeInsets MessageInsets;
         nfloat BubbleSideInset = 15.0f;
         nfloat PortraitBubbleSpacing = 7.0f;
+        nfloat TimestampRevealRightSpacing = 10.0f;
         nfloat MaxBubbleWidthPercent = 0.75f;
+        UILabel TimestampDividerLabel;
+        UILabel TimestampRevealLabel;
         UILabel _NameLabel;
         UILabel NameLabel {
             get {
@@ -792,6 +812,22 @@ namespace NachoClient.iOS
             MessageLabel.Lines = 0;
             MessageLabel.Font = A.Font_AvenirNextRegular17;
             MessageLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+            var timestampDividerFont = A.Font_AvenirNextDemiBold14;
+            TimestampDividerLabel = new UILabel (new CGRect (0.0f, 0.0f, Bounds.Width, timestampDividerFont.LineHeight * 2.0f));
+            TimestampDividerLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            TimestampDividerLabel.TextAlignment = UITextAlignment.Center;
+            TimestampDividerLabel.Lines = 1;
+            TimestampDividerLabel.Font = timestampDividerFont;
+            TimestampDividerLabel.TextColor = A.Color_NachoTextGray;
+            var timestampFont = A.Font_AvenirNextRegular14;
+            TimestampRevealLabel = new UILabel (new CGRect (Bounds.Width, (Bounds.Height - timestampFont.LineHeight) / 2.0f, Bounds.Width, timestampFont.LineHeight));
+            TimestampRevealLabel.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
+            TimestampRevealLabel.TextAlignment = UITextAlignment.Right;
+            TimestampRevealLabel.Lines = 1;
+            TimestampRevealLabel.Font = timestampFont;
+            TimestampRevealLabel.TextColor = A.Color_NachoTextGray;
+            AddSubview (TimestampDividerLabel);
+            AddSubview (TimestampRevealLabel);
             BubbleView.AddSubview (MessageLabel);
             AddSubview (BubbleView);
         }
@@ -803,18 +839,23 @@ namespace NachoClient.iOS
             Update ();
         }
 
-        public void SetHasSameSenderAsNext (bool sameSender)
+        public void SetShowsPortrait (bool showsPortrait)
         {
             if (ChatView != null && ChatView.ShowPortraits && Participant != null) {
-                PortraitView.Hidden = sameSender;
+                PortraitView.Hidden = !showsPortrait;
             }
         }
 
-        public void SetHasSameSenderAsPrevious (bool sameSender)
+        public void SetShowsName (bool showsName)
         {
             if (ChatView != null && ChatView.ShowNameLabels && Participant != null) {
-                NameLabel.Hidden = sameSender;
+                NameLabel.Hidden = !showsName;
             }
+        }
+
+        public void SetShowsTimestamp (bool showsTimestamp)
+        {
+            TimestampDividerLabel.Hidden = !showsTimestamp;
         }
 
         public void Update ()
@@ -847,7 +888,7 @@ namespace NachoClient.iOS
                 MessageLabel.TextColor = A.Color_NachoGreen;
                 if (ChatView != null && ChatView.ShowPortraits) {
                     PortraitView.SetPortrait (Participant.CachedPortraitId, Participant.CachedColor, Participant.CachedInitials);
-                    PortraitView.Hidden = ChatView.DataSource.ChatMessageHasSameSenderAsNext (ChatView, Index);
+                    PortraitView.Hidden = false;
                 }
                 if (ChatView != null && ChatView.ShowNameLabels) {
                     NameLabel.Text = Participant.CachedName;
@@ -855,6 +896,9 @@ namespace NachoClient.iOS
                 }
             }
             MessageLabel.BackgroundColor = BubbleView.BackgroundColor;
+            TimestampDividerLabel.Text = Pretty.VariableDayTime (Message.DateReceived);
+            TimestampRevealLabel.Text = Pretty.Time (Message.DateReceived);
+            TimestampDividerLabel.Hidden = false;
             SetNeedsLayout ();
         }
 
@@ -862,6 +906,24 @@ namespace NachoClient.iOS
         {
             base.LayoutSubviews ();
             LayoutBubbleView ();
+            if (_PortraitView != null) {
+                var x = BubbleSideInset;
+                if (ChatView != null) {
+                    x += (ChatView.TimestampRevealWidth - _PortraitView.Frame.Width - x) * ChatView.TimestampRevealProgress;
+                }
+                var frame = PortraitView.Frame;
+                frame.X = x;
+                PortraitView.Frame = frame;
+            }
+            if (ChatView != null) {
+                var frame = TimestampDividerLabel.Frame;
+                frame.X = (ChatView.TimestampRevealWidth * ChatView.TimestampRevealProgress);
+                TimestampDividerLabel.Frame = frame;
+                frame = TimestampRevealLabel.Frame;
+                frame.Width = ChatView.TimestampRevealWidth - TimestampRevealRightSpacing;
+                frame.Y = BubbleView.Frame.Y + (BubbleView.Frame.Height - frame.Height) / 2.0f;
+                TimestampRevealLabel.Frame = frame;
+            }
         }
 
         void LayoutBubbleView ()
@@ -878,17 +940,25 @@ namespace NachoClient.iOS
             } else {
                 width = messageSize.Width + MessageInsets.Left + MessageInsets.Right;
             }
+            nfloat x = 0.0f;
+            nfloat y = 0.0f;
+            if (!TimestampDividerLabel.Hidden) {
+                y = TimestampDividerLabel.Frame.Y + TimestampDividerLabel.Frame.Height;
+            }
             if (Participant == null) {
-                BubbleView.Frame = new CGRect (Bounds.Width - BubbleView.Frame.Width - BubbleSideInset, 0.0f, width, height);
+                x = Bounds.Width - BubbleView.Frame.Width - BubbleSideInset;
+                BubbleView.Frame = new CGRect (x, y, width, height);
             } else {
-                var x = BubbleSideInset;
-                nfloat y = 0.0f;
+                x = BubbleSideInset;
                 if (ChatView != null && ChatView.ShowPortraits) {
-                    x = PortraitView.Frame.X + PortraitView.Frame.Width + PortraitBubbleSpacing;
+                    x += PortraitView.Frame.Width + PortraitBubbleSpacing;
+                }
+                if (ChatView != null) {
+                    x += (ChatView.TimestampRevealWidth + BubbleSideInset - x) * ChatView.TimestampRevealProgress;
                 }
                 if (_NameLabel != null && !_NameLabel.Hidden) {
-                    NameLabel.Frame = new CGRect (x, 0.0f, maxMessageWidth + MessageInsets.Left + MessageInsets.Right, NameLabel.Frame.Height);
-                    y = NameLabel.Frame.Y + NameLabel.Frame.Height;
+                    NameLabel.Frame = new CGRect (x, y, maxMessageWidth + MessageInsets.Left + MessageInsets.Right, NameLabel.Frame.Height);
+                    y += NameLabel.Frame.Height;
                 }
                 BubbleView.Frame = new CGRect (x, y, width, height);
             }

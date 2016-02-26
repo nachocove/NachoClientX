@@ -283,6 +283,20 @@ namespace NachoCore.Utils
             return ShortDate (dateTime);
         }
 
+        static public string VariableDayTime (DateTime dateTime)
+        {
+            var local = dateTime.ToLocalTime ();
+            var now = DateTime.Now;
+            var diff = now - local;
+            if (diff < now.TimeOfDay) {
+                return Time (dateTime);
+            }
+            if (diff < TimeSpan.FromDays (6) + now.TimeOfDay) {
+                return LongDayTime (dateTime);
+            }
+            return MediumFullDateTime (dateTime);
+        }
+
         static public string UniversalFullDateTime (DateTime d)
         {
             return d.ToLocalTime ().ToString ("U");
