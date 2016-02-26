@@ -87,9 +87,7 @@ namespace NachoCore.Model
         public void UpdateCachedProperties ()
         {
             var email = McEmailAddress.QueryById<McEmailAddress> (EmailAddrId);
-            if (ContactId == 0) {
-                PickContact (email);
-            }
+            PickContact (email);
             CachedName = null;
             CachedInformalName = null;
             CachedInitials = null;
