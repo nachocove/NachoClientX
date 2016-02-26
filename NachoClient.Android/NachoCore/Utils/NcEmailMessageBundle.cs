@@ -137,7 +137,6 @@ namespace NachoCore.Utils
             private bool populateHtml = true;
             private bool populateText = true;
             public Dictionary<string, string> ImageEntriesBySrc;
-            public bool UsingChatMessageAsTop;
 
             public ParseResult ()
             {
