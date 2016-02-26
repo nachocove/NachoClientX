@@ -737,6 +737,27 @@ namespace NachoClient.iOS
             if (MessageCount == 0) {
                 return;
             }
+            if (TopCalculatedIndex > 0 && scrollView.ContentOffset.Y < Bounds.Height) {
+                var i = TopCalculatedIndex - 1;
+                nfloat extraHeight = 0.0f;
+                ChatMessageView messageView;
+                while (i >= 0 && extraHeight < ScrollView.Bounds.Height * 3.0) {
+                    messageView = DataSource.ChatMessageViewAtIndex (this, i);
+                    messageView.Index = i;
+                    messageView.SizeToFit ();
+                    EnqueueReusableChatMessageView (messageView);
+                    extraHeight += messageView.Frame.Height + MessageSpacing;
+                    TopCalculatedIndex = i;
+                    --i;
+                }
+                ScrollView.ContentSize = new CGSize (ScrollView.ContentSize.Width, ScrollView.ContentSize.Height + extraHeight);
+                foreach (var visibleView in VisibleMessageViews) {
+                    var frame = visibleView.Frame;
+                    frame.Y += extraHeight;
+                    visibleView.Frame = frame;
+                }
+                ScrollView.ContentOffset = new CGPoint (ScrollView.ContentOffset.X, ScrollView.ContentOffset.Y + extraHeight);
+            }
             if (scrollView.ContentOffset.X < 0.0f) {
                 scrollView.ContentOffset = new CGPoint (0.0f, scrollView.ContentOffset.Y);
             }
@@ -747,7 +768,7 @@ namespace NachoClient.iOS
             var bottomY = topY + scrollView.Bounds.Height;
             for (int i = VisibleMessageViews.Count - 1; i >= 0; --i){
                 var messageView = VisibleMessageViews [i];
-                if ((messageView.Frame.Y >= scrollView.ContentOffset.Y + scrollView.Bounds.Height) || (messageView.Frame.Y <= scrollView.ContentOffset.Y)) {
+                if ((messageView.Frame.Y >= scrollView.ContentOffset.Y + scrollView.Bounds.Height) || (messageView.Frame.Y + messageView.Frame.Height <= scrollView.ContentOffset.Y)) {
                     messageView.RemoveFromSuperview ();
                     VisibleMessageViews.RemoveAt (i);
                     EnqueueReusableChatMessageView (messageView);
@@ -764,9 +785,6 @@ namespace NachoClient.iOS
             var lastVisibleView = VisibleMessageViews [VisibleMessageViews.Count - 1];
             int index;
             var y = firstVisibleView.Frame.Y - MessageSpacing;
-            if (TopCalculatedIndex > 0 && topY < Bounds.Height) {
-                // TODO: calculate a couple more pages
-            }
             while (topY < y && firstVisibleView.Index > 0) {
                 index = firstVisibleView.Index - 1;
                 firstVisibleView = DataSource.ChatMessageViewAtIndex(this, index);
