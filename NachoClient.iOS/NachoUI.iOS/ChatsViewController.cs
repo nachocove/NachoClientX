@@ -194,9 +194,11 @@ namespace NachoClient.iOS
             nfloat photoSpacing = (HEIGHT - photoSize.Height) / 2.0f;
             var participantFont = A.Font_AvenirNextDemiBold17;
             var messageFont = A.Font_AvenirNextRegular14;
+            var dateFont = A.Font_AvenirNextRegular14;
             var topSpacing = (HEIGHT - participantFont.LineHeight - messageFont.LineHeight * 2.0f) / 2.0f;
             PhotoContainerView = new UIView (new CGRect(photoSpacing, photoSpacing, photoSize.Width, photoSize.Height));
-            DateLabel = new UILabel (new CGRect(Bounds.Width - 40.0f - RightSpacing, topSpacing, 40.0f, 20.0f));
+            var dateBaselineAdjust = participantFont.Ascender - dateFont.Ascender;
+            DateLabel = new UILabel (new CGRect(Bounds.Width - 40.0f - RightSpacing, topSpacing + dateBaselineAdjust, 40.0f, 20.0f));
             var x = PhotoContainerView.Frame.X + PhotoContainerView.Frame.Width + photoSpacing;
             ParticipantsLabel = new UILabel (new CGRect(x, topSpacing, DateLabel.Frame.X - x, participantFont.LineHeight));
             MessageLabel = new UILabel (new CGRect(x, ParticipantsLabel.Frame.Y + ParticipantsLabel.Frame.Height, Bounds.Width - RightSpacing - x, messageFont.LineHeight * 2.0f));
@@ -212,7 +214,7 @@ namespace NachoClient.iOS
             MessageLabel.Lines = 2;
             ParticipantsLabel.LineBreakMode = UILineBreakMode.TailTruncation;
 
-            DateLabel.Font = A.Font_AvenirNextRegular14;
+            DateLabel.Font = dateFont;
             DateLabel.TextColor = A.Color_NachoTextGray;
 
             PortraitView1 = new PortraitView (PhotoContainerView.Bounds);
