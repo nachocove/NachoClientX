@@ -234,9 +234,10 @@ namespace NachoClient.AndroidClient
 
         public override void OnStart ()
         {
-            base.OnStart ();
-
-            BindValues (View);
+            using (NcAbate.UIAbatement ()) {
+                base.OnStart ();
+                BindValues (View);
+            }
         }
 
         public override void OnDestroyView ()

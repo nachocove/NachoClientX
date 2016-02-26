@@ -920,16 +920,6 @@ namespace NachoCore
             InvokeOnUIThread.Instance.Invoke (() => Owner.SendEmailResp (sender.AccountId, emailMessageId, didSend));
         }
 
-        public void BackendAbateStart ()
-        {
-            Owner.BackendAbateStart ();
-        }
-
-        public void BackendAbateStop ()
-        {
-            Owner.BackendAbateStop ();
-        }
-
         #endregion
 
         public void SendEmailBodyFetchHint (int accountId, int emailMessageId)

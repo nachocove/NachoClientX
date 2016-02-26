@@ -35,34 +35,25 @@ namespace NachoClient.iOS
             ClassName = this.GetType ().Name;
         }
 
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            NachoCore.Utils.NcAbate.HighPriority ("NcUIViewController ViewDidLoad");
-        }
-
         public override void ViewWillAppear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR + "_BEGIN");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR);
             if (HandlesKeyboardNotifications) {
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
             base.ViewWillAppear (animated);
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR + "_END");
         }
 
         public override void ViewDidAppear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_BEGIN");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR);
             base.ViewDidAppear (animated);
-            NachoCore.Utils.NcAbate.RegularPriority ("NcUIViewController ViewDidAppear");
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_END");
         }
 
         public override void ViewWillDisappear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_BEGIN");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR);
             base.ViewWillDisappear (animated);
             if (null != ViewDisappearing) {
                 ViewDisappearing (this, EventArgs.Empty);
@@ -74,15 +65,12 @@ namespace NachoClient.iOS
             if (ShouldEndEditing) {
                 View.EndEditing (true);
             }
-            NachoCore.Utils.NcAbate.RegularPriority ("NcUIViewController ViewWillDisappear");
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_END");
         }
 
         public override void ViewDidDisappear (bool animated)
         {
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR + "_BEGIN");
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR);
             base.ViewDidDisappear (animated);
-            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR + "_END");
         }
 
         public virtual bool ShouldEndEditing {

@@ -1035,21 +1035,16 @@ namespace NachoClient.iOS
         public override void DraggingStarted (UIScrollView scrollView)
         {
             scrolling = true;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
             scrolling = false;
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             scrolling = false;
-            if (!willDecelerate) {
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
-            }
         }
 
         protected void DumpInfo (McEmailMessageThread messageThread)

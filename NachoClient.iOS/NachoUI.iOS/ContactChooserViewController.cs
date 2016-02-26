@@ -73,12 +73,12 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            searcher = new ContactsEmailSearch (UpdateUi);
-            searcher.SearchFor (autoCompleteTextField.Text);
-            NachoCore.Utils.NcAbate.HighPriority ("ContactChooser ViewWillAppear");
-            resultsTableView.ReloadData ();
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser ViewWillAppear");
-            autoCompleteTextField.BecomeFirstResponder ();
+            using (NcAbate.UIAbatement ()) {
+                searcher = new ContactsEmailSearch (UpdateUi);
+                searcher.SearchFor (autoCompleteTextField.Text);
+                resultsTableView.ReloadData ();
+                autoCompleteTextField.BecomeFirstResponder ();
+            }
         }
 
         public override void ViewWillDisappear (bool animated)

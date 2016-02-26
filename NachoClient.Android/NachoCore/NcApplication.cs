@@ -270,10 +270,6 @@ namespace NachoCore
         public int UiThreadId { get; set; }
         // event can be used to register for status indications.
         public event EventHandler StatusIndEvent;
-        // when true, everything in the background needs to chill.
-        public bool IsBackgroundAbateRequired { get; set; }
-        // when true, the brain needs to chill
-        public bool IsBrainAbateRequired { get; set; }
 
         public bool TestOnlyInvokeUseCurrentThread { get; set; }
 
@@ -365,22 +361,6 @@ namespace NachoCore
                 }
             };
             UiThreadId = Thread.CurrentThread.ManagedThreadId;
-
-            StatusIndEvent += (sender, ea) => {
-                var siea = (StatusIndEventArgs)ea;
-                TimeSpan deliveryTime;
-                switch (siea.Status.SubKind) {
-                case NcResult.SubKindEnum.Info_BackgroundAbateStarted:
-                    deliveryTime = NcAbate.DeliveryTime (siea);
-                    // Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
-                    break;
-
-                case NcResult.SubKindEnum.Info_BackgroundAbateStopped:
-                    deliveryTime = NcAbate.DeliveryTime (siea);
-                    // Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
-                    break;
-                }
-            };
         }
 
         private static volatile NcApplication instance;
@@ -781,18 +761,6 @@ namespace NachoCore
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication SendEmailRespCallback.");
             }
-        }
-
-        public void BackendAbateStart ()
-        {
-            IsBrainAbateRequired = true;
-            NcBrain.SharedInstance.PauseService ();
-        }
-
-        public void BackendAbateStop ()
-        {
-            IsBrainAbateRequired = false;
-            NcBrain.SharedInstance.UnPauseService ();
         }
 
         #endregion

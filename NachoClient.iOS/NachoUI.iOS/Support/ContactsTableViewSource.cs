@@ -281,23 +281,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void DraggingStarted (UIScrollView scrollView)
-        {
-            NachoCore.Utils.NcAbate.HighPriority ("ContactsTableView DraggingStarted");
-        }
-
-        public override void DecelerationEnded (UIScrollView scrollView)
-        {
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactsTableView DecelerationEnded");
-        }
-
-        public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
-        {
-            if (!willDecelerate) {
-                NachoCore.Utils.NcAbate.RegularPriority ("ContactsTableView DraggingEnded");
-            }
-        }
-
         public void ReconfigureVisibleCells (UITableView tableView)
         {
             if (null == tableView) {

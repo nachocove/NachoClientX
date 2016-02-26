@@ -324,24 +324,24 @@ namespace NachoClient.iOS
             bool refreshVisibleCells = true;
 
             if (threadsNeedsRefresh) {
-                threadsNeedsRefresh = false;
-                NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController MaybeRefreshThreads");
-                ReloadCapture.Start ();
-                List<int> adds;
-                List<int> deletes;
-                if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
-                    Util.UpdateTable (TableView, adds, deletes);
-                    refreshVisibleCells = false;
+                using (NcAbate.UIAbatement ()) {
+                    threadsNeedsRefresh = false;
+                    ReloadCapture.Start ();
+                    List<int> adds;
+                    List<int> deletes;
+                    if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
+                        Util.UpdateTable (TableView, adds, deletes);
+                        refreshVisibleCells = false;
+                    }
+                    if (messageSource.NoMessageThreads ()) {
+                        refreshVisibleCells = !MaybeDismissView ();
+                    }
+                    if (searchDisplayController.Active) {
+                        UpdateSearchResults ();
+                        refreshVisibleCells = false;
+                    }
+                    ReloadCapture.Stop ();
                 }
-                if (messageSource.NoMessageThreads ()) {
-                    refreshVisibleCells = !MaybeDismissView ();
-                }
-                if (searchDisplayController.Active) {
-                    UpdateSearchResults ();
-                    refreshVisibleCells = false;
-                }
-                ReloadCapture.Stop ();
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController MaybeRefreshThreads");
             }
             if (refreshVisibleCells) {
                 messageSource.ReconfigureVisibleCells (TableView);
@@ -413,8 +413,6 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             cancelRefreshTimer ();
             CancelSearchIfActive ();
-            // In case we exit during scrolling
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
         }
 
         public override void ViewDidDisappear (bool animated)

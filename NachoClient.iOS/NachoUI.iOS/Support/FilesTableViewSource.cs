@@ -962,11 +962,11 @@ namespace NachoClient.iOS
 
         public bool UpdateSearchResults (nint forSearchOption, string forSearchString)
         {
-            NachoCore.Utils.NcAbate.HighPriority ("AttachmentsTableViewSource UpdateSearchResults");
-            var results = SearchByString (forSearchString);
-            SetSearchResults (results);
-            NachoCore.Utils.NcAbate.RegularPriority ("AttachmentsTableViewSource UpdateSearchResults");
-            return true;
+            using (NcAbate.UIAbatement ()) {
+                var results = SearchByString (forSearchString);
+                SetSearchResults (results);
+                return true;
+            }
         }
 
         public List<NcFileIndex> SearchByString (string searchString)

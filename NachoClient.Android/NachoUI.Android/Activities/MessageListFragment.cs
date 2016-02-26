@@ -341,15 +341,9 @@ namespace NachoClient.AndroidClient
                 case RecyclerView.ScrollStateSettling:
                     swipeMenuRecyclerView.EnableSwipe (false);
                     userInitiated |= (RecyclerView.ScrollStateDragging == newState);
-                    if (!NcApplication.Instance.IsBackgroundAbateRequired) {
-                        NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment ScrollStateChanged");
-                    }
                     break;
                 case RecyclerView.ScrollStateIdle:
                     swipeMenuRecyclerView.EnableSwipe (true);
-                    if (NcApplication.Instance.IsBackgroundAbateRequired) {
-                        NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment ScrollStateChanged");
-                    }
                     if (null != OnStop) {
                         OnStop ();
                     }
@@ -989,34 +983,34 @@ namespace NachoClient.AndroidClient
 
         public void RefreshIfVisible ()
         {
-            List<int> adds;
-            List<int> deletes;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfVisible");
-            if (messages.Refresh (out adds, out deletes)) {
-                NotifyChanges (adds, deletes);
+            using (NcAbate.UIAbatement ()) {
+                List<int> adds;
+                List<int> deletes;
+                if (messages.Refresh (out adds, out deletes)) {
+                    NotifyChanges (adds, deletes);
+                }
+                if (0 == messages.Count ()) {
+                    ((MessageListDelegate)Activity).ListIsEmpty ();
+                }
+                MaybeDisplayNoMessagesView (View);
             }
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfVisible");
-            if (0 == messages.Count ()) {
-                ((MessageListDelegate)Activity).ListIsEmpty ();
-            }
-            MaybeDisplayNoMessagesView (View);
         }
 
         public void RefreshIfNeeded ()
         {
-            List<int> adds;
-            List<int> deletes;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageListFragment RefreshIfNeeded");
-            if (NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes)) {
-                NotifyChanges (adds, deletes);
-            } else {
-                RefreshVisibleMessageCells ();
+            using (NcAbate.UIAbatement ()) {
+                List<int> adds;
+                List<int> deletes;
+                if (NcEmailSingleton.RefreshIfNeeded (messages, out adds, out deletes)) {
+                    NotifyChanges (adds, deletes);
+                } else {
+                    RefreshVisibleMessageCells ();
+                }
+                if (0 == messages.Count ()) {
+                    ((MessageListDelegate)Activity).ListIsEmpty ();
+                }
+                MaybeDisplayNoMessagesView (View);
             }
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageListFragment RefreshIfNeeded");
-            if (0 == messages.Count ()) {
-                ((MessageListDelegate)Activity).ListIsEmpty ();
-            }
-            MaybeDisplayNoMessagesView (View);
         }
 
         int[] first = new int[3];

@@ -89,6 +89,7 @@ namespace NachoPlatform
             try {
                 if (cur.Count > 0) {
                     while (cur.MoveToNext ()) {
+                        NcAbate.PauseWhileAbated ();
                         try {
                             long id = GetFieldLong (cur, ContactsContract.Contacts.InterfaceConsts.Id);
                             String lastUpdateString = GetField (cur, ContactsContract.Contacts.InterfaceConsts.ContactLastUpdatedTimestamp);

@@ -426,133 +426,130 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            if (isAppearing) {
-                // NcUIViewController will call ConfigureAndLayout on ViewWillAppear
-                // But in order to load the web view earlier, this controller calls ConfigureAndLayout in ViewDidLoad
-                // Therefore, we want to skip a duplicate call from base.ViewWillAppear
-                return;
-            }
-            // It appears that sometimes we get here during a pop to root view controller,
-            // and nothing is setup as it would be during an intentional segue.  Can't figure
-            // out the root cause, but adding these couple checks should prevent crashes.
-            if (this.NavigationController == null) {
-                Log.Error (Log.LOG_UI, "MessageViewController ConfigureAndLayout null NavigationController");
-                return;
-            }
-            if (thread == null) {
-                Log.Error (Log.LOG_UI, "MessageViewController ConfigureAndLayout null thread");
-                return;
-            }
-            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
-                this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
-                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
-            }
+            using (NcAbate.UIAbatement ()) {
+                if (isAppearing) {
+                    // NcUIViewController will call ConfigureAndLayout on ViewWillAppear
+                    // But in order to load the web view earlier, this controller calls ConfigureAndLayout in ViewDidLoad
+                    // Therefore, we want to skip a duplicate call from base.ViewWillAppear
+                    return;
+                }
+                // It appears that sometimes we get here during a pop to root view controller,
+                // and nothing is setup as it would be during an intentional segue.  Can't figure
+                // out the root cause, but adding these couple checks should prevent crashes.
+                if (this.NavigationController == null) {
+                    Log.Error (Log.LOG_UI, "MessageViewController ConfigureAndLayout null NavigationController");
+                    return;
+                }
+                if (thread == null) {
+                    Log.Error (Log.LOG_UI, "MessageViewController ConfigureAndLayout null thread");
+                    return;
+                }
+                if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                    this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
+                    this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
+                }
 
-            NachoCore.Utils.NcAbate.HighPriority ("MessageViewController");
+                var message = thread.SingleMessageSpecialCase ();
 
-            var message = thread.SingleMessageSpecialCase ();
-
-            if (null == message) {
-                // TODO: Unavailable message
-                NavigationController.PopViewController (true);
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageViewController");
-                return;
-            }
+                if (null == message) {
+                    // TODO: Unavailable message
+                    NavigationController.PopViewController (true);
+                    return;
+                }
                 
-            attachments = McAttachment.QueryByItem (message);
-            attachmentListView.Hidden = !HasAttachments;
+                attachments = McAttachment.QueryByItem (message);
+                attachmentListView.Hidden = !HasAttachments;
 
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageViewController");
+                // User image view
+                var userImageView = headerView.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
+                var userLabelView = headerView.ViewWithTag ((int)TagType.USER_LABEL_TAG) as UILabel;
+                userImageView.Hidden = true;
+                userLabelView.Hidden = true;
 
-            // User image view
-            var userImageView = headerView.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
-            var userLabelView = headerView.ViewWithTag ((int)TagType.USER_LABEL_TAG) as UILabel;
-            userImageView.Hidden = true;
-            userLabelView.Hidden = true;
+                var userImage = Util.PortraitToImage (message.cachedPortraitId);
 
-            var userImage = Util.PortraitToImage (message.cachedPortraitId);
-
-            if (null != userImage) {
-                userImageView.Hidden = false;
-                userImageView.Image = userImage;
-            } else {
-                userLabelView.Hidden = false;
-                userLabelView.Text = message.cachedFromLetters;
-                userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
-            }
+                if (null != userImage) {
+                    userImageView.Hidden = false;
+                    userImageView.Image = userImage;
+                } else {
+                    userLabelView.Hidden = false;
+                    userLabelView.Text = message.cachedFromLetters;
+                    userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
+                }
                 
-            var cursor = new VerticalLayoutCursor (headerView);
-            cursor.AddSpace (35); // for From and top inset
+                var cursor = new VerticalLayoutCursor (headerView);
+                cursor.AddSpace (35); // for From and top inset
 
-            var subjectLabelView = View.ViewWithTag ((int)TagType.SUBJECT_TAG) as UILabel;
-            subjectLabelView.Lines = 0;
-            string subject = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
-            if (string.IsNullOrEmpty (subject)) {
-                subjectLabelView.TextColor = A.Color_9B9B9B;
-                subjectLabelView.Text = Pretty.NoSubjectString ();
-            } else {
-                subjectLabelView.TextColor = A.Color_0F424C;
-                subjectLabelView.Text = subject;
-            }
-            cursor.LayoutView (subjectLabelView);
+                var subjectLabelView = View.ViewWithTag ((int)TagType.SUBJECT_TAG) as UILabel;
+                subjectLabelView.Lines = 0;
+                string subject = EmailHelper.CreateSubjectWithIntent (message.Subject, message.Intent, message.IntentDateType, message.IntentDate);
+                if (string.IsNullOrEmpty (subject)) {
+                    subjectLabelView.TextColor = A.Color_9B9B9B;
+                    subjectLabelView.Text = Pretty.NoSubjectString ();
+                } else {
+                    subjectLabelView.TextColor = A.Color_0F424C;
+                    subjectLabelView.Text = subject;
+                }
+                cursor.LayoutView (subjectLabelView);
 
-            var receivedLabelView = View.ViewWithTag ((int)TagType.RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.MediumFullDateTime (message.DateReceived);
-            cursor.LayoutView (receivedLabelView);
+                var receivedLabelView = View.ViewWithTag ((int)TagType.RECEIVED_DATE_TAG) as UILabel;
+                receivedLabelView.Text = Pretty.MediumFullDateTime (message.DateReceived);
+                cursor.LayoutView (receivedLabelView);
 
-            // Reminder image view and label
-            nfloat yOffset = receivedLabelView.Frame.Bottom;
-            var reminderImageView = View.ViewWithTag ((int)TagType.REMINDER_ICON_TAG) as UIImageView;
-            var reminderLabelView = View.ViewWithTag ((int)TagType.REMINDER_TEXT_TAG) as UILabel;
-            if (message.HasDueDate () || message.IsDeferred ()) {
-                reminderImageView.Hidden = false;
-                reminderLabelView.Hidden = false;
-                reminderLabelView.Text = Pretty.ReminderText (message);
-                ViewFramer.Create (reminderImageView).Y (yOffset + 4);
-                ViewFramer.Create (reminderLabelView).Y (yOffset);
-                yOffset += 20;
-                cursor.AddSpace (20);
-            } else {
-                reminderImageView.Hidden = true;
-                reminderLabelView.Hidden = true;
-            }
+                // Reminder image view and label
+                nfloat yOffset = receivedLabelView.Frame.Bottom;
+                var reminderImageView = View.ViewWithTag ((int)TagType.REMINDER_ICON_TAG) as UIImageView;
+                var reminderLabelView = View.ViewWithTag ((int)TagType.REMINDER_TEXT_TAG) as UILabel;
+                if (message.HasDueDate () || message.IsDeferred ()) {
+                    reminderImageView.Hidden = false;
+                    reminderLabelView.Hidden = false;
+                    reminderLabelView.Text = Pretty.ReminderText (message);
+                    ViewFramer.Create (reminderImageView).Y (yOffset + 4);
+                    ViewFramer.Create (reminderLabelView).Y (yOffset);
+                    yOffset += 20;
+                    cursor.AddSpace (20);
+                } else {
+                    reminderImageView.Hidden = true;
+                    reminderLabelView.Hidden = true;
+                }
 
-            compactSeparatorYOffset = cursor.TotalHeight;
+                compactSeparatorYOffset = cursor.TotalHeight;
 
-            toView.Clear ();
-            foreach (var address in NcEmailAddress.ParseToAddressListString(message.To)) {
-                toView.Append (address);
-            }
-            toView.ConfigureView ();
-            cursor.LayoutView (toView);
+                toView.Clear ();
+                foreach (var address in NcEmailAddress.ParseToAddressListString(message.To)) {
+                    toView.Append (address);
+                }
+                toView.ConfigureView ();
+                cursor.LayoutView (toView);
 
-            ccView.Clear ();
-            foreach (var address in NcEmailAddress.ParseCcAddressListString(message.Cc)) {
-                ccView.Append (address);
-            }
-            ccView.ConfigureView ();
-            cursor.LayoutView (ccView);
+                ccView.Clear ();
+                foreach (var address in NcEmailAddress.ParseCcAddressListString(message.Cc)) {
+                    ccView.Append (address);
+                }
+                ccView.ConfigureView ();
+                cursor.LayoutView (ccView);
 
-            expandedSeparatorYOffset = cursor.TotalHeight;
+                expandedSeparatorYOffset = cursor.TotalHeight;
 
-            var blankView = View.ViewWithTag ((int)TagType.BLANK_VIEW_TAG);
-            ViewFramer.Create (blankView).Y (separator1YOffset).Height (expandedSeparatorYOffset - compactSeparatorYOffset);
+                var blankView = View.ViewWithTag ((int)TagType.BLANK_VIEW_TAG);
+                ViewFramer.Create (blankView).Y (separator1YOffset).Height (expandedSeparatorYOffset - compactSeparatorYOffset);
 
-            var separator1View = View.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
-            separator1View.Frame = new CGRect (0, compactSeparatorYOffset, headerView.Frame.Width, 1);
+                var separator1View = View.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
+                separator1View.Frame = new CGRect (0, compactSeparatorYOffset, headerView.Frame.Width, 1);
            
-            // Chili image view
-            ConfigureChili (message);
+                // Chili image view
+                ConfigureChili (message);
 
-            var fromLabelView = View.ViewWithTag ((int)TagType.FROM_TAG) as UILabel;
-            fromLabelView.Text = Pretty.SenderString (message.From);
-            fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
+                var fromLabelView = View.ViewWithTag ((int)TagType.FROM_TAG) as UILabel;
+                fromLabelView.Text = Pretty.SenderString (message.From);
+                fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
 
-            ConfigureAttachments ();
+                ConfigureAttachments ();
 
-            bodyView.Configure (message, false);
+                bodyView.Configure (message, false);
 
-            LayoutView ();
+                LayoutView ();
+            }
         }
 
         protected void ConfigureChili (McEmailMessage message)

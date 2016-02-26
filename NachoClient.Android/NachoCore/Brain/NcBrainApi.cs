@@ -99,11 +99,6 @@ namespace NachoCore.Brain
         {
             var index = NcBrain.SharedInstance.Index (accountId);
             if (null != index) {
-                // Signal abatement to get brain to stop processing
-                string caller = "LockIndexForDeletion";
-                NcAbate.HighPriority (caller);
-                NcAbate.RegularPriority (caller);
-
                 // Mark the index to prevent further use
                 index.MarkForDeletion ();
             }

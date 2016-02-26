@@ -624,14 +624,12 @@ namespace NachoClient.iOS
         {
             cardIndexAtScrollStart = CardIndexNearestOffset ((UITableView)scrollView, scrollView.ContentOffset);
             scrolling = true;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
             scrolling = false;
             EnsureScrollEndIsAsExpected (scrollView);
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
@@ -639,7 +637,6 @@ namespace NachoClient.iOS
             if (!willDecelerate) {
                 scrolling = false;
                 EnsureScrollEndIsAsExpected (scrollView);
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
             }
         }
 
