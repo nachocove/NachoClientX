@@ -53,6 +53,9 @@ namespace NachoClient.iOS
             LoadedMessageIDs = new Dictionary<string, bool> ();
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
+            using (var image = UIImage.FromBundle ("chat-add-contact")) {
+                NavigationItem.RightBarButtonItem = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, AddContact);
+            }
         }
 
         #endregion
@@ -83,14 +86,6 @@ namespace NachoClient.iOS
                 UpdateForChat ();
 
             }
-        }
-
-        void UpdateForChat ()
-        {
-            HeaderView.ParticipantsLabel.Text = Chat.CachedParticipantsLabel;
-            HeaderView.EditingEnabled = false;
-            ChatView.ShowPortraits = ChatView.ShowNameLabels = Chat.ParticipantCount > 1;
-            ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (Chat.Id);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -187,9 +182,16 @@ namespace NachoClient.iOS
                 NavigationController.PushViewController (contactDetailViewController, true);
             } else {
                 var viewController = new ChatParticipantListViewController ();
+                viewController.MessagesViewController = this;
                 viewController.Participants = new List<McChatParticipant> (ParticipantsByEmailId.Values);
                 NavigationController.PushViewController (viewController, true);
             }
+        }
+
+        void AddContact (object sender, EventArgs e)
+        {
+            var address = new NcEmailAddress (NcEmailAddress.Kind.To);
+            ShowContactSearch (address);
         }
 
         #endregion
@@ -251,6 +253,14 @@ namespace NachoClient.iOS
 
         #region Message Loading & Display
 
+        void UpdateForChat ()
+        {
+            HeaderView.ParticipantsLabel.Text = Chat.CachedParticipantsLabel;
+            HeaderView.EditingEnabled = false;
+            ChatView.ShowPortraits = ChatView.ShowNameLabels = Chat.ParticipantCount > 1;
+            ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (Chat.Id);
+        }
+
         void ReloadMessages ()
         {
             if (Chat != null) {
@@ -262,6 +272,9 @@ namespace NachoClient.iOS
                 }
                 ChatView.ReloadData ();
                 ChatView.ScrollToBottom ();
+            } else {
+                Messages.Clear ();
+                ChatView.ReloadData ();
             }
         }
 
@@ -331,6 +344,17 @@ namespace NachoClient.iOS
                 if (mailbox == null) {
                     NcAlertView.ShowMessage (NavigationController.TopViewController, "Invalid Email Address", String.Format ("Sorry, the email address you provided does not appear to be valid."));
                 } else {
+                    if (Chat != null) {
+                        Chat = null;
+                        ReloadMessages ();
+                        HeaderView.ToView.Clear ();
+                        foreach (var participant in ParticipantsByEmailId.Values) {
+                            var participantAddress = new NcEmailAddress(NcEmailAddress.Kind.To, participant.EmailAddress);
+                            HeaderView.ToView.Append (participantAddress);
+                        }
+                        ParticipantsByEmailId = null;
+                        HeaderView.EditingEnabled = true;
+                    }
                     HeaderView.ToView.Append (address);
                     ComposeView.UpdateSendEnabled ();
                 }
@@ -346,7 +370,7 @@ namespace NachoClient.iOS
             // The contact chooser was pushed on the nav stack, rather than shown as a modal.
             // So we need to pop it from the stack
             vc.Cleanup ();
-            NavigationController.PopViewController (true);
+            NavigationController.PopToViewController (this, true);
             HeaderView.ToView.SetEditFieldAsFirstResponder ();
         }
 
@@ -410,7 +434,9 @@ namespace NachoClient.iOS
 
         void Tap ()
         {
-            ChatViewController.ShowParticipantDetails ();
+            if (!EditingEnabled){
+                ChatViewController.ShowParticipantDetails ();
+            }
         }
 
         public void AddressBlockNeedsLayout (UcAddressBlock view)

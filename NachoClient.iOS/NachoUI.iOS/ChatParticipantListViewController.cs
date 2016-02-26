@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UIKit;
 using CoreGraphics;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -12,6 +13,7 @@ namespace NachoClient.iOS
 
     public class ChatParticipantListViewController : NcUITableViewController
     {
+        public ChatMessagesViewController MessagesViewController;
         ChatParticipantTableViewSource Source;
         public List<McChatParticipant> Participants;
         UIStoryboard mainStorybaord;
@@ -27,6 +29,9 @@ namespace NachoClient.iOS
         public ChatParticipantListViewController () : base()
         {
             NavigationItem.Title = "Chat Participants";
+            using (var image = UIImage.FromBundle ("chat-add-contact")) {
+                NavigationItem.RightBarButtonItem = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, AddContact);
+            }
         }
 
         public override void LoadView ()
@@ -48,6 +53,19 @@ namespace NachoClient.iOS
             var contactDetailViewController = MainStoryboard.InstantiateViewController ("ContactDetailViewController") as ContactDetailViewController;
             contactDetailViewController.contact = McContact.QueryById<McContact> (participant.ContactId);
             NavigationController.PushViewController (contactDetailViewController, true);
+        }
+
+        void AddContact (object sender, EventArgs e)
+        {
+            var address = new NcEmailAddress (NcEmailAddress.Kind.To);
+            ShowContactSearch (address);
+        }
+
+        public void ShowContactSearch (NcEmailAddress address)
+        {
+            ContactSearchViewController searchController = MainStoryboard.InstantiateViewController ("ContactSearchViewController") as ContactSearchViewController;
+            searchController.SetOwner (MessagesViewController, MessagesViewController.Account, address, NachoContactType.EmailRequired);
+            FadeCustomSegue.Transition (this, searchController);
         }
     }
 
