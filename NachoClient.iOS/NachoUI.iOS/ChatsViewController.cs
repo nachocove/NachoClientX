@@ -225,10 +225,10 @@ namespace NachoClient.iOS
             PhotoContainerView.AddSubview (PortraitView1);
             PhotoContainerView.AddSubview (PortraitView2);
 
-            AddSubview (PhotoContainerView);
-            AddSubview (ParticipantsLabel);
-            AddSubview (MessageLabel);
-            AddSubview (DateLabel);
+            ContentView.AddSubview (PhotoContainerView);
+            ContentView.AddSubview (ParticipantsLabel);
+            ContentView.AddSubview (MessageLabel);
+            ContentView.AddSubview (DateLabel);
         }
 
         public override void LayoutSubviews ()

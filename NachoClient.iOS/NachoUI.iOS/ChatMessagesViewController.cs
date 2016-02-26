@@ -8,6 +8,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using CoreGraphics;
+using System.Linq;
 
 namespace NachoClient.iOS
 {
@@ -50,6 +51,8 @@ namespace NachoClient.iOS
             HidesBottomBarWhenPushed = true;
             Messages = new List<McEmailMessage> ();
             LoadedMessageIDs = new Dictionary<string, bool> ();
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
         }
 
         #endregion
@@ -173,6 +176,20 @@ namespace NachoClient.iOS
                 ComposeView.Clear ();
                 ChatView.ScrollToBottom ();
             });
+        }
+
+        public void ShowParticipantDetails ()
+        {
+            if (ParticipantsByEmailId.Count == 1) {
+                var participant = ParticipantsByEmailId.Values.First();
+                var contactDetailViewController = MainStoryboard.InstantiateViewController ("ContactDetailViewController") as ContactDetailViewController;
+                contactDetailViewController.contact = McContact.QueryById<McContact> (participant.ContactId);
+                NavigationController.PushViewController (contactDetailViewController, true);
+            } else {
+                var viewController = new ChatParticipantListViewController ();
+                viewController.Participants = new List<McChatParticipant> (ParticipantsByEmailId.Values);
+                NavigationController.PushViewController (viewController, true);
+            }
         }
 
         #endregion
@@ -359,6 +376,7 @@ namespace NachoClient.iOS
         public ChatMessagesViewController ChatViewController;
         UIView BottomBorderView;
         public readonly UILabel ParticipantsLabel;
+        UIImageView DisclosureIndicator;
 
         public ChatMessagesHeaderView (CGRect frame) : base (frame)
         {
@@ -370,7 +388,13 @@ namespace NachoClient.iOS
             ToView.SetCompact (false, -1);
             ToView.ConfigureView ();
             ToView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
-            ParticipantsLabel = new UILabel (Bounds);
+            using (var image = UIImage.FromBundle ("chat-arrow-more")) {
+                DisclosureIndicator = new UIImageView (image);
+                DisclosureIndicator.Frame = new CGRect (Bounds.Width - image.Size.Width - 7.0f, (Bounds.Height - image.Size.Height) / 2.0f, image.Size.Width, image.Size.Height);
+            }
+            DisclosureIndicator.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin;
+            var x = Bounds.Width - DisclosureIndicator.Frame.X;
+            ParticipantsLabel = new UILabel (new CGRect(x, 0.0f, Bounds.Width - 2.0f * x, Bounds.Height));
             ParticipantsLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             ParticipantsLabel.Font = A.Font_AvenirNextDemiBold17;
             ParticipantsLabel.TextAlignment = UITextAlignment.Center;
@@ -378,8 +402,15 @@ namespace NachoClient.iOS
             ParticipantsLabel.TextColor = A.Color_NachoGreen;
             ParticipantsLabel.Lines = 1;
             AddSubview (ToView);
+            AddSubview (DisclosureIndicator);
             AddSubview (ParticipantsLabel);
             AddSubview (BottomBorderView);
+            AddGestureRecognizer (new UITapGestureRecognizer (Tap));
+        }
+
+        void Tap ()
+        {
+            ChatViewController.ShowParticipantDetails ();
         }
 
         public void AddressBlockNeedsLayout (UcAddressBlock view)
@@ -424,9 +455,11 @@ namespace NachoClient.iOS
                 preferredHeight = (nfloat)Math.Max (43.0f, ToView.Frame.Size.Height + 1.0f);
                 ToView.Hidden = false;
                 ParticipantsLabel.Hidden = true;
+                DisclosureIndicator.Hidden = true;
             } else {
                 ToView.Hidden = true;
                 ParticipantsLabel.Hidden = false;
+                DisclosureIndicator.Hidden = false;
             }
             Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, preferredHeight);
             if ((Math.Abs (preferredHeight - previousPreferredHeight) > 0.5) && ChatViewController != null) {
