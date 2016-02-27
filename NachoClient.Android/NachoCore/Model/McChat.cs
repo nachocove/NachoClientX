@@ -170,6 +170,15 @@ namespace NachoCore.Model
                 "ORDER BY m.DateReceived DESC LIMIT ? OFFSET ?", Id, AccountId, limit, offset);
         }
 
+        public int MessageCount ()
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(DISTINCT m.MessageId) FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE cm.ChatId = ? " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) ", Id);
+        }
+
         void PopuplateParticipantsFromAddresses (List<NcEmailAddress> addresses)
         {
             ParticipantCount = 0;

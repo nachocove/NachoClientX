@@ -17,6 +17,8 @@ namespace NachoClient.iOS
 
         #region Properties
 
+        const int MessagesPerQuery = 50;
+
         public McAccount Account;
         public McChat Chat;
         List<McEmailMessage> Messages;
@@ -24,9 +26,10 @@ namespace NachoClient.iOS
         ChatMessagesHeaderView HeaderView;
         ChatMessageComposeView ComposeView;
         bool IsListeningForStatusChanges;
-        UIStoryboard mainStorybaord;
         Dictionary<string, bool> LoadedMessageIDs;
         Dictionary<int, McChatParticipant> ParticipantsByEmailId;
+        int MessageCount;
+        UIStoryboard mainStorybaord;
         UIStoryboard MainStoryboard {
             get {
                 if (mainStorybaord == null) {
@@ -239,6 +242,7 @@ namespace NachoClient.iOS
                                     }
                                 }else{
                                     Messages.Add (message);
+                                    MessageCount += 1;
                                     LoadedMessageIDs.Add (message.MessageID, true);
                                     ChatView.InsertMessageViewAtEnd ();
                                 }
@@ -265,8 +269,9 @@ namespace NachoClient.iOS
         {
             if (Chat != null) {
                 LoadedMessageIDs.Clear ();
-                Messages = Chat.GetMessages ();
+                Messages = Chat.GetMessages (0, MessagesPerQuery);
                 Messages.Reverse ();
+                MessageCount = Chat.MessageCount ();
                 foreach (var message in Messages) {
                     LoadedMessageIDs.Add (message.MessageID, true);
                 }
@@ -280,16 +285,30 @@ namespace NachoClient.iOS
 
         public int NumberOfMessagesInChatView (ChatView chatView)
         {
-            return Messages.Count;
+            return MessageCount;
         }
 
         public ChatMessageView ChatMessageViewAtIndex (ChatView chatView, int index)
         {
-            var message = Messages [index];
+            var indexInArray = index - MessageCount + Messages.Count;
+            if (indexInArray < 0) {
+                var messages = Chat.GetMessages (Messages.Count, Math.Max (MessagesPerQuery, -indexInArray));
+                messages.Reverse ();
+                Messages.InsertRange (0, messages);
+            }
+            indexInArray = index - MessageCount + Messages.Count;
+            McEmailMessage message = null;
             McChatParticipant particpant = null;
-            ParticipantsByEmailId.TryGetValue (message.FromEmailAddressId, out particpant);
-            if (!message.IsRead) {
-                EmailHelper.MarkAsRead (message, true);
+            if (indexInArray < 0) {
+                // Hmmm...a message must have been deleted and messed up our count
+                // Should rarely happen, and only if you scroll all the way back to the top
+                // while a message gets deleted.
+            } else {
+                message = Messages [indexInArray];
+                ParticipantsByEmailId.TryGetValue (message.FromEmailAddressId, out particpant);
+                if (!message.IsRead) {
+                    EmailHelper.MarkAsRead (message, true);
+                }
             }
             var messageView = chatView.DequeueReusableChatMessageView ();
             messageView.SetMessage (message, particpant);
@@ -299,20 +318,23 @@ namespace NachoClient.iOS
 
         public void UpdateMessageViewBlockProperties (ChatView chatView, int index, ChatMessageView messageView)
         {
-            var message = Messages [index];
-            var previous = index > 0 ? Messages [index - 1] : null;
-            var next = index < Messages.Count - 1 ? Messages [index + 1] : null;
-            var oneHour = TimeSpan.FromHours (1);
-            var atTimeBlockStart = previous == null || (message.DateReceived - previous.DateReceived > oneHour);
-            var atTimeBlockEnd = next == null || (next.DateReceived - message.DateReceived > oneHour);
-            var atParticipantBlockStart = previous == null || previous.FromEmailAddressId != message.FromEmailAddressId;
-            var atParticipantBlockEnd = next == null || next.FromEmailAddressId != message.FromEmailAddressId;
-            var showName = atTimeBlockStart || atParticipantBlockStart;
-            var showPortrait = atTimeBlockEnd || atParticipantBlockEnd;
-            var showTimestamp = atTimeBlockStart;
-            messageView.SetShowsName (showName);
-            messageView.SetShowsPortrait (showPortrait);
-            messageView.SetShowsTimestamp (showTimestamp);
+            var indexInArray = index - MessageCount + Messages.Count;
+            if (indexInArray >= 0) {
+                var message = Messages [indexInArray];
+                var previous = indexInArray > 0 ? Messages [indexInArray - 1] : null;
+                var next = indexInArray < Messages.Count - 1 ? Messages [indexInArray + 1] : null;
+                var oneHour = TimeSpan.FromHours (1);
+                var atTimeBlockStart = previous == null || (message.DateReceived - previous.DateReceived > oneHour);
+                var atTimeBlockEnd = next == null || (next.DateReceived - message.DateReceived > oneHour);
+                var atParticipantBlockStart = previous == null || previous.FromEmailAddressId != message.FromEmailAddressId;
+                var atParticipantBlockEnd = next == null || next.FromEmailAddressId != message.FromEmailAddressId;
+                var showName = atTimeBlockStart || atParticipantBlockStart;
+                var showPortrait = atTimeBlockEnd || atParticipantBlockEnd;
+                var showTimestamp = atTimeBlockStart;
+                messageView.SetShowsName (showName);
+                messageView.SetShowsPortrait (showPortrait);
+                messageView.SetShowsTimestamp (showTimestamp);
+            }
         }
 
         #endregion
@@ -946,6 +968,8 @@ namespace NachoClient.iOS
                 } else {
                     MessageLabel.Text = bundle.TopText;
                 }
+                TimestampDividerLabel.Text = Pretty.VariableDayTime (Message.DateReceived);
+                TimestampRevealLabel.Text = Pretty.Time (Message.DateReceived);
             }
             if (Participant == null) {
                 BubbleView.BackgroundColor = A.Color_NachoGreen;
@@ -973,8 +997,6 @@ namespace NachoClient.iOS
                 }
             }
             MessageLabel.BackgroundColor = BubbleView.BackgroundColor;
-            TimestampDividerLabel.Text = Pretty.VariableDayTime (Message.DateReceived);
-            TimestampRevealLabel.Text = Pretty.Time (Message.DateReceived);
             TimestampDividerLabel.Hidden = false;
             SetNeedsLayout ();
         }
