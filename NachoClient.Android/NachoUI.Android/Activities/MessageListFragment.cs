@@ -442,29 +442,6 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void SetFilterText (View parentView, FolderFilterOptions filterSetting)
-        {
-            string text;
-            switch (filterSetting) {
-            case FolderFilterOptions.All:
-                text = "All messages";
-                break;
-            case FolderFilterOptions.Hot:
-                text = "Hot messages";
-                break;
-            case FolderFilterOptions.Focused:
-                text = "Focused messages";
-                break;
-            case FolderFilterOptions.Unread:
-                text = "Unread messages";
-                break;
-            default:
-                text = "Unknown set of messages";
-                break;
-            }
-            parentView.FindViewById<TextView> (Resource.Id.filter_setting).Text = text;
-        }
-
         void HoteventListView_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
         {
             if (null != onEventClick) {
