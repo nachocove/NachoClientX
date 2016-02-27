@@ -397,9 +397,11 @@ namespace NachoClient.AndroidClient
         public void Refresh (Action completionAction = null)
         {
             eventCalendarMap.Refresh (() => {
-                NotifyDataSetChanged ();
-                if (null != completionAction) {
-                    completionAction ();
+                using (NcAbate.UIAbatement ()) {
+                    NotifyDataSetChanged ();
+                    if (null != completionAction) {
+                        completionAction ();
+                    }
                 }
             });
         }

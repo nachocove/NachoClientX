@@ -118,6 +118,7 @@ namespace NachoPlatform
                 var cancellationToken = NcTask.Cts.Token;
                 foreach (var source in sources) {
                     cancellationToken.ThrowIfCancellationRequested ();
+                    NcAbate.PauseWhileAbated ();
                     switch (source.SourceType) {
                     // FIXME - exclude only those sources we cover in EAS.
                     case ABSourceType.Exchange:

@@ -150,10 +150,10 @@ namespace NachoClient.iOS
 
         public void LoadAttendees ()
         {
-            NachoCore.Utils.NcAbate.HighPriority ("EventAttendeeViewController LoadAttendees");
-            AttendeeSource.Setup (AttendeeList, account, editing, organizer, recurring);
-            tableView.ReloadData ();
-            NachoCore.Utils.NcAbate.RegularPriority ("EventAttendeeViewController LoadAttendees");
+            using (NcAbate.UIAbatement ()) {
+                AttendeeSource.Setup (AttendeeList, account, editing, organizer, recurring);
+                tableView.ReloadData ();
+            }
         }
 
         public List<McAttendee> GetAttendeeList ()

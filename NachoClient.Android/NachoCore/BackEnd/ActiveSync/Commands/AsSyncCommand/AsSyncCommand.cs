@@ -538,11 +538,8 @@ namespace NachoCore.ActiveSync
                     ProcessCollectionResponses (folder, xmlResponses);
                     if (!HasBeenCancelled) {
                         if (null != xmlCommands && xmlCommands.Elements ().Any ()) {
-                            BEContext.Owner.BackendAbateStart ();
-                            try {
+                            using (NcAbate.BackEndAbatement ()) {
                                 ProcessCollectionCommands (folder, xmlCommands);
-                            } finally {
-                                BEContext.Owner.BackendAbateStop ();
                             }
                         }
                     }

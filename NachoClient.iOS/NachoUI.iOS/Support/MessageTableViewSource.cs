@@ -35,6 +35,8 @@ namespace NachoClient.iOS
         private UIView headerWrapper;
         private UILabel headerText;
 
+        IDisposable abatementRequest = null;
+
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
         private const int DELETE_TAG = 3;
@@ -1035,20 +1037,26 @@ namespace NachoClient.iOS
         public override void DraggingStarted (UIScrollView scrollView)
         {
             scrolling = true;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
+            if (null == abatementRequest) {
+                abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+            }
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
             scrolling = false;
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
+            if (null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
+            }
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             scrolling = false;
-            if (!willDecelerate) {
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
+            if (!willDecelerate && null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
             }
         }
 

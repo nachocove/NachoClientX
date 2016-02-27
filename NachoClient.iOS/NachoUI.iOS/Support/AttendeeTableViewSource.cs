@@ -590,23 +590,6 @@ namespace NachoClient.iOS
             attendeeResponseView.Layer.BorderWidth = 1;
             parentView.Add (attendeeResponseView);
         }
-
-        public override void DraggingStarted (UIScrollView scrollView)
-        {
-            NachoCore.Utils.NcAbate.HighPriority ("AttendeeTableViewSource DraggingStarted");
-        }
-
-        public override void DecelerationEnded (UIScrollView scrollView)
-        {
-            NachoCore.Utils.NcAbate.RegularPriority ("AttendeeTableViewSource DecelerationEnded");
-        }
-
-        public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
-        {
-            if (!willDecelerate) {
-                NachoCore.Utils.NcAbate.RegularPriority ("AttendeeTableViewSource Draggingended");
-            }
-        }
     }
 }
 

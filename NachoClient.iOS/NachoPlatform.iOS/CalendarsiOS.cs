@@ -585,6 +585,7 @@ namespace NachoPlatform
             }
             foreach (var ekCalendar in ekCalendars) {
                 cancellationToken.ThrowIfCancellationRequested ();
+                NcAbate.PauseWhileAbated ();
                 appFolders.Add (new PlatformCalendarFolderRecordiOS (ekCalendar, ekCalendar.CalendarIdentifier == defaultId));
             }
 
@@ -593,6 +594,7 @@ namespace NachoPlatform
             if (null != ekEvents) {
                 foreach (var ekEvent in ekEvents) {
                     cancellationToken.ThrowIfCancellationRequested ();
+                    NcAbate.PauseWhileAbated ();
                     appEvents.Add (new PlatformCalendarRecordiOS (ekEvent));
                 }
             }

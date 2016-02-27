@@ -25,7 +25,7 @@ namespace NachoCore.Brain
         UPDATE_MESSAGE_NOTIFICATION_STATUS,
         UPDATE_MESSAGE_READ_STATUS,
         UPDATE_MESSAGE_REPLY_STATUS,
-        PAUSE,
+        PAUSE_OBSOLETE,
         INDEX_MESSAGE,
     };
 
