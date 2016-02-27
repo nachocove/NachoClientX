@@ -34,6 +34,8 @@ namespace NachoClient.iOS
         protected string searchToken;
         McAccount accountForSearchAPI;
 
+        IDisposable abatementRequest = null;
+
         public ContactsTableViewSource ()
         {
             owner = null;
@@ -278,6 +280,29 @@ namespace NachoClient.iOS
             if (0 <= index) {
                 var p = NSIndexPath.FromItemSection (NSRange.NotFound, index);
                 tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
+            }
+        }
+
+        public override void DraggingStarted (UIScrollView scrollView)
+        {
+            if (null == abatementRequest) {
+                abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+            }
+        }
+
+        public override void DecelerationEnded (UIScrollView scrollView)
+        {
+            if (null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
+            }
+        }
+
+        public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
+        {
+            if (!willDecelerate && null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
             }
         }
 

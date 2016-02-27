@@ -18,6 +18,8 @@ namespace NachoClient.iOS
         public ICalendarTableViewSourceDelegate owner;
         static List<UIButton> preventAddButtonGC;
 
+        IDisposable abatementRequest = null;
+
         protected const string EmptyCellReuseIdentifier = "EmptyCell";
         protected const string CalendarEventReuseIdentifier = "CalendarEvent";
 
@@ -525,12 +527,19 @@ namespace NachoClient.iOS
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
+            if (null == abatementRequest) {
+                abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+            }
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
             if (null != owner) {
                 owner.CalendarTableViewScrollingEnded ();
+            }
+            if (null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
             }
         }
 
@@ -539,6 +548,10 @@ namespace NachoClient.iOS
             if (!willDecelerate) {
                 if (null != owner) {
                     owner.CalendarTableViewScrollingEnded ();
+                }
+                if (null != abatementRequest) {
+                    abatementRequest.Dispose ();
+                    abatementRequest = null;
                 }
             }
         }

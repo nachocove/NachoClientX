@@ -45,6 +45,41 @@ namespace NachoCore.Utils
             }
         }
 
+        private class UITimedAbateImplementation : IDisposable
+        {
+            bool disposed = false;
+            Timer disposeTimer;
+
+            void TimerCallback (object state)
+            {
+                if (!disposed) {
+                    NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                        Dispose ();
+                    });
+                }
+            }
+
+            public UITimedAbateImplementation (TimeSpan maxDuration)
+            {
+                // Use C# Timer class, not NcTimer, because the timer must not be canceled if the app starts to shut down.
+                disposeTimer = new Timer (TimerCallback, null, maxDuration, TimeSpan.Zero);
+                Monitor.Enter (uiLock);
+                isUiLocked = true;
+                NachoCore.Model.NcModel.Instance.RateLimiter.Enabled = true;
+            }
+
+            public void Dispose ()
+            {
+                if (!disposed) {
+                    disposed = true;
+                    disposeTimer.Dispose ();
+                    NachoCore.Model.NcModel.Instance.RateLimiter.Enabled = false;
+                    isUiLocked = false;
+                    Monitor.Exit (uiLock);
+                }
+            }
+        }
+
         private static object uiLock = new object ();
         private static bool isUiLocked = false;
         private static object backEndLock = new object ();
@@ -63,6 +98,20 @@ namespace NachoCore.Utils
             NcAssert.AreEqual (NcApplication.Instance.UiThreadId, System.Threading.Thread.CurrentThread.ManagedThreadId,
                 "NcAbate.UIAbatement() can only be called on the UI thread.");
             return new UIAbateImplementation ();
+        }
+
+        /// <summary>
+        /// Request that the back end stop working for a while, with a maximum time for the request.  This request can
+        /// only be made from the UI thread.  The abatement request ends when the returned object is disposed or the
+        /// given amount of time has expired.  Dispose() may be safely called on the returned object even if the time
+        /// has expired.
+        /// </summary>
+        /// <param name="maxDuration">The time after which the abatement will expire if it hasn't already been completed.</param>
+        public static IDisposable UITimedAbatement (TimeSpan maxDuration)
+        {
+            NcAssert.AreEqual (NcApplication.Instance.UiThreadId, System.Threading.Thread.CurrentThread.ManagedThreadId,
+                "NcAbate.UITimedAbatement() can only be called on the UI thread.");
+            return new UITimedAbateImplementation (maxDuration);
         }
 
         /// <summary>

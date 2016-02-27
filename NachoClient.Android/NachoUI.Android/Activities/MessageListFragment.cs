@@ -327,6 +327,7 @@ namespace NachoClient.AndroidClient
             int lastDy;
             bool userInitiated;
             Action OnStop;
+            IDisposable abatementRequest = null;
 
             public MessageListScrollListener (Action OnStop) : base ()
             {
@@ -341,11 +342,18 @@ namespace NachoClient.AndroidClient
                 case RecyclerView.ScrollStateSettling:
                     swipeMenuRecyclerView.EnableSwipe (false);
                     userInitiated |= (RecyclerView.ScrollStateDragging == newState);
+                    if (null == abatementRequest) {
+                        abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+                    }
                     break;
                 case RecyclerView.ScrollStateIdle:
                     swipeMenuRecyclerView.EnableSwipe (true);
                     if (null != OnStop) {
                         OnStop ();
+                    }
+                    if (null != abatementRequest) {
+                        abatementRequest.Dispose ();
+                        abatementRequest = null;
                     }
                     break;
                 }
