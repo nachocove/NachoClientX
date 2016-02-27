@@ -546,18 +546,6 @@ namespace NachoClient
             alert.Show ();
         }
 
-        public static string GetFirstName (string displayName)
-        {
-            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (names [0] == null) {
-                return "";
-            }
-            if (names [0].Length > 1) {
-                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
-            }
-            return names [0].ToUpper ();
-        }
-
         public static string GetImage (string image)
         {
             if (UIScreen.MainScreen.Bounds.Height > 600 && UIScreen.MainScreen.Bounds.Height < 700) {
@@ -909,7 +897,7 @@ namespace NachoClient
             attendeeName.TextColor = UIColor.LightGray;
             attendeeName.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
             attendeeName.TextAlignment = UITextAlignment.Center;
-            attendeeName.Text = Util.GetFirstName (attendee.DisplayName);
+            attendeeName.Text = CalendarHelper.GetFirstName (attendee.DisplayName);
             parentView.AddSubview (attendeeName);
 
             // If the current user is the organizer, then construct a little circle in the

@@ -390,7 +390,7 @@ namespace NachoClient.AndroidClient
 
             foreach (var a in attachments) {
                 var cell = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
-                var attachmentView = new NcAttachmentView (a, cell, onAttachmentSelected, onAttachmentError);
+                new NcAttachmentView (a, cell, onAttachmentSelected, onAttachmentError);
                 listview.AddView (cell);
             }
 

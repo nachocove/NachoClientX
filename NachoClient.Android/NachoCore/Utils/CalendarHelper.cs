@@ -1687,6 +1687,18 @@ namespace NachoCore.Utils
             return (local.Month == adjustment.DaylightTransitionStart.Month && local > TransitionPoint (adjustment.DaylightTransitionStart, local.Year)) ||
             (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
         }
+
+        public static string GetFirstName (string displayName)
+        {
+            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (0 == names.Length || names [0] == null) {
+                return "";
+            }
+            if (names [0].Length > 1) {
+                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
+            }
+            return names [0].ToUpper ();
+        }
     }
 }
 
