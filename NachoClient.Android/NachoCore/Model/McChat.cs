@@ -166,8 +166,8 @@ namespace NachoCore.Model
                 "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
                 "WHERE cm.ChatId = ? " +
                 "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
-                "AND m.Id = (SELECT MAX(Id) FROM McEmailMessage m2 WHERE m2.MessageID = m.MessageID AND m2.AccountID = ? AND likelihood (m2.IsAwaitingDelete = 0, 1.0)) " +
-                "ORDER BY m.DateReceived DESC LIMIT ? OFFSET ?", Id, AccountId, limit, offset);
+                "AND m.Id = (SELECT MAX(m2.Id) FROM McChatMessage cm2 JOIN McEmailMessage m2 ON cm2.MessageId = m2.Id WHERE m2.MessageID = m.MessageID AND cm2.ChatId = ? AND likelihood (m2.IsAwaitingDelete = 0, 1.0)) " +
+                "ORDER BY m.DateReceived DESC LIMIT ? OFFSET ?", Id, Id, limit, offset);
         }
 
         public int MessageCount ()

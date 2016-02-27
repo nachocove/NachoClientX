@@ -269,15 +269,16 @@ namespace NachoClient.iOS
         {
             if (Chat != null) {
                 LoadedMessageIDs.Clear ();
+                MessageCount = Chat.MessageCount ();
                 Messages = Chat.GetMessages (0, MessagesPerQuery);
                 Messages.Reverse ();
-                MessageCount = Chat.MessageCount ();
                 foreach (var message in Messages) {
                     LoadedMessageIDs.Add (message.MessageID, true);
                 }
                 ChatView.ReloadData ();
                 ChatView.ScrollToBottom ();
             } else {
+                MessageCount = 0;
                 Messages.Clear ();
                 ChatView.ReloadData ();
             }
