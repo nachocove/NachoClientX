@@ -127,7 +127,7 @@ namespace NachoClient.iOS
 
             // When the app is re-started from a notification on a
             // different account, the tab bar and nacho now should
-            // close all views & start in nach now. But perhaps it
+            // close all views & start in nacho now. But perhaps it
             // is possible for this view to become visible just as
             // it is about to be popped?  Catch & avoid that case.
             var message = thread.FirstMessageSpecialCase ();
