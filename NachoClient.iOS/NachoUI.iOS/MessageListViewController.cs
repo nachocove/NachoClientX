@@ -358,12 +358,17 @@ namespace NachoClient.iOS
             return false;
         }
 
+        McAccount currentAccount;
+
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
 
+            if (null == currentAccount) {
+                currentAccount = NcApplication.Instance.Account;
+            }
             // Account switched
-            if (!messageSource.GetNachoEmailMessages ().IsCompatibleWithAccount (NcApplication.Instance.Account)) {
+            if (currentAccount.Id != NcApplication.Instance.Account.Id) {
                 if (searchDisplayController.Active) {
                     searchDisplayController.Active = false;
                 }
@@ -430,11 +435,14 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (null != s.Account) {
-                var m = messageSource.GetNachoEmailMessages ();
-                if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
-                    return;
+                // KLUDGE - always handle for unified account
+                if (McAccount.GetUnifiedAccount ().Id != NcApplication.Instance.Account.Id) {
+                    var m = messageSource.GetNachoEmailMessages ();
+                    if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
+                        return;
+                    }
                 }
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: {0} {1}", s.Status.SubKind, m.DisplayName ());
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: {0}", s.Status.SubKind);
 
             }
             switch (s.Status.SubKind) {
