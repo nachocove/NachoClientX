@@ -1028,6 +1028,8 @@ namespace NachoCore.Utils
             new Regex ("^\\-\\-+"),
             // Default iPhone, Nacho, or Samsung signature
             new Regex ("^Sent (from|via) ")
+            // Consider adding something like ^.+,$ to find lines like "Regards," "Thanks," etc.  Maybe need to allow for
+            // two or three words like "See you soon,"  Athough need to be careful not to match "Hi so-and-so," at the start of a message.
         };
 
         public static bool IsQuoteLine (string line)

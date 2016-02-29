@@ -28,6 +28,7 @@ namespace NachoClient.iOS
         bool IsListeningForStatusChanges;
         Dictionary<string, bool> LoadedMessageIDs;
         Dictionary<int, McChatParticipant> ParticipantsByEmailId;
+        Dictionary<int, List<McAttachment>> AttachmentsByMessageId;
         int MessageCount;
         UIStoryboard mainStorybaord;
         UIStoryboard MainStoryboard {
@@ -53,6 +54,7 @@ namespace NachoClient.iOS
         {
             HidesBottomBarWhenPushed = true;
             Messages = new List<McEmailMessage> ();
+            AttachmentsByMessageId = new Dictionary<int, List<McAttachment>> ();
             LoadedMessageIDs = new Dictionary<string, bool> ();
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
@@ -300,6 +302,7 @@ namespace NachoClient.iOS
             indexInArray = index - MessageCount + Messages.Count;
             McEmailMessage message = null;
             McChatParticipant particpant = null;
+            List<McAttachment> attachments = null;
             if (indexInArray < 0) {
                 // Hmmm...a message must have been deleted and messed up our count
                 // Should rarely happen, and only if you scroll all the way back to the top
@@ -310,9 +313,16 @@ namespace NachoClient.iOS
                 if (!message.IsRead) {
                     EmailHelper.MarkAsRead (message, true);
                 }
+                if (message.cachedHasAttachments) {
+                    if (!AttachmentsByMessageId.ContainsKey (message.Id)) {
+                        AttachmentsByMessageId.Add (message.Id, McAttachment.QueryByItemId (message.AccountId, message.Id, McAbstrFolderEntry.ClassCodeEnum.Email));
+                    }
+                    AttachmentsByMessageId.TryGetValue (message.Id, out attachments);
+                }
             }
             var messageView = chatView.DequeueReusableChatMessageView ();
-            messageView.SetMessage (message, particpant);
+            messageView.OnAttachmentSelected = ShowAttachment;
+            messageView.SetMessage (message, particpant, attachments);
             UpdateMessageViewBlockProperties (chatView, index, messageView);
             return messageView;
         }
@@ -335,6 +345,13 @@ namespace NachoClient.iOS
                 messageView.SetShowsName (showName);
                 messageView.SetShowsPortrait (showPortrait);
                 messageView.SetShowsTimestamp (showTimestamp);
+            }
+        }
+
+        private void ShowAttachment (McAttachment attachment)
+        {
+            if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
+                PlatformHelpers.DisplayAttachment (this, attachment);
             }
         }
 
@@ -861,8 +878,10 @@ namespace NachoClient.iOS
     {
         public ChatView ChatView;
         public UIView BubbleView;
+        public AttachmentView.AttachmentSelectedCallback OnAttachmentSelected;
         McEmailMessage Message;
         McChatParticipant Participant;
+        List<McAttachment> Attachments;
         UILabel MessageLabel;
         public int Index;
         UIEdgeInsets MessageInsets;
@@ -899,9 +918,11 @@ namespace NachoClient.iOS
                 return _PortraitView;
             }
         }
+        List<ChatMessageAttachmentView> AttachmentViews;
 
         public ChatMessageView (CGRect frame) : base (frame)
         {
+            AttachmentViews = new List<ChatMessageAttachmentView> ();
             MessageInsets = new UIEdgeInsets (6.0f, 9.0f, 6.0f, 9.0f);
             BubbleView = new UIView (new CGRect(0.0f, 0.0f, Bounds.Width * 0.75f, Bounds.Height));
             BubbleView.BackgroundColor = UIColor.White;
@@ -911,7 +932,6 @@ namespace NachoClient.iOS
             MessageLabel = new UILabel (new CGRect(MessageInsets.Left, MessageInsets.Top, BubbleView.Bounds.Width - MessageInsets.Left - MessageInsets.Right, BubbleView.Bounds.Height - MessageInsets.Top - MessageInsets.Bottom));
             MessageLabel.Lines = 0;
             MessageLabel.Font = A.Font_AvenirNextRegular17;
-            MessageLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             var timestampDividerFont = A.Font_AvenirNextDemiBold14;
             TimestampDividerLabel = new UILabel (new CGRect (0.0f, 0.0f, Bounds.Width, timestampDividerFont.LineHeight * 2.0f));
             TimestampDividerLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -932,10 +952,11 @@ namespace NachoClient.iOS
             AddSubview (BubbleView);
         }
 
-        public void SetMessage(McEmailMessage message, McChatParticipant participant)
+        public void SetMessage(McEmailMessage message, McChatParticipant participant, List<McAttachment> attachments)
         {
             Message = message;
             Participant = participant;
+            Attachments = attachments;
             Update ();
         }
 
@@ -999,7 +1020,26 @@ namespace NachoClient.iOS
             }
             MessageLabel.BackgroundColor = BubbleView.BackgroundColor;
             TimestampDividerLabel.Hidden = false;
+            UpdateAttachments ();
             SetNeedsLayout ();
+        }
+
+        void UpdateAttachments ()
+        {
+            foreach (var view in AttachmentViews) {
+                view.RemoveFromSuperview ();
+            }
+            AttachmentViews.Clear ();
+            if (Attachments != null) {
+                foreach (var attachment in Attachments) {
+                    var frame = new CGRect (0.0f, 0.0f, Bounds.Width, ChatMessageAttachmentView.VIEW_HEIGHT);
+                    var view = new ChatMessageAttachmentView (frame, attachment);
+                    BubbleView.AddSubview (view);
+                    AttachmentViews.Add (view);
+                    view.SetColors (MessageLabel.BackgroundColor, MessageLabel.TextColor);
+                    view.OnAttachmentSelected = OnAttachmentSelected;
+                }
+            }
         }
 
         public override void LayoutSubviews ()
@@ -1028,17 +1068,32 @@ namespace NachoClient.iOS
 
         void LayoutBubbleView ()
         {
-            var maxMessageWidth = Bounds.Width * MaxBubbleWidthPercent - MessageInsets.Left - MessageInsets.Right;
+            var maxMessageWidth = (nfloat)Math.Floor (Bounds.Width * MaxBubbleWidthPercent - MessageInsets.Left - MessageInsets.Right);
             if (ChatView != null && ChatView.ShowPortraits && Participant != null) {
+                // If we're showing portraits, they take up space, so we need to make the bubble smaller
+                // than it would otherwise be.  Instead of removing the entire width added by the portrait,
+                // just take a bit off.  BubbleSideInset is a good smallish size, but we could do anything here.
                 maxMessageWidth -= BubbleSideInset;
             }
             var messageSize = MessageLabel.SizeThatFits (new CGSize (maxMessageWidth, 99999999.0f));
-            var height = messageSize.Height + MessageInsets.Top + MessageInsets.Bottom;
-            nfloat width;
             if (messageSize.Height > MessageLabel.Font.LineHeight + 5.0f) {
-                width = maxMessageWidth + MessageInsets.Left + MessageInsets.Right;
-            } else {
-                width = messageSize.Width + MessageInsets.Left + MessageInsets.Right;
+                // If we've got more than one line, just use maxMessageWidth so consecutive mutli-line
+                // messages line up.  Without this, each message would be a few pixels different because
+                // of differences in how each message wraps before actually hitting maxMessageWidth
+                messageSize.Width = maxMessageWidth;
+            }
+            if (AttachmentViews.Count > 0) {
+                // If there's an attachment view, use the max width so there's enough room to show attachment info
+                messageSize.Width = maxMessageWidth;
+            }
+            messageSize.Height = (nfloat)Math.Ceiling (messageSize.Height);
+            MessageLabel.Frame = new CGRect (MessageInsets.Left, MessageInsets.Top, messageSize.Width, messageSize.Height);
+            nfloat bubbleY = MessageLabel.Frame.Y + MessageLabel.Frame.Height;
+            var bubbleSize = new CGSize (messageSize.Width + MessageInsets.Left + MessageInsets.Right, messageSize.Height + MessageInsets.Top + MessageInsets.Bottom);
+            foreach (var attachmentView in AttachmentViews) {
+                attachmentView.Frame = new CGRect (MessageInsets.Left, bubbleY, messageSize.Width, attachmentView.Frame.Height);
+                bubbleSize.Height += attachmentView.Frame.Height;
+                bubbleY += attachmentView.Frame.Height;
             }
             nfloat x = 0.0f;
             nfloat y = 0.0f;
@@ -1047,7 +1102,7 @@ namespace NachoClient.iOS
             }
             if (Participant == null) {
                 x = Bounds.Width - BubbleView.Frame.Width - BubbleSideInset;
-                BubbleView.Frame = new CGRect (x, y, width, height);
+                BubbleView.Frame = new CGRect (x, y, bubbleSize.Width, bubbleSize.Height);
             } else {
                 x = BubbleSideInset;
                 if (ChatView != null && ChatView.ShowPortraits) {
@@ -1060,7 +1115,7 @@ namespace NachoClient.iOS
                     NameLabel.Frame = new CGRect (x, y, maxMessageWidth + MessageInsets.Left + MessageInsets.Right, NameLabel.Frame.Height);
                     y += NameLabel.Frame.Height;
                 }
-                BubbleView.Frame = new CGRect (x, y, width, height);
+                BubbleView.Frame = new CGRect (x, y, bubbleSize.Width, bubbleSize.Height);
             }
         }
 
@@ -1070,6 +1125,32 @@ namespace NachoClient.iOS
             Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, BubbleView.Frame.Y + BubbleView.Frame.Size.Height);
         }
 
+    }
+
+    public class ChatMessageAttachmentView : AttachmentView 
+    {
+
+        public ChatMessageAttachmentView (CGRect frame, McAttachment attachment) : base(frame, attachment)
+        {
+            AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            HideSeparator ();
+            if (attachment.IsInline && detailView.Text.StartsWith ("Inline ")) {
+                detailView.Text = detailView.Text.Substring ("Inline ".Length);
+            }
+//            imageView.BackgroundColor = UIColor.White;
+//            imageView.ContentMode = UIViewContentMode.Center;
+//            imageView.ClipsToBounds = true;
+//            imageView.Layer.CornerRadius = imageView.Frame.Size.Width / 2.0f;
+        }
+
+        public void SetColors (UIColor backgroundColor, UIColor foregroundColor)
+        {
+            BackgroundColor = backgroundColor;
+            filenameView.BackgroundColor = backgroundColor;
+            detailView.BackgroundColor = backgroundColor;
+            filenameView.TextColor = foregroundColor;
+            detailView.TextColor = foregroundColor;
+        }
     }
 }
 

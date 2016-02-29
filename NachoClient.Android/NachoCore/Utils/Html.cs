@@ -441,7 +441,11 @@ namespace NachoCore.Utils
 
         private void VisitBlockElement (HtmlNode node)
         {
-            CheckLastLineForTopSplit ();
+            if (node.Name.Equals ("div") && node.GetAttributeValue ("class", "").Equals ("gmail_signature")) {
+                SetTop ();
+            } else {
+                CheckLastLineForTopSplit ();
+            }
             AtLineStart = true;
             VisitChildren (node);
             AtLineStart = true;
