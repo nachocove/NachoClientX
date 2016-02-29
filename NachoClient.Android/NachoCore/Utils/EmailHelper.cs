@@ -978,13 +978,15 @@ namespace NachoCore.Utils
 
         public static void ToggleRead (McEmailMessage message)
         {
-            bool isRead = !message.IsRead;
-            message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
-                var target = (McEmailMessage)record;
-                target.IsRead = isRead;
-                return true;
-            });
-            BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, isRead);
+            if (null != message) {
+                bool isRead = !message.IsRead;
+                message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.IsRead = isRead;
+                    return true;
+                });
+                BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, isRead);
+            }
         }
 
         public static McAttachment NoteToAttachment (McNote note)
