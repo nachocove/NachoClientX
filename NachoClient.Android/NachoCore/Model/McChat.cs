@@ -26,6 +26,7 @@ namespace NachoCore.Model
         public string CachedInitials2 { get; set; }
         public int CachedColor1 { get; set; }
         public int CachedColor2 { get; set; }
+        public string DraftMessage { get; set; }
 
         public McChat () : base ()
         {
@@ -239,6 +240,18 @@ namespace NachoCore.Model
                 var final = firsts [firsts.Count - 1];
                 firsts.RemoveAt (firsts.Count - 1);
                 CachedParticipantsLabel = String.Join(", ", firsts) + " & " + final;
+            }
+        }
+
+        public void ClearDraft ()
+        {
+            if (!String.IsNullOrEmpty (DraftMessage)) {
+                DraftMessage = "";
+                Update ();
+            }
+            var attachments = McAttachment.QueryByItemId (AccountId, Id, McAbstrFolderEntry.ClassCodeEnum.Chat);
+            foreach (var attachment in attachments) {
+                attachment.Unlink (Id, AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
             }
         }
     }

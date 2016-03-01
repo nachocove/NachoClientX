@@ -701,11 +701,6 @@ namespace NachoClient.iOS
                 }));
         }
 
-        public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
-        {
-            return ImageiOS.FromStream (stream);
-        }
-
         void DisplayMessageBody ()
         {
             if (Composer.Bundle != null) {

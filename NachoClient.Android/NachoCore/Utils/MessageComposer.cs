@@ -18,8 +18,6 @@ namespace NachoCore.Utils
         void MessageComposerDidCompletePreparation (MessageComposer composer);
 
         void MessageComposerDidFailToLoadMessage (MessageComposer composer);
-
-        PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream);
     }
 
     public class MessageComposer : MessageDownloadDelegate
@@ -722,7 +720,7 @@ namespace NachoCore.Utils
                         part.ContentObject.DecodeTo (stream);
                     }
                     var tmpStream = new FileStream (tmpFilePath, FileMode.Open, FileAccess.Read);
-                    var image = Delegate.ImageForMessageComposerAttachment (this, tmpStream);
+                    var image = PlatformImageFactory.Instance.FromStream (tmpStream);
                     tmpStream.Dispose ();
                     if (image != null) {
                         tmpStream = new FileStream (tmpFilePath, FileMode.Create);
@@ -748,7 +746,7 @@ namespace NachoCore.Utils
         void AdjustEstimatedSizesForAttachment (Stream stream)
         {
             stream.Seek (0, 0);
-            var image = Delegate.ImageForMessageComposerAttachment (this, stream);
+            var image = PlatformImageFactory.Instance.FromStream (stream);
             if (image != null) {
                 AdjustEstimatedSizesForImageWithProperties (stream.Length, image.Size);
                 image.Dispose ();

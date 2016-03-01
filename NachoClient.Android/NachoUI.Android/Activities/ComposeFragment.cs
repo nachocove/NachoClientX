@@ -584,11 +584,6 @@ namespace NachoClient.AndroidClient
             NcAlertView.ShowMessage (Activity, "Could not load message", "Sorry, we could not load your message.  Please try again.");
         }
 
-        public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
-        {
-            return ImageAndroid.FromStream (stream);
-        }
-
         void DisplayMessageBody ()
         {
             if (Composer.Bundle != null) {

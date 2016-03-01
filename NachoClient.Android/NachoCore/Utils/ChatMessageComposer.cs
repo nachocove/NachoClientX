@@ -33,6 +33,11 @@ namespace NachoCore.Utils
             if (previousMessages.Count > 0) {
                 Message.ReferencedEmailId = previousMessages [0].Id;
             }
+            InitialAttachments = McAttachment.QueryByItemId (Chat.AccountId, Chat.Id, McAbstrFolderEntry.ClassCodeEnum.Chat);
+            foreach (var attachment in InitialAttachments) {
+                attachment.Unlink (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+            }
+            Message.cachedHasAttachments = InitialAttachments.Count > 0;
         }
 
         public static void SendChatMessage (McChat chat, string text, List<McEmailMessage> previousMessages, Action<McEmailMessage> callback)

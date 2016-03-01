@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public class ChatMessagesViewController : NcUIViewControllerNoLeaks, INachoContactChooserDelegate, ChatViewDataSource, ChatViewDelegate
+    public class ChatMessagesViewController : NcUIViewControllerNoLeaks, INachoContactChooserDelegate, ChatViewDataSource, ChatViewDelegate, INachoFileChooserParent
     {
 
         #region Properties
@@ -118,7 +118,6 @@ namespace NachoClient.iOS
 
         protected override void OnKeyboardChanged ()
         {
-            var scrolledToBottom = ChatView.IsScrolledToBottom;
             base.OnKeyboardChanged ();
             SubviewChangedHeight ();
             ChatView.LayoutIfNeeded ();
@@ -162,6 +161,7 @@ namespace NachoClient.iOS
                     Log.Error (Log.LOG_CHAT, "Got null chat when sending new message");
                     return;
                 }
+                Chat.ClearDraft ();
                 UpdateForChat ();
                 ReloadMessages ();
             }
@@ -197,6 +197,79 @@ namespace NachoClient.iOS
         {
             var address = new NcEmailAddress (NcEmailAddress.Kind.To);
             ShowContactSearch (address);
+        }
+
+        public void Attach ()
+        {
+            var helper = new AddAttachmentViewController.MenuHelper (this, Account, MainStoryboard, View);
+            PresentViewController (helper.MenuViewController, true, null);
+        }
+
+        // User picking a file as an attachment
+        public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
+        {
+            var attachment = obj as McAttachment;
+            if (attachment == null){
+                var file = obj as McDocument;
+                if (file != null) {
+                    attachment = McAttachment.InsertSaveStart (Account.Id);
+                    attachment.SetDisplayName (file.DisplayName);
+                    attachment.UpdateFileCopy (file.GetFilePath ());
+                } else {
+                    var note = obj as McNote;
+                    if (note != null) {
+                        attachment = McAttachment.InsertSaveStart (Account.Id);
+                        attachment.SetDisplayName (note.DisplayName + ".txt");
+                        attachment.UpdateData (note.noteContent);
+                    }
+                }
+            }
+
+            if (attachment != null) {
+                attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+                attachment.Update ();
+                ComposeView.AddAttachment (attachment);
+                this.DismissViewController (true, null);
+            } else {
+                NcAssert.CaseError ();
+            }
+
+        }
+
+        // User adding an attachment from media browser
+        public void Append (McAttachment attachment)
+        {
+            attachment.Update ();
+            attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+            ComposeView.AddAttachment (attachment);
+        }
+
+        public void AttachmentUpdated (McAttachment attachment)
+        {
+            ComposeView.UpdateAttachment (attachment);
+        }
+
+        // Not really a direct user action, but caused by the user selecting a date for the intent
+        public void DismissChildFileChooser (INachoFileChooser vc)
+        {
+            DismissViewController (true, null);
+        }
+
+        // Not really a direct user action, but caused by the user selecting a date for the intent
+        public void DismissPhotoPicker ()
+        {
+            DismissViewController (true, null);
+        }
+
+        public void PresentFileChooserViewController (UIViewController vc)
+        {
+            PresentViewController (vc, true, null);
+        }
+
+        public void RemoveAttachment (McAttachment attachment)
+        {
+            attachment.Unlink (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+            attachment.Delete ();
         }
 
         #endregion
@@ -265,6 +338,10 @@ namespace NachoClient.iOS
             HeaderView.EditingEnabled = false;
             ChatView.ShowPortraits = ChatView.ShowNameLabels = Chat.ParticipantCount > 1;
             ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (Chat.Id);
+            var attachments = McAttachment.QueryByItemId (Chat.AccountId, Chat.Id, McAbstrFolderEntry.ClassCodeEnum.Chat);
+            foreach (var attachment in attachments) {
+                ComposeView.AddAttachment (attachment);
+            }
         }
 
         void ReloadMessages ()
@@ -348,7 +425,7 @@ namespace NachoClient.iOS
             }
         }
 
-        private void ShowAttachment (McAttachment attachment)
+        public void ShowAttachment (McAttachment attachment)
         {
             if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                 PlatformHelpers.DisplayAttachment (this, attachment);
@@ -539,17 +616,27 @@ namespace NachoClient.iOS
 
         public ChatMessagesViewController ChatViewController;
         UITextView MessageField;
+        UIButton AttachButton;
         UIButton SendButton;
         UIView TopBorderView;
         UILabel MessagePlaceholderLabel;
+        List<UcAttachmentCell> AttachmentViews;
+        UIScrollView AttachmentsScrollView;
         public static readonly nfloat STANDARD_HEIGHT = 41.0f;
 
         public ChatMessageComposeView (CGRect frame) : base (frame)
         {
+            AttachmentViews = new List<UcAttachmentCell> ();
             TopBorderView = new UIView (new CGRect (0.0f, 0.0f, Bounds.Size.Width, 1.0f));
             TopBorderView.BackgroundColor = A.Color_NachoBorderGray;
             TopBorderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             BackgroundColor = UIColor.White;
+            AttachButton = new UIButton (UIButtonType.Custom);
+            using (var image = UIImage.FromBundle ("chat-attachfile")) {
+                AttachButton.SetImage (image, UIControlState.Normal);
+            }
+            AttachButton.TouchUpInside += Attach;
+            AttachButton.ContentMode = UIViewContentMode.Center;
             MessageField = new UITextView (Bounds);
             MessageField.Changed += MessageChanged;
             MessageField.Font = A.Font_AvenirNextRegular17;
@@ -565,10 +652,13 @@ namespace NachoClient.iOS
             SendButton.SetTitleColor (A.Color_NachoTextGray, UIControlState.Disabled);
             SendButton.TitleEdgeInsets = new UIEdgeInsets (0.0f, 7.0f, 0.5f, 7.0f);
             SendButton.Font = A.Font_AvenirNextMedium17;
+            AttachmentsScrollView = new UIScrollView (new CGRect(0.0f, Bounds.Height, Bounds.Width, 0.0f));
             AddSubview (TopBorderView);
+            AddSubview (AttachButton);
             AddSubview (MessageField);
             AddSubview (MessagePlaceholderLabel);
             AddSubview (SendButton);
+            AddSubview (AttachmentsScrollView);
             UpdateSendEnabled ();
         }
 
@@ -590,6 +680,11 @@ namespace NachoClient.iOS
             ChatViewController.Send ();
         }
 
+        void Attach (object sender, EventArgs e)
+        {
+            ChatViewController.Attach ();
+        }
+
         public string GetMessage ()
         {
             return MessageField.Text;
@@ -599,6 +694,11 @@ namespace NachoClient.iOS
         {
             MessageField.Text = "";
             UpdateSendEnabled ();
+            foreach (var view in AttachmentViews) {
+                view.RemoveFromSuperview ();
+                view.Dispose ();
+            }
+            AttachmentViews.Clear ();
             SetNeedsLayout ();
         }
 
@@ -612,7 +712,27 @@ namespace NachoClient.iOS
 
         public override void LayoutSubviews ()
         {
-            var preferredHeight = (nfloat)Math.Min (MessageField.ContentSize.Height + 1.0f, 4.0f * STANDARD_HEIGHT);
+            nfloat maxHeight = 5.0f * STANDARD_HEIGHT;
+            var preferredHeight = MessageField.ContentSize.Height + 1.0f;
+            if (AttachmentViews.Count > 0) {
+                nfloat attachmentsHeight = 0.0f;
+                nfloat y = 0.0f;
+                foreach (var attachmentView in AttachmentViews) {
+                    preferredHeight += attachmentView.Frame.Height;
+                    attachmentView.Frame = new CGRect (0.0f, y, Bounds.Width, attachmentView.Frame.Height);
+                    y += attachmentView.Frame.Height;
+                    attachmentsHeight += attachmentView.Frame.Height;
+                }
+                AttachmentsScrollView.ContentSize = new CGSize (AttachmentsScrollView.Bounds.Width, attachmentsHeight);
+                if (preferredHeight > maxHeight) {
+                    attachmentsHeight = (nfloat)Math.Min (maxHeight - STANDARD_HEIGHT, attachmentsHeight);
+                    preferredHeight = maxHeight;
+                }
+                AttachmentsScrollView.Frame = new CGRect (0.0f, preferredHeight - attachmentsHeight, Bounds.Width, attachmentsHeight);
+            } else {
+                preferredHeight = (nfloat)Math.Min (preferredHeight, maxHeight);
+                AttachmentsScrollView.Frame = new CGRect (0.0f, preferredHeight, Bounds.Width, 0.0f);
+            }
             var previousHeight = Frame.Height;
             Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, preferredHeight);
             bool changedHeight = (Math.Abs (preferredHeight - previousHeight) > 0.5) && ChatViewController != null;
@@ -620,21 +740,59 @@ namespace NachoClient.iOS
             var sendButtonHeight = STANDARD_HEIGHT - 1.0f;
             SendButton.Frame = new CGRect (
                 Bounds.Width - SendButton.Frame.Size.Width - SendButton.TitleEdgeInsets.Left - SendButton.TitleEdgeInsets.Right,
-                Bounds.Height - sendButtonHeight,
+                AttachmentsScrollView.Frame.Y - sendButtonHeight,
                 SendButton.Frame.Size.Width + SendButton.TitleEdgeInsets.Left + SendButton.TitleEdgeInsets.Right,
                 sendButtonHeight
             );
-            MessageField.Frame = new CGRect (
+            AttachButton.Frame = new CGRect (
                 0.0f,
+                AttachmentsScrollView.Frame.Y - STANDARD_HEIGHT,
+                STANDARD_HEIGHT,
+                STANDARD_HEIGHT
+            );
+            MessageField.Frame = new CGRect (
+                AttachButton.Frame.X + AttachButton.Frame.Width,
                 1.0f,
                 SendButton.Frame.X,
-                Bounds.Height - 1.0f
+                AttachmentsScrollView.Frame.Y - 1.0f
             );
             MessagePlaceholderLabel.SizeToFit ();
             MessagePlaceholderLabel.Frame = new CGRect (MessageField.Frame.X + 5.0f, MessageField.Frame.Y + 8.0f, MessagePlaceholderLabel.Frame.Width, MessagePlaceholderLabel.Frame.Height);
             if (changedHeight) {
                 ChatViewController.SubviewChangedHeight ();
             }
+        }
+
+        public void AddAttachment (McAttachment attachment)
+        {
+            var view = new UcAttachmentCell (attachment, Bounds.Width, true, TapAttachment, RemoveAttachment);
+            AttachmentsScrollView.AddSubview (view);
+            AttachmentViews.Add (view);
+            SetNeedsLayout ();
+        }
+
+        public void UpdateAttachment (McAttachment attachment)
+        {
+            foreach (var view in AttachmentViews) {
+                if (view.attachment.Id == attachment.Id) {
+                    view.attachment = attachment;
+                    view.ConfigureView ();
+                }
+            }
+        }
+
+        public void TapAttachment (UcAttachmentCell cell)
+        {
+            ChatViewController.ShowAttachment (cell.attachment);
+        }
+
+        public void RemoveAttachment (UcAttachmentCell cell)
+        {
+            AttachmentViews.Remove (cell);
+            cell.RemoveFromSuperview ();
+            cell.Dispose ();
+            SetNeedsLayout ();
+            ChatViewController.RemoveAttachment (cell.attachment);
         }
 
     }
