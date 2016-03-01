@@ -22,58 +22,58 @@ namespace NachoClient.iOS
         void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view);
     }
 
+    public class ComposeFieldLabel : UIView
+    {
+        public readonly UILabel NameLabel;
+        public readonly UILabel ValueLabel;
+        private UIView DisclosureIndicatorView;
+        public Action Action;
+        public nfloat LeftPadding = 0.0f;
+        public nfloat RightPadding = 0.0f;
+        private nfloat DisclosureWidth = 12.0f;
+
+        UITapGestureRecognizer TapGesture;
+
+        public ComposeFieldLabel (CGRect frame) : base(frame)
+        {
+            NameLabel = new UILabel (Bounds);
+            ValueLabel = new UILabel (Bounds);
+            BackgroundColor = UIColor.White;
+            AddSubview (NameLabel);
+            AddSubview (ValueLabel);
+            DisclosureIndicatorView = Util.AddArrowAccessory (Bounds.Width - RightPadding - DisclosureWidth, 0, DisclosureWidth, this);
+            TapGesture = new UITapGestureRecognizer (Tap);
+            AddGestureRecognizer (TapGesture);
+        }
+
+        public override void LayoutSubviews ()
+        {
+            base.LayoutSubviews ();
+            DisclosureIndicatorView.Frame = new CGRect (
+                Bounds.Width - RightPadding - DisclosureWidth,
+                (Bounds.Height - DisclosureIndicatorView.Frame.Height) / 2.0f,
+                DisclosureWidth,
+                DisclosureIndicatorView.Frame.Height
+            );
+            NameLabel.SizeToFit ();
+            var x = LeftPadding;
+            NameLabel.Frame = new CGRect (x, 0, NameLabel.Frame.Width, Bounds.Height);
+            x += NameLabel.Frame.Width;
+            ValueLabel.Frame = new CGRect (x, 0, DisclosureIndicatorView.Frame.X - x, Bounds.Height);
+        }
+
+        public void Tap ()
+        {
+            if (Action != null) {
+                Action ();
+            }
+        }
+    }
+
     public class MessageComposeHeaderView : UIView, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate
     {
 
         #region Private Views
-
-        public class MessageFieldLabel : UIView
-        {
-            public readonly UILabel NameLabel;
-            public readonly UILabel ValueLabel;
-            private UIView DisclosureIndicatorView;
-            public Action Action;
-            public nfloat LeftPadding = 0.0f;
-            public nfloat RightPadding = 0.0f;
-            private nfloat DisclosureWidth = 12.0f;
-
-            UITapGestureRecognizer TapGesture;
-
-            public MessageFieldLabel (CGRect frame) : base(frame)
-            {
-                NameLabel = new UILabel (Bounds);
-                ValueLabel = new UILabel (Bounds);
-                BackgroundColor = UIColor.White;
-                AddSubview (NameLabel);
-                AddSubview (ValueLabel);
-                DisclosureIndicatorView = Util.AddArrowAccessory (Bounds.Width - RightPadding - DisclosureWidth, 0, DisclosureWidth, this);
-                TapGesture = new UITapGestureRecognizer (Tap);
-                AddGestureRecognizer (TapGesture);
-            }
-
-            public override void LayoutSubviews ()
-            {
-                base.LayoutSubviews ();
-                DisclosureIndicatorView.Frame = new CGRect (
-                    Bounds.Width - RightPadding - DisclosureWidth,
-                    (Bounds.Height - DisclosureIndicatorView.Frame.Height) / 2.0f,
-                    DisclosureWidth,
-                    DisclosureIndicatorView.Frame.Height
-                );
-                NameLabel.SizeToFit ();
-                var x = LeftPadding;
-                NameLabel.Frame = new CGRect (x, 0, NameLabel.Frame.Width, Bounds.Height);
-                x += NameLabel.Frame.Width;
-                ValueLabel.Frame = new CGRect (x, 0, DisclosureIndicatorView.Frame.X - x, Bounds.Height);
-            }
-           
-            public void Tap ()
-            {
-                if (Action != null) {
-                    Action ();
-                }
-            }
-        }
 
         #endregion
 
@@ -92,9 +92,9 @@ namespace NachoClient.iOS
         public readonly UcAddressBlock ToView;
         public readonly UcAddressBlock CcView;
         public readonly UcAddressBlock BccView;
-        public readonly MessageFieldLabel FromView;
+        public readonly ComposeFieldLabel FromView;
         public readonly NcAdjustableLayoutTextField SubjectField;
-        public readonly MessageFieldLabel IntentView;
+        public readonly ComposeFieldLabel IntentView;
         public readonly UcAttachmentBlock AttachmentsView;
         UIView ToSeparator;
         UIView CcSeparator;
@@ -146,7 +146,7 @@ namespace NachoClient.iOS
             CcView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             BccView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
 
-            FromView = new MessageFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
+            FromView = new ComposeFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
             FromView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             FromView.NameLabel.Font = LabelFont;
             FromView.ValueLabel.Font = LabelFont;
@@ -172,7 +172,7 @@ namespace NachoClient.iOS
             SubjectField.EditingDidBegin += SubjectEditingDidBegin;
             SubjectField.EditingDidEnd += SubjectEditingDidEnd;
 
-            IntentView = new MessageFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
+            IntentView = new ComposeFieldLabel (new CGRect (0, 0, Bounds.Width, LineHeight));
             IntentView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             IntentView.NameLabel.Font = LabelFont;
             IntentView.ValueLabel.Font = LabelFont;

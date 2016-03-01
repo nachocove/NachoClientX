@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public class ChatMessagesViewController : NcUIViewControllerNoLeaks, INachoContactChooserDelegate, ChatViewDataSource, ChatViewDelegate, INachoFileChooserParent
+    public class ChatMessagesViewController : NcUIViewControllerNoLeaks, INachoContactChooserDelegate, ChatViewDataSource, ChatViewDelegate, INachoFileChooserParent, AccountPickerViewControllerDelegate
     {
 
         #region Properties
@@ -29,6 +29,7 @@ namespace NachoClient.iOS
         Dictionary<string, bool> LoadedMessageIDs;
         Dictionary<int, McChatParticipant> ParticipantsByEmailId;
         Dictionary<int, List<McAttachment>> AttachmentsByMessageId;
+        List<McAttachment> AttachmentsForUnsavedChat;
         int MessageCount;
         UIStoryboard mainStorybaord;
         UIStoryboard MainStoryboard {
@@ -54,6 +55,7 @@ namespace NachoClient.iOS
         {
             HidesBottomBarWhenPushed = true;
             Messages = new List<McEmailMessage> ();
+            AttachmentsForUnsavedChat = new List<McAttachment> ();
             AttachmentsByMessageId = new Dictionary<int, List<McAttachment>> ();
             LoadedMessageIDs = new Dictionary<string, bool> ();
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
@@ -89,8 +91,13 @@ namespace NachoClient.iOS
                 HeaderView.EditingEnabled = true;
             } else {
                 UpdateForChat ();
-
+                ComposeView.SetMessage (Chat.DraftMessage);
+                var attachments = McAttachment.QueryByItemId (Chat.AccountId, Chat.Id, McAbstrFolderEntry.ClassCodeEnum.Chat);
+                foreach (var attachment in attachments) {
+                    ComposeView.AddAttachment (attachment);
+                }
             }
+            UpdateFromField ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -114,9 +121,11 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             var text = ComposeView.GetMessage ();
-            if ((text == null && Chat.DraftMessage != null) || (text != null && Chat.DraftMessage == null) || (text != null && Chat.DraftMessage != null && !text.Equals(Chat.DraftMessage))) {
-                Chat.DraftMessage = text;
-                Chat.Update ();
+            if (Chat != null) {
+                if ((text == null && Chat.DraftMessage != null) || (text != null && Chat.DraftMessage == null) || (text != null && Chat.DraftMessage != null && !text.Equals (Chat.DraftMessage))) {
+                    Chat.DraftMessage = text;
+                    Chat.Update ();
+                }
             }
         }
 
@@ -172,6 +181,10 @@ namespace NachoClient.iOS
                     return;
                 }
                 Chat.ClearDraft ();
+                foreach (var attachment in AttachmentsForUnsavedChat) {
+                    attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+                }
+                AttachmentsForUnsavedChat.Clear ();
                 UpdateForChat ();
                 ReloadMessages ();
             }
@@ -181,7 +194,6 @@ namespace NachoClient.iOS
                 previousMessages.Add (Messages [i]);
             }
             ChatMessageComposer.SendChatMessage (Chat, text, previousMessages, (McEmailMessage message) => {
-                // TODO: this message is in the outbox.  It will be deleted and replaced by a message from the sent folder
                 Chat.AddMessage (message);
                 ComposeView.Clear ();
                 ChatView.ScrollToBottom ();
@@ -236,7 +248,11 @@ namespace NachoClient.iOS
             }
 
             if (attachment != null) {
-                attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+                if (Chat == null) {
+                    AttachmentsForUnsavedChat.Add (attachment);
+                } else {
+                    attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+                }
                 attachment.Update ();
                 ComposeView.AddAttachment (attachment);
                 this.DismissViewController (true, null);
@@ -250,7 +266,11 @@ namespace NachoClient.iOS
         public void Append (McAttachment attachment)
         {
             attachment.Update ();
-            attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+            if (Chat == null) {
+                AttachmentsForUnsavedChat.Add (attachment);
+            } else {
+                attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+            }
             ComposeView.AddAttachment (attachment);
         }
 
@@ -278,8 +298,33 @@ namespace NachoClient.iOS
 
         public void RemoveAttachment (McAttachment attachment)
         {
-            attachment.Unlink (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
-            attachment.Delete ();
+            if (Chat == null) {
+                for (int i = 0; i < AttachmentsForUnsavedChat.Count; ++i) {
+                    if (AttachmentsForUnsavedChat [i].Id == attachment.Id) {
+                        AttachmentsForUnsavedChat.RemoveAt (i);
+                        break;
+                    }
+                }
+            } else {
+                attachment.Unlink (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+            }
+        }
+
+        // User tapping the from field
+        public void ChooseAccount ()
+        {
+            var picker = new AccountPickerViewController ();
+            picker.PickerDelegate = this;
+            picker.Accounts = new List<McAccount> (McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).Where((McAccount a) => { return a.AccountType != McAccount.AccountTypeEnum.Unified; }));
+            picker.SelectedAccount = Account;
+            NavigationController.PushViewController (picker, true);
+        }
+
+        public void AccountPickerDidPickAccount (AccountPickerViewController vc, McAccount account)
+        {
+            NavigationController.PopViewController (true);
+            Account = account;
+            UpdateFromField ();
         }
 
         #endregion
@@ -348,11 +393,11 @@ namespace NachoClient.iOS
             HeaderView.EditingEnabled = false;
             ChatView.ShowPortraits = ChatView.ShowNameLabels = Chat.ParticipantCount > 1;
             ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (Chat.Id);
-            ComposeView.SetMessage (Chat.DraftMessage);
-            var attachments = McAttachment.QueryByItemId (Chat.AccountId, Chat.Id, McAbstrFolderEntry.ClassCodeEnum.Chat);
-            foreach (var attachment in attachments) {
-                ComposeView.AddAttachment (attachment);
-            }
+        }
+
+        void UpdateFromField ()
+        {
+            HeaderView.FromView.ValueLabel.Text = Account.EmailAddr;
         }
 
         void ReloadMessages ()
@@ -513,6 +558,7 @@ namespace NachoClient.iOS
     public class ChatMessagesHeaderView : UIView, IUcAddressBlockDelegate
     {
 
+        public readonly ComposeFieldLabel FromView;
         public readonly UcAddressBlock ToView;
         bool _EditingEnabled;
         public bool EditingEnabled {
@@ -527,6 +573,7 @@ namespace NachoClient.iOS
 
         public ChatMessagesViewController ChatViewController;
         UIView BottomBorderView;
+        UIView FromBorderView;
         public readonly UILabel ParticipantsLabel;
         UIImageView DisclosureIndicator;
 
@@ -545,6 +592,7 @@ namespace NachoClient.iOS
                 DisclosureIndicator.Frame = new CGRect (Bounds.Width - image.Size.Width - 7.0f, (Bounds.Height - image.Size.Height) / 2.0f, image.Size.Width, image.Size.Height);
             }
             DisclosureIndicator.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin;
+            DisclosureIndicator.UserInteractionEnabled = true;
             var x = Bounds.Width - DisclosureIndicator.Frame.X;
             ParticipantsLabel = new UILabel (new CGRect(x, 0.0f, Bounds.Width - 2.0f * x, Bounds.Height));
             ParticipantsLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
@@ -553,17 +601,48 @@ namespace NachoClient.iOS
             ParticipantsLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             ParticipantsLabel.TextColor = A.Color_NachoGreen;
             ParticipantsLabel.Lines = 1;
+            ParticipantsLabel.UserInteractionEnabled = true;
+            FromView = new ComposeFieldLabel (new CGRect (0, 0, Bounds.Width, 42.0f));
+            FromView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
+            FromView.NameLabel.Font = A.Font_AvenirNextMedium14;
+            FromView.ValueLabel.Font = FromView.NameLabel.Font;
+            FromView.NameLabel.TextColor = A.Color_NachoDarkText;
+            FromView.ValueLabel.TextColor = FromView.ValueLabel.TextColor;
+            FromView.NameLabel.Text = "From: ";
+            FromView.Action = SelectFrom;
+            FromView.LeftPadding = 15.0f;
+            FromView.RightPadding = 15.0f;
+            FromView.SetNeedsLayout ();
+            FromView.Hidden = true;
+            FromBorderView = new UIView (new CGRect (0.0f, Bounds.Height - 1.0f, Bounds.Size.Width, 1.0f));
+            FromBorderView.BackgroundColor = A.Color_NachoBorderGray;
+            FromBorderView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleTopMargin;
+            FromBorderView.Hidden = true;
+            AddSubview (FromView);
+            AddSubview (FromBorderView);
             AddSubview (ToView);
             AddSubview (DisclosureIndicator);
             AddSubview (ParticipantsLabel);
             AddSubview (BottomBorderView);
-            AddGestureRecognizer (new UITapGestureRecognizer (Tap));
+            ParticipantsLabel.AddGestureRecognizer (new UITapGestureRecognizer (TapPartcipantLabel));
+            DisclosureIndicator.AddGestureRecognizer (new UITapGestureRecognizer (TapPartcipantLabel));
         }
 
-        void Tap ()
+        void TapPartcipantLabel ()
         {
             if (!EditingEnabled){
                 ChatViewController.ShowParticipantDetails ();
+            }
+        }
+
+        void SelectFrom ()
+        {
+            ChatViewController.ChooseAccount ();
+        }
+
+        bool ShowFromSelector {
+            get {
+                return NcApplication.Instance.Account.AccountType == McAccount.AccountTypeEnum.Unified;
             }
         }
 
@@ -606,14 +685,25 @@ namespace NachoClient.iOS
             nfloat preferredHeight = 43.0f;
             if (EditingEnabled) {
                 base.LayoutSubviews ();
-                preferredHeight = (nfloat)Math.Max (43.0f, ToView.Frame.Size.Height + 1.0f);
+                preferredHeight = (nfloat)Math.Max (43.0f, ToView.Frame.Size.Height + BottomBorderView.Frame.Height);
                 ToView.Hidden = false;
                 ParticipantsLabel.Hidden = true;
                 DisclosureIndicator.Hidden = true;
+                if (ShowFromSelector) {
+                    var frame = FromBorderView.Frame;
+                    frame.Y = ToView.Frame.Y + ToView.Frame.Height;
+                    FromBorderView.Frame = frame;
+                    FromView.Frame = new CGRect (0.0f, FromBorderView.Frame.Y + FromBorderView.Frame.Height, Bounds.Width, FromView.Frame.Height);
+                    FromView.Hidden = false;
+                    preferredHeight += FromView.Frame.Height + FromBorderView.Frame.Height;
+                } else {
+                    FromView.Hidden = true;
+                }
             } else {
                 ToView.Hidden = true;
                 ParticipantsLabel.Hidden = false;
                 DisclosureIndicator.Hidden = false;
+                FromView.Hidden = true;
             }
             Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, preferredHeight);
             if ((Math.Abs (preferredHeight - previousPreferredHeight) > 0.5) && ChatViewController != null) {
