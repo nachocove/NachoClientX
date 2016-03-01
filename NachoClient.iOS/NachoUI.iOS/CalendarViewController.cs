@@ -204,7 +204,9 @@ namespace NachoClient.iOS
 
                 // No actual events are visible.  Section headers only.  Figure out which section
                 // is at the top (which is not trivial), then scroll that section to the top
-                // after reloading the data.
+                // after reloading the data.  (With the zero-height dummy row that has been added
+                // to each day, there should always be visible rows, so this code isn't needed
+                // anymore.  But I am leaving it here just in case.)
                 nint topSection = 0;
                 var visibleArea = calendarTableView.Bounds;
                 nint numSections = calendarSource.NumberOfSections (calendarTableView);
