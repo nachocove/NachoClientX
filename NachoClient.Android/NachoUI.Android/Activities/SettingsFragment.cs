@@ -52,20 +52,21 @@ namespace NachoClient.AndroidClient
             hotSwitch.Checked = LoginHelpers.ShowHotCards ();
             hotSwitch.CheckedChange += HotSwitch_CheckedChange;
 
-            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
-                var crashButton = view.FindViewById<Button> (Resource.Id.crash_button);
-                crashButton.Visibility = ViewStates.Visible;
-                crashButton.Click += CrashButton_Click;
-                var tutorialButton = view.FindViewById<Button> (Resource.Id.tutorial_button);
-                tutorialButton.Visibility = ViewStates.Visible;
-                tutorialButton.Click += TutorialButton_Click;
-            }
+//            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
+//                var crashButton = view.FindViewById<Button> (Resource.Id.crash_button);
+//                crashButton.Visibility = ViewStates.Visible;
+//                crashButton.Click += CrashButton_Click;
+//                var tutorialButton = view.FindViewById<Button> (Resource.Id.tutorial_button);
+//                tutorialButton.Visibility = ViewStates.Visible;
+//                tutorialButton.Click += TutorialButton_Click;
+//            }
+
             return view;
         }
 
         void TutorialButton_Click (object sender, EventArgs e)
         {
-            StartActivity(new Intent(this.Activity, typeof(TutorialActivity)));
+            StartActivity (new Intent (this.Activity, typeof(TutorialActivity)));
         }
 
         void HotSwitch_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
@@ -81,6 +82,8 @@ namespace NachoClient.AndroidClient
         public override void OnResume ()
         {
             base.OnResume ();
+
+            accountAdapter.Refresh ();
 
             // Highlight the tab bar icon of this activity
             var moreImage = View.FindViewById<Android.Widget.ImageView> (Resource.Id.more_image);

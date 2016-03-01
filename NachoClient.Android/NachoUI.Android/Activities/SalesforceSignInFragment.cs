@@ -188,10 +188,10 @@ namespace NachoClient.AndroidClient
                         new Uri (instanceUrl));
                     Log.Info (Log.LOG_UI, "SalesforceSignInFragment created account ID{0}", Account.Id);
                     Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
-                    NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountSetChanged);
                     Account.Update ();
                     SalesForceProtoControl.SetShouldAddBccToEmail (Account.Id, true);
                     BackEnd.Instance.Start (Account.Id);
+                    NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountSetChanged);
                     Activity.Finish ();
                 }
             } else {

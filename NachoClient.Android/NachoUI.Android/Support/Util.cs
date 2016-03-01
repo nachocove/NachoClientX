@@ -56,7 +56,7 @@ namespace NachoClient.AndroidClient
                 imageId = Resource.Drawable.avatar_aol;
                 break;
             case McAccount.AccountServiceEnum.SalesForce:
-                imageId = Resource.Drawable.salesforce_header_logo;
+                imageId = Resource.Drawable.avatar_salesforce;
                 break;
             default:
                 imageId = Resource.Drawable.avatar_unified;
