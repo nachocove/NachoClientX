@@ -110,6 +110,16 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            var text = ComposeView.GetMessage ();
+            if ((text == null && Chat.DraftMessage != null) || (text != null && Chat.DraftMessage == null) || (text != null && Chat.DraftMessage != null && !text.Equals(Chat.DraftMessage))) {
+                Chat.DraftMessage = text;
+                Chat.Update ();
+            }
+        }
+
         public override void ViewDidDisappear (bool animated)
         {
             StopListeningForStatusChanges ();
@@ -338,6 +348,7 @@ namespace NachoClient.iOS
             HeaderView.EditingEnabled = false;
             ChatView.ShowPortraits = ChatView.ShowNameLabels = Chat.ParticipantCount > 1;
             ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (Chat.Id);
+            ComposeView.SetMessage (Chat.DraftMessage);
             var attachments = McAttachment.QueryByItemId (Chat.AccountId, Chat.Id, McAbstrFolderEntry.ClassCodeEnum.Chat);
             foreach (var attachment in attachments) {
                 ComposeView.AddAttachment (attachment);
@@ -665,6 +676,11 @@ namespace NachoClient.iOS
         void MessageChanged (object sender, EventArgs e)
         {
             UpdateSendEnabled ();
+            ResizeMessageField ();
+        }
+
+        void ResizeMessageField ()
+        {
             var frame = MessageField.Frame;
             MessageField.Frame = new CGRect (frame.X, frame.Y, frame.Width, 1.0f);
             if (MessageField.ContentSize.Height != frame.Height) {
@@ -688,6 +704,17 @@ namespace NachoClient.iOS
         public string GetMessage ()
         {
             return MessageField.Text;
+        }
+
+        public void SetMessage (string text)
+        {
+            if (text != null) {
+                MessageField.Text = text;
+            } else {
+                MessageField.Text = "";
+            }
+            UpdateSendEnabled ();
+            ResizeMessageField ();
         }
 
         public void Clear ()
