@@ -668,6 +668,7 @@ namespace NachoCore.Model
                 "WHERE " +
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
