@@ -1140,10 +1140,10 @@ namespace NachoClient
                 imageName = "avatar-yahoo";
                 break;
             case McAccount.AccountServiceEnum.Aol:
-                imageName = "Icon";
+                imageName = "avatar-aol";
                 break;
             case McAccount.AccountServiceEnum.SalesForce:
-                imageName = "salesforce-header-logo";
+                imageName = "avatar-salesforce";
                 break;
             default:
                 imageName = "Icon";
