@@ -520,6 +520,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 " likelihood (f.IsClientOwned != 1, 0.9) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 "{1}" +
@@ -547,6 +548,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.5) AND " +
@@ -573,6 +575,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 " likelihood (e.IsRead = 0, 0.05) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
@@ -600,6 +603,7 @@ namespace NachoCore.Model
                 " JOIN McFolder AS f ON f.Id = m.FolderId " +
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 " likelihood (f.Type = ?, 0.2) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " e.FlagUtcStartDate < ? " +
@@ -620,6 +624,7 @@ namespace NachoCore.Model
                 " JOIN McFolder AS f ON f.Id = m.FolderId " +
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 " likelihood (e.IsRead = 0, 0.05) AND " +
                 " likelihood (f.Type = ?, 0.2) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
@@ -733,6 +738,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
@@ -746,6 +752,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 "{2}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 "{3}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
@@ -776,6 +783,7 @@ namespace NachoCore.Model
                 " JOIN McFolder AS f ON f.Id = m.FolderId " +
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (f.Type = ?, 0.05) AND " +
                 " likelihood (e.FlagUtcStartDate < ?, 0.99) AND " +
@@ -788,6 +796,7 @@ namespace NachoCore.Model
                 " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (f.Type = ?, 0.05) AND " +
                 " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE likelihood (a.IsVip != 0, 0.01)) " +
@@ -814,6 +823,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 "{0}" +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
@@ -845,6 +855,7 @@ namespace NachoCore.Model
                 //" JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
                 " WHERE " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.IsChat = 0, 0.8) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (f.Type = ?, 0.2) AND " +
                 " likelihood (e.FlagUtcStartDate < ?, 0.99) AND " +
