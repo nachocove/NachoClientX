@@ -2840,7 +2840,6 @@
     <BundleResource Include="Resources\nav-chat%402x.png" />
     <BundleResource Include="Resources\nav-chat%403x.png" />
     <BundleResource Include="Resources\nav-chat%404x.png" />
-    <BundleResource Include="Resources\salesforce-header-logo.png" />
     <BundleResource Include="Resources\avatar-aol%402x.png" />
     <BundleResource Include="Resources\avatar-aol%403x.png" />
     <BundleResource Include="Resources\avatar-aol%404x.png" />
@@ -2853,6 +2852,10 @@
     <BundleResource Include="Resources\gen-filter%403x.png" />
     <BundleResource Include="Resources\gen-filter%404x.png" />
     <BundleResource Include="Resources\gen-filter%406x.png" />
+    <BundleResource Include="Resources\avatar-salesforce%402x.png" />
+    <BundleResource Include="Resources\avatar-salesforce%403x.png" />
+    <BundleResource Include="Resources\avatar-salesforce%404x.png" />
+    <BundleResource Include="Resources\avatar-salesforce%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
