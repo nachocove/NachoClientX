@@ -974,12 +974,15 @@ namespace NachoClient.iOS
         private void ComposeResponse (EmailHelper.Action action, bool startWithQuickResponse = false)
         {
             var message = thread.FirstMessageSpecialCase ();
-            var account = McAccount.EmailAccountForMessage (message);
-            var composeViewController = new MessageComposeViewController (account);
-            composeViewController.Composer.Kind = action;
-            composeViewController.Composer.RelatedThread = thread;
-            composeViewController.StartWithQuickResponse = startWithQuickResponse;
-            composeViewController.Present ();
+            // The message may have been deleted while the view was open.
+            if (null != message) {
+                var account = McAccount.EmailAccountForMessage (message);
+                var composeViewController = new MessageComposeViewController (account);
+                composeViewController.Composer.Kind = action;
+                composeViewController.Composer.RelatedThread = thread;
+                composeViewController.StartWithQuickResponse = startWithQuickResponse;
+                composeViewController.Present ();
+            }
         }
 
         #region IBodyViewOwner implementation
@@ -998,11 +1001,14 @@ namespace NachoClient.iOS
             if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 string body;
                 var message = thread.FirstMessageSpecialCase ();
-                var account = McAccount.EmailAccountForMessage (message);
-                var composeViewController = new MessageComposeViewController (account);
-                composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
-                composeViewController.Composer.InitialText = body;
-                composeViewController.Present ();
+                // The message may have been deleted while the view was open.
+                if (null == message) {
+                    var account = McAccount.EmailAccountForMessage (message);
+                    var composeViewController = new MessageComposeViewController (account);
+                    composeViewController.Composer.Message = EmailHelper.MessageFromMailTo (account, url.AbsoluteString, out body);
+                    composeViewController.Composer.InitialText = body;
+                    composeViewController.Present ();
+                }
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);
             }
