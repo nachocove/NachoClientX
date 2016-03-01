@@ -733,7 +733,8 @@ namespace NachoClient.iOS
         {
             bool controllerCanSend = ChatViewController != null && ChatViewController.CanSend;
             bool hasText = !String.IsNullOrWhiteSpace (MessageField.Text);
-            SendButton.Enabled = controllerCanSend && hasText;
+            bool hasAttachment = AttachmentViews.Count > 0;
+            SendButton.Enabled = controllerCanSend && (hasText || hasAttachment);
             MessagePlaceholderLabel.Hidden = hasText;
         }
 
@@ -795,6 +796,7 @@ namespace NachoClient.iOS
             var view = new UcAttachmentCell (attachment, Bounds.Width, true, TapAttachment, RemoveAttachment);
             AttachmentsScrollView.AddSubview (view);
             AttachmentViews.Add (view);
+            UpdateSendEnabled ();
             SetNeedsLayout ();
         }
 
@@ -818,6 +820,7 @@ namespace NachoClient.iOS
             AttachmentViews.Remove (cell);
             cell.RemoveFromSuperview ();
             cell.Dispose ();
+            UpdateSendEnabled ();
             SetNeedsLayout ();
             ChatViewController.RemoveAttachment (cell.attachment);
         }
