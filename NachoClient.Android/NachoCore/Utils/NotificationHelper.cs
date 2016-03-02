@@ -52,6 +52,11 @@ namespace NachoCore.Utils
 
             return false;
         }
+
+        public static bool ShouldNotifyChatMessage (McEmailMessage emailMessage)
+        {
+            return true;
+        }
     }
 }
 

@@ -168,7 +168,8 @@ namespace NachoCore.Model
         public static Dictionary<int, int> UnreadCountsByChat (int accountId)
         {
             var countsByChat = new Dictionary<int, int> ();
-            var sql = "SELECT ChatId, COUNT(m.Id) AS UnreadCount FROM McChatMessage cm " +
+            var sql = 
+                "SELECT ChatId, COUNT(m.Id) AS UnreadCount FROM McChatMessage cm " +
                 "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
                 "WHERE cm.AccountId = ? " +
                 "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
@@ -185,9 +186,10 @@ namespace NachoCore.Model
         public static Dictionary<int, int> UnreadCountsByChat ()
         {
             var countsByChat = new Dictionary<int, int> ();
-            var sql = "SELECT ChatId, COUNT(m.Id) AS UnreadCount FROM McChatMessage cm " +
+            var sql = 
+                "SELECT ChatId, COUNT(m.Id) AS UnreadCount FROM McChatMessage cm " +
                 "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
-                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "WHERE likelihood (m.IsAwaitingDelete = 0, 1.0) " +
                 "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
                 "AND likelihood (m.IsRead = 0, 0.1) " +
                 "GROUP BY ChatId";
@@ -196,6 +198,22 @@ namespace NachoCore.Model
                 countsByChat.Add (count.ChatId, count.UnreadCount);
             }
             return countsByChat;
+        }
+
+        public static List<NcChatMessage>  UnreadMessagesSince (DateTime since)
+        {
+            var retardedSince = since.AddDays (-1.0);
+            return NcModel.Instance.Db.Query<NcChatMessage> (
+                "SELECT m.*, cm.ChatId FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE (m.HasBeenNotified = 0 OR m.ShouldNotify = 1) " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (m.IsRead = 0, 0.5) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "AND m.CreatedAt > ? " +
+                "AND likelihood (m.DateReceived > ?, 0.01) " +
+                "ORDER BY m.DateReceived ASC",
+                since, retardedSince);
         }
 
         public void AddMessage (McEmailMessage message)

@@ -1009,6 +1009,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
             " (HasBeenNotified = 0 OR ShouldNotify = 1) AND " +
             " likelihood (IsRead = 0, 0.5) AND " +
+            " likelihood (IsChat = 0, 0.8) AND " +
             " CreatedAt > ? AND " +
             " likelihood (DateReceived > ?, 0.01) " +
             " ORDER BY DateReceived ASC ",

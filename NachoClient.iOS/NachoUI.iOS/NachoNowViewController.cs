@@ -219,6 +219,25 @@ namespace NachoClient.iOS
                 }
                 return;
             }
+            var chatNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.ChatNotificationKey);
+            var chatNotification = chatNotifications.FirstOrDefault ();
+            if (null != chatNotification) {
+                var parts = chatNotification.Value.Split (',');
+                var chatId = int.Parse (parts [0]);
+                var messageId = int.Parse (parts [1]);
+                var chat = McChat.QueryById<McChat> (chatId);
+                var message = McChatMessage.EmailMessageInChat (chatId, messageId);
+                chatNotification.Delete ();
+                if (null != chat && null != message) {
+                    if (MaybeSwitchToNotificationAccount (message)) {
+                        var chatViewController = new ChatMessagesViewController ();
+                        chatViewController.Chat = chat;
+                        chatViewController.Account = McAccount.QueryById<McAccount> (chat.AccountId);
+                        NavigationController.PushViewController (chatViewController, true);
+                    }
+                }
+                return;
+            }
         }
 
         bool MaybeSwitchToNotificationAccount (McAbstrObjectPerAcc obj)

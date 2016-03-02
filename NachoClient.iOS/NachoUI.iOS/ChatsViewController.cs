@@ -106,7 +106,7 @@ namespace NachoClient.iOS
         public void ChatSelected (McChat chat, Foundation.NSIndexPath indexPath)
         {
             var messagesViewController = new ChatMessagesViewController ();
-            messagesViewController.Account = NcApplication.Instance.DefaultEmailAccount;
+            messagesViewController.Account = McAccount.QueryById<McAccount> (chat.AccountId);
             messagesViewController.Chat = chat;
             NavigationController.PushViewController (messagesViewController, true);
         }

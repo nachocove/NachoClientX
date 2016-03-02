@@ -125,6 +125,12 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "NachoTabBarController: SwitchToNachoNow for email notification");
                 SwitchToNachoNow ();
             }
+
+            var chatNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.ChatNotificationKey);
+            if (0 != chatNotifications.Count) {
+                Log.Info (Log.LOG_UI, "NachoTabBarController: SwitchToNachoNow for chat notification");
+                SwitchToNachoNow ();
+            }
         }
 
         protected UINavigationController FindTabRoot (UITabBarItem item)
