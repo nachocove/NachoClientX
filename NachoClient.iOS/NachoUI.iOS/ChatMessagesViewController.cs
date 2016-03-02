@@ -871,7 +871,7 @@ namespace NachoClient.iOS
             MessageField.Frame = new CGRect (
                 AttachButton.Frame.X + AttachButton.Frame.Width,
                 1.0f,
-                SendButton.Frame.X,
+                SendButton.Frame.X - AttachButton.Frame.X - AttachButton.Frame.Width,
                 AttachmentsScrollView.Frame.Y - 1.0f
             );
             MessagePlaceholderLabel.SizeToFit ();
