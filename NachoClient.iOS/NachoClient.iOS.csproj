@@ -1817,6 +1817,9 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\PortraitView.cs" />
     <Compile Include="NachoUI.iOS\ChatParticipantListViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration52.cs">
+      <Link>NachoCore\Model\Migration\NcMigration52.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

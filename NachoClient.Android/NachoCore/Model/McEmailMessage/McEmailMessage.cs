@@ -1658,6 +1658,7 @@ namespace NachoCore.Model
             var messages = McChatMessage.QueryByMessageId (Id);
             foreach (var message in messages) {
                 message.Delete ();
+                message.UpdateLatestDuplicate ();
             }
         }
 

@@ -119,11 +119,17 @@ namespace NachoCore.Model
                         returnVal = result;
                     } else {
                         if (this is McEmailMessage) {
-                            UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var message = UpdateWithOCApply<McEmailMessage> ((record) => {
                                 var target = (McEmailMessage)record;
                                 target.IsAwaitingDelete = true;
                                 return true;
                             });
+                            if (message.IsChat){
+                                var chatMessages = McChatMessage.QueryByMessageId (Id);
+                                foreach (var chatMessage in chatMessages) {
+                                    chatMessage.UpdateLatestDuplicate ();
+                                }
+                            }
                         } else {
                             IsAwaitingDelete = true;
                             Update ();

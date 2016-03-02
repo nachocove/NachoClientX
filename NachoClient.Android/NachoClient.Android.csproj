@@ -656,6 +656,7 @@
     <Compile Include="NachoUI.Android\Activities\SalesforceSignInActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\SalesforceSettingsActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\SalesforceSettingsFragment.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration52.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

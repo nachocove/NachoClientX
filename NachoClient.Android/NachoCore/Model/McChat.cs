@@ -134,6 +134,7 @@ namespace NachoCore.Model
                         chatMessage.ChatId = Id;
                         chatMessage.AccountId = AccountId;
                         chatMessage.MessageId = message.Id;
+                        chatMessage.MimeMessageId = message.MessageID;
                         chatMessage.Insert ();
                         if (message.DateReceived > LastMessageDate) {
                             LastMessageDate = message.DateReceived;
@@ -149,6 +150,7 @@ namespace NachoCore.Model
                             UpdateParticipantCache ();
                             Update ();
                         }
+                        UpdateLatestDuplicate (message.MessageID);
                         var account = McAccount.QueryById<McAccount> (AccountId);
                         NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                             Account = account,
@@ -160,6 +162,26 @@ namespace NachoCore.Model
             }
         }
 
+        public void UpdateLatestDuplicate (string mimeMessageId)
+        {
+            var sql = 
+                "UPDATE McChatMessage SET IsLatestDuplicate = NOT EXISTS(" +
+                "    SELECT cm2.* FROM McChatMessage cm2 WHERE McChatMessage.ChatId = cm2.ChatId AND McChatMessage.MimeMessageId = cm2.MimeMessageId AND cm2.MessageId > McChatMessage.MessageId" +
+                ")" +
+                "WHERE ChatId = ? AND MimeMessageId = ?";
+            NcModel.Instance.Db.Execute (sql, Id, mimeMessageId);
+        }
+
+        public static void UpdateLatestDuplicateOfMessage (int messageId, string mimeMessageId)
+        {
+            var sql = 
+                "UPDATE McChatMessage SET IsLatestDuplicate = NOT EXISTS(" +
+                "    SELECT cm2.* FROM McChatMessage cm2 WHERE McChatMessage.ChatId = cm2.ChatId AND McChatMessage.MimeMessageId = cm2.MimeMessageId AND cm2.MessageId > McChatMessage.MessageId" +
+                ")" +
+                "WHERE ChatId IN (SELECT ChatId FROM McChatMessage cm3 WHERE cm3.MessageId = ?) AND MimeMessageId = ?";
+            NcModel.Instance.Db.Execute (sql, messageId, mimeMessageId);
+        }
+
         public List<McEmailMessage> GetMessages (int offset = 0, int limit = 50)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
@@ -167,8 +189,8 @@ namespace NachoCore.Model
                 "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
                 "WHERE cm.ChatId = ? " +
                 "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
-                "AND m.Id = (SELECT MAX(m2.Id) FROM McChatMessage cm2 JOIN McEmailMessage m2 ON cm2.MessageId = m2.Id WHERE m2.MessageID = m.MessageID AND cm2.ChatId = ? AND likelihood (m2.IsAwaitingDelete = 0, 1.0)) " +
-                "ORDER BY m.DateReceived DESC LIMIT ? OFFSET ?", Id, Id, limit, offset);
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5)" +
+                "ORDER BY m.DateReceived DESC LIMIT ? OFFSET ?", Id, limit, offset);
         }
 
         public int MessageCount ()
