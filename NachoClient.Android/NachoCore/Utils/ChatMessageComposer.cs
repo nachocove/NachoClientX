@@ -30,6 +30,7 @@ namespace NachoCore.Utils
             Message.To = EmailHelper.AddressStringFromList (ChatToList ());
             Message.IsChat = true;
             Message.DateReceived = DateTime.Now;
+            Message.IsRead = true;
             if (previousMessages.Count > 0) {
                 Message.ReferencedEmailId = previousMessages [0].Id;
             }

@@ -117,6 +117,7 @@ namespace NachoClient.iOS
     {
         const string ChatCellIdentifier = "Chat";
         public List<McChat> Chats { get; private set; }
+        public Dictionary<int, int> UnreadCountsByChat { get; private set; }
         ChatsViewController ViewController;
         public McAccount Account;
 
@@ -131,8 +132,10 @@ namespace NachoClient.iOS
         {
             if (Account.AccountType == McAccount.AccountTypeEnum.Unified) {
                 Chats = McChat.LastestChats ();
+                UnreadCountsByChat = McChat.UnreadCountsByChat ();
             } else {
                 Chats = McChat.LastestChatsForAccount (Account.Id);
+                UnreadCountsByChat = McChat.UnreadCountsByChat (Account.Id);
             }
         }
 
@@ -155,6 +158,9 @@ namespace NachoClient.iOS
                 cell = new ChatTableViewCell (ChatCellIdentifier);
             }
             cell.Chat = chat;
+            int unreadCount = 0;
+            UnreadCountsByChat.TryGetValue (chat.Id, out unreadCount);
+            cell.ShowUnreadIndicator = unreadCount > 0;
             return cell;
         }
 
@@ -178,10 +184,19 @@ namespace NachoClient.iOS
                 Update ();
             }
         }
+        public bool ShowUnreadIndicator {
+            get {
+                return !UnreadIndicator.Hidden;
+            }
+            set {
+                UnreadIndicator.Hidden = !value;
+            }
+        }
 
         UILabel ParticipantsLabel;
         UILabel DateLabel;
         UILabel MessageLabel;
+        UIImageView UnreadIndicator;
         UIView PhotoContainerView;
         PortraitView PortraitView1;
         PortraitView PortraitView2;
@@ -225,6 +240,12 @@ namespace NachoClient.iOS
             PhotoContainerView.AddSubview (PortraitView1);
             PhotoContainerView.AddSubview (PortraitView2);
 
+            using (var image = UIImage.FromBundle ("chat-stat-online")) {
+                UnreadIndicator = new UIImageView (image);
+            }
+            UnreadIndicator.Hidden = true;
+            PhotoContainerView.AddSubview (UnreadIndicator);
+
             ContentView.AddSubview (PhotoContainerView);
             ContentView.AddSubview (ParticipantsLabel);
             ContentView.AddSubview (MessageLabel);
@@ -241,6 +262,7 @@ namespace NachoClient.iOS
             MessageLabel.Frame = frame;
             DateLabel.Frame = new CGRect (Bounds.Width - DateLabel.Frame.Width - RightSpacing, DateLabel.Frame.Y, DateLabel.Frame.Width, DateLabel.Frame.Height);
             ParticipantsLabel.Frame = new CGRect (ParticipantsLabel.Frame.X, ParticipantsLabel.Frame.Y, DateLabel.Frame.X - ParticipantsLabel.Frame.X, ParticipantsLabel.Frame.Height);
+            UnreadIndicator.Frame = new CGRect (PhotoContainerView.Bounds.Width - UnreadIndicator.Frame.Width, 0.0f, UnreadIndicator.Frame.Width, UnreadIndicator.Frame.Height);
             if (Chat == null || Chat.ParticipantCount <= 1) {
                 PortraitView1.Frame = PhotoContainerView.Bounds;
             } else {

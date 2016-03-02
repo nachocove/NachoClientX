@@ -34,6 +34,7 @@ namespace NachoClient.iOS
         protected UITabBarItem deadlinesItem;
         protected UITabBarItem deferredItem;
         protected UITabBarItem inboxItem;
+        protected UITabBarItem chatsItem;
 
         protected const int TABLEVIEW_TAG = 1999;
 
@@ -61,7 +62,7 @@ namespace NachoClient.iOS
             RestoreCustomTabBarOrder ();
 
             nachoNowItem = SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Hot", "nav-nachonow", "nav-nachonow-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.ChatsViewController", "Chats", "nav-chat", "nav-chat-active");
+            chatsItem = SetTabBarItem ("NachoClient.iOS.ChatsViewController", "Chats", "nav-chat", "nav-chat-active");
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
             SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
             inboxItem = SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
@@ -103,6 +104,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidAppear (animated);
             UpdateNotificationBadge ();
+            UpdateChatsBadge ();
         }
 
         // Fires only when app starts; not on all fg events
@@ -163,6 +165,9 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_AccountChanged == s.Status.SubKind) {
                 UpdateSwitchAccountButton ();
+            }
+            if (NcResult.SubKindEnum.Info_ChatMessageAdded == s.Status.SubKind || NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded == s.Status.SubKind) {
+                UpdateChatsBadge ();
             }
         }
 
@@ -307,6 +312,21 @@ namespace NachoClient.iOS
                 MoreNavigationController.TabBarItem.BadgeValue = (showNotificationBadge ? @"!" : null);
             } else {
                 MoreNavigationController.TabBarItem.BadgeValue = null;
+            }
+        }
+
+        protected void UpdateChatsBadge ()
+        {
+            int unreadCount = 0;
+            if (NcApplication.Instance.Account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                unreadCount = McChat.UnreadMessageCountForUnified ();
+            } else {
+                unreadCount = McChat.UnreadMessageCountForAccount (NcApplication.Instance.Account.Id);
+            }
+            if (unreadCount > 0) {
+                chatsItem.BadgeValue = unreadCount.ToString ();
+            } else {
+                chatsItem.BadgeValue = null;
             }
         }
 

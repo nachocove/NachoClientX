@@ -123,6 +123,81 @@ namespace NachoCore.Model
             return null;
         }
 
+        public static int UnreadChatCountForAccount (int accountId)
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(DISTINCT ChatId) FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE cm.AccountId = ? " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "AND likelihood (m.IsRead = 0, 0.1)", accountId);
+        }
+
+        public static int UnreadChatCountForUnified ()
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(DISTINCT ChatId) FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "AND likelihood (m.IsRead = 0, 0.1)");
+        }
+
+        public static int UnreadMessageCountForAccount (int accountId)
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(*) FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE cm.AccountId = ? " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "AND likelihood (m.IsRead = 0, 0.1)", accountId);
+        }
+
+        public static int UnreadMessageCountForUnified ()
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(*) FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "AND likelihood (m.IsRead = 0, 0.1)");
+        }
+
+        public static Dictionary<int, int> UnreadCountsByChat (int accountId)
+        {
+            var countsByChat = new Dictionary<int, int> ();
+            var sql = "SELECT ChatId, COUNT(m.Id) AS UnreadCount FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE cm.AccountId = ? " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "AND likelihood (m.IsRead = 0, 0.1) " +
+                "GROUP BY ChatId";
+            var chatCounts = NcModel.Instance.Db.Query<NcChatUnreadCount> (sql, accountId);
+            foreach (var count in chatCounts) {
+                countsByChat.Add (count.ChatId, count.UnreadCount);
+            }
+            return countsByChat;
+        }
+
+        public static Dictionary<int, int> UnreadCountsByChat ()
+        {
+            var countsByChat = new Dictionary<int, int> ();
+            var sql = "SELECT ChatId, COUNT(m.Id) AS UnreadCount FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "AND likelihood (m.IsRead = 0, 0.1) " +
+                "GROUP BY ChatId";
+            var chatCounts = NcModel.Instance.Db.Query<NcChatUnreadCount> (sql);
+            foreach (var count in chatCounts) {
+                countsByChat.Add (count.ChatId, count.UnreadCount);
+            }
+            return countsByChat;
+        }
+
         public void AddMessage (McEmailMessage message)
         {
             var existing = NcModel.Instance.Db.Query<McChatMessage> ("SELECT * FROM McChatMessage WHERE MessageId = ? AND ChatId = ?", message.Id, Id);
@@ -189,17 +264,29 @@ namespace NachoCore.Model
                 "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
                 "WHERE cm.ChatId = ? " +
                 "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
-                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5)" +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
                 "ORDER BY m.DateReceived DESC LIMIT ? OFFSET ?", Id, limit, offset);
         }
 
         public int MessageCount ()
         {
             return NcModel.Instance.Db.ExecuteScalar<int> (
-                "SELECT COUNT(DISTINCT m.MessageId) FROM McChatMessage cm " +
+                "SELECT COUNT(*) FROM McChatMessage cm " +
                 "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
                 "WHERE cm.ChatId = ? " +
-                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) ", Id);
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5)", Id);
+        }
+
+        public int UnreadMessageCount ()
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(*) FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE cm.ChatId = ? " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "AND likelihood (m.IsRead = 0, 0.1)", Id);
         }
 
         void PopuplateParticipantsFromAddresses (List<NcEmailAddress> addresses)
@@ -275,6 +362,12 @@ namespace NachoCore.Model
             foreach (var attachment in attachments) {
                 attachment.Unlink (Id, AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
             }
+        }
+
+        private class NcChatUnreadCount
+        {
+            public int ChatId { get; set; }
+            public int UnreadCount { get; set; }
         }
     }
 }
