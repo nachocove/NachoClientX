@@ -1057,6 +1057,11 @@ namespace NachoCore.Utils
             if (!ValidateRecurrence (c, r)) {
                 return DateTime.MinValue;
             }
+            if (startingTime < NcEventManager.BeginningOfEventsOfInterest) {
+                // Don't bother creating McEvents for times in the past that will never show up on the calendar.
+                startingTime = NcEventManager.BeginningOfEventsOfInterest;
+            }
+
             // All date/time calculations must be done in the event's original time zone.
             TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
             DateTime eventStart = ConvertTimeFromUtc (c.StartTime, timeZone);

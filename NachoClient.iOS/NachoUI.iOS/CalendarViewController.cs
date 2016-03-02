@@ -43,10 +43,7 @@ namespace NachoClient.iOS
             var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(CalendarViewController));
             a.TextColor = UIColor.LightGray;
 
-            // Start populating the event table, so the data will hopefully be ready when this view
-            // first becomes visible.
-            eventCalendarMap = new NcAllEventsCalendarMap ();
-            eventCalendarMap.Refresh (completionAction: null);
+            eventCalendarMap = NachoPlatform.Calendars.Instance.EventProviderInstance;
         }
 
         public override void ViewDidLoad ()
@@ -98,12 +95,13 @@ namespace NachoClient.iOS
 
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
 
-            // Start a background refresh, which will update the UI when it is done.
-            calendarSource.Refresh (delegate {
+            eventCalendarMap.UiRefresh = () => {
                 ReloadDataWithoutScrolling ();
                 UpdateDateDotView ();
-            });
+            };
 
+            ReloadDataWithoutScrolling ();
+            UpdateDateDotView ();
             UpdateDateInTodayButton ();
 
             if (firstTime) {
@@ -122,7 +120,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            calendarSource.StopTrackingEventChanges ();
+            eventCalendarMap.UiRefresh = null;
         }
 
         /// <summary>
@@ -155,33 +153,11 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        private bool refreshInProgress = false;
-        private bool refreshWaitingToStart = false;
-
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
 
             switch (s.Status.SubKind) {
-
-            // When the events change, or when the time zone changes, refresh the UI to reflect the changes.
-            case NcResult.SubKindEnum.Info_EventSetChanged:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                // Don't queue up a whole bunch refresh tasks.  If there is one running and one waiting to
-                // run, there is no point in starting yet another refresh task.
-                if (!refreshWaitingToStart) {
-                    if (refreshInProgress) {
-                        refreshWaitingToStart = true;
-                    }
-                    refreshInProgress = true;
-                    calendarSource.Refresh (delegate {
-                        refreshWaitingToStart = false;
-                        refreshInProgress = false;
-                        ReloadDataWithoutScrolling ();
-                        UpdateDateDotView ();
-                    });
-                }
-                break;
 
             case NcResult.SubKindEnum.Info_ExecutionContextChanged:
                 if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {

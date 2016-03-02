@@ -198,6 +198,8 @@ namespace NachoPlatform
         NcResult Change (McCalendar contact);
 
         bool AuthorizationStatus { get; }
+
+        NachoCore.INcEventProvider EventProviderInstance { get; }
     }
 
     public enum PowerStateEnum
