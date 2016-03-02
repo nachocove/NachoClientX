@@ -18,6 +18,7 @@ using Android.Support.Design.Widget;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
@@ -281,6 +282,7 @@ namespace NachoClient.AndroidClient
                 } else {
                     settingsButton.Visibility = ViewStates.Visible;
                 }
+                UpdateUnreadCounts (account, holder.ItemView);
                 break;
             case ROW_TYPE:
                 int accountIndex = (DisplayMode.AccountSwitcher == displayMode ? position - 1 : position);
@@ -298,12 +300,51 @@ namespace NachoClient.AndroidClient
 
             if (ROW_TYPE == holder.ItemViewType) {
                 var alert = holder.ItemView.FindViewById<Android.Widget.ImageView> (Resource.Id.account_alert);
+                var count = holder.ItemView.FindViewById<Android.Widget.TextView> (Resource.Id.unread_count);
                 if ((DisplayMode.SettingsListview == displayMode) && LoginHelpers.ShouldAlertUser (account.Id)) {
                     alert.Visibility = ViewStates.Visible;
+                    count.Visibility = ViewStates.Gone;
                 } else {
                     alert.Visibility = ViewStates.Gone;
+                    if (DisplayMode.AccountSwitcher == displayMode) {
+                        count.Visibility = ViewStates.Visible;
+                        UpdateUnreadMessageCount (account, count);
+                    } else {
+                        count.Visibility = ViewStates.Gone;
+                    }
                 }
             }
+        }
+
+        public void UpdateUnreadCounts (McAccount account, View view)
+        {
+            NcTask.Run (() => {
+                int unreadCount;
+                int likelyCount;
+                int deferredCount;
+                int deadlineCount;
+                EmailHelper.GetMessageCounts (account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount, EmailHelper.GetNewSincePreference ());
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    var unreadView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_inbox);
+                    var deadlineView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_deadlines);
+                    var deferredView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_deferred);
+                    unreadView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadCount);
+                    deadlineView.Text = String.Format ("Go to Deadlines ({0:N0})", deadlineCount);
+                    deferredView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredCount);
+                    // FIMXE LTR.
+                });
+            }, "UpdateUnreadMessageView");
+        }
+
+        void UpdateUnreadMessageCount (McAccount account, Android.Widget.TextView unreadView)
+        {
+            NcTask.Run (() => {
+                int unreadMessageCount;
+                EmailHelper.GetUnreadMessageCount (account, out unreadMessageCount, EmailHelper.GetNewSincePreference ());
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    unreadView.Text = String.Format ("({0:N0})", unreadMessageCount);
+                });
+            }, "UpdateUnreadMessageCount");
         }
 
         void OnClick (int position, int viewType, int resourceId)

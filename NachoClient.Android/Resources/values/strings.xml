@@ -206,4 +206,7 @@
     <string name="default_calendar_account">Default Calendar Account</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="show_new_unread">Display Unread Counts</string>
+    <string name="show_new">New</string>
+    <string name="show_all">All</string>
 </resources>

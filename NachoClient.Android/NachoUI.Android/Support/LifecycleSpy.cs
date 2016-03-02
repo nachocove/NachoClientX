@@ -73,7 +73,7 @@ namespace NachoClient.AndroidClient
                             GoToBackgroundTimer = null;
                             isForeground = false;
                             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
-                            McMutables.Set (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", DateTime.UtcNow.ToString ());
+                            LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
                             Log.Info (Log.LOG_LIFECYCLE, "LifecycleSpy:GoToBackgroundTimer exited.");
                         }
                     }, null, new TimeSpan (0, 0, 5), TimeSpan.Zero);

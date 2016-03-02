@@ -83,6 +83,7 @@
             android:layout_gravity="center"
             android:src="@drawable/gen_inbox" />
         <TextView
+            android:id="@+id/to_inbox"
             android:textColor="@android:color/black"
             android:textSize="14dp"
             android:textStyle="normal"
@@ -114,6 +115,7 @@
             android:layout_gravity="center"
             android:src="@drawable/gen_deadline" />
         <TextView
+            android:id="@+id/to_deadlines"
             android:textColor="@android:color/black"
             android:textSize="14dp"
             android:textStyle="normal"
@@ -145,6 +147,7 @@
             android:layout_gravity="center"
             android:src="@drawable/gen_deferred_msgs" />
         <TextView
+            android:id="@+id/to_deferred"
             android:textColor="@android:color/black"
             android:textSize="14dp"
             android:textStyle="normal"
