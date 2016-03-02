@@ -364,11 +364,8 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            if (null == currentAccount) {
-                currentAccount = NcApplication.Instance.Account;
-            }
             // Account switched
-            if (currentAccount.Id != NcApplication.Instance.Account.Id) {
+            if ((null == currentAccount) || (currentAccount.Id != NcApplication.Instance.Account.Id)) {
                 if (searchDisplayController.Active) {
                     searchDisplayController.Active = false;
                 }
@@ -380,6 +377,7 @@ namespace NachoClient.iOS
                     return;
                 }
             }
+            currentAccount = NcApplication.Instance.Account;
                 
             if (HasAccountSwitcher ()) {
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
