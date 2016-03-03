@@ -178,24 +178,30 @@ namespace NachoClient.AndroidClient
             listView.ScrollStateChanged += ListView_ScrollStateChanged;
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            NachoPlatform.Calendars.Instance.ChangeIndicator += PlatformCalendarChangeCallback;
 
             if (jumpToToday) {
                 jumpToToday = false;
-                eventListAdapter.Refresh (() => {
-                    listView.SetSelection (eventListAdapter.PositionForToday);
-                });
-            } else {
-                eventListAdapter.Refresh ();
+                listView.SetSelection (eventListAdapter.PositionForToday);
             }
 
             return view;
         }
 
+        public override void OnResume ()
+        {
+            base.OnResume ();
+            eventListAdapter.OnResume ();
+        }
+
+        public override void OnStop ()
+        {
+            base.OnStop ();
+            eventListAdapter.OnStop ();
+        }
+
         public override void OnDestroyView ()
         {
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            NachoPlatform.Calendars.Instance.ChangeIndicator -= PlatformCalendarChangeCallback;
             base.OnDestroyView ();
         }
 
@@ -338,30 +344,11 @@ namespace NachoClient.AndroidClient
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
         }
 
-        private bool refreshInProgress = false;
-        private bool refreshWaitingToStart = false;
-
         void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
 
             switch (s.Status.SubKind) {
-
-            case NcResult.SubKindEnum.Info_EventSetChanged:
-            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
-                // Don't queue up a whole bunch of refresh tasks.  If there is one running and one waiting to
-                // run, there is no point in starting yet another refresh task.
-                if (!refreshWaitingToStart) {
-                    if (refreshInProgress) {
-                        refreshWaitingToStart = true;
-                    }
-                    refreshInProgress = true;
-                    eventListAdapter.Refresh (() => {
-                        refreshWaitingToStart = false;
-                        refreshInProgress = false;
-                    });
-                }
-                break;
 
             case NcResult.SubKindEnum.Info_ExecutionContextChanged:
                 if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
@@ -370,11 +357,6 @@ namespace NachoClient.AndroidClient
                 }
                 break;
             }
-        }
-
-        void PlatformCalendarChangeCallback (object sender, EventArgs e)
-        {
-            eventListAdapter.Refresh ();
         }
     }
 
@@ -387,23 +369,19 @@ namespace NachoClient.AndroidClient
 
         public EventListAdapter (CreateEventOnDateDelegate callback)
         {
-            eventCalendarMap = new AndroidEventsCalendarMap (DateTime.UtcNow.AddDays (-31), DateTime.UtcNow.AddYears (1));
-            eventCalendarMap.Refresh (() => {
-                NotifyDataSetChanged ();
-            });
+            eventCalendarMap = NachoPlatform.Calendars.Instance.EventProviderInstance;
             createEventOnDateCallback = callback;
         }
 
-        public void Refresh (Action completionAction = null)
+        public void OnResume ()
         {
-            eventCalendarMap.Refresh (() => {
-                using (NcAbate.UIAbatement ()) {
-                    NotifyDataSetChanged ();
-                    if (null != completionAction) {
-                        completionAction ();
-                    }
-                }
-            });
+            eventCalendarMap.UiRefresh = NotifyDataSetChanged;
+            NotifyDataSetChanged ();
+        }
+
+        public void OnStop ()
+        {
+            eventCalendarMap.UiRefresh = null;
         }
 
         public int PositionForToday {
@@ -508,98 +486,25 @@ namespace NachoClient.AndroidClient
 
         public bool HasEvents (DateTime date)
         {
-            if ((date.Month >= DateTime.UtcNow.Month && date.Year == DateTime.UtcNow.Year) || date.Year > DateTime.UtcNow.Year) {
-                var index = eventCalendarMap.IndexOfDate (date);
-                if (0 <= index) {
-                    return eventCalendarMap.NumberOfItemsForDay (index) > 0;
-                }
-                return false;
-            }
-            return false;
+            return IsSupportedDate (date) && 0 < eventCalendarMap.NumberOfItemsForDay (eventCalendarMap.IndexOfDate (date));
         }
 
         public bool IsSupportedDate (DateTime date)
         {
+            ExtendCalendarIfNecessary (date);
             return 0 <= eventCalendarMap.IndexOfDate (date);
         }
 
-        private class AndroidEventsCalendarMap : NcEventsCalendarMapCommon
+        private void ExtendCalendarIfNecessary (DateTime date)
         {
-            private DateTime startRange;
-            private DateTime endRange;
-
-            public AndroidEventsCalendarMap (DateTime startRange, DateTime endRange)
-            {
-                this.startRange = startRange;
-                this.endRange = endRange;
-            }
-
-            protected override List<McEvent> GetEventsWithDuplicates ()
-            {
-                var appEvents = McEvent.QueryEventsInRange (startRange, endRange);
-                var deviceEvents = AndroidCalendars.GetDeviceEvents (startRange, endRange);
-
-                var result = new List<McEvent> (appEvents.Count + deviceEvents.Count);
-                result.AddRange (appEvents);
-                result.AddRange (deviceEvents);
-                result.Sort ((x, y) => {
-                    int startTimeOrder = DateTime.Compare (x.StartTime, y.StartTime);
-                    if (0 == startTimeOrder) {
-                        // If the events have the same start time, put device events before app events.
-                        if (0 != x.DeviceEventId && 0 == y.DeviceEventId) {
-                            return -1;
-                        } else if (0 == x.DeviceEventId && 0 != y.DeviceEventId) {
-                            return 1;
-                        } else {
-                            return 0;
-                        }
-                    }
-                    return startTimeOrder;
-                });
-
-                // The Android calendar item database has a UID field, but in my experience that field
-                // has always been null.  Which renders moot the code that eliminates duplicate events
-                // for the same meeting.  So we have to eliminate duplicates here.  If we see a device
-                // event without a UID, and we find another event with the same start time, end time,
-                // and title, then ignore the UID-less device event.  It is not as accurate as using
-                // the UID, but it is as good as we can do.
-                for (int i = 0; i < result.Count; ++i) {
-                    McEvent e = result [i];
-                    if (0 == e.DeviceEventId || null != e.UID) {
-                        continue;
-                    }
-                    string eTitle = null;
-                    for (int j = i + 1; j < result.Count && result [j].StartTime == e.StartTime; ++j) {
-                        McEvent f = result [j];
-                        if (e.EndTime == f.EndTime) {
-                            if (null == eTitle) {
-                                string dummyLocation;
-                                int dummyColor;
-                                AndroidCalendars.GetEventDetails (e.DeviceEventId, out eTitle, out dummyLocation, out dummyColor);
-                            }
-                            string fTitle = null;
-                            if (0 == f.DeviceEventId) {
-                                var appCal = f.GetCalendarItemforEvent ();
-                                if (null != appCal) {
-                                    fTitle = appCal.GetSubject ();
-                                }
-                            } else {
-                                string dummyLocation;
-                                int dummyColor;
-                                AndroidCalendars.GetEventDetails (f.DeviceEventId, out fTitle, out dummyLocation, out dummyColor);
-                            }
-                            if (null != eTitle && null != fTitle && eTitle == fTitle) {
-                                result [i] = null;
-                                break;
-                            }
-                        }
-                    }
-                }
-                result.RemoveAll ((McEvent obj) => {
-                    return obj == null;
-                });
-
-                return result;
+            // The calendar can only be extended into the future.  So ignore dates in the past.
+            if (date > DateTime.Now && 0 > eventCalendarMap.IndexOfDate (date)) {
+                // Extending the calendar is expensive, so extend it two months at a time,
+                // not just up to the given date.
+                DateTime local = date.ToLocalTime ();
+                DateTime newLimit = new DateTime (local.Year, local.Month, 1, 0, 0, 0, DateTimeKind.Local).AddMonths (2);
+                eventCalendarMap.ExtendEventMap (newLimit);
+                NotifyDataSetChanged ();
             }
         }
     }

@@ -35,20 +35,6 @@ namespace NachoClient.iOS
             this.calendar = calendar;
         }
 
-        public void Refresh (Action completionAction)
-        {
-            if (null != calendar) {
-                calendar.Refresh (completionAction);
-            }
-        }
-
-        public void StopTrackingEventChanges ()
-        {
-            if (null != calendar) {
-                calendar.StopTrackingEventChanges ();
-            }
-        }
-
         protected bool NoCalendarEvents ()
         {
             return ((null == calendar) || (0 == calendar.NumberOfDays ()));
@@ -257,8 +243,8 @@ namespace NachoClient.iOS
                 return;
             }
             var e = calendar.GetEvent (indexPath.Section, indexPath.Row - 1);
-            var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row - 1);
-            var cRoot =  CalendarHelper.GetMcCalendarRootForEvent (e.Id);
+            var c = e.GetCalendarItemforEvent ();
+            var cRoot = CalendarHelper.GetMcCalendarRootForEvent (e.Id);
 
             if (null == c || null == cRoot) {
                 cell.ContentView.ViewWithTag (SWIPE_TAG).Hidden = true;

@@ -22,13 +22,20 @@ namespace NachoCore
         private static Dictionary<object, TimeSpan> eventWindows = new Dictionary<object, TimeSpan> ();
         private static TimeSpan maxDuration = TimeSpan.MinValue;
         private static DateTime latestEndDate = DateTime.MinValue;
+        private static DateTime oldestEvent = DateTime.Now.Subtract (TimeSpan.FromDays (30)).Date.ToUniversalTime ();
 
         public static void Initialize ()
         {
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             // Always keep the events accurate for the next 30 days, so that local notifications will be correct.
-            AddEventWindow (typeof(NcEventManager), new TimeSpan (30, 0, 0, 0));
+            AddEventWindow (typeof(NcEventManager), TimeSpan.FromDays (30));
+        }
+
+        public static DateTime BeginningOfEventsOfInterest {
+            get {
+                return oldestEvent;
+            }
         }
 
         /// <summary>

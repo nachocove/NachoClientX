@@ -537,6 +537,7 @@ namespace NachoCore
                 NcBrain.StartService ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
+                NachoPlatform.Calendars.Instance.EventProviderInstance.NumberOfDays ();
                 if (null != Class4LateShowEvent) {
                     Class4LateShowEvent (this, EventArgs.Empty);
                 }
