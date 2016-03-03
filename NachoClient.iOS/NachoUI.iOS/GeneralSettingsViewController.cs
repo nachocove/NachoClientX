@@ -18,6 +18,10 @@ namespace NachoClient.iOS
         AccountsTableViewSource accountsTableViewSource;
         UIStoryboard accountStoryboard;
 
+        static readonly nfloat HEIGHT = 50;
+        static readonly nfloat INDENT = 25;
+        UcNameValuePair UnreadCountBlock;
+
         ConnectToSalesforceCell connectToSalesforceView;
 
         SwitchAccountButton switchAccountButton;
@@ -84,6 +88,8 @@ namespace NachoClient.iOS
             accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
+            accountsTableView.TableHeaderView = GetViewForHeader (accountsTableView);
+
             var footerView = new UIView (new CGRect (0, 0, accountsTableView.Frame.Width, 160));
             var addAccountView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 60), AddAccountSelected);
             footerView.AddSubview (addAccountView);
@@ -110,6 +116,8 @@ namespace NachoClient.iOS
         {
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             accountsTableView.Frame = new CGRect (0, 0, accountsTableView.Frame.Width, View.Frame.Height);
+
+            RefreshUnreadBlock ();
 
             connectToSalesforceView.Hidden = (null != McAccount.GetSalesForceAccount ());
         }
@@ -216,5 +224,42 @@ namespace NachoClient.iOS
             NavigationController.PopToViewController (this, true);
 
         }
+
+        UIView GetViewForHeader (UITableView tableView)
+        {
+            var headerView = new UIView (new CGRect (0, 0, tableView.Frame.Width, 0));
+            headerView.BackgroundColor = UIColor.White;
+
+            nfloat yOffset = 5;
+            UnreadCountBlock = new UcNameValuePair (new CGRect (0, yOffset, headerView.Frame.Width, HEIGHT), "Display Unread Counts", INDENT, 15, UnreadCountBlockTapHandler);
+            headerView.AddSubview (UnreadCountBlock);
+            yOffset = UnreadCountBlock.Frame.Bottom;
+
+            yOffset += 5;
+
+            ViewFramer.Create (headerView).Height (yOffset);
+            return headerView;
+        }
+
+        protected void UnreadCountBlockTapHandler (NSObject sender)
+        {
+            NcActionSheet.Show (UnreadCountBlock, this,
+                new NcAlertAction ("All Messages", () => {
+                    EmailHelper.SetShouldDisplayAllUnreadCount (true);
+                    RefreshUnreadBlock ();
+                }),
+                new NcAlertAction ("New Messages", () => {
+                    EmailHelper.SetShouldDisplayAllUnreadCount (false);
+                    RefreshUnreadBlock ();
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+            );
+        }
+
+        protected void RefreshUnreadBlock ()
+        {
+            UnreadCountBlock.SetValue (EmailHelper.ShouldDisplayAllUnreadCount () ? "All Messages" : "New Messages");
+        }
+
     }
 }

@@ -348,7 +348,7 @@ namespace NachoCore
                     foreach (var ex in aex.InnerExceptions) { 
                         if (ex is IOException && ex.Message.Contains ("Too many open files")) {
                             Log.Error (Log.LOG_SYS, "UnobservedTaskException:{0}: Dumping File Descriptors", ex.Message);
-                            NcApplicationMonitor.DumpFileLeaks();
+                            NcApplicationMonitor.DumpFileLeaks ();
                             NcApplicationMonitor.DumpFileDescriptors ();
                             NcModel.Instance.DumpLastAccess ();
                         }
@@ -361,6 +361,16 @@ namespace NachoCore
                 }
             };
             UiThreadId = Thread.CurrentThread.ManagedThreadId;
+
+            // Maintain 'last time we entered background' time
+            StatusIndEvent += (object sender, EventArgs ea) => {
+                var siea = (StatusIndEventArgs)ea;
+                if (NcResult.SubKindEnum.Info_ExecutionContextChanged == siea.Status.SubKind) {
+                    if (ExecutionContextEnum.Background == ExecutionContext) {
+                        LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
+                    }
+                }
+            };
         }
 
         private static volatile NcApplication instance;
@@ -614,8 +624,8 @@ namespace NachoCore
                 NcModel.Instance.RunInTransaction (() => {
                     if (null == McFolder.GetDeviceContactsFolder ()) {
                         var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
-                                        McFolder.ClientOwned_DeviceContacts, "Device Contacts",
-                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                                            McFolder.ClientOwned_DeviceContacts, "Device Contacts",
+                                            NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                         freshMade.Insert ();
                     }
                 });
@@ -624,8 +634,8 @@ namespace NachoCore
                 NcModel.Instance.RunInTransaction (() => {
                     if (null == McFolder.GetDeviceCalendarsFolder ()) {
                         var freshMade = McFolder.Create (deviceAccount.Id, true, true, true, "0",
-                                        McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
-                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                                            McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
+                                            NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                         freshMade.Insert ();
                     }
                 });
