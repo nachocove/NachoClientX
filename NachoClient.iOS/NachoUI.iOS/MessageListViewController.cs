@@ -372,9 +372,6 @@ namespace NachoClient.iOS
                 CancelSearchIfActive ();
                 if (HasAccountSwitcher ()) {
                     SwitchToAccount (NcApplication.Instance.Account);
-                } else {
-                    NavigationController.PopViewController (true);
-                    return;
                 }
             }
             currentAccount = NcApplication.Instance.Account;
