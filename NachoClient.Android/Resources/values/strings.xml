@@ -25,6 +25,7 @@
     <string name="support">Support</string>
     <string name="about">About Nacho Mail</string>
     <string name="contacts">Contacts</string>
+    <string name="chats">Chats</string>
     <string name="more">More</string>
     <string name="add_account">Add Account</string>
     <string name="connect_to_salesforce">Connect to Salesforce</string>
@@ -168,6 +169,7 @@
     <string name="no_messages">No messages</string>
     <string name="no_contacts">No contacts</string>
     <string name="no_hot_messages">You do not have any more Hot messages.</string>
+    <string name="no_chats">No chats</string>
     <string name="add_hot_messages">You can add Hot messages by tapping on the chili icon in your mail.</string>
     <string name="menu_quick_reply">Quick Reply</string>
     <string name="menu_create_deadline">Create Deadline</string>
