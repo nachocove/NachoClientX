@@ -116,8 +116,7 @@ namespace NachoCore
 
         public override NcResult StartSync ()
         {
-            // FIXME Unfied Sync All
-            return NachoSyncResult.DoesNotSync ();
+            return EmailHelper.SyncUnified ();
         }
 
         public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)

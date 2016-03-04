@@ -70,13 +70,7 @@ namespace NachoCore
 
         public override NcResult StartSync ()
         {
-            // FIXME all acount sync cmd
-//            if (null != folder) {
-//                return BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
-//            } else {
-//                return NachoSyncResult.DoesNotSync ();
-//            }
-            return NachoSyncResult.DoesNotSync ();
+            return EmailHelper.SyncUnified ();
         }
 
         public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
