@@ -293,8 +293,7 @@ namespace NachoCore.Model
             // delete all file system data for account id
             RemoveAccountFiles (AccountId);
 
-            // if there is only one account. TODO: deal with multi-account
-            NcApplication.Instance.Account = null;
+            NcApplication.Instance.Account = LoginHelpers.PickStartupAccount();
             // if successful, unmark account is being removed since it is completed.
             DeleteRemovingAccountFile ();
         }
