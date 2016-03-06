@@ -448,7 +448,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static void BindChatCell (McChat chat, View view)
+        public static void BindChatListCell (McChat chat, View view)
         {
             var title = view.FindViewById<TextView> (Resource.Id.title);
             var date = view.FindViewById<TextView> (Resource.Id.date);
@@ -460,6 +460,42 @@ namespace NachoClient.AndroidClient
                 preview.Text = "";
             } else {
                 preview.Text = chat.LastMessagePreview;
+            }
+        }
+
+        public static void BindChatViewCell(McEmailMessage message, McEmailMessage previous, McEmailMessage next, View view)
+        {
+            var oneHour = TimeSpan.FromHours (1);
+            var atTimeBlockStart = previous == null || (message.DateReceived - previous.DateReceived > oneHour);
+            var atTimeBlockEnd = next == null || (next.DateReceived - message.DateReceived > oneHour);
+            var atParticipantBlockStart = previous == null || previous.FromEmailAddressId != message.FromEmailAddressId;
+            var atParticipantBlockEnd = next == null || next.FromEmailAddressId != message.FromEmailAddressId;
+            var showName = atTimeBlockStart || atParticipantBlockStart;
+            var showPortrait = atTimeBlockEnd || atParticipantBlockEnd;
+            var showTimestamp = atTimeBlockStart;
+
+            var dateView = view.FindViewById<TextView> (Resource.Id.date);
+            if (showTimestamp) {
+                dateView.Text = Pretty.VariableDayTime (message.DateReceived);
+                dateView.Visibility = ViewStates.Visible;
+            } else {
+                dateView.Visibility = ViewStates.Gone;
+            }
+
+            var titleView = view.FindViewById<TextView> (Resource.Id.title);
+            if (showName) {
+                titleView.Text = Pretty.SenderString (message.From);
+                titleView.Visibility = ViewStates.Visible;
+            } else {
+                titleView.Visibility = ViewStates.Gone;
+            }
+
+            var previewView = view.FindViewById<TextView> (Resource.Id.preview);
+            var bundle = new NcEmailMessageBundle (message);
+            if (bundle.NeedsUpdate) {
+                previewView.Text = "!! " + message.BodyPreview;  
+            } else {
+                previewView.Text = bundle.TopText;
             }
         }
 

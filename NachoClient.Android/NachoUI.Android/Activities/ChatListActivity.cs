@@ -38,7 +38,7 @@ namespace NachoClient.AndroidClient
 
         void ChatListFragment_onChatClick (object sender, McChat chat)
         {
-            // StartActivity (ChatViewActivity.ShowChatIntent (this, chat));
+            StartActivity (ChatViewActivity.ShowChatIntent (this, chat));
         }
 
         public override void OnBackPressed ()

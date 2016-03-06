@@ -211,4 +211,6 @@
     <string name="show_new_unread">Display Unread Counts</string>
     <string name="show_new">New</string>
     <string name="show_all">All</string>
+    <string name="send">Send</string>
+    <string name="chat_prompt">Type a message...</string>
 </resources>

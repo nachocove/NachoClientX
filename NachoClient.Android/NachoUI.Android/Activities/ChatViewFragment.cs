@@ -24,30 +24,34 @@ using Android.Graphics.Drawables;
 using NachoCore.Brain;
 using Android.Views.InputMethods;
 using NachoPlatform;
+using Android.Widget;
 
 namespace NachoClient.AndroidClient
 {
-    public class ChatListFragment : Fragment
+    public interface IChatViewFragmentOwner
     {
-        private const int CALL_TAG = 1;
-        private const int EMAIL_TAG = 2;
+        void DoneWithMessage ();
 
-        private const string SAVED_SEARCHING_KEY = "ChatListFragment.searching";
+        McChat ChatToView { get; }
+    }
+
+    public class ChatViewFragment : Fragment
+    {
+        private const string SAVED_SEARCHING_KEY = "ChatViewFragment.searching";
 
         bool searching;
         Android.Widget.EditText searchEditText;
         SwipeMenuListView listView;
-        ChatListAdapter chatListAdapter;
+        ChatAdapter chatAdapter;
+
+        McChat chat;
+
+        ButtonBar buttonBar;
+        Dictionary<int, McChatParticipant> ParticipantsByEmailId;
 
         SwipeRefreshLayout mSwipeRefreshLayout;
 
         public event EventHandler<McChat> onChatClick;
-
-        public static ChatListFragment newInstance ()
-        {
-            var fragment = new ChatListFragment ();
-            return fragment;
-        }
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -56,10 +60,7 @@ namespace NachoClient.AndroidClient
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            var view = inflater.Inflate (Resource.Layout.ChatListFragment, container, false);
-
-            var activity = (NcTabBarActivity)this.Activity;
-            activity.HookNavigationToolbar (view);
+            var view = inflater.Inflate (Resource.Layout.ChatViewFragment, container, false);
 
             mSwipeRefreshLayout = view.FindViewById<SwipeRefreshLayout> (Resource.Id.swipe_refresh_layout);
             mSwipeRefreshLayout.SetColorSchemeResources (Resource.Color.refresh_1, Resource.Color.refresh_2, Resource.Color.refresh_3);
@@ -68,15 +69,9 @@ namespace NachoClient.AndroidClient
                 rearmRefreshTimer (3);
             };
 
-            var addButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            addButton.SetImageResource (Resource.Drawable.nav_add);
-            addButton.Visibility = Android.Views.ViewStates.Visible;
-            addButton.Click += AddButton_Click;
-
-            var searchButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
-            searchButton.SetImageResource (Resource.Drawable.nav_search);
-            searchButton.Visibility = Android.Views.ViewStates.Visible;
-            searchButton.Click += SearchButton_Click;
+            buttonBar = new ButtonBar (view);
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.nav_add, AddButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Left1, Resource.Drawable.nav_search, SearchButton_Click);
 
             searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
             searchEditText.TextChanged += SearchString_TextChanged;
@@ -84,55 +79,34 @@ namespace NachoClient.AndroidClient
             var cancelButton = view.FindViewById (Resource.Id.cancel);
             cancelButton.Click += CancelButton_Click;
 
-            // Highlight the tab bar icon of this activity
-//            var chatsImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.contacts_image);
-//            chatsImage.SetImageResource (Resource.Drawable.nav_chat_active);
+            var sendButton = view.FindViewById<Button> (Resource.Id.chat_send);
+            sendButton.Click += SendButton_Click;
 
-            chatListAdapter = new ChatListAdapter (this);
+            return view;
+        }
 
-            MaybeDisplayNoChatsView (view);
+        public override void OnActivityCreated (Bundle savedInstanceState)
+        {
+            base.OnActivityCreated (savedInstanceState);
 
-            listView = view.FindViewById<SwipeMenuListView> (Resource.Id.listView);
-            listView.Adapter = chatListAdapter;
+            chat = ((IChatViewFragmentOwner)Activity).ChatToView;
+            chatAdapter = new ChatAdapter (this, chat);
+
+            var titleView = View.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
+            titleView.Text = chat.CachedParticipantsLabel;
+
+            ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (chat.Id);
+
+            listView = View.FindViewById<SwipeMenuListView> (Resource.Id.listView);
+            listView.Adapter = chatAdapter;
 
             listView.ItemClick += ListView_ItemClick;
 
             listView.setMenuCreator ((menu) => {
-                SwipeMenuItem dialItem = new SwipeMenuItem (Activity.ApplicationContext);
-                dialItem.setBackground (A.Drawable_NachoSwipeContactCall (Activity));
-                dialItem.setWidth (dp2px (90));
-                dialItem.setTitle ("Dial");
-                dialItem.setTitleSize (14);
-                dialItem.setTitleColor (A.Color_White);
-                dialItem.setIcon (A.Id_NachoSwipeContactCall);
-                dialItem.setId (CALL_TAG);
-                menu.addMenuItem (dialItem, SwipeMenu.SwipeSide.LEFT);
-                SwipeMenuItem emailItem = new SwipeMenuItem (Activity.ApplicationContext);
-                emailItem.setBackground (A.Drawable_NachoSwipeContactEmail (Activity));
-                emailItem.setWidth (dp2px (90));
-                emailItem.setTitle ("Email");
-                emailItem.setTitleSize (14);
-                emailItem.setTitleColor (A.Color_White);
-                emailItem.setIcon (A.Id_NachoSwipeContactEmail);
-                emailItem.setId (EMAIL_TAG);
-                menu.addMenuItem (emailItem, SwipeMenu.SwipeSide.RIGHT);
             }
             );
 
             listView.setOnMenuItemClickListener (( position, menu, index) => {
-//                McContact contact = null; // FIXME
-//                if (null != contact) {
-//                    switch (index) {
-//                    case CALL_TAG:
-//                        Util.CallNumber (Activity, contact, null);
-//                        break;
-//                    case EMAIL_TAG:
-//                        Util.SendEmail (Activity, McAccount.EmailAccountForContact (contact).Id, contact, alternateEmailAddress);
-//                        break;
-//                    default:
-//                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action index {0}", index));
-//                    }
-//                }
                 return false;
             });
 
@@ -143,20 +117,6 @@ namespace NachoClient.AndroidClient
             listView.setOnSwipeEndListener ((position) => {
                 mSwipeRefreshLayout.Enabled = true;
             });
-
-            return view;
-        }
-
-        public override void OnActivityCreated (Bundle savedInstanceState)
-        {
-            base.OnActivityCreated (savedInstanceState);
-            if (null != savedInstanceState) {
-//                searching = savedInstanceState.GetBoolean (SAVED_SEARCHING_KEY, false);
-//                if (searching) {
-//                    StartSearching ();
-//                    chatListAdapter.Search (searchEditText.Text);
-//                }
-            }
         }
 
         public override void OnResume ()
@@ -175,7 +135,7 @@ namespace NachoClient.AndroidClient
         public override void OnDestroyView ()
         {
             base.OnDestroyView ();
-            chatListAdapter.Cleanup ();
+            chatAdapter.Cleanup ();
         }
 
         public override void OnSaveInstanceState (Bundle outState)
@@ -189,16 +149,40 @@ namespace NachoClient.AndroidClient
             if (null != onChatClick) {
                 InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
                 imm.HideSoftInputFromWindow (searchEditText.WindowToken, HideSoftInputFlags.NotAlways);
-                var chat = chatListAdapter [e.Position];
-                if (null != chat) {
-                    onChatClick (this, chat);
-                }
+                var message = chatAdapter [e.Position];
+                // TODO: Now what?
             }
         }
 
         void AddButton_Click (object sender, EventArgs e)
         {
             //   Activity.StartActivity (ContactEditActivity.AddContactIntent (Activity));
+        }
+
+
+        void SendButton_Click (object sender, EventArgs e)
+        {
+//            if (chat == null) {
+//                var addresses = HeaderView.ToView.AddressList;
+//                chat = McChat.ChatForAddresses (Account.Id, addresses);
+//                if (chat == null) {
+//                    Log.Error (Log.LOG_CHAT, "Got null chat when sending new message");
+//                    return;
+//                }
+//                chat.ClearDraft ();
+//                foreach (var attachment in AttachmentsForUnsavedChat) {
+//                    attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+//                }
+//                AttachmentsForUnsavedChat.Clear ();
+//                UpdateForChat ();
+//                ReloadMessages ();
+//            }
+            var editText = View.FindViewById<EditText> (Resource.Id.chat_message);
+            var text = editText.Text;
+            ChatMessageComposer.SendChatMessage (chat, text, chatAdapter.GetNewestChats(3), (McEmailMessage message) => {
+                chat.AddMessage (message);
+                editText.Text = "";
+            });
         }
 
         void SearchButton_Click (object sender, EventArgs e)
@@ -282,7 +266,7 @@ namespace NachoClient.AndroidClient
                 refreshTimer.Dispose ();
                 refreshTimer = null;
             }
-            refreshTimer = new NcTimer ("ChatListFragment refresh", EndRefreshingOnUIThread, null, seconds * 1000, 0); 
+            refreshTimer = new NcTimer ("ChatFragment refresh", EndRefreshingOnUIThread, null, seconds * 1000, 0); 
         }
 
         void cancelRefreshTimer ()
@@ -315,7 +299,7 @@ namespace NachoClient.AndroidClient
             for (var i = listView.FirstVisiblePosition; i <= listView.LastVisiblePosition; i++) {
                 var cell = listView.GetChildAt (i - listView.FirstVisiblePosition);
                 if (null != cell) {
-                    chatListAdapter.GetView (i, cell, listView);
+                    chatAdapter.GetView (i, cell, listView);
                 }
             }
         }
@@ -323,8 +307,8 @@ namespace NachoClient.AndroidClient
         public bool MaybeDisplayNoChatsView (View view)
         {
             if (null != view) {
-                if (null != chatListAdapter) {
-                    var showEmpty = !searching && (0 == chatListAdapter.Count);
+                if (null != chatAdapter) {
+                    var showEmpty = !searching && (0 == chatAdapter.Count);
                     view.FindViewById<Android.Widget.TextView> (Resource.Id.no_chats).Visibility = (showEmpty ? ViewStates.Visible : ViewStates.Gone);
                     return true;
                 }
@@ -339,21 +323,18 @@ namespace NachoClient.AndroidClient
 
     }
 
-    public class ChatListAdapter : Android.Widget.BaseAdapter<McChat>
+    public class ChatAdapter : Android.Widget.BaseAdapter<McEmailMessage>
     {
-        List<McChat> chats;
-        public Dictionary<int, int> unreadCountsByChat { get; private set; }
+        McChat chat;
+        ChatViewFragment parent;
+        List<McEmailMessage> messages;
 
-        ChatListFragment parent;
-
-        McAccount account;
-
-        public ChatListAdapter (ChatListFragment parent)
+        public ChatAdapter (ChatViewFragment parent, McChat chat)
         {
             this.parent = parent;
-            account = NcApplication.Instance.Account;
+            this.chat = chat;
 
-            RefreshChatsIfVisible ();
+            RefreshChatIfVisible ();
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
@@ -363,35 +344,35 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
-        protected void RefreshChatsIfVisible ()
+        public List<McEmailMessage> GetNewestChats(int count)
         {
-            if (account.AccountType == McAccount.AccountTypeEnum.Unified) {
-                chats = McChat.LastestChats ();
-                unreadCountsByChat = McChat.UnreadCountsByChat ();
-            } else {
-                chats = McChat.LastestChatsForAccount (account.Id);
-                unreadCountsByChat = McChat.UnreadCountsByChat (account.Id);
+            var previousMessages = new List<McEmailMessage> ();
+            for (int i = messages.Count - 1; i >= messages.Count - count && i >= 0; --i){
+                previousMessages.Add (messages [i]);
             }
+            return previousMessages;
+        }
+
+        protected void RefreshChatIfVisible ()
+        {
+            messages = chat.GetAllMessages ();
             NotifyDataSetChanged ();
-            if (null != parent) {
-                parent.MaybeDisplayNoChatsView (parent.View);
-            }
         }
 
         public override long GetItemId (int position)
         {
-            return chats [position].Id;
+            return messages [position].Id;
         }
 
         public override int Count {
             get {
-                return chats.Count;
+                return messages.Count;
             }
         }
 
-        public override McChat this [int position] {  
+        public override McEmailMessage this [int position] {  
             get {
-                return chats [position];
+                return messages [position];
             }
         }
 
@@ -399,11 +380,13 @@ namespace NachoClient.AndroidClient
         {
             View view = convertView; // re-use an existing view, if one is available
             if (view == null) {
-                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.ChatListCell, parent, false);
+                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.ChatViewCell, parent, false);
 
             }
-            var chat = chats[position];
-            Bind.BindChatListCell (chat, view);
+            var message = messages [position];
+            var previousMessage = (0 == position) ? null : messages [position - 1];
+            var nextMessage = ((messages.Count - 1) >= position) ? null : messages [position + 1];
+            Bind.BindChatViewCell (message, previousMessage, nextMessage, view);
             return view;
         }
 
@@ -412,8 +395,8 @@ namespace NachoClient.AndroidClient
             var s = (StatusIndEventArgs)e;
 
             switch (s.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_ChatSetChanged:
-                RefreshChatsIfVisible ();
+            case NcResult.SubKindEnum.Info_ChatMessageAdded:
+                RefreshChatIfVisible ();
                 break;
             }
         }

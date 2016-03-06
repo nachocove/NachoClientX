@@ -286,6 +286,17 @@ namespace NachoCore.Model
                 "ORDER BY m.DateReceived DESC LIMIT ? OFFSET ?", Id, limit, offset);
         }
 
+        public List<McEmailMessage> GetAllMessages ()
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT m.* FROM McChatMessage cm " +
+                "JOIN McEmailMessage m ON cm.MessageId = m.Id " +
+                "WHERE cm.ChatId = ? " +
+                "AND likelihood (m.IsAwaitingDelete = 0, 1.0) " +
+                "AND likelihood (cm.IsLatestDuplicate = 1, 0.5) " +
+                "ORDER BY m.DateReceived ASC", Id);
+        }
+
         public int MessageCount ()
         {
             return NcModel.Instance.Db.ExecuteScalar<int> (
