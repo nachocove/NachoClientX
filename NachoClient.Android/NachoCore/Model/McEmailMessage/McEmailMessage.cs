@@ -525,8 +525,8 @@ namespace NachoCore.Model
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 "{1}" +
                 " likelihood (m.FolderId != ?, 0.5) AND " +
-                " likelihood (e.[From] LIKE ?, 0.05) OR " +
-                " likelihood (e.[To] Like ?, 0.05) " +
+                " (likelihood (e.[From] LIKE ?, 0.05) OR " +
+                "  likelihood (e.[To] Like ?, 0.05) ) " +
                 " ORDER BY e.DateReceived DESC";
 
             var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 1.0) AND ", accountId);

@@ -1136,13 +1136,10 @@ namespace NachoClient.iOS
                 return;
             }
 
-            using (NcAbate.UIAbatement ()) {
-                UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
-                List<int> adds;
-                List<int> deletes;
-                messageSource.RefreshEmailMessages (out adds, out deletes);
+            messageSource.BackgroundRefreshEmailMessages ((changed, adds, deletes) => {
+                var interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
                 interactionsTableView.ReloadData ();
-            }
+            });
         }
 
         public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
