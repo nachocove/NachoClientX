@@ -445,6 +445,7 @@ namespace NachoPlatform
             }
 
             if (serverCertChain.Count == 1) {
+                Log.Info (Log.LOG_HTTP, "serverCertChain.Count == 1");
                 errors = SslPolicyErrors.RemoteCertificateChainErrors;
                 goto sslErrorVerify;
             }
@@ -458,7 +459,8 @@ namespace NachoPlatform
             }
 
             cert = netCerts [0];
-            sslErrorVerify:
+
+sslErrorVerify:
             if (NcHttpCertificateValidation.CertValidation (new Uri (Url.ToString ()), cert, chain, errors)) {
                 completionHandler (
                     NSUrlSessionAuthChallengeDisposition.UseCredential,
