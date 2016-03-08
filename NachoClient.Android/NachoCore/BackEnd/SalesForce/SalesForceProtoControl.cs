@@ -235,7 +235,7 @@ namespace NachoCore.SFDC
 
             // TODO: couple ClearEventQueue with PostEvent inside SM mutex.
             Sm.ClearEventQueue ();
-            var next = McPending.QueryEligible (AccountId, McAccount.SmtpCapabilities).
+            var next = McPending.QueryEligible (AccountId, SalesForceCapabilities).
                 FirstOrDefault (x => McPending.Operations.Sync == x.Operation);
             if (null != next) {
                 Log.Info (Log.LOG_SFDC, "Strategy:FG/BG:Send");

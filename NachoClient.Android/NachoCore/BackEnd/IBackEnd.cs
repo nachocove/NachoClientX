@@ -148,6 +148,8 @@ namespace NachoCore
         AutoDInfoEnum AutoDInfo (int accountId, McAccount.AccountCapabilityEnum capabilities);
         X509Certificate2 ServerCertToBeExamined (int accountId, McAccount.AccountCapabilityEnum capabilities);
         void SendEmailBodyFetchHint (int accountId, int emailMessageId);
+        // Sync Contacts.
+        NcResult SyncContactsCmd (int accountId);
     }
 }
 
