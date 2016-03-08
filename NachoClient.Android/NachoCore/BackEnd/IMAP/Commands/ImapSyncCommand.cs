@@ -396,9 +396,9 @@ namespace NachoCore.IMAP
                             return true;
                         });
                     }
-                    var result = folder.Link (emailMessage, imapSummary.UniqueId);
-                    if (!result.isOK () && result.SubKind != NcResult.SubKindEnum.Error_AlreadyInFolder) {
-                        throw new Exception (string.Format ("Could not link message: {0}", result.GetMessage ()));
+                    var res = folder.Link (emailMessage, imapSummary.UniqueId);
+                    if (!res.isOK () && res.SubKind != NcResult.SubKindEnum.Error_AlreadyInFolder) {
+                        throw new Exception (string.Format ("Could not link message: {0}", res.GetMessage ()));
                     }
                 });
             }
