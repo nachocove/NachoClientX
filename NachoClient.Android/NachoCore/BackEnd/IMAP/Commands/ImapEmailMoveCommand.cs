@@ -129,10 +129,10 @@ namespace NachoCore.IMAP
                 NcModel.Instance.RunInTransaction (() => {
                     foreach (var pair in uidMapping) {
                         McEmailMessage email;
-                        if (emailUidMapping.TryGetValue (pair.Key.Id, out email)) {
+                        if (emailUidMapping.TryGetValue (pair.Key, out email)) {
                             email.UpdateWithOCApply<McEmailMessage> ((record) => {
                                 var target = (McEmailMessage)record;
-                                target.SetImapUid(dst, pair.Value.Id);
+                                target.SetImapUid(dst, pair.Value);
                                 return true;
                             });
                         } else {
