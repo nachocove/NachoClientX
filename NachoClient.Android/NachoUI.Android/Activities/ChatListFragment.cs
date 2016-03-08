@@ -69,14 +69,14 @@ namespace NachoClient.AndroidClient
             };
 
             var addButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.right_button1);
-            addButton.SetImageResource (Resource.Drawable.nav_add);
+            addButton.SetImageResource (Resource.Drawable.chat_newmsg);
             addButton.Visibility = Android.Views.ViewStates.Visible;
             addButton.Click += AddButton_Click;
 
-            var searchButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
-            searchButton.SetImageResource (Resource.Drawable.nav_search);
-            searchButton.Visibility = Android.Views.ViewStates.Visible;
-            searchButton.Click += SearchButton_Click;
+//            var searchButton = view.FindViewById<Android.Widget.ImageView> (Resource.Id.left_button1);
+//            searchButton.SetImageResource (Resource.Drawable.nav_search);
+//            searchButton.Visibility = Android.Views.ViewStates.Visible;
+//            searchButton.Click += SearchButton_Click;
 
             searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
             searchEditText.TextChanged += SearchString_TextChanged;
@@ -198,7 +198,9 @@ namespace NachoClient.AndroidClient
 
         void AddButton_Click (object sender, EventArgs e)
         {
-            //   Activity.StartActivity (ContactEditActivity.AddContactIntent (Activity));
+            if (null != onChatClick) {
+                onChatClick (this, null);
+            }
         }
 
         void SearchButton_Click (object sender, EventArgs e)
@@ -342,6 +344,7 @@ namespace NachoClient.AndroidClient
     public class ChatListAdapter : Android.Widget.BaseAdapter<McChat>
     {
         List<McChat> chats;
+
         public Dictionary<int, int> unreadCountsByChat { get; private set; }
 
         ChatListFragment parent;
@@ -402,7 +405,7 @@ namespace NachoClient.AndroidClient
                 view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.ChatListCell, parent, false);
 
             }
-            var chat = chats[position];
+            var chat = chats [position];
             Bind.BindChatListCell (chat, view);
             return view;
         }

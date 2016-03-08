@@ -463,7 +463,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static void BindChatViewCell(McEmailMessage message, McEmailMessage previous, McEmailMessage next, View view)
+        public static void BindChatViewCell (McEmailMessage message, McEmailMessage previous, McEmailMessage next, McChatParticipant participant, View view)
         {
             var oneHour = TimeSpan.FromHours (1);
             var atTimeBlockStart = previous == null || (message.DateReceived - previous.DateReceived > oneHour);
@@ -482,6 +482,8 @@ namespace NachoClient.AndroidClient
                 dateView.Visibility = ViewStates.Gone;
             }
 
+            showName = showName && (participant != null);
+
             var titleView = view.FindViewById<TextView> (Resource.Id.title);
             if (showName) {
                 titleView.Text = Pretty.SenderString (message.From);
@@ -489,7 +491,7 @@ namespace NachoClient.AndroidClient
             } else {
                 titleView.Visibility = ViewStates.Gone;
             }
-
+                
             var previewView = view.FindViewById<TextView> (Resource.Id.preview);
             var bundle = new NcEmailMessageBundle (message);
             if (bundle.NeedsUpdate) {
@@ -497,6 +499,22 @@ namespace NachoClient.AndroidClient
             } else {
                 previewView.Text = bundle.TopText;
             }
+
+            var previewCardView = view.FindViewById<CardView> (Resource.Id.preview_card);
+
+            int textColorId;
+            int backgroundColorId;
+
+            if (null == participant) {
+                textColorId = Android.Resource.Color.White;
+                backgroundColorId = Resource.Color.NachoGreen;
+            } else {
+                backgroundColorId = Android.Resource.Color.White;
+                textColorId = Resource.Color.NachoGreen;
+            }
+            previewView.SetTextColor (view.Resources.GetColor (textColorId));
+            previewView.SetBackgroundResource (backgroundColorId);
+            previewCardView.SetCardBackgroundColor (view.Resources.GetColor (backgroundColorId));
         }
 
         public static int ColorForUser (int index)

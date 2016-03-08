@@ -48,6 +48,26 @@
         android:textColor="@android:color/black"
         android:background="@android:color/white" />
     <LinearLayout
+        android:id="@+id/to_view"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:text="To:"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white"
+            android:padding="5dp" />
+        <NachoClient.AndroidClient.EmailAddressField
+            android:id="@+id/compose_to"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white"
+            android:padding="5dp" />
+    </LinearLayout>
+    <LinearLayout
         android:background="@color/NachoBackgroundGray"
         android:orientation="vertical"
         android:layout_width="fill_parent"

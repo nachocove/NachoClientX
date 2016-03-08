@@ -43,11 +43,11 @@ namespace NachoClient.AndroidClient
         Android.Widget.EditText searchEditText;
         SwipeMenuListView listView;
         ChatAdapter chatAdapter;
+        public EmailAddressField ToField;
 
         McChat chat;
 
         ButtonBar buttonBar;
-        Dictionary<int, McChatParticipant> ParticipantsByEmailId;
 
         SwipeRefreshLayout mSwipeRefreshLayout;
 
@@ -70,8 +70,8 @@ namespace NachoClient.AndroidClient
             };
 
             buttonBar = new ButtonBar (view);
-            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.nav_add, AddButton_Click);
-            buttonBar.SetIconButton (ButtonBar.Button.Left1, Resource.Drawable.nav_search, SearchButton_Click);
+            buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.chat_add_contact, AddButton_Click);
+//            buttonBar.SetIconButton (ButtonBar.Button.Left1, Resource.Drawable.nav_search, SearchButton_Click);
 
             searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
             searchEditText.TextChanged += SearchString_TextChanged;
@@ -82,7 +82,17 @@ namespace NachoClient.AndroidClient
             var sendButton = view.FindViewById<Button> (Resource.Id.chat_send);
             sendButton.Click += SendButton_Click;
 
+            ToField = view.FindViewById<EmailAddressField> (Resource.Id.compose_to);
+            ToField.AllowDuplicates (false);
+            ToField.Adapter = new ContactAddressAdapter (this.Activity);
+            ToField.TokensChanged += ToField_TokensChanged;
+
             return view;
+        }
+
+        void ToField_TokensChanged (object sender, EventArgs e)
+        {
+            // TODO: Update send button status
         }
 
         public override void OnActivityCreated (Bundle savedInstanceState)
@@ -92,10 +102,16 @@ namespace NachoClient.AndroidClient
             chat = ((IChatViewFragmentOwner)Activity).ChatToView;
             chatAdapter = new ChatAdapter (this, chat);
 
+            var toView = View.FindViewById (Resource.Id.to_view);
             var titleView = View.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
-            titleView.Text = chat.CachedParticipantsLabel;
 
-            ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (chat.Id);
+            if (null == chat) {
+                toView.Visibility = ViewStates.Visible;
+                titleView.Visibility = ViewStates.Gone;
+            } else {
+                toView.Visibility = ViewStates.Gone;
+                titleView.Text = chat.CachedParticipantsLabel;
+            }
 
             listView = View.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = chatAdapter;
@@ -162,24 +178,39 @@ namespace NachoClient.AndroidClient
 
         void SendButton_Click (object sender, EventArgs e)
         {
-//            if (chat == null) {
-//                var addresses = HeaderView.ToView.AddressList;
-//                chat = McChat.ChatForAddresses (Account.Id, addresses);
-//                if (chat == null) {
-//                    Log.Error (Log.LOG_CHAT, "Got null chat when sending new message");
-//                    return;
-//                }
-//                chat.ClearDraft ();
+            if (chat == null) {
+                var addresses = NcEmailAddress.ParseToAddressListString (ToField.AddressString);
+                var account = NcApplication.Instance.Account;
+                if (McAccount.GetUnifiedAccount ().Id == account.Id) {
+                    account = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                }
+                chat = McChat.ChatForAddresses (account.Id, addresses);
+                if (chat == null) {
+                    Log.Error (Log.LOG_CHAT, "Got null chat when sending new message");
+                    return;
+                }
+
+                listView = View.FindViewById<SwipeMenuListView> (Resource.Id.listView);
+                chatAdapter = new ChatAdapter (this, chat);
+                listView.Adapter = chatAdapter;
+
+                var toView = View.FindViewById (Resource.Id.to_view);
+                var titleView = View.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
+
+                toView.Visibility = ViewStates.Gone;
+                titleView.Visibility = ViewStates.Visible;
+
+                chat.ClearDraft ();
 //                foreach (var attachment in AttachmentsForUnsavedChat) {
 //                    attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
 //                }
 //                AttachmentsForUnsavedChat.Clear ();
 //                UpdateForChat ();
 //                ReloadMessages ();
-//            }
+            }
             var editText = View.FindViewById<EditText> (Resource.Id.chat_message);
             var text = editText.Text;
-            ChatMessageComposer.SendChatMessage (chat, text, chatAdapter.GetNewestChats(3), (McEmailMessage message) => {
+            ChatMessageComposer.SendChatMessage (chat, text, chatAdapter.GetNewestChats (3), (McEmailMessage message) => {
                 chat.AddMessage (message);
                 editText.Text = "";
             });
@@ -328,11 +359,16 @@ namespace NachoClient.AndroidClient
         McChat chat;
         ChatViewFragment parent;
         List<McEmailMessage> messages;
+        Dictionary<int, McChatParticipant> ParticipantsByEmailId;
 
         public ChatAdapter (ChatViewFragment parent, McChat chat)
         {
             this.parent = parent;
             this.chat = chat;
+
+            if (null != chat) {
+                ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (chat.Id);
+            }
 
             RefreshChatIfVisible ();
 
@@ -344,10 +380,10 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
-        public List<McEmailMessage> GetNewestChats(int count)
+        public List<McEmailMessage> GetNewestChats (int count)
         {
             var previousMessages = new List<McEmailMessage> ();
-            for (int i = messages.Count - 1; i >= messages.Count - count && i >= 0; --i){
+            for (int i = messages.Count - 1; i >= messages.Count - count && i >= 0; --i) {
                 previousMessages.Add (messages [i]);
             }
             return previousMessages;
@@ -355,7 +391,11 @@ namespace NachoClient.AndroidClient
 
         protected void RefreshChatIfVisible ()
         {
-            messages = chat.GetAllMessages ();
+            if (null == chat) {
+                messages = new List<McEmailMessage> ();
+            } else {
+                messages = chat.GetAllMessages ();
+            }
             NotifyDataSetChanged ();
         }
 
@@ -386,7 +426,11 @@ namespace NachoClient.AndroidClient
             var message = messages [position];
             var previousMessage = (0 == position) ? null : messages [position - 1];
             var nextMessage = ((messages.Count - 1) >= position) ? null : messages [position + 1];
-            Bind.BindChatViewCell (message, previousMessage, nextMessage, view);
+
+            McChatParticipant particpant = null;
+            ParticipantsByEmailId.TryGetValue (message.FromEmailAddressId, out particpant);
+
+            Bind.BindChatViewCell (message, previousMessage, nextMessage, particpant, view);
             return view;
         }
 
