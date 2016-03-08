@@ -338,7 +338,7 @@ namespace NachoCore.IMAP
 
         public static SyncInstruction SyncInstructionForFlagSync (ref McProtocolState protocolState, UniqueIdSet uidSet)
         {
-            return new SyncInstruction (uidSet, ImapSummaryItemsResync (protocolState), new HashSet<HeaderId> (), false, false);
+            return new SyncInstruction (uidSet, ImapSummaryItemsResync (protocolState), new HashSet<string> (), false, false);
         }
 
         #endregion
