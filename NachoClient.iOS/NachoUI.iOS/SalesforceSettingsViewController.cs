@@ -236,7 +236,7 @@ namespace NachoClient.iOS
 
         void RefreshAccountButton_TouchUpInside (object sender, EventArgs e)
         {
-            BackEnd.Instance.SyncCmd (account.Id, 0);
+            BackEnd.Instance.SyncContactsCmd (account.Id);
             ToggleRefreshAccountSpinnerView ();
             rearmRefreshTimer (10);
 

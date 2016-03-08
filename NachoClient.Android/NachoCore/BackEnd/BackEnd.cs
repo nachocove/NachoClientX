@@ -695,6 +695,11 @@ namespace NachoCore
             return ApplyToService (accountId, McAccount.AccountCapabilityEnum.ContactReader, (service) => service.DnldContactBodyCmd (contactId));
         }
 
+        public NcResult SyncContactsCmd (int accountId)
+        {
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.ContactReader | McAccount.AccountCapabilityEnum.ContactWriter, (service) => service.SyncContactsCmd ());
+        }
+
         public NcResult CreateTaskCmd (int accountId, int taskId, int folderId)
         {
             return ApplyToService (accountId, McAccount.AccountCapabilityEnum.TaskWriter, (service) => service.CreateTaskCmd (taskId, folderId));
