@@ -745,6 +745,10 @@ namespace Test.iOS
         public void SendEmailBodyFetchHint (int accountId, int emailMessageId)
         {
         }
+        public NcResult SyncContactsCmd (int accountId)
+        {
+            return NcResult.OK ();
+        }
     }
 
     public class MockStatusIndEvent : IStatusIndEvent

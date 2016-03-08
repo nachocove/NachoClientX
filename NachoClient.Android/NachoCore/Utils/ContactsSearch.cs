@@ -8,6 +8,7 @@ using NachoCore.Brain;
 using NachoCore.Index;
 using NachoCore.Model;
 using NachoPlatform;
+using System.Collections.Concurrent;
 
 namespace NachoCore.Utils
 {
@@ -33,8 +34,7 @@ namespace NachoCore.Utils
         bool serverResultsPending = false;
 
         List<McAccount> accounts;
-        Dictionary<int, string> accountSearchTokens;
-        HashSet<string> searchedStrings;
+        IDictionary<int, string> accountSearchTokens;
 
         public void SearchFor (string searchString)
         {
@@ -82,26 +82,22 @@ namespace NachoCore.Utils
                         }
                         searchString = currentSearch;
                     }
-                    if (serverOnly) {
-                        IncorporateServerResults (searchString);
-                    } else {
-                        // Start the server-based search.  Since server results are cached, there is little point in repeating
-                        // a search that has already happened in this session.  That is what searchedStrings.Add() checks for.
-                        if (!string.IsNullOrEmpty (searchString) && 0 < accounts.Count && searchedStrings.Add (searchString)) {
-                            bool firstSearch = (null == accountSearchTokens);
-                            if (firstSearch) {
-                                accountSearchTokens = new Dictionary<int, string> (accounts.Count);
-                            }
-                            foreach (var account in accounts) {
-                                if (firstSearch) {
-                                    accountSearchTokens [account.Id] = BackEnd.Instance.StartSearchContactsReq (account.Id, searchString, null).GetValue<string> ();
-                                } else {
-                                    BackEnd.Instance.SearchContactsReq (account.Id, searchString, null, accountSearchTokens [account.Id]);
+                    // searchString can only be null if Dispose() was called while this task was queued up waiting to start.
+                    if (null != searchString) {
+                        if (serverOnly) {
+                            IncorporateServerResults (searchString);
+                        } else {
+                            // Start the server-based search for any account where a search is not already in progress.
+                            if (!string.IsNullOrEmpty (searchString) && 2 < searchString.Length && 0 < accounts.Count) {
+                                foreach (var account in accounts) {
+                                    if (!accountSearchTokens.ContainsKey (account.Id)) {
+                                        accountSearchTokens [account.Id] = BackEnd.Instance.StartSearchContactsReq (account.Id, searchString, null).GetValue<string> ();
+                                    }
                                 }
                             }
+                            // Do the local search, which is subclass-specific.
+                            DoSearch (searchString);
                         }
-                        // Do the local search, which is subclass-specific.
-                        DoSearch (searchString);
                     }
                     lock (lockObject) {
                         lastSearch = searchString;
@@ -123,7 +119,7 @@ namespace NachoCore.Utils
 
             // Initializing accounts requires a database query, so delay that until there is a background thread.
             accounts = null;
-            searchedStrings = new HashSet<string> ();
+            accountSearchTokens = new ConcurrentDictionary<int, string> ();
         }
 
         protected void UpdateUi (string searchString, List<McContactEmailAddressAttribute> results)
@@ -157,12 +153,7 @@ namespace NachoCore.Utils
                     // If there is a current search, stop it from updating the UI when it completes.
                     updateUi = (string searchString, List<McContactEmailAddressAttribute> results) => { };
                 }
-                if (null != accountSearchTokens) {
-                    // Cancel any server searches that might be in progress.
-                    foreach (var accountTokenPair in accountSearchTokens) {
-                        McPending.Cancel (accountTokenPair.Key, accountTokenPair.Value);
-                    }
-                }
+                accountSearchTokens.Clear ();
             }
         }
 
@@ -170,10 +161,11 @@ namespace NachoCore.Utils
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind &&
-                null != s.Account && null != s.Tokens && null != accountSearchTokens &&
+                null != s.Account && null != s.Tokens &&
                 accountSearchTokens.Keys.Contains (s.Account.Id) &&
                 s.Tokens.Contains (accountSearchTokens [s.Account.Id]))
             {
+                accountSearchTokens.Remove (s.Account.Id);
                 bool startSearch;
                 lock (lockObject) {
                     startSearch = (null != lastSearch) && !searchInProgress;
@@ -489,7 +481,7 @@ namespace NachoCore.Utils
                     indexMatches = lastIndexResults;
                 } else {
                     indexMatches = new List<MatchedItem> ();
-                    foreach (var account in McAccount.GetAllAccounts ()) {
+                    foreach (var account in McAccount.QueryByAccountCapabilities(McAccount.AccountCapabilityEnum.ContactReader)) {
                         var index = NcBrain.SharedInstance.Index (account.Id);
                         indexMatches.AddRange (index.SearchAllContactFields (searchString, maxMatches: 100));
                     }

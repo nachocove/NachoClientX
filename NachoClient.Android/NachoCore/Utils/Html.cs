@@ -28,6 +28,75 @@ namespace NachoCore.Utils
             return node;
         }
 
+        public static HtmlDocument CopyUntilNode (this HtmlDocument doc, HtmlNode targetNode)
+        {
+            var copyDoc = new HtmlDocument ();
+            var node = doc.DocumentNode;
+            var stack = new List<HtmlNode> (node.ChildNodes);
+            var copyParentStack = new List<HtmlNode> ();
+            copyParentStack.Add (copyDoc.DocumentNode);
+            var childCountStack = new List<int> ();
+            childCountStack.Add (node.ChildNodes.Count);
+            HtmlNode copy;
+            while (stack.Count > 0) {
+                node = stack [0];
+                stack.RemoveAt (0);
+                if (node.NodeType == HtmlNodeType.Element) {
+                    copy = copyDoc.CreateElement (node.OriginalName);
+                    foreach (var attr in node.Attributes) {
+                        copy.SetAttributeValue (attr.OriginalName, attr.Value);
+                    }
+                } else if (node.NodeType == HtmlNodeType.Text) {
+                    copy = copyDoc.CreateTextNode ((node as HtmlTextNode).Text);
+                } else {
+                    copy = null;
+                }
+                if (copy != null) {
+                    copyParentStack [copyParentStack.Count - 1].AppendChild (copy);
+                }
+                childCountStack [childCountStack.Count - 1] -= 1;
+                if (childCountStack [childCountStack.Count - 1] == 0) {
+                    copyParentStack.RemoveAt (copyParentStack.Count - 1);
+                    childCountStack.RemoveAt (childCountStack.Count - 1);
+                }
+                if (node.NodeType == HtmlNodeType.Element && node.ChildNodes.Count > 0) {
+                    copyParentStack.Add (copy);
+                    childCountStack.Add (node.ChildNodes.Count);
+                    var index = 0;
+                    foreach (var child in node.ChildNodes) {
+                        stack.Insert (index, child);
+                        index += 1;
+                    }
+                }
+                if (System.Object.ReferenceEquals (node, targetNode)) {
+                    break;
+                }
+            }
+            return copyDoc;
+        }
+
+        public static HtmlNode FindElementWithId (this HtmlDocument doc, string id)
+        {
+            var stack = new List<HtmlNode> ();
+            stack.Add (doc.DocumentNode);
+            HtmlNode node;
+            while (stack.Count > 0) {
+                node = stack [0];
+                stack.RemoveAt (0);
+                if (node.GetAttributeValue ("id", "").Equals (id)) {
+                    return node;
+                }
+                int i = 0;
+                if (node.NodeType == HtmlNodeType.Document || node.NodeType == HtmlNodeType.Element) {
+                    foreach (var child in node.ChildNodes) {
+                        stack.Insert (i, child);
+                        i += 1;
+                    }
+                }
+            }
+            return null;
+        }
+
     }
 
     public class HtmlTextSerializer {
@@ -70,13 +139,19 @@ namespace NachoCore.Utils
 
         }
 
-        HtmlDocument Document;
+        HtmlNode Node;
         bool AtLineStart = true;
         bool AtDocumentStart = true;
         bool AtParagraphBreak = true;
         bool AtStatePush = true;
         string Text;
+        public string TopText;
+        string Line;
         HtmlState State;
+        public HtmlNode LastTopTextNode;
+        HtmlNode LastTextNode;
+        public bool FoundTop;
+        bool NeedsTopCheck;
 
         #endregion
 
@@ -84,15 +159,22 @@ namespace NachoCore.Utils
 
         public HtmlTextSerializer (string html)
         {
-            Document = new HtmlDocument ();
-            Document.LoadHtml (html);
+            var document = new HtmlDocument ();
+            document.LoadHtml (html);
+            Node = document.DocumentNode;
             CommonInit ();
 
         }
 
         public HtmlTextSerializer (HtmlDocument document)
         {
-            Document = document;
+            Node = document.DocumentNode;
+            CommonInit ();
+        }
+
+        public HtmlTextSerializer (HtmlNode node)
+        {
+            Node = node;
             CommonInit ();
         }
 
@@ -100,6 +182,8 @@ namespace NachoCore.Utils
         {
             PushState ();
             Text = "";
+            TopText = "";
+            Line = "";
         }
 
         #endregion
@@ -108,8 +192,14 @@ namespace NachoCore.Utils
 
         public string Serialize ()
         {
+            Line = "";
             Text = "";
-            VisitNode (Document.DocumentNode);
+            TopText = "";
+            LastTextNode = null;
+            LastTopTextNode = null;
+            FoundTop = false;
+            NeedsTopCheck = false;
+            VisitNode (Node);
             return Text;
         }
 
@@ -132,6 +222,39 @@ namespace NachoCore.Utils
             State.Parent.IsStarted = State.Parent.IsStarted || State.IsStarted;
             State = State.Parent;
             AtStatePush = false;
+        }
+
+        #endregion
+
+        #region Top Splitting
+
+        void CheckLastLineForTopSplit ()
+        {
+            if (!FoundTop && NeedsTopCheck) {
+                if (EmailHelper.IsQuoteLine(Line)) {
+                    SetTop (true);
+                }
+            }
+            if (!FoundTop) {
+                LastTopTextNode = LastTextNode;
+            }
+        }
+
+        void SetTop (bool stripLastLine = false)
+        {
+            if (!FoundTop) {
+                FoundTop = true;
+                if (stripLastLine) {
+                    var index = Text.Length - Line.Length;
+                    if (index >= 0) {
+                        TopText = Text.Substring (0, index).Trim ();
+                    } else {
+                        TopText = "";
+                    }
+                } else {
+                    TopText = Text.Trim ();
+                }
+            }
         }
 
         #endregion
@@ -175,6 +298,7 @@ namespace NachoCore.Utils
         }
 
         public void Visit_BR (HtmlNode node){
+            CheckLastLineForTopSplit ();
             if (AtLineStart) {
                 OutputText ("");
             }
@@ -183,6 +307,7 @@ namespace NachoCore.Utils
 
         public void Visit_HR (HtmlNode Node)
         {
+            SetTop ();
             AtLineStart = true;
             OutputText ("----------------");
             AtLineStart = true;
@@ -190,6 +315,7 @@ namespace NachoCore.Utils
 
         public void Visit_BLOCKQUOTE (HtmlNode node)
         {
+            SetTop ();
             PushState ();
             State.LinePrefix = State.LinePrefix.TrimEnd () + "> ";
             VisitParagraphElement (node, true);
@@ -315,6 +441,11 @@ namespace NachoCore.Utils
 
         private void VisitBlockElement (HtmlNode node)
         {
+            if (node.Name.Equals ("div") && node.GetAttributeValue ("class", "").Equals ("gmail_signature")) {
+                SetTop ();
+            } else {
+                CheckLastLineForTopSplit ();
+            }
             AtLineStart = true;
             VisitChildren (node);
             AtLineStart = true;
@@ -349,6 +480,7 @@ namespace NachoCore.Utils
                     normalized = normalized.TrimStart ();
                 }
                 if (normalized.Length > 0) {
+                    LastTextNode = node;
                     OutputText (normalized);
                 }
             }
@@ -364,25 +496,31 @@ namespace NachoCore.Utils
                 if (AtLineStart) {
                     if (AtParagraphBreak) {
                         if (AtStatePush) {
+                            Line = State.Parent.LinePrefix;
                             Text += "\n" + State.Parent.LinePrefix;
                         } else {
+                            Line = State.LinePrefix;
                             Text += "\n" + State.LinePrefix;
                         }
                     }
                     if (State.IsStarted || State.FirstLinePrefix == null) {
+                        Line = State.LinePrefix;
                         Text += "\n" + State.LinePrefix;
                     } else {
+                        Line = State.FirstLinePrefix;
                         Text += "\n" + State.FirstLinePrefix;
                     }
                 }
             } else {
                 AtDocumentStart = false;
             }
+            Line += text;
             Text += text;
             AtLineStart = false;
             AtParagraphBreak = false;
             AtStatePush = false;
             State.IsStarted = true;
+            NeedsTopCheck = true;
         }
 
         private string GetElementDisplayStyle (HtmlNode node)
@@ -510,24 +648,38 @@ namespace NachoCore.Utils
 
         public HtmlDocument Deserialize (string text)
         {
-            Document = new HtmlDocument ();
-            var html = Document.CreateElement ("html");
-            var head = Document.CreateElement ("head");
-            var charset = Document.CreateElement ("meta");
+            var document = new HtmlDocument ();
+            var html = document.CreateElement ("html");
+            var head = document.CreateElement ("head");
+            var charset = document.CreateElement ("meta");
             charset.SetAttributeValue ("charset", "utf8");
             head.AppendChild (charset);
             html.AppendChild (head);
-            Node = Document.CreateElement ("body");
-            html.AppendChild (Node);
-            Document.DocumentNode.AppendChild (html);
+            var body = document.CreateElement ("body");
+            html.AppendChild (body);
+            document.DocumentNode.AppendChild (html);
+
+            DeserializeInto (text, body);
+
+            return document;
+        }
+
+        public void DeserializeInto (string text, HtmlNode node)
+        {
+            if (String.IsNullOrEmpty (text)) {
+                return;
+            }
+            
+            LinePrefix = "";
+
+            Document = node.OwnerDocument;
+            Node = node;
 
             Reader = new StringReader (text);
             var readMore = true;
             while (readMore) {
                 readMore = ReadLine ();
             }
-
-            return Document;
         }
 
         public void PushNode (string name)

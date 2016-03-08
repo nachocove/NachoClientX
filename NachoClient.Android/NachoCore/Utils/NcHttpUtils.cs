@@ -48,6 +48,13 @@ namespace NachoCore.Utils
                 }
                 return null;
             }
+
+            set {
+                if (Headers.Contains ("Content-Type")) {
+                    throw new ArgumentException ("ContentType is already set.");
+                }
+                Headers.Add ("Content-Type", value);
+            }
         }
 
         public Uri RequestUri { get; protected set; }
@@ -372,6 +379,7 @@ namespace NachoCore.Utils
 
             try {
                 if (!chain.Build (cert)) {
+                    Log.Info (Log.LOG_HTTP, "Could not build chain.");
                     errors = SslPolicyErrors.RemoteCertificateChainErrors;
                     goto sslErrorVerify;
                 }
@@ -392,6 +400,7 @@ namespace NachoCore.Utils
                 }
             } catch (System.Security.Cryptography.CryptographicException) {
                 // As best we can tell, a XAMMIT (spurious).
+                Log.Info (Log.LOG_HTTP, "Spurious XAMMIT?");
                 errors = SslPolicyErrors.RemoteCertificateChainErrors;
                 goto sslErrorVerify;
             }
@@ -423,7 +432,7 @@ namespace NachoCore.Utils
                 }
             }
 
-            sslErrorVerify:
+sslErrorVerify:
             return ServicePointManager.ServerCertificateValidationCallback (new HttpWebRequest (Url), cert, chain, errors);
         }
 

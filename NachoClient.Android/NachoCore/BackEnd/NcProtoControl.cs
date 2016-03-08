@@ -11,7 +11,7 @@ namespace NachoCore
 {
     public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait, FSync };
 
-    public class NcProtoControl
+    public class NcProtoControl: IBEContext
     {
         public class PcEvt : SmEvt
         {
@@ -398,12 +398,18 @@ namespace NachoCore
             lock (executeLock) {
                 // don't allow us to execute, if the App/UI told us to stop.
                 if (!IsStarted) {
+                    Log.Info (Log.LOG_BACKEND, "BackEnd.Execute({0}:{1}): Refusing to start because of IsStarted=false.", AccountId, this.GetType ().Name);
                     return false;
                 }
-                if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down ||
-                    (null != Server && NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable)) {
+                if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down) {
+                    Log.Info (Log.LOG_BACKEND, "BackEnd.Execute({0}:{1}): Refusing to start because of network (Status={2}).", AccountId, this.GetType ().Name, NcCommStatus.Instance.Status);
+                    return false;
+                }
+                if (null != Server && NcCommStatus.Instance.Quality (Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
                     // network is down, or the server is bad. Don't start. Callbacks will trigger us
                     // to start later.
+                    Log.Info (Log.LOG_BACKEND, "BackEnd.Execute({0}:{1}): Refusing to start because of server quality (ServerId={2}, Quality={3}).", AccountId, this.GetType ().Name,
+                        Server != null ? Server.Id.ToString () : "null", Server != null ? NcCommStatus.Instance.Quality (Server.Id).ToString () : "");
                     return false;
                 }
                 if (Cts.IsCancellationRequested) {
@@ -504,6 +510,31 @@ namespace NachoCore
                 Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSRCHC");
             }, "SearchContactsReq");
             return NcResult.OK (token);
+        }
+
+        public virtual NcResult SyncContactsCmd ()
+        {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            McFolder folder;
+            NcModel.Instance.RunInTransaction (() => {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.ContactReader | McAccount.AccountCapabilityEnum.ContactWriter) {
+                    Operation = McPending.Operations.Sync,
+                    ServerId = "0", // not used currently. Perhaps in the future?
+                };
+                McPending dup;
+                if (pending.IsDuplicate (out dup)) {
+                    Log.Info (Log.LOG_BACKEND, "SyncContactsCmd: IsDuplicate of Id/Token {0}", dup);
+                    result = NcResult.OK (dup.Token);
+                    return;
+                }
+                pending.DoNotDelay ();
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSYNCCONTACT");
+            }, "SyncContactsCmd");
+            return result;
         }
 
         public virtual NcResult SendEmailCmd (int emailMessageId)
@@ -773,6 +804,9 @@ namespace NachoCore
             NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
+            // make sure to delete any hint we may have.
+            Log.Info (Log.LOG_BACKEND, "Removing hint due to addition of pending");
+            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, emailMessageId);
             NcModel.Instance.RunInTransaction (() => {
                 if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
                     result = NcResult.Error (subKind);

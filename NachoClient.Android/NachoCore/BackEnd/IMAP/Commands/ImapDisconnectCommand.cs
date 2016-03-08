@@ -8,7 +8,7 @@ namespace NachoCore.IMAP
 {
     public class ImapDisconnectCommand : ImapCommand
     {
-        public ImapDisconnectCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapDisconnectCommand (IBEContext beContext) : base (beContext)
         {
         }
 

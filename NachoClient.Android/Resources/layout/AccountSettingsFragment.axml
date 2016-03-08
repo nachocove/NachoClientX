@@ -275,6 +275,56 @@
                             android:background="@android:color/white"
                             android:text="@string/fast_notification" />
                     </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/default_email_view"
+                        android:orientation="vertical"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content">
+                        <View
+                            android:layout_marginTop="5dp"
+                            android:layout_marginBottom="5dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/NachoBackgroundGray" />
+                        <Switch
+                            android:id="@+id/default_email_switch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingLeft="5dp"
+                            android:layout_alignParentTop="true"
+                            android:textSize="17dp"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/black"
+                            android:background="@android:color/white"
+                            android:text="@string/default_email_account"
+                            android:textOn="@string/yes"
+                            android:textOff="@string/no" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/default_calendar_view"
+                        android:orientation="vertical"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content">
+                        <View
+                            android:layout_marginTop="5dp"
+                            android:layout_marginBottom="5dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/NachoBackgroundGray" />
+                        <Switch
+                            android:id="@+id/default_calendar_switch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingLeft="5dp"
+                            android:layout_alignParentTop="true"
+                            android:textSize="17dp"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/black"
+                            android:background="@android:color/white"
+                            android:text="@string/default_calendar_account"
+                            android:textOn="@string/yes"
+                            android:textOff="@string/no" />
+                    </LinearLayout>
                 </LinearLayout>
             </android.support.v7.widget.CardView>
             <View

@@ -26,7 +26,7 @@ namespace NachoCore
             if (null == account) {
                 return false;
             }
-            return (account.Id == Account.Id);
+            return account.ContainsAccount (Account.Id);
         }
     }
 }

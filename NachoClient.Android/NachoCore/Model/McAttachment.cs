@@ -105,13 +105,18 @@ namespace NachoCore.Model
 
         public NcResult Link (McAbstrItem item, bool includedInBody = false)
         {
-            NcAssert.False (0 == Id);
-            NcAssert.False (0 == item.Id);
+            return Link (item.Id, item.AccountId, item.GetClassCode ());
+        }
 
-            var classCode = item.GetClassCode ();
+        public NcResult Link (int itemId, int accountId, McAbstrFolderEntry.ClassCodeEnum classCode, bool includedInBody = false)
+        {
+            NcAssert.False (0 == Id);
+            NcAssert.False (0 == itemId);
+
             switch (classCode) {
             case McAbstrFolderEntry.ClassCodeEnum.Calendar:
             case McAbstrFolderEntry.ClassCodeEnum.Email:
+            case McAbstrFolderEntry.ClassCodeEnum.Chat:
                 // FIXME - can we get rid of never-in-folder?
             case McAbstrFolderEntry.ClassCodeEnum.NeverInFolder:
                 break;
@@ -123,14 +128,14 @@ namespace NachoCore.Model
             // The Map is in the item's account.
             NcResult result = NcResult.OK ();
             NcModel.Instance.RunInTransaction (() => {
-                var existing = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (item.AccountId, Id, item.Id, classCode);
+                var existing = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (accountId, Id, itemId, classCode);
                 if (null != existing) {
                     result = NcResult.Error (NcResult.SubKindEnum.Error_AlreadyAttached);
                     return;
                 }
-                var map = new McMapAttachmentItem (item.AccountId) {
+                var map = new McMapAttachmentItem (accountId) {
                     AttachmentId = Id,
-                    ItemId = item.Id,
+                    ItemId = itemId,
                     ClassCode = classCode,
                     IncludedInBody = includedInBody,
                 };
@@ -141,7 +146,12 @@ namespace NachoCore.Model
 
         public NcResult Unlink (McAbstrItem item)
         {
-            var existing = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (item.AccountId, Id, item.Id, item.GetClassCode ());
+            return Unlink (item.Id, item.AccountId, item.GetClassCode ());
+        }
+
+        public NcResult Unlink (int itemId, int accountId, McAbstrFolderEntry.ClassCodeEnum classCode)
+        {
+            var existing = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (accountId, Id, itemId, classCode);
             if (null == existing) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_NotAttached);
             }
@@ -158,7 +168,7 @@ namespace NachoCore.Model
         /// <param name="classCode">Class code.</param>
         public static List<McAttachment> QueryByItemId (int accountId, int itemId, McAbstrFolderEntry.ClassCodeEnum classCode)
         {
-            if (McAbstrFolderEntry.ClassCodeEnum.Email == classCode || McAbstrFolderEntry.ClassCodeEnum.Calendar == classCode) {
+            if (McAbstrFolderEntry.ClassCodeEnum.Email == classCode || McAbstrFolderEntry.ClassCodeEnum.Calendar == classCode || McAbstrFolderEntry.ClassCodeEnum.Chat == classCode) {
                 // Only e-mail messages and calendar items can own attachments.
                 // TODO We think that exceptions can own attachments, but that hasn't been confirmed.
                 return NcModel.Instance.Db.Query<McAttachment> (

@@ -69,25 +69,44 @@ namespace NachoPlatform
         {
             var deviceAccount = McAccount.GetDeviceAccount ();
             var retval = new List<PlatformContactRecordAndroid> ();
-            var cr = MainApplication.Instance.ContentResolver;
-            var projection = new [] {
-                ContactsContract.Contacts.InterfaceConsts.Id,
-                ContactsContract.Contacts.InterfaceConsts.ContactLastUpdatedTimestamp,
-                ContactsContract.Contacts.InterfaceConsts.Starred,
-            };
-            var cur = cr.Query (ContactsContract.Contacts.ContentUri, projection, null, null, null, null);
-            if (cur.Count > 0) {
-                while (cur.MoveToNext ()) {
-                    long id = GetFieldLong (cur, ContactsContract.Contacts.InterfaceConsts.Id);
 
-                    String lastUpdateString = GetField (cur, ContactsContract.Contacts.InterfaceConsts.ContactLastUpdatedTimestamp);
-                    var lastUpdate = FromUnixTimeMilliseconds (lastUpdateString, DateTime.UtcNow);
-                    int starred = GetFieldInt (cur, ContactsContract.Contacts.InterfaceConsts.Starred);
-                    var entry = new PlatformContactRecordAndroid (deviceAccount, id, lastUpdate, starred != 0);
-                    retval.Add (entry);
-                }
+            Android.Database.ICursor cur;
+
+            try {
+                var cr = MainApplication.Instance.ContentResolver;
+                var projection = new [] {
+                    ContactsContract.Contacts.InterfaceConsts.Id,
+                    ContactsContract.Contacts.InterfaceConsts.ContactLastUpdatedTimestamp,
+                    ContactsContract.Contacts.InterfaceConsts.Starred,
+                };
+                cur = cr.Query (ContactsContract.Contacts.ContentUri, projection, null, null, null, null);
+                NcAssert.NotNull (cur);
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "ContactsAndroid:GetContacts setup {0}", ex);
+                return retval;
             }
-            cur.Close ();
+
+            try {
+                if (cur.Count > 0) {
+                    while (cur.MoveToNext ()) {
+                        NcAbate.PauseWhileAbated ();
+                        try {
+                            long id = GetFieldLong (cur, ContactsContract.Contacts.InterfaceConsts.Id);
+                            String lastUpdateString = GetField (cur, ContactsContract.Contacts.InterfaceConsts.ContactLastUpdatedTimestamp);
+                            var lastUpdate = FromUnixTimeMilliseconds (lastUpdateString, DateTime.UtcNow);
+                            int starred = GetFieldInt (cur, ContactsContract.Contacts.InterfaceConsts.Starred);
+                            var entry = new PlatformContactRecordAndroid (deviceAccount, id, lastUpdate, starred != 0);
+                            retval.Add (entry);
+                        } catch {
+                            Log.Error (Log.LOG_SYS, "ContactsAndroid:GetContacts exception, record skipped");
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "ContactsAndroid:GetContacts main loop {0}", ex);
+            } finally {
+                cur.Close ();
+            }
             return retval;
         }
 
@@ -294,7 +313,9 @@ namespace NachoPlatform
                 pCur.Close ();
             }
 
-            const int TYPE_BIRTHDAY = 3; // bug in xamarin. This isn't exposed.
+            // bug in xamarin. This isn't exposed.
+            const int TYPE_BIRTHDAY = 3;
+
             protected void GetContactBirthday ()
             {
                 // Birthday (Not sure how to get this yet. All java examples use Event.TYPE_BIRTHDAY, but that doesn't seem to exist in C#
@@ -426,7 +447,7 @@ namespace NachoPlatform
                                 Contact.AddEmailAddressAttribute (Contact.AccountId, name, emailType, addr.ToString ()); // FIXME what are name and label?
                             }
                         } else {
-                            var addr = addresses[0] as MailboxAddress;
+                            var addr = addresses [0] as MailboxAddress;
                             var name = string.Format ("EmailAddress{0}", emailType, addresses.IndexOf (addr));
                             if (starred == 0) {
                                 Contact.AddEmailAddressAttribute (Contact.AccountId, name, emailType, addr.ToString ()); // FIXME what are name and label?

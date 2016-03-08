@@ -113,9 +113,7 @@ namespace Test.Common
                 Address.Delete ();
             }
             NcBrain.StopService ();
-            while (!NcBrain.SharedInstance.IsQueueEmpty ()) {
-                Thread.Sleep (50);
-            }
+            NcBrain.SharedInstance.QueueClear ();
             NcTask.StopService ();
 
             if (null != Brain) {

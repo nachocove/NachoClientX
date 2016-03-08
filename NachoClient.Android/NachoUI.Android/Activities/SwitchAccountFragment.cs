@@ -18,12 +18,15 @@ using Android.Support.Design.Widget;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoClient.AndroidClient
 {
     public interface AccountListDelegate
     {
         void AddAccount ();
+
+        void ConnectToSalesforce ();
 
         void AccountSelected (McAccount account);
 
@@ -131,16 +134,21 @@ namespace NachoClient.AndroidClient
         };
 
         public event EventHandler AddAccount;
+        public event EventHandler ConnectToSalesforce;
         public event EventHandler<int> AccountShortcut;
         public event EventHandler<McAccount> AccountSelected;
 
+        bool showUnified;
+        bool showSalesforce;
         public DisplayMode displayMode;
 
         List<McAccount> accounts;
 
-        public  AccountAdapter (DisplayMode displayMode)
+        public  AccountAdapter (DisplayMode displayMode, bool showUnified = true, bool showSalesforce = false)
         {
             this.displayMode = displayMode;
+            this.showUnified = showUnified;
+            this.showSalesforce = showSalesforce;
 
             Refresh ();
         }
@@ -149,7 +157,7 @@ namespace NachoClient.AndroidClient
         {
             accounts = new List<McAccount> ();
 
-            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
+            foreach (var account in McAccount.GetAllConfiguredNormalAccounts()) {
                 if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     accounts.Add (account);
                 }
@@ -159,6 +167,18 @@ namespace NachoClient.AndroidClient
             var deviceAccount = McAccount.GetDeviceAccount ();
             if (null != deviceAccount) {
                 accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
+            }
+
+            if (showUnified && accounts.Count > 1) {
+                var unifiedAccount = McAccount.GetUnifiedAccount ();
+                accounts.Insert (0, unifiedAccount);
+            }
+
+            if (showSalesforce) {
+                var salesforceAccount = McAccount.GetSalesForceAccount ();
+                if (null != salesforceAccount) {
+                    accounts.Add (salesforceAccount);
+                }
             }
 
             // Remove the current account from the switcher view.
@@ -173,7 +193,9 @@ namespace NachoClient.AndroidClient
         {
             public AccountHolder (View view, Action<int, int, int> listener, int viewType) : base (view)
             {
-                view.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, 0);
+                if (ROW_TYPE == viewType) {
+                    view.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, 0);
+                }
 
                 if (HEADER_TYPE == viewType) {
                     var settingsButton = view.FindViewById<Android.Widget.Button> (Resource.Id.account_settings);
@@ -184,6 +206,13 @@ namespace NachoClient.AndroidClient
                     deferredButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_deferred);
                     var deadlinesButton = view.FindViewById<View> (Resource.Id.go_to_deadlines);
                     deadlinesButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.go_to_deadlines);
+                }
+
+                if (FOOTER_TYPE == viewType) {
+                    var addAccountButton = view.FindViewById (Resource.Id.add_account);
+                    addAccountButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.add_account);
+                    var connectToSalesForceButton = view.FindViewById (Resource.Id.connect_to_salesforce);
+                    connectToSalesForceButton.Click += (object sender, EventArgs e) => listener (AdapterPosition, viewType, Resource.Id.connect_to_salesforce);
                 }
             }
         }
@@ -238,9 +267,22 @@ namespace NachoClient.AndroidClient
             McAccount account = null;
             switch (holder.ItemViewType) {
             case FOOTER_TYPE:
+                var salesforceView = holder.ItemView.FindViewById (Resource.Id.connect_to_salesforce);
+                if (showSalesforce && (null == McAccount.GetSalesForceAccount ())) {
+                    salesforceView.Visibility = ViewStates.Visible;
+                } else {
+                    salesforceView.Visibility = ViewStates.Gone;
+                }
                 return;
             case HEADER_TYPE:
                 account = NcApplication.Instance.Account;
+                var settingsButton = holder.ItemView.FindViewById (Resource.Id.account_settings);
+                if (McAccount.GetUnifiedAccount ().Id == account.Id) {
+                    settingsButton.Visibility = ViewStates.Gone;
+                } else {
+                    settingsButton.Visibility = ViewStates.Visible;
+                }
+                UpdateUnreadCounts (account, holder.ItemView);
                 break;
             case ROW_TYPE:
                 int accountIndex = (DisplayMode.AccountSwitcher == displayMode ? position - 1 : position);
@@ -258,12 +300,51 @@ namespace NachoClient.AndroidClient
 
             if (ROW_TYPE == holder.ItemViewType) {
                 var alert = holder.ItemView.FindViewById<Android.Widget.ImageView> (Resource.Id.account_alert);
+                var count = holder.ItemView.FindViewById<Android.Widget.TextView> (Resource.Id.unread_count);
                 if ((DisplayMode.SettingsListview == displayMode) && LoginHelpers.ShouldAlertUser (account.Id)) {
                     alert.Visibility = ViewStates.Visible;
+                    count.Visibility = ViewStates.Gone;
                 } else {
                     alert.Visibility = ViewStates.Gone;
+                    if (DisplayMode.AccountSwitcher == displayMode) {
+                        count.Visibility = ViewStates.Visible;
+                        UpdateUnreadMessageCount (account, count);
+                    } else {
+                        count.Visibility = ViewStates.Gone;
+                    }
                 }
             }
+        }
+
+        public void UpdateUnreadCounts (McAccount account, View view)
+        {
+            NcTask.Run (() => {
+                int unreadCount;
+                int likelyCount;
+                int deferredCount;
+                int deadlineCount;
+                EmailHelper.GetMessageCounts (account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount, EmailHelper.GetNewSincePreference ());
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    var unreadView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_inbox);
+                    var deadlineView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_deadlines);
+                    var deferredView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_deferred);
+                    unreadView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadCount);
+                    deadlineView.Text = String.Format ("Go to Deadlines ({0:N0})", deadlineCount);
+                    deferredView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredCount);
+                    // FIMXE LTR.
+                });
+            }, "UpdateUnreadMessageView");
+        }
+
+        void UpdateUnreadMessageCount (McAccount account, Android.Widget.TextView unreadView)
+        {
+            NcTask.Run (() => {
+                int unreadMessageCount;
+                EmailHelper.GetUnreadMessageCount (account, out unreadMessageCount, EmailHelper.GetNewSincePreference ());
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    unreadView.Text = String.Format ("({0:N0})", unreadMessageCount);
+                });
+            }, "UpdateUnreadMessageCount");
         }
 
         void OnClick (int position, int viewType, int resourceId)
@@ -290,8 +371,17 @@ namespace NachoClient.AndroidClient
                 }
                 break;
             case FOOTER_TYPE:
-                if (AddAccount != null) {
-                    AddAccount (this, null);
+                switch (resourceId) {
+                case Resource.Id.add_account:
+                    if (AddAccount != null) {
+                        AddAccount (this, null);
+                    }
+                    break;
+                case Resource.Id.connect_to_salesforce:
+                    if (ConnectToSalesforce != null) {
+                        ConnectToSalesforce (this, null);
+                    }
+                    break;
                 }
                 break;
             }

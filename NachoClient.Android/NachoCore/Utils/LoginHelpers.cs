@@ -45,7 +45,7 @@ namespace NachoCore.Utils
 
         static public bool ShouldAlertUser ()
         {
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds()) {
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds()) {
                 if (ShouldAlertUser (accountId)) {
                     return true;
                 }
@@ -212,10 +212,26 @@ namespace NachoCore.Utils
                 if (McAccount.AccountTypeEnum.Device == a.AccountType) {
                     continue;
                 }
+                if (McAccount.AccountTypeEnum.Unified == a.AccountType) {
+                    var normalAccounts = McAccount.GetAllConfiguredNormalAccounts ();
+                    if (1 != normalAccounts.Count) {
+                        continue;
+                    }
+                }
                 return a;
             }
             // Default to device account
             return McAccount.GetDeviceAccount ();
+        }
+
+        public static bool ConfiguredAccountExists (string emailAddress, McAccount.AccountServiceEnum service)
+        {
+            var existingAccount = McAccount.QueryByEmailAddrAndService (emailAddress, service).SingleOrDefault ();
+            if (null != existingAccount) {
+                return (McAccount.ConfigurationInProgressEnum.Done == existingAccount.ConfigurationInProgress);
+            } else {
+                return false;
+            }
         }
 
         public static bool ConfiguredAccountExists (string emailAddress)
@@ -236,6 +252,26 @@ namespace NachoCore.Utils
         public static bool GetGoogleSignInCallbackArrived ()
         {
             return McMutables.GetOrCreateBool (GlobalAccountId, MODULE, "GoogleSignInCallbackArrived", false);
+        }
+
+        // Sorry about the android, this is for iOS too.
+        public static void SetBackgroundTime (DateTime backgroundTime)
+        {
+            McMutables.Set (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", backgroundTime.ToString ("O"));
+        }
+
+        // Sorry about the android, this is for iOS too.
+        public static DateTime GetBackgroundTime ()
+        {
+            DateTime result;
+            var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", DateTime.UtcNow.ToString ("O"));
+            if (!DateTime.TryParseExact (datestring, "O", null, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out result)) {
+                if (!DateTime.TryParse (datestring, out result)) {
+                    Log.Warn (Log.LOG_UTILS, "Could not parse background time for account: {0}", datestring);
+                    result = DateTime.UtcNow;
+                }
+            }
+            return result;
         }
     }
 }

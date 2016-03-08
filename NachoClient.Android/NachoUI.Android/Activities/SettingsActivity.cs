@@ -33,7 +33,11 @@ namespace NachoClient.AndroidClient
 
         public void AccountSettingsSelected (McAccount account)
         {
-            StartActivity (AccountSettingsActivity.ShowAccountSettingsIntent (this, account)); 
+            if (McAccount.AccountTypeEnum.SalesForce == account.AccountType) {
+                StartActivity (SalesforceSettingsActivity.ShowSalesforceSettingsIntent (this, account));
+            } else {
+                StartActivity (AccountSettingsActivity.ShowAccountSettingsIntent (this, account));
+            }
         }
 
         protected override void OnSaveInstanceState (Bundle outState)

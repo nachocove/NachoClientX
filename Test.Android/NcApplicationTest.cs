@@ -44,44 +44,31 @@ namespace Test.Common
                 Assert.True (bound > stop);
             });
             Assert.True (task.Wait (3 * NcModel.Instance.RateLimiter.RefreshMsecs));
-            // Put us in scrolling mode.
-            task = Task.Run (() => {
-                NcAbate.HighPriority("RateLimitBgDbWritesInScroll");
-            });
-            Assert.True (task.Wait (10 * 1000));
-            while (!NcModel.Instance.RateLimiter.Enabled) {
-                ;
-            }
-            // See that writes aren't inhibited for UI thread.
-            NcModel.Instance.RateLimiter.Refresh ();
-            start = DateTime.UtcNow;
-            for (var i = 0; i < 2 * NcModel.Instance.RateLimiter.Allowance; i++) {
-                server.Update ();
-            }
-            stop = DateTime.UtcNow;
-            Assert.True (start.AddMilliseconds (NcModel.Instance.RateLimiter.RefreshMsecs) > stop);
-            // See that writes are inhibited for BG thread.
-            NcModel.Instance.RateLimiter.Refresh ();
-            task = Task.Run (() => {
-                Assert.True (System.Threading.Thread.CurrentThread.ManagedThreadId !=
-                    NcApplication.Instance.UiThreadId);
+            // Use the abatement mechanism to turn on the rate limiter.
+            using (NcAbate.UIAbatement ()) {
+                // See that writes aren't inhibited for UI thread.
+                NcModel.Instance.RateLimiter.Refresh ();
                 start = DateTime.UtcNow;
                 for (var i = 0; i < 2 * NcModel.Instance.RateLimiter.Allowance; i++) {
                     server.Update ();
                 }
                 stop = DateTime.UtcNow;
-                var bound = start.AddMilliseconds (NcModel.Instance.RateLimiter.RefreshMsecs);
-                // Console.WriteLine("{0} => {1} < {2}", start.Millisecond, stop.Millisecond, bound.Millisecond);
-                Assert.True (bound < stop);
-            });
-            Assert.True (task.Wait (10 * NcModel.Instance.RateLimiter.RefreshMsecs));
-            // Take us out of scrolling mode.
-            task = Task.Run (() => {
-                NcAbate.RegularPriority("RateLimitBgDbWritesInScroll");
-            });
-            Assert.True (task.Wait (10 * 1000));
-            while (NcModel.Instance.RateLimiter.Enabled) {
-                ;
+                Assert.True (start.AddMilliseconds (NcModel.Instance.RateLimiter.RefreshMsecs) > stop);
+                // See that writes are inhibited for BG thread.
+                NcModel.Instance.RateLimiter.Refresh ();
+                task = Task.Run (() => {
+                    Assert.True (System.Threading.Thread.CurrentThread.ManagedThreadId !=
+                    NcApplication.Instance.UiThreadId);
+                    start = DateTime.UtcNow;
+                    for (var i = 0; i < 2 * NcModel.Instance.RateLimiter.Allowance; i++) {
+                        server.Update ();
+                    }
+                    stop = DateTime.UtcNow;
+                    var bound = start.AddMilliseconds (NcModel.Instance.RateLimiter.RefreshMsecs);
+                    // Console.WriteLine("{0} => {1} < {2}", start.Millisecond, stop.Millisecond, bound.Millisecond);
+                    Assert.True (bound < stop);
+                });
+                Assert.True (task.Wait (10 * NcModel.Instance.RateLimiter.RefreshMsecs));
             }
             // See that writes aren't inhibited (UI/BG).
             NcModel.Instance.RateLimiter.Refresh ();

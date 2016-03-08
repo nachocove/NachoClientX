@@ -9,6 +9,8 @@ using NachoCore.Model;
 using HtmlAgilityPack;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Linq;
+using NachoCore.SFDC;
 
 namespace NachoCore.Utils
 {
@@ -30,6 +32,8 @@ namespace NachoCore.Utils
         // Message is saved into Outbox
         public static void SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
         {
+            // messageToSend = SalesForceProtoControl.MaybeAddSFDCEmailToBcc (messageToSend);
+
             var outbox = McFolder.GetClientOwnedOutboxFolder (messageToSend.AccountId);
             if (null != outbox) {
                 outbox.Link (messageToSend);
@@ -119,7 +123,11 @@ namespace NachoCore.Utils
                         message.Delete ();
                     }
                 } else {
-                    message.Delete ();
+                    if (!message.IsChat) {
+                        // If it's a chat message, we want to keep it around in the db until
+                        // we've got the sent copy fully sync'd
+                        message.Delete ();
+                    }
                     var sentFolder = McFolder.GetDefaultSentFolder (accountId);
                     if (null != sentFolder) {
                         // Best-effort, nothing to do on non-OK retval.
@@ -258,7 +266,7 @@ namespace NachoCore.Utils
                 var path = attachment.GetFilePath ();
                 attachment.AccountId = account.Id;
                 if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                    attachment.UpdateFileMove(path);
+                    attachment.UpdateFileMove (path);
                 } else {
                     attachment.Update ();
                 }
@@ -844,7 +852,7 @@ namespace NachoCore.Utils
             if (null != referencedMessage) {
                 mimeMessage.InReplyTo = referencedMessage.MessageID;
                 if (null != referencedMessage.References) {
-                    foreach (var reference in MimeKit.Utils.MimeUtils.EnumerateReferences(referencedMessage.References)) {
+                    foreach (var reference in referencedMessage.References.Split('\n')) {
                         mimeMessage.References.Add (reference);
                     }
                 }
@@ -858,24 +866,77 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount)
+        public static DateTime GetNewSincePreference ()
+        {
+            if (ShouldDisplayAllUnreadCount ()) {
+                return DateTime.MinValue;
+            } else {
+                return LoginHelpers.GetBackgroundTime ();
+            }
+        }
+
+        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount, DateTime newSince)
         {
             unreadMessageCount = 0;
             deadlineMessageCount = 0;
             deferredMessageCount = 0;
             likelyMessageCount = 0;
 
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
                 if (account.ContainsAccount (accountId)) {
                     var inboxFolder = NcEmailManager.InboxFolder (accountId);
                     if (null != inboxFolder) {
-                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
                         deadlineMessageCount += McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
                         deferredMessageCount += new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
                         likelyMessageCount += new NachoLikelyToReadEmailMessages (inboxFolder).Count ();
                     }
                 }
             }
+        }
+
+        public static void GetUnreadMessageCount (McAccount account, out int unreadMessageCount, DateTime newSince)
+        {
+            unreadMessageCount = 0;
+
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
+                if (account.ContainsAccount (accountId)) {
+                    var inboxFolder = NcEmailManager.InboxFolder (accountId);
+                    if (null != inboxFolder) {
+                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
+                    }
+                }
+            }
+        }
+
+        public const string AllUnread_McMutablesModule = "Settings";
+        public const string AllUnread_McMutablesKey = "ShowAllUnread";
+
+        /// <summary>
+        /// Shoulds the display all unread count if true.  Just new unread if false.
+        /// </summary>
+        /// <returns><c>true</c>, if display all unread count is set, <c>false</c> otherwise display new unread.</returns>
+        public static bool ShouldDisplayAllUnreadCount ()
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            return McMutables.GetBoolDefault (accountId, AllUnread_McMutablesModule, AllUnread_McMutablesKey, true);
+        }
+
+        public static void SetShouldDisplayAllUnreadCount (bool enabled)
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            McMutables.SetBool (accountId, AllUnread_McMutablesModule, AllUnread_McMutablesKey, enabled);
+        }
+
+        public static bool IsSalesForceContact (int accountId, string emailAddress)
+        {
+            var contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+            foreach (var contact in contacts) {
+                if (contact.Source == McAbstrItem.ItemSource.SalesForce) {
+                    return true;
+                }
+            }
+            return false;
         }
 
 
@@ -956,13 +1017,15 @@ namespace NachoCore.Utils
 
         public static void ToggleRead (McEmailMessage message)
         {
-            bool isRead = !message.IsRead;
-            message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
-                var target = (McEmailMessage)record;
-                target.IsRead = isRead;
-                return true;
-            });
-            BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, isRead);
+            if (null != message) {
+                bool isRead = !message.IsRead;
+                message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.IsRead = isRead;
+                    return true;
+                });
+                BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, isRead);
+            }
         }
 
         public static McAttachment NoteToAttachment (McNote note)
@@ -981,6 +1044,109 @@ namespace NachoCore.Utils
             attachment.UpdateSaveFinish ();
             return attachment;
         }
+
+        public static HashSet<int> AccountSet (List<McEmailMessage> messages)
+        {
+            var set = new HashSet<int> ();
+            foreach (var message in messages) {
+                set.Add (message.AccountId);
+            }
+            return set;
+        }
+            
+        // Quoted text in an email often comes inside a blockquote (Apple) or after an HR (Outlook).
+        // Therefore, those elements can easily be used to identify the start of quoted text.
+        // Howver, there are a few other scenarios that it helps to check for...
+
+        static Regex[] QuoteLinePatterns = new Regex[] {
+            // Typical attribution line from gmail, comes before the blockquote    
+            new Regex ("^On .+ wrote:$"),
+            // Typical start of quoted message from Outlook(?), comes after an empty DIV with border-top, not an HR
+            new Regex ("^From: "),
+            // Typical signature divider
+            new Regex ("^\\-\\-+"),
+            // Default iPhone, Nacho, or Samsung signature
+            new Regex ("^Sent (from|via) ")
+            // Consider adding something like ^.+,$ to find lines like "Regards," "Thanks," etc.  Maybe need to allow for
+            // two or three words like "See you soon,"  Athough need to be careful not to match "Hi so-and-so," at the start of a message.
+        };
+
+        public static bool IsQuoteLine (string line)
+        {
+            var trimmedLine = line.Trim ();
+            foreach (var pattern in QuoteLinePatterns) {
+                if (pattern.IsMatch (trimmedLine)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static bool CheckForSalesforceContacts (int accountId, Dictionary <string, bool> cache, string addresses)
+        {
+            var list = NcEmailAddress.ParseToAddressListString (addresses);
+            foreach (var address in list) {
+                var mailbox = address.ToMailboxAddress (true);
+                if (mailbox != null) {
+                    bool isSalesforceContact;
+                    if (!cache.TryGetValue (mailbox.Address, out isSalesforceContact)) {
+                        isSalesforceContact = SalesForceProtoControl.IsSalesForceContact (accountId, mailbox.Address);
+                        cache.Add (mailbox.Address, isSalesforceContact);
+                    }
+                    if (isSalesforceContact) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static bool MaybeAddSalesforceBcc (Dictionary <string, bool> cache, McEmailMessage message)
+        {
+            var account = McAccount.GetSalesForceAccount ();
+            if (null == account) {
+                return false;
+            }
+
+            if (!SalesForceProtoControl.ShouldAddBccToEmail (account.Id)) {
+                return false;
+            }
+
+            bool doAdd = CheckForSalesforceContacts (account.Id, cache, message.To);
+            doAdd |= CheckForSalesforceContacts (account.Id, cache, message.Cc);
+            doAdd |= CheckForSalesforceContacts (account.Id, cache, message.Bcc);
+
+            if (doAdd) {
+                if (null != account) {
+                    string bccAddress = SalesForceProtoControl.EmailToSalesforceAddress (account.Id);
+                    if (null == message.Bcc) {
+                        message.Bcc = bccAddress;
+                    } else {
+                        var bccAddresses = message.Bcc.Split (new[] { ',' }).ToList ();
+                        bccAddresses.Add (bccAddress);
+                        message.Bcc = string.Join (",", bccAddresses);
+                    }
+                }
+            }
+            return doAdd;
+        }
+
+        public static NcResult SyncUnified ()
+        {
+            bool syncStarted = false;
+            var EmailAccounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).ToList ();
+            foreach (var account in EmailAccounts) {
+                if (McAccount.GetUnifiedAccount ().Id != account.Id) {
+                    var inboxFolder = McFolder.GetDefaultInboxFolder (account.Id);
+                    if (null != inboxFolder) {
+                        var nr = BackEnd.Instance.SyncCmd (inboxFolder.AccountId, inboxFolder.Id);
+                        syncStarted |= !NachoSyncResult.DoesNotSync (nr);
+                    }
+                }
+            }
+            return (syncStarted ? NcResult.OK() : NachoSyncResult.DoesNotSync());
+        }
+       
     }
 }
 

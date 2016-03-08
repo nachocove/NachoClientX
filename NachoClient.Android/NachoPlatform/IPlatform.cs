@@ -198,6 +198,8 @@ namespace NachoPlatform
         NcResult Change (McCalendar contact);
 
         bool AuthorizationStatus { get; }
+
+        NachoCore.INcEventProvider EventProviderInstance { get; }
     }
 
     public enum PowerStateEnum
@@ -332,15 +334,16 @@ namespace NachoPlatform
 
     }
 
-    public abstract class PlatformImage : IDisposable {
+    public interface IPlatformImage : IDisposable {
         
-        public abstract Tuple<float, float> Size { get; }
-        public abstract Stream ResizedData (float width, float height);
+        Tuple<float, float> Size { get; }
+        Stream ResizedData (float width, float height);
 
-        public virtual void Dispose ()
-        {
-        }
+    }
 
+    public interface IPlatformImageFactory {
+        IPlatformImage FromStream (Stream stream);
+        IPlatformImage FromPath (string path);
     }
 
     public interface IDnsLockObject

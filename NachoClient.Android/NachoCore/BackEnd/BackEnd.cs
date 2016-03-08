@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using SQLite;
 using NachoCore;
 using NachoCore.ActiveSync;
@@ -15,6 +12,8 @@ using NachoCore.SMTP;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
+using System.Threading;
+using NachoCore.SFDC;
 
 /* Back-End:
  * The BE manages all protocol interaction with all servers (will be
@@ -31,7 +30,6 @@ using NachoPlatform;
  * The UI Must have started all accounts before modding the DB records associated
  * with those accounts - otherwise mod events will get dropped and not end up on the server.
  * */
-using System.Threading;
 
 
 namespace NachoCore
@@ -74,8 +72,6 @@ namespace NachoCore
             CannotConnectToServer,
             CannotFindServer,
         }
-
-        private NcTimer PendingOnTimeTimer = null;
 
         #region ConcurrentQueue<NcProtoControl>
 
@@ -262,6 +258,8 @@ namespace NachoCore
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start() called");
             // The callee does Task.Run.
             ApplyAcrossAccounts ("Start", (accountId) => Start (accountId));
+
+            McPendingHelper.Instance.Start ();
         }
 
         // DON'T PUT Stop in a Task.Run. We want to execute as much as possible immediately.
@@ -271,10 +269,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
             Oauth2RefreshInstance.Stop ();
-            if (null != PendingOnTimeTimer) {
-                PendingOnTimeTimer.Dispose ();
-                PendingOnTimeTimer = null;
-            }
+            McPendingHelper.Instance.Stop ();
             ApplyAcrossAccounts ("Stop", (accountId) => Stop (accountId));
             BodyFetchHints.Reset ();
         }
@@ -325,6 +320,10 @@ namespace NachoCore
                 // TODO: what should happen here?
                 break;
 
+            case McAccount.AccountTypeEnum.SalesForce:
+                services.Enqueue (new SalesForceProtoControl (this, accountId));
+                break;
+
             default:
                 NcAssert.True (false);
                 break;
@@ -352,15 +351,11 @@ namespace NachoCore
                 if (!AccountHasServices (accountId)) {
                     CreateServices (accountId);
                 }
-                if (null == PendingOnTimeTimer) {
-                    PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => McPending.MakeEligibleOnTime (), null, 1000, 1000);
-                    PendingOnTimeTimer.Stfu = true;
-                }
 
                 // don't use ApplyAcrossServices, as we'll wind up right back here.
                 var services = GetServices (accountId);
                 foreach (var service in services) {
-                    NcTask.Run (() => service.Start (), "Start");
+                    NcTask.Run (() => service.Start (), string.Format ("Start_{0}:{1}_", service.GetType ().Name, accountId));
                 }
 
                 // See if we have an OAuth2 credential for this account. 
@@ -700,6 +695,11 @@ namespace NachoCore
             return ApplyToService (accountId, McAccount.AccountCapabilityEnum.ContactReader, (service) => service.DnldContactBodyCmd (contactId));
         }
 
+        public NcResult SyncContactsCmd (int accountId)
+        {
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.ContactReader | McAccount.AccountCapabilityEnum.ContactWriter, (service) => service.SyncContactsCmd ());
+        }
+
         public NcResult CreateTaskCmd (int accountId, int taskId, int folderId)
         {
             return ApplyToService (accountId, McAccount.AccountCapabilityEnum.TaskWriter, (service) => service.CreateTaskCmd (taskId, folderId));
@@ -923,16 +923,6 @@ namespace NachoCore
         public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
         {
             InvokeOnUIThread.Instance.Invoke (() => Owner.SendEmailResp (sender.AccountId, emailMessageId, didSend));
-        }
-
-        public void BackendAbateStart ()
-        {
-            Owner.BackendAbateStart ();
-        }
-
-        public void BackendAbateStop ()
-        {
-            Owner.BackendAbateStop ();
         }
 
         #endregion

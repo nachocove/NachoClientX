@@ -37,7 +37,7 @@ namespace NachoCore.IMAP
             public string preview { get; set; }
         }
 
-        public ImapSyncCommand (IBEContext beContext, NcImapClient imap, SyncKit syncKit) : base (beContext, imap)
+        public ImapSyncCommand (IBEContext beContext, SyncKit syncKit) : base (beContext)
         {
             Synckit = syncKit;
             PendingSingle = Synckit.PendingSingle;
@@ -160,22 +160,22 @@ namespace NachoCore.IMAP
 
                         Cts.Token.ThrowIfCancellationRequested ();
 
-                        BEContext.Owner.BackendAbateStart ();
+                        using (NcAbate.BackEndAbatement ()) {
 
-                        // Process any new or changed messages. This will also tell us any messages that vanished.
-                        UniqueIdSet vanished;
-                        UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, syncInst, out vanished);
+                            // Process any new or changed messages. This will also tell us any messages that vanished.
+                            UniqueIdSet vanished;
+                            UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, syncInst, out vanished);
 
-                        Cts.Token.ThrowIfCancellationRequested ();
+                            Cts.Token.ThrowIfCancellationRequested ();
 
-                        // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
-                        toDelete.AddRange (vanished);
-                        deleteEmails (toDelete);
+                            // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
+                            toDelete.AddRange (vanished);
+                            deleteEmails (toDelete);
 
-                        Cts.Token.ThrowIfCancellationRequested ();
-                        changed |= toDelete.Any () || newOrChanged.Any ();
+                            Cts.Token.ThrowIfCancellationRequested ();
+                            changed |= toDelete.Any () || newOrChanged.Any ();
+                        }
                     } finally {
-                        BEContext.Owner.BackendAbateStop ();
                         sw.Stop ();
                         Log.Info (Log.LOG_IMAP, "{0}: Processing {1} took {2}ms ({3} per uid)", Synckit.Folder.ImapFolderNameRedacted (), syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds / syncInst.UidSet.Count);
                     }
@@ -357,7 +357,7 @@ namespace NachoCore.IMAP
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception updating: {0}", ex.ToString ());
                 }
-            } else {
+            } else if (imapSummary.Envelope != null) {
                 try {
                     emailMessage = ParseEmail (accountId, serverId, imapSummary);
                     changed = true;
@@ -366,6 +366,13 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
                     return null;
                 }
+            } else {
+                // We don't have an emailMessage, but we didn't fetch the Envelope. This means we got here
+                // for an email we don't have in our DB, but for which a 'flag-update' was issued. Perhaps 
+                // the email was deleted locally after the SyncKit was created.
+                Log.Info (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Flag-only-update for unknown email message (imap UID {0}) in folder {1}", imapSummary.UniqueId, folder.ImapFolderNameRedacted ());
+                created = false;
+                return null;
             }
 
             if (changed) {
@@ -376,6 +383,12 @@ namespace NachoCore.IMAP
                         emailMessage.Insert ();
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
+                        if (emailMessage.IsChat){
+                            var result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
+                            if (result.isError()){
+                                Log.Error(Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
+                            }
+                        }
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                             var target = (McEmailMessage)record;
@@ -608,7 +621,7 @@ namespace NachoCore.IMAP
         public static McEmailMessage ParseEmail (int accountId, string ServerId, MessageSummary summary)
         {
             if (null == summary.Envelope) {
-                NcAssert.NotNull (summary.Envelope);
+                NcAssert.NotNull (summary.Envelope, "Message Envelope is null!");
             }
 
             var emailMessage = new McEmailMessage () {
@@ -667,11 +680,8 @@ namespace NachoCore.IMAP
                     emailMessage.SenderEmailAddressId = fromEmailAddress.Id;
                 }
             }
-            if (null != summary.References && summary.References.Count > 0) {
-                if (summary.References.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} References entries in message.", summary.References.Count);
-                }
-                emailMessage.References = summary.References [0];
+            if (null != summary.References && summary.References.Any ()) {
+                emailMessage.References = string.Join ("\n", summary.References);
             }
 
             if (null != summary.Headers) {
@@ -716,6 +726,8 @@ namespace NachoCore.IMAP
             ParseGmailLabels (emailMessage, summary);
             updateFlags (emailMessage, summary.Flags.GetValueOrDefault (), summary.UserFlags);
             emailMessage.IsIncomplete = false;
+            emailMessage.DetermineIfIsChat ();
+
             return FixupFromInfo (emailMessage, false);
         }
 
@@ -727,8 +739,25 @@ namespace NachoCore.IMAP
                 changed = true;
             }
             if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
-                emailMessage.ConversationId = Guid.NewGuid ().ToString ();
-                changed = true;
+                var references = new List<string> ();
+                if (!String.IsNullOrEmpty (emailMessage.InReplyTo)){
+                    references.AddRange (MimeKit.Utils.MimeUtils.EnumerateReferences (emailMessage.InReplyTo));
+                }
+                if (!String.IsNullOrEmpty (emailMessage.References)){
+                    references.AddRange (emailMessage.References.Split('\n'));
+                }
+                foreach (var reference in references) {
+                    var referencedMessage = McEmailMessage.QueryByMessageId (emailMessage.AccountId, reference);
+                    if (referencedMessage != null) {
+                        emailMessage.ConversationId = referencedMessage.ConversationId;
+                        changed = true;
+                        break;
+                    }
+                }
+                if (String.IsNullOrEmpty (emailMessage.ConversationId)) {
+                    emailMessage.ConversationId = Guid.NewGuid ().ToString ();
+                    changed = true;
+                }
             }
             return changed;
         }
@@ -755,7 +784,7 @@ namespace NachoCore.IMAP
 
         public static void InsertAttachments (McEmailMessage msg, MessageSummary imapSummary)
         {
-            var attachments = imapSummary.BodyParts.Where (part => part.ContentDisposition != null);
+            var attachments = imapSummary.BodyParts.Where (part => part.ContentDisposition != null).ToList ();
             if (attachments.Any ()) {
                 foreach (var att in attachments) {
                     // Create & save the attachment record.

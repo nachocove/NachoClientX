@@ -16,7 +16,7 @@ namespace NachoCore.IMAP
     {
         private List<Regex> RegexList;
 
-        public ImapEmailMoveCommand (IBEContext beContext, NcImapClient imap, List<McPending> pendingList) : base (beContext, imap)
+        public ImapEmailMoveCommand (IBEContext beContext, List<McPending> pendingList) : base (beContext)
         {
             PendingList = pendingList;
             NcModel.Instance.RunInTransaction (() => {
@@ -121,22 +121,22 @@ namespace NachoCore.IMAP
                 // Note: There's still a tiny window where something might have deleted
                 // one of these messages, too. We can't prevent it. MailKit doesn't pass back 
                 // the necessary information we need from the COPYUID response to accomplish this.
-                var newUids = srcFolder.MoveTo (existingUids, dstFolder, Token);
-                if (existingUids.Count != newUids.Count) {
-                    Log.Warn (Log.LOG_IMAP, "Messages seem to have disappeared during move! Wanted to move: {0}, found existing UIDS {1}, and new UIDS {2}", uids, existingUids, newUids);
+                var uidMapping = srcFolder.MoveTo (existingUids, dstFolder, Token);
+                if (existingUids.Count != uidMapping.Count) {
+                    Log.Warn (Log.LOG_IMAP, "Messages seem to have disappeared during move! Wanted to move: {0}, found existing UIDS {1}, and new UIDS {2}", uids, existingUids, uidMapping);
                 }
 
                 NcModel.Instance.RunInTransaction (() => {
-                    for (var i = 0; i < existingUids.Count; i++) {
+                    foreach (var pair in uidMapping) {
                         McEmailMessage email;
-                        if (emailUidMapping.TryGetValue (existingUids [i], out email)) {
+                        if (emailUidMapping.TryGetValue (pair.Key.Id, out email)) {
                             email.UpdateWithOCApply<McEmailMessage> ((record) => {
                                 var target = (McEmailMessage)record;
-                                target.SetImapUid(dst, newUids [i]);
+                                target.SetImapUid(dst, pair.Value.Id);
                                 return true;
                             });
                         } else {
-                            Log.Error (Log.LOG_IMAP, "Could not match UID {0} to email", existingUids [i]);
+                            Log.Error (Log.LOG_IMAP, "Could not match UID {0} to email", pair.Key);
                         }
                     }
                 });

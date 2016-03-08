@@ -416,6 +416,10 @@ namespace Test.Common
             public void SendEmailBodyFetchHint (int accountId, int emailMessageId)
             {
             }
+            public NcResult SyncContactsCmd (int accountId)
+            {
+                return NcResult.OK ();
+            }
         }
     }
 }

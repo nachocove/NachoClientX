@@ -73,12 +73,12 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            searcher = new ContactsEmailSearch (UpdateUi);
-            searcher.SearchFor (autoCompleteTextField.Text);
-            NachoCore.Utils.NcAbate.HighPriority ("ContactChooser ViewWillAppear");
-            resultsTableView.ReloadData ();
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser ViewWillAppear");
-            autoCompleteTextField.BecomeFirstResponder ();
+            using (NcAbate.UIAbatement ()) {
+                searcher = new ContactsEmailSearch (UpdateUi);
+                searcher.SearchFor (autoCompleteTextField.Text);
+                resultsTableView.ReloadData ();
+                autoCompleteTextField.BecomeFirstResponder ();
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -197,7 +197,9 @@ namespace NachoClient.iOS
             this.address.address = address;
             if (owner != null) {
                 owner.UpdateEmailAddress (this, this.address);
-                owner.DismissINachoContactChooser (this);
+                if (PresentedViewController == null) {
+                    owner.DismissINachoContactChooser (this);
+                }
             } else {
                 Log.Error (Log.LOG_UI, "ContactChooserViewController: null in update email address");
             }
@@ -228,7 +230,9 @@ namespace NachoClient.iOS
         {
             vc.Cleanup ();
             owner.UpdateEmailAddress (this, address);
-            owner.DismissINachoContactChooser (this);
+            if (PresentedViewController == null) {
+                owner.DismissINachoContactChooser (this);
+            }
         }
 
         // INachoContactChooser delegate

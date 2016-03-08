@@ -50,35 +50,36 @@ namespace NachoCore.Brain
             return EventQueue.IsEmpty ();
         }
 
-        private bool IsInterrupted ()
+        public void QueueClear ()
         {
-            return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired || NcApplication.Instance.IsBrainAbateRequired;
+            while (EventQueue.Count () > 0) {
+                EventQueue.Dequeue ();
+            }
         }
 
-        public bool IsCancelled ()
+        private bool KeepGoing ()
         {
-            return null == EventQueue || EventQueue.Token.IsCancellationRequested;
+            NcAbate.PauseWhileAbated ();
+            return !EventQueue.Token.IsCancellationRequested;
         }
-            
+
+        private bool KeepGoing (DateTime until)
+        {
+            return KeepGoing () && DateTime.UtcNow < until;
+        }
+
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
+            NcAbate.PauseWhileAbated ();
+
             Log.Info (Log.LOG_BRAIN, "Process brain event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
 
             switch (brainEvent.Type) {
-            case NcBrainEventType.PAUSE:
-                NcTask.CancelableSleep (4 * 1000, EventQueue.Token);
-                break;
 
             case NcBrainEventType.PERIODIC_GLEAN:
-                if (!NcApplication.Instance.IsBackgroundAbateRequired) {
-                    LastPeriodicGlean = DateTime.Now;
-                }
                 NotificationRateLimiter.Running = false;
                 var runTill = EvaluateRunTime (NcContactGleaner.GLEAN_PERIOD);
-                if (!ProcessPeriodic (runTill)) {
-                    // nothing was done, so stop the gleaner. It'll start when there's something to do.
-                    NcContactGleaner.Stop ();
-                }
+                ProcessPeriodic (runTill);
                 NotificationRateLimiter.Running = true;
                 break;
             case NcBrainEventType.STATE_MACHINE:
@@ -129,9 +130,9 @@ namespace NachoCore.Brain
                 if (0 < persistedCount) {
                     didSomething = true;
                 }
-                if (DateTime.UtcNow < runTill && !IsInterrupted ()) {
+                if (KeepGoing (runTill)) {
                     Scheduler.Initialize ();
-                    while (DateTime.UtcNow < runTill && !IsInterrupted ()) {
+                    while (KeepGoing (runTill)) {
                         bool ignoredResult;
                         if (!Scheduler.Run (out ignoredResult)) {
                             break;
@@ -139,10 +140,10 @@ namespace NachoCore.Brain
                         didSomething = true;
                     }
                 }
-                while (DateTime.UtcNow < runTill && !IsInterrupted ()) {
+                while (KeepGoing (runTill)) {
                     var emailMessages = McEmailMessage.QueryNeedUpdate (50, above: false);
                     foreach (var emailMessage in emailMessages) {
-                        if (DateTime.UtcNow > runTill || IsInterrupted ()) {
+                        if (!KeepGoing (runTill)) {
                             break;
                         }
                         UpdateEmailMessageScores (emailMessage);
@@ -159,7 +160,7 @@ namespace NachoCore.Brain
         private int ProcessPersistedRequests ()
         {
             int numProcessed = 0;
-            while (!IsInterrupted ()) {
+            while (KeepGoing ()) {
                 var dbEvent = McBrainEvent.QueryNext ();
                 if (null == dbEvent) {
                     break;
@@ -303,7 +304,7 @@ namespace NachoCore.Brain
             int numScored = 0;
             var emailMessages = McEmailMessage.QueryNeedQuickScoring (accountId, count);
             foreach (var emailMessage in emailMessages) {
-                if (IsInterrupted ()) {
+                if (!KeepGoing ()) {
                     break;
                 }
                 QuickScoreEmailMessage (emailMessage);
@@ -333,7 +334,7 @@ namespace NachoCore.Brain
             int numGleaned = 0;
             var emailMessages = McEmailMessage.QueryNeedGleaning (accountId, count);
             foreach (var emailMessage in emailMessages) {
-                if (IsInterrupted ()) {
+                if (!KeepGoing ()) {
                     break;
                 }
                 if (!GleanEmailMessage (emailMessages [numGleaned])) {

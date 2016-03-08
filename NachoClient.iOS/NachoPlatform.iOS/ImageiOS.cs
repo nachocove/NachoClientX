@@ -8,13 +8,19 @@ using Foundation;
 using CoreGraphics;
 using NachoCore.Utils;
 
-namespace NachoClient.iOS
+namespace NachoPlatform
 {
-    public class ImageiOS : PlatformImage
-    {
-        UIImage Image;
 
-        public static ImageiOS FromPath (string path)
+    public class PlatformImageFactory : IPlatformImageFactory
+    {
+
+        public static readonly PlatformImageFactory Instance = new PlatformImageFactory (); 
+
+        private PlatformImageFactory()
+        {
+        }
+
+        public IPlatformImage FromPath (string path)
         {
             UIImage image = null;
             try {
@@ -23,12 +29,12 @@ namespace NachoClient.iOS
                 Log.Warn (Log.LOG_UTILS, "Unable to create UIImage from path");
             }
             if (image != null) {
-                return new ImageiOS (image);
+                return new PlatformImage (image);
             }
             return null;
         }
 
-        public static ImageiOS FromStream (Stream stream)
+        public IPlatformImage FromStream (Stream stream)
         {
             UIImage image = null;
             try {
@@ -37,23 +43,29 @@ namespace NachoClient.iOS
                 Log.Warn (Log.LOG_UTILS, "Unable to create UIImage from stream");
             }
             if (image != null) {
-                return new ImageiOS (image);
+                return new PlatformImage (image);
             }
             return null;
         }
+    }
 
-        private ImageiOS (UIImage image)
+    public class PlatformImage : IPlatformImage
+    {
+
+        UIImage Image;
+
+        public PlatformImage (UIImage image)
         {
             Image = image;
         }
 
-        public override Tuple<float, float> Size {
+        public Tuple<float, float> Size {
             get {
                 return new Tuple<float, float> ((float)Image.Size.Width, (float)Image.Size.Height);
             }
         }
 
-        public override System.IO.Stream ResizedData (float maxWidth, float maxHeight)
+        public System.IO.Stream ResizedData (float maxWidth, float maxHeight)
         {
             CGSize newSize = new CGSize (Image.Size.Width, Image.Size.Height);
             if (newSize.Width > maxWidth) {
@@ -76,7 +88,7 @@ namespace NachoClient.iOS
             return newImage.AsJPEG ().AsStream ();
         }
 
-        public override void Dispose ()
+        public void Dispose ()
         {
             Image.Dispose ();
         }

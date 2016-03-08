@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/NachoBackgroundGray">
+    <include
+        layout="@layout/ButtonBar" />
+    <RelativeLayout
+        android:id="@+id/search"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone">
+        <EditText
+            android:id="@+id/searchstring"
+            android:textSize="17dp"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_alignParentLeft="true"
+            android:hint="@string/search"
+            android:drawableLeft="@android:drawable/ic_menu_search"
+            android:drawablePadding="10dp"
+            android:background="@android:color/white"
+            android:padding="5dp" />
+        <Button
+            android:id="@+id/cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cancel"
+            android:textSize="14dp"
+            android:textStyle="normal"
+            android:layout_alignParentRight="true"
+            android:textColor="@android:color/white"
+            android:background="@color/NachoGreen" />
+    </RelativeLayout>
+    <TextView
+        android:id="@+id/chat_title"
+        android:text="@string/demo_contact_name"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:gravity="center|center_vertical"
+        android:textSize="17dp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="@android:color/black"
+        android:background="@android:color/white" />
+    <LinearLayout
+        android:id="@+id/to_view"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:text="To:"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white"
+            android:padding="5dp" />
+        <NachoClient.AndroidClient.EmailAddressField
+            android:id="@+id/compose_to"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white"
+            android:padding="5dp" />
+    </LinearLayout>
+    <LinearLayout
+        android:background="@color/NachoBackgroundGray"
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+        <TextView
+            android:id="@+id/no_chats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.1"
+            android:gravity="center_horizontal"
+            android:paddingTop="48dp"
+            android:textColor="@android:color/black"
+            android:textSize="14dp"
+            android:text="@string/no_chats"
+            android:visibility="gone"
+            android:background="@color/NachoLightGray" />
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <NachoClient.AndroidClient.SwipeMenuListView
+                android:id="@+id/listView"
+                android:scrollbars="vertical"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:transcriptMode="normal"
+                android:divider="@null"
+                android:background="@color/NachoLightGray" />
+        </android.support.v4.widget.SwipeRefreshLayout>
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:layout_gravity="bottom"
+        android:background="@android:color/white">
+        <ImageButton
+            android:id="@+id/chat_attach"
+            android:src="@drawable/chat_attachfile"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="4dp"
+            android:layout_marginBottom="4dp"
+            android:scaleType="fitEnd"
+            android:layout_gravity="left|bottom"
+            android:background="@android:color/white" />
+        <EditText
+            android:id="@+id/chat_message"
+            android:hint="@string/chat_prompt"
+            android:textSize="17dp"
+            android:textColor="@android:color/black"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_gravity="bottom"
+            android:paddingLeft="4dp"
+            android:background="@android:color/white"
+            android:inputType="textCapSentences|textMultiLine"
+            android:isScrollContainer="true"
+            android:minHeight="40dp"
+            android:maxHeight="40dp" />
+        <Button
+            android:id="@+id/chat_send"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/send"
+            android:textSize="17dp"
+            android:textStyle="normal"
+            android:textColor="@color/NachoGreen"
+            android:layout_gravity="right|bottom"
+            android:background="@android:color/white" />
+    </LinearLayout>
+</LinearLayout>

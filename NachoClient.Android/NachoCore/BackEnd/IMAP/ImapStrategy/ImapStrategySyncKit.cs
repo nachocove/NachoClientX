@@ -60,6 +60,8 @@ namespace NachoCore.IMAP
         /// </summary>
         public const int KInboxWindowMultiplier = 2;
 
+        public const string KXNachoChat = "X-Nacho-Chat";
+
         private static uint SpanSizeWithCommStatus (McProtocolState protocolState)
         {
             uint overallWindowSize = KRungSyncWindowSize [protocolState.ImapSyncRung];
@@ -93,16 +95,16 @@ namespace NachoCore.IMAP
             return NewMessageFlags;
         }
 
-        private static HashSet<HeaderId> ImapSummaryHeaders ()
+        private static HashSet<string> ImapSummaryHeaders ()
         {
-            HashSet<HeaderId> headers = new HashSet<HeaderId> ();
-            headers.Add (HeaderId.Importance);
-            headers.Add (HeaderId.DkimSignature);
-            headers.Add (HeaderId.ContentClass);
-            headers.Add (HeaderId.XPriority);
-            headers.Add (HeaderId.Priority);
-            headers.Add (HeaderId.XMSMailPriority);
-
+            var headers = new HashSet<string> ();
+            headers.Add (HeaderId.Importance.ToString ());
+            headers.Add (HeaderId.DkimSignature.ToString ());
+            headers.Add (HeaderId.ContentClass.ToString ());
+            headers.Add (HeaderId.XPriority.ToString ());
+            headers.Add (HeaderId.Priority.ToString ());
+            headers.Add (HeaderId.XMSMailPriority.ToString ());
+            headers.Add (KXNachoChat);
             return headers;
         }
 
@@ -118,7 +120,8 @@ namespace NachoCore.IMAP
                                                   | MessageSummaryItems.Flags
                                                   | MessageSummaryItems.InternalDate
                                                   | MessageSummaryItems.MessageSize
-                                                  | MessageSummaryItems.UniqueId;
+                                                  | MessageSummaryItems.UniqueId
+                                                  | MessageSummaryItems.References;
 
             if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
                 NewMessageFlags |= MessageSummaryItems.GMailMessageId;

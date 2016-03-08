@@ -11,6 +11,15 @@ using MailKit;
 
 namespace NachoCore.Model
 {
+    [Flags]
+    public enum FolderFilterOptions
+    {
+        All = 0,
+        Hot = 1,
+        Focused = 2,
+        Unread = 4,
+    }
+
     public class McFolder : McAbstrFolderEntry
     {
         [Indexed]
@@ -127,6 +136,8 @@ namespace NachoCore.Model
         public bool IsDistinguished { get; set; }
 
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
+
+        public FolderFilterOptions FilterSetting { get; set; }
 
         // Client-owned distinguised folders.
         public const string ClientOwned_Outbox = "f6a01521-a763-4522-8a13-3df0545f4bdb";
@@ -1209,7 +1220,7 @@ namespace NachoCore.Model
         public const int LTR_FAKE_FOLDER_ID = -2;
         public const int DEFERRED_FAKE_FOLDER_ID = -3;
         public const int DEADLINE_FAKE_FOLDER_ID = -4;
-
+        public const int INBOX_FAKE_FOLDER_ID = -5;
 
         public static McFolder GetHotFakeFolder ()
         {
@@ -1239,7 +1250,15 @@ namespace NachoCore.Model
         {
             return new McFolder () {
                 Id = DEADLINE_FAKE_FOLDER_ID,
-                DisplayName = "Deadline",
+                DisplayName = "Deadlines",
+            };
+        }
+
+        public static McFolder GetInboxFakeFolder ()
+        {
+            return new McFolder () {
+                Id = INBOX_FAKE_FOLDER_ID,
+                DisplayName = "Inbox",
             };
         }
     }

@@ -19,12 +19,14 @@ namespace NachoPlatform
         private static object syncRoot = new Object ();
         private EKEventStore Es;
         private NSObject NotifToken = null;
+        private INcEventProvider eventsProvider;
 
         public event EventHandler ChangeIndicator;
 
         private Calendars ()
         {
             EKEventStoreCreate ();
+            eventsProvider = new NcAllEventsCalendarMap (DateTime.Now.AddDays (151).Date);
         }
 
         public static Calendars Instance {
@@ -37,6 +39,12 @@ namespace NachoPlatform
                     }
                 }
                 return instance;
+            }
+        }
+
+        public INcEventProvider EventProviderInstance {
+            get {
+                return eventsProvider;
             }
         }
 
@@ -585,6 +593,7 @@ namespace NachoPlatform
             }
             foreach (var ekCalendar in ekCalendars) {
                 cancellationToken.ThrowIfCancellationRequested ();
+                NcAbate.PauseWhileAbated ();
                 appFolders.Add (new PlatformCalendarFolderRecordiOS (ekCalendar, ekCalendar.CalendarIdentifier == defaultId));
             }
 
@@ -593,6 +602,7 @@ namespace NachoPlatform
             if (null != ekEvents) {
                 foreach (var ekEvent in ekEvents) {
                     cancellationToken.ThrowIfCancellationRequested ();
+                    NcAbate.PauseWhileAbated ();
                     appEvents.Add (new PlatformCalendarRecordiOS (ekEvent));
                 }
             }

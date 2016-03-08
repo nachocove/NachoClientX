@@ -314,7 +314,7 @@ namespace NachoClient.iOS
             // Ideally the subview would be made into a class and take care of its own layout, but this works for now
             if (!organizerView.Hidden) {
                 nfloat emailOffset = 46f;
-                if (organizerNameLabel.Text.Equals ("")) {
+                if (string.IsNullOrEmpty (organizerNameLabel.Text)) {
                     emailOffset = (organizerView.Bounds.Height / 2) - 3;
                 }
                 if (emailOffset != organizerEmailLabel.Frame.Y) {

@@ -60,9 +60,9 @@ namespace NachoCore.Utils
             while (!TakeToken ()) {
                 var duration = (int)(LastRefresh.AddMilliseconds (RefreshMsecs) - DateTime.UtcNow).TotalMilliseconds;
                 duration = (0 < duration) ? duration : 1;
-                Log.Info (Log.LOG_SYS, "NcRateLimiter:Sleep");
+                // Log.Info (Log.LOG_SYS, "NcRateLimiter:Sleep");
                 Thread.Sleep (duration);
-                Log.Info (Log.LOG_SYS, "NcRateLimiter:Wake");
+                // Log.Info (Log.LOG_SYS, "NcRateLimiter:Wake");
             }
         }
     }

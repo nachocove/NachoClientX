@@ -321,7 +321,7 @@ namespace Test.Common
             message3.Insert ();
             Folder.Link (message3);
 
-            var count = McEmailMessage.CountOfUnreadMessageItems (1, Folder.Id);
+            var count = McEmailMessage.CountOfUnreadMessageItems (1, Folder.Id, default(DateTime));
             Assert.AreEqual (3, count);
         }
 

@@ -17,7 +17,7 @@ namespace NachoCore.Utils
             UserActionValue = (enable ? 2 : 1);
         }
 
-        public static void ToggleHotOrNot (McEmailMessage message)
+        public static int ToggleHotOrNot (McEmailMessage message)
         {
             int oldUserAction = message.UserAction;
             int newUserAction = 0;
@@ -54,6 +54,7 @@ namespace NachoCore.Utils
                     NcBrain.UpdateUserAction (message.AccountId, message.Id, message.UserAction);
                 }
             }, "ToggleHotOrNot");
+            return newUserAction;
         }
 
         public static void ToggleHotOrNot (McEmailMessageThread thread)

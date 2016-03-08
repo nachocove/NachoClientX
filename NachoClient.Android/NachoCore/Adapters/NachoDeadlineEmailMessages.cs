@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoDeadlineEmailMessages : INachoEmailMessages
+    public class NachoDeadlineEmailMessages : NachoEmailMessagesBase, INachoEmailMessages
     {
         int accountId;
         List<McEmailMessageThread> threadList;
@@ -24,7 +24,7 @@ namespace NachoCore
             Refresh (out adds, out deletes);
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryDueDateMessageItems (accountId);
             var threads = NcMessageThreads.ThreadByConversation (list);
@@ -35,19 +35,19 @@ namespace NachoCore
             return false;
         }
 
-        public int Count ()
+        public override int Count ()
         {
             return threadList.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public override McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
             t.Source = this;
             return t;
         }
 
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var message = McEmailMessage.QueryById<McEmailMessage> (id);
             if (null == message) {
@@ -58,39 +58,24 @@ namespace NachoCore
             }
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             return "Deadlines";
         }
 
-        public bool HasOutboxSemantics ()
-        {
-            return false;
-        }
-
-        public bool HasDraftsSemantics ()
-        {
-            return false;
-        }
-
-        public NcResult StartSync ()
-        {
-            return NachoSyncResult.DoesNotSync ();
-        }
-
-        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             return new NachoDeadlineEmailThread (accountId, thread.GetThreadId());
         }
 
-        public bool IsCompatibleWithAccount (McAccount account)
+        public override bool IsCompatibleWithAccount (McAccount account)
         {
             return account.Id == accountId;
         }
 
     }
 
-    public class NachoDeadlineEmailThread : INachoEmailMessages
+    public class NachoDeadlineEmailThread : NachoEmailMessagesBase, INachoEmailMessages
     {
         int accountId;
         string threadId;
@@ -106,7 +91,7 @@ namespace NachoCore
             Refresh (out adds, out deletes);
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryDueDateMessageItemsByThreadId (accountId, threadId);
             var threads = NcMessageThreads.ThreadByMessage (list);
@@ -117,19 +102,19 @@ namespace NachoCore
             return false;
         }
 
-        public int Count ()
+        public override int Count ()
         {
             return threadList.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public override McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
             t.Source = this;
             return t;
         }
 
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var thread = new List<McEmailMessageThread> ();
             var m = new McEmailMessageThread ();
@@ -139,32 +124,12 @@ namespace NachoCore
             return thread;
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             return "Deadlines";
         }
 
-        public bool HasOutboxSemantics ()
-        {
-            return false;
-        }
-
-        public bool HasDraftsSemantics ()
-        {
-            return false;
-        }
-
-        public NcResult StartSync ()
-        {
-            return NachoSyncResult.DoesNotSync ();
-        }
-
-        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
-        {
-            return null;
-        }
-
-        public bool IsCompatibleWithAccount (McAccount account)
+        public override bool IsCompatibleWithAccount (McAccount account)
         {
             return account.Id == accountId;
         }

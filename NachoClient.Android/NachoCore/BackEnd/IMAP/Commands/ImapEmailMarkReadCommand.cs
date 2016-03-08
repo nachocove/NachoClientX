@@ -10,7 +10,7 @@ namespace NachoCore.IMAP
 {
     public class ImapEmailMarkReadCommand : ImapCommand
     {
-        public ImapEmailMarkReadCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapEmailMarkReadCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
             PendingSingle = pending;
             pending.MarkDispatched ();

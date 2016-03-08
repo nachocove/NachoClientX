@@ -18,6 +18,12 @@ namespace NachoClient.iOS
         AccountsTableViewSource accountsTableViewSource;
         UIStoryboard accountStoryboard;
 
+        static readonly nfloat HEIGHT = 50;
+        static readonly nfloat INDENT = 25;
+        UcNameValuePair UnreadCountBlock;
+
+        ConnectToSalesforceCell connectToSalesforceView;
+
         SwitchAccountButton switchAccountButton;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
@@ -75,14 +81,23 @@ namespace NachoClient.iOS
             Util.ConfigureNavBar (false, this.NavigationController);
 
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount: false, showUnified: false);
+            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount: false, showUnified: false, showSalesforce: true);
 
             accountsTableView = new UITableView (View.Frame);
             accountsTableView.Source = accountsTableViewSource;
             accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            accountsTableView.TableFooterView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 80), AddAccountSelected);
+            accountsTableView.TableHeaderView = GetViewForHeader (accountsTableView);
+
+            var footerView = new UIView (new CGRect (0, 0, accountsTableView.Frame.Width, 160));
+            var addAccountView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 60), AddAccountSelected);
+            footerView.AddSubview (addAccountView);
+
+            connectToSalesforceView = new ConnectToSalesforceCell (new CGRect (0, 60, accountsTableView.Frame.Width, 80), ConnectToSalesforceSelected);
+            footerView.AddSubview (connectToSalesforceView);
+
+            accountsTableView.TableFooterView = footerView;
 
             View.AddSubview (accountsTableView);           
         }
@@ -101,6 +116,10 @@ namespace NachoClient.iOS
         {
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             accountsTableView.Frame = new CGRect (0, 0, accountsTableView.Frame.Width, View.Frame.Height);
+
+            RefreshUnreadBlock ();
+
+            connectToSalesforceView.Hidden = (null != McAccount.GetSalesForceAccount ());
         }
 
         public override void ViewDidLayoutSubviews ()
@@ -125,7 +144,11 @@ namespace NachoClient.iOS
         public void AccountSelected (McAccount account)
         {
             View.EndEditing (true);
-            PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
+            if (McAccount.AccountTypeEnum.SalesForce == account.AccountType) {
+                PerformSegue ("SegueToSalesforceSettings", new SegueHolder (account));
+            } else {
+                PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
+            }
         }
 
         // INachoAccountsTableDelegate
@@ -145,12 +168,28 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
+        public void ConnectToSalesforceSelected ()
+        {
+            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+            var credentialsViewController = (SalesforceCredentialsViewController)accountStoryboard.InstantiateViewController ("SalesforceCredentialsViewController");
+            credentialsViewController.Service = McAccount.AccountServiceEnum.SalesForce;
+            credentialsViewController.AccountDelegate = this;
+            NavigationController.PushViewController (credentialsViewController, true);
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("SegueToAccountSettings")) {
                 var h = (SegueHolder)sender;
                 var account = (McAccount)h.value;
                 var vc = (AccountSettingsViewController)segue.DestinationViewController;
+                vc.SetAccount (account);
+                return;
+            }
+            if (segue.Identifier.Equals ("SegueToSalesforceSettings")) {
+                var h = (SegueHolder)sender;
+                var account = (McAccount)h.value;
+                var vc = (SalesforceSettingsViewController)segue.DestinationViewController;
                 vc.SetAccount (account);
                 return;
             }
@@ -185,5 +224,42 @@ namespace NachoClient.iOS
             NavigationController.PopToViewController (this, true);
 
         }
+
+        UIView GetViewForHeader (UITableView tableView)
+        {
+            var headerView = new UIView (new CGRect (0, 0, tableView.Frame.Width, 0));
+            headerView.BackgroundColor = UIColor.White;
+
+            nfloat yOffset = 5;
+            UnreadCountBlock = new UcNameValuePair (new CGRect (0, yOffset, headerView.Frame.Width, HEIGHT), "Display Unread Counts", INDENT, 15, UnreadCountBlockTapHandler);
+            headerView.AddSubview (UnreadCountBlock);
+            yOffset = UnreadCountBlock.Frame.Bottom;
+
+            yOffset += 5;
+
+            ViewFramer.Create (headerView).Height (yOffset);
+            return headerView;
+        }
+
+        protected void UnreadCountBlockTapHandler (NSObject sender)
+        {
+            NcActionSheet.Show (UnreadCountBlock, this,
+                new NcAlertAction ("All Messages", () => {
+                    EmailHelper.SetShouldDisplayAllUnreadCount (true);
+                    RefreshUnreadBlock ();
+                }),
+                new NcAlertAction ("New Messages", () => {
+                    EmailHelper.SetShouldDisplayAllUnreadCount (false);
+                    RefreshUnreadBlock ();
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+            );
+        }
+
+        protected void RefreshUnreadBlock ()
+        {
+            UnreadCountBlock.SetValue (EmailHelper.ShouldDisplayAllUnreadCount () ? "All Messages" : "New Messages");
+        }
+
     }
 }

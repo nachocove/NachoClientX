@@ -32,6 +32,8 @@ namespace NachoClient.iOS
 
         bool RefreshEmailMessages (out List<int> adds, out List<int> deletes);
 
+        void BackgroundRefreshEmailMessages (NachoMessagesRefreshCompletionDelegate completionAction);
+
         bool NoMessageThreads ();
 
         void ReconfigureVisibleCells (UITableView tableView);
@@ -54,7 +56,7 @@ namespace NachoClient.iOS
 
         void MultiSelectToggle (IMessageTableViewSource source, bool enabled);
 
-        void MultiSelectChange (IMessageTableViewSource source, int count);
+        void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts);
 
         void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action);
     }

@@ -73,6 +73,7 @@ namespace NachoClient.iOS
         private const string NotificationActionIdentifierDelete = "delete";
         private const string NotificationActionIdentifierArchive = "archive";
         private const string NotificationCategoryIdentifierMessage = "message";
+        private const string NotificationCategoryIdentifierChat = "chat";
 
         private ulong UserNotificationSettings {
             get {
@@ -405,6 +406,12 @@ namespace NachoClient.iOS
                 if (null != eventNotificationDictionary) {
                     var eventId = ((NSNumber)eventNotificationDictionary).NIntValue;
                     SaveNotification ("FinishedLaunching", EventNotificationKey, eventId);
+                }
+                var chatNotificationDictionary = (NSArray)localNotification.UserInfo.ObjectForKey (ChatNotificationKey);
+                if (null != chatNotificationDictionary) {
+                    var chatId = (chatNotificationDictionary.GetItem<NSNumber> (0)).NIntValue;
+                    var messageId = (chatNotificationDictionary.GetItem<NSNumber> (1)).NIntValue;
+                    SaveNotification ("FinishedLaunching", ChatNotificationKey, new nint[] {chatId, messageId});
                 }
                 if (localNotification != null) {
                     // reset badge
@@ -848,6 +855,12 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
                 CompletePerformFetchWithoutShutdown ();
             }
+
+            // Crashes while launching in the background shouldn't increment the safe mode counter.
+            // (It would be nice if background launches could simply not increment the counter rather
+            // than clear it completely, but that is not worth the effort.)
+            NcApplication.Instance.UnmarkStartup ();
+
             CompletionHandler = completionHandler;
             // check to see if migrations need to run. If so, we shouldn't let the PerformFetch proceed!
             NcMigration.Setup ();
@@ -856,13 +869,12 @@ namespace NachoClient.iOS
                 FinalizePerformFetch (UIBackgroundFetchResult.NoData); // or UIBackgroundFetchResult.Failed?
                 return;
             }
-            NcCommStatus.Instance.ForceUp ("StartFetch");
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
 
-            fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            fetchAccounts = McAccount.GetAllConfiguredNormalAccountIds ();
             if (hasRegisteredForRemoteNotifications) {
-                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+                pushAccounts = McAccount.GetAllConfiguredNormalAccountIds ();
             } else {
                 pushAccounts = new List<int> ();
             }
@@ -873,6 +885,8 @@ namespace NachoClient.iOS
                 ReverseFinalShutdown ();
                 BackEnd.Instance.Start ();
                 NcApplicationMonitor.Instance.Start (1, 60);
+            } else {
+                NcCommStatus.Instance.Reset ("StartFetch");
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
             // iOS only allows a limited amount of time to fetch data in the background.
@@ -901,20 +915,32 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void SaveNotification (string traceMessage, string key, nint[] id)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "{0}: {1} id is {2}.", traceMessage, key, id);
+
+            var devAccount = McAccount.GetDeviceAccount ();
+            if (null != devAccount) {
+                McMutables.Set (devAccount.Id, key, key, String.Join<nint>(",", id));
+            }
+        }
+
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
             var emailMutables = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey);
             var eventMutables = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
+            var chatMutables = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.ChatNotificationKey);
 
             var emailNotification = (NSNumber)notification.UserInfo.ObjectForKey (EmailNotificationKey);
             var eventNotification = (NSNumber)notification.UserInfo.ObjectForKey (EventNotificationKey);
+            var chatNotification = (NSArray)notification.UserInfo.ObjectForKey (ChatNotificationKey);
 
             // The app is 'active' if it is already running when the local notification
             // arrives or if the app is started when a local notification is delivered.
             // When the app is started by a notification, FinishedLauching adds mutables.
             if (UIApplicationState.Active == UIApplication.SharedApplication.ApplicationState) {
                 // If the app is started by FinishedLaunching, it adds some mutables
-                if ((0 == emailMutables.Count) && (0 == eventMutables.Count)) {
+                if ((0 == emailMutables.Count) && (0 == eventMutables.Count) && (0 == chatMutables.Count)) {
                     // Now we know that the app was already running.  In this case,
                     // we notify the user of the upcoming event with an alert view.
                     string title = notification.AlertTitle;
@@ -960,7 +986,15 @@ namespace NachoClient.iOS
                     nachoTabBarController.SwitchToNachoNow ();
                 }
             }
-            if ((null == emailNotification) && (null == eventNotification)) {
+            if (null != chatNotification) {
+                var chatId = ((NSNumber)chatNotification.GetItem<NSNumber>(0)).ToMcModelIndex ();
+                var messageId = ((NSNumber)chatNotification.GetItem<NSNumber>(1)).ToMcModelIndex ();
+                SaveNotification ("ReceivedLocalNotification", ChatNotificationKey, new nint[]{chatId, messageId});
+                if (null != nachoTabBarController) {
+                    nachoTabBarController.SwitchToNachoNow ();
+                }
+            }
+            if ((null == emailNotification) && (null == eventNotification) && (null == chatNotification)) {
                 Log.Error (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: received unknown notification");
             }
         }
@@ -1061,6 +1095,7 @@ namespace NachoClient.iOS
          * NOTE: This code will need to get a little smarter when we are doing many types of notification.
          */
         static public NSString EmailNotificationKey = new NSString ("McEmailMessage.Id");
+        static public NSString ChatNotificationKey = new NSString ("McChat.Id,McChatMessage.MessageId");
         static public NSString EventNotificationKey = new NSString ("NotifiOS.handle");
 
         private bool BadgeNotifAllowed = true;
@@ -1130,6 +1165,51 @@ namespace NachoClient.iOS
             return true;
         }
 
+        private bool NotifyChatMessage (NcChatMessage message, McChat chat, McAccount account, bool withSound)
+        {
+            var fromString = Pretty.SenderString (message.From);
+            var bundle = new NcEmailMessageBundle (message);
+            string preview = bundle.TopText;
+            if (String.IsNullOrWhiteSpace (preview)) {
+                preview = message.BodyPreview;
+            }
+            if (String.IsNullOrWhiteSpace (preview)) {
+                return false;
+            }
+
+            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
+                // Add debugging info for dev & alpha
+                var latency = (DateTime.UtcNow - message.DateReceived).TotalSeconds;
+                var cause = (null == fetchCause ? "BG" : fetchCause);
+                preview = String.Format ("[{0}:{1:N1}s] {2}", cause, latency, preview);
+
+                Log.Info (Log.LOG_PUSH, "[PA] notify email message: client_id={0}, message_id={1}, cause={2}, delay={3}",
+                    NcApplication.Instance.ClientId, message.Id, cause, latency);
+            }
+
+            if (NotificationCanAlert) {
+                var notif = new UILocalNotification ();
+                notif.Category = NotificationCategoryIdentifierChat;
+                notif.AlertBody = String.Format ("{0}\n{1}", fromString, preview);
+                if (notif.RespondsToSelector (new Selector ("setAlertTitle:"))) {
+                    notif.AlertTitle = "New Chat Message";
+                }
+                notif.AlertAction = null;
+                notif.UserInfo = NSDictionary.FromObjectAndKey (NSArray.FromNSObjects(NSNumber.FromInt32 (message.ChatId), NSNumber.FromInt32 (message.Id)), ChatNotificationKey);
+                if (withSound) {
+                    if (NotificationCanSound) {
+                        notif.SoundName = UILocalNotification.DefaultSoundName;
+                    } else {
+                        Log.Warn (Log.LOG_UI, "No permission to play sound. (emailMessageId={0})", message.Id);
+                    }
+                }
+                UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+            } else {
+                Log.Warn (Log.LOG_UI, "No permission to badge. (emailMessageId={0})", message.Id);
+            }
+            return true;
+        }
+
         // It is okay if this function is called more than it needs to be.
         private void BadgeNotifUpdate ()
         {
@@ -1142,10 +1222,14 @@ namespace NachoClient.iOS
             var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
             var since = DateTime.Parse (datestring);
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
-            var badgeCount = unreadAndHot.Count ();
+            var unreadChatMessages = McChat.UnreadMessagesSince (since);
+            var badgeCount = unreadAndHot.Count () + unreadChatMessages.Count ();
             var soundExpressed = false;
             int remainingVisibleSlots = 10;
             var accountTable = new Dictionary<int, McAccount> ();
+            var chatTable = new Dictionary<int, McChat> ();
+            McAccount account = null;
+            McChat chat = null;
 
             var notifiedMessageIDs = new HashSet<string> ();
 
@@ -1162,7 +1246,6 @@ namespace NachoClient.iOS
                     }
                     continue;
                 }
-                McAccount account = null;
                 if (!accountTable.TryGetValue (message.AccountId, out account)) {
                     var newAccount = McAccount.QueryById<McAccount> (message.AccountId);
                     if (null == newAccount) {
@@ -1196,6 +1279,46 @@ namespace NachoClient.iOS
                     break;
                 }
             }
+
+            if (remainingVisibleSlots > 0){
+                foreach (var message in unreadChatMessages) {
+                    if (!accountTable.TryGetValue (message.AccountId, out account)) {
+                        account = McAccount.QueryById<McAccount> (message.AccountId);
+                        if (null == account) {
+                            Log.Warn (Log.LOG_PUSH, "Will not notify chat message from an unknown account (accoundId={0}, emailMessageId={1})", message.AccountId, message.Id);
+                        }
+                        accountTable.Add (message.AccountId, account);
+                    }
+                    if (!chatTable.TryGetValue (message.ChatId, out chat)) {
+                        chat = McChat.QueryById<McChat> (message.ChatId);
+                        if (null == chat) {
+                            Log.Warn (Log.LOG_PUSH, "Will not notify chat message from an unknown chat (chatId={0}, emailMessageId={1})", message.ChatId, message.Id);
+                        }
+                        chatTable.Add (message.ChatId, chat);
+                    }
+                    if ((null == account) || (null == chat) || !NotificationHelper.ShouldNotifyChatMessage (message)) {
+                        --badgeCount;
+                        // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
+                        McEmailMessage.QueryById<McEmailMessage>(message.Id).MarkHasBeenNotified (false);
+                        continue;
+                    }
+                    if (!NotifyChatMessage (message, chat, account, !soundExpressed)) {
+                        Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification attempt for message {0} failed.", message.Id);
+                        --badgeCount;
+                        continue;
+                    } else {
+                        soundExpressed = true;
+                    }
+                    // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
+                    McEmailMessage.QueryById<McEmailMessage>(message.Id).MarkHasBeenNotified (true);
+                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification for message {0}", message.Id);
+                    --remainingVisibleSlots;
+                    if (0 >= remainingVisibleSlots) {
+                        break;
+                    }
+                }
+            }
+
             accountTable.Clear ();
 
             if (NotificationCanBadge) {

@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class NachoUnifiedHotList : INachoEmailMessages
+    public class NachoUnifiedHotList : NachoEmailMessagesBase, INachoEmailMessages
     {
         List<McEmailMessageThread> threadList;
 
@@ -20,7 +20,7 @@ namespace NachoCore
             Refresh (out adds, out deletes);
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             double threshold = McEmailMessage.minHotScore;
             // Before statistics converge, there may be a period when there is no hot emails.
@@ -34,12 +34,12 @@ namespace NachoCore
             return false;
         }
 
-        public int Count ()
+        public override int Count ()
         {
             return threadList.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public override McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
             t.Source = this;
@@ -47,7 +47,7 @@ namespace NachoCore
         }
 
         // Add messages, not just hot ones
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var message = McEmailMessage.QueryById<McEmailMessage> (id);
             if (null == message) {
@@ -63,42 +63,26 @@ namespace NachoCore
             return thread;
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             return "Hot List";
         }
 
-        public bool HasOutboxSemantics ()
+        public override NcResult StartSync ()
         {
-            return false;
+            return EmailHelper.SyncUnified ();
         }
 
-        public bool HasDraftsSemantics ()
-        {
-            return false;
-        }
-
-        public NcResult StartSync ()
-        {
-            // FIXME all acount sync cmd
-//            if (null != folder) {
-//                return BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
-//            } else {
-//                return NachoSyncResult.DoesNotSync ();
-//            }
-            return NachoSyncResult.DoesNotSync ();
-        }
-
-        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
+        public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             var firstMessage = thread.FirstMessage ();
             var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
             return new NachoThreadedEmailMessages (inbox, thread.GetThreadId ());
         }
 
-        public bool IsCompatibleWithAccount (McAccount account)
+        public override bool IsCompatibleWithAccount (McAccount account)
         {
-            return NcApplication.Instance.Account.ContainsAccount (account.Id);
+            return McAccount.GetUnifiedAccount ().Id == account.Id;
         }
     }
 }

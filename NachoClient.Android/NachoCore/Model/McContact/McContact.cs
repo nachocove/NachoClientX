@@ -125,6 +125,7 @@ namespace NachoCore.Model
         }
 
         /// ActiveSync or Device
+        [Indexed]
         public McAbstrItem.ItemSource Source { get; set; }
 
         /// Set only for Device contacts
@@ -1365,6 +1366,18 @@ namespace NachoCore.Model
             return contactList;
         }
 
+        public static List<McContact> QueryByEmailAddress (string emailAddress)
+        {
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
+                "SELECT c.* FROM McContact AS c " +
+                " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                " WHERE " +
+                " s.Value = ? AND " +
+                " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                emailAddress);
+            return contactList;
+        }
+
         public static List<NcContactPortraitIndex> QueryForPortraits (List<int> emailAddressIndexList)
         {
             var set = String.Format ("( {0} )", String.Join (",", emailAddressIndexList.ToArray<int> ()));
@@ -1689,6 +1702,23 @@ namespace NachoCore.Model
                 name = CompanyName;
             }
             return name;
+        }
+
+        public string GetInformalDisplayName ()
+        {
+            if (!String.IsNullOrEmpty (FirstName)) {
+                return FirstName;
+            }
+            if (!String.IsNullOrEmpty (LastName)) {
+                return LastName;
+            }
+            if (!String.IsNullOrEmpty (MiddleName)) {
+                return MiddleName;
+            }
+            if (!String.IsNullOrEmpty (DisplayName)) {
+                return DisplayName;
+            }
+            return CompanyName;
         }
 
         public string GetEmailAddress ()
