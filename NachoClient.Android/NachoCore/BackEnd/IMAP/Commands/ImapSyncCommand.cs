@@ -378,13 +378,17 @@ namespace NachoCore.IMAP
             if (changed) {
                 // TODO move the rest to parent class or into the McEmailAddress class before insert or update?
                 NcModel.Instance.RunInTransaction (() => {
+                    NcResult result;
                     if (justCreated) {
                         emailMessage.IsJunk = folder.IsJunkFolder ();
                         emailMessage.Insert ();
-                        folder.Link (emailMessage);
+                        result = folder.Link (emailMessage, imapSummary.UniqueId);
+                        if (!result.isOK () && result.SubKind != NcResult.SubKindEnum.Error_AlreadyInFolder) {
+                            throw new Exception (string.Format ("Could not link message: {0}", result.GetMessage ()));
+                        }
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
                         if (emailMessage.IsChat){
-                            var result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
+                            result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
                             if (result.isError()){
                                 Log.Error(Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
                             }
@@ -395,10 +399,10 @@ namespace NachoCore.IMAP
                             updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                             return true;
                         });
-                    }
-                    var res = folder.Link (emailMessage, imapSummary.UniqueId);
-                    if (!res.isOK () && res.SubKind != NcResult.SubKindEnum.Error_AlreadyInFolder) {
-                        throw new Exception (string.Format ("Could not link message: {0}", res.GetMessage ()));
+                        result = folder.Link (emailMessage, imapSummary.UniqueId);
+                        if (!result.isOK () && result.SubKind != NcResult.SubKindEnum.Error_AlreadyInFolder) {
+                            throw new Exception (string.Format ("Could not link message: {0}", result.GetMessage ()));
+                        }
                     }
                 });
             }
