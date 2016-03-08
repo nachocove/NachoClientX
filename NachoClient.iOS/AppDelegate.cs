@@ -855,6 +855,12 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
                 CompletePerformFetchWithoutShutdown ();
             }
+
+            // Crashes while launching in the background shouldn't increment the safe mode counter.
+            // (It would be nice if background launches could simply not increment the counter rather
+            // than clear it completely, but that is not worth the effort.)
+            NcApplication.Instance.UnmarkStartup ();
+
             CompletionHandler = completionHandler;
             // check to see if migrations need to run. If so, we shouldn't let the PerformFetch proceed!
             NcMigration.Setup ();

@@ -436,9 +436,21 @@ namespace NachoCore
             // we need to sequence these properly.
             NcMigration.Setup ();
             if (ShouldEnterSafeMode ()) {
+                // Put an error message in the log to increase the chances that this will be noticed and investigated.
+                Log.Error (Log.LOG_LIFECYCLE, "Safe mode was triggered. Please investigate.");
+
                 ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
                 Telemetry.SharedInstance.Throttling = false;
+
+                // Submit a support request, to make the chances even higher that this will be noticed and investigated.
+                var supportInfo = new System.Collections.Generic.Dictionary<string, string> ();
+                supportInfo.Add ("ContactInfo", "None, because this is auto-generated");
+                supportInfo.Add ("Message", "Safe mode was triggered. Please investigate.");
+                supportInfo.Add ("BuildVersion", BuildInfo.Version);
+                supportInfo.Add ("BuildNumber", BuildInfo.BuildNumber);
+                Telemetry.RecordSupport (supportInfo);
+
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
                         Log.Info (Log.LOG_LIFECYCLE, "NcApplication: safe mode canceled");
@@ -841,6 +853,10 @@ namespace NachoCore
 
         private bool MonitorUploads ()
         {
+            // Even if everything is already caught up, keep the safe mode screen visible for
+            // a couple of seconds so the user has time to read it.
+            Thread.Sleep (TimeSpan.FromSeconds (2));
+
             bool telemetryDone = false;
             bool crashReportingDone = false;
             SafeModeStarted = true;
