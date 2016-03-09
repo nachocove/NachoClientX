@@ -134,17 +134,6 @@ namespace NachoCore.Utils
             }
         }
 
-        static void LogCertificateError (X509Chain chain, SslPolicyErrors sslPolicyErrors, string tag)
-        {
-            List<string> errors = new List<string> ();
-            if (null != chain.ChainElements) {
-                foreach (var certEl in chain.ChainElements) {
-                    errors.Add (string.Format ("Certificate(status={0}):\n{0}", string.Join (",", certEl.ChainElementStatus.Select (x => x.StatusInformation).ToList ()), certEl.Certificate));
-                }
-            }
-            Log.Error (Log.LOG_HTTP, "{0} sslPolicyErrors={1}\n{2}", tag, sslPolicyErrors, string.Join ("\n", errors));
-        }
-
         static bool StringCertificateValidationCallback (string hostname,
             X509Certificate certificate,
             X509Chain chain,
@@ -155,7 +144,7 @@ namespace NachoCore.Utils
             }
             var ok = chain.Build (new X509Certificate2 (certificate));
             if (!ok) {
-                LogCertificateError (chain, sslPolicyErrors, "StringCertificateValidationCallback");
+                LogCertificateChainErrors (chain, sslPolicyErrors, string.Format ("StringCertificateValidationCallback({0})", hostname));
             }
             return ok;
         }
@@ -219,7 +208,7 @@ namespace NachoCore.Utils
                         ok = false;
                     }
                     if (!ok) {
-                        LogCertificateError (chain, sslPolicyErrors, "HttpWebRequestCertificateValidationCallback");
+                        LogCertificateChainErrors (chain, sslPolicyErrors, "HttpWebRequestCertificateValidationCallback");
                         // We change the result. Log the reason
                         foreach (var status in chain.ChainStatus) {
                             Log.Warn (Log.LOG_HTTP, "Cert chain status: {0}", status.Status);
@@ -248,6 +237,17 @@ namespace NachoCore.Utils
                 Log.Info (Log.LOG_HTTP, "Certificate validation failed with: {0}", sslPolicyErrors);
             }
             return false;
+        }
+
+        static void LogCertificateChainErrors (X509Chain chain, SslPolicyErrors sslPolicyErrors, string tag)
+        {
+            List<string> errors = new List<string> ();
+            if (null != chain.ChainElements) {
+                foreach (var certEl in chain.ChainElements) {
+                    errors.Add (string.Format ("Certificate(status={0}):\n{1}", string.Join (",", certEl.ChainElementStatus.Select (x => x.StatusInformation).ToList ()), certEl.Certificate));
+                }
+            }
+            Log.Error (Log.LOG_HTTP, "{0} sslPolicyErrors={1}, chain-errors: {2}\n{3}", tag, sslPolicyErrors, string.Join (",", chain.ChainStatus.Select (x => x.StatusInformation)), string.Join ("\n", errors));
         }
 
         public static void TestOnlyFlushCache ()
