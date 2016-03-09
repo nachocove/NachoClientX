@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
@@ -120,11 +121,51 @@ namespace NachoCore.Utils
                                                           X509Chain chain,
                                                           SslPolicyErrors sslPolicyErrors)
         {
-            var maybeRequest = sender as HttpWebRequest;
-            if (null == maybeRequest) {
-                return SslPolicyErrors.None == sslPolicyErrors;
+            string hostname = sender as string;
+            if (null != hostname) {
+                return StringCertificateValidationCallback (hostname, certificate, chain, sslPolicyErrors);
+            } else {
+                var maybeRequest = sender as HttpWebRequest;
+                if (null != maybeRequest) {
+                    return HttpWebRequestCertificateValidationCallback (maybeRequest, certificate, chain, sslPolicyErrors);
+                } else {
+                    return SslPolicyErrors.None == sslPolicyErrors;
+                }
             }
-            IHttpWebRequest request = new MockableHttpWebRequest (maybeRequest);
+        }
+
+        static void LogCertificateError (X509Chain chain, SslPolicyErrors sslPolicyErrors, string tag)
+        {
+            List<string> errors = new List<string> ();
+            if (null != chain.ChainElements) {
+                foreach (var certEl in chain.ChainElements) {
+                    errors.Add (string.Format ("Certificate(status={0}):\n{0}", string.Join (",", certEl.ChainElementStatus.Select (x => x.StatusInformation).ToList ()), certEl.Certificate));
+                }
+            }
+            Log.Error (Log.LOG_HTTP, "{0} sslPolicyErrors={1}\n{2}", tag, sslPolicyErrors, string.Join ("\n", errors));
+        }
+
+        static bool StringCertificateValidationCallback (string hostname,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            if (SslPolicyErrors.None == sslPolicyErrors) {
+                return true;
+            }
+            var ok = chain.Build (new X509Certificate2 (certificate));
+            if (!ok) {
+                LogCertificateError (chain, sslPolicyErrors, "StringCertificateValidationCallback");
+            }
+            return ok;
+        }
+
+        static bool HttpWebRequestCertificateValidationCallback (HttpWebRequest sender,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            IHttpWebRequest request = new MockableHttpWebRequest (sender);
             X509Certificate2 certificate2 = null;
             if (null != certificate) {
                 certificate2 = new X509Certificate2 (certificate);
@@ -178,6 +219,7 @@ namespace NachoCore.Utils
                         ok = false;
                     }
                     if (!ok) {
+                        LogCertificateError (chain, sslPolicyErrors, "HttpWebRequestCertificateValidationCallback");
                         // We change the result. Log the reason
                         foreach (var status in chain.ChainStatus) {
                             Log.Warn (Log.LOG_HTTP, "Cert chain status: {0}", status.Status);
