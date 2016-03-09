@@ -1007,29 +1007,29 @@ namespace NachoClient.iOS
                 var thread = new McEmailMessageThread ();
                 thread.FirstMessageId = emailMessageId;
                 thread.MessageCount = 1;
-                if (actionIdentifier == NotificationActionIdentifierReply) {
-                    if (Window.RootViewController is NachoTabBarController) {
-                        var message = thread.FirstMessageSpecialCase ();
-                        var account = McAccount.EmailAccountForMessage (message);
+                var message = thread.FirstMessageSpecialCase ();
+                if (null != message) {
+                    if (actionIdentifier == NotificationActionIdentifierReply) {
+                        if (Window.RootViewController is NachoTabBarController) {
+                            var account = McAccount.EmailAccountForMessage (message);
+                            EmailHelper.MarkAsRead (thread, force: true);
+                            var composeViewController = new MessageComposeViewController (account);
+                            composeViewController.Composer.RelatedThread = thread;
+                            composeViewController.Composer.Kind = EmailHelper.Action.Reply;
+                            composeViewController.Present (false, null);
+                        }
+                    } else if (actionIdentifier == NotificationActionIdentifierArchive) {
+                        NcEmailArchiver.Archive (message);
+                        BadgeNotifUpdate ();
+                    } else if (actionIdentifier == NotificationActionIdentifierMark) {
                         EmailHelper.MarkAsRead (thread, force: true);
-                        var composeViewController = new MessageComposeViewController (account);
-                        composeViewController.Composer.RelatedThread = thread;
-                        composeViewController.Composer.Kind = EmailHelper.Action.Reply;
-                        composeViewController.Present (false, null);
+                        BadgeNotifUpdate ();
+                    } else if (actionIdentifier == NotificationActionIdentifierDelete) {
+                        NcEmailArchiver.Delete (message);
+                        BadgeNotifUpdate ();
+                    } else {
+                        NcAssert.CaseError ("Unknown notification action");
                     }
-                } else if (actionIdentifier == NotificationActionIdentifierArchive) {
-                    var message = thread.FirstMessageSpecialCase ();
-                    NcEmailArchiver.Archive (message);
-                    BadgeNotifUpdate ();
-                } else if (actionIdentifier == NotificationActionIdentifierMark) {
-                    EmailHelper.MarkAsRead (thread, force: true);
-                    BadgeNotifUpdate ();
-                } else if (actionIdentifier == NotificationActionIdentifierDelete) {
-                    var message = thread.FirstMessageSpecialCase ();
-                    NcEmailArchiver.Delete (message);
-                    BadgeNotifUpdate ();
-                } else {
-                    NcAssert.CaseError ("Unknown notification action");
                 }
             }
             completionHandler ();
