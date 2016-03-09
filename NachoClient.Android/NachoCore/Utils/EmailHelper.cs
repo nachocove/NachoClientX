@@ -866,7 +866,16 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount)
+        public static DateTime GetNewSincePreference ()
+        {
+            if (ShouldDisplayAllUnreadCount ()) {
+                return DateTime.MinValue;
+            } else {
+                return LoginHelpers.GetBackgroundTime ();
+            }
+        }
+
+        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount, DateTime newSince)
         {
             unreadMessageCount = 0;
             deadlineMessageCount = 0;
@@ -877,7 +886,7 @@ namespace NachoCore.Utils
                 if (account.ContainsAccount (accountId)) {
                     var inboxFolder = NcEmailManager.InboxFolder (accountId);
                     if (null != inboxFolder) {
-                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
                         deadlineMessageCount += McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
                         deferredMessageCount += new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
                         likelyMessageCount += new NachoLikelyToReadEmailMessages (inboxFolder).Count ();
@@ -886,7 +895,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void GetUnreadMessageCount (McAccount account, out int unreadMessageCount)
+        public static void GetUnreadMessageCount (McAccount account, out int unreadMessageCount, DateTime newSince)
         {
             unreadMessageCount = 0;
 
@@ -894,10 +903,40 @@ namespace NachoCore.Utils
                 if (account.ContainsAccount (accountId)) {
                     var inboxFolder = NcEmailManager.InboxFolder (accountId);
                     if (null != inboxFolder) {
-                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
                     }
                 }
             }
+        }
+
+        public const string AllUnread_McMutablesModule = "Settings";
+        public const string AllUnread_McMutablesKey = "ShowAllUnread";
+
+        /// <summary>
+        /// Shoulds the display all unread count if true.  Just new unread if false.
+        /// </summary>
+        /// <returns><c>true</c>, if display all unread count is set, <c>false</c> otherwise display new unread.</returns>
+        public static bool ShouldDisplayAllUnreadCount ()
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            return McMutables.GetBoolDefault (accountId, AllUnread_McMutablesModule, AllUnread_McMutablesKey, true);
+        }
+
+        public static void SetShouldDisplayAllUnreadCount (bool enabled)
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            McMutables.SetBool (accountId, AllUnread_McMutablesModule, AllUnread_McMutablesKey, enabled);
+        }
+
+        public static bool IsSalesForceContact (int accountId, string emailAddress)
+        {
+            var contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+            foreach (var contact in contacts) {
+                if (contact.Source == McAbstrItem.ItemSource.SalesForce) {
+                    return true;
+                }
+            }
+            return false;
         }
 
 
@@ -1091,6 +1130,23 @@ namespace NachoCore.Utils
             }
             return doAdd;
         }
+
+        public static NcResult SyncUnified ()
+        {
+            bool syncStarted = false;
+            var EmailAccounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).ToList ();
+            foreach (var account in EmailAccounts) {
+                if (McAccount.GetUnifiedAccount ().Id != account.Id) {
+                    var inboxFolder = McFolder.GetDefaultInboxFolder (account.Id);
+                    if (null != inboxFolder) {
+                        var nr = BackEnd.Instance.SyncCmd (inboxFolder.AccountId, inboxFolder.Id);
+                        syncStarted |= !NachoSyncResult.DoesNotSync (nr);
+                    }
+                }
+            }
+            return (syncStarted ? NcResult.OK() : NachoSyncResult.DoesNotSync());
+        }
+       
     }
 }
 

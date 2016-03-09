@@ -364,22 +364,17 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            if (null == currentAccount) {
-                currentAccount = NcApplication.Instance.Account;
-            }
             // Account switched
-            if (currentAccount.Id != NcApplication.Instance.Account.Id) {
+            if ((null == currentAccount) || (currentAccount.Id != NcApplication.Instance.Account.Id)) {
                 if (searchDisplayController.Active) {
                     searchDisplayController.Active = false;
                 }
                 CancelSearchIfActive ();
                 if (HasAccountSwitcher ()) {
                     SwitchToAccount (NcApplication.Instance.Account);
-                } else {
-                    NavigationController.PopViewController (true);
-                    return;
                 }
             }
+            currentAccount = NcApplication.Instance.Account;
                 
             if (HasAccountSwitcher ()) {
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);

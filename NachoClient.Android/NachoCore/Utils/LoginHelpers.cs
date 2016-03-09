@@ -253,5 +253,25 @@ namespace NachoCore.Utils
         {
             return McMutables.GetOrCreateBool (GlobalAccountId, MODULE, "GoogleSignInCallbackArrived", false);
         }
+
+        // Sorry about the android, this is for iOS too.
+        public static void SetBackgroundTime (DateTime backgroundTime)
+        {
+            McMutables.Set (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", backgroundTime.ToString ("O"));
+        }
+
+        // Sorry about the android, this is for iOS too.
+        public static DateTime GetBackgroundTime ()
+        {
+            DateTime result;
+            var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", DateTime.UtcNow.ToString ("O"));
+            if (!DateTime.TryParseExact (datestring, "O", null, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out result)) {
+                if (!DateTime.TryParse (datestring, out result)) {
+                    Log.Warn (Log.LOG_UTILS, "Could not parse background time for account: {0}", datestring);
+                    result = DateTime.UtcNow;
+                }
+            }
+            return result;
+        }
     }
 }

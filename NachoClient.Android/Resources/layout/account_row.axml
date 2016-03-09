@@ -64,6 +64,16 @@
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
                 android:layout_gravity="center" />
+            <TextView
+                android:id="@+id/unread_count"
+                android:text="(2)"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="3dp"
+                android:textSize="14dp"
+                android:textStyle="normal"
+                android:textColor="@android:color/black" />
         </LinearLayout>
     </android.support.v7.widget.CardView>
     <View

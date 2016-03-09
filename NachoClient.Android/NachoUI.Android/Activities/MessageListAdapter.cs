@@ -654,7 +654,7 @@ namespace NachoClient.AndroidClient
         void StartComposeActivity (EmailHelper.Action action, McEmailMessageThread thread, McEmailMessage message)
         {
             var activity = owner.Activity;
-            owner.StartActivity (MessageComposeActivity.RespondIntent (activity, action, thread.FirstMessage()));
+            owner.StartActivity (MessageComposeActivity.RespondIntent (activity, action, thread.FirstMessage ()));
         }
 
         void DeadlinesView_Click ()
@@ -682,15 +682,15 @@ namespace NachoClient.AndroidClient
         void BindSummaryViewHolder (SummaryViewHolder summaryViewHolder)
         {
             NcTask.Run (() => {
-                int unreadMessageCount;
-                int likelyMessageCount;
-                int deferredMessageCount;
-                int deadlineMessageCount;
-                EmailHelper.GetMessageCounts (NcApplication.Instance.Account, out unreadMessageCount, out deferredMessageCount, out deadlineMessageCount, out likelyMessageCount);
+                int unreadCount;
+                int likelyCount;
+                int deferredCount;
+                int deadlineCount;
+                EmailHelper.GetMessageCounts (NcApplication.Instance.Account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount, EmailHelper.GetNewSincePreference ());
                 InvokeOnUIThread.Instance.Invoke (() => {
-                    summaryViewHolder.inboxMessageCountView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadMessageCount);
-                    summaryViewHolder.deferredMessageCountView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredMessageCount);
-                    summaryViewHolder.deadlinesMessageCountView.Text = String.Format ("Go to Deadlines ({0:N0})", deadlineMessageCount);
+                    summaryViewHolder.inboxMessageCountView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadCount);
+                    summaryViewHolder.deferredMessageCountView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredCount);
+                    summaryViewHolder.deadlinesMessageCountView.Text = String.Format ("Go to Deadlines ({0:N0})", deadlineCount);
                     // FIMXE LTR.
                 });
             }, "UpdateUnreadMessageView");

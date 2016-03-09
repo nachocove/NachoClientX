@@ -52,6 +52,10 @@ namespace NachoClient.AndroidClient
             hotSwitch.Checked = LoginHelpers.ShowHotCards ();
             hotSwitch.CheckedChange += HotSwitch_CheckedChange;
 
+            var unreadSwitch = view.FindViewById<Switch> (Resource.Id.show_new_unread);
+            unreadSwitch.Checked = EmailHelper.ShouldDisplayAllUnreadCount ();
+            unreadSwitch.CheckedChange += UnreadSwitch_CheckedChange;
+
 //            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
 //                var crashButton = view.FindViewById<Button> (Resource.Id.crash_button);
 //                crashButton.Visibility = ViewStates.Visible;
@@ -72,6 +76,11 @@ namespace NachoClient.AndroidClient
         void HotSwitch_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
         {
             LoginHelpers.SetShowHotCards (e.IsChecked); 
+        }
+
+        void UnreadSwitch_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
+        {
+            EmailHelper.SetShouldDisplayAllUnreadCount (e.IsChecked);
         }
 
         void CrashButton_Click (object sender, EventArgs e)

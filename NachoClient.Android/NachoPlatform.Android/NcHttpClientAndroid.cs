@@ -411,6 +411,7 @@ namespace NachoPlatform
                 } 
 
                 if (certificates.Length == 1) {//no root?
+                    Log.Info (Log.LOG_HTTP, "certificates.Length == 1");
                     errors = System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors;
                     goto sslErrorVerify;
                 } 
@@ -423,9 +424,7 @@ namespace NachoPlatform
 
                 root = netCerts [0];
 
-
-                sslErrorVerify:
-                // Call the delegate to validate
+sslErrorVerify:
                 return NcHttpCertificateValidation.CertValidation (uri, root, chain, errors);
             }
         }

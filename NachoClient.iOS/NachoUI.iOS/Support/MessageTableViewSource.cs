@@ -194,6 +194,28 @@ namespace NachoClient.iOS
             return didRefresh;
         }
 
+        public void BackgroundRefreshEmailMessages (NachoMessagesRefreshCompletionDelegate completionAction)
+        {
+            if (!messageThreads.HasBackgroundRefresh ()) {
+                List<int> adds;
+                List<int> deletes;
+                bool changed = RefreshEmailMessages (out adds, out deletes);
+                if (null != completionAction) {
+                    completionAction (changed, adds, deletes);
+                }
+                return;
+            }
+            ClearCache ();
+            messageThreads.BackgroundRefresh ((changed, adds, deletes) => {
+                if (null != headerText && messageThreads.HasFilterSemantics ()) {
+                    headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
+                }
+                if (null != completionAction) {
+                    completionAction (changed, adds, deletes);
+                }
+            });
+        }
+
         public bool NoMessageThreads ()
         {
             return ((null == messageThreads) || (0 == messageThreads.Count ()));

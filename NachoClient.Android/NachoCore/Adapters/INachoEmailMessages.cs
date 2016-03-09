@@ -7,6 +7,8 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
+    public delegate void NachoMessagesRefreshCompletionDelegate (bool changed, List<int> adds, List<int> deletes);
+
     public interface INachoEmailMessages
     {
         int Count ();
@@ -15,6 +17,10 @@ namespace NachoCore
         /// Refresh the email message list. Return true if there is changes; false otherrwise.
         /// </summary>
         bool Refresh (out List<int> adds, out List<int> deletes);
+
+        bool HasBackgroundRefresh ();
+
+        void BackgroundRefresh (NachoMessagesRefreshCompletionDelegate completionAction);
 
         // Returns the thread, not the messages
         McEmailMessageThread GetEmailThread (int i);
@@ -56,6 +62,18 @@ namespace NachoCore
             adds = null;
             deletes = null;
             return false;
+        }
+
+        public virtual bool HasBackgroundRefresh ()
+        {
+            return false;
+        }
+
+        public virtual void BackgroundRefresh (NachoMessagesRefreshCompletionDelegate completionAction)
+        {
+            if (null != completionAction) {
+                completionAction (false, null, null);
+            }
         }
 
         public virtual McEmailMessageThread GetEmailThread (int i)

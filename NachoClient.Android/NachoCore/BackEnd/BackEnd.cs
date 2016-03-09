@@ -282,8 +282,12 @@ namespace NachoCore
 
             // Don't use ApplyAcrossServices, as that will start the services if they aren't already.
             var services = GetServices (accountId);
-            foreach (var service in services) {
-                service.Stop ();
+            if (null != services) {
+                // Despite the call to CreateServices() above, GetServices() can return null if the
+                // account is in the process of being removed.
+                foreach (var service in services) {
+                    service.Stop ();
+                }
             }
             CredReqActive.Remove (accountId);
         }
@@ -693,6 +697,11 @@ namespace NachoCore
         public NcResult DnldContactBodyCmd (int accountId, int contactId)
         {
             return ApplyToService (accountId, McAccount.AccountCapabilityEnum.ContactReader, (service) => service.DnldContactBodyCmd (contactId));
+        }
+
+        public NcResult SyncContactsCmd (int accountId)
+        {
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.ContactReader | McAccount.AccountCapabilityEnum.ContactWriter, (service) => service.SyncContactsCmd ());
         }
 
         public NcResult CreateTaskCmd (int accountId, int taskId, int folderId)

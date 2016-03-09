@@ -19,9 +19,7 @@ namespace NachoCore
         {
             this.contact = contact;
             threadList = new List<McEmailMessageThread> ();
-            List<int> adds;
-            List<int> deletes;
-            Refresh (out adds, out deletes);
+            BackgroundRefresh (completionAction: null);
         }
 
         public override bool Refresh (out List<int> adds, out List<int> deletes)
@@ -39,6 +37,37 @@ namespace NachoCore
                 return true;
             }
             return false;
+        }
+
+        public override bool HasBackgroundRefresh ()
+        {
+            return true;
+        }
+
+        public override void BackgroundRefresh (NachoMessagesRefreshCompletionDelegate completionAction)
+        {
+            if (null == contact) {
+                threadList = new List<McEmailMessageThread> ();
+                if (null != completionAction) {
+                    completionAction (true, null, null);
+                }
+                return;
+            }
+            NcTask.Run (() => {
+                var rawList = McEmailMessage.QueryInteractions (contact.AccountId, contact);
+                var newThreadList = NcMessageThreads.ThreadByMessage (rawList);
+                NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                    List<int> adds = null;
+                    List<int> deletes = null;
+                    bool changed = NcMessageThreads.AreDifferent (threadList, newThreadList, out adds, out deletes);
+                    if (changed) {
+                        threadList = newThreadList;
+                    }
+                    if (null != completionAction) {
+                        completionAction (changed, adds, deletes);
+                    }
+                });
+            }, "UserInteractionEmailMessages.BackgroundRefresh");
         }
 
         public override int Count ()

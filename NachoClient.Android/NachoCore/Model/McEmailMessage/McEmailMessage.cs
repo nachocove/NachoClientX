@@ -525,8 +525,8 @@ namespace NachoCore.Model
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 "{1}" +
                 " likelihood (m.FolderId != ?, 0.5) AND " +
-                " likelihood (e.[From] LIKE ?, 0.05) OR " +
-                " likelihood (e.[To] Like ?, 0.05) " +
+                " (likelihood (e.[From] LIKE ?, 0.05) OR " +
+                "  likelihood (e.[To] Like ?, 0.05) ) " +
                 " ORDER BY e.DateReceived DESC";
 
             var account0 = SingleAccountString (" likelihood (e.AccountId = {0}, 1.0) AND ", accountId);
@@ -660,7 +660,7 @@ namespace NachoCore.Model
                 query, threadId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
-        public static int CountOfUnreadMessageItems (int accountId, int folderId)
+        public static int CountOfUnreadMessageItems (int accountId, int folderId, DateTime newSince)
         {
             var queryFormat =
                 "SELECT COUNT(*) FROM McEmailMessage AS e " +
@@ -672,6 +672,7 @@ namespace NachoCore.Model
                 "{1}" +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
+                " e.DateReceived >= ? AND " +
                 " e.FlagUtcStartDate < ? AND " +
                 "e.IsRead = 0";
 
@@ -681,7 +682,7 @@ namespace NachoCore.Model
             var query = String.Format (queryFormat, account0, account1);
 
             return NcModel.Instance.Db.ExecuteScalar<int> (
-                query, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+                query, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, newSince, DateTime.UtcNow);
         }
 
         public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int limit, double minScore)

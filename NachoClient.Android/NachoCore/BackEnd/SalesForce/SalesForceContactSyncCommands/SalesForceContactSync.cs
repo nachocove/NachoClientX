@@ -74,6 +74,9 @@ namespace NachoCore.SFDC
         public SalesForceContactSync (SalesForceProtoControl owner, int accountId, McPending pending = null)
         {
             Pending = pending;
+            if (null != Pending) {
+                Pending.MarkDispatched ();
+            }
             SFDCOwner = owner;
             Sm = new NcStateMachine ("SFDCPC:CONTACTSYNC") { 
                 Name = string.Format ("SFDCPC:CONTACTSYNC({0})", accountId),

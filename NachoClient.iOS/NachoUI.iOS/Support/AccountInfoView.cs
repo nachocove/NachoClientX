@@ -118,15 +118,15 @@ namespace NachoClient.iOS
 
             NcTask.Run (() => {
                 int unreadMessageCount;
-                EmailHelper.GetUnreadMessageCount(account, out unreadMessageCount);
+                EmailHelper.GetUnreadMessageCount (account, out unreadMessageCount, EmailHelper.GetNewSincePreference ());
                 InvokeOnUIThread.Instance.Invoke (() => {
                     if (100000 > unreadMessageCount) {
-                        unreadCountLabel.Text = String.Format("{0:N0}", unreadMessageCount);
+                        unreadCountLabel.Text = String.Format ("{0:N0}", unreadMessageCount);
                     } else {
                         unreadCountLabel.Text = "> 100K";
                     }
-                    unreadCountLabel.SizeToFit();
-                    SetUnreadCountWidth((nfloat)Math.Max((double)UNREAD_COUNT_HEIGHT, (double)(unreadCountLabel.Frame.Width + 2.0f * UNREAD_COUNT_PADDING)));
+                    unreadCountLabel.SizeToFit ();
+                    SetUnreadCountWidth ((nfloat)Math.Max ((double)UNREAD_COUNT_HEIGHT, (double)(unreadCountLabel.Frame.Width + 2.0f * UNREAD_COUNT_PADDING)));
                 });
             }, "UpdateUnreadMessageCount");
         }

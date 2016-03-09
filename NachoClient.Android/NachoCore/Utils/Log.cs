@@ -428,6 +428,8 @@ namespace NachoCore.Utils
                 return "SEARCH";
             case LOG_SFDC:
                 return "SFDC";
+            case LOG_CHAT:
+                return "CHAT";
             default:
                 throw new Exception (string.Format ("Unknown Log subsystem {0}", subsystem));
             }

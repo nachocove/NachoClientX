@@ -144,7 +144,7 @@ namespace NachoCore.Model
         /// <param name="count">Count is the same as the retval from plain-old Update(). 0 indicates failure.</param>
         /// <param name="tries">Tries before giving up.</param>
         /// <typeparam name="T">T must match the type of the object.</typeparam>
-        public virtual T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100) where T : McAbstrObject, new()
+        public virtual T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 50) where T : McAbstrObject, new()
         {
             NcAssert.True (typeof(T) == this.GetType ());
             var record = this;
@@ -162,6 +162,7 @@ namespace NachoCore.Model
                 } catch (SQLiteException ex) {
                     if (ex.Result == SQLite3.Result.Busy) {
                         Log.Warn (Log.LOG_DB, "UpdateWithOCApply: Busy");
+                        Thread.Sleep (100);
                         count = 0;
                     } else {
                         throw;

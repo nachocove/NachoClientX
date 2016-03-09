@@ -27,7 +27,7 @@ namespace NachoClient.AndroidClient
 
         EmailAddressField.TokenObject TokenObject;
 
-        public EmailAddressFieldChangeArgs (EmailAddressField.TokenObject tokenObject) : base()
+        public EmailAddressFieldChangeArgs (EmailAddressField.TokenObject tokenObject) : base ()
         {
             TokenObject = tokenObject;
         }
@@ -44,7 +44,9 @@ namespace NachoClient.AndroidClient
         {
 
             public NcEmailAddress EmailAddress { get; set; }
+
             public McContact Contact { get; set; }
+
             string AddressStringInvariant {
                 get {
                     if (Contact != null) {
@@ -54,13 +56,13 @@ namespace NachoClient.AndroidClient
                 }    
             }
 
-            public TokenObject (NcEmailAddress address) : base()
+            public TokenObject (NcEmailAddress address) : base ()
             {
                 EmailAddress = address;
                 Contact = null;
             }
 
-            public TokenObject (McContact contact, NcEmailAddress address) : base()
+            public TokenObject (McContact contact, NcEmailAddress address) : base ()
             {
                 Contact = contact;
                 EmailAddress = address;
@@ -76,7 +78,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public EmailAddressField (Context context, IAttributeSet attrs) : base(context, attrs)
+        public EmailAddressField (Context context, IAttributeSet attrs) : base (context, attrs)
         {
             Threshold = 1;
             SetTokenListener (this);
@@ -152,6 +154,25 @@ namespace NachoClient.AndroidClient
                 var addresses = EmailHelper.AddressList (NcEmailAddress.Kind.Unknown, null, value);
                 foreach (var address in addresses) {
                     AddObject (new TokenObject (address));
+                }
+            }
+        }
+
+        public List<NcEmailAddress> AddressList {
+            get {
+                var addresses = new List<NcEmailAddress> (Objects.Count);
+                foreach (var obj in Objects) {
+                    var wrapper = obj as TokenObject;
+                    addresses.Add (wrapper.EmailAddress);
+                }
+                return addresses;
+            }
+            set {
+                Clear ();
+                if (null != value) {
+                    foreach (var address in value) {
+                        AddObject (new TokenObject (address));
+                    }
                 }
             }
         }

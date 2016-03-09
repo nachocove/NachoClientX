@@ -46,6 +46,10 @@ namespace NachoClient.AndroidClient
             var deadlineView = view.FindViewById<View> (Resource.Id.deadline);
             deadlineView.Click += DeadlineView_Click;
 
+            var chatsView = view.FindViewById<View> (Resource.Id.chats);
+            chatsView.Click += ChatsView_Click;
+            ;
+
             var filesView = view.FindViewById<View> (Resource.Id.files);
             filesView.Click += FilesView_Click;
 
@@ -77,7 +81,14 @@ namespace NachoClient.AndroidClient
                 settingsImage.Visibility = ViewStates.Invisible;
             }
         }
-            
+
+        void ChatsView_Click (object sender, EventArgs e)
+        {
+            var intent = new Intent ();
+            intent.SetClass (this.Activity, typeof(ChatListActivity));
+            StartActivity (intent); 
+        }
+
         void AboutView_Click (object sender, EventArgs e)
         {
             var intent = new Intent ();
