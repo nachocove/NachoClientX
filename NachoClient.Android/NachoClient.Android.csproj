@@ -752,6 +752,9 @@
     </AndroidAsset>
     <AndroidAsset Include="Assets\LegalInfo.txt" />
     <AndroidAsset Include="Assets\ReleaseNotes.txt" />
+    <AndroidAsset Include="..\NachoClient.iOS\Resources\chat-email.html">
+      <Link>Assets\chat-email.html</Link>
+    </AndroidAsset>
   </ItemGroup>
   <ItemGroup>
     <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />

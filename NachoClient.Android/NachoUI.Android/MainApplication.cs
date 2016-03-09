@@ -105,7 +105,7 @@ namespace NachoClient.AndroidClient
         void CopyAssetsToDocuments ()
         {
             var documentsPath = System.Environment.GetFolderPath (System.Environment.SpecialFolder.MyDocuments);
-            string[] assets = { "nacho.html", "nacho.css", "nacho.js" };
+            string[] assets = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
             foreach (var assetName in assets) {
                 var destinationPath = Path.Combine (documentsPath, assetName);
                 // TODO: only copy if newer...how to check the modified time of an asset (don't think it's possible)

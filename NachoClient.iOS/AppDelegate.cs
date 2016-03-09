@@ -448,7 +448,7 @@ namespace NachoClient.iOS
         public void CopyResourcesToDocuments ()
         {
             var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            string[] resources = { "nacho.html", "nacho.css", "nacho.js" };
+            string[] resources = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
             foreach (var resourceName in resources) {
                 var resourcePath = NSBundle.MainBundle.PathForResource (resourceName, null);
                 var destinationPath = Path.Combine (documentsPath, resourceName);
