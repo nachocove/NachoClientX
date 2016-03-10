@@ -1282,11 +1282,11 @@ namespace NachoClient.iOS
                 return _ErrorIndicator;
             }
         }
-        List<ChatMessageAttachmentView> AttachmentViews;
+        List<UIView> AttachmentViews;
 
         public ChatMessageView (CGRect frame) : base (frame)
         {
-            AttachmentViews = new List<ChatMessageAttachmentView> ();
+            AttachmentViews = new List<UIView> ();
             MessageInsets = new UIEdgeInsets (6.0f, 9.0f, 6.0f, 9.0f);
             BubbleView = new UIView (new CGRect(0.0f, 0.0f, Bounds.Width * 0.75f, Bounds.Height));
             BubbleView.BackgroundColor = UIColor.White;
@@ -1408,13 +1408,32 @@ namespace NachoClient.iOS
             AttachmentViews.Clear ();
             if (Attachments != null) {
                 foreach (var attachment in Attachments) {
-                    var frame = new CGRect (0.0f, 0.0f, Bounds.Width, ChatMessageAttachmentView.VIEW_HEIGHT);
-                    var view = new ChatMessageAttachmentView (frame, attachment);
+                    UIView view = null;
+                    if (attachment.ContentType.StartsWith ("image/") && attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                        view = CreateImageViewForAttachment (attachment);
+                    }
+                    if (view == null) {
+                        var frame = new CGRect (0.0f, 0.0f, Bounds.Width, ChatMessageAttachmentView.VIEW_HEIGHT);
+                        var attachmentView = new ChatMessageAttachmentView (frame, attachment);
+                        attachmentView.SetColors (MessageLabel.BackgroundColor, MessageLabel.TextColor);
+                        attachmentView.OnAttachmentSelected = OnAttachmentSelected;
+                        view = attachmentView;
+                    }
                     BubbleView.AddSubview (view);
                     AttachmentViews.Add (view);
-                    view.SetColors (MessageLabel.BackgroundColor, MessageLabel.TextColor);
-                    view.OnAttachmentSelected = OnAttachmentSelected;
                 }
+            }
+        }
+
+        UIImageView CreateImageViewForAttachment (McAttachment attachment)
+        {
+            using (var image = UIImage.FromFile (attachment.GetFilePath ())) {
+                var imageView = new UIImageView (image);
+                imageView.UserInteractionEnabled = true;
+                imageView.AddGestureRecognizer (new UITapGestureRecognizer (() => {
+                    OnAttachmentSelected (attachment);
+                }));
+                return imageView;
             }
         }
 
@@ -1473,7 +1492,12 @@ namespace NachoClient.iOS
             nfloat bubbleY = MessageLabel.Frame.Y + MessageLabel.Frame.Height;
             var bubbleSize = new CGSize (messageSize.Width + MessageInsets.Left + MessageInsets.Right, messageSize.Height + MessageInsets.Top + MessageInsets.Bottom);
             foreach (var attachmentView in AttachmentViews) {
-                attachmentView.Frame = new CGRect (MessageInsets.Left, bubbleY, messageSize.Width, attachmentView.Frame.Height);
+                var imageView = attachmentView as UIImageView;
+                if (imageView != null) {
+                    imageView.Frame = new CGRect (MessageInsets.Left, bubbleY, messageSize.Width, messageSize.Width / imageView.Image.Size.Width * imageView.Image.Size.Height);
+                } else {
+                    attachmentView.Frame = new CGRect (MessageInsets.Left, bubbleY, messageSize.Width, attachmentView.Frame.Height);
+                }
                 bubbleSize.Height += attachmentView.Frame.Height;
                 bubbleY += attachmentView.Frame.Height;
             }
