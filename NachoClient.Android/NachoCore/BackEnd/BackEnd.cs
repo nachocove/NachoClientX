@@ -282,8 +282,12 @@ namespace NachoCore
 
             // Don't use ApplyAcrossServices, as that will start the services if they aren't already.
             var services = GetServices (accountId);
-            foreach (var service in services) {
-                service.Stop ();
+            if (null != services) {
+                // Despite the call to CreateServices() above, GetServices() can return null if the
+                // account is in the process of being removed.
+                foreach (var service in services) {
+                    service.Stop ();
+                }
             }
             CredReqActive.Remove (accountId);
         }

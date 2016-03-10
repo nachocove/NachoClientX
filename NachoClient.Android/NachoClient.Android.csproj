@@ -661,6 +661,8 @@
     <Compile Include="NachoUI.Android\Activities\ChatListFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChatViewActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ChatViewFragment.cs" />
+    <Compile Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
+    <Compile Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -756,6 +758,9 @@
     </AndroidAsset>
     <AndroidAsset Include="Assets\LegalInfo.txt" />
     <AndroidAsset Include="Assets\ReleaseNotes.txt" />
+    <AndroidAsset Include="..\NachoClient.iOS\Resources\chat-email.html">
+      <Link>Assets\chat-email.html</Link>
+    </AndroidAsset>
   </ItemGroup>
   <ItemGroup>
     <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />
@@ -1884,6 +1889,9 @@
     <AndroidResource Include="Resources\layout\ChatViewActivity.axml" />
     <AndroidResource Include="Resources\layout\ChatViewCell.axml" />
     <AndroidResource Include="Resources\layout\ChatViewFragment.axml" />
+    <AndroidResource Include="Resources\layout\ChatParticipantListCell.axml" />
+    <AndroidResource Include="Resources\layout\ChatParticipantListActivity.axml" />
+    <AndroidResource Include="Resources\layout\ChatParticipantListFragment.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
