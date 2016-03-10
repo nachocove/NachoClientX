@@ -600,7 +600,12 @@ namespace NachoClient.iOS
                     PerformSegue ("SegueToCertAsk", new SegueHolder (McAccount.AccountCapabilityEnum.EmailSender));
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    PerformSegue ("SegueToAdvancedSettings", this);
+                    if (null == serverWithIssue || !string.IsNullOrEmpty (serverWithIssue.UserSpecifiedServerName)) {
+                        PerformSegue ("SegueToAdvancedSettings", this);
+                    } else {
+                        BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
+                        NavigationController.PopViewController (true);
+                    }
                     break;
                 }
             }
