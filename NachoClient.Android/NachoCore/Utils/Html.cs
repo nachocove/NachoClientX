@@ -641,6 +641,7 @@ namespace NachoCore.Utils
         HtmlNode Node;
         StringReader Reader;
         string LinePrefix = "";
+        public bool CreateBlockquotes = true;
 
         public HtmlTextDeserializer ()
         {
@@ -664,7 +665,7 @@ namespace NachoCore.Utils
             return document;
         }
 
-        public void DeserializeInto (string text, HtmlNode node)
+        public void DeserializeInto (string text, HtmlNode node, bool inline = false)
         {
             if (String.IsNullOrEmpty (text)) {
                 return;
@@ -675,10 +676,15 @@ namespace NachoCore.Utils
             Document = node.OwnerDocument;
             Node = node;
 
-            Reader = new StringReader (text);
-            var readMore = true;
-            while (readMore) {
-                readMore = ReadLine ();
+            if (inline) {
+                Node = node;
+                ConsumeText (text);
+            }else{
+                Reader = new StringReader (text);
+                var readMore = true;
+                while (readMore) {
+                    readMore = ReadLine ();
+                }
             }
         }
 
@@ -698,27 +704,29 @@ namespace NachoCore.Utils
         {
             var line = Reader.ReadLine ();
             if (line != null) {
-                if (!String.IsNullOrEmpty (LinePrefix)) {
-                    if (!line.StartsWith (LinePrefix)) {
-                        while (!line.StartsWith (LinePrefix) && LinePrefix.Length > 0) {
-                            PopNode ();
-                            LinePrefix = LinePrefix.Substring (0, LinePrefix.Length - 1);
-                        }
-                        if (!String.IsNullOrEmpty (LinePrefix)) {
+                if (CreateBlockquotes) {
+                    if (!String.IsNullOrEmpty (LinePrefix)) {
+                        if (!line.StartsWith (LinePrefix)) {
+                            while (!line.StartsWith (LinePrefix) && LinePrefix.Length > 0) {
+                                PopNode ();
+                                LinePrefix = LinePrefix.Substring (0, LinePrefix.Length - 1);
+                            }
+                            if (!String.IsNullOrEmpty (LinePrefix)) {
+                                line = line.Substring (LinePrefix.Length);
+                            }
+                        } else {
                             line = line.Substring (LinePrefix.Length);
                         }
-                    } else {
-                        line = line.Substring (LinePrefix.Length);
                     }
-                }
-                while (line.StartsWith (">")) {
-                    PushNode ("blockquote");
-                    Node.SetAttributeValue ("type", "cite");
-                    line = line.Substring (1);
-                    LinePrefix += ">";
-                }
-                if (!String.IsNullOrEmpty(LinePrefix)) {
-                    line = line.TrimStart ();
+                    while (line.StartsWith (">")) {
+                        PushNode ("blockquote");
+                        Node.SetAttributeValue ("type", "cite");
+                        line = line.Substring (1);
+                        LinePrefix += ">";
+                    }
+                    if (!String.IsNullOrEmpty(LinePrefix)) {
+                        line = line.TrimStart ();
+                    }
                 }
                 PushNode ("div");
                 ConsumeText (line);

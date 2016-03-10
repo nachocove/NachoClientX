@@ -71,7 +71,6 @@ namespace NachoClient.AndroidClient
 
             buttonBar = new ButtonBar (view);
             buttonBar.SetIconButton (ButtonBar.Button.Right1, Resource.Drawable.chat_add_contact, AddButton_Click);
-//            buttonBar.SetIconButton (ButtonBar.Button.Left1, Resource.Drawable.nav_search, SearchButton_Click);
 
             searchEditText = view.FindViewById<Android.Widget.EditText> (Resource.Id.searchstring);
             searchEditText.TextChanged += SearchString_TextChanged;
@@ -92,7 +91,7 @@ namespace NachoClient.AndroidClient
 
         void ToField_TokensChanged (object sender, EventArgs e)
         {
-            // TODO: Update send button status
+            UpdateChatFromToField ();
         }
 
         public override void OnActivityCreated (Bundle savedInstanceState)
@@ -100,18 +99,9 @@ namespace NachoClient.AndroidClient
             base.OnActivityCreated (savedInstanceState);
 
             chat = ((IChatViewFragmentOwner)Activity).ChatToView;
-            chatAdapter = new ChatAdapter (this, chat);
+            chatAdapter = new ChatAdapter (chat);
 
-            var toView = View.FindViewById (Resource.Id.to_view);
-            var titleView = View.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
-
-            if (null == chat) {
-                toView.Visibility = ViewStates.Visible;
-                titleView.Visibility = ViewStates.Gone;
-            } else {
-                toView.Visibility = ViewStates.Gone;
-                titleView.Text = chat.CachedParticipantsLabel;
-            }
+            ShowAddressEditor (null == chat);
 
             listView = View.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             listView.Adapter = chatAdapter;
@@ -172,48 +162,83 @@ namespace NachoClient.AndroidClient
 
         void AddButton_Click (object sender, EventArgs e)
         {
-            //   Activity.StartActivity (ContactEditActivity.AddContactIntent (Activity));
+            if (IsAddressEditorVisible ()) {
+                chat = null;
+                UpdateChatFromToField ();
+            }
+            ShowAddressEditor ((null == chat) || !IsAddressEditorVisible ());
         }
-
 
         void SendButton_Click (object sender, EventArgs e)
         {
-            if (chat == null) {
-                var addresses = NcEmailAddress.ParseToAddressListString (ToField.AddressString);
-                var account = NcApplication.Instance.Account;
-                if (McAccount.GetUnifiedAccount ().Id == account.Id) {
-                    account = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
-                }
-                chat = McChat.ChatForAddresses (account.Id, addresses);
-                if (chat == null) {
-                    Log.Error (Log.LOG_CHAT, "Got null chat when sending new message");
-                    return;
-                }
-
-                listView = View.FindViewById<SwipeMenuListView> (Resource.Id.listView);
-                chatAdapter = new ChatAdapter (this, chat);
-                listView.Adapter = chatAdapter;
-
-                var toView = View.FindViewById (Resource.Id.to_view);
-                var titleView = View.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
-
-                toView.Visibility = ViewStates.Gone;
-                titleView.Visibility = ViewStates.Visible;
-
-                chat.ClearDraft ();
-//                foreach (var attachment in AttachmentsForUnsavedChat) {
-//                    attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
-//                }
-//                AttachmentsForUnsavedChat.Clear ();
-//                UpdateForChat ();
-//                ReloadMessages ();
-            }
             var editText = View.FindViewById<EditText> (Resource.Id.chat_message);
             var text = editText.Text;
-            ChatMessageComposer.SendChatMessage (chat, text, chatAdapter.GetNewestChats (3), (McEmailMessage message) => {
-                chat.AddMessage (message);
-                editText.Text = "";
-            });
+
+            if (String.IsNullOrEmpty (text)) {
+                return;
+            }
+                
+            if (null == chat) {
+                UpdateChatFromToField ();
+            }
+            ShowAddressEditor (null == chat);
+
+            if (null != chat) {
+                ChatMessageComposer.SendChatMessage (chat, text, chatAdapter.GetNewestChats (3), (McEmailMessage message) => {
+                    chat.AddMessage (message);
+                    editText.Text = "";
+                });
+            }
+        }
+
+        void UpdateChatFromToField ()
+        {
+            var account = NcApplication.Instance.Account;
+            if (McAccount.GetUnifiedAccount ().Id == account.Id) {
+                account = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+            }
+
+            var addresses = NcEmailAddress.ParseToAddressListString (ToField.AddressString);
+            if ((null == addresses) || (0 == addresses.Count)) {
+                chat = null;
+            } else {
+                chat = McChat.ChatForAddresses (account.Id, addresses);
+            }
+
+            listView = View.FindViewById<SwipeMenuListView> (Resource.Id.listView);
+            chatAdapter = new ChatAdapter (chat);
+            listView.Adapter = chatAdapter;
+
+            if (null != chat) {
+                //                foreach (var attachment in AttachmentsForUnsavedChat) {
+                //                    attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+                //                }
+                //                AttachmentsForUnsavedChat.Clear ();
+                //                UpdateForChat ();
+                //                ReloadMessages ();
+            }
+        }
+
+        bool IsAddressEditorVisible ()
+        {
+            var toView = View.FindViewById (Resource.Id.to_view);
+            return ViewStates.Visible == toView.Visibility;
+        }
+
+        void ShowAddressEditor (bool visible)
+        {
+            var toView = View.FindViewById (Resource.Id.to_view);
+            var titleView = View.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
+
+            if (visible) {
+                titleView.Visibility = ViewStates.Gone;
+                toView.Visibility = ViewStates.Visible;
+                ToField.AddressList = (null == chat) ? null : McChatParticipant.ConvertToAddressList (McChatParticipant.GetChatParticipants (chat.Id));
+            } else {
+                toView.Visibility = ViewStates.Gone;
+                titleView.Visibility = ViewStates.Visible;
+                titleView.Text = (null == chat) ? "" : chat.CachedParticipantsLabel;
+            }
         }
 
         void SearchButton_Click (object sender, EventArgs e)
@@ -231,46 +256,17 @@ namespace NachoClient.AndroidClient
 
         void StartSearching ()
         {
-//            searching = true;
-//            chatListAdapter.StartSearch ();
-//
-//            var search = View.FindViewById (Resource.Id.search);
-//            search.Visibility = ViewStates.Visible;
-//            var navbar = View.FindViewById (Resource.Id.navigation_bar);
-//            navbar.Visibility = ViewStates.Gone;
-//            var navtoolbar = View.FindViewById (Resource.Id.navigation_toolbar);
-//            navtoolbar.Visibility = ViewStates.Gone;
-//
-//            searchEditText.RequestFocus ();
-//            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
-//            imm.ShowSoftInput (searchEditText, ShowFlags.Implicit);
+
         }
 
         void CancelSearch ()
         {
-//            searching = false;
-//            chatListAdapter.CancelSearch ();
-//
-//            searchEditText.ClearFocus ();
-//            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
-//            imm.HideSoftInputFromWindow (searchEditText.WindowToken, HideSoftInputFlags.NotAlways);
-//            searchEditText.Text = "";
-//
-//            var navbar = View.FindViewById (Resource.Id.navigation_bar);
-//            navbar.Visibility = ViewStates.Visible;
-//            var navtoolbar = View.FindViewById (Resource.Id.navigation_toolbar);
-//            navtoolbar.Visibility = ViewStates.Visible;
-//            var search = View.FindViewById (Resource.Id.search);
-//            search.Visibility = ViewStates.Gone;
+
         }
 
         void SearchString_TextChanged (object sender, Android.Text.TextChangedEventArgs e)
         {
-//            var searchString = searchEditText.Text;
-//            if (TestMode.Instance.Process (searchString)) {
-//                return;
-//            }
-//            chatListAdapter.Search (searchString);
+
         }
 
         public void OnBackPressed ()
@@ -357,13 +353,11 @@ namespace NachoClient.AndroidClient
     public class ChatAdapter : Android.Widget.BaseAdapter<McEmailMessage>
     {
         McChat chat;
-        ChatViewFragment parent;
         List<McEmailMessage> messages;
         Dictionary<int, McChatParticipant> ParticipantsByEmailId;
 
-        public ChatAdapter (ChatViewFragment parent, McChat chat)
+        public ChatAdapter (McChat chat)
         {
-            this.parent = parent;
             this.chat = chat;
 
             if (null != chat) {
