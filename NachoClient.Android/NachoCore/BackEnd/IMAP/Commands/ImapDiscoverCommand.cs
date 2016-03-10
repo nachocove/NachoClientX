@@ -46,17 +46,12 @@ namespace NachoCore.IMAP
             bool serverFailedGenerally = false;
             try {
                 Cts.Token.ThrowIfCancellationRequested ();
-                if (null != BEContext.Cred && BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
-                    Log.Info (Log.LOG_IMAP, "Auth is Oauth2. Skipping discovery");
-                    evt = ExecuteCommand();
-                } else {
-                    evt = TryLock (Client.SyncRoot, KLockTimeout, () => {
-                        if (Client.IsConnected) {
-                            Client.Disconnect (false, Cts.Token);
-                        }
-                        return ExecuteConnectAndAuthEvent ();
-                    });
-                }
+                evt = TryLock (Client.SyncRoot, KLockTimeout, () => {
+                    if (Client.IsConnected) {
+                        Client.Disconnect (false, Cts.Token);
+                    }
+                    return ExecuteConnectAndAuthEvent ();
+                });
                 Cts.Token.ThrowIfCancellationRequested ();
             } catch (CommandLockTimeOutException ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: CommandLockTimeOutException: {0}", ex.Message);
