@@ -387,7 +387,7 @@ namespace NachoCore
             }
         }
 
-        public virtual void Refresh (Action<McCred> onSuccess, Action<McCred, bool> onFailure, CancellationToken Token)
+        public virtual void Refresh (Action<McCred> onSuccess, Action<McCred, bool> onFailure, CancellationToken Token, int defaultRefreshTime)
         {
             var queryDict = new Dictionary<string, string> ();
             queryDict ["client_id"] = ClientId;
@@ -455,7 +455,7 @@ namespace NachoCore
 
                 int expires = null != expiresIn ? (int)expiresIn : 0;
                 if (expires <= 0) {
-                    expires = 3600;
+                    expires = defaultRefreshTime;
                 }
                 // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
                 Cred.UpdateOauth2 ((string)accessToken,

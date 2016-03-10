@@ -97,6 +97,10 @@ namespace NachoCore.Model
             ExpirySecs = expirySecs;
             NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
             AccessToken = null;
+            if (string.IsNullOrEmpty (refreshToken)) {
+                var st = new System.Diagnostics.StackTrace ();
+                Log.Warn (Log.LOG_SYS, "UpdateOauth2({0}): No refreshToken!\n{1}", AccountId, st.ToString ());
+            }
             NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
             RefreshToken = null;
             UpdateCredential ();
@@ -226,7 +230,8 @@ namespace NachoCore.Model
                 return;
             }
 
-            refresh.Refresh (onSuccess, onFailure, Token);
+            var defaultRefreshTime = McMutables.GetInt (AccountId, "McCred", "Oauth2RefreshDefaultTime", 3600);
+            refresh.Refresh (onSuccess, onFailure, Token, defaultRefreshTime);
         }
     }
 }
