@@ -99,7 +99,7 @@ namespace NachoClient.AndroidClient
             base.OnActivityCreated (savedInstanceState);
 
             chat = ((IChatViewFragmentOwner)Activity).ChatToView;
-            chatAdapter = new ChatAdapter (chat);
+            chatAdapter = new ChatAdapter (chat, this);
 
             ShowAddressEditor (null == chat);
 
@@ -206,7 +206,7 @@ namespace NachoClient.AndroidClient
             }
 
             listView = View.FindViewById<SwipeMenuListView> (Resource.Id.listView);
-            chatAdapter = new ChatAdapter (chat);
+            chatAdapter = new ChatAdapter (chat, this);
             listView.Adapter = chatAdapter;
 
             if (null != chat) {
@@ -355,10 +355,12 @@ namespace NachoClient.AndroidClient
         McChat chat;
         List<McEmailMessage> messages;
         Dictionary<int, McChatParticipant> ParticipantsByEmailId;
+        Fragment parent;
 
-        public ChatAdapter (McChat chat)
+        public ChatAdapter (McChat chat, Fragment parent)
         {
             this.chat = chat;
+            this.parent = parent;
 
             if (null != chat) {
                 ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (chat.Id);
@@ -425,7 +427,18 @@ namespace NachoClient.AndroidClient
             ParticipantsByEmailId.TryGetValue (message.FromEmailAddressId, out particpant);
 
             Bind.BindChatViewCell (message, previousMessage, nextMessage, particpant, view);
+            Bind.BindChatAttachments (message, view, LayoutInflater.From (parent.Context), AttachmentSelectedCallback, AttachmentErrorCallback);
             return view;
+        }
+
+
+        public void AttachmentSelectedCallback (McAttachment attachment)
+        {
+            AttachmentHelper.OpenAttachment (parent.Activity, attachment);
+        }
+
+        public  void AttachmentErrorCallback (McAttachment attachment, NcResult nr)
+        {
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

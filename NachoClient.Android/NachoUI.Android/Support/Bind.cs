@@ -515,6 +515,22 @@ namespace NachoClient.AndroidClient
             previewView.SetTextColor (view.Resources.GetColor (textColorId));
             previewView.SetBackgroundResource (backgroundColorId);
             previewCardView.SetCardBackgroundColor (view.Resources.GetColor (backgroundColorId));
+
+        }
+
+        public static void BindChatAttachments(McEmailMessage message, View view, LayoutInflater inflater, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected, NcAttachmentView.AttachmentErrorCallback onAttachmentError)
+        {
+            var attachmentListView = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_views);
+            attachmentListView.RemoveAllViews ();
+
+            var attachments = McAttachment.QueryByItemId (message.AccountId, message.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+            if (null != attachments) {
+                foreach (var a in attachments) {
+                    var cell = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
+                    new NcAttachmentView (a, cell, onAttachmentSelected, onAttachmentError);
+                    attachmentListView.AddView (cell);
+                }
+            }
         }
 
         public static int ColorForUser (int index)
