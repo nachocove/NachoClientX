@@ -93,6 +93,8 @@ namespace NachoCore.Utils
 
         private ConcurrentDictionary<ServerIdentity, ServerValidationPolicy> Policies;
 
+        public ConcurrentDictionary<string, Tuple<X509Chain, X509Certificate2, SslPolicyErrors>> FailedCertificates;
+
         public static ServerCertificatePeek Instance {
             get {
                 if (instance == null) {
@@ -100,6 +102,7 @@ namespace NachoCore.Utils
                         if (instance == null) {
                             instance = new ServerCertificatePeek ();
                             instance.Cache = new ConcurrentDictionary<string, X509Certificate2> ();
+                            instance.FailedCertificates = new ConcurrentDictionary<string, Tuple<X509Chain, X509Certificate2, SslPolicyErrors>> ();
                             var serverComparer = new ServerIdentityComparer ();
                             instance.Policies = new ConcurrentDictionary<ServerIdentity, ServerValidationPolicy> (serverComparer);
                             ServicePointManager.ServerCertificateValidationCallback = CertificateValidationCallback;
@@ -121,17 +124,17 @@ namespace NachoCore.Utils
                                                           X509Chain chain,
                                                           SslPolicyErrors sslPolicyErrors)
         {
+            var maybeRequest = sender as HttpWebRequest;
+            if (null != maybeRequest) {
+                return HttpWebRequestCertificateValidationCallback (maybeRequest, certificate, chain, sslPolicyErrors);
+            }
+
             string hostname = sender as string;
             if (null != hostname) {
                 return StringCertificateValidationCallback (hostname, certificate, chain, sslPolicyErrors);
-            } else {
-                var maybeRequest = sender as HttpWebRequest;
-                if (null != maybeRequest) {
-                    return HttpWebRequestCertificateValidationCallback (maybeRequest, certificate, chain, sslPolicyErrors);
-                } else {
-                    return SslPolicyErrors.None == sslPolicyErrors;
-                }
             }
+
+            return SslPolicyErrors.None == sslPolicyErrors;
         }
 
         static bool StringCertificateValidationCallback (string hostname,
@@ -142,9 +145,10 @@ namespace NachoCore.Utils
             if (SslPolicyErrors.None == sslPolicyErrors) {
                 return true;
             }
-            var ok = chain.Build (new X509Certificate2 (certificate));
+            var cert2 = new X509Certificate2 (certificate);
+            var ok = chain.Build (cert2);
             if (!ok) {
-                LogCertificateChainErrors (chain, sslPolicyErrors, string.Format ("StringCertificateValidationCallback({0})", hostname));
+                Instance.FailedCertificates [hostname] = new Tuple<X509Chain, X509Certificate2, SslPolicyErrors> (chain, cert2, sslPolicyErrors);
             }
             return ok;
         }
@@ -208,7 +212,6 @@ namespace NachoCore.Utils
                         ok = false;
                     }
                     if (!ok) {
-                        LogCertificateChainErrors (chain, sslPolicyErrors, "HttpWebRequestCertificateValidationCallback");
                         // We change the result. Log the reason
                         foreach (var status in chain.ChainStatus) {
                             Log.Warn (Log.LOG_HTTP, "Cert chain status: {0}", status.Status);
@@ -234,12 +237,15 @@ namespace NachoCore.Utils
                 Instance.Cache.AddOrUpdate (host, certificate2, (k, v) => certificate2);
                 return true;
             } else {
-                Log.Info (Log.LOG_HTTP, "Certificate validation failed with: {0}", sslPolicyErrors);
+                if (chain.ChainElements.Count == 0 && null != certificate2) {
+                    chain.Build (certificate2);
+                }
+                Instance.FailedCertificates [request.Address.Host] = new Tuple<X509Chain, X509Certificate2, SslPolicyErrors> (chain, certificate2, sslPolicyErrors);
             }
             return false;
         }
 
-        static void LogCertificateChainErrors (X509Chain chain, SslPolicyErrors sslPolicyErrors, string tag)
+        public static void LogCertificateChainErrors (X509Chain chain, SslPolicyErrors sslPolicyErrors, string tag)
         {
             List<string> errors = new List<string> ();
             if (null != chain.ChainElements) {
@@ -247,7 +253,7 @@ namespace NachoCore.Utils
                     errors.Add (string.Format ("Certificate(status={0}):\n{1}", string.Join (",", certEl.ChainElementStatus.Select (x => x.StatusInformation).ToList ()), certEl.Certificate));
                 }
             }
-            Log.Error (Log.LOG_HTTP, "{0} sslPolicyErrors={1}, chain-errors: {2}\n{3}", tag, sslPolicyErrors, string.Join (",", chain.ChainStatus.Select (x => x.StatusInformation)), string.Join ("\n", errors));
+            Log.Info (Log.LOG_HTTP, "{0} sslPolicyErrors={1}, chain-errors: {2}\n{3}", tag, sslPolicyErrors, string.Join (",", chain.ChainStatus.Select (x => x.StatusInformation)), string.Join ("\n", errors));
         }
 
         public static void TestOnlyFlushCache ()

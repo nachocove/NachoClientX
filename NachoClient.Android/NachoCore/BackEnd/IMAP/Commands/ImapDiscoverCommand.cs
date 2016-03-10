@@ -8,6 +8,8 @@ using MailKit;
 using System.IO;
 using System.Net.Sockets;
 using NachoCore.Model;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace NachoCore.IMAP
 {
@@ -38,6 +40,9 @@ namespace NachoCore.IMAP
 
         private Event ExecuteCommandInternal ()
         {
+            Tuple<X509Chain, X509Certificate2, SslPolicyErrors> failedInfo;
+            ServerCertificatePeek.Instance.FailedCertificates.TryRemove (BEContext.Server.Host, out failedInfo);
+
             bool Initial = !BEContext.ProtocolState.ImapDiscoveryDone;
             Tuple<ResolveAction, string> action = new Tuple<ResolveAction, string> (ResolveAction.None, null);
 
@@ -103,10 +108,17 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCOMMEXTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (IOException ex) {
-                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.ToString ());
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
+                if (ServerCertificatePeek.Instance.FailedCertificates.TryRemove (BEContext.Server.Host, out failedInfo)) {
+                    ServerCertificatePeek.LogCertificateChainErrors (failedInfo.Item1, failedInfo.Item3, string.Format ("ImapDiscoverCommand: Cert Validation Error for {0}", BEContext.Server.Host));
+                    // TODO Should hardfail here. Repeating won't help. SM needs to be modified to handle HardFail with a proper error message
+                    // evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPCERTHARD");
+
+                } else {
+                    Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.ToString ());
+                }
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
                 if (Initial) {
