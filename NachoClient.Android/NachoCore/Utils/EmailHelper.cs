@@ -1146,6 +1146,22 @@ namespace NachoCore.Utils
             }
             return (syncStarted ? NcResult.OK() : NachoSyncResult.DoesNotSync());
         }
+
+        public static NcResult SyncUnifiedSent ()
+        {
+            bool syncStarted = false;
+            var EmailAccounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).ToList ();
+            foreach (var account in EmailAccounts) {
+                if (McAccount.GetUnifiedAccount ().Id != account.Id) {
+                    var sentFolder = McFolder.GetDefaultSentFolder (account.Id);
+                    if (null != sentFolder) {
+                        var nr = BackEnd.Instance.SyncCmd (sentFolder.AccountId, sentFolder.Id);
+                        syncStarted |= !NachoSyncResult.DoesNotSync (nr);
+                    }
+                }
+            }
+            return (syncStarted ? NcResult.OK() : NachoSyncResult.DoesNotSync());
+        }
        
     }
 }

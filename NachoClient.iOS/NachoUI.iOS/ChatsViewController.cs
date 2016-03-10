@@ -76,8 +76,26 @@ namespace NachoClient.iOS
 
         void Reload ()
         {
+            Sync ();
             Source.Reset ();
             TableView.ReloadData ();
+        }
+
+        void Sync ()
+        {
+            if (Source.Account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                EmailHelper.SyncUnified ();
+                EmailHelper.SyncUnifiedSent ();
+            } else {
+                var inbox = McFolder.GetDefaultInboxFolder (Source.Account.Id);
+                if (inbox != null) {
+                    BackEnd.Instance.SyncCmd (inbox.AccountId, inbox.Id);
+                }
+                var sent = McFolder.GetDefaultInboxFolder (Source.Account.Id);
+                if (sent != null) {
+                    BackEnd.Instance.SyncCmd (sent.AccountId, sent.Id);
+                }
+            }
         }
 
         void SwitchAccountButtonPressed ()
@@ -89,6 +107,7 @@ namespace NachoClient.iOS
         {
             if (Source == null) {
                 TableView.Source = Source = new ChatsTableViewSource (account, this);
+                Sync ();
             } else {
                 Source.Account = account;
                 Reload ();
