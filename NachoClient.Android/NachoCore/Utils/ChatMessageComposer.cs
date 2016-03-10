@@ -63,39 +63,38 @@ namespace NachoCore.Utils
 
         protected override void PrepareMessageBody ()
         {
+            var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var htmlPath = Path.Combine (documentsPath, "chat-email.html");
             var doc = new HtmlDocument ();
-            var html = doc.CreateElement ("html");
-            var head = doc.CreateElement ("head");
-            var meta = doc.CreateElement ("meta");
-            meta.SetAttributeValue ("charset", "utf-8");
-            head.AppendChild (meta);
-            var body = doc.CreateElement ("body");
-            var chat = doc.CreateElement ("div");
-            chat.SetAttributeValue ("id", "nacho-chat");
-            body.AppendChild (chat);
-            html.AppendChild (head);
-            html.AppendChild (body);
-            doc.DocumentNode.AppendChild (html);
-            var serializer = new HtmlTextDeserializer ();
-            serializer.DeserializeInto (Text, chat);
-            serializer.DeserializeInto (SignatureText (), body);
-            var parent = body;
-            foreach (var previousMessage in PreviousMessages) {
-                // It's safe to assume that any PreviousMessage we were given was already downloaded & displayed
-                if (previousMessage.BodyId != 0) {
-                    serializer.DeserializeInto ("\n", parent);
-                    var blockquote = doc.CreateElement ("blockquote");
-                    blockquote.SetAttributeValue ("type", "cite");
-                    parent.AppendChild (blockquote);
-                    serializer.DeserializeInto (EmailHelper.AttributionLineForMessage (previousMessage) + "\n\n", blockquote);
-                    var previousBundle = new NcEmailMessageBundle (previousMessage);
-                    if (previousBundle.NeedsUpdate) {
-                        previousBundle.Update ();
+            using (var stream = new FileStream (htmlPath, FileMode.Open, FileAccess.Read)) {
+                doc.Load (stream);
+            }
+
+            var deserializer = new HtmlTextDeserializer ();
+            var stack = new List<HtmlNode> ();
+            stack.Add (doc.DocumentNode.Element("html"));
+
+            while (stack.Count > 0) {
+                var node = stack [0];
+                stack.RemoveAt (0);
+                if (node.NodeType == HtmlNodeType.Element) {
+                    var templateVar = node.GetAttributeValue ("nacho-template", "");
+                    if (templateVar != "") {
+                        node.RemoveAllChildren ();
                     }
-                    serializer.DeserializeInto (previousBundle.TopText, blockquote);
-                    parent = blockquote;
+                    if (templateVar.Equals ("from-email")) {
+                        deserializer.DeserializeInto (Account.EmailAddr, node, inline: true);
+                    }else if (templateVar.Equals ("from-initials")) {
+                        deserializer.DeserializeInto (EmailHelper.Initials(Account.EmailAddr), node, inline: true);
+                    }else if (templateVar.Equals ("message")) {
+                        deserializer.DeserializeInto (Text, node);
+                    }
+                    if (node.ChildNodes.Count > 0) {
+                        stack.InsertRange (0, node.ChildNodes);
+                    }
                 }
             }
+
             NcTask.Run (() => {
                 Bundle.SetParsed(fullHtml: doc, topText: Text);
                 InvokeOnUIThread.Instance.Invoke (() => {

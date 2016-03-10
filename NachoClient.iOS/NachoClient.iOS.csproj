@@ -2859,6 +2859,7 @@
     <BundleResource Include="Resources\avatar-salesforce%403x.png" />
     <BundleResource Include="Resources\avatar-salesforce%404x.png" />
     <BundleResource Include="Resources\avatar-salesforce%406x.png" />
+    <BundleResource Include="Resources\chat-email.html" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

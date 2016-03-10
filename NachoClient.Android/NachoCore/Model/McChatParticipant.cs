@@ -123,6 +123,19 @@ namespace NachoCore.Model
             Update ();
         }
 
+        public static List<NcEmailAddress> ConvertToAddressList(List<McChatParticipant> participants)
+        {
+            var result = new List<NcEmailAddress> ();
+            foreach (var participant in participants) {
+                var address = new NcEmailAddress (NcEmailAddress.Kind.Unknown);
+                address.index = participant.EmailAddrId;
+                address.address = participant.EmailAddress;
+                address.contact = McContact.QueryById<McContact> (participant.ContactId);
+                result.Add (address);
+            }
+            return result;
+        }
+
     }
 }
 
