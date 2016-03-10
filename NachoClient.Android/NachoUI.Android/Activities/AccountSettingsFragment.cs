@@ -224,7 +224,7 @@ namespace NachoClient.AndroidClient
                     accountIssue.SetText (Resource.String.certificate_issue);
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    if (null == serverWithIssue || !string.IsNullOrEmpty (serverWithIssue.UserSpecifiedServerName)) {
+                    if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
                         accountIssue.SetText (Resource.String.update_password);
                     } else {
                         accountIssue.SetText (Resource.String.server_error);
@@ -337,7 +337,7 @@ namespace NachoClient.AndroidClient
             McServer serverWithIssue;
             BackEndStateEnum serverIssue;
             if (LoginHelpers.IsUserInterventionRequired (account.Id, out serverWithIssue, out serverIssue)) {
-                if (null == serverWithIssue || !string.IsNullOrEmpty (serverWithIssue.UserSpecifiedServerName)) {
+                if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
                     Log.Error (Log.LOG_SYS, "AccountIssueView_Click: needs to go to AdvancedSettings here");
                 } else {
                     BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
