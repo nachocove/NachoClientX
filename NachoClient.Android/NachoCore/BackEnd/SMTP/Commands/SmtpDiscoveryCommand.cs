@@ -39,16 +39,22 @@ namespace NachoCore.SMTP
             Event evt;
             bool serverFailedGenerally = false;
             try {
-                Event evt1 = TryLock (Client.SyncRoot, KLockTimeout, () => {
-                    if (Client.IsConnected) {
-                        Client.Disconnect (false, Cts.Token);
-                    }
-                    if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        ConnectAndAuthenticate ();
-                        Cts.Token.ThrowIfCancellationRequested ();
-                    }
-                    return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
-                });
+                Event evt1;
+                if (null != BEContext.Cred && BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                    Log.Info (Log.LOG_SMTP, "Auth is Oauth2. Skipping discovery");
+                    evt1 = Event.Create ((uint)SmEvt.E.Success, "SMTPDISCOAUTH2");
+                } else {
+                    evt1 = TryLock (Client.SyncRoot, KLockTimeout, () => {
+                        if (Client.IsConnected) {
+                            Client.Disconnect (false, Cts.Token);
+                        }
+                        if (!Client.IsConnected || !Client.IsAuthenticated) {
+                            ConnectAndAuthenticate ();
+                            Cts.Token.ThrowIfCancellationRequested ();
+                        }
+                        return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
+                    });
+                }
                 Cts.Token.ThrowIfCancellationRequested ();
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
                 return evt1;
