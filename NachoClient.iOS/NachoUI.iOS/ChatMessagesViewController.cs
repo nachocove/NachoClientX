@@ -29,6 +29,7 @@ namespace NachoClient.iOS
         Dictionary<string, bool> LoadedMessageIDs;
         Dictionary<int, McChatParticipant> ParticipantsByEmailId;
         Dictionary<int, List<McAttachment>> AttachmentsByMessageId;
+        Dictionary<string, int> PendingSendMap;
         List<McAttachment> AttachmentsForUnsavedChat;
         int MessageCount;
         UIStoryboard mainStorybaord;
@@ -57,6 +58,7 @@ namespace NachoClient.iOS
             Messages = new List<McEmailMessage> ();
             AttachmentsForUnsavedChat = new List<McAttachment> ();
             AttachmentsByMessageId = new Dictionary<int, List<McAttachment>> ();
+            PendingSendMap = new Dictionary<string, int> ();
             LoadedMessageIDs = new Dictionary<string, bool> ();
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
@@ -193,11 +195,28 @@ namespace NachoClient.iOS
             for (int i = Messages.Count - 1; i >= Messages.Count - 3 && i >= 0; --i){
                 previousMessages.Add (Messages [i]);
             }
-            ChatMessageComposer.SendChatMessage (Chat, text, previousMessages, (McEmailMessage message) => {
-                Chat.AddMessage (message);
-                ComposeView.Clear ();
-                ChatView.ScrollToBottom ();
+            ChatMessageComposer.SendChatMessage (Chat, text, previousMessages, (McEmailMessage message, NcResult result) => {
+                if (result.isOK()){
+                    Chat.AddMessage (message);
+                    ComposeView.Clear ();
+                    ChatView.ScrollToBottom ();
+                    PendingSendMap.Add(result.Value as string, message.Id);
+                }else{
+                    NcAlertView.ShowMessage (this, "Could not send messasge", "Sorry, there was a problem sending the message.  Please try again.");
+                }
             });
+        }
+
+        void Resend (McEmailMessage message)
+        {
+            var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
+            if (pending != null) {
+                pending.Delete ();
+            }
+            var result = EmailHelper.SendTheMessage (message, null);
+            if (result.isOK ()) {
+                PendingSendMap.Add (result.Value as string, message.Id);
+            }
         }
 
         public void ShowParticipantDetails ()
@@ -356,25 +375,48 @@ namespace NachoClient.iOS
             if (s.Account != null) {
                 if (NcApplication.Instance.Account.AccountType == McAccount.AccountTypeEnum.Unified || NcApplication.Instance.Account.Id == s.Account.Id) {
                     if (s.Status.SubKind == NcResult.SubKindEnum.Info_ChatMessageAdded) {
-                        var chatId = Convert.ToInt32 (s.Tokens[0]);
-                        var messageId = Convert.ToInt32 (s.Tokens[1]);
+                        var chatId = Convert.ToInt32 (s.Tokens [0]);
+                        var messageId = Convert.ToInt32 (s.Tokens [1]);
                         if (chatId == Chat.Id) {
                             var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
                             if (message != null) {
                                 if (LoadedMessageIDs.ContainsKey (message.MessageID)) {
                                     // Swap out the old message, which was possibly deleted, with the new one.
                                     for (int i = Messages.Count - 1; i >= 0; --i) {
-                                        var existingMessage = Messages[i];
+                                        var existingMessage = Messages [i];
                                         if (existingMessage.MessageID == message.MessageID) {
                                             Messages [i] = message;
                                             break;
                                         }
                                     }
-                                }else{
+                                } else {
                                     Messages.Add (message);
                                     MessageCount += 1;
                                     LoadedMessageIDs.Add (message.MessageID, true);
                                     ChatView.InsertMessageViewAtEnd ();
+                                }
+                            }
+                        }
+                    } else if (s.Status.SubKind == NcResult.SubKindEnum.Info_EmailMessageSendSucceeded) {
+                        var pendingToken = s.Tokens [0];
+                        if (PendingSendMap.ContainsKey (pendingToken)) {
+                            PendingSendMap.Remove (pendingToken);
+                        }
+                    } else if (s.Status.SubKind == NcResult.SubKindEnum.Error_EmailMessageSendFailed) {
+                        var pendingToken = s.Tokens [0];
+                        if (PendingSendMap.ContainsKey (pendingToken)) {
+                            var messageId = PendingSendMap [pendingToken];
+                            PendingSendMap.Remove (pendingToken);
+                            for (int i = Messages.Count - 1; i >= 0; --i) {
+                                var index = i + MessageCount - Messages.Count;
+                                var existingMessage = Messages [i];
+                                if (existingMessage.Id == messageId) {
+                                    var messageView = ChatView.MessageViewAtIndex (index);
+                                    if (messageView != null) {
+                                        messageView.Update ();
+                                        UpdateMessageViewBlockProperties (ChatView, messageView.Index, messageView);
+                                    }
+                                    break;
                                 }
                             }
                         }
@@ -478,6 +520,25 @@ namespace NachoClient.iOS
                 messageView.SetShowsName (showName);
                 messageView.SetShowsPortrait (showPortrait);
                 messageView.SetShowsTimestamp (showTimestamp);
+            }
+        }
+
+        public void ChatMessageViewDidSelectError (ChatView chatView, int index)
+        {
+            var messageView = ChatView.MessageViewAtIndex (index);
+            var indexInArray = index - MessageCount + Messages.Count;
+            if (indexInArray >= 0) {
+                var message = Messages [indexInArray];
+                NcAlertView.Show (this, "Could not send message", "Sorry, there was an issue sending the message.", new NcAlertAction[] {
+                    new NcAlertAction("OK", null),
+                    new NcAlertAction("Try Again", () => { 
+                        Resend (message);
+                        if (messageView != null){
+                            messageView.Update ();
+                            UpdateMessageViewBlockProperties (ChatView, messageView.Index, messageView);
+                        }
+                    })
+                });
             }
         }
 
@@ -925,6 +986,7 @@ namespace NachoClient.iOS
     }
 
     public interface ChatViewDelegate {
+        void ChatMessageViewDidSelectError (ChatView chatView, int index);
     }
 
     public class ChatView : UIView, IUIScrollViewDelegate
@@ -1042,6 +1104,16 @@ namespace NachoClient.iOS
             foreach (var visibleView in VisibleMessageViews){
                 DataSource.UpdateMessageViewBlockProperties (this, visibleView.Index, visibleView);
             }
+        }
+
+        public ChatMessageView MessageViewAtIndex (int index)
+        {
+            foreach (var view in VisibleMessageViews) {
+                if (view.Index == index) {
+                    return view;
+                }
+            }
+            return null;
         }
 
         public void ScrollToBottom (bool animated = false)
@@ -1196,6 +1268,20 @@ namespace NachoClient.iOS
                 return _PortraitView;
             }
         }
+        UIImageView _ErrorIndicator;
+        UIImageView ErrorIndicator {
+            get {
+                if (_ErrorIndicator == null) {
+                    using (var image = UIImage.FromBundle ("Slide1-5")) {
+                        _ErrorIndicator = new UIImageView (image);
+                        _ErrorIndicator.AddGestureRecognizer (new UITapGestureRecognizer (ErrorTap));
+                        _ErrorIndicator.UserInteractionEnabled = true;
+                        AddSubview (_ErrorIndicator);
+                    }
+                }
+                return _ErrorIndicator;
+            }
+        }
         List<ChatMessageAttachmentView> AttachmentViews;
 
         public ChatMessageView (CGRect frame) : base (frame)
@@ -1259,17 +1345,22 @@ namespace NachoClient.iOS
 
         public void Update ()
         {
+            bool hasError = false;
             if (Message == null) {
                 MessageLabel.Text = "";
             }else{
                 var bundle = new NcEmailMessageBundle (Message);
                 if (bundle.NeedsUpdate) {
-                    MessageLabel.Text = "!! " + Message.BodyPreview;  
+                    MessageLabel.Text = Message.BodyPreview;  
                 } else {
                     MessageLabel.Text = bundle.TopText;
                 }
                 TimestampDividerLabel.Text = Pretty.VariableDayTime (Message.DateReceived);
                 TimestampRevealLabel.Text = Pretty.Time (Message.DateReceived);
+                if (Participant == null){
+                    var pending = McPending.QueryByEmailMessageId (Message.AccountId, Message.Id);
+                    hasError = pending != null && pending.ResultKind == NcResult.KindEnum.Error;
+                }
             }
             if (Participant == null) {
                 BubbleView.BackgroundColor = A.Color_NachoGreen;
@@ -1294,6 +1385,13 @@ namespace NachoClient.iOS
                 if (ChatView != null && ChatView.ShowNameLabels) {
                     NameLabel.Text = Participant.CachedName;
                     NameLabel.Hidden = false;
+                }
+            }
+            if (hasError) {
+                ErrorIndicator.Hidden = false;
+            } else {
+                if (_ErrorIndicator != null) {
+                    _ErrorIndicator.Hidden = true;
                 }
             }
             MessageLabel.BackgroundColor = BubbleView.BackgroundColor;
@@ -1332,6 +1430,12 @@ namespace NachoClient.iOS
                 var frame = PortraitView.Frame;
                 frame.X = x;
                 PortraitView.Frame = frame;
+            }
+            if (_ErrorIndicator != null) {
+                var frame = _ErrorIndicator.Frame;
+                frame.X = BubbleView.Frame.X + BubbleView.Frame.Width + BubbleSideInset;
+                frame.Y = BubbleView.Frame.Y + (BubbleView.Frame.Height - frame.Height) / 2.0f;
+                _ErrorIndicator.Frame = frame;
             }
             if (ChatView != null) {
                 var frame = TimestampDividerLabel.Frame;
@@ -1380,6 +1484,9 @@ namespace NachoClient.iOS
             }
             if (Participant == null) {
                 x = Bounds.Width - BubbleView.Frame.Width - BubbleSideInset;
+                if (_ErrorIndicator != null && _ErrorIndicator.Hidden == false) {
+                    x -= _ErrorIndicator.Frame.Width + BubbleSideInset;
+                }
                 BubbleView.Frame = new CGRect (x, y, bubbleSize.Width, bubbleSize.Height);
             } else {
                 x = BubbleSideInset;
@@ -1401,6 +1508,11 @@ namespace NachoClient.iOS
         {
             LayoutBubbleView ();
             Frame = new CGRect (Frame.X, Frame.Y, Frame.Width, BubbleView.Frame.Y + BubbleView.Frame.Size.Height);
+        }
+
+        void ErrorTap ()
+        {
+            ChatView.Delegate.ChatMessageViewDidSelectError (ChatView, Index);
         }
 
     }

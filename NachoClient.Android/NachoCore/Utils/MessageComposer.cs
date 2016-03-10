@@ -787,12 +787,12 @@ namespace NachoCore.Utils
 
         #region Send Message
 
-        public void Send ()
+        public NcResult Send ()
         {
             if (ImageLengths != null) {
                 ResizeImages ();
             }
-            EmailHelper.SendTheMessage (Message, RelatedCalendarItem);
+            return EmailHelper.SendTheMessage (Message, RelatedCalendarItem);
         }
 
         #endregion

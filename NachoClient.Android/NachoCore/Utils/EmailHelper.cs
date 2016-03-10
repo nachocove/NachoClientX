@@ -30,7 +30,7 @@ namespace NachoCore.Utils
         }
 
         // Message is saved into Outbox
-        public static void SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
+        public static NcResult SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
         {
             // messageToSend = SalesForceProtoControl.MaybeAddSFDCEmailToBcc (messageToSend);
 
@@ -45,16 +45,15 @@ namespace NachoCore.Utils
                 referencedMessage = McEmailMessage.QueryById<McEmailMessage> (messageToSend.ReferencedEmailId);
             }
 
-            bool messageSent = false;
             List<McFolder> folders = null;
+            NcResult sendResult = null;
             if (calendarInviteItem != null) {
                 folders = McFolder.QueryByFolderEntryId<McCalendar> (calendarInviteItem.AccountId, calendarInviteItem.Id);
                 if (folders.Count == 0) {
                     Log.Error (Log.LOG_UI, "The event being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
                 } else {
                     int folderId = folders [0].Id;
-                    NachoCore.BackEnd.Instance.ForwardCalCmd (messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
-                    messageSent = true;
+                    sendResult = NachoCore.BackEnd.Instance.ForwardCalCmd (messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
                 }
             } else {
                 if (referencedMessage != null) {
@@ -64,28 +63,27 @@ namespace NachoCore.Utils
                     } else {
                         int folderId = folders [0].Id;
                         if (messageToSend.ReferencedIsForward) {
-                            NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
-                            messageSent = true;
+                            sendResult = NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
                         } else {
-                            NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
-                            messageSent = true;
+                            sendResult = NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
                         }
                     }
                 }
-                if (!messageSent) {
-                    // A new outgoing message.  Or a forward/reply that has problems.
-                    NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
-                    messageSent = true;
-                }
             }
-            if (messageSent) {
+            if (sendResult == null) {
+                // A new outgoing message.  Or a forward/reply that has problems.
+                sendResult = NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
+            }
+            if (sendResult != null) {
                 // Send status ind because the message is in the outbox
                 var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = result,
                     Account = McAccount.QueryById<McAccount> (messageToSend.AccountId),
                 });
+                return sendResult;
             }
+            return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed, NcResult.WhyEnum.Unknown);
         }
 
         private static bool MustSaveMessageToSent (int accountId)
