@@ -420,7 +420,7 @@ namespace NachoClient.AndroidClient
                     if (string.IsNullOrEmpty (Composer.Message.Bcc)) {
                         Composer.Message.Bcc = extraBcc;
                     } else {
-                        Composer.Message.Bcc += ", " + Composer.Message.Bcc;
+                        Composer.Message.Bcc += ", " + extraBcc;
                     }
                     UpdateHeaderFromBcc ();
                 }
