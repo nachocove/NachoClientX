@@ -259,19 +259,19 @@ namespace NachoClient.iOS
             DeleteAccountActivityIndicator.StartAnimating ();
             AlertMimicView.AddSubview (DeleteAccountActivityIndicator);
 
-            connectToSalesforceView = new ConnectToSalesforceCell (new CGRect (0, 60, View.Frame.Width, 80), ConnectToSalesforceSelected);
-            View.AddSubview (connectToSalesforceView);           
+            //connectToSalesforceView = new ConnectToSalesforceCell (new CGRect (0, 60, View.Frame.Width, 80), ConnectToSalesforceSelected);
+            //View.AddSubview (connectToSalesforceView);           
 
         }
 
-        public void ConnectToSalesforceSelected ()
-        {
-            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
-            var credentialsViewController = (SalesforceCredentialsViewController)accountStoryboard.InstantiateViewController ("SalesforceCredentialsViewController");
-            credentialsViewController.Service = McAccount.AccountServiceEnum.SalesForce;
-            credentialsViewController.AccountDelegate = this;
-            NavigationController.PushViewController (credentialsViewController, true);
-        }
+//        public void ConnectToSalesforceSelected ()
+//        {
+//            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+//            var credentialsViewController = (SalesforceCredentialsViewController)accountStoryboard.InstantiateViewController ("SalesforceCredentialsViewController");
+//            credentialsViewController.Service = McAccount.AccountServiceEnum.SalesForce;
+//            credentialsViewController.AccountDelegate = this;
+//            NavigationController.PushViewController (credentialsViewController, true);
+//        }
 
         void AddBccSwitch_ValueChanged (object sender, EventArgs e)
         {
