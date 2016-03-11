@@ -43,7 +43,8 @@ namespace NachoClient.AndroidClient
         Android.Widget.EditText searchEditText;
         SwipeMenuListView listView;
         ChatAdapter chatAdapter;
-        public EmailAddressField ToField;
+        EmailAddressField ToField;
+        Android.Widget.TextView titleView;
 
         McChat chat;
 
@@ -86,12 +87,24 @@ namespace NachoClient.AndroidClient
             ToField.Adapter = new ContactAddressAdapter (this.Activity);
             ToField.TokensChanged += ToField_TokensChanged;
 
+            titleView = view.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
+            titleView.Click += TitleView_Click;
+
             return view;
         }
 
         void ToField_TokensChanged (object sender, EventArgs e)
         {
             UpdateChatFromToField ();
+        }
+
+        void TitleView_Click (object sender, EventArgs e)
+        {
+            if (null != chat) {
+                var participants = McChatParticipant.GetChatParticipants (chat.Id);
+                var intent = ChatParticipantListActivity.ParticipantsIntent (this.Activity, typeof(ChatParticipantListActivity), Intent.ActionView, chat.AccountId, participants);
+                StartActivity (intent);
+            }
         }
 
         public override void OnActivityCreated (Bundle savedInstanceState)
@@ -208,15 +221,6 @@ namespace NachoClient.AndroidClient
             listView = View.FindViewById<SwipeMenuListView> (Resource.Id.listView);
             chatAdapter = new ChatAdapter (chat, this);
             listView.Adapter = chatAdapter;
-
-            if (null != chat) {
-                //                foreach (var attachment in AttachmentsForUnsavedChat) {
-                //                    attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
-                //                }
-                //                AttachmentsForUnsavedChat.Clear ();
-                //                UpdateForChat ();
-                //                ReloadMessages ();
-            }
         }
 
         bool IsAddressEditorVisible ()
@@ -228,7 +232,6 @@ namespace NachoClient.AndroidClient
         void ShowAddressEditor (bool visible)
         {
             var toView = View.FindViewById (Resource.Id.to_view);
-            var titleView = View.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
 
             if (visible) {
                 titleView.Visibility = ViewStates.Gone;
