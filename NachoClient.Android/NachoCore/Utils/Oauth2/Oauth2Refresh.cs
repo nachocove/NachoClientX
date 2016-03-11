@@ -329,7 +329,7 @@ namespace NachoCore
             if ((isExpired || fatalError) && !needUi) {
                 var account = McAccount.QueryById<McAccount> (cred.AccountId);
                 if (account.AccountService == McAccount.AccountServiceEnum.SalesForce) {
-                    var refreshTimer = new NcTimer ("SFDCRefreshFailTimer", (state) => {
+                    new NcTimer ("SFDCRefreshFailTimer", (state) => {
                         RefreshCredential (cred);
                     }, null, new TimeSpan (0, 0, 5), TimeSpan.Zero);
                 } else {
