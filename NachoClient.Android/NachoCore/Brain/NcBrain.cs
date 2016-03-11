@@ -11,6 +11,7 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.Index;
 using System.Threading;
+using System.Linq;
 
 namespace NachoCore.Brain
 {
@@ -61,11 +62,10 @@ namespace NachoCore.Brain
         public OperationCounters McEmailAddressCounters;
         public OperationCounters McEmailAddressScoreSyncInfo;
 
-        private DateTime LastPeriodicGlean;
-        private DateTime LastPeriodicGleanRestart;
-
         private object ProcessLoopLockObj;
         private object SyncRoot;
+
+        private NcTimer periodicTimer;
 
         private NcBrainNotification NotificationRateLimiter;
 
@@ -73,8 +73,6 @@ namespace NachoCore.Brain
         {
             _Indexes = new ConcurrentDictionary<int, NcIndex> ();
 
-            LastPeriodicGlean = new DateTime ();
-            LastPeriodicGleanRestart = new DateTime ();
             NotificationRateLimiter = new NcBrainNotification ();
 
             RootCounter = new NcCounter (prefix, true);
@@ -85,6 +83,8 @@ namespace NachoCore.Brain
 
             ProcessLoopLockObj = new object ();
             SyncRoot = new object ();
+
+            periodicTimer = null;
 
             InitializeEventHandler ();
         }
@@ -117,60 +117,48 @@ namespace NachoCore.Brain
 
         public static void StartService ()
         {
-            // Set up the logging functions for IndexLib
-            NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
+                NcBrain brain = NcBrain.SharedInstance;
                 lock (brain.SyncRoot) {
                     var token = NcTask.Cts.Token;
-                    token.Register (NcContactGleaner.Stop);
                     brain.EventQueue.Token = token;
-                    NcContactGleaner.Start ();
                     brain.IsRunning = true;
+                    // Remove any TERMINATE events at the front of the queue.  They were intended for
+                    // the previous run of the brain, not this session.
+                    while (null != brain.EventQueue.DequeueIf (evt => { return evt.Type == NcBrainEventType.TERMINATE; })) {
+                    }
+                    brain.periodicTimer = new NcTimer ("NcBrain.periodicTimer", (state) => {
+                        if (NcApplication.Instance.IsForegroundOrBackground) {
+                            try {
+                                SharedInstance.EnqueueIfNotAlreadyThere (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
+                            } catch (OperationCanceledException) {
+                                // The timer filed at about the same time that the brain was shut down.
+                            }
+                        }
+                    }, null, TimeSpan.FromSeconds (NcContactGleaner.GLEAN_PERIOD), TimeSpan.FromSeconds (NcContactGleaner.GLEAN_PERIOD));
+                    brain.periodicTimer.Stfu = true;
                 }
-                brain.Process ();
+                try {
+                    brain.Process ();
+                } finally {
+                    lock (brain.SyncRoot) {
+                        brain.IsRunning = false;
+                    }
+                }
             }, "Brain");
         }
 
         public static void StopService ()
         {
-            lock (NcBrain.SharedInstance.SyncRoot) {
-                NcBrain.SharedInstance.IsRunning = false;
-                NcContactGleaner.Stop ();
-                NcBrain.SharedInstance.EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
-            }
-        }
-
-        public void PauseService ()
-        {
-            lock (SyncRoot) {
-                if (IsRunning) {
-                    NcContactGleaner.Stop ();
-                    var pause = new NcBrainEvent (NcBrainEventType.PAUSE);
-                    try {
-                        EventQueue.UndequeueIfNot (pause, (obj) => {
-                            NcBrainEvent evt = obj;
-                            return evt.Type == NcBrainEventType.PAUSE;
-                        });
-                    } catch (OperationCanceledException) {
-                        // This means brain is stopped, so ignore this
+            var brain = NcBrain.SharedInstance;
+            lock (brain.SyncRoot) {
+                if (brain.IsRunning) {
+                    brain.IsRunning = false;
+                    brain.EventQueue.Undequeue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+                    if (null != brain.periodicTimer) {
+                        brain.periodicTimer.Dispose ();
+                        brain.periodicTimer = null;
                     }
-                }
-            }
-        }
-
-        public void UnPauseService ()
-        {
-            lock (SyncRoot) {
-                if (IsRunning) {
-                    try {
-                        EventQueue.DequeueIf ((obj) => {
-                            NcBrainEvent evt = obj;
-                            return evt.Type == NcBrainEventType.PAUSE;
-                        });
-                    } catch (OperationCanceledException) {
-                        // This means brain is stopped, so ignore this
-                    }
-                    NcContactGleaner.Start ();
                 }
             }
         }
@@ -212,11 +200,6 @@ namespace NachoCore.Brain
                             McEmailMessage.StartTimeVariance (EventQueue.Token);
                             tvStarted = true;
                         }
-                        // TODO - scheduling of brain actions need to be smarter. This will be
-                        // addressed in brain 2.0.
-                        if (!NcApplication.Instance.IsForegroundOrBackground) {
-                            continue;
-                        }
                     }
                     if (ENABLED) {
                         ProcessEvent (brainEvent);
@@ -250,15 +233,6 @@ namespace NachoCore.Brain
                 var initialRicEvent = new NcBrainInitialRicEvent (eventArgs.Account.Id);
                 NcBrain.SharedInstance.Enqueue (initialRicEvent);
                 break;
-            case NcResult.SubKindEnum.Info_BackgroundAbateStopped:
-                DateTime now = DateTime.Now;
-                if (((double)NcContactGleaner.GLEAN_PERIOD < (now - LastPeriodicGlean).TotalSeconds) &&
-                    (LastPeriodicGleanRestart < LastPeriodicGlean)) {
-                    LastPeriodicGleanRestart = now;
-                    NcContactGleaner.Stop ();
-                    NcContactGleaner.Start ();
-                }
-                break;
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
                 var stateMachineEvent = new NcBrainStateMachineEvent (eventArgs.Account.Id, 100);
                 NcBrain.SharedInstance.Enqueue (stateMachineEvent);
@@ -269,7 +243,11 @@ namespace NachoCore.Brain
         public void ProcessOneNewEmail (McEmailMessage emailMessage)
         {
             NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
-            QuickScoreEmailMessage (emailMessage);
+
+            var folder = McFolder.QueryByFolderEntryId<McEmailMessage> (emailMessage.AccountId, emailMessage.Id).FirstOrDefault ();
+            if (null != folder && !folder.IsJunkFolder () && NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 != folder.Type) {
+                NcBrain.IndexMessage (emailMessage);
+            }
         }
     }
 }

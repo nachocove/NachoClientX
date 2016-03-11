@@ -17,7 +17,7 @@ namespace NachoCore.Model
 {
     public class NcSQLiteConnection : SQLiteConnection
     {
-        private const int KGCSeconds = 60;
+        public const int KGCSeconds = 60;
         private object LockObj;
         private bool DidDispose;
 
@@ -73,11 +73,10 @@ namespace NachoCore.Model
             }
         }
 
-        public void EliminateIfStale (Action action)
+        public void EliminateIfStale (DateTime cutoff, Action action)
         {
             lock (LockObj) {
-                var wayBack = DateTime.UtcNow.AddSeconds (-GCSeconds);
-                if (LastAccess < wayBack) {
+                if (LastAccess < cutoff) {
                     action ();
                     Eliminate ();
                 }
@@ -131,6 +130,10 @@ namespace NachoCore.Model
                     typeof(McBrainEvent),
                     typeof(McEmailAddressScore),
                     typeof(McEmailMessageScore),
+                    typeof(McEmailMessageNeedsUpdate),
+                    typeof(McChat),
+                    typeof(McChatMessage),
+                    typeof(McChatParticipant)
                 };
             }
         }
@@ -478,6 +481,7 @@ namespace NachoCore.Model
 
         private NcTimer CheckPointTimer;
         private NcTimer DbConnGCTimer;
+        private DateTime lastDbConnGC = default(DateTime);
 
         private class CheckpointResult
         {
@@ -491,19 +495,30 @@ namespace NachoCore.Model
 
         private void DbConnGCTimerCallback (Object state)
         {
-            Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections");
+            DateTime staleCutoff;
+            if (default(DateTime) == lastDbConnGC) {
+                staleCutoff = DateTime.UtcNow - TimeSpan.FromSeconds (2 * NcSQLiteConnection.KGCSeconds);
+            } else {
+                staleCutoff = lastDbConnGC - TimeSpan.FromSeconds (NcSQLiteConnection.KGCSeconds);
+            }
+            lastDbConnGC = DateTime.UtcNow;
+            Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections older than {0:n0} seconds", (DateTime.UtcNow - staleCutoff).TotalSeconds);
             foreach (var kvp in DbConns) {
                 NcSQLiteConnection dummy;
                 if (kvp.Key == NcApplication.Instance.UiThreadId) {
                     continue;
                 }
-                kvp.Value.EliminateIfStale (() => {
+                kvp.Value.EliminateIfStale (staleCutoff, () => {
                     if (!DbConns.TryRemove (kvp.Key, out dummy)) {
                         Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
                     } else {
                         Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
                     }
                 });
+            }
+            if (null != DbConnGCTimer) {
+                DbConnGCTimer.Dispose ();
+                DbConnGCTimer = null;
             }
             // Avoid recurring timer because C# will dump many invocations into the Q and run them concurrently.
             DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
@@ -512,7 +527,11 @@ namespace NachoCore.Model
 
         public void Start ()
         {
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
+            int initialGcTimerLength = 15 * 1000;
+            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.PlatformIndication) {
+                initialGcTimerLength = 1 * 1000;
+            }
+            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, initialGcTimerLength, Timeout.Infinite);
             DbConnGCTimer.Stfu = true;
 
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
@@ -570,9 +589,17 @@ namespace NachoCore.Model
             return (TransDepth.TryGetValue (Thread.CurrentThread.ManagedThreadId, out depth) && depth > 0);
         }
 
+        void LogWriteFromUIThread(string tag)
+        {
+            if (Thread.CurrentThread.ManagedThreadId == NcApplication.Instance.UiThreadId) {
+                // Log.Info (Log.LOG_DB, "NcModel: {0} on UI thread\n{1}", tag, NachoPlatformBinding.PlatformProcess.GetStackTrace ());
+            }
+        }
+
         public int Update (object obj, Type objType, bool performOC = false, int priorVersion = 0)
         {
             lock (WriteNTransLockObj) {
+                LogWriteFromUIThread ("Update");
                 return Db.Update (obj, objType, performOC, priorVersion);
             }
         }
@@ -590,6 +617,7 @@ namespace NachoCore.Model
             do {
                 try {
                     lock (WriteNTransLockObj) {
+                        LogWriteFromUIThread ("BusyProtect");
                         rc = action ();
                     }
                     return rc;
@@ -620,6 +648,7 @@ namespace NachoCore.Model
         public void RunInLock (Action action)
         {
             lock (WriteNTransLockObj) {
+                LogWriteFromUIThread ("RunInLock");
                 action ();
             }
         }
@@ -656,6 +685,7 @@ namespace NachoCore.Model
                     try {
                         lockWatch.Start ();
                         lock (WriteNTransLockObj) {
+                            LogWriteFromUIThread ("RunInTransaction");
                             lockWatch.Stop ();
                             Db.CommandRecord = new List<string> ();
                             workWatch.Start ();

@@ -21,6 +21,27 @@ namespace NachoPlatform
     /// </summary>
     public static class AndroidCalendars
     {
+        private static List<McEvent> cachedDeviceEvents = new List<McEvent> ();
+        private static DateTime cachedStartRange = NcEventManager.BeginningOfEventsOfInterest;
+        private static DateTime cachedEndRange = DateTime.Now.AddDays (151).Date.ToUniversalTime ();
+        private static object deviceEventsLock = new object ();
+
+        public static List<McEvent> GetDeviceEvents (DateTime startRange, DateTime endRange)
+        {
+            bool reloadNeeded;
+            List<McEvent> result;
+            lock (deviceEventsLock) {
+                reloadNeeded = startRange < cachedStartRange || endRange > cachedEndRange;
+                cachedStartRange = startRange;
+                cachedEndRange = endRange;
+                result = cachedDeviceEvents;
+            }
+            if (reloadNeeded) {
+                Calendars.Instance.DeviceCalendarChanged ();
+            }
+            return result;
+        }
+
         private static string[] instancesProjection = new string[] {
             CalendarContract.Instances.EventId,
             CalendarContract.Instances.Begin,
@@ -34,23 +55,32 @@ namespace NachoPlatform
         private const int INSTANCES_ALL_DAY_INDEX = 3;
         private const int INSTANCES_UID_INDEX = 4;
 
-        /// <summary>
-        /// Create in-memory McEvent objects for all of the device events within the given date range.
-        /// The McEvents that are crated will have a negative CalendarId, which is the negative value
-        /// of the event's ID in the Android database.
-        /// </summary>
-        public static List<McEvent> GetDeviceEvents (DateTime startRange, DateTime endRange)
+        public static void ReloadDeviceEvents ()
         {
+            DateTime startRange;
+            DateTime endRange;
+            lock (deviceEventsLock) {
+                startRange = cachedStartRange;
+                endRange = cachedEndRange;
+            }
             var resolver = MainApplication.Instance.ContentResolver;
-            var uriBuilder = CalendarContract.Instances.ContentSearchUri.BuildUpon ();
-            ContentUris.AppendId (uriBuilder, startRange.MillisecondsSinceEpoch ());
-            ContentUris.AppendId (uriBuilder, endRange.MillisecondsSinceEpoch ());
             ICursor eventCursor;
             try {
-                eventCursor = CalendarContract.Instances.Query (resolver, instancesProjection, startRange.MillisecondsSinceEpoch (), endRange.MillisecondsSinceEpoch ());
+                eventCursor = CalendarContract.Instances.Query (
+                    resolver, instancesProjection, startRange.MillisecondsSinceEpoch (), endRange.MillisecondsSinceEpoch ());
             } catch (Exception e) {
                 Log.Error (Log.LOG_SYS, "Querying device events failed with {0}", e.ToString ());
-                return new List<McEvent> ();
+                lock (deviceEventsLock) {
+                    cachedDeviceEvents = new List<McEvent> ();
+                }
+                return;
+            }
+
+            if (null == eventCursor) {
+                lock (deviceEventsLock) {
+                    cachedDeviceEvents = new List<McEvent> ();
+                }
+                return;
             }
 
             var deviceAccount = McAccount.GetDeviceAccount ().Id;
@@ -74,7 +104,9 @@ namespace NachoPlatform
                 });
             }
 
-            return result;
+            lock (deviceEventsLock) {
+                cachedDeviceEvents = result;
+            }
         }
 
         private static string[] eventSummaryProjection = new string[] {
@@ -107,7 +139,7 @@ namespace NachoPlatform
                 Log.Error (Log.LOG_SYS, "Looking up device details failed with {0}", e.ToString ());
                 return false;
             }
-            if (!eventCursor.MoveToNext ()) {
+            if (null == eventCursor || !eventCursor.MoveToNext ()) {
                 return false;
             }
             title = eventCursor.GetString (EVENT_SUMMARY_TITLE_INDEX);
@@ -197,7 +229,7 @@ namespace NachoPlatform
                 Log.Error (Log.LOG_SYS, "Looking up device details failed with {0}", e.ToString ());
                 return null;
             }
-            if (!eventCursor.MoveToNext ()) {
+            if (null == eventCursor || !eventCursor.MoveToNext ()) {
                 return null;
             }
 
@@ -693,12 +725,13 @@ namespace NachoPlatform
 
     public sealed class Calendars : IPlatformCalendars
     {
-        private const int SchemaRev = 0;
         private static volatile Calendars instance;
         private static object syncRoot = new Object ();
+        private INcEventProvider eventsProvider;
 
         private Calendars ()
         {
+            eventsProvider = new AndroidEventsCalendarMap (DateTime.Now.AddDays (151).Date);
         }
 
         public static Calendars Instance {
@@ -714,9 +747,15 @@ namespace NachoPlatform
             }
         }
 
+        public INcEventProvider EventProviderInstance {
+            get {
+                return eventsProvider;
+            }
+        }
+
         public void AskForPermission (Action<bool> result)
         {
-            // Permissions are controlled by the app's manifest.  They aren't changed at runtime.
+            // Permissions are controlled by the app's manifest.  They can't be changed at runtime.
         }
 
         public void GetCalendars (out IEnumerable<PlatformCalendarFolderRecord> folders, out IEnumerable<PlatformCalendarRecord> events)
@@ -751,8 +790,90 @@ namespace NachoPlatform
 
         public void DeviceCalendarChanged ()
         {
-            if (null != ChangeIndicator) {
-                ChangeIndicator (this, EventArgs.Empty);
+            NcTask.Run (() => {
+                AndroidCalendars.ReloadDeviceEvents ();
+                NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_EventSetChanged);
+                if (null != ChangeIndicator) {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        ChangeIndicator (this, EventArgs.Empty);
+                    });
+                }
+            }, "DeviceCalendarChanged");
+        }
+
+        private class AndroidEventsCalendarMap : NcEventsCalendarMapCommon
+        {
+            public AndroidEventsCalendarMap (DateTime end)
+                : base(end)
+            {
+            }
+
+            protected override List<McEvent> GetEventsWithDuplicates (DateTime start, DateTime end)
+            {
+                var appEvents = McEvent.QueryEventsInRange (start, end);
+                var deviceEvents = AndroidCalendars.GetDeviceEvents (start, end);
+
+                var result = new List<McEvent> (appEvents.Count + deviceEvents.Count);
+                result.AddRange (appEvents);
+                result.AddRange (deviceEvents);
+                result.Sort ((x, y) => {
+                    int startTimeOrder = DateTime.Compare (x.StartTime, y.StartTime);
+                    if (0 == startTimeOrder) {
+                        // If the events have the same start time, put device events before app events.
+                        if (0 != x.DeviceEventId && 0 == y.DeviceEventId) {
+                            return -1;
+                        } else if (0 == x.DeviceEventId && 0 != y.DeviceEventId) {
+                            return 1;
+                        } else {
+                            return 0;
+                        }
+                    }
+                    return startTimeOrder;
+                });
+
+                // The Android calendar item database has a UID field, but in my experience that field
+                // has always been null.  Which renders moot the code that eliminates duplicate events
+                // for the same meeting.  So we have to eliminate duplicates here.  If we see a device
+                // event without a UID, and we find another event with the same start time, end time,
+                // and title, then ignore the UID-less device event.  It is not as accurate as using
+                // the UID, but it is as good as we can do.
+                for (int i = 0; i < result.Count; ++i) {
+                    McEvent e = result [i];
+                    if (0 == e.DeviceEventId || null != e.UID) {
+                        continue;
+                    }
+                    string eTitle = null;
+                    for (int j = i + 1; j < result.Count && result [j].StartTime == e.StartTime; ++j) {
+                        McEvent f = result [j];
+                        if (e.EndTime == f.EndTime) {
+                            if (null == eTitle) {
+                                string dummyLocation;
+                                int dummyColor;
+                                AndroidCalendars.GetEventDetails (e.DeviceEventId, out eTitle, out dummyLocation, out dummyColor);
+                            }
+                            string fTitle = null;
+                            if (0 == f.DeviceEventId) {
+                                var appCal = f.GetCalendarItemforEvent ();
+                                if (null != appCal) {
+                                    fTitle = appCal.GetSubject ();
+                                }
+                            } else {
+                                string dummyLocation;
+                                int dummyColor;
+                                AndroidCalendars.GetEventDetails (f.DeviceEventId, out fTitle, out dummyLocation, out dummyColor);
+                            }
+                            if (null != eTitle && null != fTitle && eTitle == fTitle) {
+                                result [i] = null;
+                                break;
+                            }
+                        }
+                    }
+                }
+                result.RemoveAll ((McEvent obj) => {
+                    return obj == null;
+                });
+
+                return result;
             }
         }
     }
@@ -770,4 +891,3 @@ namespace NachoPlatform
         }
     }
 }
-

@@ -22,6 +22,7 @@ namespace NachoClient.iOS
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected const string DraftsMessageReuseIdentifier = "DraftsMessage";
         protected HashSet<nint> MultiSelect = null;
+        protected Dictionary<int, int> MultiSelectAccounts = null;
         protected bool multiSelectAllowed;
         protected bool multiSelectActive;
         public IMessageTableViewSourceDelegate owner;
@@ -30,6 +31,11 @@ namespace NachoClient.iOS
         protected NcCapture RefreshCapture;
         private string ArchiveMessageCaptureName;
         private string RefreshCaptureName;
+
+        private UIView headerWrapper;
+        private UILabel headerText;
+
+        IDisposable abatementRequest = null;
 
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
@@ -160,6 +166,7 @@ namespace NachoClient.iOS
             this.owner = owner;
             multiSelectAllowed = true;
             MultiSelect = new HashSet<nint> ();
+            MultiSelectAccounts = new Dictionary<int, int> ();
             ArchiveMessageCaptureName = "MessageTableViewSource.ArchiveMessage";
             NcCapture.AddKind (ArchiveMessageCaptureName);
             ArchiveCaptureMessage = NcCapture.Create (ArchiveMessageCaptureName);
@@ -181,7 +188,32 @@ namespace NachoClient.iOS
             ClearCache ();
             var didRefresh = messageThreads.Refresh (out adds, out deletes);
             RefreshCapture.Stop ();
+            if (null != headerText && messageThreads.HasFilterSemantics ()) {
+                headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
+            }
             return didRefresh;
+        }
+
+        public void BackgroundRefreshEmailMessages (NachoMessagesRefreshCompletionDelegate completionAction)
+        {
+            if (!messageThreads.HasBackgroundRefresh ()) {
+                List<int> adds;
+                List<int> deletes;
+                bool changed = RefreshEmailMessages (out adds, out deletes);
+                if (null != completionAction) {
+                    completionAction (changed, adds, deletes);
+                }
+                return;
+            }
+            ClearCache ();
+            messageThreads.BackgroundRefresh ((changed, adds, deletes) => {
+                if (null != headerText && messageThreads.HasFilterSemantics ()) {
+                    headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
+                }
+                if (null != completionAction) {
+                    completionAction (changed, adds, deletes);
+                }
+            });
         }
 
         public bool NoMessageThreads ()
@@ -207,6 +239,42 @@ namespace NachoClient.iOS
             } else {
                 return messageThreads.Count ();
             }
+        }
+
+        public override nfloat EstimatedHeightForHeader (UITableView tableView, nint section)
+        {
+            return messageThreads.HasFilterSemantics () ? 24 : 0;
+        }
+
+        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
+        {
+            return EstimatedHeightForHeader (tableView, section);
+        }
+
+        public override UIView GetViewForHeader (UITableView tableView, nint section)
+        {
+            if (!messageThreads.HasFilterSemantics ()) {
+                return null;
+            }
+
+            if (null == headerWrapper) {
+                headerWrapper = new UIView (new CGRect (0, 0, tableView.Frame.Width, 24));
+                headerWrapper.BackgroundColor = A.Color_NachoBackgroundGray;
+
+                var headerIcon = new UIImageView (new CGRect (30, 0, 24, 24));
+                headerIcon.Image = UIImage.FromBundle ("gen-read-list");
+                headerWrapper.AddSubview (headerIcon);
+
+                headerText = new UILabel (new CGRect (65, 0, tableView.Frame.Width - 65, 24));
+                headerWrapper.AddSubview (headerText);
+                headerText.BackgroundColor = A.Color_NachoBackgroundGray;
+                headerText.AccessibilityLabel = "MessageListFilterSetting";
+                headerText.Font = A.Font_AvenirNextDemiBold14;
+            }
+
+            headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
+
+            return headerWrapper;
         }
 
         protected nfloat HeightForMessage (McEmailMessage message)
@@ -263,11 +331,13 @@ namespace NachoClient.iOS
                 var threadIndex = indexPath.Row;
                 if (MultiSelect.Contains (threadIndex)) {
                     MultiSelect.Remove (threadIndex);
+                    UpdateMultiSelectAccounts (messageThread, -1);
                 } else {
                     MultiSelect.Add (threadIndex);
+                    UpdateMultiSelectAccounts (messageThread, 1);
                 }
                 ConfigureMultiSelectCell (cell);
-                owner.MultiSelectChange (this, MultiSelect.Count);
+                owner.MultiSelectChange (this, MultiSelect.Count, 1 < MultiSelectAccounts.Count);
             } else {
                 owner.MessageThreadSelected (messageThread);
                 DumpInfo (messageThread);
@@ -354,7 +424,7 @@ namespace NachoClient.iOS
             }
             if (null != owner) {
                 owner.MultiSelectToggle (this, multiSelectAllowed && multiSelectActive);
-                owner.MultiSelectChange (this, MultiSelect.Count);
+                owner.MultiSelectChange (this, MultiSelect.Count, 1 < MultiSelectAccounts.Count);
             }
         }
 
@@ -366,6 +436,7 @@ namespace NachoClient.iOS
         public void MultiSelectEnable (UITableView tableView)
         {
             MultiSelect.Clear ();
+            MultiSelectAccounts.Clear ();
             multiSelectActive = true;
             MultiSelectToggle (tableView);
         }
@@ -373,8 +444,27 @@ namespace NachoClient.iOS
         public void MultiSelectCancel (UITableView tableView)
         {
             MultiSelect.Clear ();
+            MultiSelectAccounts.Clear ();
             multiSelectActive = false;
             MultiSelectToggle (tableView);
+        }
+
+        void UpdateMultiSelectAccounts(McEmailMessageThread messageThread, int delta)
+        {
+            var message = messageThread.FirstMessage ();
+            if (null == message) {
+                return;
+            }
+            int value;
+            if (MultiSelectAccounts.TryGetValue (message.AccountId, out value)) {
+                value += delta;
+                if (0 == value) {
+                    MultiSelectAccounts.Remove (message.AccountId);
+                }
+            } else {
+                NcAssert.True (1 == delta);
+                MultiSelectAccounts.Add (message.AccountId, delta);
+            }
         }
 
         /// <summary>
@@ -581,7 +671,10 @@ namespace NachoClient.iOS
                 ConfigureAsUnavailable (cell);
                 return;
             }
-            NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
+
+            NcTask.Run (() => {
+                NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
+            }, "MessageNotificationStatusUpdated");
 
             cell.TextLabel.Text = "";
             cell.ContentView.Hidden = false;
@@ -661,7 +754,8 @@ namespace NachoClient.iOS
             messageHeaderView.ConfigureMessageView (messageThread, message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
-                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                // Set the value for redraw; status ind will show up soon for permanent action
+                message.UserAction = NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 messageHeaderView.ConfigureMessageView (messageThread, message);
             };
 
@@ -692,7 +786,9 @@ namespace NachoClient.iOS
             // Since there is a decent chance that the user will open this message, ask the backend to fetch it
             // download its body.
             if (0 == message.BodyId) {
-                BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
+                NcTask.Run (() => {
+                    BackEnd.Instance.SendEmailBodyFetchHint (message.AccountId, message.Id);
+                }, "MessageTableViewSource.SendEmailBodyFetchHint");
             }
         }
 
@@ -830,6 +926,9 @@ namespace NachoClient.iOS
                     }
                 }
             }
+            if (null != headerText && null != messageThreads && messageThreads.HasFilterSemantics()) {
+                headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
+            }
         }
 
         public void EmailMessageChanged (UITableView tableView, int id)
@@ -903,6 +1002,7 @@ namespace NachoClient.iOS
 
         public void MultiSelectMove (UITableView tableView, McFolder folder)
         {
+            NcAssert.True (1 == MultiSelectAccounts.Count);
             var messageList = GetSelectedMessages ();
             NcEmailArchiver.Move (messageList, folder);
             MultiSelectCancel (tableView);
@@ -959,20 +1059,26 @@ namespace NachoClient.iOS
         public override void DraggingStarted (UIScrollView scrollView)
         {
             scrolling = true;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
+            if (null == abatementRequest) {
+                abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+            }
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
             scrolling = false;
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
+            if (null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
+            }
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             scrolling = false;
-            if (!willDecelerate) {
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
+            if (!willDecelerate && null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
             }
         }
 

@@ -14,18 +14,16 @@ namespace NachoCore.Brain
         protected OpenedIndexSet OpenedIndexes;
         private long BytesIndexed;
         private RoundRobinList Scheduler;
-        private RoundRobinSource ContactIndexingSource;
 
         private void InitializeEventHandler ()
         {
             EventQueue = new NcQueue<NcBrainEvent> ();
             OpenedIndexes = new OpenedIndexSet (this);
             Scheduler = new RoundRobinList ();
-            Scheduler.Add ("update hi priority email messages", new RoundRobinSource (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScores, 5), 3);
-            ContactIndexingSource = new RoundRobinSource (McContact.QueryNeedIndexingObjects, IndexContact, 5);
-            Scheduler.Add ("index contacts", ContactIndexingSource, 10);
-            Scheduler.Add ("analyze email messages", new RoundRobinSource (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 5), 2);
-            Scheduler.Add ("index email messages", new RoundRobinSource (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 5), 3);
+            Scheduler.Add ("update hi priority email messages", new RoundRobinSource (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScores, 50), 2);
+            Scheduler.Add ("index contacts", new RoundRobinSource (McContact.QueryNeedIndexingObjects, IndexContact, 50), 1);
+            Scheduler.Add ("analyze email messages", new RoundRobinSource (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 50), 2);
+            Scheduler.Add ("index email messages", new RoundRobinSource (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 50), 1);
         }
 
         public void Enqueue (NcBrainEvent brainEvent)
@@ -36,8 +34,14 @@ namespace NachoCore.Brain
         public void EnqueueIfNotAlreadyThere (NcBrainEvent brainEvent)
         {
             EventQueue.EnqueueIfNot (brainEvent, (obj) => {
-                NcBrainEvent evt = obj;
-                return evt.Type == brainEvent.Type;
+                return obj.Type == brainEvent.Type;
+            });
+        }
+
+        public void EnqueueIfNotAtTail (NcBrainEvent brainEvent)
+        {
+            EventQueue.EnqueueIfNotTail (brainEvent, (obj) => {
+                return obj.Type == brainEvent.Type;
             });
         }
 
@@ -46,35 +50,36 @@ namespace NachoCore.Brain
             return EventQueue.IsEmpty ();
         }
 
-        private bool IsInterrupted ()
+        public void QueueClear ()
         {
-            return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired;
+            while (EventQueue.Count () > 0) {
+                EventQueue.Dequeue ();
+            }
         }
 
-        public bool IsCancelled ()
+        private bool KeepGoing ()
         {
-            return null == EventQueue || EventQueue.Token.IsCancellationRequested;
+            NcAbate.PauseWhileAbated ();
+            return !EventQueue.Token.IsCancellationRequested;
+        }
+
+        private bool KeepGoing (DateTime until)
+        {
+            return KeepGoing () && DateTime.UtcNow < until;
         }
 
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
-            Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
+            NcAbate.PauseWhileAbated ();
+
+            Log.Info (Log.LOG_BRAIN, "Process brain event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
 
             switch (brainEvent.Type) {
-            case NcBrainEventType.PAUSE:
-                NcTask.CancelableSleep (4 * 1000, EventQueue.Token);
-                break;
 
             case NcBrainEventType.PERIODIC_GLEAN:
-                if (!NcApplication.Instance.IsBackgroundAbateRequired) {
-                    LastPeriodicGlean = DateTime.Now;
-                }
                 NotificationRateLimiter.Running = false;
                 var runTill = EvaluateRunTime (NcContactGleaner.GLEAN_PERIOD);
-                if (!ProcessPeriodic (runTill)) {
-                    // nothing was done, so stop the gleaner. It'll start when there's something to do.
-                    NcContactGleaner.Stop ();
-                }
+                ProcessPeriodic (runTill);
                 NotificationRateLimiter.Running = true;
                 break;
             case NcBrainEventType.STATE_MACHINE:
@@ -94,14 +99,13 @@ namespace NachoCore.Brain
                 ProcessInitialRicEvent (brainEvent as NcBrainInitialRicEvent);
                 break;
             case NcBrainEventType.PERSISTENT_QUEUE:
-                var persistentQueueVent = (NcBrainPersistentQueueEvent)brainEvent;
                 try {
-                    ProcessPersistedRequests (persistentQueueVent.EventCount);
+                    ProcessPersistedRequests ();
                 } finally {
-                    // A reindex contact event can result in an index being left open.
                     OpenedIndexes.Cleanup ();
                 }
                 break;
+            case NcBrainEventType.INDEX_MESSAGE:
             case NcBrainEventType.UNINDEX_CONTACT:
             case NcBrainEventType.UNINDEX_MESSAGE:
             case NcBrainEventType.UPDATE_ADDRESS_SCORE:
@@ -118,57 +122,28 @@ namespace NachoCore.Brain
             }
         }
 
-        private int ProcessLoop (int count, string message, Func<bool> action)
-        {
-            int numProcessed = 0;
-            while (numProcessed < count && !IsInterrupted ()) {
-                if (!action ()) {
-                    break;
-                }
-                numProcessed++;
-            }
-            if (0 != numProcessed) {
-                Log.Info (Log.LOG_BRAIN, "{0} {1}", numProcessed, message);
-            }
-            return numProcessed;
-        }
-
         private bool ProcessPeriodic (DateTime runTill)
         {
             try {
                 bool didSomething = false;
-                bool ranOnce = false;
-                while (DateTime.UtcNow < runTill) {
-                    if (IsInterrupted ()) {
-                        break;
-                    }
-
-                    // Process all events in the persistent queue first
-                    if (0 < ProcessPersistedRequests (100)) {
-                        continue;
-                    }
-                    // Handle all other events
-                    if (!ranOnce) {
-                        Scheduler.Initialize ();
-                        ranOnce = true;
-                    }
-                    bool result;
-                    if (!Scheduler.Run (out result)) {
-                        break;
-                    }
+                int persistedCount = ProcessPersistedRequests ();
+                if (0 < persistedCount) {
                     didSomething = true;
                 }
-                while (DateTime.UtcNow < runTill) {
-                    if (IsInterrupted ()) {
-                        break;
+                if (KeepGoing (runTill)) {
+                    Scheduler.Initialize ();
+                    while (KeepGoing (runTill)) {
+                        bool ignoredResult;
+                        if (!Scheduler.Run (out ignoredResult)) {
+                            break;
+                        }
+                        didSomething = true;
                     }
-
-                    var emailMessages = McEmailMessage.QueryNeedUpdate (5, above: false);
-                    if (0 == emailMessages.Count) {
-                        break;
-                    }
+                }
+                while (KeepGoing (runTill)) {
+                    var emailMessages = McEmailMessage.QueryNeedUpdate (50, above: false);
                     foreach (var emailMessage in emailMessages) {
-                        if (IsInterrupted ()) {
+                        if (!KeepGoing (runTill)) {
                             break;
                         }
                         UpdateEmailMessageScores (emailMessage);
@@ -182,16 +157,20 @@ namespace NachoCore.Brain
             }
         }
 
-        private int ProcessPersistedRequests (int count)
+        private int ProcessPersistedRequests ()
         {
-            bool sourceReset = false;
-            return ProcessLoop (count, "persisted requests processed", () => {
+            int numProcessed = 0;
+            while (KeepGoing ()) {
                 var dbEvent = McBrainEvent.QueryNext ();
                 if (null == dbEvent) {
-                    return false;
+                    break;
                 }
                 var brainEvent = dbEvent.BrainEvent ();
+                Log.Info (Log.LOG_BRAIN, "Process persisted brain event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
                 switch (brainEvent.Type) {
+                case NcBrainEventType.INDEX_MESSAGE:
+                    IndexEmailMessage (McEmailMessage.QueryById<McEmailMessage> ((int)((NcBrainIndexMessageEvent)brainEvent).EmailMessageId));
+                    break;
                 case NcBrainEventType.UNINDEX_MESSAGE:
                     var unindexEvent = brainEvent as NcBrainUnindexMessageEvent;
                     UnindexEmailMessage ((int)unindexEvent.AccountId, (int)unindexEvent.EmailMessageId);
@@ -206,13 +185,6 @@ namespace NachoCore.Brain
                     UnindexContact ((int)reindexEvent.AccountId, (int)reindexEvent.ContactId);
                     if (null != contact) {
                         IndexContact (contact);
-                    }
-                    if (!sourceReset) {
-                        // The contact is already indexed but it may already be sitting
-                        // in contact indexing source's object list. Then, it will be
-                        // indexed twice. So, we manually clears that source's object list
-                        ContactIndexingSource.Reset ();
-                        sourceReset = true;
                     }
                     break;
                 case NcBrainEventType.UPDATE_ADDRESS_SCORE:
@@ -261,8 +233,12 @@ namespace NachoCore.Brain
                     break;
                 }
                 dbEvent.Delete ();
-                return true;
-            });
+                ++numProcessed;
+            }
+            if (0 < numProcessed) {
+                Log.Info (Log.LOG_BRAIN, "{0} persistent requests processed", numProcessed);
+            }
+            return numProcessed;
         }
 
         private void ProcessUIEvent (NcBrainUIEvent brainEvent)
@@ -328,7 +304,7 @@ namespace NachoCore.Brain
             int numScored = 0;
             var emailMessages = McEmailMessage.QueryNeedQuickScoring (accountId, count);
             foreach (var emailMessage in emailMessages) {
-                if (IsInterrupted ()) {
+                if (!KeepGoing ()) {
                     break;
                 }
                 QuickScoreEmailMessage (emailMessage);
@@ -358,7 +334,7 @@ namespace NachoCore.Brain
             int numGleaned = 0;
             var emailMessages = McEmailMessage.QueryNeedGleaning (accountId, count);
             foreach (var emailMessage in emailMessages) {
-                if (IsInterrupted ()) {
+                if (!KeepGoing ()) {
                     break;
                 }
                 if (!GleanEmailMessage (emailMessages [numGleaned])) {

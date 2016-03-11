@@ -1604,9 +1604,6 @@
       <DependentUpon>ExchangeAdvancedFieldsViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AccountAdvancedFieldsViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\GoogleOAuth2Authenticator.cs">
-      <Link>NachoCore\Utils\GoogleOAuth2Authenticator.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs</Link>
     </Compile>
@@ -1737,6 +1734,19 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoUnifiedLikelyToRead.cs">
       <Link>NachoCore\Adapters\NachoUnifiedLikelyToRead.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs">
+      <Link>NachoCore\Utils\Oauth2\GoogleOAuth2Authenticator.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\Oauth2Refresh.cs">
+      <Link>NachoCore\Utils\Oauth2\Oauth2Refresh.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs">
+      <Link>NachoCore\Utils\Oauth2\SFDCOauth2Authenticator.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\SalesforceCredentialsViewController.designer.cs">
+      <DependentUpon>SalesforceCredentialsViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\AccountPickerViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountPickerViewController.designer.cs">
       <DependentUpon>AccountPickerViewController.cs</DependentUpon>
@@ -1749,6 +1759,66 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailSearch.cs">
       <Link>NachoCore\Utils\EmailSearch.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SFDCCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SFDCCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SFDCGetContactsCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SFDCGetContactsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SalesForceContactSync.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\SalesForceContactSync.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetApiVersionsCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetApiVersionsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetObjectsCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetObjectsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetResourcesCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetResourcesCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SalesForceSetup.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SalesForceSetup.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs">
+      <Link>NachoCore\Model\McEmailMessage\McEmailMessageNeedsUpdate.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration51.cs">
+      <Link>NachoCore\Model\Migration\NcMigration51.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McChat.cs">
+      <Link>NachoCore\Model\McChat.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McChatMessage.cs">
+      <Link>NachoCore\Model\McChatMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McChatParticipant.cs">
+      <Link>NachoCore\Model\McChatParticipant.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ChatsViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ChatMessageComposer.cs">
+      <Link>NachoCore\Utils\ChatMessageComposer.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs">
+      <Link>NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\SFDCGetEmailDomainCommand.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\FolderTableViewSource.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\FolderLists.cs">
+      <Link>NachoCore\Utils\FolderLists.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ChatMessagesViewController.cs" />
+    <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\SalesforceSettingsViewController.designer.cs">
+      <DependentUpon>SalesforceSettingsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\PortraitView.cs" />
+    <Compile Include="NachoUI.iOS\ChatParticipantListViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration52.cs">
+      <Link>NachoCore\Model\Migration\NcMigration52.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -2677,6 +2747,119 @@
     <BundleResource Include="Resources\MessageRead%402x.png" />
     <BundleResource Include="Resources\MessageRead%403x.png" />
     <BundleResource Include="Resources\MessageRead%404x.png" />
+    <BundleResource Include="Resources\gen-read-list-active%402x.png" />
+    <BundleResource Include="Resources\gen-read-list-active%403x.png" />
+    <BundleResource Include="Resources\gen-read-list-active%404x.png" />
+    <BundleResource Include="Resources\gen-read-list-active%406x.png" />
+    <BundleResource Include="Resources\gen-read-list%402x.png" />
+    <BundleResource Include="Resources\gen-read-list%403x.png" />
+    <BundleResource Include="Resources\gen-read-list%404x.png" />
+    <BundleResource Include="Resources\gen-read-list%406x.png" />
+    <BundleResource Include="Resources\Icon-83.5%402x.png" />
+    <BundleResource Include="Resources\chat-add-contact-active%402x.png" />
+    <BundleResource Include="Resources\chat-add-contact-active%403x.png" />
+    <BundleResource Include="Resources\chat-add-contact-active%404x.png" />
+    <BundleResource Include="Resources\chat-add-contact%402x.png" />
+    <BundleResource Include="Resources\chat-add-contact%403x.png" />
+    <BundleResource Include="Resources\chat-add-contact%404x.png" />
+    <BundleResource Include="Resources\chat-arrow-more%402x.png" />
+    <BundleResource Include="Resources\chat-arrow-more%403x.png" />
+    <BundleResource Include="Resources\chat-arrow-more%404x.png" />
+    <BundleResource Include="Resources\chat-attachfile%402x.png" />
+    <BundleResource Include="Resources\chat-attachfile%403x.png" />
+    <BundleResource Include="Resources\chat-attachfile%404x.png" />
+    <BundleResource Include="Resources\chat-call-active%402x.png" />
+    <BundleResource Include="Resources\chat-call-active%403x.png" />
+    <BundleResource Include="Resources\chat-call-active%404x.png" />
+    <BundleResource Include="Resources\chat-call%402x.png" />
+    <BundleResource Include="Resources\chat-call%403x.png" />
+    <BundleResource Include="Resources\chat-call%404x.png" />
+    <BundleResource Include="Resources\chat-clear-active%402x.png" />
+    <BundleResource Include="Resources\chat-clear-active%403x.png" />
+    <BundleResource Include="Resources\chat-clear-active%404x.png" />
+    <BundleResource Include="Resources\chat-clear%402x.png" />
+    <BundleResource Include="Resources\chat-clear%403x.png" />
+    <BundleResource Include="Resources\chat-clear%404x.png" />
+    <BundleResource Include="Resources\chat-emoticon-active%402x.png" />
+    <BundleResource Include="Resources\chat-emoticon-active%403x.png" />
+    <BundleResource Include="Resources\chat-emoticon-active%404x.png" />
+    <BundleResource Include="Resources\chat-emoticon%402x.png" />
+    <BundleResource Include="Resources\chat-emoticon%403x.png" />
+    <BundleResource Include="Resources\chat-emoticon%404x.png" />
+    <BundleResource Include="Resources\chat-forward-active%402x.png" />
+    <BundleResource Include="Resources\chat-forward-active%403x.png" />
+    <BundleResource Include="Resources\chat-forward-active%404x.png" />
+    <BundleResource Include="Resources\chat-forward%402x.png" />
+    <BundleResource Include="Resources\chat-forward%403x.png" />
+    <BundleResource Include="Resources\chat-forward%404x.png" />
+    <BundleResource Include="Resources\chat-info%402x.png" />
+    <BundleResource Include="Resources\chat-info%403x.png" />
+    <BundleResource Include="Resources\chat-info%404x.png" />
+    <BundleResource Include="Resources\chat-newmsg-active%402x.png" />
+    <BundleResource Include="Resources\chat-newmsg-active%403x.png" />
+    <BundleResource Include="Resources\chat-newmsg-active%404x.png" />
+    <BundleResource Include="Resources\chat-newmsg%402x.png" />
+    <BundleResource Include="Resources\chat-newmsg%403x.png" />
+    <BundleResource Include="Resources\chat-newmsg%404x.png" />
+    <BundleResource Include="Resources\chat-photo-active%402x.png" />
+    <BundleResource Include="Resources\chat-photo-active%403x.png" />
+    <BundleResource Include="Resources\chat-photo-active%404x.png" />
+    <BundleResource Include="Resources\chat-photo%402x.png" />
+    <BundleResource Include="Resources\chat-photo%403x.png" />
+    <BundleResource Include="Resources\chat-photo%404x.png" />
+    <BundleResource Include="Resources\chat-photolibrary%402x.png" />
+    <BundleResource Include="Resources\chat-photolibrary%403x.png" />
+    <BundleResource Include="Resources\chat-photolibrary%404x.png" />
+    <BundleResource Include="Resources\chat-sendaudio%402x.png" />
+    <BundleResource Include="Resources\chat-sendaudio%403x.png" />
+    <BundleResource Include="Resources\chat-sendaudio%404x.png" />
+    <BundleResource Include="Resources\chat-sendlocation%402x.png" />
+    <BundleResource Include="Resources\chat-sendlocation%403x.png" />
+    <BundleResource Include="Resources\chat-sendlocation%404x.png" />
+    <BundleResource Include="Resources\chat-sharecontact%402x.png" />
+    <BundleResource Include="Resources\chat-sharecontact%403x.png" />
+    <BundleResource Include="Resources\chat-sharecontact%404x.png" />
+    <BundleResource Include="Resources\chat-stat-inactive%402x.png" />
+    <BundleResource Include="Resources\chat-stat-inactive%403x.png" />
+    <BundleResource Include="Resources\chat-stat-inactive%404x.png" />
+    <BundleResource Include="Resources\chat-stat-offline%402x.png" />
+    <BundleResource Include="Resources\chat-stat-offline%403x.png" />
+    <BundleResource Include="Resources\chat-stat-offline%404x.png" />
+    <BundleResource Include="Resources\chat-stat-online%402x.png" />
+    <BundleResource Include="Resources\chat-stat-online%403x.png" />
+    <BundleResource Include="Resources\chat-stat-online%404x.png" />
+    <BundleResource Include="Resources\chat-takephoto%402x.png" />
+    <BundleResource Include="Resources\chat-takephoto%403x.png" />
+    <BundleResource Include="Resources\chat-takephoto%404x.png" />
+    <BundleResource Include="Resources\chat-upload-active%402x.png" />
+    <BundleResource Include="Resources\chat-upload-active%403x.png" />
+    <BundleResource Include="Resources\chat-upload-active%404x.png" />
+    <BundleResource Include="Resources\chat-upload%402x.png" />
+    <BundleResource Include="Resources\chat-upload%403x.png" />
+    <BundleResource Include="Resources\chat-upload%404x.png" />
+    <BundleResource Include="Resources\nav-chat-active%402x.png" />
+    <BundleResource Include="Resources\nav-chat-active%403x.png" />
+    <BundleResource Include="Resources\nav-chat-active%404x.png" />
+    <BundleResource Include="Resources\nav-chat%402x.png" />
+    <BundleResource Include="Resources\nav-chat%403x.png" />
+    <BundleResource Include="Resources\nav-chat%404x.png" />
+    <BundleResource Include="Resources\avatar-aol%402x.png" />
+    <BundleResource Include="Resources\avatar-aol%403x.png" />
+    <BundleResource Include="Resources\avatar-aol%404x.png" />
+    <BundleResource Include="Resources\avatar-aol%406x.png" />
+    <BundleResource Include="Resources\gen-filter-active%402x.png" />
+    <BundleResource Include="Resources\gen-filter-active%403x.png" />
+    <BundleResource Include="Resources\gen-filter-active%404x.png" />
+    <BundleResource Include="Resources\gen-filter-active%406x.png" />
+    <BundleResource Include="Resources\gen-filter%402x.png" />
+    <BundleResource Include="Resources\gen-filter%403x.png" />
+    <BundleResource Include="Resources\gen-filter%404x.png" />
+    <BundleResource Include="Resources\gen-filter%406x.png" />
+    <BundleResource Include="Resources\avatar-salesforce%402x.png" />
+    <BundleResource Include="Resources\avatar-salesforce%403x.png" />
+    <BundleResource Include="Resources\avatar-salesforce%404x.png" />
+    <BundleResource Include="Resources\avatar-salesforce%406x.png" />
+    <BundleResource Include="Resources\chat-email.html" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

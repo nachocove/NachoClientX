@@ -251,7 +251,8 @@ namespace Test.Common
 
             // Re-read email #1 and verify the update count
             message1 = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
-            Assert.AreEqual (5, message1.NeedUpdate);
+            var needsUpdate1 = McEmailMessageNeedsUpdate.Get (message1);
+            Assert.AreEqual (5, needsUpdate1);
 
             // Insert one email that is replied
             var message3 = new McEmailMessage () {
@@ -291,9 +292,11 @@ namespace Test.Common
 
             // Re-read email #1 & #2 and verify the update counts
             message1 = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
-            Assert.AreEqual (8, message1.NeedUpdate);
+            needsUpdate1 = McEmailMessageNeedsUpdate.Get (message1);
+            Assert.AreEqual (8, needsUpdate1);
             message2 = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
-            Assert.AreEqual (3, message2.NeedUpdate);
+            var needsUpdate2 = McEmailMessageNeedsUpdate.Get (message2);
+            Assert.AreEqual (3, needsUpdate2);
         }
     }
 }

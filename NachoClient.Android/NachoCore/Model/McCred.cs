@@ -1,13 +1,8 @@
 using System;
-using System.Net.Http;
 using System.Threading;
-using Newtonsoft.Json;
 using NachoCore.Utils;
 using NachoPlatform;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace NachoCore.Model
 {
@@ -55,6 +50,13 @@ namespace NachoCore.Model
         // General-use. The epoch of the Credentials.
         public int Epoch { get; set; }
 
+        [SQLite.Ignore]
+        public bool IsExpired {
+            get {
+                return Expiry <= DateTime.UtcNow;
+            }
+        }
+
         public McCred ()
         {
             Expiry = DateTime.MaxValue;
@@ -88,6 +90,9 @@ namespace NachoCore.Model
         {
             NcAssert.True (0 != Id);
             NcAssert.AreEqual ((int)CredTypeEnum.OAuth2, (int)CredType, string.Format ("UpdateOauth2:CredType:{0}", CredType));
+            if (0 == expirySecs) {
+                expirySecs = 3600;
+            }
             Expiry = DateTime.UtcNow.AddSeconds (expirySecs);
             ExpirySecs = expirySecs;
             NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
@@ -109,7 +114,7 @@ namespace NachoCore.Model
             if (String.IsNullOrEmpty (domain)) {
                 return username;
             } else {
-                return String.Join ("\\", new string[] { domain, username });
+                return String.Join ("\\", new [] { domain, username });
             }
         }
 
@@ -202,72 +207,26 @@ namespace NachoCore.Model
             }
         }
 
-        private class OAuth2RefreshRespose
-        {
-            public string access_token { get; set; }
 
-            public string expires_in { get; set; }
-
-            public string token_type { get; set; }
-
-            public string refresh_token { get; set; }
-        }
-
-        static public INcHttpClient TestHttpClient { get; set; }
-        public INcHttpClient HttpClient {
-            get {
-                if (TestHttpClient != null) {
-                    return TestHttpClient;
-                } else {
-                    return NcHttpClient.Instance;
-                }
-            }
-        }
-
-        public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred> onFailure, CancellationToken Token)
+        public void RefreshOAuth2 (Action<McCred> onSuccess, Action<McCred, bool> onFailure, CancellationToken Token)
         {
             var account = McAccount.QueryById<McAccount> (AccountId);
+            Oauth2TokenRefresh refresh;
             switch (account.AccountService) {
             case McAccount.AccountServiceEnum.GoogleDefault:
-                var query = "client_secret=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientSecret) +
-                            "&grant_type=" + "refresh_token" +
-                            "&refresh_token=" + Uri.EscapeDataString (GetRefreshToken ()) +
-                            "&client_id=" + Uri.EscapeDataString (GoogleOAuthConstants.ClientId);
-                var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
-                var request = new NcHttpRequest (HttpMethod.Post, requestUri);
-                int timeoutSecs = 30;
+                refresh = new GoogleOauth2Refresh (this);
+                break;
 
-                HttpClient.SendRequest (request, timeoutSecs, ((response, token) => {
-                    if (response.StatusCode != System.Net.HttpStatusCode.OK) {
-                        Log.Error (Log.LOG_SYS, "OAUTH2 HTTP Status {0}", response.StatusCode.ToString ());
-                        onFailure (this);
-                        return;
-                    }
-                    var jsonResponse = response.GetContent ();
-                    var decodedResponse = JsonConvert.DeserializeObject<OAuth2RefreshRespose> (Encoding.UTF8.GetString (jsonResponse));
-                    if ("Bearer" != decodedResponse.token_type) {
-                        Log.Error (Log.LOG_SYS, "Unknown OAUTH2 token_type {0}", decodedResponse.token_type);
-                    }
-                    if (null == decodedResponse.access_token || null == decodedResponse.expires_in) {
-                        Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token {0} or expires_in {1}", decodedResponse.access_token, decodedResponse.expires_in);
-                        onFailure (this);
-                    }
-                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", decodedResponse.expires_in);
-                    // also there's an ID token: http://stackoverflow.com/questions/8311836/how-to-identify-a-google-oauth2-user/13016081#13016081
-                    UpdateOauth2 (decodedResponse.access_token, 
-                        string.IsNullOrEmpty (decodedResponse.refresh_token) ? GetRefreshToken () : decodedResponse.refresh_token,
-                        uint.Parse (decodedResponse.expires_in));
-                    onSuccess (this);
-                }), ((ex, token) => {
-                    Log.Error (Log.LOG_SYS, "OAUTH2 Exception {0}", ex.ToString ());
-                    onFailure (this);
-                }), Token);
+            case McAccount.AccountServiceEnum.SalesForce:
+                refresh = new SFDCOauth2Refresh (this);
                 break;
 
             default:
-                Log.Error (Log.LOG_SYS, "Can not refresh {0}:{1}", account.Id, account.AccountService);
+                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Can not refresh {1}", account.Id, account.AccountService);
                 return;
             }
+
+            refresh.Refresh (onSuccess, onFailure, Token);
         }
     }
 }

@@ -26,7 +26,7 @@ namespace NachoClient.iOS
             McAccount account;
             UIStoryboard storyboard;
 
-            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIStoryboard storyboard)
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIStoryboard storyboard, UIBarButtonItem parentButton, UIView parentView)
             {
                 this.owner = owner;
                 this.account = account;
@@ -40,6 +40,25 @@ namespace NachoClient.iOS
                 MenuViewController.AddOption ("Browse Attachments", UIImage.FromBundle("calendar-add-files"), UIDocumentMenuOrder.First, ShowBrowseAttachments);
                 MenuViewController.AddOption ("Take a Photo", UIImage.FromBundle("calendar-take-photo"), UIDocumentMenuOrder.First, ShowTakePhoto);
                 MenuViewController.AddOption ("Browse Photos", UIImage.FromBundle("calendar-add-photo"), UIDocumentMenuOrder.First, ShowBrowsePhotos);
+                var ppc = MenuViewController.PopoverPresentationController;
+                if (null != ppc) {
+                    if (null != parentButton) {
+                        ppc.BarButtonItem = parentButton;
+                    } else {
+                        ppc.SourceView = parentView;
+                        ppc.SourceRect = parentView.Bounds;
+                    }
+                }
+            }
+
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIStoryboard storyboard, UIBarButtonItem parentButton)
+                : this (owner, account, storyboard, parentButton, null)
+            {
+            }
+
+            public MenuHelper (INachoFileChooserParent owner, McAccount account, UIStoryboard storyboard, UIView parentView)
+                : this (owner, account, storyboard, null, parentView)
+            {
             }
 
             void ShowBrowsePhotos ()
@@ -351,7 +370,7 @@ namespace NachoClient.iOS
 
         void SetupPhotoPicker (bool useCamera)
         {
-            var helper = new MenuHelper (owner, account, Storyboard);
+            var helper = new MenuHelper (owner, account, Storyboard, View);
             helper.ShowPhotoPicker (useCamera, this);
         }
 

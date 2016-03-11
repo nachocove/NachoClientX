@@ -26,7 +26,7 @@ namespace NachoCore.IMAP
 
         #region Pick
 
-        public Tuple<PickActionEnum, ImapCommand> PickUserDemand (NcImapClient Client, CancellationToken Token)
+        public Tuple<PickActionEnum, ImapCommand> PickUserDemand ()
         {
             var protocolState = BEContext.ProtocolState;
 
@@ -38,7 +38,7 @@ namespace NachoCore.IMAP
                 if (null != search) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:EmailSearch");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp, 
-                        new ImapSearchCommand (BEContext, Client, search));
+                        new ImapSearchCommand (BEContext, search));
                 }
                 // (FG) If the user has initiated a Sync, we do that.
                 var sync = McPending.QueryEligibleOrderByPriorityStamp (AccountId, McAccount.ImapCapabilities).
@@ -48,7 +48,7 @@ namespace NachoCore.IMAP
                     if (null != syncKit) {
                         Log.Info (Log.LOG_IMAP, "Strategy:FG:Sync");
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp,
-                            new ImapSyncCommand (BEContext, Client, syncKit));
+                            new ImapSyncCommand (BEContext,  syncKit));
                     }
                 }
                 // (FG) If the user has initiated a body Fetch, we do that.
@@ -57,7 +57,7 @@ namespace NachoCore.IMAP
                 if (null != fetch) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:EmailBodyDownload");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp,
-                        new ImapFetchCommand (BEContext, Client, fetch));
+                        new ImapFetchCommand (BEContext, fetch));
                 }
                 // (FG) If the user has initiated an attachment Fetch, we do that.
                 fetch = McPending.QueryEligibleOrderByPriorityStamp (AccountId, McAccount.ImapCapabilities).
@@ -65,13 +65,13 @@ namespace NachoCore.IMAP
                 if (null != fetch) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:AttachmentDownload");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp,
-                        new ImapFetchCommand (BEContext, Client, fetch));
+                        new ImapFetchCommand (BEContext, fetch));
                 }
             }
             return null;
         }
 
-        public Tuple<PickActionEnum, ImapCommand> Pick (NcImapClient Client, CancellationToken Token)
+        public Tuple<PickActionEnum, ImapCommand> Pick ()
         {
             var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
@@ -79,7 +79,7 @@ namespace NachoCore.IMAP
                 // ExecutionContext is not set until after BE is started.
                 exeCtxt = NcApplication.Instance.PlatformIndication;
             }
-            var userDemand = PickUserDemand (Client, Token);
+            var userDemand = PickUserDemand ();
             if (null != userDemand) {
                 return userDemand;
             }
@@ -89,7 +89,7 @@ namespace NachoCore.IMAP
                 if (null != syncKit) {
                     Log.Info (Log.LOG_IMAP, "Strategy:QS:Sync");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                        new ImapSyncCommand (BEContext, Client, syncKit));
+                        new ImapSyncCommand (BEContext, syncKit));
                 }
             }
 
@@ -98,6 +98,7 @@ namespace NachoCore.IMAP
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (AccountId, McAccount.ImapCapabilities).FirstOrDefault ();
                 if (null != next) {
+                    // Analysis disable once ConditionIsAlwaysTrueOrFalse
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:{0}:{1}", next.DelayNotAllowed ? "HotQOp" : "QOp", next.Operation.ToString ());
                     ImapCommand cmd = null;
@@ -105,13 +106,13 @@ namespace NachoCore.IMAP
                     switch (next.Operation) {
                     // It is likely that next is one of these at the top of the switch () ...
                     case McPending.Operations.FolderCreate:
-                        cmd = new ImapFolderCreateCommand (BEContext, Client, next);
+                        cmd = new ImapFolderCreateCommand (BEContext, next);
                         break;
                     case McPending.Operations.FolderUpdate:
-                        cmd = new ImapFolderUpdateCommand (BEContext, Client, next);
+                        cmd = new ImapFolderUpdateCommand (BEContext, next);
                         break;
                     case McPending.Operations.FolderDelete:
-                        cmd = new ImapFolderDeleteCommand (BEContext, Client, next);
+                        cmd = new ImapFolderDeleteCommand (BEContext, next);
                         break;
                     case McPending.Operations.EmailDelete:
                         // see if there's more than one we can process for the same folder
@@ -119,7 +120,7 @@ namespace NachoCore.IMAP
                             .Where (x => x.Operation == next.Operation &&
                                       x.ParentId == next.ParentId &&
                                       x.DelayNotAllowed == next.DelayNotAllowed);
-                        cmd = new ImapEmailDeleteCommand (BEContext, Client, deletes.ToList ());
+                        cmd = new ImapEmailDeleteCommand (BEContext, deletes.ToList ());
                         break;
                     case McPending.Operations.EmailMove:
                         // see if there's more than one we can process for the same folder
@@ -128,10 +129,10 @@ namespace NachoCore.IMAP
                                     x.ParentId == next.ParentId &&
                                     x.DestParentId == next.DestParentId &&
                                     x.DelayNotAllowed == next.DelayNotAllowed);
-                        cmd = new ImapEmailMoveCommand (BEContext, Client, moves.ToList ());
+                        cmd = new ImapEmailMoveCommand (BEContext, moves.ToList ());
                         break;
                     case McPending.Operations.EmailMarkRead:
-                        cmd = new ImapEmailMarkReadCommand (BEContext, Client, next);
+                        cmd = new ImapEmailMarkReadCommand (BEContext, next);
                         break;
                     case McPending.Operations.EmailSetFlag:
                         // FIXME - defer until we decide how to deal with deferred messages.
@@ -145,21 +146,21 @@ namespace NachoCore.IMAP
                     // ... however one of these below, which would have been handled above, could have been
                     // inserted into the Q while Pick() is in the middle of running.
                     case McPending.Operations.EmailSearch:
-                        cmd = new ImapSearchCommand (BEContext, Client, next);
+                        cmd = new ImapSearchCommand (BEContext, next);
                         break;
                     case McPending.Operations.EmailBodyDownload:
                     case McPending.Operations.AttachmentDownload:
-                        cmd = new ImapFetchCommand (BEContext, Client, next);
+                        cmd = new ImapFetchCommand (BEContext, next);
                         break;
                     case McPending.Operations.Sync:
                         var uSyncKit = GenSyncKit (ref protocolState, next);
                         if (null != uSyncKit) {
-                            cmd = new ImapSyncCommand (BEContext, Client, uSyncKit);
+                            cmd = new ImapSyncCommand (BEContext, uSyncKit);
                             action = PickActionEnum.Sync;
                         } else {
                             // This should not happen, so just do a folder-sync because we always can.
                             Log.Error (Log.LOG_IMAP, "Strategy:FG/BG:QOp: null SyncKit");
-                            cmd = new ImapFolderSyncCommand (BEContext, Client);
+                            cmd = new ImapFolderSyncCommand (BEContext);
                             action = PickActionEnum.FSync;
                         }
                         break;
@@ -173,7 +174,7 @@ namespace NachoCore.IMAP
                 // (FG, BG) If it has been more than FolderExamineInterval (depends on exeCtxt) since last FolderSync, do a FolderSync.
                 if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fsync");
-                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext, Client));
+                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext));
                 }
 
                 FetchKit fetchKit;
@@ -183,7 +184,7 @@ namespace NachoCore.IMAP
                     if (null != fetchKit) {
                         Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fetch(Hints {0})", fetchKit.FetchBodies.Count);
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Fetch, 
-                            new ImapFetchCommand (BEContext, Client, fetchKit));
+                            new ImapFetchCommand (BEContext, fetchKit));
                     }
                 }
 
@@ -198,29 +199,23 @@ namespace NachoCore.IMAP
                 if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Fetch");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Fetch, 
-                        new ImapFetchCommand (BEContext, Client, fetchKit));
+                        new ImapFetchCommand (BEContext, fetchKit));
                 }
                 if (null != syncKit) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                        new ImapSyncCommand (BEContext, Client, syncKit));
+                        new ImapSyncCommand (BEContext, syncKit));
                 }
 
                 Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
-                McFolder idleFolder;
-                if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.GoogleDefault) {
-                    idleFolder = McFolder.QueryByServerId<McFolder> (AccountId, "[Gmail]/All Mail");
-                } else {
-                    idleFolder = McFolder.GetDefaultInboxFolder (AccountId);
-                }
                 return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
-                    new ImapIdleCommand (BEContext, Client, idleFolder));
+                    new ImapIdleCommand (BEContext, McFolder.GetDefaultInboxFolder (AccountId)));
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 Log.Info (Log.LOG_IMAP, "Strategy:QS:Wait");
                 return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Wait,
-                    new ImapWaitCommand (BEContext, Client, 120, true));
+                    new ImapWaitCommand (BEContext, 120, true));
             }
             NcAssert.True (false);
             return null;

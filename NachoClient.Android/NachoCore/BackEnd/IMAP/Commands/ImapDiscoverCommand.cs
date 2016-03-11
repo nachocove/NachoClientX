@@ -13,10 +13,10 @@ namespace NachoCore.IMAP
 {
     public class ImapDiscoverCommand : ImapCommand
     {
-        public ImapDiscoverCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
+        public ImapDiscoverCommand (IBEContext beContext) : base (beContext)
         {
             RedactProtocolLogFunc = RedactProtocolLog;
-            DontReportCommResult = BEContext.ProtocolState.ImapDiscoveryDone ? false : true;
+            DontReportCommResult = !BEContext.ProtocolState.ImapDiscoveryDone;
         }
 
         public string RedactProtocolLog (bool isRequest, string logData)
@@ -27,6 +27,7 @@ namespace NachoCore.IMAP
 
         public override void Execute (NcStateMachine sm)
         {
+            Sm = sm;
             NcTask.Run (() => {
                 Event evt = ExecuteCommandInternal ();
                 if (!Cts.Token.IsCancellationRequested) {
@@ -40,7 +41,7 @@ namespace NachoCore.IMAP
             bool Initial = !BEContext.ProtocolState.ImapDiscoveryDone;
             Tuple<ResolveAction, string> action = new Tuple<ResolveAction, string> (ResolveAction.None, null);
 
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
+            Log.Info (Log.LOG_IMAP, "{0}: Started", CmdNameWithAccount);
             Event evt;
             bool serverFailedGenerally = false;
             try {
@@ -49,7 +50,7 @@ namespace NachoCore.IMAP
                     if (Client.IsConnected) {
                         Client.Disconnect (false, Cts.Token);
                     }
-                    return base.ExecuteConnectAndAuthEvent ();
+                    return ExecuteConnectAndAuthEvent ();
                 });
                 Cts.Token.ThrowIfCancellationRequested ();
             } catch (CommandLockTimeOutException ex) {
@@ -86,11 +87,11 @@ namespace NachoCore.IMAP
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (ServiceNotAuthenticatedException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ServiceNotAuthenticatedException: {0}", ex.Message);
-                evt =  Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
+                evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL2");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (InvalidOperationException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: InvalidOperationException: {0}", ex.Message);
-                evt =  Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPINVOPTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (ImapProtocolException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: ImapProtocolException {0}", ex.Message);
@@ -102,7 +103,7 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCOMMEXTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (IOException ex) {
-                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.Message);
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.ToString ());
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
@@ -117,14 +118,14 @@ namespace NachoCore.IMAP
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;
             } finally {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
+                Log.Info (Log.LOG_IMAP, "{0}: Finished", CmdNameWithAccount);
             }
 
             if (Cts.Token.IsCancellationRequested) {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Cancelled", this.GetType ().Name, AccountId);
+                Log.Info (Log.LOG_IMAP, "{0}: Cancelled", CmdNameWithAccount);
                 return Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOCANCEL1"); // will be ignored by the caller
             }
-            ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
+            ReportCommResult (serverFailedGenerally);
             switch (action.Item1) {
             case ResolveAction.None:
                 break;
@@ -207,10 +208,6 @@ namespace NachoCore.IMAP
                     }
                 }
                 break;
-
-            default:
-                break;
-
             }
             if (BEContext.Cred.Username != username) {
                 BEContext.Cred.UpdateWithOCApply<McCred> ((record) => {

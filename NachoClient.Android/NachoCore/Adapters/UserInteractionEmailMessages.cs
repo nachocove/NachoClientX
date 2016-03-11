@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public class UserInteractionEmailMessages : INachoEmailMessages
+    public class UserInteractionEmailMessages : NachoEmailMessagesBase, INachoEmailMessages
     {
         McContact contact;
         List<McEmailMessageThread> threadList;
@@ -19,12 +19,10 @@ namespace NachoCore
         {
             this.contact = contact;
             threadList = new List<McEmailMessageThread> ();
-            List<int> adds;
-            List<int> deletes;
-            Refresh (out adds, out deletes);
+            BackgroundRefresh (completionAction: null);
         }
 
-        public bool Refresh (out List<int> adds, out List<int> deletes)
+        public override bool Refresh (out List<int> adds, out List<int> deletes)
         {
             adds = null;
             deletes = null;
@@ -41,12 +39,43 @@ namespace NachoCore
             return false;
         }
 
-        public int Count ()
+        public override bool HasBackgroundRefresh ()
+        {
+            return true;
+        }
+
+        public override void BackgroundRefresh (NachoMessagesRefreshCompletionDelegate completionAction)
+        {
+            if (null == contact) {
+                threadList = new List<McEmailMessageThread> ();
+                if (null != completionAction) {
+                    completionAction (true, null, null);
+                }
+                return;
+            }
+            NcTask.Run (() => {
+                var rawList = McEmailMessage.QueryInteractions (contact.AccountId, contact);
+                var newThreadList = NcMessageThreads.ThreadByMessage (rawList);
+                NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                    List<int> adds = null;
+                    List<int> deletes = null;
+                    bool changed = NcMessageThreads.AreDifferent (threadList, newThreadList, out adds, out deletes);
+                    if (changed) {
+                        threadList = newThreadList;
+                    }
+                    if (null != completionAction) {
+                        completionAction (changed, adds, deletes);
+                    }
+                });
+            }, "UserInteractionEmailMessages.BackgroundRefresh");
+        }
+
+        public override int Count ()
         {
             return threadList.Count;
         }
 
-        public McEmailMessageThread GetEmailThread (int i)
+        public override McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
             t.Source = this;
@@ -55,7 +84,7 @@ namespace NachoCore
 
         // Add messages make up the thread, just the user ones
 
-        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        public override List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
             var thread = new List<McEmailMessageThread> ();
             var m = new McEmailMessageThread ();
@@ -65,34 +94,14 @@ namespace NachoCore
             return thread;
         }
 
-        public string DisplayName ()
+        public override string DisplayName ()
         {
             return "Interactions";
         }
 
-        public bool HasOutboxSemantics ()
+        public override bool IsCompatibleWithAccount (McAccount account)
         {
-            return false;
-        }
-
-        public bool HasDraftsSemantics ()
-        {
-            return false;
-        }
-
-        public NcResult StartSync ()
-        {
-            return NachoSyncResult.DoesNotSync ();
-        }
-
-        public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
-        {
-            return null;
-        }
-
-        public bool IsCompatibleWithAccount (McAccount account)
-        {
-            return account.Id == contact.AccountId;
+            return account.ContainsAccount (contact.AccountId);
         }
     }
 }

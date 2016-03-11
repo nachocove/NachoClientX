@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="8191" systemVersion="14F27" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="whm-e9-YWX">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="15D21" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="whm-e9-YWX">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="8154"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9530"/>
     </dependencies>
     <scenes>
         <!--Switch Account View Controller-->
@@ -100,6 +101,7 @@
                         <outlet property="contentView" destination="73b-MM-u7g" id="Erf-qp-QXw"/>
                         <outlet property="scrollView" destination="R7v-6c-XcH" id="hya-iQ-4du"/>
                         <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="nJv-0g-ewn"/>
+                        <segue destination="Ef5-Gs-Ti8" kind="push" identifier="SegueToSalesforceSettings" id="Io9-QA-erY"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -194,6 +196,8 @@
                         <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToCompose" id="urW-p2-x1h"/>
                         <segue destination="Png-41-0bk" kind="push" identifier="SegueToDrafts" id="ob4-Hl-1Og"/>
                         <segue destination="PLY-NH-kiA" kind="push" identifier="SegueToLikelyToRead" id="oUa-Te-1to"/>
+                        <segue destination="2MA-z5-r9e" kind="push" identifier="SegueToInbox" id="Gi8-ik-ZM2"/>
+                        <segue destination="8ef-DW-GpE" kind="push" identifier="SegueToDeadlines" id="vNg-HB-UMF"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -520,10 +524,10 @@
             <objects>
                 <viewController storyboardIdentifier="MessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="96Q-f8-PuZ" customClass="MessageViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="1rs-zQ-j9D">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="C3K-cn-kde">
-                                <rect key="frame" x="0.0" y="-26" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="34" width="320" height="504"/>
                                 <gestureRecognizers/>
                             </scrollView>
                         </subviews>
@@ -726,6 +730,21 @@
             </objects>
             <point key="canvasLocation" x="-5521" y="2968"/>
         </scene>
+        <!--Salesforce Settings View Controller-->
+        <scene sceneID="uVd-e3-2MQ">
+            <objects>
+                <viewController storyboardIdentifier="SalesforceSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Ef5-Gs-Ti8" customClass="SalesforceSettingsViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="oK8-a9-Mh6">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="UJX-OJ-OJJ"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="fT6-px-d7J" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-5070" y="3153"/>
+        </scene>
         <!--Notes View Controller-->
         <scene sceneID="OcZ-uK-llj">
             <objects>
@@ -767,10 +786,10 @@
                     <connections>
                         <segue destination="OCr-PO-3nH" kind="relationship" relationship="viewControllers" id="HwV-au-Wta"/>
                         <segue destination="Vlr-fD-Tu0" kind="relationship" relationship="viewControllers" id="xV8-bC-V20"/>
+                        <segue destination="pJI-14-ahj" kind="relationship" relationship="viewControllers" id="n2R-Xk-cJe"/>
                         <segue destination="xfD-Vu-nBF" kind="relationship" relationship="viewControllers" id="XQg-JR-vxA"/>
                         <segue destination="PGe-ip-eZd" kind="relationship" relationship="viewControllers" id="aB0-7O-hbe"/>
                         <segue destination="v0a-Zq-Chs" kind="relationship" relationship="viewControllers" id="haI-Fc-A7q"/>
-                        <segue destination="9uN-rN-Nz8" kind="relationship" relationship="viewControllers" id="z3Q-nX-cwl"/>
                         <segue destination="YbX-PP-2fM" kind="relationship" relationship="viewControllers" id="oIU-MH-zyI"/>
                         <segue destination="7B7-RS-wHJ" kind="relationship" relationship="viewControllers" id="O32-d6-g3n"/>
                         <segue destination="Ond-cj-T9D" kind="relationship" relationship="viewControllers" id="L3g-YM-YjM"/>
@@ -1371,6 +1390,38 @@
             </objects>
             <point key="canvasLocation" x="-6977" y="6110"/>
         </scene>
+        <!--Chats-->
+        <scene sceneID="hBD-gN-hEW">
+            <objects>
+                <navigationController id="pJI-14-ahj" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Chats" id="aq0-eK-E35"/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="EFk-o4-eXf">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <connections>
+                        <segue destination="kTb-Ke-53L" kind="relationship" relationship="rootViewController" id="pG1-U8-kOq"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="HFV-bz-bsX" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-6961" y="6878"/>
+        </scene>
+        <!--Chats View Controller-->
+        <scene sceneID="YEQ-J7-z75">
+            <objects>
+                <tableViewController id="kTb-Ke-53L" customClass="ChatsViewController" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="28" sectionFooterHeight="28" id="JrJ-Dy-oPh">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </tableView>
+                    <navigationItem key="navigationItem" id="fZ3-rK-5uh"/>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Kyc-0u-lx4" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-6213" y="6878"/>
+        </scene>
         <!--Likely To Read View Controller-->
         <scene sceneID="5RI-xh-ME7">
             <objects>
@@ -1403,32 +1454,38 @@
         <image name="more-nachomail.png" width="24" height="24"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="gVj-FW-dv1"/>
-        <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="JTo-qU-j7O"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="udF-bU-cV6"/>
-        <segue reference="b2R-9j-Kqr"/>
-        <segue reference="4M9-UI-9mt"/>
-        <segue reference="2D9-t9-ebv"/>
-        <segue reference="d1S-bn-Rkc"/>
-        <segue reference="z8t-Er-kGd"/>
-        <segue reference="QDW-pm-HY2"/>
-        <segue reference="oCQ-GI-yPC"/>
-        <segue reference="B7C-Lk-RW2"/>
-        <segue reference="H7r-gd-Nf5"/>
-        <segue reference="H86-lc-tSW"/>
-        <segue reference="K4H-to-cZ8"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="47y-6M-xBI"/>
         <segue reference="ytC-Oe-29B"/>
         <segue reference="STf-DG-2qn"/>
-        <segue reference="88w-D9-03c"/>
         <segue reference="eyY-I1-wel"/>
+        <segue reference="88w-D9-03c"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="udF-bU-cV6"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="4M9-UI-9mt"/>
+        <segue reference="b2R-9j-Kqr"/>
+        <segue reference="z8t-Er-kGd"/>
+        <segue reference="d1S-bn-Rkc"/>
+        <segue reference="2D9-t9-ebv"/>
+        <segue reference="QDW-pm-HY2"/>
+        <segue reference="gVj-FW-dv1"/>
+        <segue reference="oUa-Te-1to"/>
+        <segue reference="H86-lc-tSW"/>
+        <segue reference="K4H-to-cZ8"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="B7C-Lk-RW2"/>
+        <segue reference="oCQ-GI-yPC"/>
+        <segue reference="H7r-gd-Nf5"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="47y-6M-xBI"/>
+        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="urW-p2-x1h"/>
+        <segue reference="Gi8-ik-ZM2"/>
+        <segue reference="vNg-HB-UMF"/>
+        <segue reference="nJv-0g-ewn"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

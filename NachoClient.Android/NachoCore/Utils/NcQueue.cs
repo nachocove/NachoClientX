@@ -130,6 +130,13 @@ namespace NachoCore.Utils
             }
         }
 
+        public int Count ()
+        {
+            lock (Lock) {
+                return _Queue.Count;
+            }
+        }
+
         public delegate bool QueueItemMatchFunction (T obj1);
 
         /// <summary>
@@ -173,6 +180,18 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
+        /// Enqueues an object if a similar object matched with the match function is not already at the tail of the queue.
+        /// </summary>
+        public void EnqueueIfNotTail (T obj, QueueItemMatchFunction match)
+        {
+            lock (Lock) {
+                if (_Queue.Count == 0 || !match (Tail ())) {
+                    Enqueue (obj);
+                }
+            }
+        }
+
+        /// <summary>
         // Dequeues an object from the queue if it matches based on the match function
         /// </summary>
         /// <returns>The object</returns>
@@ -202,6 +221,20 @@ namespace NachoCore.Utils
             lock (Lock) {
                 if (_Queue.Count > 0) {
                     obj = _Queue [0];
+                }
+            }
+            return obj;
+        }
+
+        /// <summary>
+        /// Return the tail of the queue without affecting the queue itself.
+        /// </summary>
+        public T Tail ()
+        {
+            T obj = default(T);
+            lock (Lock) {
+                if (_Queue.Count > 0) {
+                    obj = _Queue [_Queue.Count - 1];
                 }
             }
             return obj;

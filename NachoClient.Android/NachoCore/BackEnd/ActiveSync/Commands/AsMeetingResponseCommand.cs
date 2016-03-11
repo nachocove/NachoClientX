@@ -14,7 +14,7 @@ namespace NachoCore.ActiveSync
             base (Xml.MeetingResp.MeetingResponse, Xml.MeetingResp.Ns, dataSource)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
         }
 
         protected override bool RequiresPending ()

@@ -24,6 +24,8 @@ namespace NachoClient.iOS
         bool scrolling;
         // to control whether swiping is allowed or not
 
+        IDisposable abatementRequest = null;
+
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
         private const int DELETE_TAG = 3;
@@ -624,22 +626,30 @@ namespace NachoClient.iOS
         {
             cardIndexAtScrollStart = CardIndexNearestOffset ((UITableView)scrollView, scrollView.ContentOffset);
             scrolling = true;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
+            if (null == abatementRequest) {
+                abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+            }
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
+            if (null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
+            }
             scrolling = false;
             EnsureScrollEndIsAsExpected (scrollView);
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
+                if (null != abatementRequest) {
+                    abatementRequest.Dispose ();
+                    abatementRequest = null;
+                }
                 scrolling = false;
                 EnsureScrollEndIsAsExpected (scrollView);
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
             }
         }
 

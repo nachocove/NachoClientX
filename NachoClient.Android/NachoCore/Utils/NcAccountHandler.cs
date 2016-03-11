@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using NachoPlatform;
 using System.Linq;
 using NachoCore.Brain;
+using NachoCore.SFDC;
 
 namespace NachoCore.Model
 {
@@ -131,6 +132,18 @@ namespace NachoCore.Model
             return account;
         }
 
+        public McAccount CreateAccountAndServerForSalesForce (McAccount.AccountServiceEnum service, string emailAddress,
+            string accessToken, string refreshToken, uint expireSecs, Uri serverUri)
+        {
+            var account = CreateAccount (service, emailAddress, accessToken, refreshToken, expireSecs);
+            var server = McServer.QueryByAccountIdAndCapabilities (account.Id, account.AccountCapability);
+            if (null != server) {
+                server.Delete ();
+            }
+            SalesForceProtoControl.PopulateServer (account.Id, serverUri);
+            return account;
+        }
+
         public bool MaybeCreateServersForIMAP (McAccount account, McAccount.AccountServiceEnum service)
         {
             int imapServerPort;
@@ -194,7 +207,7 @@ namespace NachoCore.Model
                 imapServer.Insert ();
                 smtpServer.Insert ();
             });
-            Log.Info (Log.LOG_UI, "CreateServersForIMAP: {0}/{1}:{2}/{3}:{4}", account.Id, imapServerName, imapServerPort, smtpServer, smtpServerPort);
+            Log.Info (Log.LOG_UI, "CreateServersForIMAP: {0}/{1}:{2}/{3}:{4}", account.Id, imapServerName, imapServerPort, smtpServerName, smtpServerPort);
             return true;
         }
 
@@ -280,8 +293,7 @@ namespace NachoCore.Model
             // delete all file system data for account id
             RemoveAccountFiles (AccountId);
 
-            // if there is only one account. TODO: deal with multi-account
-            NcApplication.Instance.Account = null;
+            NcApplication.Instance.Account = LoginHelpers.PickStartupAccount();
             // if successful, unmark account is being removed since it is completed.
             DeleteRemovingAccountFile ();
         }

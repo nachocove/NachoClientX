@@ -52,20 +52,24 @@ namespace NachoClient.AndroidClient
 
         protected override void OnCreate (Bundle bundle)
         {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate");
             base.OnCreate (bundle);
 
             SetContentView (Resource.Layout.MessageComposeActivity);
 
             composeFragment = null;
             if (null != bundle) {
+                Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate...bundle != null");
                 composeFragment = FragmentManager.FindFragmentByTag<ComposeFragment> (COMPOSE_FRAGMENT_TAG);
             }
             if (null == composeFragment) {
-                NcAssert.True (Intent.HasExtra (EXTRA_ACCOUNT_ID));
-                var account = McAccount.QueryById<McAccount> (Intent.GetIntExtra (EXTRA_ACCOUNT_ID, 0));
-                composeFragment = new ComposeFragment (account);
+                Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate...creating ComposeFragment");
+                composeFragment = new ComposeFragment ();
                 FragmentManager.BeginTransaction ().Replace (Resource.Id.content, composeFragment, COMPOSE_FRAGMENT_TAG).Commit ();
             }
+            NcAssert.True (Intent.HasExtra (EXTRA_ACCOUNT_ID));
+            var account = McAccount.QueryById<McAccount> (Intent.GetIntExtra (EXTRA_ACCOUNT_ID, 0));
+            composeFragment.Account = account;
 
             if (Intent.HasExtra (EXTRA_ACTION)) {
                 composeFragment.Composer.Kind = (NachoCore.Utils.EmailHelper.Action)Intent.GetIntExtra (EXTRA_ACTION, 0);
@@ -77,6 +81,7 @@ namespace NachoClient.AndroidClient
 
             if (null != RetainedData) {
                 savedMessageInfo = RetainedData;
+                Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate...RetainedData != null (message {0})", savedMessageInfo.MessageId);
                 composeFragment.Composer.Message = McEmailMessage.QueryById<McEmailMessage> (savedMessageInfo.MessageId);
                 if (!savedMessageInfo.MessageSaved) {
                     composeFragment.MessageIsReady = false;
@@ -85,6 +90,7 @@ namespace NachoClient.AndroidClient
                     });
                 }
             } else {
+                Log.Info (Log.LOG_UI, "MessageComposeActivity OnCreate...RetainedData == null");
                 if (Intent.HasExtra (EXTRA_RELATED_MESSAGE_ID)) {
                     var relatedThread = new McEmailMessageThread ();
                     relatedThread.FirstMessageId = Intent.GetIntExtra (EXTRA_RELATED_MESSAGE_ID, 0);
@@ -131,10 +137,12 @@ namespace NachoClient.AndroidClient
 
         protected override void OnSaveInstanceState (Bundle outState)
         {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity OnSaveInstanceState");
             base.OnSaveInstanceState (outState);
             savedMessageInfo.MessageId = composeFragment.Composer.Message.Id;
             savedMessageInfo.MessageSaved = false;
             composeFragment.Save (() => {
+                Log.Info (Log.LOG_UI, "MessageComposeActivity OnSaveInstanceState...Save done");
                 savedMessageInfo.MessageSaved = true;
                 savedMessageInfo.FireEvent ();
             });
@@ -176,7 +184,7 @@ namespace NachoClient.AndroidClient
             var intent = new Intent (context, typeof(MessageComposeActivity));
             intent.SetAction (Intent.ActionSend);
             intent.PutExtra (EXTRA_MESSAGE, IntentHelper.StoreValue (message));
-            intent.PutExtra (EXTRA_ACCOUNT_ID, message.Id);
+            intent.PutExtra (EXTRA_ACCOUNT_ID, message.AccountId);
             intent.PutExtra (EXTRA_INITIAL_TEXT, text);
             return intent;
         }

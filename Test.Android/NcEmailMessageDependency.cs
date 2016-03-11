@@ -192,39 +192,7 @@ namespace Test.Common
             }
         }
 
-        [Test]
-        public void TestQueryDependenciesByContact ()
-        {
-            SetupEntries ();
-
-            List<McEmailMessage> emailMessageList;
-
-            emailMessageList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailAddressId (1);
-            VerifyListIds<McEmailMessage> (emailMessageList, 11);
-
-            emailMessageList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailAddressId (2);
-            VerifyListIds<McEmailMessage> (emailMessageList, 11, 13);
-        }
-
-        [Test]
-        public void TestQueryDependenciesByEmailMessage ()
-        {
-            SetupEntries ();
-
-            List<McEmailAddress> addressList;
-
-            addressList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailMessageId (11);
-            VerifyListIds<McEmailAddress> (addressList, 1);
-
-            addressList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailMessageId (12);
-            VerifyListIds<McEmailAddress> (addressList, 1);
-
-            addressList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailMessageId (13);
-            VerifyListIds<McEmailAddress> (addressList);
-
-            addressList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailMessageId (14);
-            VerifyListIds<McEmailAddress> (addressList);
-        }
+       
     }
 }
 

@@ -160,14 +160,14 @@ namespace NachoClient.AndroidClient
                     endTime = cal.EndTime.ToLocalTime ();
 
                     // Figure out the correct account for the new event.
-                    account = NcApplication.Instance.Account;
+                    account = NcApplication.Instance.DefaultCalendarAccount;
                     if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == new NachoFolders (account.Id, NachoFolders.FilterForCalendars).Count ()) {
                         if (AndroidCalendars.DeviceCalendarsExist ()) {
                             isAppEvent = false;
                             account = McAccount.GetDeviceAccount ();
                         } else {
                             bool foundAccount = false;
-                            foreach (var candidateAccountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+                            foreach (var candidateAccountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
                                 if (candidateAccountId != account.Id) {
                                     var candidateAccount = McAccount.QueryById<McAccount> (candidateAccountId);
                                     if (candidateAccount.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && 0 < new NachoFolders (candidateAccountId, NachoFolders.FilterForCalendars).Count ()) {

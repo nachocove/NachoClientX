@@ -700,12 +700,12 @@ namespace NachoClient.iOS
                 if (address == null) {
                     if (contact.EmailAddresses.Count == 0) {
                         if (contact.CanUserEdit ()) {
-                            PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                            PerformSegue ("SegueToContactDefaultSelector", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
                         } else {
                             Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
                         }
                     } else {
-                        PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+                        PerformSegue ("SegueToContactDefaultSelector", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
                     }
                 } else {
                     ComposeMessage (address);
@@ -1136,14 +1136,10 @@ namespace NachoClient.iOS
                 return;
             }
 
-            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
-
-            NachoCore.Utils.NcAbate.HighPriority ("ContactDetailViewController RefreshData");
-            List<int> adds;
-            List<int> deletes;
-            messageSource.RefreshEmailMessages (out adds, out deletes);
-            interactionsTableView.ReloadData ();
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactDetailViewController RefreshData");
+            messageSource.BackgroundRefreshEmailMessages ((changed, adds, deletes) => {
+                var interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
+                interactionsTableView.ReloadData ();
+            });
         }
 
         public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
@@ -1180,7 +1176,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public void MultiSelectChange (IMessageTableViewSource source, int count)
+        public void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts)
         {
         }
 

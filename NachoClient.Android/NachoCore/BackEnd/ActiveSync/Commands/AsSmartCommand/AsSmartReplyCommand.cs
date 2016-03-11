@@ -11,7 +11,7 @@ namespace NachoCore.ActiveSync
         {
             CommandName = Xml.ComposeMail.SmartReply;
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
             EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
         }
     }

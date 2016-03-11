@@ -133,6 +133,7 @@ namespace NachoPlatform
                     if (request.Content is FileStream) {
                         var fileStream = request.Content as FileStream;
                         Java.IO.File file = new Java.IO.File (fileStream.Name);
+                        Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): using file {1}", request.guid, fileStream.Name);
                         body = RequestBody.Create (MediaType.Parse (request.ContentType), file);
                     } else if (request.Content is byte[]) {
                         body = RequestBody.Create (MediaType.Parse (request.ContentType), request.Content as byte[]);
@@ -141,7 +142,9 @@ namespace NachoPlatform
                         return;
                     }
                 } else {
-                    builder.Header ("Content-Type", "text/plain");
+                    if (string.IsNullOrEmpty (request.ContentType)) {
+                        builder.Header ("Content-Type", "text/plain");
+                    }
                     body = default(RequestBody);
                 }
                 if (null != callbacks.ProgressAction) {
@@ -189,6 +192,7 @@ namespace NachoPlatform
                     }
                 }
             });
+            Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Enqueue task", request.guid);
             call.Enqueue (callbacks);
         }
 
@@ -251,7 +255,7 @@ namespace NachoPlatform
             void LogCompletion (long sent, long received)
             {
                 sw.Stop ();
-                Log.Debug (Log.LOG_HTTP, "NcHttpClient: Finished request {0}ms (bytes sent:{1} received:{2})", sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Finished request {1}ms (bytes sent:{2} received:{3})", OriginalRequest.guid, sw.ElapsedMilliseconds, sent.ToString ("n0"), received.ToString ("n0"));
             }
 
             #region ICallback implementation
@@ -318,7 +322,7 @@ namespace NachoPlatform
                         }
                     }
                 } catch (Exception ex) {
-                    Log.Info (Log.LOG_HTTP, "Error Processing response: {0}", ex);
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Error Processing response: {0}", OriginalRequest.guid, ex);
                     ErrorAction (ex, Token);
                 } finally {
                     File.Delete (filename);
@@ -440,6 +444,7 @@ namespace NachoPlatform
                 } 
 
                 if (certificates.Length == 1) {//no root?
+                    Log.Info (Log.LOG_HTTP, "certificates.Length == 1");
                     errors = System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors;
                     goto sslErrorVerify;
                 } 
@@ -452,9 +457,7 @@ namespace NachoPlatform
 
                 root = netCerts [0];
 
-
-                sslErrorVerify:
-                // Call the delegate to validate
+sslErrorVerify:
                 return NcHttpCertificateValidation.CertValidation (uri, root, chain, errors);
             }
         }

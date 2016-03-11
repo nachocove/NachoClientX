@@ -298,9 +298,9 @@ namespace NachoClient.AndroidClient
                     } else if (a < attendees.Count) {
                         var attendee = attendees [a];
                         var initials = ContactsHelper.NameToLetters (attendee.DisplayName);
-                        var color = Util.ColorResourceForEmail (attendee.AccountId, attendee.Email);
-                        attendeePhotoView.SetEmailAddress (attendee.AccountId, attendee.Email, initials, color);
-                        attendeeNameView.Text = GetFirstName (attendee.DisplayName);
+                        var color = Util.ColorResourceForEmail (detail.Account.Id, attendee.Email);
+                        attendeePhotoView.SetEmailAddress (detail.Account.Id, attendee.Email, initials, color);
+                        attendeeNameView.Text = CalendarHelper.GetFirstName (attendee.DisplayName);
                     } else {
                         attendeePhotoView.Visibility = ViewStates.Gone;
                         attendeeNameView.Visibility = ViewStates.Gone;
@@ -428,18 +428,6 @@ namespace NachoClient.AndroidClient
                 return null;
             }
             return parent.FindViewById<TextView> (id);
-        }
-
-        private static string GetFirstName (string displayName)
-        {
-            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (names [0] == null) {
-                return "";
-            }
-            if (names [0].Length > 1) {
-                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
-            }
-            return names [0].ToUpper ();
         }
 
         private void ClearResponseButtons ()
@@ -710,8 +698,13 @@ namespace NachoClient.AndroidClient
             } else {
                 AndroidDeviceCalendarFolder folder;
                 var calItem = AndroidCalendars.GetEventDetails (occurrence.DeviceEventId, out folder);
-                calendarName = (null == folder) ? null : folder.DisplayName;
-                isWritableDeviceCalendar = folder.IsWritable;
+                if (null == folder) {
+                    calendarName = null;
+                    isWritableDeviceCalendar = false;
+                } else {
+                    calendarName = folder.DisplayName;
+                    isWritableDeviceCalendar = folder.IsWritable;
+                }
                 base.Initialize (occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
             }
         }
@@ -729,8 +722,13 @@ namespace NachoClient.AndroidClient
             } else {
                 AndroidDeviceCalendarFolder folder;
                 var calItem = AndroidCalendars.GetEventDetails (Occurrence.DeviceEventId, out folder);
-                calendarName = (null == folder) ? null : folder.DisplayName;
-                isWritableDeviceCalendar = folder.IsWritable;
+                if (null == folder) {
+                    calendarName = null;
+                    isWritableDeviceCalendar = false;
+                } else {
+                    calendarName = folder.DisplayName;
+                    isWritableDeviceCalendar = folder.IsWritable;
+                }
                 base.Initialize (Occurrence, calItem, calItem, McAccount.GetDeviceAccount ());
             }
         }

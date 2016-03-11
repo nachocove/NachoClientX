@@ -47,7 +47,16 @@ namespace NachoCore.IMAP
                 return NcResult.Error ("Unknown email ServerId");
             }
             var fetchBody = ImapStrategy.FetchBodyFromEmail (email);
-            return FetchOneBody (fetchBody);
+            Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) {1} for email {2}", AccountId, pending, email.Id);
+            NcResult result = FetchOneBodyInternal (fetchBody, email);
+            if (result.isError ()) {
+                if (result.Why == NcResult.WhyEnum.MissingOnServer) {
+                    // The message doesn't exist. Delete it locally.
+                    email.Delete ();
+                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                }
+            }
+            return result;
         }
 
         private NcResult FetchOneBody (FetchKit.FetchBody fetchBody)
@@ -57,6 +66,7 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", fetchBody.ServerId);
                 return NcResult.Error ("Unknown email ServerId");
             }
+            Log.Info (Log.LOG_IMAP, "Processing DnldEmailBodyCmd({0}) for email {1}", AccountId, email.Id);
             NcResult result = FetchOneBodyInternal (fetchBody, email);
             if (result.isError ()) {
                 if (result.Why == NcResult.WhyEnum.MissingOnServer) {
@@ -71,8 +81,6 @@ namespace NachoCore.IMAP
         private NcResult FetchOneBodyInternal (FetchKit.FetchBody fetchBody, McEmailMessage email)
         {
             NcResult result;
-            Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
-
             McFolder folder = McFolder.QueryByServerId (AccountId, fetchBody.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
             UpdateImapSetting (mailKitFolder, ref folder);
@@ -148,7 +156,7 @@ namespace NachoCore.IMAP
 
             Cts.Token.ThrowIfCancellationRequested ();
             try {
-                if (null == fetchBody.Parts) {
+                if (null == fetchBody.Parts || !fetchBody.Parts.Any ()) {
                     result = DownloadEntireMessage (ref body, mailKitFolder, uid, imapBody);
                 } else {
                     result = DownloadIndividualParts (email, ref body, mailKitFolder, uid, fetchBody.Parts, imapBody.ContentType.Boundary);

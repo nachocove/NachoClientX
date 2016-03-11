@@ -34,6 +34,8 @@ namespace NachoClient.iOS
         protected string searchToken;
         McAccount accountForSearchAPI;
 
+        IDisposable abatementRequest = null;
+
         public ContactsTableViewSource ()
         {
             owner = null;
@@ -283,18 +285,24 @@ namespace NachoClient.iOS
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
-            NachoCore.Utils.NcAbate.HighPriority ("ContactsTableView DraggingStarted");
+            if (null == abatementRequest) {
+                abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+            }
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactsTableView DecelerationEnded");
+            if (null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
+            }
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
-            if (!willDecelerate) {
-                NachoCore.Utils.NcAbate.RegularPriority ("ContactsTableView DraggingEnded");
+            if (!willDecelerate && null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
             }
         }
 

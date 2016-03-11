@@ -24,14 +24,14 @@ namespace NachoCore.Brain
         // All these fields use lazy initialization pattern because we do not necessarily
         // do all the processing (indexing and all analyzers in one shot). So,
         // we only extract whatever as they are requested.
-        protected string _Content { get; set; }
+        protected System.Text.StringBuilder _Content = null;
 
         public string Content {
             get {
                 if (null == _Content) {
                     ExtractContent ();
                 }
-                return _Content;
+                return _Content.ToString ();
             }
         }
 
@@ -70,7 +70,7 @@ namespace NachoCore.Brain
 
         protected virtual void ExtractContent ()
         {
-            _Content = "";
+            _Content = new System.Text.StringBuilder ();
         }
 
         protected virtual void ExtractWords ()
@@ -120,10 +120,10 @@ namespace NachoCore.Brain
         {
             try {
                 var words = WordsFromString (plainText);
-                _Content += plainText + ". ";
+                _Content.Append (plainText).Append (' ');
                 foreach (var word in words) {
                     MayCancel ();
-                    if (IsAllUpperCase (word)) {
+                    if (2 < word.Length && IsAllUpperCase (word)) {
                         _Keywords.Add (word);
                     }
                 }
@@ -157,11 +157,13 @@ namespace NachoCore.Brain
                 html.LoadHtml (rawHtml);
                 WalkHtmlNodes (html.DocumentNode, (HtmlNode node) => {
                     MayCancel ();
-                    _Content += node.InnerText + ". ";
-                    var words = WordsFromString (node.InnerText);
-
-                    if (IsEmphasisHtmlTag (node.ParentNode.Name)) {
-                        _Keywords.AddRange (words);
+                    var innerText = node.InnerText.Trim ();
+                    if (!string.IsNullOrWhiteSpace (innerText)) {
+                        innerText = HtmlEntity.DeEntitize (innerText);
+                        _Content.Append(innerText).Append(' ');
+                        if (IsEmphasisHtmlTag (node.ParentNode.Name)) {
+                            _Keywords.AddRange (WordsFromString (innerText));
+                        }
                     }
                 });
             } catch (OperationCanceledException) {
@@ -223,6 +225,7 @@ namespace NachoCore.Brain
 
         protected override void ExtractContent ()
         {
+            _Content = new System.Text.StringBuilder ();
             ExtractContentFromPlainText (Text);
         }
     }
@@ -239,6 +242,7 @@ namespace NachoCore.Brain
 
         protected override void ExtractContent ()
         {
+            _Content = new System.Text.StringBuilder ();
             ExtractContentFromHtml (Html);
         }
     }
@@ -305,15 +309,8 @@ namespace NachoCore.Brain
         private List<TextPart> ProcessMimePart (MimePart part)
         {
             var parts = new List<TextPart> ();
-            if ("text" == part.ContentType.MediaType) {
-                if (("plain" == part.ContentType.MediaSubtype) || ("html" == part.ContentType.MediaSubtype)) {
-                    if (CanProcessCharset (part.ContentType.Charset)) {
-                        TextPart body = (TextPart)part;
-                        parts.Add (body);
-                    } else {
-                        Log.Error (Log.LOG_BRAIN, "NcTokenizer: not indexing {0}", part.ContentType.Charset);
-                    }
-                }
+            if (part.ContentType.Matches ("text", "plain") || part.ContentType.Matches ("text", "html")) {
+                parts.Add ((TextPart)part);
             }
             return parts;
         }
@@ -330,7 +327,7 @@ namespace NachoCore.Brain
 
         protected override void ExtractContent ()
         {
-            _Content = "";
+            _Content = new System.Text.StringBuilder ();
             _Keywords = new List<string> ();
             foreach (TextPart part in Parts) {
                 if (part.IsAttachment) {

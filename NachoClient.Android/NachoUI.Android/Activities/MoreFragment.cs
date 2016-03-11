@@ -40,14 +40,15 @@ namespace NachoClient.AndroidClient
             var folderView = view.FindViewById<View> (Resource.Id.mail);
             folderView.Click += FolderView_Click;
 
-            var likelyToReadView = view.FindViewById<View> (Resource.Id.likely_to_read);
-            likelyToReadView.Click += LikelyToReadView_Click;
-
             var deferredView = view.FindViewById<View> (Resource.Id.deferred);
             deferredView.Click += DeferredView_Click;
 
             var deadlineView = view.FindViewById<View> (Resource.Id.deadline);
             deadlineView.Click += DeadlineView_Click;
+
+            var chatsView = view.FindViewById<View> (Resource.Id.chats);
+            chatsView.Click += ChatsView_Click;
+            ;
 
             var filesView = view.FindViewById<View> (Resource.Id.files);
             filesView.Click += FilesView_Click;
@@ -81,10 +82,10 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void LikelyToReadView_Click (object sender, EventArgs e)
+        void ChatsView_Click (object sender, EventArgs e)
         {
-            var folder = McFolder.GetLtrFakeFolder ();
-            var intent = LtrFolderActivity.ShowLtrFolderIntent (this.Activity, folder);
+            var intent = new Intent ();
+            intent.SetClass (this.Activity, typeof(ChatListActivity));
             StartActivity (intent); 
         }
 
@@ -142,6 +143,7 @@ namespace NachoClient.AndroidClient
             typeof(DeadlineActivity),
             typeof(DeferredActivity),
             typeof(FoldersActivity),
+            typeof(FileListActivity),
             typeof(SettingsActivity),
             typeof(SupportActivity),
         };

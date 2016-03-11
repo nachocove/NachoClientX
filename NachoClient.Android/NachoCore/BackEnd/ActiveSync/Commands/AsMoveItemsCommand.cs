@@ -21,7 +21,7 @@ namespace NachoCore.ActiveSync
             PendingList.AddRange (MoveKit.Pendings);
             NcModel.Instance.RunInTransaction (() => {
                 foreach (var pending in PendingList) {
-                    pending.MarkDispached ();
+                    pending.MarkDispatched ();
                 }
             });
         }

@@ -35,6 +35,8 @@ namespace NachoClient.AndroidClient
         QuickResponseFragmentDelegate
     {
         private const string FILE_PICKER_TAG = "FilePickerFragment";
+        private const string ACCOUNT_CHOOSER_TAG = "AccountChooser";
+        private const string CAMERA_OUTPUT_URI_KEY = "cameraOutputUri";
 
         private const int PICK_REQUEST_CODE = 1;
         private const int TAKE_PHOTO_REQUEST_CODE = 2;
@@ -59,16 +61,30 @@ namespace NachoClient.AndroidClient
 
         #region Constructor/Factory
 
-        public ComposeFragment (McAccount account) : base ()
+        public ComposeFragment () : base ()
         {
-            Composer = new MessageComposer (account);
-            Composer.Delegate = this;
             JavaScriptQueue = new List<Tuple<string, JavascriptCallback>> ();
+        }
+
+        public McAccount Account {
+            get {
+                if (Composer != null) {
+                    return Composer.Account;
+                }
+                return null;
+            }
+            set {
+                if (Composer == null) {
+                    Composer = new MessageComposer (value);
+                    Composer.Delegate = this;
+                }
+            }
         }
 
         public static ComposeFragment newInstance (McAccount account)
         {
-            var fragment = new ComposeFragment (account);
+            var fragment = new ComposeFragment ();
+            fragment.Account = account;
             return fragment;
         }
 
@@ -78,11 +94,20 @@ namespace NachoClient.AndroidClient
 
         public override void OnCreate (Bundle savedInstanceState)
         {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnCreate");
             base.OnCreate (savedInstanceState);
+            if (savedInstanceState != null) {
+                Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment savedInstanceState != null");
+                var cameraUriString = savedInstanceState.GetString (CAMERA_OUTPUT_URI_KEY);
+                if (cameraUriString != null) {
+                    CameraOutputUri = Android.Net.Uri.Parse (cameraUriString);
+                }
+            }
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnCreateView");
             var view = inflater.Inflate (Resource.Layout.ComposeFragment, container, false);
 
             buttonBar = new ButtonBar (view);
@@ -111,9 +136,19 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        public override void OnSaveInstanceState (Bundle outState)
+        {
+            Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnSaveInstanceState");
+            base.OnSaveInstanceState (outState);
+            if (CameraOutputUri != null) {
+                outState.PutString (CAMERA_OUTPUT_URI_KEY, CameraOutputUri.ToString ());
+            }
+        }
+
         public override void OnDestroyView ()
         {
-            HeaderView.Dispose ();
+            Log.Info (Log.LOG_UI, "MessageComposeActivity ComposeFragment OnDestroyView");
+            HeaderView.Cleanup ();
             base.OnDestroyView ();
         }
 
@@ -287,7 +322,7 @@ namespace NachoClient.AndroidClient
                 return;
             }
             if (ChooserArrayAdapter.ADD_FILE == packageName) {
-                var filePicker = new FilePickerFragment (Composer.Account.Id);
+                var filePicker = FilePickerFragment.newInstance (Composer.Account.Id);
                 filePicker.Delegate = this;
                 filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
                 return;
@@ -302,7 +337,7 @@ namespace NachoClient.AndroidClient
 
             StartActivityForResult (intent, PICK_REQUEST_CODE);
         }
-            
+
         public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
         {
             if (Result.Ok != resultCode) {
@@ -318,6 +353,7 @@ namespace NachoClient.AndroidClient
                 attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
                 attachment.UpdateFileCopy (CameraOutputUri.Path);
                 attachment.UpdateSaveFinish ();
+                File.Delete (CameraOutputUri.Path);
                 attachment.Link (Composer.Message);
                 HeaderView.AttachmentsView.AddAttachment (attachment);
             } else if (PICK_REQUEST_CODE == requestCode) {
@@ -372,27 +408,56 @@ namespace NachoClient.AndroidClient
 
         #region User Action - Header
 
+        bool SalesforceBccAdded = false;
+        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool>();
+
+        void MaybeAddSalesforceBcc()
+        {
+            if(!SalesforceBccAdded) {
+                SalesforceBccAdded = EmailHelper.MaybeAddSalesforceBcc(SalesforceAddressCache, Composer.Message);
+                UpdateHeaderFromBcc ();
+            }
+        }
+                
+
         public void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to)
         {
             Composer.Message.To = to;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc)
         {
             Composer.Message.Cc = cc;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc)
         {
             Composer.Message.Bcc = bcc;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidChangeSubject (MessageComposeHeaderView view, string subject)
         {
             Composer.Message.Subject = subject;
+        }
+
+        public void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view, string from)
+        {
+            var accountFragment = new AccountChooserFragment ();
+            accountFragment.SetValues (Composer.Account, (McAccount selectedAccount) => {
+                if (selectedAccount.Id != Composer.Account.Id) {
+                    Composer.SetAccount (selectedAccount);
+                    var mailbox = new MailboxAddress (Pretty.UserNameForAccount (Composer.Account), Composer.Account.EmailAddr);
+                    Composer.Message.From = mailbox.ToString ();
+                    UpdateHeaderFromView();
+                }
+            });
+            accountFragment.Show (FragmentManager, ACCOUNT_CHOOSER_TAG);
         }
 
         public void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view)
@@ -519,11 +584,6 @@ namespace NachoClient.AndroidClient
             NcAlertView.ShowMessage (Activity, "Could not load message", "Sorry, we could not load your message.  Please try again.");
         }
 
-        public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
-        {
-            return ImageAndroid.FromStream (stream);
-        }
-
         void DisplayMessageBody ()
         {
             if (Composer.Bundle != null) {
@@ -574,9 +634,20 @@ namespace NachoClient.AndroidClient
             HeaderView.ToField.AddressString = Composer.Message.To;
             HeaderView.CcField.AddressString = Composer.Message.Cc;
             HeaderView.BccField.AddressString = Composer.Message.Bcc;
+            UpdateHeaderFromView ();
             UpdateHeaderSubjectView ();
             UpdateHeaderIntentView ();
             UpdateHeaderAttachmentsView ();
+        }
+
+        void UpdateHeaderFromView ()
+        {
+            HeaderView.FromField.Text = Composer.Message.From;
+        }
+
+        void UpdateHeaderFromBcc()
+        {
+            HeaderView.BccField.AddressString = Composer.Message.Bcc;
         }
 
         void UpdateHeaderSubjectView ()

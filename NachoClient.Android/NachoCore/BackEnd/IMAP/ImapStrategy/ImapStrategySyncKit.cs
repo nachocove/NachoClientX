@@ -60,6 +60,8 @@ namespace NachoCore.IMAP
         /// </summary>
         public const int KInboxWindowMultiplier = 2;
 
+        public const string KXNachoChat = "X-Nacho-Chat";
+
         private static uint SpanSizeWithCommStatus (McProtocolState protocolState)
         {
             uint overallWindowSize = KRungSyncWindowSize [protocolState.ImapSyncRung];
@@ -84,16 +86,16 @@ namespace NachoCore.IMAP
 
         private static MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
 
-        private static HashSet<HeaderId> ImapSummaryHeaders ()
+        private static HashSet<string> ImapSummaryHeaders ()
         {
-            HashSet<HeaderId> headers = new HashSet<HeaderId> ();
-            headers.Add (HeaderId.Importance);
-            headers.Add (HeaderId.DkimSignature);
-            headers.Add (HeaderId.ContentClass);
-            headers.Add (HeaderId.XPriority);
-            headers.Add (HeaderId.Priority);
-            headers.Add (HeaderId.XMSMailPriority);
-
+            var headers = new HashSet<string> ();
+            headers.Add (HeaderId.Importance.ToString ());
+            headers.Add (HeaderId.DkimSignature.ToString ());
+            headers.Add (HeaderId.ContentClass.ToString ());
+            headers.Add (HeaderId.XPriority.ToString ());
+            headers.Add (HeaderId.Priority.ToString ());
+            headers.Add (HeaderId.XMSMailPriority.ToString ());
+            headers.Add (KXNachoChat);
             return headers;
         }
 
@@ -109,7 +111,8 @@ namespace NachoCore.IMAP
                                                   | MessageSummaryItems.Flags
                                                   | MessageSummaryItems.InternalDate
                                                   | MessageSummaryItems.MessageSize
-                                                  | MessageSummaryItems.UniqueId;
+                                                  | MessageSummaryItems.UniqueId
+                                                  | MessageSummaryItems.References;
 
             if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
                 NewMessageFlags |= MessageSummaryItems.GMailMessageId;
@@ -163,9 +166,17 @@ namespace NachoCore.IMAP
         public SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync)
         {
             if (null == folder) {
+                Log.Error (Log.LOG_IMAP, "GenSyncKit({0}): no folder given", AccountId);
+                if (null != pending) {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing, NcResult.WhyEnum.NotSpecified));
+                }
                 return null;
             }
             if (folder.ImapNoSelect) {
+                Log.Error (Log.LOG_IMAP, "GenSyncKit({0}): folder is ImapNoSelect ({1})", AccountId, folder.ImapFolderNameRedacted ());
+                if (null != pending) {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing, NcResult.WhyEnum.AccessDeniedOrBlocked));
+                }
                 return null;
             }
             bool havePending = null != pending;
@@ -201,7 +212,7 @@ namespace NachoCore.IMAP
                         // time-window (see NeedFolderMetadata()), and skipped the OpenOnly step.
                         // We need to dispatch the pending before ResolveOneSync() so we don't
                         // try to ResolveAsSuccess an eligible pending (which leads to a crash).
-                        pending = pending.MarkDispached ();
+                        pending = pending.MarkDispatched ();
                     }
                     ResolveOneSync (BEContext, ref protocolState, folder, pending);
                 }
@@ -319,7 +330,7 @@ namespace NachoCore.IMAP
 
         public static SyncInstruction SyncInstructionForFlagSync (UniqueIdSet uidSet)
         {
-            return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<HeaderId> (), false, false);
+            return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<string> (), false, false);
         }
 
         #endregion

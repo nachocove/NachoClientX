@@ -116,7 +116,7 @@ namespace NachoClient.iOS
                             PerformSegue ("ContactsToContactEdit", new SegueHolder (account));
                         });
                     }
-                    NcActionSheet.Show (this.View, this, null,
+                    NcActionSheet.Show (addContactButton, this, null,
                         "Cannot add contacts to the current account. Select other account for the new contact.", actions);
                 }
             };
@@ -239,19 +239,19 @@ namespace NachoClient.iOS
 
         protected void MaybeRefreshContacts ()
         {
-            if (contactsNeedsRefresh) {
-                contactsNeedsRefresh = false;
-                ReloadCapture.Start ();
-                NachoCore.Utils.NcAbate.HighPriority ("ContactListViewController LoadContacts");
-                // RIC -- only highlight recents from the current account
-                var recents = McContact.RicContactsSortedByRank (NcApplication.Instance.Account.Id, 5);
-                var contacts = McContact.AllContactsSortedByName (true);
-                contactTableViewSource.SetContacts (recents, contacts, true);
-                TableView.ReloadData ();
-                NachoCore.Utils.NcAbate.RegularPriority ("ContactListViewController LoadContacts");
-                ReloadCapture.Stop ();
-            } else {
-                contactTableViewSource.ReconfigureVisibleCells (TableView);
+            using (NcAbate.UIAbatement ()) {
+                if (contactsNeedsRefresh) {
+                    contactsNeedsRefresh = false;
+                    ReloadCapture.Start ();
+                    // RIC -- only highlight recents from the current account
+                    var recents = McContact.RicContactsSortedByRank (NcApplication.Instance.Account.Id, 5);
+                    var contacts = McContact.AllContactsSortedByName (true);
+                    contactTableViewSource.SetContacts (recents, contacts, true);
+                    TableView.ReloadData ();
+                    ReloadCapture.Stop ();
+                } else {
+                    contactTableViewSource.ReconfigureVisibleCells (TableView);
+                }
             }
         }
 

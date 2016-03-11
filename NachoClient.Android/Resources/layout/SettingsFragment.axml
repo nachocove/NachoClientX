@@ -40,6 +40,19 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="@color/NachoBackgroundGray" />
+                <Switch
+                    android:id="@+id/show_new_unread"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="5dp"
+                    android:layout_alignParentTop="true"
+                    android:textSize="14dp"
+                    android:textStyle="normal"
+                    android:textColor="@android:color/black"
+                    android:background="@android:color/white"
+                    android:textOff="@string/show_new"
+                    android:textOn="@string/show_all"
+                    android:text="@string/show_new_unread" />
                 <Button
                     android:id="@+id/crash_button"
                     android:layout_width="match_parent"

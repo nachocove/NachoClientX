@@ -53,13 +53,13 @@ namespace NachoCore
             }
             var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
-                return new MissingFolder ("Likely To Read");
+                return new MissingFolder ("Focused");
             } else {
                 return new NachoLikelyToReadEmailMessages (inboxFolder);
             }
         }
 
-        protected class MissingFolder : INachoEmailMessages
+        protected class MissingFolder : NachoEmailMessagesBase, INachoEmailMessages
         {
             protected string displayName;
 
@@ -68,61 +68,10 @@ namespace NachoCore
                 this.displayName = displayName;
             }
 
-            public int Count ()
-            {
-                return 0;
-            }
-
-            public bool Refresh (out List<int> adds, out List<int> deletes)
-            {
-                adds = null;
-                deletes = null;
-                return false;
-            }
-
-            public McEmailMessageThread GetEmailThread (int i)
-            {
-                NcAssert.CaseError ();
-                return null;
-            }
-
-            public List<McEmailMessageThread> GetEmailThreadMessages (int id)
-            {
-                NcAssert.CaseError ();
-                return null;
-            }
-
-            public string DisplayName ()
+            public override string DisplayName ()
             {
                 return displayName;
             }
-
-            public bool HasOutboxSemantics ()
-            {
-                return false;
-            }
-
-            public bool HasDraftsSemantics ()
-            {
-                return false;
-            }
-
-            public NcResult StartSync ()
-            {
-                return NachoSyncResult.DoesNotSync ();
-            }
-
-            public INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
-            {
-                return null;
-            }
-
-            public bool IsCompatibleWithAccount (McAccount account)
-            {
-                return false;
-            }
-
         }
     }
 }
-

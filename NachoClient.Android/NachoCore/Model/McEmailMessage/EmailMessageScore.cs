@@ -13,6 +13,8 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
+
+
     public partial class McEmailMessage : McAbstrItem, IScorable
     {
         public enum GleanPhaseEnum
@@ -121,7 +123,8 @@ namespace NachoCore.Model
 
         public bool ShouldUpdate ()
         {
-            return (0 < NeedUpdate);
+            var needsUpdate = McEmailMessageNeedsUpdate.Get (this);
+            return (0 < needsUpdate);
         }
 
         protected double BayesianLikelihood ()
@@ -197,6 +200,7 @@ namespace NachoCore.Model
         }
 
         delegate double classifier (McEmailMessage emailMessage);
+
         public Tuple<double,double> Classify ()
         {
             double? memoized = null;
@@ -411,7 +415,7 @@ namespace NachoCore.Model
                     var em = (McEmailMessage)item;
                     em.ScoreVersion = newScoreVersion;
                     // If we scoring the last version, need to mark for update to recompute the score later
-                    em.NeedUpdate = (Scoring.Version == newScoreVersion ? 1 : 0);
+                    McEmailMessageNeedsUpdate.Update (em, (Scoring.Version == newScoreVersion ? 1 : 0));
                     return true;
                 });
                 return;
@@ -427,9 +431,9 @@ namespace NachoCore.Model
                 em.Score = newScore;
                 em.Score2 = newLtrScore;
                 em.ScoreVersion = newScoreVersion;
-                em.NeedUpdate = 0;
                 em.TimeVarianceState = newState;
                 em.TimeVarianceType = newTYpe;
+                McEmailMessageNeedsUpdate.Update (em, 0);
                 return true;
             });
         }
@@ -491,15 +495,20 @@ namespace NachoCore.Model
             if (above) {
                 query = String.Format (
                     "SELECT e.* FROM McEmailMessage AS e " +
-                    " WHERE e.NeedUpdate > ? AND e.ScoreVersion = ? " +
+                    " JOIN McEmailMessageNeedsUpdate AS n ON e.Id = n.EmailMessageId " +
+                    " WHERE n.NeedsUpdate > ? AND e.ScoreVersion = ? " +
+                    " ORDER BY e.DateReceived DESC " +
                     " LIMIT ?");
             } else {
                 query = String.Format (
                     "SELECT e.* FROM McEmailMessage AS e " +
-                    " WHERE e.NeedUpdate <= ? AND e.NeedUpdate > 0 AND e.ScoreVersion = ? " +
+                    " JOIN McEmailMessageNeedsUpdate AS n ON e.Id = n.EmailMessageId " +
+                    " WHERE n.NeedsUpdate <= ? AND n.NeedsUpdate > 0 AND e.ScoreVersion = ? " +
+                    " ORDER BY e.DateReceived DESC " +
                     " LIMIT ?");
             }
-            return NcModel.Instance.Db.Query<McEmailMessage> (query, threshold, Scoring.Version, count);
+            var list = NcModel.Instance.Db.Query<McEmailMessage> (query, threshold, Scoring.Version, count);
+            return list;
         }
 
         public static List<object> QueryNeedUpdateObjectsAbove (int count)
@@ -518,7 +527,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
                 " WHERE e.ScoreVersion < ? AND e.HasBeenGleaned > 0 " +
-                " ORDER BY Id DESC " +
+                " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?", version, count);
         }
 
@@ -533,7 +542,9 @@ namespace NachoCore.Model
                 "SELECT e.* FROM McEmailMessage AS e " +
                 " WHERE " +
                 " likelihood (HasBeenGleaned < ?, 0.1) " +
-                " AND likelihood (e.AccountId = ?, 1.0) LIMIT ?",
+                " AND likelihood (e.AccountId = ?, 1.0) " +
+                " ORDER BY e.DateReceived DESC " +
+                " LIMIT ?",
                 GleanPhaseEnum.GLEAN_PHASE2, accountId, count);
         }
 
@@ -542,6 +553,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
                 " WHERE e.ScoreVersion = 0 AND e.Score = 0 AND e.AccountId = ? " +
+                " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?", accountId, count);
         }
 
@@ -704,13 +716,13 @@ namespace NachoCore.Model
             }
         }
 
-        public void UpdateScoresAndNeedUpdate ()
+        public void UpdateScores ()
         {
             int rc = NcModel.Instance.BusyProtect (() => {
                 return NcModel.Instance.Db.Execute (
                     "UPDATE McEmailMessage " +
-                    "SET Score = ?,  Score2 = ?, NeedUpdate = ? " +
-                    "WHERE Id = ?", Score, Score2, NeedUpdate, Id);
+                    "SET Score = ?,  Score2 = ? " +
+                    "WHERE Id = ?", Score, Score2, Id);
             });
             if (0 < rc) {
                 NcBrain brain = NcBrain.SharedInstance;
@@ -752,7 +764,7 @@ namespace NachoCore.Model
                 scoreChanged = true;
             }
             if (fullUpdateNeeded || scoreChanged) {
-                emailMessage.NeedUpdate = 0;
+                McEmailMessageNeedsUpdate.Update (emailMessage, 0);
                 if (fullUpdateNeeded) {
                     var newState = emailMessage.TimeVarianceState;
                     var newType = emailMessage.TimeVarianceType;
@@ -765,7 +777,7 @@ namespace NachoCore.Model
                         return true;
                     });
                 } else {
-                    emailMessage.UpdateScoresAndNeedUpdate ();
+                    emailMessage.UpdateScores ();
                 }
             }
         }
@@ -886,8 +898,8 @@ namespace NachoCore.Model
                         var scores = Classify ();
                         Score = scores.Item1;
                         Score2 = scores.Item2;
-                        NeedUpdate = 0;
-                        UpdateScoresAndNeedUpdate ();
+                        UpdateScores ();
+                        McEmailMessageNeedsUpdate.Update (this, 0);
                     }
                 }
             });

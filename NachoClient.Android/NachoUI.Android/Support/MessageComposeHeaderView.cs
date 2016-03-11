@@ -24,6 +24,8 @@ namespace NachoClient.AndroidClient
 
         void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc);
 
+        void MessageComposeHeaderViewDidSelectFromField (MessageComposeHeaderView view, string from);
+
         void MessageComposeHeaderViewDidSelectIntentField (MessageComposeHeaderView view);
 
         void MessageComposeHeaderViewDidSelectAddAttachment (MessageComposeHeaderView view);
@@ -44,6 +46,7 @@ namespace NachoClient.AndroidClient
         public EmailAddressField ToField;
         public EmailAddressField CcField;
         public EmailAddressField BccField;
+        public TextView FromField;
         public TextView IntentValueLabel;
         public TextView CcLabel;
         public MessageComposeAttachmentsView AttachmentsView;
@@ -104,6 +107,8 @@ namespace NachoClient.AndroidClient
 
             CcLabel = view.FindViewById<TextView> (Resource.Id.compose_cc_label);
             BccContainer = view.FindViewById<LinearLayout> (Resource.Id.compose_bcc_container);
+            FromField = view.FindViewById<TextView> (Resource.Id.compose_from);
+            FromField.Click += FromField_Click;
             SubjectField = view.FindViewById<EditText> (Resource.Id.compose_subject);
             SubjectField.FocusChange += SubjectFieldFocused;
             IntentContainer = view.FindViewById<LinearLayout> (Resource.Id.compose_intent_container);
@@ -112,6 +117,13 @@ namespace NachoClient.AndroidClient
             IntentContainer.Click += SelectIntent;
             AttachmentsView = view.FindViewById<MessageComposeAttachmentsView> (Resource.Id.compose_attachments);
             AttachmentsView.HeaderView = this;
+        }
+
+        void FromField_Click (object sender, EventArgs e)
+        {
+            if (Delegate != null) {
+                Delegate.MessageComposeHeaderViewDidSelectFromField (this, FromField.Text);
+            }
         }
 
         void BccFieldChanged (object sender, EventArgs e)
@@ -184,14 +196,11 @@ namespace NachoClient.AndroidClient
             base.OnLayout (changed, l, t, r, b);
         }
 
-        protected override void Dispose (bool disposing)
+        public void Cleanup ()
         {
-            if (disposing) {
-                ToField.Adapter.Dispose ();
-                CcField.Adapter.Dispose ();
-                BccField.Adapter.Dispose ();
-            }
-            base.Dispose (disposing);
+            ((ContactAddressAdapter)ToField.Adapter).Cleanup ();
+            ((ContactAddressAdapter)CcField.Adapter).Cleanup ();
+            ((ContactAddressAdapter)BccField.Adapter).Cleanup ();
         }
     }
 
@@ -258,13 +267,10 @@ namespace NachoClient.AndroidClient
                 return;
             }
 
-            protected override void Dispose (bool disposing)
+            public void Cleanup ()
             {
-                if (disposing) {
-                    searcher.Dispose ();
-                    searcher = null;
-                }
-                base.Dispose (disposing);
+                searcher.Dispose ();
+                searcher = null;
             }
         }
 
@@ -343,13 +349,10 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        protected override void Dispose (bool disposing)
+        public void Cleanup ()
         {
-            if (disposing) {
-                filter.Dispose ();
-                filter = null;
-            }
-            base.Dispose (disposing);
+            filter.Cleanup ();
+            filter = null;
         }
     }
 }

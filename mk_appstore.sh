@@ -48,20 +48,28 @@ if [ -z "$ANDROID_PACKAGE" ] ; then
     echo "No package name found in projects"
     exit 1
 fi
+ORIGINAL_APK="$ANDROID_PACKAGE.apk"
 EXPECTED_APK="$ANDROID_PACKAGE.apk"
 RESIGNED_APK="$ANDROID_PACKAGE-tmp.apk"
 
-# Build NachoClient
+
+# Build NachoClient.iOS
 VERSION="$version" BUILD="$build" RELEASE="$release" /Applications/Xamarin\ Studio.app/Contents/MacOS/XamarinStudio ./NachoClient.sln
 if [ ${PIPESTATUS[0]} -eq 0 ]
 then
     (cd NachoClient.iOS; VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --ios ./bin/iPhone/AppStore) || die "Failed to upload ipa"
-
-    (cd NachoClient.Android; 
-        ../scripts/android_sign.py sign --release $release --keystore-path=$HOME/.ssh ./bin/Release/$EXPECTED_APK ./bin/Release/$RESIGNED_APK || die "Failed to re-sign apk";
-        mv ./bin/Release/$RESIGNED_APK ./bin/Release/$EXPECTED_APK || die "Failed to move apk";
-        VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --android ./bin/Release || die "Failed to upload apk";
-    ) || die "Could not sign and upload apk"
 else
     echo "appstore build failed!"
 fi
+
+# Build NachoClient.Android
+(cd NachoClient.Android; 
+    rm -f ` find . -name "*.apk" `
+    VERSION="$version" BUILD="$build" RELEASE="$release" scripts/mk_log_settings.py
+    VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/configure_android.py ./Properties/AndroidManifest.xml
+    VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/mk_build_info.py --architecture android --root . --csproj-file NachoClient.Android.csproj
+    xbuild "/t:SignAndroidPackage" "/p:Configuration=Release" NachoClient.Android.csproj
+    ../scripts/android_sign.py sign --release $release --keystore-path=$HOME/.ssh ./bin/Release/$ORIGINAL_APK ./bin/Release/$RESIGNED_APK || die "Failed to re-sign apk";
+    mv ./bin/Release/$RESIGNED_APK ./bin/Release/$EXPECTED_APK || die "Failed to move apk";
+    VERSION="$version" BUILD="$build" RELEASE="$release" ../scripts/hockeyapp_upload.py --no-skip --android ./bin/Release || die "Failed to upload apk";
+) || die "Could not sign and upload apk"

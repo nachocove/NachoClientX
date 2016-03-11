@@ -606,13 +606,13 @@ namespace NachoClient.iOS
                     case 1:
                         McNote note = McNote.QueryById<McNote> (item.Id);
                         if (null != note) {
-                            vc.NoteAction (note);
+                            vc.NoteAction (note, cell);
                         }
                         break;
                     case 2:
                         McDocument document = McDocument.QueryById<McDocument> (item.Id);
                         if (null != document) {
-                            vc.DocumentAction (document);
+                            vc.DocumentAction (document, cell);
                         }
                         break;
                     }
@@ -962,11 +962,11 @@ namespace NachoClient.iOS
 
         public bool UpdateSearchResults (nint forSearchOption, string forSearchString)
         {
-            NachoCore.Utils.NcAbate.HighPriority ("AttachmentsTableViewSource UpdateSearchResults");
-            var results = SearchByString (forSearchString);
-            SetSearchResults (results);
-            NachoCore.Utils.NcAbate.RegularPriority ("AttachmentsTableViewSource UpdateSearchResults");
-            return true;
+            using (NcAbate.UIAbatement ()) {
+                var results = SearchByString (forSearchString);
+                SetSearchResults (results);
+                return true;
+            }
         }
 
         public List<NcFileIndex> SearchByString (string searchString)

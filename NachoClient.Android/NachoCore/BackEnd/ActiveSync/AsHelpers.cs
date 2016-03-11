@@ -103,6 +103,14 @@ namespace NachoCore.ActiveSync
                     item.BodyPreview = bodyText;
                 }
             }
+            if (null != item.BodyPreview) {
+                const int TruncationSize = 500;
+                // AWS ignores trunc size & returns the full body
+                if ((2*TruncationSize) < item.BodyPreview.Length) {
+                    Log.Warn (Log.LOG_AS, "Body preview too big: {0}", item.BodyPreview.Length);
+                    item.BodyPreview = item.BodyPreview.Substring (0, TruncationSize);
+                }
+            }
         }
 
         public static T ToEnum<T> (this string enumString)

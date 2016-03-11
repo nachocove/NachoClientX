@@ -53,10 +53,13 @@ namespace NachoClient.AndroidClient
                 imageId = Resource.Drawable.avatar_yahoo;
                 break;
             case McAccount.AccountServiceEnum.Aol:
-                imageId = Resource.Drawable.Icon;
+                imageId = Resource.Drawable.avatar_aol;
+                break;
+            case McAccount.AccountServiceEnum.SalesForce:
+                imageId = Resource.Drawable.avatar_salesforce;
                 break;
             default:
-                imageId = Resource.Drawable.Icon;
+                imageId = Resource.Drawable.avatar_unified;
                 break;
             }
             return imageId;
@@ -106,7 +109,7 @@ namespace NachoClient.AndroidClient
 
         public static void SendEmail (Context context, int accountId, McContact contact, string alternateEmailAddress)
         {
-            if (null != alternateEmailAddress) {
+            if (!String.IsNullOrEmpty (alternateEmailAddress)) {
                 var intent = MessageComposeActivity.NewMessageIntent (context, accountId, alternateEmailAddress);
                 context.StartActivity (intent);
                 return;

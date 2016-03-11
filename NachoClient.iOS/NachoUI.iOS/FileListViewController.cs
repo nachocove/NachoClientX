@@ -103,8 +103,6 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            // In case we exit during scrolling
-            NachoCore.Utils.NcAbate.RegularPriority ("FileListViewController ViewWillDisappear");
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -585,9 +583,9 @@ namespace NachoClient.iOS
             }
         }
 
-        public void FileChooserSheet (McAbstrObject file, Action displayAction)
+        public void FileChooserSheet (McAbstrObject file, UIView alertParentView, Action displayAction)
         {
-            NcActionSheet.Show (View, this,
+            NcActionSheet.Show (alertParentView, this,
                 new NcAlertAction ("Preview", () => {
                     displayAction ();
                 }),
@@ -604,28 +602,28 @@ namespace NachoClient.iOS
                 if (null == Owner) {
                     PlatformHelpers.DisplayAttachment (this, a);
                 } else {
-                    FileChooserSheet (a, () => PlatformHelpers.DisplayAttachment (this, a));
+                    FileChooserSheet (a, cell, () => PlatformHelpers.DisplayAttachment (this, a));
                 }
             });
         }
 
-        public void DocumentAction (McDocument document)
+        public void DocumentAction (McDocument document, UIView alertParentView)
         {
             if (null == Owner) {
                 PlatformHelpers.DisplayFile (this, document);
             } else {
-                FileChooserSheet (document, () => PlatformHelpers.DisplayFile (this, document));
+                FileChooserSheet (document, alertParentView, () => PlatformHelpers.DisplayFile (this, document));
             }
         }
 
-        public void NoteAction (McNote note)
+        public void NoteAction (McNote note, UIView alertParentView)
         {
             if (null == Owner) {
                 PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
                 return;
             }
 
-            FileChooserSheet (note, () => {
+            FileChooserSheet (note, alertParentView, () => {
                 PerformSegue (FilesToNotesModalSegueId, new SegueHolder (note));
             });
         }

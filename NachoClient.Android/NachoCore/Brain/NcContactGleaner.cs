@@ -26,44 +26,6 @@ namespace NachoCore.Brain
         public const int GLEAN_PERIOD = 4;
         private const uint MaxSaneAddressLength = 40;
 
-        private static NcTimer Invoker;
-        private static void InvokerCallback (Object state)
-        {
-            if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
-                NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext) {
-                // TODO - This is a temporary solution. We should not process any event other 
-                return;
-            }
-            try {
-                NcBrain.SharedInstance.EnqueueIfNotAlreadyThere (new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN));
-            } catch (OperationCanceledException) {
-                // brain is no longer active. Shut ourselves down.
-                Log.Error (Log.LOG_BRAIN, "NcContactGleaner tried to enqueue, but brain is not there.");
-                Stop ();
-            }
-        }
-
-        public static void Start ()
-        {
-            if (NcBrain.ENABLED) {
-                if (!NcBrain.SharedInstance.IsCancelled ()) {
-                    Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
-                        TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
-                    Invoker.Stfu = true;
-                }
-            }
-        }
-
-        public static void Stop ()
-        {
-            if (NcBrain.ENABLED) {
-                if (null != Invoker) {
-                    Invoker.Dispose ();
-                    Invoker = null;
-                }
-            }
-        }
-
         public NcContactGleaner ()
         {
         }
@@ -136,7 +98,6 @@ namespace NachoCore.Brain
             });
         }
 
-
         public static void GleanContacts (string address, int accountId, bool obeyAbatement)
         {
             if (String.IsNullOrEmpty (address)) {
@@ -145,7 +106,7 @@ namespace NachoCore.Brain
             var addressList = NcEmailAddress.ParseAddressListString (address);
             var gleanedFolder = McFolder.GetGleanedFolder (accountId);
             foreach (var mbAddr in addressList) {
-                if (NcApplication.Instance.IsBackgroundAbateRequired && obeyAbatement) {
+                if (obeyAbatement && NcAbate.IsAbated ()) {
                     throw new NcGleaningInterruptedException ();
                 }
                 if (mbAddr is MailboxAddress) {

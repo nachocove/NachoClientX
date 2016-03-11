@@ -296,7 +296,6 @@ namespace NachoCore
             Sm.Validate ();
             NachoPlatform.Contacts.Instance.ChangeIndicator += DeviceDbChange;
             NachoPlatform.Calendars.Instance.ChangeIndicator += DeviceDbChange;
-            NcApplication.Instance.StatusIndEvent += AbateChange;
         }
 
         public override void Remove ()
@@ -304,18 +303,7 @@ namespace NachoCore
             NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
             NachoPlatform.Contacts.Instance.ChangeIndicator -= DeviceDbChange;
             Calendars.Instance.ChangeIndicator -= DeviceDbChange;
-            NcApplication.Instance.StatusIndEvent -= AbateChange;
             base.Remove ();
-        }
-
-        private void AbateChange (object sender, EventArgs ea)
-        {
-            var siea = (StatusIndEventArgs)ea;
-            if (NcResult.SubKindEnum.Info_BackgroundAbateStarted == siea.Status.SubKind) {
-                Sm.PostEvent ((uint)DevEvt.E.AbateOn, "DEVCABATEON");
-            } else if (NcResult.SubKindEnum.Info_BackgroundAbateStopped == siea.Status.SubKind) {
-                Sm.PostEvent ((uint)DevEvt.E.AbateOff, "DEVCABATEOFF");
-            }
         }
 
         private void DeviceDbChange (object sender, EventArgs ea)
@@ -363,10 +351,12 @@ namespace NachoCore
                                 while (!deviceContacts.ProcessNextContact ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
                                 while (!deviceContacts.RemoveNextStale ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
                             } finally {
                                 // Trigger status events and report progress both when the sync is complete
@@ -386,18 +376,22 @@ namespace NachoCore
                                 while (!deviceCalendars.ProcessNextCalendarFolder ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
                                 while (!deviceCalendars.ProcessNextCalendarEvent ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
                                 while (!deviceCalendars.RemoveNextStaleEvent ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
                                 while (!deviceCalendars.RemoveNextStaleFolder ()) {
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
+                                    NcAbate.PauseWhileAbated ();
                                 }
                             } finally {
                                 // Trigger status events and report progress both when the sync is complete
@@ -464,7 +458,7 @@ namespace NachoCore
             McContact contact = null;
             McCalendar cal = null;
             foreach (var pending in pendings) {
-                pending.MarkDispached ();
+                pending.MarkDispatched ();
                 switch (pending.Operation) {
                 case McPending.Operations.CalBodyDownload:
                 case McPending.Operations.CalMove:
@@ -536,7 +530,7 @@ namespace NachoCore
 
         protected override bool Execute ()
         {
-            // Ignore base.Execute() we don't care about the nextwork.
+            // Ignore base.Execute() we don't care about the network.
             // We're letting the app use Start() to trigger a re-sync. TODO - consider using Sync command.
             Sm.PostEvent ((uint)SmEvt.E.Launch, "DEVICELAUNCH");
             return true;

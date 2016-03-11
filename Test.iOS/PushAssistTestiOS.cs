@@ -577,7 +577,7 @@ namespace Test.Common
         {
             Assert.AreEqual (expected.Length, emails.Length);
             for (int n = 0; n < expected.Length; n++) {
-                Assert.AreEqual (expected [n], NotificationHelper.ShouldNotifyEmailMessage (emails [n], account));
+                Assert.AreEqual (expected [n], NotificationHelper.ShouldNotifyEmailMessage (emails [n]));
             }
         }
 

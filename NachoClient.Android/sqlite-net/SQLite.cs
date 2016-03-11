@@ -3205,7 +3205,7 @@ namespace SQLite
 		public static extern Result EnableLoadExtension (IntPtr db, int onoff);
 #endif
 
-		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_close", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_close_v2", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
 		
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_initialize", CallingConvention=CallingConvention.Cdecl)]
@@ -3368,7 +3368,7 @@ namespace SQLite
 
 		public static Result Close(Sqlite3DatabaseHandle db)
 		{
-			return (Result)Sqlite3.sqlite3_close(db);
+			return (Result)Sqlite3.sqlite3_close_v2(db);
 		}
 
 		public static Result BusyTimeout(Sqlite3DatabaseHandle db, int milliseconds)

@@ -64,10 +64,17 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        static NcTimer CheckNotifiedTimer;
+
         public static void OnForeground ()
         {
             // All messages are consider 'notified' once we are in foreground
-            NcTask.Run (NcApplication.Instance.CheckNotified, "CheckNotified");  // FIXME, don't always call, call on a delay
+            if (null != CheckNotifiedTimer) {
+                CheckNotifiedTimer.Dispose ();
+            }
+            CheckNotifiedTimer = new NcTimer ("NotificationService:OnForeground", (state) => {
+                NcApplication.Instance.CheckNotified ();
+            }, null, new TimeSpan (0, 0, 15), TimeSpan.Zero);
 
             // Cancel any notifications that we've issued while in background
             var nMgr = (NotificationManager)MainApplication.Instance.GetSystemService (NotificationService);
@@ -84,6 +91,7 @@ namespace NachoClient.AndroidClient
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
 
             unreadAndHot.RemoveAll (x => String.IsNullOrEmpty (x.From));
+            unreadAndHot.RemoveAll (x => !NotificationHelper.ShouldNotifyEmailMessage (x));
 
             if (unreadAndHot.Count > 0) {
                 ExpandedNotification (EMAIL_NOTIFICATION_ID, unreadAndHot.Last (), unreadAndHot.Count);
@@ -123,15 +131,21 @@ namespace NachoClient.AndroidClient
                 builder.SetContentInfo (String.Format ("{0} more message{1}", count - 1, count > 2 ? "s" : ""));
             }
 
-            var deleteIntent = new Intent (this, typeof (NotificationDeleteMessageReceiver));
+            var deleteIntent = new Intent (this, typeof(NotificationDeleteMessageReceiver));
             deleteIntent.PutExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", message.Id);
             var pendingDeleteIntent = PendingIntent.GetBroadcast (this, 0, deleteIntent, PendingIntentFlags.UpdateCurrent);
             builder.AddAction (Resource.Drawable.email_notification_delete, "Delete", pendingDeleteIntent);
 
-            var archiveIntent = new Intent (this, typeof (NotificationArchiveMessageReceiver));
+            var archiveIntent = new Intent (this, typeof(NotificationArchiveMessageReceiver));
             archiveIntent.PutExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", message.Id);
             var pendingArchiveIntent = PendingIntent.GetBroadcast (this, 0, archiveIntent, PendingIntentFlags.UpdateCurrent);
             builder.AddAction (Resource.Drawable.email_notification_archive, "Archive", pendingArchiveIntent);
+
+
+            var notificationDeletedIntent = new Intent (this, typeof(NotificationDeletedReceiver));
+            notificationDeletedIntent.PutExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", message.Id);
+            var pendingNotificationDeletedIntent = PendingIntent.GetBroadcast (this, 0, notificationDeletedIntent, PendingIntentFlags.UpdateCurrent);
+            builder.SetDeleteIntent (pendingNotificationDeletedIntent);
 
             var preview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
 
@@ -160,7 +174,7 @@ namespace NachoClient.AndroidClient
 
     }
 
-    [BroadcastReceiver (Enabled=true)]
+    [BroadcastReceiver (Enabled = true)]
     class NotificationDeleteMessageReceiver : BroadcastReceiver
     {
 
@@ -182,7 +196,7 @@ namespace NachoClient.AndroidClient
 
     }
 
-    [BroadcastReceiver (Enabled=true)]
+    [BroadcastReceiver (Enabled = true)]
     class NotificationArchiveMessageReceiver : BroadcastReceiver
     {
 
@@ -199,6 +213,24 @@ namespace NachoClient.AndroidClient
                 }
                 var nMgr = (NotificationManager)MainApplication.Instance.GetSystemService (Context.NotificationService);
                 nMgr.Cancel (NotificationService.EMAIL_NOTIFICATION_ID);
+            }
+        }
+    }
+
+    [BroadcastReceiver (Enabled = true)]
+    class NotificationDeletedReceiver : BroadcastReceiver
+    {
+
+        public override void OnReceive (Context context, Intent intent)
+        {
+            // In case notification started the app
+            MainApplication.OneTimeStartup ("NotificationActivity");
+            var messageId = intent.GetIntExtra ("com.nachocove.nachomail.EXTRA_MESSAGE", 0);
+            if (messageId != 0) {
+                var message = McEmailMessage.QueryById<McEmailMessage> (messageId);
+                if (null != message) {
+                    message.MarkHasBeenNotified (false);
+                }
             }
         }
 

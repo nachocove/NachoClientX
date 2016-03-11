@@ -15,7 +15,6 @@ namespace NachoClient.AndroidClient
         private static object syncRoot = new Object ();
 
         private bool isForeground;
-        private bool isPaused;
 
         public void Init (Application app)
         {
@@ -59,20 +58,42 @@ namespace NachoClient.AndroidClient
         // there's a change is not good. If a notification must
         // be sent, 1) delay it, and 2) use IsPaused to prevent
         // redundant notifications.
+
+        object BackgroundTimerLock = new object ();
+        NcTimer GoToBackgroundTimer;
+
         void Application.IActivityLifecycleCallbacks.OnActivityPaused (Activity activity)
         {
-            isPaused = true;
-            isForeground = false;
-            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
-            McMutables.Set (McAccount.GetDeviceAccount ().Id, "Android", "BackgroundTime", DateTime.UtcNow.ToString ());
+            lock (BackgroundTimerLock) {
+                if (null == GoToBackgroundTimer) {
+                    GoToBackgroundTimer = new NcTimer ("LifecycleSpy:GoToBackgroundTimer", (state) => {
+                        lock (BackgroundTimerLock) {
+                            Log.Info (Log.LOG_LIFECYCLE, "LifecycleSpy:GoToBackgroundTimer called.");
+                            GoToBackgroundTimer.Dispose ();
+                            GoToBackgroundTimer = null;
+                            isForeground = false;
+                            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
+                            LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
+                            Log.Info (Log.LOG_LIFECYCLE, "LifecycleSpy:GoToBackgroundTimer exited.");
+                        }
+                    }, null, new TimeSpan (0, 0, 5), TimeSpan.Zero);
+                }
+            }
         }
 
         void Application.IActivityLifecycleCallbacks.OnActivityResumed (Activity activity)
         {
-            isPaused = true;
-            isForeground = true;
-            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
-            NotificationService.OnForeground ();
+            lock (BackgroundTimerLock) {
+                if (null != GoToBackgroundTimer) {
+                    GoToBackgroundTimer.Dispose ();
+                    GoToBackgroundTimer = null;
+                }
+                isForeground = true;
+                if (NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.PlatformIndication) {
+                    NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
+                    NotificationService.OnForeground ();
+                }
+            }
         }
 
         void Application.IActivityLifecycleCallbacks.OnActivitySaveInstanceState (Activity activity, Bundle outState)

@@ -16,7 +16,7 @@ namespace NachoCore.SMTP
         public SmtpSendBaseCommand (IBEContext beContext, NcSmtpClient smtp, McPending pending) : base (beContext, smtp)
         {
             PendingSingle = pending;
-            PendingSingle.MarkDispached ();
+            PendingSingle.MarkDispatched ();
             EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
         }
 
