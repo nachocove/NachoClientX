@@ -63,6 +63,7 @@ namespace NachoClient.iOS
         UIImageView accountImageView;
         UILabel EmailAddress;
         UISwitch DefaultEmailSwitch;
+        UIButton FixAccountButton;
         UIButton DeleteAccountButton;
         UIView DeleteAccountBackgroundView;
         UIActivityIndicatorView DeleteAccountActivityIndicator;
@@ -70,6 +71,8 @@ namespace NachoClient.iOS
         UIButton RefreshAccountButton;
         UIView RefreshAccountBackgroundView;
         UIActivityIndicatorView RefreshAccountActivityIndicator;
+        ConnectToSalesforceCell connectToSalesforceView;
+        UIStoryboard accountStoryboard;
 
         protected override void CreateViewHierarchy ()
         {
@@ -184,6 +187,35 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
+            McServer serverWithIssue;
+            BackEndStateEnum serverIssue;
+            if (LoginHelpers.IsUserInterventionRequired (account.Id, out serverWithIssue, out serverIssue)) {
+                FixAccountButton = UIButton.FromType (UIButtonType.System);
+                FixAccountButton.Frame = new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT);
+                Util.AddButtonImage (FixAccountButton, "gen-avatar-alert", UIControlState.Normal);
+                FixAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
+                var serverIssueText = "";
+                switch (serverIssue) {
+                case BackEndStateEnum.CredWait:
+                    serverIssueText = "Update Password";
+                    break;
+                case BackEndStateEnum.CertAskWait:
+                    serverIssueText = "Certificate Issue";
+                    break;
+                case BackEndStateEnum.ServerConfWait:
+                    serverIssueText = "Server Error";
+                    break;
+                }
+                FixAccountButton.SetTitle (serverIssueText, UIControlState.Normal);
+                FixAccountButton.AccessibilityLabel = serverIssueText;
+                FixAccountButton.Font = A.Font_AvenirNextRegular14;
+                FixAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+                FixAccountButton.TouchUpInside += FixAccountButton_TouchUpInside;
+                contentView.AddSubview (FixAccountButton);
+                yOffset = FixAccountButton.Frame.Bottom;
+                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
+            }
+
             DeleteAccountButton = UIButton.FromType (UIButtonType.System);
             DeleteAccountButton.Frame = new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT);
             Util.AddButtonImage (DeleteAccountButton, "email-delete-two", UIControlState.Normal);
@@ -227,6 +259,18 @@ namespace NachoClient.iOS
             DeleteAccountActivityIndicator.StartAnimating ();
             AlertMimicView.AddSubview (DeleteAccountActivityIndicator);
 
+            connectToSalesforceView = new ConnectToSalesforceCell (new CGRect (0, 60, View.Frame.Width, 80), ConnectToSalesforceSelected);
+            View.AddSubview (connectToSalesforceView);           
+
+        }
+
+        public void ConnectToSalesforceSelected ()
+        {
+            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+            var credentialsViewController = (SalesforceCredentialsViewController)accountStoryboard.InstantiateViewController ("SalesforceCredentialsViewController");
+            credentialsViewController.Service = McAccount.AccountServiceEnum.SalesForce;
+            credentialsViewController.AccountDelegate = this;
+            NavigationController.PushViewController (credentialsViewController, true);
         }
 
         void AddBccSwitch_ValueChanged (object sender, EventArgs e)
@@ -281,6 +325,23 @@ namespace NachoClient.iOS
                     RefreshAccountBackgroundView.Alpha = 1.0f;
                 });
                 RefreshAccountActivityIndicator.StartAnimating ();
+            }
+        }
+
+        void FixAccountButton_TouchUpInside (object sender, EventArgs e)
+        {
+            McServer serverWithIssue;
+            BackEndStateEnum serverIssue;
+            if (LoginHelpers.IsUserInterventionRequired (account.Id, out serverWithIssue, out serverIssue)) {
+                switch (serverIssue) {
+                case BackEndStateEnum.CredWait:
+                    // FIXME Go to SalesForce Oauth2 webview
+                    break;
+                case BackEndStateEnum.CertAskWait:
+                case BackEndStateEnum.ServerConfWait:
+                    // TODO: Can this ever happen?
+                    break;
+                }
             }
         }
 
@@ -347,6 +408,9 @@ namespace NachoClient.iOS
 
             accountImageView = null;
 
+            if (null != FixAccountButton) {
+                FixAccountButton.TouchUpInside -= FixAccountButton_TouchUpInside;
+            }
             DeleteAccountButton.TouchUpInside -= DeleteAccountButton_TouchUpInside;
             if (DefaultEmailSwitch != null) {
                 DefaultEmailSwitch.ValueChanged -= AddBccSwitch_ValueChanged;
