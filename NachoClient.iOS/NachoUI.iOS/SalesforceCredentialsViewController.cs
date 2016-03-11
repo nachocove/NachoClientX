@@ -101,17 +101,7 @@ namespace NachoClient.iOS
                 string refresh_token;
                 e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
 
-//                string expires_in;
-//                e.Account.Properties.TryGetValue ("expires_in", out expires_in);
-//                Log.Info (Log.LOG_SYS, "OAUTH2 Token acquired. expires_in={0}", expires_in);
-//
-//                string expiresString = "0";
-                uint expireSecs = 3600;
-//                if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
-//                    if (!uint.TryParse (expiresString, out expireSecs)) {
-//                        Log.Info (Log.LOG_UI, "AuthCompleted: Could not convert expires value {0} to int", expiresString);
-//                    }
-//                }
+                uint expireSecs = 7200;
 
                 string id_url;
                 e.Account.Properties.TryGetValue ("id", out id_url);

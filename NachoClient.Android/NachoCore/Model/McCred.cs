@@ -226,12 +226,11 @@ namespace NachoCore.Model
                 break;
 
             default:
-                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Can not refresh {1}", account.Id, account.AccountService);
+                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}:{1}): Can not refresh", account.Id, account.AccountService);
                 return;
             }
 
-            var defaultRefreshTime = McMutables.GetInt (AccountId, "McCred", "Oauth2RefreshDefaultTime", 3600);
-            refresh.Refresh (onSuccess, onFailure, Token, defaultRefreshTime);
+            refresh.Refresh (onSuccess, onFailure, Token, (int)ExpirySecs);
         }
     }
 }

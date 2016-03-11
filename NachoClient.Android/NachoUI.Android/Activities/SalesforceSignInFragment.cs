@@ -149,7 +149,7 @@ namespace NachoClient.AndroidClient
                 string refresh_token;
                 e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
 
-                uint expireSecs = 3600;
+                uint expireSecs = 7200;
 
                 string id_url;
                 e.Account.Properties.TryGetValue ("id", out id_url);

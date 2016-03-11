@@ -216,21 +216,30 @@ namespace NachoCore
                     Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens: cancelled.");
                     return;
                 }
-                CredReqActiveState.CredReqActiveStatus status;
-                var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
-                if (Be.CredReqActive.TryGetStatus (cred.AccountId, out status) ||
-                    cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
-                    if (null != status && status.State == CredReqActiveState.State.NeedUI) {
-                        Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token already needs UI. BackEndStates={1}", cred.AccountId, string.Join (",", Be.BackEndStates (cred.AccountId)));
-                        // We've decided to give up on this one
-                        continue;
+                var account = McAccount.QueryById<McAccount> (cred.AccountId);
+                switch (account.AccountType) {
+                case McAccount.AccountTypeEnum.SalesForce:
+                    // don't bother. We don't know the timeout anyway, and we can refresh when needed.
+                    continue;
+
+                default:
+                    CredReqActiveState.CredReqActiveStatus status;
+                    var expiryFractionSecs = Math.Round ((double)(cred.ExpirySecs * (100 - KOauth2RefreshPercent)) / 100);
+                    if (Be.CredReqActive.TryGetStatus (cred.AccountId, out status) ||
+                        cred.Expiry.AddSeconds (-expiryFractionSecs) <= DateTime.UtcNow) {
+                        if (null != status && status.State == CredReqActiveState.State.NeedUI) {
+                            Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token already needs UI. BackEndStates={1}", cred.AccountId, string.Join (",", Be.BackEndStates (cred.AccountId)));
+                            // We've decided to give up on this one
+                            continue;
+                        }
+                        Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh needed.", cred.AccountId);
+                        RefreshCredential (cred);
+                    } else {
+                        Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh not needed. due {1}, is {2}, expiryFractionSecs {3} ({4}), status {5}", 
+                            cred.AccountId, cred.Expiry, DateTime.UtcNow, expiryFractionSecs, cred.Expiry.AddSeconds (-expiryFractionSecs),
+                            status != null ? status.ToString () : "NULL");
                     }
-                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh needed.", cred.AccountId);
-                    RefreshCredential (cred);
-                } else {
-                    Log.Info (Log.LOG_SYS, "OAUTH2 RefreshAllDueTokens({0}): token refresh not needed. due {1}, is {2}, expiryFractionSecs {3} ({4}), status {5}", 
-                        cred.AccountId, cred.Expiry, DateTime.UtcNow, expiryFractionSecs, cred.Expiry.AddSeconds (-expiryFractionSecs),
-                        status != null ? status.ToString () : "NULL");
+                    break;
                 }
             }
         }
@@ -314,11 +323,19 @@ namespace NachoCore
             } else {
                 Log.Warn (Log.LOG_BACKEND, "TokenRefreshFailure with no CredReqActiveState");
                 alertUi (cred.AccountId, "TokenRefreshFailure2");
+                needUi = true;
                 return;
             }
-            if (isExpired || fatalError) {
-                // accelerate the update a bit, by restarting the timer.
-                ChangeOauthRefreshTimer (KOauth2RefreshDelaySecs * 2);
+            if ((isExpired || fatalError) && !needUi) {
+                var account = McAccount.QueryById<McAccount> (cred.AccountId);
+                if (account.AccountService == McAccount.AccountServiceEnum.SalesForce) {
+                    var refreshTimer = new NcTimer ("SFDCRefreshFailTimer", (state) => {
+                        RefreshCredential (cred);
+                    }, null, new TimeSpan (0, 0, 5), TimeSpan.Zero);
+                } else {
+                    // accelerate the update a bit, by restarting the timer.
+                    ChangeOauthRefreshTimer (KOauth2RefreshDelaySecs * 2);
+                }
             }
         }
 
@@ -389,19 +406,32 @@ namespace NachoCore
 
         public virtual void Refresh (Action<McCred> onSuccess, Action<McCred, bool> onFailure, CancellationToken Token, int defaultRefreshTime)
         {
+            var refresh_token = Cred.GetRefreshToken ();
+            NcAssert.False (string.IsNullOrEmpty (refresh_token), "No refresh token!");
+
+            var account = McAccount.QueryById<McAccount> (Cred.AccountId);
+            if (account.AccountService == McAccount.AccountServiceEnum.SalesForce) {
+                refresh_token += "X";
+            }
+
             var queryDict = new Dictionary<string, string> ();
             queryDict ["client_id"] = ClientId;
             queryDict ["client_secret"] = ClientSecret;
             queryDict ["grant_type"] = "refresh_token";
-            queryDict ["refresh_token"] = Cred.GetRefreshToken ();
+            queryDict ["refresh_token"] = refresh_token;
 
+            var logHeader = string.Format ("RefreshOAuth2({0}:{1})", Cred.AccountId, account.AccountService);
             var queryString = string.Join ("&", queryDict.Select (kv => string.Format ("{0}={1}", kv.Key, Uri.EscapeDataString (kv.Value))));
             var requestUri = new Uri (RefreshUrl + "?" + queryString);
             var request = new NcHttpRequest (HttpMethod.Post, requestUri);
             request.Headers.Add ("Accept", "application/json");
             request.SetContent (null, "application/x-www-form-urlencoded");
 
-            Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): Attempting Refresh", Cred.AccountId);
+            Log.Info (Log.LOG_SYS, "{0}: Attempting Refresh", logHeader);
+#if DEBUG
+            Log.Info (Log.LOG_SYS, "{0}: : OAUTH2 request: {1}:{2}", logHeader, request.Method, request.RequestUri.AbsoluteUri);
+
+#endif
 
             HttpClient.SendRequest (request, TimeoutSecs, ((response, token) => {
                 if (response.StatusCode != System.Net.HttpStatusCode.OK) {
@@ -411,7 +441,7 @@ namespace NachoCore
                         // This probably means the refresh token is no longer valid. We don't immediately punch
                         // up to the UI, because we really don't fully trust HTTP response code. Treat it as 'fatal',
                         // and let the underlying code decide what to do with fatal responses.
-                        Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): Refresh Status {1}", Cred.AccountId, response.StatusCode.ToString ());
+                        Log.Info (Log.LOG_SYS, "{0}: Refresh Status {1}", logHeader, response.StatusCode.ToString ());
                         fatalError = true;
                         break;
                     default:
@@ -419,7 +449,7 @@ namespace NachoCore
                         if (response.HasBody) {
                             body = Encoding.UTF8.GetString (response.GetContent ());
                         }
-                        Log.Warn (Log.LOG_SYS, "RefreshOAuth2({0}): HTTP Status {1}\n{2}", Cred.AccountId, response.StatusCode.ToString (), body);
+                        Log.Warn (Log.LOG_SYS, "{0}: HTTP Status {1}\n{2}", logHeader, response.StatusCode.ToString (), body);
                         break;
                     }
                     onFailure (Cred, fatalError);
@@ -429,28 +459,30 @@ namespace NachoCore
                 var decodedResponse = Newtonsoft.Json.Linq.JObject.Parse (jsonResponse);
 
 #if DEBUG
-                Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): : OAUTH2 response: {1}", Cred.AccountId, jsonResponse);
+                Log.Info (Log.LOG_SYS, "{0}: : OAUTH2 response: {1}", logHeader, jsonResponse);
 #endif
                 Newtonsoft.Json.Linq.JToken tokenType;
                 if (!decodedResponse.TryGetValue ("token_type", out tokenType) || (string)tokenType != "Bearer") {
-                    Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Unknown OAUTH2 token_type {1}", Cred.AccountId, tokenType);
+                    Log.Error (Log.LOG_SYS, "{0}: Unknown OAUTH2 token_type {1}", logHeader, tokenType);
                 }
 
                 Newtonsoft.Json.Linq.JToken accessToken;
                 if (!decodedResponse.TryGetValue ("access_token", out accessToken)) {
-                    Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Missing OAUTH2 access_token {1}", Cred.AccountId, accessToken);
+                    Log.Error (Log.LOG_SYS, "{0}: Missing OAUTH2 access_token {1}", logHeader, accessToken);
                     onFailure (Cred, true);
                 }
                 Newtonsoft.Json.Linq.JToken expiresIn;
                 if (!decodedResponse.TryGetValue ("expires_in", out expiresIn)) {
-                    Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): OAUTH2 Token refreshed.", Cred.AccountId);
+                    Log.Info (Log.LOG_SYS, "{0}: OAUTH2 Token refreshed.", logHeader);
                 } else {
-                    Log.Info (Log.LOG_SYS, "RefreshOAuth2({0}): OAUTH2 Token refreshed. expires_in={1}", Cred.AccountId, expiresIn);
+                    Log.Info (Log.LOG_SYS, "{0}: OAUTH2 Token refreshed. expires_in={1}", logHeader, expiresIn);
                 }
 
                 Newtonsoft.Json.Linq.JToken refreshToken;
                 if (!decodedResponse.TryGetValue ("refresh_token", out refreshToken)) {
-                    Log.Warn (Log.LOG_SYS, "RefreshOAuth2({0}): No refresh-token in reply", Cred.AccountId);
+                    Log.Info (Log.LOG_SYS, "{0}:refresh_token: No refresh-token in reply", logHeader);
+                } else {
+                    Log.Info (Log.LOG_SYS, "{0}:refresh_token: New refresh-token received", logHeader);
                 }
 
                 int expires = null != expiresIn ? (int)expiresIn : 0;
@@ -464,7 +496,7 @@ namespace NachoCore
                 onSuccess (Cred);
                 RefreshAction (Cred, decodedResponse);
             }), ((ex, token) => {
-                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}): Exception {1}", Cred.AccountId, ex.ToString ());
+                Log.Error (Log.LOG_SYS, "{0}: Exception {1}", logHeader, ex.ToString ());
                 onFailure (Cred, false);
             }), Token);
         }
