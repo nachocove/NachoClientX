@@ -330,28 +330,42 @@ namespace NachoClient.AndroidClient
 
         void FastNotifications_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
         {
-            account.FastNotificationEnabled = e.IsChecked;
-            account.Update ();
-            BindAccount ();
-            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
+            // This is called when the UI object is programmatically set to its initial value.
+            // So check that the value has actually changed before doing anything.
+            if (account.FastNotificationEnabled != e.IsChecked) {
+                account.FastNotificationEnabled = e.IsChecked;
+                account.Update ();
+                BindAccount ();
+                NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
+            }
         }
 
         void DefaultCalendarAccount_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
         {
-            var deviceAccount = McAccount.GetDeviceAccount ();
-            var mutablesModule = "DefaultAccounts";
-            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.CalWriter);
-            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
-            defaultCalendarSwitch.Enabled = false;
+            if (e.IsChecked) {
+                var defaultCalendarAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                if (account.Id != defaultCalendarAccount.Id) {
+                    var deviceAccount = McAccount.GetDeviceAccount ();
+                    var mutablesModule = "DefaultAccounts";
+                    var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.CalWriter);
+                    McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+                    defaultCalendarSwitch.Enabled = false;
+                }
+            }
         }
 
         void DefaultEmailAccount_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
         {
-            var deviceAccount = McAccount.GetDeviceAccount ();
-            var mutablesModule = "DefaultAccounts";
-            var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.EmailSender);
-            McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
-            defaultEmailSwitch.Enabled = false;
+            if (e.IsChecked) {
+                var defaultEmailAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                if (account.Id != defaultEmailAccount.Id) {
+                    var deviceAccount = McAccount.GetDeviceAccount ();
+                    var mutablesModule = "DefaultAccounts";
+                    var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.EmailSender);
+                    McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+                    defaultEmailSwitch.Enabled = false;
+                }
+            }
         }
 
         void NotificationsView_Click (object sender, EventArgs e)
