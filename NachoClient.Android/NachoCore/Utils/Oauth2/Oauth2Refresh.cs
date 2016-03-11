@@ -410,9 +410,6 @@ namespace NachoCore
             NcAssert.False (string.IsNullOrEmpty (refresh_token), "No refresh token!");
 
             var account = McAccount.QueryById<McAccount> (Cred.AccountId);
-            if (account.AccountService == McAccount.AccountServiceEnum.SalesForce) {
-                refresh_token += "X";
-            }
 
             var queryDict = new Dictionary<string, string> ();
             queryDict ["client_id"] = ClientId;
