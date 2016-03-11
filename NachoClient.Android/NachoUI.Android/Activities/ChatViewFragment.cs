@@ -43,7 +43,8 @@ namespace NachoClient.AndroidClient
         Android.Widget.EditText searchEditText;
         SwipeMenuListView listView;
         ChatAdapter chatAdapter;
-        public EmailAddressField ToField;
+        EmailAddressField ToField;
+        Android.Widget.TextView titleView;
 
         McChat chat;
 
@@ -86,6 +87,9 @@ namespace NachoClient.AndroidClient
             ToField.Adapter = new ContactAddressAdapter (this.Activity);
             ToField.TokensChanged += ToField_TokensChanged;
 
+            titleView = view.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
+            titleView.Click += TitleView_Click;
+
             return view;
         }
 
@@ -94,12 +98,21 @@ namespace NachoClient.AndroidClient
             UpdateChatFromToField ();
         }
 
+        void TitleView_Click (object sender, EventArgs e)
+        {
+            if (null != chat) {
+                var participants = McChatParticipant.GetChatParticipants (chat.Id);
+                var intent = ChatParticipantListActivity.ParticipantsIntent (this.Activity, typeof(ChatParticipantListActivity), Intent.ActionView, chat.AccountId, participants);
+                StartActivity (intent);
+            }
+        }
+
         public override void OnActivityCreated (Bundle savedInstanceState)
         {
             base.OnActivityCreated (savedInstanceState);
 
             chat = ((IChatViewFragmentOwner)Activity).ChatToView;
-            chatAdapter = new ChatAdapter (chat);
+            chatAdapter = new ChatAdapter (chat, this);
 
             ShowAddressEditor (null == chat);
 
@@ -206,17 +219,8 @@ namespace NachoClient.AndroidClient
             }
 
             listView = View.FindViewById<SwipeMenuListView> (Resource.Id.listView);
-            chatAdapter = new ChatAdapter (chat);
+            chatAdapter = new ChatAdapter (chat, this);
             listView.Adapter = chatAdapter;
-
-            if (null != chat) {
-                //                foreach (var attachment in AttachmentsForUnsavedChat) {
-                //                    attachment.Link (Chat.Id, Chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
-                //                }
-                //                AttachmentsForUnsavedChat.Clear ();
-                //                UpdateForChat ();
-                //                ReloadMessages ();
-            }
         }
 
         bool IsAddressEditorVisible ()
@@ -228,7 +232,6 @@ namespace NachoClient.AndroidClient
         void ShowAddressEditor (bool visible)
         {
             var toView = View.FindViewById (Resource.Id.to_view);
-            var titleView = View.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
 
             if (visible) {
                 titleView.Visibility = ViewStates.Gone;
@@ -355,10 +358,12 @@ namespace NachoClient.AndroidClient
         McChat chat;
         List<McEmailMessage> messages;
         Dictionary<int, McChatParticipant> ParticipantsByEmailId;
+        Fragment parent;
 
-        public ChatAdapter (McChat chat)
+        public ChatAdapter (McChat chat, Fragment parent)
         {
             this.chat = chat;
+            this.parent = parent;
 
             if (null != chat) {
                 ParticipantsByEmailId = McChatParticipant.GetChatParticipantsByEmailId (chat.Id);
@@ -425,7 +430,18 @@ namespace NachoClient.AndroidClient
             ParticipantsByEmailId.TryGetValue (message.FromEmailAddressId, out particpant);
 
             Bind.BindChatViewCell (message, previousMessage, nextMessage, particpant, view);
+            Bind.BindChatAttachments (message, view, LayoutInflater.From (parent.Context), AttachmentSelectedCallback, AttachmentErrorCallback);
             return view;
+        }
+
+
+        public void AttachmentSelectedCallback (McAttachment attachment)
+        {
+            AttachmentHelper.OpenAttachment (parent.Activity, attachment);
+        }
+
+        public  void AttachmentErrorCallback (McAttachment attachment, NcResult nr)
+        {
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
