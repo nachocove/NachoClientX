@@ -1409,7 +1409,8 @@ namespace NachoClient.iOS
             if (Attachments != null) {
                 foreach (var attachment in Attachments) {
                     UIView view = null;
-                    if (attachment.ContentType.StartsWith ("image/") && attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                    string contnentType = attachment.ContentType == null ? "" : attachment.ContentType.ToLower ();
+                    if (contnentType.StartsWith ("image/") && attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
                         view = CreateImageViewForAttachment (attachment);
                     }
                     if (view == null) {
