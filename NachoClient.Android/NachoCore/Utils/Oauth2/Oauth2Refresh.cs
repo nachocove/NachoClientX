@@ -426,7 +426,7 @@ namespace NachoCore
 
             Log.Info (Log.LOG_SYS, "{0}: Attempting Refresh", logHeader);
 #if DEBUG
-            Log.Info (Log.LOG_SYS, "{0}: : OAUTH2 request: {1}:{2}", logHeader, request.Method, request.RequestUri.AbsoluteUri);
+            Log.Info (Log.LOG_SYS, "{0}: OAUTH2 request: {1}:{2}", logHeader, request.Method, request.RequestUri.AbsoluteUri);
 
 #endif
 
