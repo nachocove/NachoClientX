@@ -1099,34 +1099,17 @@ namespace NachoCore.Utils
             return false;
         }
 
-        public static bool MaybeAddSalesforceBcc (Dictionary <string, bool> cache, McEmailMessage message)
+        public static string ExtraSalesforceBccAddress (Dictionary<string, bool> cache, McEmailMessage message)
         {
             var account = McAccount.GetSalesForceAccount ();
-            if (null == account) {
-                return false;
+            if (null != account && SalesForceProtoControl.ShouldAddBccToEmail (account.Id) &&
+                (CheckForSalesforceContacts (account.Id, cache, message.To) ||
+                 CheckForSalesforceContacts (account.Id, cache, message.Cc) ||
+                 CheckForSalesforceContacts (account.Id, cache, message.Bcc)))
+            {
+                return SalesForceProtoControl.EmailToSalesforceAddress (account.Id);
             }
-
-            if (!SalesForceProtoControl.ShouldAddBccToEmail (account.Id)) {
-                return false;
-            }
-
-            bool doAdd = CheckForSalesforceContacts (account.Id, cache, message.To);
-            doAdd |= CheckForSalesforceContacts (account.Id, cache, message.Cc);
-            doAdd |= CheckForSalesforceContacts (account.Id, cache, message.Bcc);
-
-            if (doAdd) {
-                if (null != account) {
-                    string bccAddress = SalesForceProtoControl.EmailToSalesforceAddress (account.Id);
-                    if (null == message.Bcc) {
-                        message.Bcc = bccAddress;
-                    } else {
-                        var bccAddresses = message.Bcc.Split (new[] { ',' }).ToList ();
-                        bccAddresses.Add (bccAddress);
-                        message.Bcc = string.Join (",", bccAddresses);
-                    }
-                }
-            }
-            return doAdd;
+            return null;
         }
 
         public static NcResult SyncUnified ()
