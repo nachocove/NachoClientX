@@ -253,7 +253,12 @@ namespace NachoClient.AndroidClient
                 if (null == constraint) {
                     cachedResults = new List<McContactEmailAddressAttribute> ();
                 } else {
-                    searcher.SearchFor (constraint.ToString ());
+                    // I have seen a case where PerformFiltering is called after Cleanup().  We don't
+                    // have complete control over when PerformFiltering is called, so deal with the
+                    // situation rather than try to prevent it.
+                    if (null != searcher) {
+                        searcher.SearchFor (constraint.ToString ());
+                    }
                 }
                 return new FilterResults () {
                     Values = new ResultsWrapper (cachedResults),
