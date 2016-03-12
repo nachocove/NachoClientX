@@ -143,4 +143,11 @@
             android:layout_gravity="right|bottom"
             android:background="@android:color/white" />
     </LinearLayout>
+    <ListView
+        android:id="@+id/attachment_listView"
+        android:scrollbars="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:divider="@null"
+        android:background="@color/NachoLightGray" />
 </LinearLayout>

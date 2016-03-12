@@ -61,6 +61,7 @@
             android:textSize="14dp"
             android:textStyle="normal"
             android:maxLines="2"
+            android:minLines="2"
             android:ellipsize="none"
             android:textColor="@android:color/black"
             android:background="@android:color/white" />

@@ -25,6 +25,7 @@ using NachoCore.Brain;
 using Android.Views.InputMethods;
 using NachoPlatform;
 using Android.Widget;
+using System.IO;
 
 namespace NachoClient.AndroidClient
 {
@@ -35,7 +36,7 @@ namespace NachoClient.AndroidClient
         McChat ChatToView { get; }
     }
 
-    public class ChatViewFragment : Fragment
+    public class ChatViewFragment : Fragment, FilePickerFragmentDelegate
     {
         private const string SAVED_SEARCHING_KEY = "ChatViewFragment.searching";
 
@@ -45,6 +46,8 @@ namespace NachoClient.AndroidClient
         ChatAdapter chatAdapter;
         EmailAddressField ToField;
         Android.Widget.TextView titleView;
+        ListView chatAttachmentListView;
+        ChatAttachmentAdapter chatAttachmentAdapter;
 
         McChat chat;
 
@@ -53,6 +56,17 @@ namespace NachoClient.AndroidClient
         SwipeRefreshLayout mSwipeRefreshLayout;
 
         public event EventHandler<McChat> onChatClick;
+
+        private const string FILE_PICKER_TAG = "FilePickerFragment";
+        private const string ACCOUNT_CHOOSER_TAG = "AccountChooser";
+        private const string CAMERA_OUTPUT_URI_KEY = "cameraOutputUri";
+
+        private const int PICK_REQUEST_CODE = 1;
+        private const int TAKE_PHOTO_REQUEST_CODE = 2;
+
+        Android.Net.Uri CameraOutputUri;
+
+        McAccount account;
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -82,6 +96,9 @@ namespace NachoClient.AndroidClient
             var sendButton = view.FindViewById<Button> (Resource.Id.chat_send);
             sendButton.Click += SendButton_Click;
 
+            var attachButton = view.FindViewById<ImageButton> (Resource.Id.chat_attach);
+            attachButton.Click += AttachButton_Click;
+
             ToField = view.FindViewById<EmailAddressField> (Resource.Id.compose_to);
             ToField.AllowDuplicates (false);
             ToField.Adapter = new ContactAddressAdapter (this.Activity);
@@ -89,6 +106,11 @@ namespace NachoClient.AndroidClient
 
             titleView = view.FindViewById<Android.Widget.TextView> (Resource.Id.chat_title);
             titleView.Click += TitleView_Click;
+
+            account = NcApplication.Instance.Account;
+            if (McAccount.GetUnifiedAccount ().Id == account.Id) {
+                account = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+            }
 
             return view;
         }
@@ -136,6 +158,13 @@ namespace NachoClient.AndroidClient
             listView.setOnSwipeEndListener ((position) => {
                 mSwipeRefreshLayout.Enabled = true;
             });
+
+            chatAttachmentAdapter = new ChatAttachmentAdapter ();
+            chatAttachmentAdapter.OnViewAttachment = ViewAttachment;
+            chatAttachmentAdapter.OnDeleteAttachment = DeleteAttachment;
+
+            chatAttachmentListView = View.FindViewById<ListView> (Resource.Id.attachment_listView);
+            chatAttachmentListView.Adapter = chatAttachmentAdapter;
         }
 
         public override void OnResume ()
@@ -197,20 +226,24 @@ namespace NachoClient.AndroidClient
             ShowAddressEditor (null == chat);
 
             if (null != chat) {
+                foreach (var attachment in chatAttachmentAdapter.attachments) {
+                    attachment.Link (chat.Id, chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
+                }
                 ChatMessageComposer.SendChatMessage (chat, text, chatAdapter.GetNewestChats (3), (McEmailMessage message) => {
                     chat.AddMessage (message);
                     editText.Text = "";
+                    ClearAttachments ();
                 });
             }
         }
 
+        void AttachButton_Click (object sender, EventArgs e)
+        {
+            PickAttachment ();
+        }
+
         void UpdateChatFromToField ()
         {
-            var account = NcApplication.Instance.Account;
-            if (McAccount.GetUnifiedAccount ().Id == account.Id) {
-                account = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
-            }
-
             var addresses = NcEmailAddress.ParseToAddressListString (ToField.AddressString);
             if ((null == addresses) || (0 == addresses.Count)) {
                 chat = null;
@@ -351,6 +384,148 @@ namespace NachoClient.AndroidClient
             return (int)Android.Util.TypedValue.ApplyDimension (Android.Util.ComplexUnitType.Dip, (float)dp, Resources.DisplayMetrics);
         }
 
+        void PickAttachment ()
+        {
+            InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
+            imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
+
+            Intent shareIntent = new Intent ();
+            shareIntent.SetAction (Intent.ActionPick);
+            shareIntent.SetType ("image/*");
+            shareIntent.PutExtra (Intent.ExtraAllowMultiple, true);
+            var resInfos = Activity.PackageManager.QueryIntentActivities (shareIntent, 0);
+            var packages = new List<string> ();
+            if (Util.CanTakePhoto (Activity)) {
+                packages.Add (ChooserArrayAdapter.TAKE_PHOTO);
+            }
+            packages.Add (ChooserArrayAdapter.ADD_FILE);
+            foreach (var resInfo in resInfos) {
+                packages.Add (resInfo.ActivityInfo.PackageName);
+            }
+            if (packages.Count > 1) {
+                ArrayAdapter<String> adapter = new ChooserArrayAdapter (Activity, Android.Resource.Layout.SelectDialogItem, Android.Resource.Id.Text1, packages);
+                var builder = new Android.App.AlertDialog.Builder (Activity);
+                builder.SetTitle ("Get File");
+                builder.SetAdapter (adapter, (s, ev) => {
+                    InvokeApplication (packages [ev.Which]);
+                });
+                builder.Show ();
+            } else if (1 == packages.Count) {
+                InvokeApplication (packages [0]);
+            }
+
+        }
+
+        void InvokeApplication (string packageName)
+        {
+            if (ChooserArrayAdapter.TAKE_PHOTO == packageName) {
+                CameraOutputUri = Util.TakePhoto (this, TAKE_PHOTO_REQUEST_CODE);
+                return;
+            }
+            if (ChooserArrayAdapter.ADD_FILE == packageName) {
+                var filePicker = FilePickerFragment.newInstance (account.Id);
+                filePicker.Delegate = this;
+                filePicker.Show (FragmentManager, FILE_PICKER_TAG); 
+                return;
+            }
+            var intent = new Intent ();
+            intent.SetAction (Intent.ActionGetContent);
+            intent.AddCategory (Intent.CategoryOpenable);
+            intent.SetType ("*/*");
+            intent.SetFlags (ActivityFlags.SingleTop);
+            intent.PutExtra (Intent.ExtraAllowMultiple, true);
+            intent.SetPackage (packageName);
+
+            StartActivityForResult (intent, PICK_REQUEST_CODE);
+        }
+
+        public override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            if (Result.Ok != resultCode) {
+                return;
+            }
+            if (TAKE_PHOTO_REQUEST_CODE == requestCode) {
+                var mediaScanIntent = new Intent (Intent.ActionMediaScannerScanFile);
+                mediaScanIntent.SetData (CameraOutputUri);
+                Activity.SendBroadcast (mediaScanIntent);
+                var attachment = McAttachment.InsertSaveStart (account.Id);
+                var filename = Path.GetFileName (CameraOutputUri.Path);
+                attachment.SetDisplayName (filename);
+                attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
+                attachment.UpdateFileCopy (CameraOutputUri.Path);
+                attachment.UpdateSaveFinish ();
+                File.Delete (CameraOutputUri.Path);
+                AddAttachment (attachment);
+            } else if (PICK_REQUEST_CODE == requestCode) {
+                try {
+                    var clipData = data.ClipData;
+                    if (null == clipData) {
+                        var attachment = AttachmentHelper.UriToAttachment (account.Id, Activity, data.Data, data.Type);
+                        if (null != attachment) {
+                            AddAttachment (attachment);
+                        }
+                    } else {
+                        for (int i = 0; i < clipData.ItemCount; i++) {
+                            var uri = clipData.GetItemAt (i).Uri;
+                            var attachment = AttachmentHelper.UriToAttachment (account.Id, Activity, uri, data.Type);
+                            if (null != attachment) {
+                                AddAttachment (attachment);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    NachoCore.Utils.Log.Error (NachoCore.Utils.Log.LOG_LIFECYCLE, "Exception while processing the STREAM extra of a Send intent: {0}", e.ToString ());
+                }
+            }
+        }
+
+        public void FilePickerDidPickFile (FilePickerFragment picker, McAbstrFileDesc file)
+        {
+            picker.Dismiss ();
+            var attachment = file as McAttachment;
+            if (attachment != null) {
+                AddAttachment (attachment);
+            }
+        }
+
+        void AddAttachment (McAttachment attachment)
+        {
+            chatAttachmentAdapter.attachments.Add (attachment);
+
+            ResizeChatAttachmentListView ();
+
+            chatAttachmentAdapter.NotifyDataSetChanged ();
+        }
+
+        void ViewAttachment(int position)
+        {
+            var attachment = chatAttachmentAdapter.attachments [position];
+            AttachmentHelper.OpenAttachment (this.Activity, attachment);
+        }
+
+        // Callback
+        void DeleteAttachment (int position)
+        {
+            chatAttachmentAdapter.attachments.RemoveAt (position);
+            ResizeChatAttachmentListView ();
+            chatAttachmentAdapter.NotifyDataSetChanged ();
+        }
+
+        void ClearAttachments ()
+        {
+            chatAttachmentAdapter.attachments.Clear ();
+            ResizeChatAttachmentListView ();
+            chatAttachmentAdapter.NotifyDataSetChanged ();
+        }
+
+        void ResizeChatAttachmentListView ()
+        {
+            // Resize the listview, up to three visible cells
+            var count = Math.Min (chatAttachmentAdapter.attachments.Count, 3);
+            var lp = chatAttachmentListView.LayoutParameters;
+            lp.Height = dp2px (50) * count;
+            chatAttachmentListView.LayoutParameters = lp;
+        }
     }
 
     public class ChatAdapter : Android.Widget.BaseAdapter<McEmailMessage>
@@ -431,6 +606,7 @@ namespace NachoClient.AndroidClient
 
             Bind.BindChatViewCell (message, previousMessage, nextMessage, particpant, view);
             Bind.BindChatAttachments (message, view, LayoutInflater.From (parent.Context), AttachmentSelectedCallback, AttachmentErrorCallback);
+            Bind.BindChatAttachmentColors (view, null == particpant);
             return view;
         }
 
@@ -455,6 +631,85 @@ namespace NachoClient.AndroidClient
             }
         }
 
+    }
+
+    // Used when composing a new chat message
+    public class ChatAttachmentAdapter : Android.Widget.BaseAdapter<McAttachment>
+    {
+        public List<McAttachment> attachments;
+
+        public delegate void ViewAttachment (int Position);
+        public delegate void DeleteAttachment (int Position);
+
+        public ViewAttachment OnViewAttachment;
+        public DeleteAttachment OnDeleteAttachment;
+
+
+        public ChatAttachmentAdapter ()
+        {
+            attachments = new List<McAttachment> ();
+            NotifyDataSetChanged ();
+        }
+
+        public override long GetItemId (int position)
+        {
+            return attachments [position].Id;
+        }
+
+        public override int Count {
+            get {
+                return attachments.Count;
+            }
+        }
+
+        public override McAttachment this [int position] {  
+            get {
+                return attachments [position];
+            }
+        }
+
+        public override View GetView (int position, View convertView, ViewGroup parent)
+        {
+            View view = convertView; // re-use an existing view, if one is available
+
+            ImageButton deleteButton;
+
+            if (view == null) {
+                view = LayoutInflater.From (parent.Context).Inflate (Resource.Layout.AttachmentListViewCell, parent, false);
+                view.Click += View_Click;
+                deleteButton = view.FindViewById<ImageButton> (Resource.Id.attachment_remove);
+                deleteButton.Visibility = ViewStates.Visible;
+                deleteButton.Click += DeleteButton_Click;
+            } else {
+                deleteButton = view.FindViewById<ImageButton> (Resource.Id.attachment_remove);
+            }
+            deleteButton.Tag = position;
+            view.Tag = position;
+
+            var attachment = attachments [position];
+            Bind.BindAttachmentView (attachment, view);
+
+            return view;
+        }
+
+        void View_Click (object sender, EventArgs e)
+        {
+            var deleteButton = (View)sender;
+            var position = (int)deleteButton.Tag;
+            if (null != OnViewAttachment) {
+                OnViewAttachment (position);
+            }
+        }
+
+        void DeleteButton_Click (object sender, EventArgs e)
+        {
+            var deleteButton = (View)sender;
+            var position = (int)deleteButton.Tag;
+            if (null != OnDeleteAttachment) {
+                OnDeleteAttachment (position);
+            }
+        }
+            
     }
 }
 

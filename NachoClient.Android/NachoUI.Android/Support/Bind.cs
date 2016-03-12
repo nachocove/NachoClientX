@@ -518,7 +518,7 @@ namespace NachoClient.AndroidClient
 
         }
 
-        public static void BindChatAttachments(McEmailMessage message, View view, LayoutInflater inflater, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected, NcAttachmentView.AttachmentErrorCallback onAttachmentError)
+        public static void BindChatAttachments (McEmailMessage message, View view, LayoutInflater inflater, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected, NcAttachmentView.AttachmentErrorCallback onAttachmentError)
         {
             var attachmentListView = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_views);
             attachmentListView.RemoveAllViews ();
@@ -530,6 +530,31 @@ namespace NachoClient.AndroidClient
                     new NcAttachmentView (a, cell, onAttachmentSelected, onAttachmentError);
                     attachmentListView.AddView (cell);
                 }
+            }
+        }
+
+        public static void BindChatAttachmentColors (View view, bool useDarkBackground)
+        {
+            int textColorId;
+            int backgroundColorId;
+
+            if (useDarkBackground) {
+                textColorId = Android.Resource.Color.White;
+                backgroundColorId = Resource.Color.NachoGreen;
+            } else {
+                backgroundColorId = Android.Resource.Color.White;
+                textColorId = Resource.Color.NachoGreen;
+            }
+
+            var attachmentListView = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_views);
+            for (int i = 0; i < attachmentListView.ChildCount; i++) {
+                var attachmentView = attachmentListView.GetChildAt (i);
+                attachmentView.SetBackgroundResource (backgroundColorId);
+                attachmentView.FindViewById (Resource.Id.separator).Visibility = ViewStates.Gone;
+                var nameView = attachmentView.FindViewById<TextView> (Resource.Id.attachment_name);
+                nameView.SetTextColor (view.Resources.GetColor (textColorId));
+                var descriptionView = attachmentView.FindViewById<TextView> (Resource.Id.attachment_description);
+                descriptionView.SetTextColor (view.Resources.GetColor (textColorId));
             }
         }
 
