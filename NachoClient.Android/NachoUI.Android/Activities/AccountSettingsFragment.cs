@@ -224,7 +224,11 @@ namespace NachoClient.AndroidClient
                     accountIssue.SetText (Resource.String.certificate_issue);
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    accountIssue.SetText (Resource.String.update_password);
+                    if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
+                        accountIssue.SetText (Resource.String.update_password);
+                    } else {
+                        accountIssue.SetText (Resource.String.server_error);
+                    }
                     break;
                 }
                 accountIssueView.Visibility = ViewStates.Visible;
@@ -241,9 +245,14 @@ namespace NachoClient.AndroidClient
                 if (!String.IsNullOrEmpty (rectificationUrl)) {
                     passwordRectification.Text = rectificationUrl;
                     passwordRectificationView.Visibility = ViewStates.Visible;
+                    passwordExpiresView.Visibility = ViewStates.Gone;
                 } else {
                     passwordRectificationView.Visibility = ViewStates.Gone;
+                    passwordExpiresView.Visibility = ViewStates.Visible;
                 }
+            } else {
+                passwordRectificationView.Visibility = ViewStates.Gone;
+                passwordExpiresView.Visibility = ViewStates.Gone;
             }
 
             if (0 < issues) {
@@ -315,17 +324,28 @@ namespace NachoClient.AndroidClient
 
         void PasswordExpiresView_Click (object sender, EventArgs e)
         {
-            
+            Log.Error (Log.LOG_SYS, "PasswordExpiresView_Click: NOT IMPLEMENTED");
         }
 
         void PasswordRectificationView_Click (object sender, EventArgs e)
         {
-
+            Log.Error (Log.LOG_SYS, "PasswordRectificationView_Click: NOT IMPLEMENTED");
         }
 
         void AccountIssueView_Click (object sender, EventArgs e)
         {
-            
+            McServer serverWithIssue;
+            BackEndStateEnum serverIssue;
+            if (LoginHelpers.IsUserInterventionRequired (account.Id, out serverWithIssue, out serverIssue)) {
+                if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
+                    Log.Error (Log.LOG_SYS, "AccountIssueView_Click: needs to go to AdvancedSettings here");
+                } else {
+                    BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
+                    this.Activity.Finish ();
+                }
+            } else {
+                Log.Error (Log.LOG_SYS, "AccountIssueView_Click: NOT IMPLEMENTED");
+            }
         }
 
         void FastNotifications_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
