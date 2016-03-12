@@ -229,7 +229,8 @@ namespace NachoClient.AndroidClient
                 foreach (var attachment in chatAttachmentAdapter.attachments) {
                     attachment.Link (chat.Id, chat.AccountId, McAbstrFolderEntry.ClassCodeEnum.Chat);
                 }
-                ChatMessageComposer.SendChatMessage (chat, text, chatAdapter.GetNewestChats (3), (McEmailMessage message) => {
+                    
+                ChatMessageComposer.SendChatMessage (chat, text, chatAdapter.GetNewestChats (3), (McEmailMessage message, NcResult result) => {
                     chat.AddMessage (message);
                     editText.Text = "";
                     ClearAttachments ();
@@ -497,7 +498,7 @@ namespace NachoClient.AndroidClient
             chatAttachmentAdapter.NotifyDataSetChanged ();
         }
 
-        void ViewAttachment(int position)
+        void ViewAttachment (int position)
         {
             var attachment = chatAttachmentAdapter.attachments [position];
             AttachmentHelper.OpenAttachment (this.Activity, attachment);
@@ -639,6 +640,7 @@ namespace NachoClient.AndroidClient
         public List<McAttachment> attachments;
 
         public delegate void ViewAttachment (int Position);
+
         public delegate void DeleteAttachment (int Position);
 
         public ViewAttachment OnViewAttachment;
