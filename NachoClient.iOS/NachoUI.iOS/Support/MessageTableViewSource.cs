@@ -460,6 +460,8 @@ namespace NachoClient.iOS
                 value += delta;
                 if (0 == value) {
                     MultiSelectAccounts.Remove (message.AccountId);
+                } else {
+                    MultiSelectAccounts [message.AccountId] = value;
                 }
             } else {
                 NcAssert.True (1 == delta);
