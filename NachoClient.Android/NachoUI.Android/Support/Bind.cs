@@ -448,11 +448,13 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static void BindChatListCell (McChat chat, View view)
+        public static void BindChatListCell (McChat chat, View view, bool highlightUnread)
         {
             var title = view.FindViewById<TextView> (Resource.Id.title);
             var date = view.FindViewById<TextView> (Resource.Id.date);
             var preview = view.FindViewById<TextView> (Resource.Id.preview);
+            var initials = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
+            var chatHasNew = view.FindViewById (Resource.Id.chat_has_new);
 
             title.Text = chat.CachedParticipantsLabel;
             date.Text = Pretty.TimeWithDecreasingPrecision (chat.LastMessageDate);
@@ -461,6 +463,9 @@ namespace NachoClient.AndroidClient
             } else {
                 preview.Text = chat.LastMessagePreview;
             }
+
+            initials.SetPortraitId (chat.CachedPortraitId1, chat.CachedInitials1, ColorForUser (chat.CachedColor1));
+            chatHasNew.Visibility = (highlightUnread ? ViewStates.Visible : ViewStates.Invisible);
         }
 
         public static void BindChatViewCell (McEmailMessage message, McEmailMessage previous, McEmailMessage next, McChatParticipant participant, View view)
