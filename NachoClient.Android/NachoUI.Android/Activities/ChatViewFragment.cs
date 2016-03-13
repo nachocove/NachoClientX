@@ -600,7 +600,7 @@ namespace NachoClient.AndroidClient
             }
             var message = messages [position];
             var previousMessage = (0 == position) ? null : messages [position - 1];
-            var nextMessage = ((messages.Count - 1) >= position) ? null : messages [position + 1];
+            var nextMessage = ((messages.Count - 1) <= position) ? null : messages [position + 1];
 
             McChatParticipant particpant = null;
             ParticipantsByEmailId.TryGetValue (message.FromEmailAddressId, out particpant);

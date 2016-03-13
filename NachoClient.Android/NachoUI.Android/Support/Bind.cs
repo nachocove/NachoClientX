@@ -496,6 +496,14 @@ namespace NachoClient.AndroidClient
             } else {
                 titleView.Visibility = ViewStates.Gone;
             }
+
+            var initials = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
+            if (showPortrait && (null != participant)) {
+                initials.Visibility = ViewStates.Visible;
+                initials.SetPortraitId (participant.CachedPortraitId, participant.CachedInitials, ColorForUser (participant.CachedColor));
+            } else {
+                initials.Visibility = ViewStates.Invisible;
+            }
                 
             var previewView = view.FindViewById<TextView> (Resource.Id.preview);
             var bundle = new NcEmailMessageBundle (message);
