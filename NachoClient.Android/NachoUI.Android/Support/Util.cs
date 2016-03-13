@@ -120,7 +120,7 @@ namespace NachoClient.AndroidClient
             }
             var emailAddress = contact.GetDefaultOrSingleEmailAddress ();
             if (null == emailAddress) {
-                NcAlertView.ShowMessage (context, "Contact has multiple addresses", "Please send an email address to use.");
+                NcAlertView.ShowMessage (context, "Contact has multiple addresses", "Please select an email address to use.");
                 return;
             }
             context.StartActivity (MessageComposeActivity.NewMessageIntent (context, accountId, emailAddress));

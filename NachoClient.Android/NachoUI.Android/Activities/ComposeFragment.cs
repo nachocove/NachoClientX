@@ -589,7 +589,9 @@ namespace NachoClient.AndroidClient
 
         public void MessageComposerDidFailToLoadMessage (MessageComposer composer)
         {
-            NcAlertView.ShowMessage (Activity, "Could not load message", "Sorry, we could not load your message.  Please try again.");
+            if (null != this.Activity) {
+                NcAlertView.ShowMessage (this.Activity, "Could not load message", "Sorry, we could not load your message. Please try again.");
+            }
         }
 
         void DisplayMessageBody ()

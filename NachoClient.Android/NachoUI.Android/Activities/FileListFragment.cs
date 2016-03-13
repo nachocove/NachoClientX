@@ -322,8 +322,11 @@ namespace NachoClient.AndroidClient
 
         public void AttachmentDownloadDidFail (AttachmentDownloader downloader, NcResult result)
         {
-            RefreshVisibleItems ();
-            NcAlertView.ShowMessage (Activity, "Download Error", "Sorry, we couldn't download the file.  Please try again.");
+            // TODO Display the dialog error message even if the view has already been dismissed.
+            if (null != this.Activity) {
+                RefreshVisibleItems ();
+                NcAlertView.ShowMessage (Activity, "Download Error", "Sorry, we couldn't download the file. Please try again.");
+            }
         }
 
         void RefreshVisibleItems ()

@@ -174,7 +174,9 @@ namespace NachoClient.AndroidClient
             downloadView.Visibility = ViewStates.Gone;
             downloadIndicator.ClearAnimation ();
             downloadIndicator.Visibility = ViewStates.Gone;
-            NcAlertView.ShowMessage (Activity, "Download Error", "Sorry, we couldn't download the attachment.  Please try again.");
+            if (null != this.Activity) {
+                NcAlertView.ShowMessage (this.Activity, "Download Error", "Sorry, we couldn't download the attachment. Please try again.");
+            }
         }
     }
 
