@@ -97,14 +97,15 @@ namespace NachoCore.Model
             ExpirySecs = expirySecs;
             NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
             AccessToken = null;
+            var account = McAccount.QueryById<McAccount> (AccountId);
             if (string.IsNullOrEmpty (refreshToken)) {
-                var account = McAccount.QueryById<McAccount> (AccountId);
                 var st = new System.Diagnostics.StackTrace ();
                 Log.Warn (Log.LOG_SYS, "UpdateOauth2({0}:{1}): No refreshToken!\n{2}", AccountId, account.AccountService, st.ToString ());
             }
             NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
             RefreshToken = null;
             UpdateCredential ();
+            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_McCredPasswordChanged);
         }
 
         public void ClearExpiry ()

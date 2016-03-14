@@ -659,20 +659,7 @@ namespace NachoClient.iOS
 
         public void StartGoogleLogin ()
         {
-            var scopes = new List<string> ();
-            scopes.Add ("email");
-            scopes.Add ("profile");
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            var auth = new NachoCore.Utils.GoogleOAuth2Authenticator (
-                           clientId: GoogleOAuthConstants.ClientId,
-                           clientSecret: GoogleOAuthConstants.ClientSecret,
-                           scope: String.Join (" ", scopes.ToArray ()),
-                           accessTokenUrl: new Uri ("https://accounts.google.com/o/oauth2/token"),
-                           authorizeUrl: new Uri ("https://accounts.google.com/o/oauth2/auth"),
-                           redirectUrl: new Uri ("http://www.nachocove.com/authorization_callback"),
-                           loginHint: account.EmailAddr);
+            var auth = new GoogleOAuth2Authenticator (account.EmailAddr);
 
             auth.AllowCancel = true;
 
