@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.AndroidClient</AssemblyName>
-    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
     <ReleaseVersion>2.1.0</ReleaseVersion>
@@ -1892,6 +1892,7 @@
     <AndroidResource Include="Resources\layout\ChatParticipantListCell.axml" />
     <AndroidResource Include="Resources\layout\ChatParticipantListActivity.axml" />
     <AndroidResource Include="Resources\layout\ChatParticipantListFragment.axml" />
+    <AndroidResource Include="Resources\xml\app_restrictions.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
