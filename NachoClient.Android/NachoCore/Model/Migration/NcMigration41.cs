@@ -17,7 +17,7 @@ namespace NachoCore.Model
             foreach (var account in Db.Table<McAccount> ()) {
                 bool foundItem = false;
                 try {
-                    foundItem |= string.IsNullOrEmpty (account.GetLogSalt ());
+                    foundItem = !string.IsNullOrEmpty (account.GetLogSalt ());
                 } catch (NachoPlatform.KeychainItemNotFoundException) {}
 
                 if (!foundItem) {
