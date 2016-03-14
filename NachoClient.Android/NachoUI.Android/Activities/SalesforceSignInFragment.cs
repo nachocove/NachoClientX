@@ -34,10 +34,10 @@ namespace NachoClient.AndroidClient
 
         SFDCOAuth2Authenticator Authenticator;
 
-        public static SalesforceSignInFragment newInstance (McAccount.AccountServiceEnum Service, McAccount account)
+        public static SalesforceSignInFragment newInstance (McAccount account)
         {
             var fragment = new SalesforceSignInFragment ();
-            fragment.Service = Service;
+            fragment.Service = McAccount.AccountServiceEnum.SalesForce;
             fragment.Account = account;
             return fragment;
         }
@@ -168,30 +168,39 @@ namespace NachoClient.AndroidClient
 
                 var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
 
-                if (LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"], Service)) {
+                if (null == Account && LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"], Service)) {
                     Log.Info (Log.LOG_UI, "SalesforceSignInFragment existing account: {0}", userInfo.Property ("email"));
                     NcAlertView.ShowMessage (this.Activity, "Account Exists", "An account with that email address already exists. Duplicate accounts are not supported.");
                     RestartAuthenticator ();
                 } else {
-                    if (Account != null) {
-                        Log.Info (Log.LOG_UI, "SalesforceSignInFragment removing account ID{0}", Account.Id);
-                        NcAccountHandler.Instance.RemoveAccount (Account.Id);
-                        Account = null;
+                    if (Account == null) {
+                        string instanceUrl;
+                        e.Account.Properties.TryGetValue ("instance_url", out instanceUrl);
+                        Account = NcAccountHandler.Instance.CreateAccountAndServerForSalesForce (Service,
+                            (string)userInfo ["email"],
+                            access_token,
+                            refresh_token,
+                            expireSecs,
+                            new Uri (instanceUrl));
+                        Log.Info (Log.LOG_UI, "SalesforceSignInFragment created account ID{0}", Account.Id);
+                        Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
+                        Account.Update ();
+                        SalesForceProtoControl.SetShouldAddBccToEmail (Account.Id, true);
+                        BackEnd.Instance.Start (Account.Id);
+                        NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountSetChanged);
+                    } else {
+                        // FIXME: Deal with changed userInfo?
+                        var cred = McCred.QueryByAccountId<McCred> (Account.Id).FirstOrDefault (x => x.CredType == McCred.CredTypeEnum.OAuth2);
+                        NcAssert.NotNull (cred, "trying to update an account, but no cred");
+                        cred.UpdateOauth2 (access_token,
+                            string.IsNullOrEmpty (refresh_token) ? cred.GetRefreshToken() : refresh_token,
+                            expireSecs);
+                        McServer serverWithIssue;
+                        BackEndStateEnum serverIssue;
+                        if (LoginHelpers.IsUserInterventionRequired (Account.Id, out serverWithIssue, out serverIssue)) {
+                            BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
+                        }
                     }
-                    string instanceUrl;
-                    e.Account.Properties.TryGetValue ("instance_url", out instanceUrl);
-                    Account = NcAccountHandler.Instance.CreateAccountAndServerForSalesForce (Service,
-                        (string)userInfo ["email"],
-                        access_token,
-                        refresh_token,
-                        expireSecs,
-                        new Uri (instanceUrl));
-                    Log.Info (Log.LOG_UI, "SalesforceSignInFragment created account ID{0}", Account.Id);
-                    Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
-                    Account.Update ();
-                    SalesForceProtoControl.SetShouldAddBccToEmail (Account.Id, true);
-                    BackEnd.Instance.Start (Account.Id);
-                    NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountSetChanged);
                     Activity.Finish ();
                 }
             } else {
