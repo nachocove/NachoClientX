@@ -89,21 +89,11 @@ namespace NachoClient.AndroidClient
                 Authenticator.Error -= AuthError;
             }
             WebAuthenticator.ClearCookies ();
-            var scopes = new List<string> ();
-            scopes.Add ("api");
-            scopes.Add ("refresh_token");
             string loginHint = null;
             if (Account != null) {
                 loginHint = Account.EmailAddr;
             }
-            Authenticator = new SFDCOAuth2Authenticator (
-                clientId: SFDCOAuth2Constants.ClientId,
-                clientSecret: SFDCOAuth2Constants.ClientSecret,
-                scope: String.Join (" ", scopes.ToArray ()),
-                accessTokenUrl: new Uri (SFDCOAuth2Constants.TokenUrl),
-                authorizeUrl: new Uri (SFDCOAuth2Constants.AuthorizeUrl),
-                redirectUrl: new Uri (SFDCOAuth2Constants.Redirecturi),
-                loginHint: loginHint);
+            Authenticator = new SFDCOAuth2Authenticator (loginHint);
             Authenticator.AllowCancel = true;
             Authenticator.Completed += AuthCompleted;
             Authenticator.Error += AuthError;
