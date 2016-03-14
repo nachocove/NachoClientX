@@ -596,7 +596,9 @@ namespace NachoClient.AndroidClient
             activityIndicatorView.Visibility = ViewStates.Invisible;
             // TODO: show this inline, possibly with message preview (if available)
             // and give the user an option to retry if appropriate
-            NcAlertView.ShowMessage (Activity, "Could not download message", "Sorry, we were unable to download the message.");
+            if (null != this.Activity) {
+                NcAlertView.ShowMessage (this.Activity, "Could not download message", "Sorry, we were unable to download the message.");
+            }
         }
 
         void RenderBody ()

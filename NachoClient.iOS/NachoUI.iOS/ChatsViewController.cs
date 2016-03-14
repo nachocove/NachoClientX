@@ -7,25 +7,61 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using System.Collections.Generic;
 using CoreGraphics;
+using NachoCore.Index;
 
 namespace NachoClient.iOS
 {
     [Foundation.Register ("ChatsViewController")]
-    public class ChatsViewController : NcUITableViewController
+    public class ChatsViewController : NcUITableViewController, IUISearchResultsUpdating, IUISearchControllerDelegate
     {
 
         ChatsTableViewSource Source;
         SwitchAccountButton SwitchAccountButton;
         UIBarButtonItem NewChatButton;
+        UISearchController SearchController;
+        ChatsSearchResultsViewController SearchResultsViewController;
+        NcIndex SearchIndex;
+        Dictionary<int, McChat> ChatsByMessageId;
         bool needsReload;
+        bool hasAppeared;
 
         public ChatsViewController (IntPtr ptr) : base(ptr)
         {
+            NavigationItem.LeftBarButtonItem = new UIBarButtonItem (UIBarButtonSystemItem.Search, ShowSearch);
             using (var image = UIImage.FromBundle ("chat-newmsg")) {
                 NavigationItem.RightBarButtonItem = NewChatButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, NewChat);
             }
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "Chats";
+            SearchResultsViewController = new ChatsSearchResultsViewController (this);
+            SearchController = new UISearchController (SearchResultsViewController);
+            SearchController.SearchResultsUpdater = this;
+            SearchController.Delegate = this;
+            DefinesPresentationContext = true;
+            hasAppeared = false;
+        }
+
+        [Foundation.Export("willPresentSearchController:")]
+        public virtual void WillPresentSearchController (UISearchController searchController)
+        {
+            NavigationController.NavigationBar.Translucent = true;
+            var chatsById = new Dictionary<int, McChat> ();
+            foreach (var chat in Source.Chats) {
+                chatsById.Add (chat.Id, chat);
+            }
+            ChatsByMessageId = new Dictionary<int, McChat> ();
+            foreach (var chatMessage in NcModel.Instance.Db.Table<McChatMessage>()) {
+                McChat chat = null;
+                chatsById.TryGetValue (chatMessage.ChatId, out chat);
+                ChatsByMessageId.Add (chatMessage.MessageId, chat);
+            }
+        }
+
+        [Foundation.Export("didDismissSearchController:")]
+        public virtual void DidDismissSearchController (UISearchController searchController)
+        {
+            NavigationController.NavigationBar.Translucent = false;
+            ChatsByMessageId.Clear ();
         }
 
         public override void ViewDidLoad ()
@@ -39,6 +75,7 @@ namespace NachoClient.iOS
             SwitchToAccount (NcApplication.Instance.Account);
 
             TableView.RowHeight = ChatTableViewCell.HEIGHT;
+            TableView.TableHeaderView = SearchController.SearchBar;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -51,8 +88,17 @@ namespace NachoClient.iOS
                 Reload ();
                 needsReload = false;
             }
+            if (!hasAppeared) {
+                TableView.ContentOffset = new CGPoint (0.0f, TableView.TableHeaderView.Frame.Height);
+            }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             SwitchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            hasAppeared = true;
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -76,8 +122,26 @@ namespace NachoClient.iOS
 
         void Reload ()
         {
+            Sync ();
             Source.Reset ();
             TableView.ReloadData ();
+        }
+
+        void Sync ()
+        {
+            if (Source.Account.AccountType == McAccount.AccountTypeEnum.Unified) {
+                EmailHelper.SyncUnified ();
+                EmailHelper.SyncUnifiedSent ();
+            } else {
+                var inbox = McFolder.GetDefaultInboxFolder (Source.Account.Id);
+                if (inbox != null) {
+                    BackEnd.Instance.SyncCmd (inbox.AccountId, inbox.Id);
+                }
+                var sent = McFolder.GetDefaultInboxFolder (Source.Account.Id);
+                if (sent != null) {
+                    BackEnd.Instance.SyncCmd (sent.AccountId, sent.Id);
+                }
+            }
         }
 
         void SwitchAccountButtonPressed ()
@@ -87,8 +151,10 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
+            SearchIndex = new NcIndex (NcModel.Instance.GetIndexPath(account.Id));
             if (Source == null) {
                 TableView.Source = Source = new ChatsTableViewSource (account, this);
+                Sync ();
             } else {
                 Source.Account = account;
                 Reload ();
@@ -103,12 +169,128 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (messagesViewController, true);
         }
 
-        public void ChatSelected (McChat chat, Foundation.NSIndexPath indexPath)
+        void ShowSearch (object sender, EventArgs args)
         {
+            TableView.SetContentOffset (new CGPoint (0.0f, 0.0f), false);
+            SearchController.SearchBar.BecomeFirstResponder ();
+        }
+
+        public void ChatSelected (McChat chat)
+        {
+            NavigationController.NavigationBar.Translucent = false;
             var messagesViewController = new ChatMessagesViewController ();
             messagesViewController.Account = McAccount.QueryById<McAccount> (chat.AccountId);
             messagesViewController.Chat = chat;
             NavigationController.PushViewController (messagesViewController, true);
+        }
+
+        public virtual void UpdateSearchResultsForSearchController (UISearchController searchController)
+        {
+            var foundChatsById = new Dictionary<int, McChat> ();
+            var chats = new List<McChat> ();
+            var text = searchController.SearchBar.Text;
+            if (!String.IsNullOrEmpty (text)) {
+                var results = SearchIndex.SearchAllEmailMessageFields (text);
+                foreach (var result in results) {
+                    McChat chat = null;
+                    ChatsByMessageId.TryGetValue (int.Parse (result.Id), out chat);
+                    if (chat != null && !foundChatsById.ContainsKey(chat.Id)) {
+                        chats.Add (chat);
+                        foundChatsById.Add (chat.Id, chat);
+                    }
+                }
+            }
+            SearchResultsViewController.UpdateChats (chats);
+        }
+
+    }
+
+    public class ChatsSearchResultsViewController : NcUITableViewController
+    {
+
+        ChatsSearchResultsTableViewSource Source;
+        ChatsViewController ChatsViewController;
+
+        public ChatsSearchResultsViewController (ChatsViewController viewController) : base()
+        {
+            AutomaticallyAdjustsScrollViewInsets = false;
+            ChatsViewController = viewController;
+        }
+
+        public override void LoadView ()
+        {
+            TableView = new UITableView ();
+            TableView.Source = Source = new ChatsSearchResultsTableViewSource (this);
+            TableView.ContentInset = new UIEdgeInsets (64.0f, 0.0f, 50.0f, 0.0f);
+        }
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            TableView.RowHeight = ChatTableViewCell.HEIGHT;
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+        }
+
+        public void ChatSelected (McChat chat)
+        {
+            ChatsViewController.ChatSelected (chat);
+        }
+
+        public void UpdateChats (List<McChat> chats)
+        {
+            Source.Chats = chats;
+            TableView.ReloadData ();
+        }
+
+    }
+
+    public class ChatsSearchResultsTableViewSource : UITableViewSource
+    {
+        const string ChatCellIdentifier = "Chat";
+        public List<McChat> Chats { get; set; }
+        ChatsSearchResultsViewController ViewController;
+
+        public ChatsSearchResultsTableViewSource (ChatsSearchResultsViewController viewController) : base ()
+        {
+            Chats = new List<McChat> ();
+            ViewController = viewController;
+        }
+
+        public override nint NumberOfSections (UITableView tableView)
+        {
+            return 1;
+        }
+
+        public override nint RowsInSection (UITableView tableview, nint section)
+        {
+            return Chats.Count;
+        }
+
+        public override UITableViewCell GetCell (UITableView tableView, Foundation.NSIndexPath indexPath)
+        {
+            var chat = Chats [indexPath.Row];
+            var cell = tableView.DequeueReusableCell (ChatCellIdentifier) as ChatTableViewCell;
+            if (cell == null) {
+                cell = new ChatTableViewCell (ChatCellIdentifier);
+            }
+            cell.Chat = chat;
+            cell.ShowUnreadIndicator = false;
+            return cell;
+        }
+
+        public override void RowSelected (UITableView tableView, Foundation.NSIndexPath indexPath)
+        {
+            var chat = Chats [indexPath.Row];
+            ViewController.ChatSelected (chat);
         }
 
     }
@@ -151,7 +333,6 @@ namespace NachoClient.iOS
 
         public override UITableViewCell GetCell (UITableView tableView, Foundation.NSIndexPath indexPath)
         {
-            // TODO: might need to query for chat if outside previously queried range
             var chat = Chats [indexPath.Row];
             var cell = tableView.DequeueReusableCell (ChatCellIdentifier) as ChatTableViewCell;
             if (cell == null) {
@@ -167,7 +348,7 @@ namespace NachoClient.iOS
         public override void RowSelected (UITableView tableView, Foundation.NSIndexPath indexPath)
         {
             var chat = Chats [indexPath.Row];
-            ViewController.ChatSelected (chat, indexPath);
+            ViewController.ChatSelected (chat);
         }
 
     }

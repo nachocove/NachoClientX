@@ -442,10 +442,19 @@ namespace NachoClient.iOS
 
         void MaybeAddSalesforceBcc()
         {
-            if(!SalesforceBccAdded) {
-                SalesforceBccAdded = EmailHelper.MaybeAddSalesforceBcc(SalesforceAddressCache, Composer.Message);
-                HeaderView.BccView.Clear ();
-                HeaderView.BccView.SetAddressList (Composer.Message.Bcc, NcEmailAddress.Kind.Bcc);
+            if (!SalesforceBccAdded) {
+                string extraBcc = EmailHelper.ExtraSalesforceBccAddress (SalesforceAddressCache, Composer.Message);
+                if (null != extraBcc) {
+                    SalesforceBccAdded = true;
+                    var parsedExtraBcc = NcEmailAddress.ParseBccAddressListString (extraBcc);
+                    if (0 == parsedExtraBcc.Count) {
+                        Log.Error (Log.LOG_EMAIL, "The Salesforce extra Bcc address could not be parsed.");
+                    }
+                    foreach (var address in parsedExtraBcc) {
+                        HeaderView.BccView.Append (address);
+                    }
+                    Composer.Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
+                }
             }
         }
 

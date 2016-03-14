@@ -413,9 +413,17 @@ namespace NachoClient.AndroidClient
 
         void MaybeAddSalesforceBcc()
         {
-            if(!SalesforceBccAdded) {
-                SalesforceBccAdded = EmailHelper.MaybeAddSalesforceBcc(SalesforceAddressCache, Composer.Message);
-                UpdateHeaderFromBcc ();
+            if (!SalesforceBccAdded) {
+                string extraBcc = EmailHelper.ExtraSalesforceBccAddress (SalesforceAddressCache, Composer.Message);
+                if (null != extraBcc) {
+                    SalesforceBccAdded = true;
+                    if (string.IsNullOrEmpty (Composer.Message.Bcc)) {
+                        Composer.Message.Bcc = extraBcc;
+                    } else {
+                        Composer.Message.Bcc += ", " + extraBcc;
+                    }
+                    UpdateHeaderFromBcc ();
+                }
             }
         }
                 
@@ -581,7 +589,9 @@ namespace NachoClient.AndroidClient
 
         public void MessageComposerDidFailToLoadMessage (MessageComposer composer)
         {
-            NcAlertView.ShowMessage (Activity, "Could not load message", "Sorry, we could not load your message.  Please try again.");
+            if (null != this.Activity) {
+                NcAlertView.ShowMessage (this.Activity, "Could not load message", "Sorry, we could not load your message. Please try again.");
+            }
         }
 
         void DisplayMessageBody ()
