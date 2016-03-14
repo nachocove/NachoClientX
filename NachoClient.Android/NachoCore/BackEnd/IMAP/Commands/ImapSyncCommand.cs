@@ -796,7 +796,7 @@ namespace NachoCore.IMAP
         private string getPreviewFromSummary (MessageSummary summary, IMailFolder mailKitFolder)
         {
             foreach (var part in summary.BodyParts) {
-                if (!part.ContentType.Matches ("text", "*") ||
+                if (!part.ContentType.IsMimeType ("text", "*") ||
                     !ValidTextParts.Contains (part.ContentType.MediaSubtype.ToLowerInvariant ())) {
                     continue;
                 }
