@@ -30,7 +30,7 @@ namespace NachoCore.Utils
         }
 
         // Message is saved into Outbox
-        public static void SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
+        public static NcResult SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
         {
             // messageToSend = SalesForceProtoControl.MaybeAddSFDCEmailToBcc (messageToSend);
 
@@ -45,16 +45,15 @@ namespace NachoCore.Utils
                 referencedMessage = McEmailMessage.QueryById<McEmailMessage> (messageToSend.ReferencedEmailId);
             }
 
-            bool messageSent = false;
             List<McFolder> folders = null;
+            NcResult sendResult = null;
             if (calendarInviteItem != null) {
                 folders = McFolder.QueryByFolderEntryId<McCalendar> (calendarInviteItem.AccountId, calendarInviteItem.Id);
                 if (folders.Count == 0) {
                     Log.Error (Log.LOG_UI, "The event being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
                 } else {
                     int folderId = folders [0].Id;
-                    NachoCore.BackEnd.Instance.ForwardCalCmd (messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
-                    messageSent = true;
+                    sendResult = NachoCore.BackEnd.Instance.ForwardCalCmd (messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
                 }
             } else {
                 if (referencedMessage != null) {
@@ -64,28 +63,27 @@ namespace NachoCore.Utils
                     } else {
                         int folderId = folders [0].Id;
                         if (messageToSend.ReferencedIsForward) {
-                            NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
-                            messageSent = true;
+                            sendResult = NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
                         } else {
-                            NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
-                            messageSent = true;
+                            sendResult = NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
                         }
                     }
                 }
-                if (!messageSent) {
-                    // A new outgoing message.  Or a forward/reply that has problems.
-                    NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
-                    messageSent = true;
-                }
             }
-            if (messageSent) {
+            if (sendResult == null) {
+                // A new outgoing message.  Or a forward/reply that has problems.
+                sendResult = NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
+            }
+            if (sendResult != null) {
                 // Send status ind because the message is in the outbox
                 var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = result,
                     Account = McAccount.QueryById<McAccount> (messageToSend.AccountId),
                 });
+                return sendResult;
             }
+            return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed, NcResult.WhyEnum.Unknown);
         }
 
         private static bool MustSaveMessageToSent (int accountId)
@@ -1101,34 +1099,17 @@ namespace NachoCore.Utils
             return false;
         }
 
-        public static bool MaybeAddSalesforceBcc (Dictionary <string, bool> cache, McEmailMessage message)
+        public static string ExtraSalesforceBccAddress (Dictionary<string, bool> cache, McEmailMessage message)
         {
             var account = McAccount.GetSalesForceAccount ();
-            if (null == account) {
-                return false;
+            if (null != account && SalesForceProtoControl.ShouldAddBccToEmail (account.Id) &&
+                (CheckForSalesforceContacts (account.Id, cache, message.To) ||
+                 CheckForSalesforceContacts (account.Id, cache, message.Cc) ||
+                 CheckForSalesforceContacts (account.Id, cache, message.Bcc)))
+            {
+                return SalesForceProtoControl.EmailToSalesforceAddress (account.Id);
             }
-
-            if (!SalesForceProtoControl.ShouldAddBccToEmail (account.Id)) {
-                return false;
-            }
-
-            bool doAdd = CheckForSalesforceContacts (account.Id, cache, message.To);
-            doAdd |= CheckForSalesforceContacts (account.Id, cache, message.Cc);
-            doAdd |= CheckForSalesforceContacts (account.Id, cache, message.Bcc);
-
-            if (doAdd) {
-                if (null != account) {
-                    string bccAddress = SalesForceProtoControl.EmailToSalesforceAddress (account.Id);
-                    if (null == message.Bcc) {
-                        message.Bcc = bccAddress;
-                    } else {
-                        var bccAddresses = message.Bcc.Split (new[] { ',' }).ToList ();
-                        bccAddresses.Add (bccAddress);
-                        message.Bcc = string.Join (",", bccAddresses);
-                    }
-                }
-            }
-            return doAdd;
+            return null;
         }
 
         public static NcResult SyncUnified ()
@@ -1140,6 +1121,22 @@ namespace NachoCore.Utils
                     var inboxFolder = McFolder.GetDefaultInboxFolder (account.Id);
                     if (null != inboxFolder) {
                         var nr = BackEnd.Instance.SyncCmd (inboxFolder.AccountId, inboxFolder.Id);
+                        syncStarted |= !NachoSyncResult.DoesNotSync (nr);
+                    }
+                }
+            }
+            return (syncStarted ? NcResult.OK() : NachoSyncResult.DoesNotSync());
+        }
+
+        public static NcResult SyncUnifiedSent ()
+        {
+            bool syncStarted = false;
+            var EmailAccounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).ToList ();
+            foreach (var account in EmailAccounts) {
+                if (McAccount.GetUnifiedAccount ().Id != account.Id) {
+                    var sentFolder = McFolder.GetDefaultSentFolder (account.Id);
+                    if (null != sentFolder) {
+                        var nr = BackEnd.Instance.SyncCmd (sentFolder.AccountId, sentFolder.Id);
                         syncStarted |= !NachoSyncResult.DoesNotSync (nr);
                     }
                 }

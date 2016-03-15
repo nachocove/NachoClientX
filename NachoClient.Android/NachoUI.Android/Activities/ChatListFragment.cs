@@ -406,7 +406,10 @@ namespace NachoClient.AndroidClient
 
             }
             var chat = chats [position];
-            Bind.BindChatListCell (chat, view);
+
+            int unreadCount = 0;
+            unreadCountsByChat.TryGetValue (chat.Id, out unreadCount);
+            Bind.BindChatListCell (chat, view, 0 < unreadCount);
             return view;
         }
 

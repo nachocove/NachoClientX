@@ -448,11 +448,13 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        public static void BindChatListCell (McChat chat, View view)
+        public static void BindChatListCell (McChat chat, View view, bool highlightUnread)
         {
             var title = view.FindViewById<TextView> (Resource.Id.title);
             var date = view.FindViewById<TextView> (Resource.Id.date);
             var preview = view.FindViewById<TextView> (Resource.Id.preview);
+            var initials = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
+            var chatHasNew = view.FindViewById (Resource.Id.chat_has_new);
 
             title.Text = chat.CachedParticipantsLabel;
             date.Text = Pretty.TimeWithDecreasingPrecision (chat.LastMessageDate);
@@ -461,6 +463,9 @@ namespace NachoClient.AndroidClient
             } else {
                 preview.Text = chat.LastMessagePreview;
             }
+
+            initials.SetPortraitId (chat.CachedPortraitId1, chat.CachedInitials1, ColorForUser (chat.CachedColor1));
+            chatHasNew.Visibility = (highlightUnread ? ViewStates.Visible : ViewStates.Invisible);
         }
 
         public static void BindChatViewCell (McEmailMessage message, McEmailMessage previous, McEmailMessage next, McChatParticipant participant, View view)
@@ -491,6 +496,14 @@ namespace NachoClient.AndroidClient
             } else {
                 titleView.Visibility = ViewStates.Gone;
             }
+
+            var initials = view.FindViewById<ContactPhotoView> (Resource.Id.user_initials);
+            if (showPortrait && (null != participant)) {
+                initials.Visibility = ViewStates.Visible;
+                initials.SetPortraitId (participant.CachedPortraitId, participant.CachedInitials, ColorForUser (participant.CachedColor));
+            } else {
+                initials.Visibility = ViewStates.Invisible;
+            }
                 
             var previewView = view.FindViewById<TextView> (Resource.Id.preview);
             var bundle = new NcEmailMessageBundle (message);
@@ -515,6 +528,47 @@ namespace NachoClient.AndroidClient
             previewView.SetTextColor (view.Resources.GetColor (textColorId));
             previewView.SetBackgroundResource (backgroundColorId);
             previewCardView.SetCardBackgroundColor (view.Resources.GetColor (backgroundColorId));
+
+        }
+
+        public static void BindChatAttachments (McEmailMessage message, View view, LayoutInflater inflater, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected, NcAttachmentView.AttachmentErrorCallback onAttachmentError)
+        {
+            var attachmentListView = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_views);
+            attachmentListView.RemoveAllViews ();
+
+            var attachments = McAttachment.QueryByItemId (message.AccountId, message.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+            if (null != attachments) {
+                foreach (var a in attachments) {
+                    var cell = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
+                    new NcAttachmentView (a, cell, onAttachmentSelected, onAttachmentError);
+                    attachmentListView.AddView (cell);
+                }
+            }
+        }
+
+        public static void BindChatAttachmentColors (View view, bool useDarkBackground)
+        {
+            int textColorId;
+            int backgroundColorId;
+
+            if (useDarkBackground) {
+                textColorId = Android.Resource.Color.White;
+                backgroundColorId = Resource.Color.NachoGreen;
+            } else {
+                backgroundColorId = Android.Resource.Color.White;
+                textColorId = Resource.Color.NachoGreen;
+            }
+
+            var attachmentListView = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_views);
+            for (int i = 0; i < attachmentListView.ChildCount; i++) {
+                var attachmentView = attachmentListView.GetChildAt (i);
+                attachmentView.SetBackgroundResource (backgroundColorId);
+                attachmentView.FindViewById (Resource.Id.separator).Visibility = ViewStates.Gone;
+                var nameView = attachmentView.FindViewById<TextView> (Resource.Id.attachment_name);
+                nameView.SetTextColor (view.Resources.GetColor (textColorId));
+                var descriptionView = attachmentView.FindViewById<TextView> (Resource.Id.attachment_description);
+                descriptionView.SetTextColor (view.Resources.GetColor (textColorId));
+            }
         }
 
         public static int ColorForUser (int index)

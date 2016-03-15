@@ -15,7 +15,12 @@ namespace NachoCore.Model
         public override void Run (System.Threading.CancellationToken token)
         {
             foreach (var account in Db.Table<McAccount> ()) {
-                if (string.IsNullOrEmpty (account.GetLogSalt ())) {
+                bool foundItem = false;
+                try {
+                    foundItem = !string.IsNullOrEmpty (account.GetLogSalt ());
+                } catch (NachoPlatform.KeychainItemNotFoundException) {}
+
+                if (!foundItem) {
                     account.GenerateAndUpdateLogSalt ();
                 }
             }

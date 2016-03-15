@@ -515,7 +515,6 @@ namespace NachoCore
         public virtual NcResult SyncContactsCmd ()
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
-            McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
                 var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.ContactReader | McAccount.AccountCapabilityEnum.ContactWriter) {
                     Operation = McPending.Operations.Sync,

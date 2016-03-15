@@ -379,49 +379,6 @@ namespace NachoCore.SFDC
             return false;
         }
 
-        public static McEmailMessage MaybeAddSFDCEmailToBcc (McEmailMessage emailMessage)
-        {
-            if (!ShouldAddBccToEmail (emailMessage.AccountId)) {
-                return emailMessage;
-            }
-
-            // FIXME: Need to test this.
-            var SalesforceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.SalesForce).FirstOrDefault ();
-            if (SalesforceAccount != null) {
-                string SFDCemail = SalesForceProtoControl.EmailToSalesforceAddress (SalesforceAccount.Id);
-                if (!string.IsNullOrEmpty (SFDCemail)) {
-                    bool addSFDCemail = IsSalesForceContact (SalesforceAccount.Id, emailMessage.To);
-                    if (!addSFDCemail) {
-                        foreach (var cc in emailMessage.Cc.Split (new[] {','})) {
-                            if (IsSalesForceContact (SalesforceAccount.Id, cc)) {
-                                addSFDCemail = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!addSFDCemail) {
-                        foreach (var bcc in emailMessage.Bcc.Split (new[] {','})) {
-                            if (IsSalesForceContact (SalesforceAccount.Id, bcc)) {
-                                addSFDCemail = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (addSFDCemail) {
-                        var bccAddresses = emailMessage.Bcc.Split (new[] { ',' }).ToList ();
-                        bccAddresses.Add (SFDCemail);
-                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> (((record) => {
-                            var target = (McEmailMessage)record;
-                            target.Bcc = string.Join (",", bccAddresses);
-                            return true;
-                        }));
-                    }
-                }
-            }
-            return emailMessage;
-        }
-
         #endregion
     }
 }

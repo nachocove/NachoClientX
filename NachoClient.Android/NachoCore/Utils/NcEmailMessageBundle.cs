@@ -688,14 +688,14 @@ namespace NachoCore.Utils
                     if (multipart != null) {
                         contentType = MultipartContentType (multipart);
                     }
-                    bool isHtml = contentType.Matches ("text", "html");
-                    bool isText = contentType.Matches ("text", "plain");
-                    if ((contentType.Matches ("text", "rtf") || contentType.Matches ("application", "rtf")) && rtfPart != null) {
+                    bool isHtml = contentType.IsMimeType ("text", "html");
+                    bool isText = contentType.IsMimeType ("text", "plain");
+                    if ((contentType.IsMimeType ("text", "rtf") || contentType.IsMimeType ("application", "rtf")) && rtfPart != null) {
                         // We don't really want RTF, but we'll hang onto in case we don't find html by the end.
                         // Even if RTF is a higher priority than HTML, we still de-prioritize it becasue we won't
                         // be displaying RTF natively; it will be converted to HTML, and the conversion may not be perfect.
                         rtfPart = part;
-                    } else if (contentType.Matches ("multipart", "alternative")) {
+                    } else if (contentType.IsMimeType ("multipart", "alternative")) {
                         // This would be a very odd case when one alternative section is nested inside the other.
                         // We'll see if the child alternative has the types we're looking for
                         isHtml = MultipartMatchesContentType (multipart, "text", "html");
@@ -718,7 +718,7 @@ namespace NachoCore.Utils
                         parsed.AlternateTypeInfo.PopulatingText = false;
                         foundText = true;
                     }
-                    if (contentType.Matches ("text", "x-nacho-chat")) {
+                    if (contentType.IsMimeType ("text", "x-nacho-chat")) {
                         part.Accept (this);
                     }
                 }
@@ -742,10 +742,10 @@ namespace NachoCore.Utils
                     if (multipart != null) {
                         contentType = MultipartContentType (multipart);
                     }
-                    bool isHtml = contentType.Matches ("text", "html");
-                    bool isText = contentType.Matches ("text", "plain");
-                    bool isRtf = contentType.Matches ("text", "rtf") || contentType.Matches ("application", "rtf");
-                    if (contentType.Matches ("multipart", "alternative")) {
+                    bool isHtml = contentType.IsMimeType ("text", "html");
+                    bool isText = contentType.IsMimeType ("text", "plain");
+                    bool isRtf = contentType.IsMimeType ("text", "rtf") || contentType.IsMimeType ("application", "rtf");
+                    if (contentType.IsMimeType ("multipart", "alternative")) {
                         isHtml = MultipartMatchesContentType (multipart, "text", "html");
                         isText = MultipartMatchesContentType (multipart, "text", "plain");
                         isRtf = MultipartMatchesContentType (multipart, "text", "rtf");
@@ -821,7 +821,7 @@ namespace NachoCore.Utils
 
         protected override void VisitMimePart (MimePart entity)
         {
-            if (entity.ContentType.Matches ("image", "*")) {
+            if (entity.ContentType.IsMimeType ("image", "*")) {
                 // We'll skip anything with an explicit size of 0 because it's likely to be a part we truncated.
                 // If there's no size set, assume there might be some data.
                 if (entity.ContentDisposition == null || entity.ContentDisposition.Size > 0) {
@@ -1020,11 +1020,11 @@ namespace NachoCore.Utils
                     if (related.Root is Multipart) {
                         return MultipartMatchesContentType (related.Root as Multipart, mediaType, mediaSubtype);
                     }
-                    return related.Root.ContentType.Matches(mediaType, mediaSubtype);
+                    return related.Root.ContentType.IsMimeType(mediaType, mediaSubtype);
                 } else if (part is Multipart) {
                     return MultipartMatchesContentType (part as Multipart, mediaType, mediaSubtype);
                 } else {
-                    return part.ContentType.Matches(mediaType, mediaSubtype);
+                    return part.ContentType.IsMimeType(mediaType, mediaSubtype);
                 }
             }
             return false;

@@ -5,7 +5,6 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content">
     <LinearLayout
-        android:background="@android:color/white"
         android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:padding="3dp"
@@ -18,22 +17,19 @@
             android:layout_height="34dp"
             android:padding="9dp"
             android:scaleType="fitCenter"
-            android:layout_gravity="center"
-            android:background="@android:color/white" />
+            android:layout_gravity="center" />
         <ImageView
             android:id="@+id/attachment_icon"
             android:src="@drawable/email_att_files"
             android:layout_width="34dp"
             android:layout_height="34dp"
             android:padding="6dp"
-            android:layout_gravity="center"
-            android:background="@android:color/white" />
+            android:layout_gravity="center" />
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@android:color/white">
+            android:layout_weight="1">
             <TextView
                 android:id="@+id/attachment_name"
                 android:text="@string/demo_attachment_name"
@@ -44,8 +40,7 @@
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
-                android:textColor="@android:color/black"
-                android:background="@android:color/white" />
+                android:textColor="@android:color/black" />
             <TextView
                 android:id="@+id/attachment_description"
                 android:text="@string/demo_attachment_size"
@@ -56,8 +51,7 @@
                 android:textStyle="normal"
                 android:maxLines="1"
                 android:ellipsize="end"
-                android:textColor="@android:color/black"
-                android:background="@android:color/white" />
+                android:textColor="@android:color/black" />
         </LinearLayout>
         <ImageView
             android:id="@+id/attachment_download"
@@ -66,8 +60,7 @@
             android:layout_height="22dp"
             android:paddingTop="3dp"
             android:paddingRight="3dp"
-            android:layout_gravity="right|center_vertical"
-            android:background="@android:color/white" />
+            android:layout_gravity="right|center_vertical" />
         <ProgressBar
             android:id="@+id/attachment_spinner"
             android:layout_width="wrap_content"
@@ -77,6 +70,7 @@
             android:layout_centerInParent="true" />
     </LinearLayout>
     <View
+        android:id="@+id/separator"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/NachoBackgroundGray" />
