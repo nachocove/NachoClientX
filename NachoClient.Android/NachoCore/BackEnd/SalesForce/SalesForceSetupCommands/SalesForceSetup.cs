@@ -106,6 +106,8 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.InitW },
@@ -124,6 +126,8 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.InitW },
@@ -139,6 +143,8 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoGetResources, State = (uint)Lst.ResourceW },
@@ -157,6 +163,8 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoGetObjects, State = (uint)Lst.ObjectsW },
@@ -175,6 +183,8 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoEmailSetupOrStop, ActSetsState = true },
@@ -193,6 +203,8 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSuccess, State = (uint)Lst.Stop },
