@@ -21,7 +21,6 @@ namespace NachoClient.iOS
         {
         }
 
-
         public void SetAccount (McAccount account)
         {
             this.account = account;
@@ -29,6 +28,8 @@ namespace NachoClient.iOS
 
         public override void ViewWillAppear (bool animated)
         {
+            CheckForRefreshStatus ();
+            StartListeningForStatusInd ();
             base.ViewWillAppear (animated);
         }
 
@@ -44,6 +45,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             View.EndEditing (true);
+            StopListeningForStatusInd ();
             base.ViewWillDisappear (animated);
         }
 
@@ -53,7 +55,62 @@ namespace NachoClient.iOS
             }
         }
 
+        void StartListeningForStatusInd ()
+        {
+            if (!IsListeningForStatusInd) {
+                IsListeningForStatusInd = true;
+                NcApplication.Instance.StatusIndEvent += StatusIndCallback;
+            }
+        }
 
+        void StopListeningForStatusInd ()
+        {
+            if (IsListeningForStatusInd) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndCallback;
+                IsListeningForStatusInd = false;
+            }
+        }
+
+        void StatusIndCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (s.Status.SubKind == NcResult.SubKindEnum.Info_BackEndStateChanged) {
+                if (s.Account != null && s.Account.Id == account.Id) {
+                    CheckForRefreshStatus ();
+                    RequeryContactCount ();
+                    ConfigureAndLayout ();
+                }
+            }
+            if (s.Status.SubKind == NcResult.SubKindEnum.Error_SyncFailed) {
+                IsRefreshing = false;
+                RequeryContactCount ();
+                ConfigureAndLayout ();
+                NcAlertView.ShowMessage (this, "Contact Fetch Failed", "Sorry, the contact fetch failed.  Please try again");
+            }
+            if (s.Status.SubKind == NcResult.SubKindEnum.Info_SyncSucceeded) {
+                IsRefreshing = false;
+                RequeryContactCount ();
+                ConfigureAndLayout ();
+            }
+            if (s.Status.SubKind == NcResult.SubKindEnum.Error_AuthFailBlocked) {
+                IsRefreshing = false;
+                RequeryContactCount ();
+                ConfigureAndLayout ();
+                // TODO: auth
+            }
+        }
+
+        string InfoText ()
+        {
+            if (ContactCount == 0 && IsRefreshing) {
+                return String.Format ("Connected to your Salesforce account\nsyncing contacts...", ContactCount);
+            } else {
+                return String.Format ("Connected to your Salesforce account\n{0} contacts synced", ContactCount);
+            }
+        }
+
+
+        bool IsListeningForStatusInd;
         static readonly nfloat HEIGHT = 50;
         static readonly nfloat INDENT = 25;
 
@@ -69,13 +126,16 @@ namespace NachoClient.iOS
         UIActivityIndicatorView DeleteAccountActivityIndicator;
         UISwitch AddBccSwitch;
         UIButton RefreshAccountButton;
-        UIView RefreshAccountBackgroundView;
         UIActivityIndicatorView RefreshAccountActivityIndicator;
         ConnectToSalesforceCell connectToSalesforceView;
         UIStoryboard accountStoryboard;
+        bool IsRefreshing;
+        int ContactCount;
+        UILabel InfoLabel;
 
         protected override void CreateViewHierarchy ()
         {
+            RequeryContactCount ();
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "Salesforce Settings";
 
@@ -96,6 +156,17 @@ namespace NachoClient.iOS
             scrollView.AlwaysBounceVertical = true;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             View.AddSubview (scrollView);
+
+            var infoFont = A.Font_AvenirNextRegular17;
+
+            InfoLabel = new UILabel (new CGRect (0.0f, 0.0f, scrollView.Bounds.Width - 2 * A.Card_Horizontal_Indent, infoFont.LineHeight));
+            InfoLabel.Font = infoFont;
+            InfoLabel.Lines = 0;
+            InfoLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            InfoLabel.TextAlignment = UITextAlignment.Center;
+            InfoLabel.Text = InfoText ();
+
+            scrollView.AddSubview (InfoLabel);
 
             contentView = new UIView (Util.CardContentRectangle (View.Frame.Width, View.Frame.Height));
             contentView.Layer.CornerRadius = A.Card_Corner_Radius;
@@ -148,6 +219,7 @@ namespace NachoClient.iOS
             Util.AddButtonImage (RefreshAccountButton, "folder-folder", UIControlState.Normal);
             RefreshAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
             RefreshAccountButton.SetTitle ("Refresh Contacts", UIControlState.Normal);
+            RefreshAccountButton.SetTitle ("Fetching Contacts...", UIControlState.Disabled);
             RefreshAccountButton.AccessibilityLabel = "Refresh Contacts";
             RefreshAccountButton.Font = A.Font_AvenirNextRegular14;
             RefreshAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
@@ -155,35 +227,13 @@ namespace NachoClient.iOS
             contentView.AddSubview (RefreshAccountButton);
             yOffset = RefreshAccountButton.Frame.Bottom;
 
+            RefreshAccountActivityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
+            RefreshAccountActivityIndicator.HidesWhenStopped = true;
+            RefreshAccountActivityIndicator.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin | UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin;
+            RefreshAccountActivityIndicator.Frame = new CGRect(RefreshAccountButton.Bounds.Width - RefreshAccountActivityIndicator.Frame.Width - INDENT * 2.0f, (RefreshAccountButton.Bounds.Height - RefreshAccountActivityIndicator.Frame.Height) / 2.0f, RefreshAccountActivityIndicator.Frame.Width, RefreshAccountActivityIndicator.Frame.Height);
+            RefreshAccountButton.AddSubview (RefreshAccountActivityIndicator);
+
             ViewFramer.Create (contentView).Height (yOffset);
-
-            // Delete Account Spinner - Keeping this separate from the validate credential spinner 
-            RefreshAccountBackgroundView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
-            RefreshAccountBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);
-            RefreshAccountBackgroundView.Hidden = true;
-            RefreshAccountBackgroundView.Alpha = 0.0f;
-            View.AddSubview (RefreshAccountBackgroundView);
-
-            UIView RefreshAlertMimicView = new UIView (new CGRect (RefreshAccountBackgroundView.Frame.Width / 2 - 90, RefreshAccountBackgroundView.Frame.Height / 2 - 80, 180, 110));
-            RefreshAlertMimicView.BackgroundColor = UIColor.White;
-            RefreshAlertMimicView.Layer.CornerRadius = 6.0f;
-            RefreshAccountBackgroundView.AddSubview (RefreshAlertMimicView);
-
-            UILabel RefreshAccountStatusMessage = new UILabel (new CGRect (8, 10, RefreshAlertMimicView.Frame.Width - 16, 25));
-            RefreshAccountStatusMessage.BackgroundColor = UIColor.White;
-            RefreshAccountStatusMessage.Alpha = 1.0f;
-            RefreshAccountStatusMessage.Font = UIFont.SystemFontOfSize (17);
-            RefreshAccountStatusMessage.TextColor = UIColor.Black;
-            RefreshAccountStatusMessage.Text = "Refresh Contacts";
-            RefreshAccountStatusMessage.TextAlignment = UITextAlignment.Center;
-            RefreshAlertMimicView.AddSubview (RefreshAccountStatusMessage);
-
-            RefreshAccountActivityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
-            RefreshAccountActivityIndicator.Frame = new CGRect (RefreshAlertMimicView.Frame.Width / 2 - 20, RefreshAccountStatusMessage.Frame.Bottom + 15, 40, 40);
-            RefreshAccountActivityIndicator.Color = A.Color_SystemBlue;
-            RefreshAccountActivityIndicator.Alpha = 1.0f;
-            RefreshAccountActivityIndicator.StartAnimating ();
-            RefreshAlertMimicView.AddSubview (RefreshAccountActivityIndicator);
 
             Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
@@ -280,52 +330,35 @@ namespace NachoClient.iOS
 
         void RefreshAccountButton_TouchUpInside (object sender, EventArgs e)
         {
-            BackEnd.Instance.SyncContactsCmd (account.Id);
-            ToggleRefreshAccountSpinnerView ();
-            rearmRefreshTimer (10);
-
-        }
-
-        protected void EndRefreshingOnUIThread (object sender)
-        {
-            NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                cancelRefreshTimer ();
-            });
-        }
-
-        NcTimer refreshTimer;
-
-        void rearmRefreshTimer (int seconds)
-        {
-            if (null != refreshTimer) {
-                refreshTimer.Dispose ();
-                refreshTimer = null;
-            }
-            refreshTimer = new NcTimer ("SalesforceSettingsViewController refresh", EndRefreshingOnUIThread, null, seconds * 1000, 0); 
-        }
-
-        void cancelRefreshTimer ()
-        {
-            ToggleRefreshAccountSpinnerView ();
-            if (null != refreshTimer) {
-                refreshTimer.Dispose ();
-                refreshTimer = null;
+            if (!IsRefreshing) {
+                var result = BackEnd.Instance.SyncContactsCmd (account.Id);
+                if (result.isOK ()) {
+                    CheckForRefreshStatus ();
+                }
+                ConfigureAndLayout ();
             }
         }
 
-        void ToggleRefreshAccountSpinnerView ()
+        void CheckForRefreshStatus ()
         {
-            RefreshAccountBackgroundView.Hidden = !RefreshAccountBackgroundView.Hidden;
-
-            if (RefreshAccountBackgroundView.Hidden) {
-                RefreshAccountActivityIndicator.StopAnimating ();
-                RefreshAccountBackgroundView.Alpha = 0.0f;
-            } else {
-                UIView.Animate (.15, () => {
-                    RefreshAccountBackgroundView.Alpha = 1.0f;
-                });
-                RefreshAccountActivityIndicator.StartAnimating ();
+            IsRefreshing = false;
+            var pendings = McPending.QueryByOperation (account.Id, McPending.Operations.Sync);
+            foreach (var pending in pendings) {
+                if (pending.State == McPending.StateEnum.Failed) {
+                    pending.Delete ();
+                } else {
+                    IsRefreshing = true;
+                }
             }
+            var status = BackEnd.Instance.BackEndState (account.Id, SalesForceProtoControl.SalesForceCapabilities);
+            bool isServerReady = status == BackEndStateEnum.PostAutoDPostInboxSync;
+            bool isServerWaiting = status == BackEndStateEnum.CertAskWait || status == BackEndStateEnum.CredWait || status == BackEndStateEnum.ServerConfWait;
+            IsRefreshing = IsRefreshing || (!isServerReady && !isServerWaiting);
+        }
+
+        void RequeryContactCount ()
+        {
+            ContactCount = McContact.CountByAccountId (account.Id);
         }
 
         void FixAccountButton_TouchUpInside (object sender, EventArgs e)
@@ -347,7 +380,7 @@ namespace NachoClient.iOS
 
         void DeleteAccountButton_TouchUpInside (object sender, EventArgs e)
         {
-            contentView.Hidden = true;
+            scrollView.Hidden = true;
             backButton.Enabled = false;
             ToggleDeleteAccountSpinnerView ();
             Action action = () => {
@@ -387,13 +420,25 @@ namespace NachoClient.iOS
                 DefaultEmailSwitch.Enabled = !isDefaultEmail;
             }
 
+            InfoLabel.Text = InfoText ();
+            var infoSize = InfoLabel.SizeThatFits (new CGSize(scrollView.Bounds.Width - 2 * A.Card_Horizontal_Indent, 99999999.0f));
+            InfoLabel.Frame = new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, scrollView.Bounds.Width - 2 * A.Card_Horizontal_Indent, infoSize.Height);
+
             var contentViewWidth = contentView.Frame.Width;
             var contentViewHeight = contentView.Frame.Height;
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            contentView.Frame = new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, contentViewWidth, contentViewHeight);
-            scrollView.ContentSize = new CGSize (contentView.Frame.Width + 2 * A.Card_Horizontal_Indent, contentView.Frame.Height + 2 * A.Card_Vertical_Indent);
+            contentView.Frame = new CGRect (A.Card_Horizontal_Indent, InfoLabel.Frame.Y + InfoLabel.Frame.Height + A.Card_Vertical_Indent, contentViewWidth, contentViewHeight);
+            scrollView.ContentSize = new CGSize (contentView.Frame.Width + 2 * A.Card_Horizontal_Indent, contentView.Frame.Y + contentView.Frame.Height + A.Card_Vertical_Indent);
 
             AddBccSwitch.SetState (SalesForceProtoControl.ShouldAddBccToEmail (account.Id), false);
+
+            if (IsRefreshing) {
+                RefreshAccountActivityIndicator.StartAnimating ();
+                RefreshAccountButton.Enabled = false;
+            } else {
+                RefreshAccountActivityIndicator.StopAnimating ();
+                RefreshAccountButton.Enabled = true;
+            }
 
         }
 

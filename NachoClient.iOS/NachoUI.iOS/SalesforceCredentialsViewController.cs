@@ -20,6 +20,7 @@ namespace NachoClient.iOS
 
         SFDCOAuth2Authenticator Authenticator;
         UIView AuthView;
+        bool IsCanceled = false;
 
         #endregion
 
@@ -34,6 +35,12 @@ namespace NachoClient.iOS
         #endregion
 
         #region Authenticator Setup
+
+        public void Cancel ()
+        {
+            IsCanceled = true;
+            Authenticator.OnCancelled ();
+        }
 
         void RestartAuthenticator ()
         {
@@ -85,6 +92,9 @@ namespace NachoClient.iOS
 
         public void AuthCompleted (object sender, AuthenticatorCompletedEventArgs e)
         {
+            if (IsCanceled) {
+                return;
+            }
             if (e.IsAuthenticated) {
                 string access_token;
                 e.Account.Properties.TryGetValue ("access_token", out access_token);
@@ -124,6 +134,8 @@ namespace NachoClient.iOS
                         new Uri (instanceUrl));
                     SalesForceProtoControl.SetShouldAddBccToEmail (Account.Id, true);
                     Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController created account ID{0}", Account.Id);
+                    Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
+                    Account.Update ();
 
 //                    Newtonsoft.Json.Linq.JObject photos;
 //                    if (userInfo.TryGetValue ("photos", out photos)) {
@@ -142,6 +154,9 @@ namespace NachoClient.iOS
 
         public void AuthError (object sender, AuthenticatorErrorEventArgs e)
         {
+            if (IsCanceled) {
+                return;
+            }
             Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController auth error");
             NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
         }
