@@ -9,6 +9,7 @@ using NachoCore.Utils;
 using System.Linq;
 using System.Collections.Generic;
 using Xamarin.Auth;
+using NachoCore.SFDC;
 
 namespace NachoClient.iOS
 {
@@ -121,6 +122,7 @@ namespace NachoClient.iOS
                         refresh_token,
                         expireSecs,
                         new Uri (instanceUrl));
+                    SalesForceProtoControl.SetShouldAddBccToEmail (Account.Id, true);
                     Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController created account ID{0}", Account.Id);
 
 //                    Newtonsoft.Json.Linq.JObject photos;
