@@ -265,11 +265,11 @@ namespace NachoCore.Brain
             }
             if (part is Multipart) {
                 var multipart = (Multipart)part;
-                if (multipart.ContentType.Matches ("multipart", "alternative")) {
+                if (multipart.ContentType.IsMimeType ("multipart", "alternative")) {
                     return ProcessAlternativeMultipart (multipart);
-                } else if (multipart.ContentType.Matches ("multipart", "mixed")) {
+                } else if (multipart.ContentType.IsMimeType ("multipart", "mixed")) {
                     return ProcessMixedMultipart (multipart);
-                } else if (multipart.ContentType.Matches ("multipart", "related")) {
+                } else if (multipart.ContentType.IsMimeType ("multipart", "related")) {
                     // The handling of multipart/related is the same as multipart/mixed.
                     // Just iterate through all its subparts and add the ones that can be
                     // indexed.
@@ -309,7 +309,7 @@ namespace NachoCore.Brain
         private List<TextPart> ProcessMimePart (MimePart part)
         {
             var parts = new List<TextPart> ();
-            if (part.ContentType.Matches ("text", "plain") || part.ContentType.Matches ("text", "html")) {
+            if (part.ContentType.IsMimeType ("text", "plain") || part.ContentType.IsMimeType ("text", "html")) {
                 parts.Add ((TextPart)part);
             }
             return parts;

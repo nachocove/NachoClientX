@@ -5,16 +5,28 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:padding="3dp">
-    <NachoClient.AndroidClient.ContactPhotoView
-        android:id="@+id/user_initials"
-        android:text="@string/demo_initials"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+    <RelativeLayout
+        android:background="@android:color/white"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="4dp"
-        android:layout_gravity="center"
-        android:gravity="center" />
+        android:layout_gravity="top|left">
+        <NachoClient.AndroidClient.ContactPhotoView
+            android:id="@+id/user_initials"
+            android:text="@string/demo_initials"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_centerInParent="true" />
+        <ImageView
+            android:id="@+id/chat_has_new"
+            android:src="@drawable/chat_stat_online"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_alignTop="@id/user_initials"
+            android:layout_alignRight="@id/user_initials" />
+    </RelativeLayout>
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
@@ -61,6 +73,7 @@
             android:textSize="14dp"
             android:textStyle="normal"
             android:maxLines="2"
+            android:minLines="2"
             android:ellipsize="none"
             android:textColor="@android:color/black"
             android:background="@android:color/white" />

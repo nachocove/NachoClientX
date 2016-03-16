@@ -9,6 +9,7 @@ using NachoCore.Utils;
 using System.Linq;
 using System.Collections.Generic;
 using Xamarin.Auth;
+using NachoCore.SFDC;
 
 namespace NachoClient.iOS
 {
@@ -119,9 +120,15 @@ namespace NachoClient.iOS
                 var url = String.Format (id_url);
                 var client = new WebClient ();
                 client.Headers.Add ("Authorization", String.Format ("Bearer {0}", access_token));
-                var userInfoString = client.DownloadString (url);
-
-                var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                Newtonsoft.Json.Linq.JObject userInfo;
+                try {
+                    var userInfoString = client.DownloadString (url);
+                    userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                } catch (Exception ex) {
+                    Log.Info (Log.LOG_HTTP, "SFDC OAUTH2: Could not download user info from {0}: {1}", id_url, ex);
+                    NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                    return;
+                }
 
                 if (LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"], Service)) {
                     Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController existing account: {0}", userInfo.Property ("email"));
@@ -141,6 +148,7 @@ namespace NachoClient.iOS
                         refresh_token,
                         expireSecs,
                         new Uri (instanceUrl));
+                    SalesForceProtoControl.SetShouldAddBccToEmail (Account.Id, true);
                     Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController created account ID{0}", Account.Id);
 
 //                    Newtonsoft.Json.Linq.JObject photos;

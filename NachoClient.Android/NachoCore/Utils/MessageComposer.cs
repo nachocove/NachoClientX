@@ -578,7 +578,7 @@ namespace NachoCore.Utils
                         OpenReaders.Add (reader);
                         attachmentPart.ContentObject = new ContentObject (reader.BaseStream);
                         mixed.Add (attachmentPart);
-                        if (attachmentPart.ContentType.Matches ("image", "*")) {
+                        if (attachmentPart.ContentType.IsMimeType ("image", "*")) {
                             AdjustEstimatedSizesForAttachment (reader.BaseStream);
                         }
                         var mapItem = McMapAttachmentItem.QueryByAttachmentIdItemIdClassCode (Message.AccountId, attachment.Id, Message.Id, Message.GetClassCode ());
@@ -712,7 +712,7 @@ namespace NachoCore.Utils
                 Mime = MimeMessage.Load (stream);
             }
             var openStreams = new List<FileStream> ();
-            foreach (var entity in Mime.BodyParts.Where(p => p.ContentType.Matches("image", "*"))) {
+            foreach (var entity in Mime.BodyParts.Where(p => p.ContentType.IsMimeType ("image", "*"))) {
                 var part = entity as MimePart;
                 if (part != null) {
                     var tmpFilePath = Path.GetTempFileName ();
@@ -787,12 +787,12 @@ namespace NachoCore.Utils
 
         #region Send Message
 
-        public void Send ()
+        public NcResult Send ()
         {
             if (ImageLengths != null) {
                 ResizeImages ();
             }
-            EmailHelper.SendTheMessage (Message, RelatedCalendarItem);
+            return EmailHelper.SendTheMessage (Message, RelatedCalendarItem);
         }
 
         #endregion

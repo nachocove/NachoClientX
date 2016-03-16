@@ -125,9 +125,11 @@ namespace NachoCore.SMTP
                 errResult.Message = ex.Message;
                 serverFailedGenerally = true;
             } finally {
-                ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
                 Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
+
+            ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
+
             if (Initial && !Cts.IsCancellationRequested) {
                 StatusInd (errResult);
             }
