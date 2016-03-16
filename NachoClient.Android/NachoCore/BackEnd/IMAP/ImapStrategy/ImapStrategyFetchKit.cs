@@ -124,12 +124,12 @@ namespace NachoCore.IMAP
 
             if (null != body && null != body.ContentType) {
                 // If we have a body and a content type, get the body type from that.
-                if (body.ContentType.Matches ("multipart", "*")) {
+                if (body.ContentType.IsMimeType ("multipart", "*")) {
                     bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                } else if (body.ContentType.Matches ("text", "*")) {
-                    if (body.ContentType.Matches ("text", "html")) {
+                } else if (body.ContentType.IsMimeType ("text", "*")) {
+                    if (body.ContentType.IsMimeType ("text", "html")) {
                         bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                    } else if (body.ContentType.Matches ("text", "plain")) {
+                    } else if (body.ContentType.IsMimeType ("text", "plain")) {
                         bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
                     } else {
                         Log.Warn (Log.LOG_IMAP, "Unhandled text subtype {0}", body.ContentType.MediaSubtype);
@@ -241,7 +241,7 @@ namespace NachoCore.IMAP
                     d = new FetchKit.DownloadPart (multi, headersOnly: true);
                 }
                 var newParts = new List<FetchKit.DownloadPart> ();
-                if (!multi.ContentType.Matches ("multipart", "alternative")) {
+                if (!multi.ContentType.IsMimeType ("multipart", "alternative")) {
                     foreach (var part in multi.BodyParts) {
                         GetDownloadableParts (part, newParts, ref AllPartSize, depth + 1);
                     }
@@ -284,7 +284,7 @@ namespace NachoCore.IMAP
 
         private static bool isExchangeATTAttachment (BodyPartBasic basic)
         {
-            if (basic.IsAttachment && basic.ContentType.Matches ("text", "*")) {
+            if (basic.IsAttachment && basic.ContentType.IsMimeType ("text", "*")) {
                 if (null == basic.ContentDisposition || string.IsNullOrEmpty (basic.ContentDisposition.FileName)) {
                     return false;
                 }

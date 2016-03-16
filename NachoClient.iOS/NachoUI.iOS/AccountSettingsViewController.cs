@@ -600,7 +600,12 @@ namespace NachoClient.iOS
                     PerformSegue ("SegueToCertAsk", new SegueHolder (McAccount.AccountCapabilityEnum.EmailSender));
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    PerformSegue ("SegueToAdvancedSettings", this);
+                    if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
+                        PerformSegue ("SegueToAdvancedSettings", this);
+                    } else {
+                        BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
+                        NavigationController.PopViewController (true);
+                    }
                     break;
                 }
             }
@@ -697,11 +702,18 @@ namespace NachoClient.iOS
                         }
                     }
 
-                    var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
-                    var userInfoString = new WebClient ().DownloadString (url);
+                    var source = "https://www.googleapis.com/oauth2/v1/userinfo";
+                    var url = String.Format ("{0}?access_token={1}", source, access_token);
+                    Newtonsoft.Json.Linq.JObject userInfo;
+                    try {
+                        var userInfoString = new WebClient ().DownloadString (url);
+                        userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                    } catch (Exception ex) {
+                        Log.Info (Log.LOG_HTTP, "Could not download or parse userInfoString from {0}: {1}", source, ex);
+                        NcAlertView.ShowMessage (this, "Settings", string.Format ("Could not download user details. Please try again. ({0})", ex.Message));
+                        return;
+                    }
 
-                    var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
-                   
                     if (!String.Equals (account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
                         // Can't change your email address
                         NcAlertView.ShowMessage (this, "Settings", "You may not change your email address.  Create a new account to use a new email address.");
