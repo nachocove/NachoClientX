@@ -44,7 +44,7 @@ namespace NachoPlatform
             try {
                 NcMdmConfig.Instance.SetValues ((mdmConfig) => {
                     mdmConfig.Host = appRestrictions.GetString ("AppServiceHost");
-                    mdmConfig.Port = uint.Parse (appRestrictions.GetString ("AppServicePort"));
+                    mdmConfig.Port = (uint)appRestrictions.GetInt ("AppServicePort");
                     mdmConfig.Username = appRestrictions.GetString ("UserName");
                     mdmConfig.Domain = appRestrictions.GetString ("UserDomain");
                     mdmConfig.EmailAddr = appRestrictions.GetString ("UserEmail");
