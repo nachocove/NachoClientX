@@ -114,10 +114,17 @@ namespace NachoClient.iOS
                     }
                 }
 
-                var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
-                var userInfoString = new WebClient ().DownloadString (url);
-
-                var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                var source = "https://www.googleapis.com/oauth2/v1/userinfo";
+                var url = String.Format ("{0}?access_token={1}", source, access_token);
+                Newtonsoft.Json.Linq.JObject userInfo;
+                try {
+                    var userInfoString = new WebClient ().DownloadString (url);
+                    userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                } catch (Exception ex) {
+                    Log.Info (Log.LOG_HTTP, "OAUTH2: Could not download user info from {0}: {1}", source, ex);
+                    NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
+                    return;
+                }
 
                 if (LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"])) {
                     Log.Info (Log.LOG_UI, "GoogleCredentialsViewController existing account: {0}", userInfo.Property ("email"));
