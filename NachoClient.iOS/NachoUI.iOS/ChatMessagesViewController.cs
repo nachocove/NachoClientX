@@ -402,7 +402,7 @@ namespace NachoClient.iOS
                         if (PendingSendMap.ContainsKey (pendingToken)) {
                             PendingSendMap.Remove (pendingToken);
                         }
-                    } else if (s.Status.SubKind == NcResult.SubKindEnum.Error_EmailMessageSendFailed) {
+                    } else if (s.Status.SubKind == NcResult.SubKindEnum.Error_EmailMessageSendFailed || s.Status.SubKind == NcResult.SubKindEnum.Error_EmailMessageReplyFailed) {
                         var pendingToken = s.Tokens [0];
                         if (PendingSendMap.ContainsKey (pendingToken)) {
                             var messageId = PendingSendMap [pendingToken];
@@ -413,7 +413,7 @@ namespace NachoClient.iOS
                                 if (existingMessage.Id == messageId) {
                                     var messageView = ChatView.MessageViewAtIndex (index);
                                     if (messageView != null) {
-                                        messageView.Update ();
+                                        messageView.Update (forceHasError: true);
                                         UpdateMessageViewBlockProperties (ChatView, messageView.Index, messageView);
                                     }
                                     break;
@@ -1343,7 +1343,7 @@ namespace NachoClient.iOS
             TimestampDividerLabel.Hidden = !showsTimestamp;
         }
 
-        public void Update ()
+        public void Update (bool forceHasError = false)
         {
             bool hasError = false;
             if (Message == null) {
@@ -1359,7 +1359,7 @@ namespace NachoClient.iOS
                 TimestampRevealLabel.Text = Pretty.Time (Message.DateReceived);
                 if (Participant == null){
                     var pending = McPending.QueryByEmailMessageId (Message.AccountId, Message.Id);
-                    hasError = pending != null && pending.ResultKind == NcResult.KindEnum.Error;
+                    hasError = forceHasError || (pending != null && pending.ResultKind == NcResult.KindEnum.Error);
                 }
             }
             if (Participant == null) {
