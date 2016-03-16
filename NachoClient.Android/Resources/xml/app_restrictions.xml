@@ -7,7 +7,7 @@
 
     <restriction android:key="AppServicePort"
         android:title="Server Port"
-        android:restrictionType="string"/>
+        android:restrictionType="integer"/>
 
     <restriction android:key="UserName"
         android:title="User username for login"
@@ -26,6 +26,7 @@
         android:restrictionType="string"/>
 
     <restriction android:key="BrandingLogo"
-        android:title="Service Account Branding Logo URL"/>
+        android:title="Service Account Branding Logo URL"
+        android:restrictionType="string"/>
 
 </restrictions>
