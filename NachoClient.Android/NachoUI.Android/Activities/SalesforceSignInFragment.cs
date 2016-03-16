@@ -154,19 +154,17 @@ namespace NachoClient.AndroidClient
                 string id_url;
                 e.Account.Properties.TryGetValue ("id", out id_url);
 
-                string userInfoString;
+                Newtonsoft.Json.Linq.JObject userInfo;
                 try {
-                    var url = String.Format (id_url);
                     var client = new WebClient ();
                     client.Headers.Add ("Authorization", String.Format ("Bearer {0}", access_token));
-                    userInfoString = client.DownloadString (url);
+                    var userInfoString = client.DownloadString (id_url);
+                    userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
                 } catch (Exception ex) {
-                    Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info {0}", ex);
+                    Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info from {0}: {1}", id_url, ex);
                     NcAlertView.ShowMessage (Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
                     return;
                 }
-
-                var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
 
                 if (LoginHelpers.ConfiguredAccountExists ((string)userInfo ["email"], Service)) {
                     Log.Info (Log.LOG_UI, "SalesforceSignInFragment existing account: {0}", userInfo.Property ("email"));

@@ -501,15 +501,15 @@ namespace NachoClient.AndroidClient
 
                     var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
 
-                    string userInfoString;
+                    Newtonsoft.Json.Linq.JObject userInfo;
                     try {
-                        userInfoString = new System.Net.WebClient ().DownloadString (url);
+                        var userInfoString = new System.Net.WebClient ().DownloadString (url);
+                        userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
                     } catch (Exception ex) {
                         Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info {0}", ex);
                         NcAlertView.ShowMessage (Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
                         return;
                     }
-                    var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
 
                     if (!String.Equals (account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
                         // Can't change your email address
