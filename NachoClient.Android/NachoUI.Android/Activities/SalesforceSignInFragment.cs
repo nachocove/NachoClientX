@@ -64,10 +64,6 @@ namespace NachoClient.AndroidClient
         {
             base.OnStart ();
 
-            if (ValidationIsFinished ()) {
-                return;
-            }
-
             if (null == Authenticator) {
                 RestartAuthenticator ();
             }
@@ -107,27 +103,12 @@ namespace NachoClient.AndroidClient
 
             switch (requestCode) {
             case SIGNIN_REQUEST_CODE:
-                if (Result.Ok == resultCode) {
-                    ValidationIsFinished ();
-                } else {
+                if (Result.Ok != resultCode) {
                     // Canceled in Google land
                     Activity.Finish ();
                 }
                 break;
             }
-        }
-
-        bool ValidationIsFinished ()
-        {
-            if (!finished) {
-                var account = McAccount.GetAccountBeingConfigured ();
-                if ((null != account) && (McAccount.ConfigurationInProgressEnum.CredentialsValidated == account.ConfigurationInProgress)) {
-                    finished = true;
-                    var parent = (CredentialsFragmentDelegate)Activity;
-                    parent.CredentialsValidated (account);
-                }
-            }
-            return finished;
         }
 
         public void AuthCompleted (object sender, AuthenticatorCompletedEventArgs e)
@@ -191,6 +172,7 @@ namespace NachoClient.AndroidClient
                             BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
                         }
                     }
+                    Activity.SetResult (Result.Ok);
                     Activity.Finish ();
                 }
             } else {

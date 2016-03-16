@@ -126,7 +126,7 @@ namespace NachoClient.AndroidClient
 
         void AccountAdapter_ConnectToSalesforce (object sender, EventArgs e)
         {
-            var parent = (AccountListDelegate)Activity;
+            var parent = (SettingsActivity)Activity;
             parent.ConnectToSalesforce ();
         }
 

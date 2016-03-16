@@ -26,8 +26,6 @@ namespace NachoClient.AndroidClient
     {
         void AddAccount ();
 
-        void ConnectToSalesforce ();
-
         void AccountSelected (McAccount account);
 
         void AccountShortcut (int destination);

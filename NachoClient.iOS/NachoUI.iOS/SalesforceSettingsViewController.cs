@@ -359,7 +359,7 @@ namespace NachoClient.iOS
             var status = BackEnd.Instance.BackEndState (account.Id, SalesForceProtoControl.SalesForceCapabilities);
             bool isServerReady = status == BackEndStateEnum.PostAutoDPostInboxSync;
             bool isServerWaiting = status == BackEndStateEnum.CertAskWait || status == BackEndStateEnum.CredWait || status == BackEndStateEnum.ServerConfWait;
-            IsRefreshing = IsRefreshing || (!isServerReady && !isServerWaiting);
+            IsRefreshing = !isServerWaiting && (IsRefreshing || !isServerReady);
         }
 
         void RequeryContactCount ()

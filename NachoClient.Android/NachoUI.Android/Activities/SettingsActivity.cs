@@ -20,6 +20,7 @@ namespace NachoClient.AndroidClient
     public class SettingsActivity : NcTabBarActivity
     {
         private const string SETTINGS_FRAGMENT_TAG = "SettingsFragment";
+        private const int SALESFORCE_REQUEST_CODE = 1;
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -43,6 +44,21 @@ namespace NachoClient.AndroidClient
         protected override void OnSaveInstanceState (Bundle outState)
         {
             base.OnSaveInstanceState (outState);
+        }
+
+        public void ConnectToSalesforce()
+        {
+            StartActivityForResult (new Intent (this, typeof(SalesforceSignInActivity)), SALESFORCE_REQUEST_CODE);
+        }
+
+        protected override void OnActivityResult (int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult (requestCode, resultCode, data);
+            if (requestCode == SALESFORCE_REQUEST_CODE) {
+                if (resultCode == Result.Ok) {
+                    AccountSettingsSelected (McAccount.GetSalesForceAccount ());
+                }
+            }
         }
 
     }
