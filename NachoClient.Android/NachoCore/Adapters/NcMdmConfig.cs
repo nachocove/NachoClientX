@@ -93,7 +93,8 @@ namespace NachoCore
             }
             if (!string.IsNullOrEmpty (BrandingLogoUrl)) {
                 try {
-                    var url = new Uri (BrandingLogoUrl);
+                    // Analysis disable once ObjectCreationAsStatement
+                    new Uri (BrandingLogoUrl);
                 } catch (UriFormatException ex) {
                     IsValid = false;
                     Log.Info (Log.LOG_UTILS, "NcMdmConfig invalid config: BrandingLogoUrl: {0} {1}", BrandingLogoUrl, ex.Message);
