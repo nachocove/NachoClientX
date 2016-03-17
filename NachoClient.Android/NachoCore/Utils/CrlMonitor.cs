@@ -118,8 +118,6 @@ namespace NachoCore.Utils
         /// <summary>
         /// Register a list of certificates with the CRL Monitoring service.
         /// NOTE: It is the caller's responsibility to validate all certs passed in.
-        /// JEFF: Is this a reasonable assumption to make, i.e that all certs passed in have
-        /// been (or assumed to be) valid?
         /// </summary>
         /// <param name="signerCerts">Signer certs.</param>
         public void Register (X509Certificate2Collection signerCerts)
