@@ -89,12 +89,13 @@ namespace NachoClient.iOS
             if (outgoingServerField.Text.Contains (":")) {
                 return "Invalid outgoing server name. Scheme or port number is not allowed.";
             }
-            int result;
-            if (!int.TryParse (incomingPortField.Text, out result)) {
-                return "Invalid incoming port number. It must be a number.";
+            string err = PortNumber_Helpers.CheckPortValidity (incomingPortField.Text, "incoming");
+            if (!string.IsNullOrEmpty (err)) {
+                return err;
             }
-            if (!int.TryParse (outgoingPortField.Text, out result)) {
-                return "Invalid outgoing port number. It must be a number.";
+            err = PortNumber_Helpers.CheckPortValidity (outgoingPortField.Text, "outgoing");
+            if (!string.IsNullOrEmpty (err)) {
+                return err;
             }
             return null;
         }

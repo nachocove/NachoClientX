@@ -122,5 +122,29 @@ namespace NachoCore.Utils
             return date;
         }
     }
+
+    public static class PortNumber_Helpers
+    {
+        public static string CheckPortValidity (string postString, string inOrOut)
+        {
+            int port;
+            if (!int.TryParse (postString, out port)) {
+                return string.Format ("Invalid {0} port number. It must be a number.", inOrOut);
+            }
+            if (!IsValidPort(port)) {
+                return string.Format ("Invalid {0} port number. it must be > 0 and < 65536.", inOrOut);
+            }
+            return null;
+        }
+
+        public static bool IsValidPort (int port)
+        {
+            if (port <= 0 || port > 65535) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
 }
 

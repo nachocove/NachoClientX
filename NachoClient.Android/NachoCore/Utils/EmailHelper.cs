@@ -386,7 +386,7 @@ namespace NachoCore.Utils
                 // Is this Uri any good at all?
                 if (serverURI.IsFile ||
                     !EmailHelper.IsValidHost (serverURI.Host) ||
-                    !EmailHelper.IsValidPort (serverURI.Port)) {
+                    !PortNumber_Helpers.IsValidPort (serverURI.Port)) {
                     if (serverName.Contains ("://")) {
                         // The user added a scheme, and it went bad.
                         return ParseServerWhyEnum.FailBadScheme;
@@ -412,7 +412,7 @@ namespace NachoCore.Utils
             if (!EmailHelper.IsValidHost (serverURI.Host)) {
                 return ParseServerWhyEnum.FailBadHost;
             }
-            if (!EmailHelper.IsValidPort (serverURI.Port)) {
+            if (!PortNumber_Helpers.IsValidPort (serverURI.Port)) {
                 return ParseServerWhyEnum.FailBadPort;
             }
             // Ensure there were no Query parameters.
@@ -471,15 +471,6 @@ namespace NachoCore.Utils
                 return true;
             }
             return false;
-        }
-
-        public static bool IsValidPort (int port)
-        {
-            if (port < 0 || port > 65535) {
-                return false;
-            } else {
-                return true;
-            }
         }
 
         public static bool IsMailToURL (string urlString)
