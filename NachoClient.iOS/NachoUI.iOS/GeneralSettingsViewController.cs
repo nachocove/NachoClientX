@@ -245,11 +245,15 @@ namespace NachoClient.iOS
         {
             NcActionSheet.Show (UnreadCountBlock, this,
                 new NcAlertAction ("All Messages", () => {
-                    EmailHelper.SetShouldDisplayAllUnreadCount (true);
+                    EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.AllMessages);
                     RefreshUnreadBlock ();
                 }),
-                new NcAlertAction ("New Messages", () => {
-                    EmailHelper.SetShouldDisplayAllUnreadCount (false);
+                new NcAlertAction ("Recent Messages", () => {
+                    EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.RecentMessages);
+                    RefreshUnreadBlock ();
+                }),
+                new NcAlertAction ("Today's Messages", () => {
+                    EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.TodaysMessages);
                     RefreshUnreadBlock ();
                 }),
                 new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
@@ -258,7 +262,24 @@ namespace NachoClient.iOS
 
         protected void RefreshUnreadBlock ()
         {
-            UnreadCountBlock.SetValue (EmailHelper.ShouldDisplayAllUnreadCount () ? "All Messages" : "New Messages");
+            string label;
+
+            switch (EmailHelper.HowToDisplayUnreadCount ()) {
+            case EmailHelper.ShowUnreadEnum.AllMessages:
+                label = "All Messages";
+                break;
+            case EmailHelper.ShowUnreadEnum.RecentMessages:
+                label = "Recent Messages";
+                break;
+            case EmailHelper.ShowUnreadEnum.TodaysMessages:
+                label = "Today's Messages";
+                break;
+            default:
+                label = null;
+                NcAssert.CaseError ();
+                break;
+            }
+            UnreadCountBlock.SetValue (label);
         }
 
     }

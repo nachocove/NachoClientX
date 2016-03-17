@@ -284,8 +284,8 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "GettingStartedViewController syncing complete");
             if (vc.Account != null) {
+                LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
                 NcApplication.Instance.Account = vc.Account;
-                LoginHelpers.SetSwitchToTime (vc.Account);
             }
             AccountDelegate.GettingStartedViewControllerDidComplete (this);
         }

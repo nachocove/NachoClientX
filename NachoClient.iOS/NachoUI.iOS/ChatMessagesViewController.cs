@@ -402,7 +402,7 @@ namespace NachoClient.iOS
                         if (PendingSendMap.ContainsKey (pendingToken)) {
                             PendingSendMap.Remove (pendingToken);
                         }
-                    } else if (s.Status.SubKind == NcResult.SubKindEnum.Error_EmailMessageSendFailed) {
+                    } else if (s.Status.SubKind == NcResult.SubKindEnum.Error_EmailMessageSendFailed || s.Status.SubKind == NcResult.SubKindEnum.Error_EmailMessageReplyFailed) {
                         var pendingToken = s.Tokens [0];
                         if (PendingSendMap.ContainsKey (pendingToken)) {
                             var messageId = PendingSendMap [pendingToken];
@@ -413,7 +413,7 @@ namespace NachoClient.iOS
                                 if (existingMessage.Id == messageId) {
                                     var messageView = ChatView.MessageViewAtIndex (index);
                                     if (messageView != null) {
-                                        messageView.Update ();
+                                        messageView.Update (forceHasError: true);
                                         UpdateMessageViewBlockProperties (ChatView, messageView.Index, messageView);
                                     }
                                     break;
@@ -1232,7 +1232,7 @@ namespace NachoClient.iOS
         McEmailMessage Message;
         McChatParticipant Participant;
         List<McAttachment> Attachments;
-        UILabel MessageLabel;
+        UITextView MessageLabel;
         public int Index;
         UIEdgeInsets MessageInsets;
         nfloat BubbleSideInset = 15.0f;
@@ -1293,9 +1293,14 @@ namespace NachoClient.iOS
             BubbleView.Layer.MasksToBounds = true;
             BubbleView.Layer.BorderWidth = 1.0f;
             BubbleView.Layer.CornerRadius = 8.0f;
-            MessageLabel = new UILabel (new CGRect(MessageInsets.Left, MessageInsets.Top, BubbleView.Bounds.Width - MessageInsets.Left - MessageInsets.Right, BubbleView.Bounds.Height - MessageInsets.Top - MessageInsets.Bottom));
-            MessageLabel.Lines = 0;
+            MessageLabel = new UITextView (new CGRect(MessageInsets.Left, MessageInsets.Top, BubbleView.Bounds.Width - MessageInsets.Left - MessageInsets.Right, BubbleView.Bounds.Height - MessageInsets.Top - MessageInsets.Bottom));
+            MessageLabel.Editable = false;
+            MessageLabel.DataDetectorTypes = UIDataDetectorType.All;
             MessageLabel.Font = A.Font_AvenirNextRegular17;
+            MessageLabel.UserInteractionEnabled = true;
+            MessageLabel.ScrollEnabled = false;
+            MessageLabel.DelaysContentTouches = false;
+            MessageLabel.TextContainerInset = new UIEdgeInsets (0, 0, 0, 0);
             var timestampDividerFont = A.Font_AvenirNextDemiBold14;
             TimestampDividerLabel = new UILabel (new CGRect (0.0f, 0.0f, Bounds.Width, timestampDividerFont.LineHeight * 2.0f));
             TimestampDividerLabel.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
@@ -1343,7 +1348,7 @@ namespace NachoClient.iOS
             TimestampDividerLabel.Hidden = !showsTimestamp;
         }
 
-        public void Update ()
+        public void Update (bool forceHasError = false)
         {
             bool hasError = false;
             if (Message == null) {
@@ -1359,7 +1364,7 @@ namespace NachoClient.iOS
                 TimestampRevealLabel.Text = Pretty.Time (Message.DateReceived);
                 if (Participant == null){
                     var pending = McPending.QueryByEmailMessageId (Message.AccountId, Message.Id);
-                    hasError = pending != null && pending.ResultKind == NcResult.KindEnum.Error;
+                    hasError = forceHasError || (pending != null && pending.ResultKind == NcResult.KindEnum.Error);
                 }
             }
             if (Participant == null) {

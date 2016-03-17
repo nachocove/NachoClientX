@@ -602,6 +602,10 @@ namespace NachoClient.AndroidClient
             var previousMessage = (0 == position) ? null : messages [position - 1];
             var nextMessage = ((messages.Count - 1) <= position) ? null : messages [position + 1];
 
+            if (!message.IsRead) {
+                EmailHelper.MarkAsRead (message, true);
+            }
+
             McChatParticipant particpant = null;
             ParticipantsByEmailId.TryGetValue (message.FromEmailAddressId, out particpant);
 
