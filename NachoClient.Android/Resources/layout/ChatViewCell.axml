@@ -70,6 +70,7 @@
                         android:textSize="14dp"
                         android:textStyle="normal"
                         android:ellipsize="none"
+                        android:autoLink="all"
                         android:textColor="@android:color/black"
                         android:background="@android:color/white" />
                     <LinearLayout
