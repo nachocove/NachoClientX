@@ -508,12 +508,13 @@ namespace NachoClient.AndroidClient
             var previewView = view.FindViewById<TextView> (Resource.Id.preview);
             var bundle = new NcEmailMessageBundle (message);
             if (bundle.NeedsUpdate) {
-                previewView.Text = "!! " + message.BodyPreview;  
+                previewView.Text = message.BodyPreview;  
             } else {
                 previewView.Text = bundle.TopText;
             }
 
             var previewCardView = view.FindViewById<CardView> (Resource.Id.preview_card);
+            var cardLayout = previewCardView.LayoutParameters as LinearLayout.LayoutParams;
 
             int textColorId;
             int backgroundColorId;
@@ -521,9 +522,15 @@ namespace NachoClient.AndroidClient
             if (null == participant) {
                 textColorId = Android.Resource.Color.White;
                 backgroundColorId = Resource.Color.NachoGreen;
+                cardLayout.Gravity = GravityFlags.Right;
+                cardLayout.LeftMargin = (int)TypedValue.ApplyDimension (ComplexUnitType.Dip, 50.0f, view.Context.Resources.DisplayMetrics);
+                cardLayout.RightMargin = (int)TypedValue.ApplyDimension (ComplexUnitType.Dip, 0.0f, view.Context.Resources.DisplayMetrics);
             } else {
                 backgroundColorId = Android.Resource.Color.White;
                 textColorId = Resource.Color.NachoGreen;
+                cardLayout.Gravity = GravityFlags.Left;
+                cardLayout.LeftMargin = (int)TypedValue.ApplyDimension (ComplexUnitType.Dip, 0.0f, view.Context.Resources.DisplayMetrics);
+                cardLayout.RightMargin = (int)TypedValue.ApplyDimension (ComplexUnitType.Dip, 50.0f, view.Context.Resources.DisplayMetrics);
             }
             previewView.SetTextColor (view.Resources.GetColor (textColorId));
             previewView.SetBackgroundResource (backgroundColorId);
