@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -52,9 +51,25 @@ namespace NachoClient.AndroidClient
             hotSwitch.Checked = LoginHelpers.ShowHotCards ();
             hotSwitch.CheckedChange += HotSwitch_CheckedChange;
 
-            var unreadSwitch = view.FindViewById<Switch> (Resource.Id.show_new_unread);
-            unreadSwitch.Checked = EmailHelper.ShouldDisplayAllUnreadCount ();
-            unreadSwitch.CheckedChange += UnreadSwitch_CheckedChange;
+            var unreadSpinner = view.FindViewById<Spinner> (Resource.Id.unread_spinner);
+            var unreadSpinnerAdapter = ArrayAdapter.CreateFromResource (this.Activity, Resource.Array.unread_count, Resource.Layout.spinner_item);
+            unreadSpinnerAdapter.SetDropDownViewResource (Android.Resource.Layout.SimpleSpinnerDropDownItem);
+            unreadSpinner.Adapter = unreadSpinnerAdapter;
+
+            // Map to string array
+            switch (EmailHelper.HowToDisplayUnreadCount ()) {
+            case EmailHelper.ShowUnreadEnum.AllMessages:
+                unreadSpinner.SetSelection (0);
+                break;
+            case EmailHelper.ShowUnreadEnum.RecentMessages:
+                unreadSpinner.SetSelection(1);
+                break;
+            case EmailHelper.ShowUnreadEnum.TodaysMessages:
+                unreadSpinner.SetSelection(2);
+                break;
+            }
+
+            unreadSpinner.ItemSelected += UnreadSpinner_ItemSelected;
 
 //            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
 //                var crashButton = view.FindViewById<Button> (Resource.Id.crash_button);
@@ -68,6 +83,21 @@ namespace NachoClient.AndroidClient
             return view;
         }
 
+        void UnreadSpinner_ItemSelected (object sender, AdapterView.ItemSelectedEventArgs e)
+        {
+            switch (e.Position) {
+            case 0:
+                EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.AllMessages);
+                break;
+            case 1:
+                EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.RecentMessages);
+                break;
+            case 2:
+                EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.TodaysMessages);
+                break;
+            }
+        }
+
         void TutorialButton_Click (object sender, EventArgs e)
         {
             StartActivity (new Intent (this.Activity, typeof(TutorialActivity)));
@@ -76,11 +106,6 @@ namespace NachoClient.AndroidClient
         void HotSwitch_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
         {
             LoginHelpers.SetShowHotCards (e.IsChecked); 
-        }
-
-        void UnreadSwitch_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
-        {
-            EmailHelper.SetShouldDisplayAllUnreadCount (e.IsChecked);
         }
 
         void CrashButton_Click (object sender, EventArgs e)

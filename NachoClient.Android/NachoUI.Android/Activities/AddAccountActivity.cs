@@ -80,8 +80,8 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "LaunchActivity syncing complete");
             if (null != account) {
+                LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
                 NcApplication.Instance.Account = account;
-                LoginHelpers.SetSwitchToTime (account);
             }
             var intent = NcTabBarActivity.HotListIntent (this);
             intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);

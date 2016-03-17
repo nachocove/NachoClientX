@@ -452,12 +452,20 @@ namespace NachoCore
                     onFailure (Cred, fatalError);
                     return;
                 }
-                var jsonResponse = Encoding.UTF8.GetString (response.GetContent ());
-                var decodedResponse = Newtonsoft.Json.Linq.JObject.Parse (jsonResponse);
 
+                Newtonsoft.Json.Linq.JObject decodedResponse;
+                try {
+                    var jsonResponse = Encoding.UTF8.GetString(response.GetContent ());
 #if DEBUG
-                Log.Info (Log.LOG_SYS, "{0}: : OAUTH2 response: {1}", logHeader, jsonResponse);
+                    Log.Info (Log.LOG_SYS, "{0}: : OAUTH2 response: {1}", logHeader, jsonResponse);
 #endif
+                    decodedResponse = Newtonsoft.Json.Linq.JObject.Parse (jsonResponse);
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_HTTP, "Could not decode user info: {0}", ex);
+                    onFailure(Cred, true);
+                    return;
+                }
+
                 Newtonsoft.Json.Linq.JToken tokenType;
                 if (!decodedResponse.TryGetValue ("token_type", out tokenType) || (string)tokenType != "Bearer") {
                     Log.Error (Log.LOG_SYS, "{0}: Unknown OAUTH2 token_type {1}", logHeader, tokenType);

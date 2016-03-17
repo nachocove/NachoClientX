@@ -1892,6 +1892,7 @@
     <AndroidResource Include="Resources\layout\ChatParticipantListCell.axml" />
     <AndroidResource Include="Resources\layout\ChatParticipantListActivity.axml" />
     <AndroidResource Include="Resources\layout\ChatParticipantListFragment.axml" />
+    <AndroidResource Include="Resources\layout\spinner_item.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
