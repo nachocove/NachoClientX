@@ -118,7 +118,7 @@ namespace NachoClient.iOS
 
             NcTask.Run (() => {
                 int unreadMessageCount;
-                EmailHelper.GetUnreadMessageCount (account, out unreadMessageCount, EmailHelper.GetNewSincePreference ());
+                EmailHelper.GetUnreadMessageCount (account, out unreadMessageCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     if (100000 > unreadMessageCount) {
                         unreadCountLabel.Text = String.Format ("{0:N0}", unreadMessageCount);

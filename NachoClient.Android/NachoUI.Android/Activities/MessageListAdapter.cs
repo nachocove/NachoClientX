@@ -686,7 +686,7 @@ namespace NachoClient.AndroidClient
                 int likelyCount;
                 int deferredCount;
                 int deadlineCount;
-                EmailHelper.GetMessageCounts (NcApplication.Instance.Account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount, EmailHelper.GetNewSincePreference ());
+                EmailHelper.GetMessageCounts (NcApplication.Instance.Account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     summaryViewHolder.inboxMessageCountView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadCount);
                     summaryViewHolder.deferredMessageCountView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredCount);

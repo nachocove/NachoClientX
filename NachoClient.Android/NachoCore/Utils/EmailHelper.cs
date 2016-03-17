@@ -864,16 +864,29 @@ namespace NachoCore.Utils
             }
         }
 
-        public static DateTime GetNewSincePreference ()
+        public static DateTime GetNewSincePreference (int accountId)
         {
-            if (ShouldDisplayAllUnreadCount ()) {
+            switch (HowToDisplayUnreadCount ()) {
+            case ShowUnreadEnum.AllMessages:
+                return DateTime.MinValue.AddDays(2);  // Some code will subtract a day from this value
+            case ShowUnreadEnum.TodaysMessages:
+                return DateTime.Now.Date.ToUniversalTime ();  // midnight
+            case ShowUnreadEnum.RecentMessages:
+                // Get the last 'switch away' time.
+                // If the account 'switch away' time is not set, return the last background time.
+                var switchAwayTime = LoginHelpers.GetSwitchAwayTime (accountId);
+                if (default(DateTime) == switchAwayTime) {
+                    return LoginHelpers.GetBackgroundTime ();
+                } else {
+                    return switchAwayTime;
+                }
+            default:
+                NcAssert.CaseError ();
                 return DateTime.MinValue;
-            } else {
-                return LoginHelpers.GetBackgroundTime ();
             }
         }
 
-        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount, DateTime newSince)
+        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount)
         {
             unreadMessageCount = 0;
             deadlineMessageCount = 0;
@@ -884,6 +897,7 @@ namespace NachoCore.Utils
                 if (account.ContainsAccount (accountId)) {
                     var inboxFolder = NcEmailManager.InboxFolder (accountId);
                     if (null != inboxFolder) {
+                        var newSince = GetNewSincePreference (accountId);
                         unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
                         deadlineMessageCount += McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
                         deferredMessageCount += new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
@@ -893,7 +907,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void GetUnreadMessageCount (McAccount account, out int unreadMessageCount, DateTime newSince)
+        public static void GetUnreadMessageCount (McAccount account, out int unreadMessageCount)
         {
             unreadMessageCount = 0;
 
@@ -901,29 +915,38 @@ namespace NachoCore.Utils
                 if (account.ContainsAccount (accountId)) {
                     var inboxFolder = NcEmailManager.InboxFolder (accountId);
                     if (null != inboxFolder) {
+                        var newSince = GetNewSincePreference (accountId);
                         unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
                     }
                 }
             }
         }
 
-        public const string AllUnread_McMutablesModule = "Settings";
-        public const string AllUnread_McMutablesKey = "ShowAllUnread";
+        public const string Unread_McMutablesModule = "Settings";
+        public const string Unread_McMutablesKey = "ShowUnread";
+
+        // Add to the end b/c in db
+        public enum ShowUnreadEnum : int
+        {
+            AllMessages = 1,
+            RecentMessages = 2,
+            TodaysMessages = 3,
+        };
 
         /// <summary>
         /// Shoulds the display all unread count if true.  Just new unread if false.
         /// </summary>
         /// <returns><c>true</c>, if display all unread count is set, <c>false</c> otherwise display new unread.</returns>
-        public static bool ShouldDisplayAllUnreadCount ()
+        public static ShowUnreadEnum HowToDisplayUnreadCount ()
         {
             var accountId = McAccount.GetDeviceAccount ().Id;
-            return McMutables.GetBoolDefault (accountId, AllUnread_McMutablesModule, AllUnread_McMutablesKey, true);
+            return (ShowUnreadEnum) McMutables.GetInt (accountId, Unread_McMutablesModule, Unread_McMutablesKey, (int) ShowUnreadEnum.AllMessages);
         }
 
-        public static void SetShouldDisplayAllUnreadCount (bool enabled)
+        public static void SetHowToDisplayUnreadCount (ShowUnreadEnum showUnreader)
         {
             var accountId = McAccount.GetDeviceAccount ().Id;
-            McMutables.SetBool (accountId, AllUnread_McMutablesModule, AllUnread_McMutablesKey, enabled);
+            McMutables.SetInt (accountId, Unread_McMutablesModule, Unread_McMutablesKey, (int) showUnreader);
         }
 
         public static bool IsSalesForceContact (int accountId, string emailAddress)
@@ -1104,9 +1127,8 @@ namespace NachoCore.Utils
             var account = McAccount.GetSalesForceAccount ();
             if (null != account && SalesForceProtoControl.ShouldAddBccToEmail (account.Id) &&
                 (CheckForSalesforceContacts (account.Id, cache, message.To) ||
-                 CheckForSalesforceContacts (account.Id, cache, message.Cc) ||
-                 CheckForSalesforceContacts (account.Id, cache, message.Bcc)))
-            {
+                CheckForSalesforceContacts (account.Id, cache, message.Cc) ||
+                CheckForSalesforceContacts (account.Id, cache, message.Bcc))) {
                 return SalesForceProtoControl.EmailToSalesforceAddress (account.Id);
             }
             return null;
@@ -1125,7 +1147,7 @@ namespace NachoCore.Utils
                     }
                 }
             }
-            return (syncStarted ? NcResult.OK() : NachoSyncResult.DoesNotSync());
+            return (syncStarted ? NcResult.OK () : NachoSyncResult.DoesNotSync ());
         }
 
         public static NcResult SyncUnifiedSent ()
@@ -1141,7 +1163,7 @@ namespace NachoCore.Utils
                     }
                 }
             }
-            return (syncStarted ? NcResult.OK() : NachoSyncResult.DoesNotSync());
+            return (syncStarted ? NcResult.OK () : NachoSyncResult.DoesNotSync ());
         }
        
     }
