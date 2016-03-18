@@ -92,6 +92,7 @@ namespace NachoClient.AndroidClient
         void AccountAdapter_AccountSelected (object sender, McAccount account)
         {
             LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
+            LoginHelpers.SetMostRecentAccount (account.Id);
             NcApplication.Instance.Account = account;
 
             var parent = (AccountListDelegate)Activity;
