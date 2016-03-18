@@ -922,6 +922,32 @@ namespace NachoCore.Utils
             }
         }
 
+        public static int GetUnreadMessageCountForBadge ()
+        {
+            var account = McAccount.GetUnifiedAccount ();
+            var unreadPref = HowToDisplayUnreadCount ();
+            DateTime since = default(DateTime);
+            if (unreadPref == ShowUnreadEnum.AllMessages) {
+                since = default(DateTime).AddDays (2);
+            } else if (unreadPref == ShowUnreadEnum.TodaysMessages) {
+                since = DateTime.Now.Date.ToUniversalTime ();
+            } else if (unreadPref == ShowUnreadEnum.RecentMessages) {
+                since = LoginHelpers.GetBackgroundTime ();
+            } else {
+                NcAssert.CaseError ();
+            }
+            var count = 0;
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
+                if (account.ContainsAccount (accountId)) {
+                    var inboxFolder = NcEmailManager.InboxFolder (accountId);
+                    if (null != inboxFolder) {
+                        count += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, since);
+                    }
+                }
+            }
+            return count;
+        }
+
         public const string Unread_McMutablesModule = "Settings";
         public const string Unread_McMutablesKey = "ShowUnread";
 
