@@ -309,17 +309,7 @@ namespace NachoClient
 
         static Random random = new Random ();
 
-        public static List<UIColor> accountColors = new List<UIColor> () {
-            UIColor.LightGray,
-            UIColor.FromRGB (0x01, 0x6B, 0x5E),
-            UIColor.FromRGB (0xFA, 0xBF, 0x20),
-            UIColor.FromRGB (0xD2, 0x47, 0x47),
-            UIColor.FromRGB (0xBE, 0xCA, 0x39),
-            UIColor.FromRGB (0x4F, 0x64, 0x6D),
-            UIColor.FromRGB (0xF3, 0x68, 0x00),
-            UIColor.FromRGB (0x2B, 0xD9, 0xB2),
-            UIColor.FromRGB (0x3C, 0xB9, 0x6A),
-        };
+        public static List<UIColor> accountColors = null;
 
         public static int PickRandomColorForUser ()
         {
@@ -340,6 +330,12 @@ namespace NachoClient
 
         public static UIColor ColorForAccount (int accountId)
         {
+            if (accountColors == null) {
+                accountColors = new List<UIColor> (McAccount.AccountColors.Length / 3);
+                for (int i = 0; i < McAccount.AccountColors.Length / 3; ++i) {
+                    accountColors.Add (UIColor.FromRGB(McAccount.AccountColors [i,0], McAccount.AccountColors [i,1], McAccount.AccountColors [i,2]));
+                }
+            }
             if (!AccountColorIndexCache.ContainsKey (accountId)) {
                 var account = McAccount.QueryById<McAccount> (accountId);
                 AccountColorIndexCache [accountId] = account.ColorIndex;

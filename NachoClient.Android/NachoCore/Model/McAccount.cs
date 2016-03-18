@@ -648,13 +648,25 @@ namespace NachoCore.Model
             return Id == accountId;
         }
 
+        public static byte[,] AccountColors = new byte[,] {
+            { 0xE0, 0xE0, 0xE0 },
+            { 0x01, 0x6B, 0x5E },
+            { 0xFA, 0xBF, 0x20 },
+            { 0xD2, 0x47, 0x47 },
+            { 0xBE, 0xCA, 0x39 },
+            { 0x4F, 0x64, 0x6D },
+            { 0xF3, 0x68, 0x00 },
+            { 0x2B, 0xD9, 0xB2 },
+            { 0x3C, 0xB9, 0x6A }
+        };
+
         public void AssignOpenColorIndex ()
         {
             if (AccountType == AccountTypeEnum.Device || AccountType == AccountTypeEnum.Unified || AccountType == AccountTypeEnum.SalesForce) {
                 ColorIndex = 0;
             } else {
                 var indexCounts = new Dictionary<int, int> ();
-                var colorCount = 8;
+                var colorCount = AccountColors.Length / 3;
                 for (int i = 0; i < colorCount; ++i) {
                     indexCounts [i] = 0;
                 }

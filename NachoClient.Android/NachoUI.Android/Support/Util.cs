@@ -171,22 +171,18 @@ namespace NachoClient.AndroidClient
             return outputUri;
         }
 
-        public static List<int> accountColors = new List<int> () {
-            unchecked((int)0xFFE0E0E0),
-            unchecked((int)0xFF016B5E),
-            unchecked((int)0xFFFABF20),
-            unchecked((int)0xFFD24747),
-            unchecked((int)0xFFBECA39),
-            unchecked((int)0xFF4F646D),
-            unchecked((int)0xFFF36800),
-            unchecked((int)0xFF2BD9B2),
-            unchecked((int)0xFF3CB96A),
-        };
+        public static List<int> accountColors = null;
 
         static Dictionary<int, int> AccountColorIndexCache = new Dictionary<int, int> ();
 
         public static int ColorForAccount (int accountId)
         {
+            if (accountColors == null) {
+                accountColors = new List<int> (McAccount.AccountColors.Length / 3);
+                for (int i = 0; i < McAccount.AccountColors.Length / 3; ++i) {
+                    accountColors.Add (unchecked((int)(0xFF000000 | (McAccount.AccountColors [i,0] << 16) | (McAccount.AccountColors [i,1] << 8) | McAccount.AccountColors [i,2])));
+                }
+            }
             if (!AccountColorIndexCache.ContainsKey (accountId)) {
                 var account = McAccount.QueryById<McAccount> (accountId);
                 AccountColorIndexCache [accountId] = account.ColorIndex;
