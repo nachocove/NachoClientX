@@ -20,6 +20,7 @@ namespace NachoClient.iOS
 
         SFDCOAuth2Authenticator Authenticator;
         UIView AuthView;
+        bool IsCanceled = false;
 
         #endregion
 
@@ -35,6 +36,12 @@ namespace NachoClient.iOS
 
         #region Authenticator Setup
 
+        public void Cancel ()
+        {
+            IsCanceled = true;
+            Authenticator.OnCancelled ();
+        }
+
         void RestartAuthenticator ()
         {
             if (Authenticator != null) {
@@ -45,21 +52,11 @@ namespace NachoClient.iOS
                 AuthView.RemoveFromSuperview ();
             }
             WebAuthenticator.ClearCookies ();
-            var scopes = new List<string> ();
-            scopes.Add ("api");
-            scopes.Add ("refresh_token");
             string loginHint = null;
             if (Account != null) {
                 loginHint = Account.EmailAddr;
             }
-            Authenticator = new SFDCOAuth2Authenticator (
-                clientId: SFDCOAuth2Constants.ClientId,
-                clientSecret: SFDCOAuth2Constants.ClientSecret,
-                scope: String.Join (" ", scopes.ToArray ()),
-                accessTokenUrl: new Uri (SFDCOAuth2Constants.TokenUrl),
-                authorizeUrl: new Uri (SFDCOAuth2Constants.AuthorizeUrl),
-                redirectUrl: new Uri (SFDCOAuth2Constants.Redirecturi),
-                loginHint: loginHint);
+            Authenticator = new SFDCOAuth2Authenticator (loginHint);
             Authenticator.AllowCancel = true;
             Authenticator.Completed += AuthCompleted;
             Authenticator.Error += AuthError;
@@ -95,6 +92,9 @@ namespace NachoClient.iOS
 
         public void AuthCompleted (object sender, AuthenticatorCompletedEventArgs e)
         {
+            if (IsCanceled) {
+                return;
+            }
             if (e.IsAuthenticated) {
                 string access_token;
                 e.Account.Properties.TryGetValue ("access_token", out access_token);
@@ -102,17 +102,7 @@ namespace NachoClient.iOS
                 string refresh_token;
                 e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
 
-//                string expires_in;
-//                e.Account.Properties.TryGetValue ("expires_in", out expires_in);
-//                Log.Info (Log.LOG_SYS, "OAUTH2 Token acquired. expires_in={0}", expires_in);
-//
-//                string expiresString = "0";
-                uint expireSecs = 3600;
-//                if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
-//                    if (!uint.TryParse (expiresString, out expireSecs)) {
-//                        Log.Info (Log.LOG_UI, "AuthCompleted: Could not convert expires value {0} to int", expiresString);
-//                    }
-//                }
+                uint expireSecs = 7200;
 
                 string id_url;
                 e.Account.Properties.TryGetValue ("id", out id_url);
@@ -150,6 +140,8 @@ namespace NachoClient.iOS
                         new Uri (instanceUrl));
                     SalesForceProtoControl.SetShouldAddBccToEmail (Account.Id, true);
                     Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController created account ID{0}", Account.Id);
+                    Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
+                    Account.Update ();
 
 //                    Newtonsoft.Json.Linq.JObject photos;
 //                    if (userInfo.TryGetValue ("photos", out photos)) {
@@ -168,6 +160,9 @@ namespace NachoClient.iOS
 
         public void AuthError (object sender, AuthenticatorErrorEventArgs e)
         {
+            if (IsCanceled) {
+                return;
+            }
             Log.Info (Log.LOG_UI, "SalesforceCredentialsViewController auth error");
             NcAlertView.ShowMessage (this, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
         }
