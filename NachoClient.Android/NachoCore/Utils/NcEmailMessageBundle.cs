@@ -787,7 +787,7 @@ namespace NachoCore.Utils
         protected override void VisitTextPart (TextPart entity)
         {
             bool isAttachment = entity.ContentDisposition != null && entity.ContentDisposition.IsAttachment;
-            if (isAttachment && MimeHelpers.isExchangeATTFilename (entity.FileName)) {
+            if (isAttachment && !string.IsNullOrEmpty (entity.FileName) && MimeHelpers.isExchangeATTFilename (entity.FileName)) {
                 isAttachment = false;
             }
             if (!isAttachment) {
