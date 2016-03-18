@@ -663,6 +663,7 @@
     <Compile Include="NachoUI.Android\Activities\ChatViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration53.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

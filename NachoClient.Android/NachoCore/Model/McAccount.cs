@@ -307,6 +307,8 @@ namespace NachoCore.Model
 
         public bool IsMdmBased { get; set; }
 
+        public int ColorIndex { get; set; }
+
         /// <summary>
         /// Does this account have the given capability or capabilities?
         /// </summary>
@@ -644,6 +646,34 @@ namespace NachoCore.Model
                 return true;
             }
             return Id == accountId;
+        }
+
+        public void AssignOpenColorIndex ()
+        {
+            if (AccountType == AccountTypeEnum.Device || AccountType == AccountTypeEnum.Unified || AccountType == AccountTypeEnum.SalesForce) {
+                ColorIndex = 0;
+            } else {
+                var indexCounts = new Dictionary<int, int> ();
+                var colorCount = NachoClient.Util.accountColors.Count;
+                for (int i = 0; i < colorCount; ++i) {
+                    indexCounts [i] = 0;
+                }
+                foreach (var account in GetAllAccounts()) {
+                    indexCounts [account.ColorIndex] += 1;
+                }
+                int targetCount = 0;
+                bool didAssignColor = false;
+                while (!didAssignColor) {
+                    for (int i = 1; i < colorCount; ++i) {
+                        if (indexCounts [i] == targetCount) {
+                            ColorIndex = i;
+                            didAssignColor = true;
+                            break;
+                        }
+                    }
+                    ++targetCount;
+                }
+            }
         }
     }
 
