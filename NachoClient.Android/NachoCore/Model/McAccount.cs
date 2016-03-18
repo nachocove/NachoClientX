@@ -654,7 +654,7 @@ namespace NachoCore.Model
                 ColorIndex = 0;
             } else {
                 var indexCounts = new Dictionary<int, int> ();
-                var colorCount = NachoClient.Util.accountColors.Count;
+                var colorCount = 8;
                 for (int i = 0; i < colorCount; ++i) {
                     indexCounts [i] = 0;
                 }
