@@ -493,12 +493,13 @@ namespace NachoCore.IMAP
         /// Resolves the one sync, i.e. One SyncKit.
         /// </summary>
         /// <param name="BEContext">BEContext.</param>
-        /// <param name="synckit">Synckit.</param>
-        public static void ResolveOneSync (IBEContext BEContext, SyncKit synckit)
+        /// <param name = "pending">A McPending</param>
+        /// <param name = "folder">A McFolder</param>
+        public static void ResolveOneSync (IBEContext BEContext, McPending pending, McFolder folder)
         {
             var protocolState = BEContext.ProtocolState;
-            ResolveOneSync (BEContext, ref protocolState, synckit.Folder, synckit.PendingSingle);
-            MaybeAdvanceSyncStage (ref protocolState, synckit.PendingSingle != null);
+            ResolveOneSync (BEContext, ref protocolState, folder, pending);
+            MaybeAdvanceSyncStage (ref protocolState, pending != null);
         }
 
         /// <summary>

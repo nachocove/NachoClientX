@@ -122,6 +122,10 @@ namespace NachoCore
             lock (PendingResolveLockObj) {
                 ConsolidatePending ();
                 foreach (var pending in PendingList) {
+                    if (pending.State != McPending.StateEnum.Dispatched) {
+                        Log.Error (Log.LOG_BACKEND, "ResolveAllDeferred: Ignoring non-Dispatched pending {0} in state {1}", pending, pending.State);
+                        continue;
+                    }
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 }
                 PendingList.Clear ();
