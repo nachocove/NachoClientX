@@ -465,6 +465,29 @@ namespace NachoCore.Utils
             CompleteBundleAfterParse ();
         }
 
+        public void ImportImageNode (HtmlNode node, string name, string mimeType, System.IO.Stream contents)
+        {
+            var entry = new BundleManifest.Entry ();
+            entry.Path = SafeFilename (name);
+            string entryKey = entry.Path;
+            Manifest.Entries [entryKey] = entry;
+            entry.ContentType = mimeType;
+            using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
+                contents.CopyTo (writer.BaseStream);
+            }
+            var relativeUrl = Storage.RelativeUrlForPath (entry.Path, FullHtmlPath);
+            if (!node.Attributes.Contains ("nacho-original-src") && node.Attributes.Contains ("src")) {
+                node.SetAttributeValue ("nacho-original-src", node.GetAttributeValue ("src", ""));
+            }
+            node.SetAttributeValue ("nacho-resize", "true");
+            if (null != relativeUrl) {
+                node.SetAttributeValue ("nacho-bundle-entry", entryKey);
+                node.SetAttributeValue ("src", relativeUrl.ToString ());
+            } else {
+                node.SetAttributeValue ("src", Storage.UrlForPath (entry.Path, entry.ContentType).ToString ());
+            }
+        }
+
         private void CompleteBundleAfterParse ()
         {
             FillMissing ();
