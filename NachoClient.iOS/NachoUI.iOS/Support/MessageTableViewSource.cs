@@ -846,7 +846,7 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
            
-            var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            var unreadMessageView = cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
             unreadMessageView.Hidden = true;
 
             var messageHeaderView = (MessageHeaderView)cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
