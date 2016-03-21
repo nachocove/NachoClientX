@@ -336,7 +336,11 @@ namespace NachoClient.iOS
         {
             DisplayNameTextBlock.SetValue (account.DisplayName);
 
-            SignatureBlock.SetValue (account.Signature);
+            if (!string.IsNullOrEmpty (account.HtmlSignature)) {
+                SignatureBlock.SetValue (account.HtmlSignature);
+            } else {
+                SignatureBlock.SetValue (account.Signature);
+            }
 
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (account.DaysToSyncEmail));
 
@@ -412,16 +416,15 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "SegueToSignatureEdit") {
                 var vc = (SignatureEditViewController)segue.DestinationViewController;
-                var tag = "Create a signature that will appear at the end of every email that you send.";
-                vc.Setup ("Signature", tag, account.Signature);
-                vc.OnSave = OnSaveSignature;
+                vc.DualModeSetup ("Signature",
+                    "Create a signature that will appear at the end of every email that you send.", account.Signature, OnSaveSignature,
+                    "Paste some HTML from the clipboard that will appear at the end of every email that you send.", account.HtmlSignature, OnSaveHtmlSignature);
                 return;
             }
             if (segue.Identifier == "SegueToDescriptionEdit") {
                 var vc = (SignatureEditViewController)segue.DestinationViewController;
                 var tag = "Create a descriptive label for this account.";
-                vc.Setup ("Description", tag, account.DisplayName);
-                vc.OnSave = OnSaveDescription;
+                vc.Setup ("Description", tag, account.DisplayName, OnSaveDescription);
                 return;
             }
             if (segue.Identifier == "SegueToAdvancedSettings") {
@@ -575,6 +578,15 @@ namespace NachoClient.iOS
         {
             SignatureBlock.SetValue (text);
             account.Signature = text;
+            account.HtmlSignature = "";
+            account.Update ();
+        }
+
+        void OnSaveHtmlSignature (string html)
+        {
+            SignatureBlock.SetValue (html);
+            account.Signature = "";
+            account.HtmlSignature = html;
             account.Update ();
         }
 

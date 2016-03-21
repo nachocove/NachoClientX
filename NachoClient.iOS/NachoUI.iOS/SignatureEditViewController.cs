@@ -4,6 +4,9 @@ using System;
 using CoreGraphics;
 using Foundation;
 using UIKit;
+using System.Collections.Generic;
+using System.IO;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -16,24 +19,57 @@ namespace NachoClient.iOS
 
         public delegate void OnSaveCallback (string text);
 
-        string itemTitle;
-        string explanatoryText;
-        string existingText;
-        public OnSaveCallback OnSave;
+        bool dualMode = false;
+        bool showingPlain = true;
 
-        UILabel labelView;
-        NcTextView textView;
+        string itemTitle;
+
+        string plainExplanation;
+        string existingPlain;
+        OnSaveCallback OnSavePlain;
+
+        string htmlExplanation;
+        string existingHtml;
+        OnSaveCallback OnSaveHtml;
+
+        UISegmentedControl plainHtmlChooser;
+        UILabel plainExplanationView;
+        NcTextView plainTextView;
+        UILabel htmlExplanationView;
+        UIWebView htmlPreview;
+        UIButton pasteButton;
         UIBarButtonItem saveButton;
         UIBarButtonItem cancelButton;
 
         private static nfloat HORIZONTAL_MARGIN = 15f;
         private static nfloat VERTICAL_MARGIN = 15f;
 
-        public void Setup (string title, string explanatoryText, string existingText)
+        public void Setup (string title, string explanatoryText, string existingText, OnSaveCallback onSave)
         {
+            dualMode = false;
+            showingPlain = true;
             this.itemTitle = title;
-            this.explanatoryText = explanatoryText;
-            this.existingText = existingText;
+            this.plainExplanation = explanatoryText;
+            this.existingPlain = existingText;
+            this.OnSavePlain = onSave;
+        }
+
+        public void DualModeSetup (string title,
+            string plainExplanation, string existingPlain, OnSaveCallback plainCallback,
+            string htmlExplanation, string existingHtml, OnSaveCallback htmlCallback)
+        {
+            dualMode = true;
+            showingPlain = string.IsNullOrEmpty (existingHtml);
+
+            this.itemTitle = title;
+
+            this.plainExplanation = plainExplanation;
+            this.existingPlain = existingPlain;
+            this.OnSavePlain = plainCallback;
+
+            this.htmlExplanation = htmlExplanation;
+            this.existingHtml = existingHtml;
+            this.OnSaveHtml = htmlCallback;
         }
 
         protected override void CreateViewHierarchy ()
@@ -51,27 +87,85 @@ namespace NachoClient.iOS
             NavigationItem.LeftBarButtonItem = cancelButton;
             NavigationItem.RightBarButtonItem = saveButton;
 
-            labelView = new UILabel (new CGRect (0, 0, View.Frame.Width, 0));
-            labelView.Font = A.Font_AvenirNextRegular14;
-            labelView.TextColor = UIColor.Black;
-            labelView.TextAlignment = UITextAlignment.Center;
-            labelView.BackgroundColor = A.Color_NachoLightGrayBackground;
-            labelView.LineBreakMode = UILineBreakMode.WordWrap;
-            View.AddSubview (labelView);
+            if (dualMode) {
 
-            textView = new NcTextView (new CGRect (HORIZONTAL_MARGIN, 0, View.Frame.Width - (2 * HORIZONTAL_MARGIN), View.Frame.Height));
-            textView.Font = A.Font_AvenirNextRegular14;
-            textView.TextColor = A.Color_NachoBlack;
-            textView.BackgroundColor = UIColor.White;
-            textView.ContentInset = new UIEdgeInsets (VERTICAL_MARGIN, 0, VERTICAL_MARGIN, 0);
-            textView.SelectionChanged += SelectionChangedHandler;
-            View.AddSubview (textView);
+                plainHtmlChooser = new UISegmentedControl (new CGRect (6, 5, View.Frame.Width - 12, 30));
+                plainHtmlChooser.InsertSegment ("Plain text", 0, false);
+                plainHtmlChooser.InsertSegment ("HTML", 1, false);
+                plainHtmlChooser.SelectedSegment = showingPlain ? 0 : 1;
+                plainHtmlChooser.TintColor = A.Color_NachoGreen;
+
+                var segmentedControlTextAttributes = new UITextAttributes ();
+                segmentedControlTextAttributes.Font = A.Font_AvenirNextDemiBold14;
+                plainHtmlChooser.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
+
+                plainHtmlChooser.ValueChanged += SelectionChanged;
+                View.AddSubview (plainHtmlChooser);
+
+                plainExplanationView = new UILabel (new CGRect (0, plainHtmlChooser.Frame.Bottom, View.Frame.Width, 0));
+                plainExplanationView.Font = A.Font_AvenirNextRegular14;
+                plainExplanationView.TextColor = UIColor.Black;
+                plainExplanationView.TextAlignment = UITextAlignment.Center;
+                plainExplanationView.BackgroundColor = A.Color_NachoLightGrayBackground;
+                plainExplanationView.LineBreakMode = UILineBreakMode.WordWrap;
+                View.AddSubview (plainExplanationView);
+
+                plainTextView = new NcTextView (new CGRect (HORIZONTAL_MARGIN, 0, View.Frame.Width - (2 * HORIZONTAL_MARGIN), View.Frame.Height));
+                plainTextView.Font = A.Font_AvenirNextRegular14;
+                plainTextView.TextColor = A.Color_NachoBlack;
+                plainTextView.BackgroundColor = UIColor.White;
+                plainTextView.ContentInset = new UIEdgeInsets (VERTICAL_MARGIN, 0, VERTICAL_MARGIN, 0);
+                plainTextView.SelectionChanged += SelectionChangedHandler;
+                View.AddSubview (plainTextView);
+
+                htmlExplanationView = new UILabel (new CGRect (0, plainHtmlChooser.Frame.Bottom, View.Frame.Width, 0));
+                htmlExplanationView.Font = A.Font_AvenirNextRegular14;
+                htmlExplanationView.TextColor = UIColor.Black;
+                htmlExplanationView.TextAlignment = UITextAlignment.Center;
+                htmlExplanationView.BackgroundColor = A.Color_NachoLightGrayBackground;
+                htmlExplanationView.LineBreakMode = UILineBreakMode.WordWrap;
+                View.AddSubview (htmlExplanationView);
+
+                htmlPreview = new UIWebView (new CGRect (HORIZONTAL_MARGIN, VERTICAL_MARGIN, View.Frame.Width - (2 * HORIZONTAL_MARGIN), View.Frame.Height));
+                View.AddSubview (htmlPreview);
+
+                pasteButton = new UIButton (UIButtonType.System);
+                pasteButton.Frame = new CGRect (HORIZONTAL_MARGIN, 0, 1, 1);
+                pasteButton.AccessibilityLabel = "Paste HTML";
+                pasteButton.SetTitle ("Paste HTML", UIControlState.Normal);
+                pasteButton.TouchUpInside += PasteButton_Clicked;
+                View.AddSubview (pasteButton);
+
+            } else {
+
+                plainExplanationView = new UILabel (new CGRect (0, 0, View.Frame.Width, 0));
+                plainExplanationView.Font = A.Font_AvenirNextRegular14;
+                plainExplanationView.TextColor = UIColor.Black;
+                plainExplanationView.TextAlignment = UITextAlignment.Center;
+                plainExplanationView.BackgroundColor = A.Color_NachoLightGrayBackground;
+                plainExplanationView.LineBreakMode = UILineBreakMode.WordWrap;
+                View.AddSubview (plainExplanationView);
+
+                plainTextView = new NcTextView (new CGRect (HORIZONTAL_MARGIN, 0, View.Frame.Width - (2 * HORIZONTAL_MARGIN), View.Frame.Height));
+                plainTextView.Font = A.Font_AvenirNextRegular14;
+                plainTextView.TextColor = A.Color_NachoBlack;
+                plainTextView.BackgroundColor = UIColor.White;
+                plainTextView.ContentInset = new UIEdgeInsets (VERTICAL_MARGIN, 0, VERTICAL_MARGIN, 0);
+                plainTextView.SelectionChanged += SelectionChangedHandler;
+                View.AddSubview (plainTextView);
+            }
         }
 
         void SaveButton_Clicked (object sender, EventArgs e)
         {
-            if (null != OnSave) {
-                OnSave (textView.Text);
+            if (showingPlain) {
+                if (null != OnSavePlain) {
+                    OnSavePlain (plainTextView.Text);
+                }
+            } else {
+                if (null != OnSaveHtml) {
+                    OnSaveHtml (existingHtml);
+                }
             }
             NavigationController.PopViewController (true);
         }
@@ -82,30 +176,197 @@ namespace NachoClient.iOS
             NavigationController.PopViewController (true);
         }
 
+        void PasteButton_Clicked (object sender, EventArgs e)
+        {
+            var pasteboard = UIPasteboard.General;
+            if (pasteboard.Contains (new string[] { "Apple Web Archive pasteboard type" })) {
+                NSData webData = pasteboard.DataForPasteboardType ("Apple Web Archive pasteboard type");
+                if (null != webData) {
+
+                    // Convert the raw data into a dictionary.
+                    NSPropertyListFormat format = NSPropertyListFormat.Xml;
+                    NSError error;
+                    NSObject webObject = NSPropertyListSerialization.PropertyListWithData (webData, (NSPropertyListReadOptions)0, ref format, out error);
+                    if (webObject is NSDictionary) {
+                        NSDictionary webObjectDictionary = (NSDictionary)webObject;
+
+                        // Get the inner dictionary that contains the HTML.
+                        NSObject mainResource = webObjectDictionary.ObjectForKey (new NSString ("WebMainResource"));
+                        if (mainResource is NSDictionary) {
+                            NSDictionary mainResourceDictionary = (NSDictionary)mainResource;
+
+                            // Get the UTF-8 encoded HTML and convert it to a string.
+                            NSObject resourceData = mainResourceDictionary.ObjectForKey (new NSString ("WebResourceData"));
+                            if (resourceData is NSData) {
+                                string html = NSString.FromData ((NSData)resourceData, NSStringEncoding.UTF8).ToString ();
+                                existingHtml = html;
+
+                                // The HTML is interesting only if it contains images or nacho-related attributes.
+                                if (html.Contains ("nacho") || html.Contains ("img") || html.Contains ("IMG")) {
+                                    bool changed = false;
+
+                                    // Parse the HTML string and iterate through all the nodes.
+                                    var htmlDoc = new HtmlAgilityPack.HtmlDocument ();
+                                    htmlDoc.LoadHtml (html);
+                                    var nodeQueue = new Queue<HtmlAgilityPack.HtmlNode> ();
+                                    nodeQueue.Enqueue (htmlDoc.DocumentNode);
+                                    while (0 < nodeQueue.Count) {
+                                        var node = nodeQueue.Dequeue ();
+
+                                        // Is it an image node?
+                                        if (HtmlAgilityPack.HtmlNodeType.Element == node.NodeType && "img" == node.Name && node.Attributes.Contains ("src")) {
+
+                                            try {
+                                                string src = node.GetAttributeValue ("src", "");
+                                                string srcUrl = null;
+                                                if (Uri.IsWellFormedUriString (src, UriKind.Absolute) && Uri.UriSchemeFile == new Uri (src).Scheme) {
+                                                    srcUrl = src;
+                                                } else if (Uri.IsWellFormedUriString (src, UriKind.Relative)) {
+                                                    // The "src" attribute is a relative URL.  Calculate the absolute URL.
+                                                    NSObject baseUrlObject = mainResourceDictionary.ValueForKey (new NSString ("WebResourceURL"));
+                                                    if (baseUrlObject is NSString) {
+                                                        string baseUrl = ((NSString)baseUrlObject).ToString ();
+                                                        if (Uri.IsWellFormedUriString (baseUrl, UriKind.Absolute)) {
+                                                            srcUrl = new Uri (new Uri (baseUrl), src).ToString ();
+                                                        }
+                                                    }
+                                                }
+                                                if (null != srcUrl) {
+
+                                                    // Iterate through the sub-resources in the web archive, looking for one that matches the image's URL.
+                                                    NSObject subResourceArrayObject = webObjectDictionary.ObjectForKey (new NSString ("WebSubresources"));
+                                                    if (subResourceArrayObject is NSArray) {
+                                                        NSArray subResourceArray = (NSArray)subResourceArrayObject;
+                                                        for (nuint i = 0; i < subResourceArray.Count; ++i) {
+                                                            NSDictionary subResource = subResourceArray.GetItem<NSDictionary> (i);
+                                                            NSObject subResourceUrlObject = subResource.ValueForKey (new NSString ("WebResourceURL"));
+                                                            if (subResourceUrlObject is NSString) {
+                                                                string subResourceUrl = ((NSString)subResourceUrlObject).ToString ();
+                                                                if (subResourceUrl == srcUrl) {
+
+                                                                    // Found a match.  Get the information about the image, including the image data.
+                                                                    string contentType = "image/jpg";
+                                                                    NSObject subResourceTypeObject = subResource.ValueForKey (new NSString ("WebResourceMIMEType"));
+                                                                    if (subResourceTypeObject is NSString) {
+                                                                        contentType = ((NSString)subResourceTypeObject).ToString ();
+                                                                    }
+                                                                    NSObject subResourceContentsObject = subResource.ObjectForKey (new NSString ("WebResourceData"));
+                                                                    if (subResourceContentsObject is NSData) {
+                                                                        NSData subResourceContents = (NSData)subResourceContentsObject;
+                                                                        string dataUrl = string.Format ("data:{0};base64,{1}",
+                                                                            contentType, Convert.ToBase64String(subResourceContents.ToArray ()));
+                                                                        node.Attributes.Remove("src");
+                                                                        node.SetAttributeValue ("src", dataUrl);
+                                                                        node.Attributes.Remove("nacho-bundle-entry");
+                                                                        node.Attributes.Remove("nacho-resize");
+                                                                        node.Attributes.Remove("nacho-original-src");
+                                                                        changed = true;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            } catch (ArgumentOutOfRangeException ex) {
+                                                // Thrown from Uri(Uri,string) if the base URI is not absolute.
+                                                Log.Error (Log.LOG_UI, "Unexpected {0} while processing pasted HTML: {1}", ex.GetType ().Name, ex.Message);
+                                            } catch (UriFormatException ex) {
+                                                Log.Error (Log.LOG_UI, "Unexpected {0} while processing pasted HTML: {1}", ex.GetType ().Name, ex.Message);
+                                            } catch (IOException ex) {
+                                                Log.Error (Log.LOG_UI, "Unexpected {0} while processing pasted HTML: {1}", ex.GetType ().Name, ex.Message);
+                                            }
+
+                                        } else if (node.Attributes.Contains ("nacho-bundle-entry")) {
+                                            // A stray nacho-bundle-entry attribute can cause a crash when the message is sent.
+                                            node.Attributes.Remove ("nacho-bundle-entry");
+                                            changed = true;
+                                        }
+                                        foreach (var child in node.ChildNodes) {
+                                            nodeQueue.Enqueue (child);
+                                        }
+                                    }
+                                    if (changed) {
+                                        var writer = new StringWriter ();
+                                        htmlDoc.Save (writer);
+                                        html = writer.ToString ();
+                                    }
+                                }
+                                existingHtml = html;
+                                ConfigureAndLayout ();
+                            }
+                        }
+                    }
+                }
+            } else {
+                NcAlertView.ShowMessage (this, "No HTML", "The clipboard does not contain any HTML");
+            }
+        }
+
+        void SelectionChanged (object sender, EventArgs e)
+        {
+            existingPlain = plainTextView.Text;
+            showingPlain = 0 == (sender as UISegmentedControl).SelectedSegment;
+            ConfigureAndLayout ();
+        }
+
         protected override void ConfigureAndLayout ()
         {
-            if (null == explanatoryText) {
-                labelView.Hidden = true;
-                ViewFramer.Create (labelView).Height (0);
-            } else {
-                labelView.Hidden = false;
-                labelView.Lines = 0;
-                labelView.Text = explanatoryText;
-                labelView.SizeToFit ();
-                ViewFramer.Create (labelView).AdjustHeight (20).Width (View.Frame.Width);
-            }
+            if (showingPlain) {
 
-            textView.Text = existingText;
-            textView.SelectedRange = new NSRange (0, 0);
-            textView.BecomeFirstResponder ();
+                if (string.IsNullOrEmpty (plainExplanation)) {
+                    plainExplanationView.Hidden = true;
+                    ViewFramer.Create (plainExplanationView).Height (0);
+                } else {
+                    plainExplanationView.Hidden = false;
+                    plainExplanationView.Lines = 0;
+                    plainExplanationView.Text = plainExplanation;
+                    plainExplanationView.SizeToFit ();
+                    ViewFramer.Create (plainExplanationView).AdjustHeight (20).Width (View.Frame.Width);
+                }
+
+                plainTextView.Hidden = false;
+                plainTextView.Text = existingPlain;
+                plainTextView.SelectedRange = new NSRange (0, 0);
+                plainTextView.BecomeFirstResponder ();
+
+                if (dualMode) {
+                    htmlExplanationView.Hidden = true;
+                    htmlPreview.Hidden = true;
+                    pasteButton.Hidden = true;
+                }
+
+            } else {
+
+                if (string.IsNullOrEmpty (htmlExplanation)) {
+                    htmlExplanationView.Hidden = true;
+                    ViewFramer.Create (htmlExplanationView).Height (0);
+                } else {
+                    htmlExplanationView.Hidden = false;
+                    htmlExplanationView.Lines = 0;
+                    htmlExplanationView.Text = htmlExplanation;
+                    htmlExplanationView.SizeToFit ();
+                    ViewFramer.Create (htmlExplanationView).AdjustHeight (20).Width (View.Frame.Width);
+                }
+
+                htmlPreview.Hidden = false;
+                string htmlToLoad = existingHtml ?? "";
+                htmlPreview.LoadHtmlString (htmlToLoad, null);
+
+                pasteButton.Hidden = false;
+
+                plainExplanationView.Hidden = true;
+                plainTextView.Hidden = true;
+                plainTextView.ResignFirstResponder ();
+            }
 
             Layout ();
         }
 
         protected override void Cleanup ()
         {
-            textView.SelectionChanged -= SelectionChangedHandler;
-            textView = null;
+            plainTextView.SelectionChanged -= SelectionChangedHandler;
+            plainTextView = null;
         }
 
         protected override void OnKeyboardChanged ()
@@ -116,8 +377,15 @@ namespace NachoClient.iOS
 
         private void Layout ()
         {
-            var yOffset = labelView.Frame.Bottom;
-            ViewFramer.Create (textView).Y(yOffset).Height (View.Frame.Height - yOffset - keyboardHeight);
+            if (showingPlain) {
+                var yOffset = plainExplanationView.Frame.Bottom;
+                ViewFramer.Create (plainTextView).Y (yOffset).Height (View.Frame.Height - yOffset - keyboardHeight);
+            } else {
+                var yOffset = htmlExplanationView.Frame.Bottom;
+                ViewFramer.Create (pasteButton).Y (yOffset);
+                pasteButton.SizeToFit ();
+                ViewFramer.Create (htmlPreview).Y (pasteButton.Frame.Bottom).Height (View.Frame.Height - pasteButton.Frame.Bottom);
+            }
         }
 
         public override void ViewDidLoad ()
@@ -151,8 +419,8 @@ namespace NachoClient.iOS
 
         private void MakeCaretVisible (bool animated)
         {
-            var caretFrame = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
-            textView.ScrollRectToVisible (caretFrame, animated);
+            var caretFrame = plainTextView.GetCaretRectForPosition (plainTextView.SelectedTextRange.End);
+            plainTextView.ScrollRectToVisible (caretFrame, animated);
         }
 
         private void SelectionChangedHandler (object sender, EventArgs args)

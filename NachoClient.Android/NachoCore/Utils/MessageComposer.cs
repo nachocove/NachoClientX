@@ -346,7 +346,12 @@ namespace NachoCore.Utils
             if (!String.IsNullOrWhiteSpace (InitialText)) {
                 messageText += InitialText;
             }
-            messageText += SignatureText ();
+
+            string htmlSignature = Account.HtmlSignature;
+            if (string.IsNullOrEmpty (htmlSignature) && !string.IsNullOrEmpty (Account.Signature)) {
+                messageText += "\n\n" + Account.Signature;
+            }
+
             if (!String.IsNullOrWhiteSpace (messageText)) {
                 using (var reader = new StringReader (messageText)) {
                     var line = reader.ReadLine ();
@@ -364,6 +369,26 @@ namespace NachoCore.Utils
                         }
                         line = reader.ReadLine ();
                     }
+                }
+            }
+
+            if (!string.IsNullOrEmpty (htmlSignature)) {
+                var signatureDoc = new HtmlDocument ();
+                signatureDoc.LoadHtml (htmlSignature);
+                var div = doc.CreateElement ("div");
+                div.AppendChild (doc.CreateElement ("br"));
+                div.AppendChild (doc.CreateElement ("br"));
+                // Skip over the <html> or <body> nodes, if any, at the top of the document.
+                var startingNode = signatureDoc.DocumentNode;
+                startingNode = startingNode.Element ("html") ?? startingNode;
+                startingNode = startingNode.Element ("body") ?? startingNode;
+                foreach (var sigPiece in startingNode.ChildNodes) {
+                    div.AppendChild (sigPiece);
+                }
+                if (null != firstChildBeforeInserts) {
+                    body.InsertBefore (div, firstChildBeforeInserts);
+                } else {
+                    body.AppendChild (div);
                 }
             }
         }
@@ -452,13 +477,10 @@ namespace NachoCore.Utils
 
         protected virtual void PrepareMessageBody ()
         {
-            string messageText = "";
-            if (!String.IsNullOrWhiteSpace (InitialText)) {
-                messageText += InitialText;
-            }
-            messageText += SignatureText ();
             NcTask.Run (() => {
-                Bundle.SetFullText (messageText);
+                var htmlDoc = Bundle.TemplateHtmlDocument ();
+                InsertInitialHtml (htmlDoc);
+                Bundle.SetFullHtml(htmlDoc, Bundle);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     FinishPreparingMessage ();
                 });
