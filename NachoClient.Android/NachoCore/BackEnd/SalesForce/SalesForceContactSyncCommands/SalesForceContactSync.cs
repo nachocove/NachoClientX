@@ -224,11 +224,10 @@ namespace NachoCore.SFDC
 
         void DoSyncContinue ()
         {
-            string contactId = Sm.Arg as string;
             DoSyncBase ();
         }
 
-        void DoSyncBase (string contactId = null)
+        void DoSyncBase ()
         {
             uint nextState;
             if (NeedFetchIds.Any ()) {
