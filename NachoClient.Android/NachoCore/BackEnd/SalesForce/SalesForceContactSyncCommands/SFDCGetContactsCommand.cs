@@ -46,10 +46,12 @@ namespace NachoCore.SFDC
     public class SFDCGetContactIdsCommand : SFDCCommand
     {
         bool Resync;
+        SalesForceContactSync Owner;
 
         public SFDCGetContactIdsCommand (IBEContext beContext, bool resync = false) : base (beContext)
         {
             Resync = resync;
+            Owner = beContext as SalesForceContactSync;
         }
 
         protected override void MakeAndSendRequest ()
@@ -92,13 +94,22 @@ namespace NachoCore.SFDC
             public string ServerId { get; set; }
         }
 
-        public static List<SFDCMcContactRecord> GetContactsByServerIds (List<string> ids, bool In)
+        public static List<SFDCMcContactRecord> GetContactsByServerIds (List<string> ids)
         {
             if (0 == ids.Count) {
                 return new List<SFDCMcContactRecord> ();
             }
             var query = string.Format ("SELECT Id,ServerId,LastModified FROM McContact WHERE Source=? AND ServerId IN ('{0}')", string.Join ("','", ids));
             return NcModel.Instance.Db.Query<SFDCMcContactRecord> (query, McAbstrItem.ItemSource.SalesForce);
+        }
+
+        public static List<McContact> GetDeletedContactsByServerIds (List<string> ids)
+        {
+            if (0 == ids.Count) {
+                return new List<McContact> ();
+            }
+            var query = string.Format ("SELECT * FROM McContact WHERE Source=? AND ServerId NOT IN ('{0}')", string.Join ("','", ids));
+            return NcModel.Instance.Db.Query<McContact> (query, McAbstrItem.ItemSource.SalesForce);
         }
 
         protected override Event ProcessSuccessResponse (NcHttpResponse response, CancellationToken token)
@@ -113,7 +124,8 @@ namespace NachoCore.SFDC
                 var jsonRecords = responseData.SelectToken ("records");
                 var contactRecords = jsonRecords.ToObject<List<ContactRecord>> ();
                 Log.Info (Log.LOG_SFDC, "SFDCGetContactsCommand: Pulled {0} contacts from server", contactRecords.Count);
-                var localContacts = GetContactsByServerIds(contactRecords.Select (x => x.Id).ToList (), true);
+                var remoteIds = contactRecords.Select (x => x.Id).ToList ();
+                var localContacts = GetContactsByServerIds(remoteIds);
                 var newContacts = new List<string> ();
                 var updatedContacts = new List<string> ();
                 foreach (var contact in contactRecords) {
@@ -125,7 +137,15 @@ namespace NachoCore.SFDC
                         updatedContacts.Add (contact.Id);
                     }
                 }
-                Log.Info (Log.LOG_SFDC, "SFDCGetContactsCommand: New Contacts {0} Updated Contacts {1}",  newContacts.Count, updatedContacts.Count);
+                var deletedContacts = GetDeletedContactsByServerIds(remoteIds);
+                int deleted = deletedContacts.Count;
+                NcModel.Instance.RunInTransaction(() => {
+                    foreach (var contact in deletedContacts) {
+                        contact.Delete ();
+                    }
+                });
+                Owner.ContactsDeleted = deletedContacts.Count;
+                Log.Info (Log.LOG_SFDC, "SFDCGetContactsCommand: New {0} Updated {1} Deleted {2}",  newContacts.Count, updatedContacts.Count, deletedContacts.Count);
                 return Event.Create ((uint)SmEvt.E.Success, "SFDCCONTSUMSUCC", new Tuple<List<string>, List<string>> (newContacts, updatedContacts));
             } catch (JsonSerializationException) {
                 return ProcessErrorResponse (jsonResponse);
