@@ -960,6 +960,11 @@ namespace NachoCore.ActiveSync
                 Log.Warn (Log.LOG_AS, "McEmailMessage with an unknown native body type.");
                 return Xml.AirSync.TypeCode.Mime_4;
             }
+            if (message.IsChat) {
+                // Always download chat messages as mime so we get the mime headers and can populate MessageID, which
+                // is used to weed out duplicate copies of the same chat message
+                return Xml.AirSync.TypeCode.Mime_4;
+            }
             long totalAttachmentSize = 0;
             foreach (var attachment in McAttachment.QueryByItem (message)) {
                 if (attachment.IsInline) {

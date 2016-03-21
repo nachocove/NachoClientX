@@ -23,7 +23,12 @@ namespace Test.Common
 
         public class EmptyInstance : NcEventsCalendarMapCommon
         {
-            protected override System.Collections.Generic.List<McEvent> GetEventsWithDuplicates ()
+            public EmptyInstance ()
+                : base (DateTime.UtcNow.AddMonths (1))
+            {
+            }
+
+            protected override System.Collections.Generic.List<McEvent> GetEventsWithDuplicates (DateTime start, DateTime end)
             {
                 return new System.Collections.Generic.List<NachoCore.Model.McEvent> ();
             }
@@ -31,7 +36,12 @@ namespace Test.Common
 
         public class Instance1 : NcEventsCalendarMapCommon
         {
-            protected override System.Collections.Generic.List<McEvent> GetEventsWithDuplicates ()
+            public Instance1 ()
+                : base (DateTime.UtcNow.AddDays (70))
+            {
+            }
+
+            protected override System.Collections.Generic.List<McEvent> GetEventsWithDuplicates (DateTime start, DateTime end)
             {
                 var id = account.Id;
 

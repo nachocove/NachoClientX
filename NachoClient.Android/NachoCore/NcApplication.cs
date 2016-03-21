@@ -270,10 +270,6 @@ namespace NachoCore
         public int UiThreadId { get; set; }
         // event can be used to register for status indications.
         public event EventHandler StatusIndEvent;
-        // when true, everything in the background needs to chill.
-        public bool IsBackgroundAbateRequired { get; set; }
-        // when true, the brain needs to chill
-        public bool IsBrainAbateRequired { get; set; }
 
         public bool TestOnlyInvokeUseCurrentThread { get; set; }
 
@@ -352,7 +348,7 @@ namespace NachoCore
                     foreach (var ex in aex.InnerExceptions) { 
                         if (ex is IOException && ex.Message.Contains ("Too many open files")) {
                             Log.Error (Log.LOG_SYS, "UnobservedTaskException:{0}: Dumping File Descriptors", ex.Message);
-                            NcApplicationMonitor.DumpFileLeaks();
+                            NcApplicationMonitor.DumpFileLeaks ();
                             NcApplicationMonitor.DumpFileDescriptors ();
                             NcModel.Instance.DumpLastAccess ();
                         }
@@ -366,19 +362,13 @@ namespace NachoCore
             };
             UiThreadId = Thread.CurrentThread.ManagedThreadId;
 
-            StatusIndEvent += (sender, ea) => {
+            // Maintain 'last time we entered background' time
+            StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
-                TimeSpan deliveryTime;
-                switch (siea.Status.SubKind) {
-                case NcResult.SubKindEnum.Info_BackgroundAbateStarted:
-                    deliveryTime = NcAbate.DeliveryTime (siea);
-                    // Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
-                    break;
-
-                case NcResult.SubKindEnum.Info_BackgroundAbateStopped:
-                    deliveryTime = NcAbate.DeliveryTime (siea);
-                    // Log.Info (Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
-                    break;
+                if (NcResult.SubKindEnum.Info_ExecutionContextChanged == siea.Status.SubKind) {
+                    if (ExecutionContextEnum.Background == ExecutionContext) {
+                        LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
+                    }
                 }
             };
         }
@@ -446,9 +436,21 @@ namespace NachoCore
             // we need to sequence these properly.
             NcMigration.Setup ();
             if (ShouldEnterSafeMode ()) {
+                // Put an error message in the log to increase the chances that this will be noticed and investigated.
+                Log.Error (Log.LOG_LIFECYCLE, "Safe mode was triggered. Please investigate.");
+
                 ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
                 Telemetry.SharedInstance.Throttling = false;
+
+                // Submit a support request, to make the chances even higher that this will be noticed and investigated.
+                var supportInfo = new System.Collections.Generic.Dictionary<string, string> ();
+                supportInfo.Add ("ContactInfo", "None, because this is auto-generated");
+                supportInfo.Add ("Message", "Safe mode was triggered. Please investigate.");
+                supportInfo.Add ("BuildVersion", BuildInfo.Version);
+                supportInfo.Add ("BuildNumber", BuildInfo.BuildNumber);
+                Telemetry.RecordSupport (supportInfo);
+
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
                         Log.Info (Log.LOG_LIFECYCLE, "NcApplication: safe mode canceled");
@@ -557,6 +559,7 @@ namespace NachoCore
                 NcBrain.StartService ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
+                NachoPlatform.Calendars.Instance.EventProviderInstance.NumberOfDays ();
                 if (null != Class4LateShowEvent) {
                     Class4LateShowEvent (this, EventArgs.Empty);
                 }
@@ -633,8 +636,8 @@ namespace NachoCore
                 NcModel.Instance.RunInTransaction (() => {
                     if (null == McFolder.GetDeviceContactsFolder ()) {
                         var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
-                                        McFolder.ClientOwned_DeviceContacts, "Device Contacts",
-                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                                            McFolder.ClientOwned_DeviceContacts, "Device Contacts",
+                                            NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                         freshMade.Insert ();
                     }
                 });
@@ -643,8 +646,8 @@ namespace NachoCore
                 NcModel.Instance.RunInTransaction (() => {
                     if (null == McFolder.GetDeviceCalendarsFolder ()) {
                         var freshMade = McFolder.Create (deviceAccount.Id, true, true, true, "0",
-                                        McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
-                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                                            McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
+                                            NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                         freshMade.Insert ();
                     }
                 });
@@ -783,18 +786,6 @@ namespace NachoCore
             }
         }
 
-        public void BackendAbateStart ()
-        {
-            IsBrainAbateRequired = true;
-            NcBrain.SharedInstance.PauseService ();
-        }
-
-        public void BackendAbateStop ()
-        {
-            IsBrainAbateRequired = false;
-            NcBrain.SharedInstance.UnPauseService ();
-        }
-
         #endregion
 
         public bool CertAskReqPreApproved (int accountId, McAccount.AccountCapabilityEnum capabilities)
@@ -862,6 +853,10 @@ namespace NachoCore
 
         private bool MonitorUploads ()
         {
+            // Even if everything is already caught up, keep the safe mode screen visible for
+            // a couple of seconds so the user has time to read it.
+            Thread.Sleep (TimeSpan.FromSeconds (2));
+
             bool telemetryDone = false;
             bool crashReportingDone = false;
             SafeModeStarted = true;

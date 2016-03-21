@@ -24,6 +24,8 @@ namespace NachoClient.iOS
         bool scrolling;
         // to control whether swiping is allowed or not
 
+        IDisposable abatementRequest = null;
+
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
         private const int DELETE_TAG = 3;
@@ -187,11 +189,7 @@ namespace NachoClient.iOS
             view.AddSubview (userLabelView);
 
             // Unread message dot
-            var unreadMessageView = new UIImageView (new CGRect (15, 60, 40, 27));
-            unreadMessageView.ContentMode = UIViewContentMode.Center;
-            using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
-                unreadMessageView.Image = image;
-            }
+            var unreadMessageView = new UnreadMessageIndicator (new CGRect (15, 60, 40, 27));
             unreadMessageView.BackgroundColor = UIColor.White;
             unreadMessageView.Tag = UNREAD_IMAGE_TAG;
             unreadMessageView.UserInteractionEnabled = true;
@@ -446,17 +444,10 @@ namespace NachoClient.iOS
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
 
-            var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            var unreadMessageView = (UnreadMessageIndicator)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
             unreadMessageView.Hidden = false;
-            if (message.IsRead) {
-                using (var image = UIImage.FromBundle ("MessageRead")) {
-                    unreadMessageView.Image = image;
-                }
-            } else {
-                using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
-                    unreadMessageView.Image = image;
-                }
-            }
+            unreadMessageView.State = message.IsRead ? UnreadMessageIndicator.MessageState.Read : UnreadMessageIndicator.MessageState.Unread;
+            unreadMessageView.Color = Util.ColorForAccount (message.AccountId);
 
             var messageHeaderView = view.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
             messageHeaderView.ConfigureMessageView (messageThread, message);
@@ -624,22 +615,30 @@ namespace NachoClient.iOS
         {
             cardIndexAtScrollStart = CardIndexNearestOffset ((UITableView)scrollView, scrollView.ContentOffset);
             scrolling = true;
-            NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
+            if (null == abatementRequest) {
+                abatementRequest = NcAbate.UITimedAbatement (TimeSpan.FromSeconds (10));
+            }
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
+            if (null != abatementRequest) {
+                abatementRequest.Dispose ();
+                abatementRequest = null;
+            }
             scrolling = false;
             EnsureScrollEndIsAsExpected (scrollView);
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
+                if (null != abatementRequest) {
+                    abatementRequest.Dispose ();
+                    abatementRequest = null;
+                }
                 scrolling = false;
                 EnsureScrollEndIsAsExpected (scrollView);
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
             }
         }
 

@@ -86,6 +86,7 @@ namespace NachoClient.AndroidClient
         public class CardViewHolder : RecyclerView.ViewHolder
         {
             public Bind.MessageHeaderViewHolder mvh;
+            public ViewGroup parent;
             public WebView webview;
 
             public CardViewHolder (View itemView, Action<int> click, Action<int,ImageView> chiliClick,
@@ -203,7 +204,9 @@ namespace NachoClient.AndroidClient
             itemView.SetMinimumHeight (parent.MeasuredHeight);
             itemView.LayoutParameters.Height = parent.MeasuredHeight;
 
-            return new CardViewHolder (itemView, ItemView_Click, ChiliView_Click, ReplyButton_Click, ReplyAllButton_Click, ForwardButton_Click, ArchiveButton_Click, DeleteButton_Click);
+            var vh = new CardViewHolder (itemView, ItemView_Click, ChiliView_Click, ReplyButton_Click, ReplyAllButton_Click, ForwardButton_Click, ArchiveButton_Click, DeleteButton_Click);
+            vh.parent = parent;
+            return vh;
         }
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
@@ -331,6 +334,8 @@ namespace NachoClient.AndroidClient
                     RenderBody (vh.webview, bundle);
                 }
             }
+            vh.ItemView.SetMinimumHeight (vh.parent.MeasuredHeight);
+            vh.ItemView.LayoutParameters.Height = vh.parent.MeasuredHeight;
         }
 
         void BindMeetingRequest (View view, McEmailMessage message)
@@ -407,7 +412,7 @@ namespace NachoClient.AndroidClient
                         var initials = ContactsHelper.NameToLetters (attendee.Name);
                         var color = Util.ColorResourceForEmail (message.AccountId, attendee.Address);
                         attendeePhotoView.SetEmailAddress (message.AccountId, attendee.Address, initials, color);
-                        attendeeNameView.Text = GetFirstName (attendee.Name);
+                        attendeeNameView.Text = CalendarHelper.GetFirstName (attendee.Name);
                     } else {
                         attendeePhotoView.Visibility = ViewStates.Gone;
                         attendeeNameView.Visibility = ViewStates.Gone;
@@ -561,18 +566,6 @@ namespace NachoClient.AndroidClient
             return parent.FindViewById<TextView> (id);
         }
 
-        private static string GetFirstName (string displayName)
-        {
-            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (names [0] == null) {
-                return "";
-            }
-            if (names [0].Length > 1) {
-                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
-            }
-            return names [0].ToUpper ();
-        }
-
         public void MessageDownloadDidFinish (MessageDownloader downloader)
         {
             var bundle = downloader.Bundle;
@@ -661,7 +654,7 @@ namespace NachoClient.AndroidClient
         void StartComposeActivity (EmailHelper.Action action, McEmailMessageThread thread, McEmailMessage message)
         {
             var activity = owner.Activity;
-            owner.StartActivity (MessageComposeActivity.RespondIntent (activity, action, thread.FirstMessage()));
+            owner.StartActivity (MessageComposeActivity.RespondIntent (activity, action, thread.FirstMessage ()));
         }
 
         void DeadlinesView_Click ()
@@ -689,15 +682,15 @@ namespace NachoClient.AndroidClient
         void BindSummaryViewHolder (SummaryViewHolder summaryViewHolder)
         {
             NcTask.Run (() => {
-                int unreadMessageCount;
-                int likelyMessageCount;
-                int deferredMessageCount;
-                int deadlineMessageCount;
-                EmailHelper.GetMessageCounts (NcApplication.Instance.Account, out unreadMessageCount, out deferredMessageCount, out deadlineMessageCount, out likelyMessageCount);
+                int unreadCount;
+                int likelyCount;
+                int deferredCount;
+                int deadlineCount;
+                EmailHelper.GetMessageCounts (NcApplication.Instance.Account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
-                    summaryViewHolder.inboxMessageCountView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadMessageCount);
-                    summaryViewHolder.deferredMessageCountView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredMessageCount);
-                    summaryViewHolder.deadlinesMessageCountView.Text = String.Format ("Go to Deadlines ({0:N0})", deadlineMessageCount);
+                    summaryViewHolder.inboxMessageCountView.Text = String.Format ("Go to Inbox ({0:N0} unread)", unreadCount);
+                    summaryViewHolder.deferredMessageCountView.Text = String.Format ("Go to Deferred Messages ({0:N0})", deferredCount);
+                    summaryViewHolder.deadlinesMessageCountView.Text = String.Format ("Go to Deadlines ({0:N0})", deadlineCount);
                     // FIMXE LTR.
                 });
             }, "UpdateUnreadMessageView");

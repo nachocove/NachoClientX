@@ -12,7 +12,5 @@ namespace NachoCore
         void CertAskReq (NcProtoControl sender, X509Certificate2 certificate);
         void SearchContactsResp (NcProtoControl sender, string prefix, string token);
         void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend);
-        void BackendAbateStart ();
-        void BackendAbateStop ();
     }
 }

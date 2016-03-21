@@ -66,8 +66,8 @@ namespace NachoCore.Utils
             Info_FolderSyncSucceeded,
             Info_MeetingResponseSucceeded,
             Info_ContactSearchCommandSucceeded,
-            Info_BackgroundAbateStarted,
-            Info_BackgroundAbateStopped,
+            Info_BackgroundAbateStarted_Obsolete,
+            Info_BackgroundAbateStopped_Obsolete,
             Info_ServiceUnavailable,
             Info_ValidateConfigSucceeded,
             Info_ExplicitThrottling,
@@ -188,6 +188,8 @@ namespace NachoCore.Utils
             Error_AlreadyAttached,
             Error_NotAttached,
             Info_AccountSetChanged,
+            Info_ChatSetChanged,
+            Info_ChatMessageAdded
         };
 
         public enum WhyEnum

@@ -309,6 +309,8 @@ namespace NachoClient
 
         static Random random = new Random ();
 
+        public static List<UIColor> accountColors = null;
+
         public static int PickRandomColorForUser ()
         {
             int randomNumber = random.Next (2, colors.Count);
@@ -322,6 +324,24 @@ namespace NachoClient
                 index = 1;
             }
             return colors [index];
+        }
+
+        static Dictionary<int, int> AccountColorIndexCache = new Dictionary<int, int> ();
+
+        public static UIColor ColorForAccount (int accountId)
+        {
+            if (accountColors == null) {
+                accountColors = new List<UIColor> (McAccount.AccountColors.Length / 3);
+                for (int i = 0; i < McAccount.AccountColors.Length / 3; ++i) {
+                    accountColors.Add (UIColor.FromRGB(McAccount.AccountColors [i,0], McAccount.AccountColors [i,1], McAccount.AccountColors [i,2]));
+                }
+            }
+            if (!AccountColorIndexCache.ContainsKey (accountId)) {
+                var account = McAccount.QueryById<McAccount> (accountId);
+                AccountColorIndexCache [accountId] = account.ColorIndex;
+            }
+            var index = AccountColorIndexCache [accountId];
+            return accountColors [index];
         }
 
         public static UIColor GetContactColor (McContact contact)
@@ -544,18 +564,6 @@ namespace NachoClient
         {
             UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
             alert.Show ();
-        }
-
-        public static string GetFirstName (string displayName)
-        {
-            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (names [0] == null) {
-                return "";
-            }
-            if (names [0].Length > 1) {
-                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
-            }
-            return names [0].ToUpper ();
         }
 
         public static string GetImage (string image)
@@ -909,7 +917,7 @@ namespace NachoClient
             attendeeName.TextColor = UIColor.LightGray;
             attendeeName.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
             attendeeName.TextAlignment = UITextAlignment.Center;
-            attendeeName.Text = Util.GetFirstName (attendee.DisplayName);
+            attendeeName.Text = CalendarHelper.GetFirstName (attendee.DisplayName);
             parentView.AddSubview (attendeeName);
 
             // If the current user is the organizer, then construct a little circle in the
@@ -1152,10 +1160,10 @@ namespace NachoClient
                 imageName = "avatar-yahoo";
                 break;
             case McAccount.AccountServiceEnum.Aol:
-                imageName = "Icon";
+                imageName = "avatar-aol";
                 break;
             case McAccount.AccountServiceEnum.SalesForce:
-                imageName = "Icon";
+                imageName = "avatar-salesforce";
                 break;
             default:
                 imageName = "Icon";

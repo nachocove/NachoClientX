@@ -289,8 +289,9 @@ namespace NachoClient.AndroidClient
             imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
 
             Intent shareIntent = new Intent ();
-            shareIntent.SetAction (Intent.ActionPick);
-            shareIntent.SetType ("image/*");
+            shareIntent.SetAction (Intent.ActionGetContent);
+            shareIntent.AddCategory (Intent.CategoryOpenable);
+            shareIntent.SetType ("*/*");
             shareIntent.PutExtra (Intent.ExtraAllowMultiple, true);
             var resInfos = Activity.PackageManager.QueryIntentActivities (shareIntent, 0);
             var packages = new List<string> ();
@@ -353,6 +354,7 @@ namespace NachoClient.AndroidClient
                 attachment.ContentType = MimeKit.MimeTypes.GetMimeType (filename);
                 attachment.UpdateFileCopy (CameraOutputUri.Path);
                 attachment.UpdateSaveFinish ();
+                File.Delete (CameraOutputUri.Path);
                 attachment.Link (Composer.Message);
                 HeaderView.AttachmentsView.AddAttachment (attachment);
             } else if (PICK_REQUEST_CODE == requestCode) {
@@ -407,21 +409,44 @@ namespace NachoClient.AndroidClient
 
         #region User Action - Header
 
+        bool SalesforceBccAdded = false;
+        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool>();
+
+        void MaybeAddSalesforceBcc()
+        {
+            if (!SalesforceBccAdded) {
+                string extraBcc = EmailHelper.ExtraSalesforceBccAddress (SalesforceAddressCache, Composer.Message);
+                if (null != extraBcc) {
+                    SalesforceBccAdded = true;
+                    if (string.IsNullOrEmpty (Composer.Message.Bcc)) {
+                        Composer.Message.Bcc = extraBcc;
+                    } else {
+                        Composer.Message.Bcc += ", " + extraBcc;
+                    }
+                    UpdateHeaderFromBcc ();
+                }
+            }
+        }
+                
+
         public void MessageComposeHeaderViewDidChangeTo (MessageComposeHeaderView view, string to)
         {
             Composer.Message.To = to;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidChangeCc (MessageComposeHeaderView view, string cc)
         {
             Composer.Message.Cc = cc;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
         public void MessageComposeHeaderViewDidChangeBcc (MessageComposeHeaderView view, string bcc)
         {
             Composer.Message.Bcc = bcc;
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
@@ -565,12 +590,9 @@ namespace NachoClient.AndroidClient
 
         public void MessageComposerDidFailToLoadMessage (MessageComposer composer)
         {
-            NcAlertView.ShowMessage (Activity, "Could not load message", "Sorry, we could not load your message.  Please try again.");
-        }
-
-        public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
-        {
-            return ImageAndroid.FromStream (stream);
+            if (null != this.Activity) {
+                NcAlertView.ShowMessage (this.Activity, "Could not load message", "Sorry, we could not load your message. Please try again.");
+            }
         }
 
         void DisplayMessageBody ()
@@ -632,6 +654,11 @@ namespace NachoClient.AndroidClient
         void UpdateHeaderFromView ()
         {
             HeaderView.FromField.Text = Composer.Message.From;
+        }
+
+        void UpdateHeaderFromBcc()
+        {
+            HeaderView.BccField.AddressString = Composer.Message.Bcc;
         }
 
         void UpdateHeaderSubjectView ()

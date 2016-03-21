@@ -58,6 +58,9 @@ namespace NachoClient.AndroidClient
 
         Switch fastNotifications;
 
+        Switch defaultEmailSwitch;
+        Switch defaultCalendarSwitch;
+
         View accountIssuesView;
         View accountIssuesSeparator;
         View accountIssuesViewSeparator;
@@ -125,6 +128,22 @@ namespace NachoClient.AndroidClient
             fastNotifications = view.FindViewById<Switch> (Resource.Id.account_fast_notification);
             fastNotifications.CheckedChange += FastNotifications_CheckedChange;
 
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.EmailSender)) {
+                defaultEmailSwitch = view.FindViewById<Switch> (Resource.Id.default_email_switch);
+                defaultEmailSwitch.CheckedChange += DefaultEmailAccount_CheckedChange;
+            } else {
+                var defaultEmailView = view.FindViewById<View> (Resource.Id.default_email_view);
+                defaultEmailView.Visibility = ViewStates.Gone;
+            }
+
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalReader)) {
+                defaultCalendarSwitch = view.FindViewById<Switch> (Resource.Id.default_calendar_switch);
+                defaultCalendarSwitch.CheckedChange += DefaultCalendarAccount_CheckedChange;
+            } else {
+                var defaultCalendarView = view.FindViewById<View> (Resource.Id.default_calendar_view);
+                defaultCalendarView.Visibility = ViewStates.Gone;
+            }
+
             accountIssuesView = view.FindViewById<View> (Resource.Id.account_issues_view);
             accountIssuesSeparator = view.FindViewById<View> (Resource.Id.account_issues_separator);
             accountIssuesViewSeparator = view.FindViewById<View> (Resource.Id.account_issues_view_separator);
@@ -140,7 +159,6 @@ namespace NachoClient.AndroidClient
             passwordRectification = view.FindViewById<TextView> (Resource.Id.account_password_rectification);
             passwordRectificationView = view.FindViewById<View> (Resource.Id.account_password_rectification_view);
             passwordRectificationView.Click += PasswordRectificationView_Click;
-
 
             deleteAccountView = view.FindViewById<View> (Resource.Id.delete_account_view);
             deleteAccountView.Click += DeleteAccountView_Click;
@@ -178,6 +196,20 @@ namespace NachoClient.AndroidClient
 
             fastNotifications.Checked = account.FastNotificationEnabled;
 
+            if (null != defaultEmailSwitch) {
+                var defaultEmailAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                bool isDefaultEmail = defaultEmailAccount != null && account.Id == defaultEmailAccount.Id;
+                defaultEmailSwitch.Checked = isDefaultEmail;
+                defaultEmailSwitch.Enabled = !isDefaultEmail;
+            }
+
+            if (null != defaultCalendarSwitch) {
+                var defaultCalendarAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                bool isDefaultCalendar = defaultCalendarAccount != null && account.Id == defaultCalendarAccount.Id;
+                defaultCalendarSwitch.Checked = isDefaultCalendar;
+                defaultCalendarSwitch.Enabled = !isDefaultCalendar;
+            }
+
             int issues = 0;
 
             McServer serverWithIssue;
@@ -192,7 +224,11 @@ namespace NachoClient.AndroidClient
                     accountIssue.SetText (Resource.String.certificate_issue);
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    accountIssue.SetText (Resource.String.update_password);
+                    if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
+                        accountIssue.SetText (Resource.String.update_password);
+                    } else {
+                        accountIssue.SetText (Resource.String.server_error);
+                    }
                     break;
                 }
                 accountIssueView.Visibility = ViewStates.Visible;
@@ -209,9 +245,14 @@ namespace NachoClient.AndroidClient
                 if (!String.IsNullOrEmpty (rectificationUrl)) {
                     passwordRectification.Text = rectificationUrl;
                     passwordRectificationView.Visibility = ViewStates.Visible;
+                    passwordExpiresView.Visibility = ViewStates.Gone;
                 } else {
                     passwordRectificationView.Visibility = ViewStates.Gone;
+                    passwordExpiresView.Visibility = ViewStates.Visible;
                 }
+            } else {
+                passwordRectificationView.Visibility = ViewStates.Gone;
+                passwordExpiresView.Visibility = ViewStates.Gone;
             }
 
             if (0 < issues) {
@@ -283,25 +324,68 @@ namespace NachoClient.AndroidClient
 
         void PasswordExpiresView_Click (object sender, EventArgs e)
         {
-            
+            Log.Error (Log.LOG_SYS, "PasswordExpiresView_Click: NOT IMPLEMENTED");
         }
 
         void PasswordRectificationView_Click (object sender, EventArgs e)
         {
-
+            Log.Error (Log.LOG_SYS, "PasswordRectificationView_Click: NOT IMPLEMENTED");
         }
 
         void AccountIssueView_Click (object sender, EventArgs e)
         {
-            
+            McServer serverWithIssue;
+            BackEndStateEnum serverIssue;
+            if (LoginHelpers.IsUserInterventionRequired (account.Id, out serverWithIssue, out serverIssue)) {
+                if (null == serverWithIssue || !serverWithIssue.IsHardWired) {
+                    Log.Error (Log.LOG_SYS, "AccountIssueView_Click: needs to go to AdvancedSettings here");
+                } else {
+                    BackEnd.Instance.ServerConfResp (serverWithIssue.AccountId, serverWithIssue.Capabilities, false);
+                    this.Activity.Finish ();
+                }
+            } else {
+                Log.Error (Log.LOG_SYS, "AccountIssueView_Click: NOT IMPLEMENTED");
+            }
         }
 
         void FastNotifications_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
         {
-            account.FastNotificationEnabled = e.IsChecked;
-            account.Update ();
-            BindAccount ();
-            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
+            // This is called when the UI object is programmatically set to its initial value.
+            // So check that the value has actually changed before doing anything.
+            if (account.FastNotificationEnabled != e.IsChecked) {
+                account.FastNotificationEnabled = e.IsChecked;
+                account.Update ();
+                BindAccount ();
+                NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
+            }
+        }
+
+        void DefaultCalendarAccount_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
+        {
+            if (e.IsChecked) {
+                var defaultCalendarAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.CalWriter);
+                if (account.Id != defaultCalendarAccount.Id) {
+                    var deviceAccount = McAccount.GetDeviceAccount ();
+                    var mutablesModule = "DefaultAccounts";
+                    var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.CalWriter);
+                    McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+                    defaultCalendarSwitch.Enabled = false;
+                }
+            }
+        }
+
+        void DefaultEmailAccount_CheckedChange (object sender, CompoundButton.CheckedChangeEventArgs e)
+        {
+            if (e.IsChecked) {
+                var defaultEmailAccount = McAccount.GetDefaultAccount (McAccount.AccountCapabilityEnum.EmailSender);
+                if (account.Id != defaultEmailAccount.Id) {
+                    var deviceAccount = McAccount.GetDeviceAccount ();
+                    var mutablesModule = "DefaultAccounts";
+                    var mutablesKey = String.Format ("Capability.{0}", (int)McAccount.AccountCapabilityEnum.EmailSender);
+                    McMutables.SetInt (deviceAccount.Id, mutablesModule, mutablesKey, account.Id);
+                    defaultEmailSwitch.Enabled = false;
+                }
+            }
         }
 
         void NotificationsView_Click (object sender, EventArgs e)
@@ -379,20 +463,7 @@ namespace NachoClient.AndroidClient
 
         public void StartGoogleLogin ()
         {
-            var scopes = new List<string> ();
-            scopes.Add ("email");
-            scopes.Add ("profile");
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            var auth = new NachoCore.Utils.GoogleOAuth2Authenticator (
-                           clientId: GoogleOAuthConstants.ClientId,
-                           clientSecret: GoogleOAuthConstants.ClientSecret,
-                           scope: String.Join (" ", scopes.ToArray ()),
-                           accessTokenUrl: new Uri ("https://accounts.google.com/o/oauth2/token"),
-                           authorizeUrl: new Uri ("https://accounts.google.com/o/oauth2/auth"),
-                           redirectUrl: new Uri ("http://www.nachocove.com/authorization_callback"),
-                           loginHint: account.EmailAddr);
+            var auth = new GoogleOAuth2Authenticator (account.EmailAddr);
 
             auth.AllowCancel = true;
 
@@ -417,15 +488,15 @@ namespace NachoClient.AndroidClient
 
                     var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
 
-                    string userInfoString;
+                    Newtonsoft.Json.Linq.JObject userInfo;
                     try {
-                        userInfoString = new System.Net.WebClient ().DownloadString (url);
+                        var userInfoString = new System.Net.WebClient ().DownloadString (url);
+                        userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
                     } catch (Exception ex) {
                         Log.Info (Log.LOG_UI, "AuthCompleted: exception fetching user info {0}", ex);
                         NcAlertView.ShowMessage (Activity, "Nacho Mail", "We could not complete your account authentication.  Please try again.");
                         return;
                     }
-                    var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
 
                     if (!String.Equals (account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
                         // Can't change your email address
@@ -437,12 +508,6 @@ namespace NachoClient.AndroidClient
                     cred.UpdateOauth2 (access_token, refresh_token, expirationSecs);
 
                     BackEnd.Instance.CredResp (account.Id);
-
-                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_McCredPasswordChanged);
-                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                        Status = result,
-                        Account = account,
-                    });
                 }
             };
 

@@ -629,6 +629,29 @@ namespace NachoCore.Model
                 Operation == Operations.EmailReply) {
                 control.Owner.SendEmailResp (control, ItemId, true);
             }
+            if (Operation == Operations.EmailBodyDownload) {
+                McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (AccountId, ServerId);
+                if (email.IsChat) {
+                    var bundle = new NcEmailMessageBundle (email);
+                    bundle.Update ();
+                    if (String.IsNullOrEmpty (email.MessageID)) {
+                        var mime = MimeKit.MimeMessage.Load (email.MimePath ());
+                        if (!String.IsNullOrEmpty (mime.MessageId)) {
+                            email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var email_ = record as McEmailMessage;
+                                email_.MessageID = mime.MessageId;
+                                return true;
+                            });
+                        }
+                    }
+                    if (!String.IsNullOrEmpty (email.MessageID)) {
+                        McChat.AssignMessageToChat (email);
+                        email.DeleteMatchingOutboxMessage ();
+                    } else {
+                        Log.Error (Log.LOG_SYNC, "Chat message download did not have MessageID");
+                    }
+                }
+            }
             if (null != result) {
                 NcAssert.True (null != control);
                 control.StatusInd (result, new [] { Token });

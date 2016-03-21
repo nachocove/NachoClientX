@@ -24,12 +24,21 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle);
 
+            MainApplication.RegisterHockeyAppUpdateManager (this);
+
             if (!NcApplication.ReadyToStartUI ()) {
                 var intent = new Intent (this, typeof(MainActivity));
                 StartActivity (intent);
                 Finish ();
                 return;
             }
+        }
+
+        protected override void OnPause ()
+        {
+            base.OnPause ();
+            MainApplication.UnregisterHockeyAppUpdateManager ();
+            MainApplication.SetupHockeyAppCrashManager (this);
         }
 
         protected override INachoEmailMessages GetMessages (out List<int> adds, out List<int> deletes)

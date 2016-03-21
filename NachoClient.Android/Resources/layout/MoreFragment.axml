@@ -154,6 +154,36 @@
                         android:layout_height="2dp"
                         android:background="@color/NachoLightGray" />
                     <LinearLayout
+                        android:id="@+id/chats"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="5dp"
+                        android:orientation="horizontal"
+                        android:background="?attr/selectableItemBackground"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content">
+                        <ImageView
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp"
+                            android:scaleType="fitXY"
+                            android:layout_gravity="center"
+                            android:src="@drawable/nav_chat" />
+                        <TextView
+                            android:textColor="@android:color/black"
+                            android:textSize="14dp"
+                            android:textStyle="normal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:text="@string/chats"
+                            android:paddingLeft="10dp" />
+                    </LinearLayout>
+                    <View
+                        android:layout_width="fill_parent"
+                        android:layout_height="2dp"
+                        android:background="@color/NachoLightGray" />
+                    <LinearLayout
                         android:id="@+id/settings"
                         android:paddingTop="5dp"
                         android:paddingBottom="5dp"

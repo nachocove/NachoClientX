@@ -116,21 +116,19 @@ namespace NachoCore
 
         public override NcResult StartSync ()
         {
-            // FIXME Unfied Sync All
-            return NachoSyncResult.DoesNotSync ();
+            return EmailHelper.SyncUnified ();
         }
 
         public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
         {
             var firstMessage = thread.FirstMessage ();
             var inbox = McFolder.GetDefaultInboxFolder (firstMessage.AccountId);
-            return new NachoThreadedEmailMessages (inbox, thread.GetThreadId());
+            return new NachoThreadedEmailMessages (inbox, thread.GetThreadId ());
         }
 
         public override bool IsCompatibleWithAccount (McAccount account)
         {
-            var currentAccount = NcApplication.Instance.Account;
-            return null != currentAccount && currentAccount.ContainsAccount (account.Id);
+            return McAccount.GetUnifiedAccount ().Id == account.Id;
         }
 
     }

@@ -66,13 +66,7 @@ namespace NachoCore
 
         public override NcResult StartSync ()
         {
-//            if (null != Folder) {
-//                return BackEnd.Instance.SyncCmd (Folder.AccountId, Folder.Id);
-//            } else {
-//                return NachoSyncResult.DoesNotSync ();
-//            }
-            // FIXME Sync
-            return NachoSyncResult.DoesNotSync ();
+            return EmailHelper.SyncUnified ();
         }
 
         public override INachoEmailMessages GetAdapterForThread (McEmailMessageThread thread)
@@ -84,7 +78,7 @@ namespace NachoCore
 
         public override bool IsCompatibleWithAccount (McAccount account)
         {
-            return NcApplication.Instance.Account.ContainsAccount (account.Id);
+            return McAccount.GetUnifiedAccount ().Id == account.Id;
         }
     }
 }

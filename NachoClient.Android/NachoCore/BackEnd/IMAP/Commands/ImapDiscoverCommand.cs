@@ -103,7 +103,7 @@ namespace NachoCore.IMAP
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCOMMEXTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
             } catch (IOException ex) {
-                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.Message);
+                Log.Info (Log.LOG_IMAP, "ImapDiscoverCommand: IOException: {0}", ex.ToString ());
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIOTEMP");
                 action = new Tuple<ResolveAction, string> (ResolveAction.FailAll, ex.Message);
                 serverFailedGenerally = true;

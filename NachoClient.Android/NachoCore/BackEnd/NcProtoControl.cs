@@ -506,6 +506,30 @@ namespace NachoCore
             return NcResult.OK (token);
         }
 
+        public virtual NcResult SyncContactsCmd ()
+        {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcModel.Instance.RunInTransaction (() => {
+                var pending = new McPending (AccountId, McAccount.AccountCapabilityEnum.ContactReader | McAccount.AccountCapabilityEnum.ContactWriter) {
+                    Operation = McPending.Operations.Sync,
+                    ServerId = "0", // not used currently. Perhaps in the future?
+                };
+                McPending dup;
+                if (pending.IsDuplicate (out dup)) {
+                    Log.Info (Log.LOG_BACKEND, "SyncContactsCmd: IsDuplicate of Id/Token {0}", dup);
+                    result = NcResult.OK (dup.Token);
+                    return;
+                }
+                pending.DoNotDelay ();
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSYNCCONTACT");
+            }, "SyncContactsCmd");
+            return result;
+        }
+
         public virtual NcResult SendEmailCmd (int emailMessageId)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);

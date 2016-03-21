@@ -18,7 +18,7 @@
             android:orientation="horizontal"
             android:layout_width="fill_parent"
             android:layout_height="80dp">
-            <ImageView
+            <nachoclient.androidclient.RoundedImageView
                 android:id="@+id/account_icon"
                 android:src="@drawable/avatar_hotmail"
                 android:layout_width="75dp"
@@ -64,6 +64,16 @@
                 android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
                 android:layout_gravity="center" />
+            <TextView
+                android:id="@+id/unread_count"
+                android:text="(2)"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="3dp"
+                android:textSize="14dp"
+                android:textStyle="normal"
+                android:textColor="@android:color/black" />
         </LinearLayout>
     </android.support.v7.widget.CardView>
     <View

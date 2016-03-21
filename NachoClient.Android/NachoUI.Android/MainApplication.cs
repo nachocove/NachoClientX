@@ -13,6 +13,8 @@ using Android.Content;
 using System.IO;
 using System.Threading;
 using Android.OS;
+using NachoClient.Build;
+using System.Threading.Tasks;
 
 namespace NachoClient.AndroidClient
 {
@@ -103,7 +105,7 @@ namespace NachoClient.AndroidClient
         void CopyAssetsToDocuments ()
         {
             var documentsPath = System.Environment.GetFolderPath (System.Environment.SpecialFolder.MyDocuments);
-            string[] assets = { "nacho.html", "nacho.css", "nacho.js" };
+            string[] assets = { "nacho.html", "nacho.css", "nacho.js", "chat-email.html" };
             foreach (var assetName in assets) {
                 var destinationPath = Path.Combine (documentsPath, assetName);
                 // TODO: only copy if newer...how to check the modified time of an asset (don't think it's possible)
@@ -115,5 +117,132 @@ namespace NachoClient.AndroidClient
             }
         }
 
+        #region HockeyApp
+
+        public class MyCustomUpdateManagerListener : HockeyApp.UpdateManagerListener
+        {
+            public override void OnUpdateAvailable ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnUpdateAvailable");
+                base.OnUpdateAvailable ();
+            }
+
+            public override void OnNoUpdateAvailable ()
+            {
+                Log.Info (Log.LOG_SYS, "HA: OnNoUpdateAvailable");
+                base.OnNoUpdateAvailable ();
+            }
+        }
+
+        public static void RegisterHockeyAppUpdateManager (Activity activity)
+        {
+            if (BuildInfoHelper.IsDev) {
+                return;
+            }
+            //Register to with the Update Manager
+            HockeyApp.UpdateManager.Register (activity, BuildInfo.HockeyAppAppId, new MyCustomUpdateManagerListener (), true);
+        }
+
+        public static void UnregisterHockeyAppUpdateManager ()
+        {
+            HockeyApp.UpdateManager.Unregister ();
+        }
+            
+        public class MyCustomCrashManagerListener : HockeyApp.CrashManagerListener
+        {
+            public string LastTrace { get; set; }
+
+            public override bool ShouldAutoUploadCrashes ()
+            {
+                return true;
+            }
+
+            public override string Description {
+                get {
+                    var descr = NcApplication.ApplicationLogForCrashManager ();
+                    if (!string.IsNullOrEmpty (LastTrace)) {
+                        descr += "\n" + LastTrace;
+                        LastTrace = null;
+                    }
+                    return descr;
+                }
+            }
+
+            public override bool IncludeDeviceData ()
+            {
+                return true;
+            }
+
+            public override bool IncludeDeviceIdentifier ()
+            {
+                return true;
+            }
+
+            public override int MaxRetryAttempts {
+                get {
+                    return 1000;
+                }
+            }
+        }
+
+        class UnCaughtExceptionHandler : Java.Lang.Object, Java.Lang.Thread.IUncaughtExceptionHandler
+        {
+            MyCustomCrashManagerListener CrashListener;
+
+            public UnCaughtExceptionHandler (MyCustomCrashManagerListener theListener)
+            {
+                CrashListener = theListener;
+            }
+
+            public void UncaughtException (Java.Lang.Thread thread, Java.Lang.Throwable ex)
+            {
+                CrashListener.LastTrace = ex.GetStackTrace ().ToString ();
+                HockeyApp.TraceWriter.WriteTrace (ex);
+            }
+        }
+
+        static bool IsHockeyInitialized;
+
+        public static void SetupHockeyAppCrashManager (Activity activity)
+        {
+            if (BuildInfoHelper.IsDev) {
+                return;
+            }
+            if (IsHockeyInitialized) {
+                return;
+            }
+            IsHockeyInitialized = true;
+
+            var myListener = new MyCustomCrashManagerListener ();
+            // Register the crash manager before Initializing the trace writer
+            HockeyApp.CrashManager.Register (activity, BuildInfo.HockeyAppAppId, myListener); 
+
+            // Initialize the Trace Writer
+            HockeyApp.TraceWriter.Initialize (myListener);
+
+            // Wire up Unhandled Expcetion handler from Android
+            AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) => {
+                // Use the trace writer to log exceptions so HockeyApp finds them
+                myListener.LastTrace = args.Exception.ToString ();
+                HockeyApp.TraceWriter.WriteTrace (args.Exception);
+                args.Handled = true;
+            };
+
+            // Wire up the .NET Unhandled Exception handler
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) => {
+                myListener.LastTrace = args.ExceptionObject.ToString ();
+                HockeyApp.TraceWriter.WriteTrace (args.ExceptionObject);
+            };
+
+            // Wire up the unobserved task exception handler
+            TaskScheduler.UnobservedTaskException += (sender, args) => {
+                myListener.LastTrace = args.Exception.ToString ();
+                HockeyApp.TraceWriter.WriteTrace (args.Exception);
+            };
+
+            Java.Lang.Thread.DefaultUncaughtExceptionHandler = new UnCaughtExceptionHandler (myListener);
+        }
+
+        #endregion
     }
 }

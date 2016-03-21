@@ -132,7 +132,7 @@ namespace NachoCore
                 if (info.lastChecked >= info.lastChanged) {
                     continue;
                 }
-                var lastTime = LoginHelpers.GetSwitchToTime (account);
+                var lastTime = EmailHelper.GetNewSincePreference (account.Id);
                 var hot = McEmailMessage.QueryUnreadAndHotAfter (lastTime);
                 info.lastChecked = DateTime.UtcNow;
                 info.hasNewEmail = (0 < hot.Count);

@@ -41,6 +41,7 @@ namespace NachoCore.IMAP
         {
             Synckit = syncKit;
             PendingSingle = Synckit.PendingSingle;
+            Synckit.PendingSingle = null;
             if (null != PendingSingle) {
                 PendingSingle.MarkDispatched ();
             }
@@ -71,14 +72,16 @@ namespace NachoCore.IMAP
                 NcCapture.AddKind (KImapSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
                 evt = syncFolder (mailKitFolder);
-                ImapStrategy.ResolveOneSync (BEContext, Synckit);
+                ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
+                PendingSingle = null; // we resolved it.
                 break;
 
             case SyncKit.MethodEnum.QuickSync:
                 NcCapture.AddKind (KImapQuickSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapQuickSyncTiming);
                 evt = QuickSync (mailKitFolder, timespan);
-                ImapStrategy.ResolveOneSync (BEContext, Synckit);
+                ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
+                PendingSingle = null; // we resolved it.
                 break;
 
             default:
@@ -160,22 +163,22 @@ namespace NachoCore.IMAP
 
                         Cts.Token.ThrowIfCancellationRequested ();
 
-                        BEContext.Owner.BackendAbateStart ();
+                        using (NcAbate.BackEndAbatement ()) {
 
-                        // Process any new or changed messages. This will also tell us any messages that vanished.
-                        UniqueIdSet vanished;
-                        UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, syncInst, out vanished);
+                            // Process any new or changed messages. This will also tell us any messages that vanished.
+                            UniqueIdSet vanished;
+                            UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, syncInst, out vanished);
 
-                        Cts.Token.ThrowIfCancellationRequested ();
+                            Cts.Token.ThrowIfCancellationRequested ();
 
-                        // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
-                        toDelete.AddRange (vanished);
-                        deleteEmails (toDelete);
+                            // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
+                            toDelete.AddRange (vanished);
+                            deleteEmails (toDelete);
 
-                        Cts.Token.ThrowIfCancellationRequested ();
-                        changed |= toDelete.Any () || newOrChanged.Any ();
+                            Cts.Token.ThrowIfCancellationRequested ();
+                            changed |= toDelete.Any () || newOrChanged.Any ();
+                        }
                     } finally {
-                        BEContext.Owner.BackendAbateStop ();
                         sw.Stop ();
                         Log.Info (Log.LOG_IMAP, "{0}: Processing {1} took {2}ms ({3} per uid)", Synckit.Folder.ImapFolderNameRedacted (), syncInst, sw.ElapsedMilliseconds, sw.ElapsedMilliseconds / syncInst.UidSet.Count);
                     }
@@ -209,7 +212,6 @@ namespace NachoCore.IMAP
             }
 
             // Update the sync count and last attempt and set the Highest and lowest sync'd
-            var exeCtxt = NcApplication.Instance.ExecutionContext;
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 if (Synckit.MaxSynced.HasValue && Synckit.MaxSynced.Value > target.ImapUidHighestUidSynced) {
@@ -384,6 +386,12 @@ namespace NachoCore.IMAP
                         emailMessage.Insert ();
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
+                        if (emailMessage.IsChat){
+                            var result = BackEnd.Instance.DnldEmailBodyCmd(emailMessage.AccountId, emailMessage.Id, false);
+                            if (result.isError()){
+                                Log.Error(Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: could not start download for chat message: {0}", result);
+                            }
+                        }
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                             var target = (McEmailMessage)record;
@@ -632,11 +640,8 @@ namespace NachoCore.IMAP
                     emailMessage.SenderEmailAddressId = fromEmailAddress.Id;
                 }
             }
-            if (null != summary.References && summary.References.Count > 0) {
-                if (summary.References.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} References entries in message.", summary.References.Count);
-                }
-                emailMessage.References = summary.References [0];
+            if (null != summary.References && summary.References.Any ()) {
+                emailMessage.References = string.Join ("\n", summary.References);
             }
 
             if (null != summary.Headers) {
@@ -679,6 +684,7 @@ namespace NachoCore.IMAP
             }
             SetConversationId (emailMessage, summary);
             emailMessage.IsIncomplete = false;
+            emailMessage.DetermineIfIsChat ();
 
             return FixupFromInfo (emailMessage, false);
         }
@@ -691,8 +697,25 @@ namespace NachoCore.IMAP
                 changed = true;
             }
             if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
-                emailMessage.ConversationId = Guid.NewGuid ().ToString ();
-                changed = true;
+                var references = new List<string> ();
+                if (!String.IsNullOrEmpty (emailMessage.InReplyTo)){
+                    references.AddRange (MimeKit.Utils.MimeUtils.EnumerateReferences (emailMessage.InReplyTo));
+                }
+                if (!String.IsNullOrEmpty (emailMessage.References)){
+                    references.AddRange (emailMessage.References.Split('\n'));
+                }
+                foreach (var reference in references) {
+                    var referencedMessage = McEmailMessage.QueryByMessageId (emailMessage.AccountId, reference);
+                    if (referencedMessage != null) {
+                        emailMessage.ConversationId = referencedMessage.ConversationId;
+                        changed = true;
+                        break;
+                    }
+                }
+                if (String.IsNullOrEmpty (emailMessage.ConversationId)) {
+                    emailMessage.ConversationId = Guid.NewGuid ().ToString ();
+                    changed = true;
+                }
             }
             return changed;
         }
@@ -775,7 +798,7 @@ namespace NachoCore.IMAP
         private string getPreviewFromSummary (MessageSummary summary, IMailFolder mailKitFolder)
         {
             foreach (var part in summary.BodyParts) {
-                if (!part.ContentType.Matches ("text", "*") ||
+                if (!part.ContentType.IsMimeType ("text", "*") ||
                     !ValidTextParts.Contains (part.ContentType.MediaSubtype.ToLowerInvariant ())) {
                     continue;
                 }

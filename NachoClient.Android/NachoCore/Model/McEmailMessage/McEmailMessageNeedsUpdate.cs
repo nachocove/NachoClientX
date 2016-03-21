@@ -27,12 +27,16 @@ namespace NachoCore.Model
 
         public static void Update (McEmailMessage message, int value)
         {
-            NcModel.Instance.Db.Execute ("UPDATE McEmailMessageNeedsUpdate SET NeedsUpdate = ? WHERE EmailMessageId = ?", value, message.Id);
+            NcModel.Instance.RunInLock (() => {
+                NcModel.Instance.Db.Execute ("UPDATE McEmailMessageNeedsUpdate SET NeedsUpdate = ? WHERE EmailMessageId = ?", value, message.Id);
+            });
         }
 
         public static void Delete (McEmailMessage message)
         {
-            NcModel.Instance.Db.Execute ("DELETE FROM McEmailMessageNeedsUpdate WHERE EmailMessageId = ?", message.Id);
+            NcModel.Instance.RunInLock (() => {
+                NcModel.Instance.Db.Execute ("DELETE FROM McEmailMessageNeedsUpdate WHERE EmailMessageId = ?", message.Id);
+            });
         }
 
         public static int Get (McEmailMessage message)

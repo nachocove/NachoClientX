@@ -18,6 +18,12 @@ namespace NachoClient.iOS
         AccountsTableViewSource accountsTableViewSource;
         UIStoryboard accountStoryboard;
 
+        static readonly nfloat HEIGHT = 50;
+        static readonly nfloat INDENT = 25;
+        UcNameValuePair UnreadCountBlock;
+
+        ConnectToSalesforceCell connectToSalesforceView;
+
         SwitchAccountButton switchAccountButton;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
@@ -75,14 +81,23 @@ namespace NachoClient.iOS
             Util.ConfigureNavBar (false, this.NavigationController);
 
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount: false, showUnified: false);
+            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount: false, showUnified: false, showSalesforce: true);
 
             accountsTableView = new UITableView (View.Frame);
             accountsTableView.Source = accountsTableViewSource;
             accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            accountsTableView.TableFooterView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 80), AddAccountSelected);
+            accountsTableView.TableHeaderView = GetViewForHeader (accountsTableView);
+
+            var footerView = new UIView (new CGRect (0, 0, accountsTableView.Frame.Width, 160));
+            var addAccountView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 60), AddAccountSelected);
+            footerView.AddSubview (addAccountView);
+
+            connectToSalesforceView = new ConnectToSalesforceCell (new CGRect (0, 60, accountsTableView.Frame.Width, 80), ConnectToSalesforceSelected);
+            footerView.AddSubview (connectToSalesforceView);
+
+            accountsTableView.TableFooterView = footerView;
 
             View.AddSubview (accountsTableView);           
         }
@@ -101,6 +116,10 @@ namespace NachoClient.iOS
         {
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             accountsTableView.Frame = new CGRect (0, 0, accountsTableView.Frame.Width, View.Frame.Height);
+
+            RefreshUnreadBlock ();
+
+            connectToSalesforceView.Hidden = (null != McAccount.GetSalesForceAccount ());
         }
 
         public override void ViewDidLayoutSubviews ()
@@ -115,6 +134,9 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_StatusBarHeightChanged == s.Status.SubKind) {
                 ConfigureAndLayout ();
             }
+            if (NcResult.SubKindEnum.Info_AccountSetChanged == s.Status.SubKind) {
+                ConfigureAndLayout ();
+            }
         }
 
         protected override void Cleanup ()
@@ -125,7 +147,11 @@ namespace NachoClient.iOS
         public void AccountSelected (McAccount account)
         {
             View.EndEditing (true);
-            PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
+            if (McAccount.AccountTypeEnum.SalesForce == account.AccountType) {
+                PerformSegue ("SegueToSalesforceSettings", new SegueHolder (account));
+            } else {
+                PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
+            }
         }
 
         // INachoAccountsTableDelegate
@@ -145,12 +171,38 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
+        public void ConnectToSalesforceSelected ()
+        {
+            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+            var credentialsViewController = (SalesforceCredentialsViewController)accountStoryboard.InstantiateViewController ("SalesforceCredentialsViewController");
+            credentialsViewController.Service = McAccount.AccountServiceEnum.SalesForce;
+            credentialsViewController.AccountDelegate = this;
+            var closeButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (closeButton, "icn-close");
+            closeButton.AccessibilityLabel = "Close";
+            closeButton.Clicked += (object sender, EventArgs e) => { 
+                credentialsViewController.Cancel ();
+                DismissViewController(true, null); 
+            };
+            credentialsViewController.NavigationItem.LeftBarButtonItem = closeButton;
+            var navigationController = new UINavigationController (credentialsViewController);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("SegueToAccountSettings")) {
                 var h = (SegueHolder)sender;
                 var account = (McAccount)h.value;
                 var vc = (AccountSettingsViewController)segue.DestinationViewController;
+                vc.SetAccount (account);
+                return;
+            }
+            if (segue.Identifier.Equals ("SegueToSalesforceSettings")) {
+                var h = (SegueHolder)sender;
+                var account = (McAccount)h.value;
+                var vc = (SalesforceSettingsViewController)segue.DestinationViewController;
                 vc.SetAccount (account);
                 return;
             }
@@ -171,11 +223,19 @@ namespace NachoClient.iOS
 
         public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
         {
-            var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
-            syncingViewController.AccountDelegate = this;
-            syncingViewController.Account = account;
-            BackEnd.Instance.Start (syncingViewController.Account.Id);
-            NavigationController.PushViewController (syncingViewController, true);
+            if (account.AccountService == McAccount.AccountServiceEnum.SalesForce) {
+                BackEnd.Instance.Start (account.Id);
+                DismissViewController (true, () => {
+                    var holder = new SegueHolder(account);
+                    PerformSegue("SegueToSalesforceSettings", holder);
+                });
+            }else{
+                var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
+                syncingViewController.AccountDelegate = this;
+                syncingViewController.Account = account;
+                BackEnd.Instance.Start (syncingViewController.Account.Id);
+                NavigationController.PushViewController (syncingViewController, true);
+            }
         }
 
         public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
@@ -185,5 +245,64 @@ namespace NachoClient.iOS
             NavigationController.PopToViewController (this, true);
 
         }
+
+        UIView GetViewForHeader (UITableView tableView)
+        {
+            var headerView = new UIView (new CGRect (0, 0, tableView.Frame.Width, 0));
+            headerView.BackgroundColor = UIColor.White;
+
+            nfloat yOffset = 5;
+            UnreadCountBlock = new UcNameValuePair (new CGRect (0, yOffset, headerView.Frame.Width, HEIGHT), "Display Unread Counts", INDENT, 15, UnreadCountBlockTapHandler);
+            headerView.AddSubview (UnreadCountBlock);
+            yOffset = UnreadCountBlock.Frame.Bottom;
+
+            yOffset += 5;
+
+            ViewFramer.Create (headerView).Height (yOffset);
+            return headerView;
+        }
+
+        protected void UnreadCountBlockTapHandler (NSObject sender)
+        {
+            NcActionSheet.Show (UnreadCountBlock, this,
+                new NcAlertAction ("All Messages", () => {
+                    EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.AllMessages);
+                    RefreshUnreadBlock ();
+                }),
+                new NcAlertAction ("Recent Messages", () => {
+                    EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.RecentMessages);
+                    RefreshUnreadBlock ();
+                }),
+                new NcAlertAction ("Today's Messages", () => {
+                    EmailHelper.SetHowToDisplayUnreadCount (EmailHelper.ShowUnreadEnum.TodaysMessages);
+                    RefreshUnreadBlock ();
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+            );
+        }
+
+        protected void RefreshUnreadBlock ()
+        {
+            string label;
+
+            switch (EmailHelper.HowToDisplayUnreadCount ()) {
+            case EmailHelper.ShowUnreadEnum.AllMessages:
+                label = "All Messages";
+                break;
+            case EmailHelper.ShowUnreadEnum.RecentMessages:
+                label = "Recent Messages";
+                break;
+            case EmailHelper.ShowUnreadEnum.TodaysMessages:
+                label = "Today's Messages";
+                break;
+            default:
+                label = null;
+                NcAssert.CaseError ();
+                break;
+            }
+            UnreadCountBlock.SetValue (label);
+            (UIApplication.SharedApplication.Delegate as AppDelegate).UpdateBadge ();
+        }
+
     }
 }

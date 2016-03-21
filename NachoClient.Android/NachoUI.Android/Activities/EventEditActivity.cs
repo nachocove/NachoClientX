@@ -167,7 +167,7 @@ namespace NachoClient.AndroidClient
                             account = McAccount.GetDeviceAccount ();
                         } else {
                             bool foundAccount = false;
-                            foreach (var candidateAccountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+                            foreach (var candidateAccountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
                                 if (candidateAccountId != account.Id) {
                                     var candidateAccount = McAccount.QueryById<McAccount> (candidateAccountId);
                                     if (candidateAccount.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) && 0 < new NachoFolders (candidateAccountId, NachoFolders.FilterForCalendars).Count ()) {

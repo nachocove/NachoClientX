@@ -191,7 +191,7 @@ namespace NachoCore.Utils
         private BundleManifest Manifest;
         private int SubmessageCount = 0;
 
-        private static int LastestVersion = 3;
+        private static int LastestVersion = 4;
 
         private static string FullTextEntryName = "full-text";
         private static string TopTextEntryName = "top-text";
@@ -444,9 +444,7 @@ namespace NachoCore.Utils
 
         public void SetFullText (string text)
         {
-            parsed = new ParseResult ();
-            parsed.FullText = text;
-            CompleteBundleAfterParse ();
+            SetParsed (fullText: text);
         }
 
         public void SetFullHtml (HtmlDocument doc, NcEmailMessageBundle sourceBundle)
@@ -455,6 +453,39 @@ namespace NachoCore.Utils
             parsed.FullHtmlDocument = doc;
             ResolveRelativeReferences (doc, sourceBundle);
             CompleteBundleAfterParse ();
+        }
+
+        public void SetParsed (HtmlDocument fullHtml = null, string fullText = null, HtmlDocument topHtml = null, string topText = null)
+        {
+            parsed = new ParseResult ();
+            parsed.FullHtmlDocument = fullHtml;
+            parsed.FullText = fullText;
+            parsed.TopText = topText;
+            parsed.TopHtmlDocument = topHtml;
+            CompleteBundleAfterParse ();
+        }
+
+        public void ImportImageNode (HtmlNode node, string name, string mimeType, System.IO.Stream contents)
+        {
+            var entry = new BundleManifest.Entry ();
+            entry.Path = SafeFilename (name);
+            string entryKey = entry.Path;
+            Manifest.Entries [entryKey] = entry;
+            entry.ContentType = mimeType;
+            using (var writer = Storage.BinaryWriterForPath (entry.Path)) {
+                contents.CopyTo (writer.BaseStream);
+            }
+            var relativeUrl = Storage.RelativeUrlForPath (entry.Path, FullHtmlPath);
+            if (!node.Attributes.Contains ("nacho-original-src") && node.Attributes.Contains ("src")) {
+                node.SetAttributeValue ("nacho-original-src", node.GetAttributeValue ("src", ""));
+            }
+            node.SetAttributeValue ("nacho-resize", "true");
+            if (null != relativeUrl) {
+                node.SetAttributeValue ("nacho-bundle-entry", entryKey);
+                node.SetAttributeValue ("src", relativeUrl.ToString ());
+            } else {
+                node.SetAttributeValue ("src", Storage.UrlForPath (entry.Path, entry.ContentType).ToString ());
+            }
         }
 
         private void CompleteBundleAfterParse ()
@@ -475,16 +506,22 @@ namespace NachoCore.Utils
             if (Message != null) {
                 Body = Message.GetBody ();
             }
-            if (Body != null){
-                if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.PlainText_1) {
-                    parsed.FullText = Body.GetContentsString ();
-                } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.HTML_2) {
-                    parsed.FullHtmlDocument = TemplateHtmlDocument ();
-                    IncludeHtml (Body.GetContentsString ());
-                } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4) {
-                    MimeMessage = MimeMessage.Load (Body.GetFilePath ());
-                } else {
-                    parsed.FullText = Body.GetContentsString ();
+            if (Body != null) {
+                try {
+                    if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.PlainText_1) {
+                        parsed.FullText = Body.GetContentsString ();
+                    } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.HTML_2) {
+                        parsed.FullHtmlDocument = TemplateHtmlDocument ();
+                        IncludeHtml (Body.GetContentsString ());
+                    } else if (Body.BodyType == McAbstrFileDesc.BodyTypeEnum.MIME_4) {
+                        MimeMessage = MimeMessage.Load (Body.GetFilePath ());
+                    } else {
+                        parsed.FullText = Body.GetContentsString ();
+                    }
+                } catch (IOException e) {
+                    // This can happen if the message is deleted while this background task is in progress.
+                    Log.Error (Log.LOG_UI, "I/O exception while parsing the body for an e-mail message or calendar item: {0}", e.Message);
+                    parsed.FullText = "";
                 }
             }
 
@@ -502,6 +539,42 @@ namespace NachoCore.Utils
                 IncludeTextAsHtml (parsed.FullText);
             } else if (parsed.FullText == null) {
                 IncludeHtmlDocumentAsText (parsed.FullHtmlDocument);
+            }
+            if (parsed.TopHtmlDocument == null) {
+                if (parsed.TopText != null) {
+                    var serializer = new HtmlTextDeserializer ();
+                    parsed.TopHtmlDocument = serializer.Deserialize (parsed.TopText);
+                } else {
+                    var serializer = new HtmlTextSerializer (parsed.FullHtmlDocument);
+                    serializer.Serialize ();
+                    HtmlNode chatElement = null;
+                    if (serializer.FoundTop) {
+                        parsed.TopText = serializer.TopText;
+                        parsed.TopHtmlDocument = parsed.FullHtmlDocument.CopyUntilNode (serializer.LastTopTextNode);
+                        chatElement = parsed.TopHtmlDocument.FindElementWithId ("nacho-chat");
+                    } else {
+                        chatElement = parsed.FullHtmlDocument.FindElementWithId ("nacho-chat");
+                        if (chatElement != null) {
+                            var copyTarget = chatElement;
+                            while (copyTarget.NodeType == HtmlNodeType.Element && copyTarget.ChildNodes.Count > 0) {
+                                copyTarget = copyTarget.ChildNodes [copyTarget.ChildNodes.Count - 1];
+                            }
+                            parsed.TopHtmlDocument = parsed.FullHtmlDocument.CopyUntilNode (copyTarget);
+                            chatElement = parsed.TopHtmlDocument.FindElementWithId ("nacho-chat");
+                        }
+                    }
+                    if (chatElement != null) {
+                        var body = parsed.TopHtmlDocument.DocumentNode.Element ("html").Element ("body");
+                        chatElement.ParentNode.RemoveChild (chatElement);
+                        body.AppendChild (chatElement);
+                        for (int i = body.ChildNodes.Count - 2; i >= 0; --i) {
+                            body.RemoveChild (body.ChildNodes [i]);
+                        }
+                        parsed.TopText = parsed.TopHtmlDocument.TextContents ();
+                    }
+                }
+            } else if (parsed.TopText == null) {
+                parsed.TopText = parsed.TopHtmlDocument.TextContents ();
             }
         }
 
@@ -524,22 +597,19 @@ namespace NachoCore.Utils
 
         private void StoreTopEntries ()
         {
-            // TODO: figure out if the message has quoted text that should be removed from the top entries
-
-            bool HasQuote = false;
             string topTextPath = null;
             string topHtmlPath = null;
 
-            if (HasQuote) {
-                // If there's no quoted content, then the top text is identical to the full text
-                // Therefore, we can point the top entries to the paths for the full entries and save space
+            if (parsed.TopText != null && parsed.TopHtmlDocument != null) {
                 topTextPath = TopTextPath;
                 topHtmlPath = TopHtmlPath;
-                Storage.StoreStringContentsForPath (TopText, topTextPath);
+                Storage.StoreStringContentsForPath (parsed.TopText, topTextPath);
                 using (var writer = Storage.TextWriterForPath (topHtmlPath)) {
                     parsed.TopHtmlDocument.Save (writer);
                 }
             } else {
+                // If there's no quoted content, then the top text is identical to the full text
+                // Therefore, we can point the top entries to the paths for the full entries and save space
                 topTextPath = FullTextPath;
                 topHtmlPath = FullHtmlPath;
             }
@@ -641,14 +711,14 @@ namespace NachoCore.Utils
                     if (multipart != null) {
                         contentType = MultipartContentType (multipart);
                     }
-                    bool isHtml = contentType.Matches ("text", "html");
-                    bool isText = contentType.Matches ("text", "plain");
-                    if ((contentType.Matches ("text", "rtf") || contentType.Matches ("application", "rtf")) && rtfPart != null) {
+                    bool isHtml = contentType.IsMimeType ("text", "html");
+                    bool isText = contentType.IsMimeType ("text", "plain");
+                    if ((contentType.IsMimeType ("text", "rtf") || contentType.IsMimeType ("application", "rtf")) && rtfPart != null) {
                         // We don't really want RTF, but we'll hang onto in case we don't find html by the end.
                         // Even if RTF is a higher priority than HTML, we still de-prioritize it becasue we won't
                         // be displaying RTF natively; it will be converted to HTML, and the conversion may not be perfect.
                         rtfPart = part;
-                    } else if (contentType.Matches ("multipart", "alternative")) {
+                    } else if (contentType.IsMimeType ("multipart", "alternative")) {
                         // This would be a very odd case when one alternative section is nested inside the other.
                         // We'll see if the child alternative has the types we're looking for
                         isHtml = MultipartMatchesContentType (multipart, "text", "html");
@@ -671,6 +741,9 @@ namespace NachoCore.Utils
                         parsed.AlternateTypeInfo.PopulatingText = false;
                         foundText = true;
                     }
+                    if (contentType.IsMimeType ("text", "x-nacho-chat")) {
+                        part.Accept (this);
+                    }
                 }
                 // If it turns out we had an RTF, but no HTML part, go ahead and get the RTF
                 if (rtfPart != null && foundHtml == false){
@@ -692,10 +765,10 @@ namespace NachoCore.Utils
                     if (multipart != null) {
                         contentType = MultipartContentType (multipart);
                     }
-                    bool isHtml = contentType.Matches ("text", "html");
-                    bool isText = contentType.Matches ("text", "plain");
-                    bool isRtf = contentType.Matches ("text", "rtf") || contentType.Matches ("application", "rtf");
-                    if (contentType.Matches ("multipart", "alternative")) {
+                    bool isHtml = contentType.IsMimeType ("text", "html");
+                    bool isText = contentType.IsMimeType ("text", "plain");
+                    bool isRtf = contentType.IsMimeType ("text", "rtf") || contentType.IsMimeType ("application", "rtf");
+                    if (contentType.IsMimeType ("multipart", "alternative")) {
                         isHtml = MultipartMatchesContentType (multipart, "text", "html");
                         isText = MultipartMatchesContentType (multipart, "text", "plain");
                         isRtf = MultipartMatchesContentType (multipart, "text", "rtf");
@@ -737,7 +810,7 @@ namespace NachoCore.Utils
         protected override void VisitTextPart (TextPart entity)
         {
             bool isAttachment = entity.ContentDisposition != null && entity.ContentDisposition.IsAttachment;
-            if (isAttachment && MimeHelpers.isExchangeATTFilename (entity.FileName)) {
+            if (isAttachment && !string.IsNullOrEmpty (entity.FileName) && MimeHelpers.isExchangeATTFilename (entity.FileName)) {
                 isAttachment = false;
             }
             if (!isAttachment) {
@@ -771,7 +844,7 @@ namespace NachoCore.Utils
 
         protected override void VisitMimePart (MimePart entity)
         {
-            if (entity.ContentType.Matches ("image", "*")) {
+            if (entity.ContentType.IsMimeType ("image", "*")) {
                 // We'll skip anything with an explicit size of 0 because it's likely to be a part we truncated.
                 // If there's no size set, assume there might be some data.
                 if (entity.ContentDisposition == null || entity.ContentDisposition.Size > 0) {
@@ -970,11 +1043,11 @@ namespace NachoCore.Utils
                     if (related.Root is Multipart) {
                         return MultipartMatchesContentType (related.Root as Multipart, mediaType, mediaSubtype);
                     }
-                    return related.Root.ContentType.Matches(mediaType, mediaSubtype);
+                    return related.Root.ContentType.IsMimeType(mediaType, mediaSubtype);
                 } else if (part is Multipart) {
                     return MultipartMatchesContentType (part as Multipart, mediaType, mediaSubtype);
                 } else {
-                    return part.ContentType.Matches(mediaType, mediaSubtype);
+                    return part.ContentType.IsMimeType(mediaType, mediaSubtype);
                 }
             }
             return false;

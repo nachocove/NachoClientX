@@ -72,6 +72,7 @@ namespace NachoClient.iOS
             var leftMargin = ICON_SIZE + ICON_GAP;
             var lineLength = frame.Width - leftMargin - DOWNLOAD_ICON_SIZE - 8;
             filenameView = new UILabel (new CGRect (leftMargin, TOP_MARGIN, lineLength, LINE_HEIGHT));
+            filenameView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             filenameView.TextColor = A.Color_NachoDarkText;
             filenameView.Font = A.Font_AvenirNextDemiBold14;
             filenameView.Tag = (int)TagType.ATTACHMENT_NAME_TAG;
@@ -81,17 +82,17 @@ namespace NachoClient.iOS
             AddSubview (filenameView);
 
             detailView = new UILabel (new CGRect (leftMargin, TOP_MARGIN + LINE_HEIGHT, lineLength, LINE_HEIGHT));
+            detailView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             detailView.Text = Pretty.AttachmentDescription (attachment);
             detailView.TextColor = A.Color_NachoTextGray;
             detailView.Font = A.Font_AvenirNextRegular14;
             detailView.Tag = (int)TagType.ATTACHMENT_SIZE_TAG;
             detailView.UserInteractionEnabled = false;
-            detailView.SizeToFit ();
-            ViewFramer.Create (detailView).Height (LINE_HEIGHT);
             AddSubview (detailView);
 
             //Download image view
-            downloadImageView = new UIImageView (new CGRect (frame.Width - 18 - 16, (frame.Height / 2) - 8, 16, 16)); 
+            downloadImageView = new UIImageView (new CGRect (frame.Width - 18 - 16, (frame.Height / 2) - 8, 16, 16));
+            downloadImageView.AutoresizingMask = UIViewAutoresizing.FlexibleLeftMargin;
             downloadImageView.Tag = (int)TagType.DOWNLOAD_IMAGEVIEW_TAG;
             using (var image = UIImage.FromBundle ("email-att-download")) {
                 downloadImageView.Image = image;
@@ -101,6 +102,7 @@ namespace NachoClient.iOS
 
             separatorView = new UIView (new CGRect (ICON_SIZE + ICON_GAP, VIEW_HEIGHT - 1.0f,
                 Frame.Width - ICON_SIZE, SEPARATOR_HEIGHT));
+            separatorView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth;
             separatorView.BackgroundColor = A.Color_NachoLightBorderGray;
             separatorView.Tag = (int)TagType.ATTACHMENT_SEPARATOR_TAG;
             AddSubview (separatorView);

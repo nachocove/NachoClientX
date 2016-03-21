@@ -47,7 +47,7 @@ namespace NachoClient.AndroidClient
 
             if (null != NcApplication.Instance.Account) {
                 var contactInfoTextField = view.FindViewById<EditText> (Resource.Id.reach);
-                contactInfoTextField.Text = NcApplication.Instance.Account.EmailAddr;
+                contactInfoTextField.Text = GetEmailAddress();
             }
 
             return view;
@@ -115,9 +115,9 @@ namespace NachoClient.AndroidClient
 
         protected string GetEmailAddress ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                return Account.EmailAddr;
+            var account = NcApplication.Instance.DefaultEmailAccount;
+            if (account != null) {
+                return account.EmailAddr;
             } else {
                 return "";
             }

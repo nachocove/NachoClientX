@@ -11,16 +11,18 @@ namespace NachoCore.SFDC
     {
         public const int KDefaultResyncSeconds = 60 * 30;
         public const string McMutablesModule = "Salesforce";
+        public const string McMutablesBccKey = "Salesforce.Bcc";
 
         public const McAccount.AccountCapabilityEnum SalesForceCapabilities = (
-            McAccount.AccountCapabilityEnum.ContactReader |
-            McAccount.AccountCapabilityEnum.ContactWriter);
+                                                                                  McAccount.AccountCapabilityEnum.ContactReader |
+                                                                                  McAccount.AccountCapabilityEnum.ContactWriter);
 
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
             // wait for the fetch of the endpoint query paths.
             UiCrdW,
+            UiServConfW,
             SyncW,
             Parked,
         };
@@ -34,6 +36,8 @@ namespace NachoCore.SFDC
                 return "Stop";
             case (uint)Lst.DiscW:
                 return "DiscW";
+            case (uint)Lst.UiServConfW:
+                return "UiServConfW";
             case (uint)Lst.UiCrdW:
                 return "UiCrdW";
             case (uint)Lst.SyncW:
@@ -47,7 +51,30 @@ namespace NachoCore.SFDC
 
         public override BackEndStateEnum BackEndState {
             get {
-                return BackEndStateEnum.PostAutoDPostInboxSync;
+                if (null != BackEndStatePreset) {
+                    return (BackEndStateEnum)BackEndStatePreset;
+                }
+                switch (Sm.State) {
+                case (uint)St.Start:
+                    return BackEndStateEnum.NotYetStarted;
+
+                case (uint)Lst.UiCrdW:
+                    return BackEndStateEnum.CredWait;
+
+                case (uint)Lst.UiServConfW:
+                    return BackEndStateEnum.ServerConfWait;
+                
+                case (uint)Lst.DiscW:
+                    return BackEndStateEnum.Running;
+                
+                case (uint)Lst.Parked:
+                case (uint)Lst.SyncW:
+                    return FirstSyncDone ?  BackEndStateEnum.PostAutoDPostInboxSync : BackEndStateEnum.PostAutoDPreInboxSync;
+
+                default:
+                    NcAssert.CaseError (string.Format ("BackEndState: Unhandled state {0}", StateName ((uint)Sm.State)));
+                    return BackEndStateEnum.PostAutoDPostInboxSync;
+                }
             }
         }
 
@@ -56,6 +83,8 @@ namespace NachoCore.SFDC
             new public enum E : uint
             {
                 AuthFail = (PcEvt.E.Last + 1),
+                UiSetServConf,
+                GetServConf,
                 UiSetCred,
                 Last = UiSetCred,
             };
@@ -96,6 +125,7 @@ namespace NachoCore.SFDC
                 Name = string.Format ("SFDCPC({0})", AccountId),
                 LocalEventType = typeof(SfdcEvt),
                 LocalStateType = typeof(Lst),
+                TransIndication = UpdateSavedState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
@@ -108,6 +138,8 @@ namespace NachoCore.SFDC
                             (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                             (uint)SfdcEvt.E.AuthFail,
+                            (uint)SfdcEvt.E.GetServConf,
+                            (uint)SfdcEvt.E.UiSetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -125,6 +157,8 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
                             (uint)SfdcEvt.E.AuthFail,
+                            (uint)SfdcEvt.E.GetServConf,
+                            (uint)SfdcEvt.E.UiSetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -134,12 +168,34 @@ namespace NachoCore.SFDC
                         }
                     },
                     new Node {
+                        State = (uint)Lst.UiServConfW,
+                        Drop = new [] {
+                            (uint)PcEvt.E.PendQOrHint,
+                            (uint)PcEvt.E.PendQHot,
+                        },
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SfdcEvt.E.AuthFail,
+                            (uint)SfdcEvt.E.GetServConf,
+                            (uint)SfdcEvt.E.UiSetCred,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SfdcEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                        }
+                    },
+                    new Node {
                         State = (uint)Lst.DiscW,
                         Drop = new [] {
                             (uint)PcEvt.E.PendQOrHint,
                             (uint)PcEvt.E.PendQHot,
                         },
-                        Invalid = new uint[] {
+                        Invalid = new [] {
+                            (uint)SfdcEvt.E.GetServConf,
+                            (uint)SfdcEvt.E.UiSetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -154,6 +210,10 @@ namespace NachoCore.SFDC
                     new Node {
                         State = (uint)Lst.SyncW,
                         Drop = new uint[] {
+                        },
+                        Invalid = new [] {
+                            (uint)SfdcEvt.E.GetServConf,
+                            (uint)SfdcEvt.E.UiSetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, ActSetsState = true },
@@ -177,6 +237,8 @@ namespace NachoCore.SFDC
                         },
                         Invalid = new [] {
                             (uint)SfdcEvt.E.AuthFail,
+                            (uint)SfdcEvt.E.GetServConf,
+                            (uint)SfdcEvt.E.UiSetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
@@ -188,6 +250,18 @@ namespace NachoCore.SFDC
                 }
             };
             Sm.Validate ();
+            LastBackEndState = BackEndState;
+        }
+
+        void UpdateSavedState ()
+        {
+            BackEndStatePreset = null;
+            if (LastBackEndState != BackEndState) {
+                var res = NcResult.Info (NcResult.SubKindEnum.Info_BackEndStateChanged);
+                res.Value = AccountId;
+                StatusInd (res);
+            }
+            LastBackEndState = BackEndState;
         }
 
         public override void Remove ()
@@ -200,6 +274,7 @@ namespace NachoCore.SFDC
 
         void DoDisc ()
         {
+            BackEndStatePreset = BackEndStateEnum.Running;
             if (SFDCSetup != null) {
                 SFDCSetup.Cancel ();
                 SFDCSetup = null;
@@ -234,7 +309,7 @@ namespace NachoCore.SFDC
 
             // TODO: couple ClearEventQueue with PostEvent inside SM mutex.
             Sm.ClearEventQueue ();
-            var next = McPending.QueryEligible (AccountId, McAccount.SmtpCapabilities).
+            var next = McPending.QueryEligible (AccountId, SalesForceCapabilities).
                 FirstOrDefault (x => McPending.Operations.Sync == x.Operation);
             if (null != next) {
                 Log.Info (Log.LOG_SFDC, "Strategy:FG/BG:Send");
@@ -254,6 +329,7 @@ namespace NachoCore.SFDC
         }
 
         NcTimer ReSyncTimer;
+        bool FirstSyncDone;
 
         void DoSyncSuccess ()
         {
@@ -264,6 +340,7 @@ namespace NachoCore.SFDC
             ReSyncTimer = new NcTimer ("SFDCResyncTimer", (state) => {
                 Sm.PostEvent ((uint)SmEvt.E.Launch, "SFDCRESYNCTIMER");
             }, null, new TimeSpan (0, 0, KDefaultResyncSeconds), TimeSpan.Zero);
+            FirstSyncDone = true;
         }
 
         void StartSync (McPending pending)
@@ -357,6 +434,16 @@ namespace NachoCore.SFDC
             return McMutables.Get (accountId, McMutablesModule, SFDCGetEmailDomainCommand.McMutablesKey);
         }
 
+        public static bool ShouldAddBccToEmail (int accountId)
+        {
+            return McMutables.GetBoolDefault (accountId, McMutablesModule, McMutablesBccKey, false);
+        }
+
+        public static void SetShouldAddBccToEmail (int accountId, bool enabled)
+        {
+            McMutables.SetBool (accountId, McMutablesModule, McMutablesBccKey, enabled);
+        }
+
         public static bool IsSalesForceContact (int accountId, string emailAddress)
         {
             var contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
@@ -366,45 +453,6 @@ namespace NachoCore.SFDC
                 }
             }
             return false;
-        }
-
-        public static McEmailMessage MaybeAddSFDCEmailToBcc (McEmailMessage emailMessage)
-        {
-            // FIXME: Need to test this.
-            var SalesforceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.SalesForce).FirstOrDefault ();
-            if (SalesforceAccount != null) {
-                string SFDCemail = SalesForceProtoControl.EmailToSalesforceAddress (SalesforceAccount.Id);
-                if (!string.IsNullOrEmpty (SFDCemail)) {
-                    bool addSFDCemail = IsSalesForceContact (SalesforceAccount.Id, emailMessage.To);
-                    if (!addSFDCemail) {
-                        foreach (var cc in emailMessage.Cc.Split (new[] {','})) {
-                            if (IsSalesForceContact (SalesforceAccount.Id, cc)) {
-                                addSFDCemail = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!addSFDCemail) {
-                        foreach (var bcc in emailMessage.Bcc.Split (new[] {','})) {
-                            if (IsSalesForceContact (SalesforceAccount.Id, bcc)) {
-                                addSFDCemail = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (addSFDCemail) {
-                        var bccAddresses = emailMessage.Bcc.Split (new[] { ',' }).ToList ();
-                        bccAddresses.Add (SFDCemail);
-                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> (((record) => {
-                            var target = (McEmailMessage)record;
-                            target.Bcc = string.Join (",", bccAddresses);
-                            return true;
-                        }));
-                    }
-                }
-            }
-            return emailMessage;
         }
 
         #endregion

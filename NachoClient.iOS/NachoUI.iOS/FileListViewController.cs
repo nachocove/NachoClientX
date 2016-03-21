@@ -103,8 +103,6 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            // In case we exit during scrolling
-            NachoCore.Utils.NcAbate.RegularPriority ("FileListViewController ViewWillDisappear");
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

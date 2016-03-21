@@ -53,10 +53,13 @@ namespace NachoClient.AndroidClient
                 imageId = Resource.Drawable.avatar_yahoo;
                 break;
             case McAccount.AccountServiceEnum.Aol:
-                imageId = Resource.Drawable.Icon;
+                imageId = Resource.Drawable.avatar_aol;
+                break;
+            case McAccount.AccountServiceEnum.SalesForce:
+                imageId = Resource.Drawable.avatar_salesforce;
                 break;
             default:
-                imageId = Resource.Drawable.Icon;
+                imageId = Resource.Drawable.avatar_unified;
                 break;
             }
             return imageId;
@@ -106,7 +109,7 @@ namespace NachoClient.AndroidClient
 
         public static void SendEmail (Context context, int accountId, McContact contact, string alternateEmailAddress)
         {
-            if (null != alternateEmailAddress) {
+            if (!String.IsNullOrEmpty (alternateEmailAddress)) {
                 var intent = MessageComposeActivity.NewMessageIntent (context, accountId, alternateEmailAddress);
                 context.StartActivity (intent);
                 return;
@@ -117,7 +120,7 @@ namespace NachoClient.AndroidClient
             }
             var emailAddress = contact.GetDefaultOrSingleEmailAddress ();
             if (null == emailAddress) {
-                NcAlertView.ShowMessage (context, "Contact has multiple addresses", "Please send an email address to use.");
+                NcAlertView.ShowMessage (context, "Contact has multiple addresses", "Please select an email address to use.");
                 return;
             }
             context.StartActivity (MessageComposeActivity.NewMessageIntent (context, accountId, emailAddress));
@@ -166,6 +169,26 @@ namespace NachoClient.AndroidClient
             intent.PutExtra (MediaStore.ExtraOutput, outputUri);
             fragment.StartActivityForResult (intent, requestCode);
             return outputUri;
+        }
+
+        public static List<int> accountColors = null;
+
+        static Dictionary<int, int> AccountColorIndexCache = new Dictionary<int, int> ();
+
+        public static int ColorForAccount (int accountId)
+        {
+            if (accountColors == null) {
+                accountColors = new List<int> (McAccount.AccountColors.Length / 3);
+                for (int i = 0; i < McAccount.AccountColors.Length / 3; ++i) {
+                    accountColors.Add (unchecked((int)(0xFF000000 | (McAccount.AccountColors [i,0] << 16) | (McAccount.AccountColors [i,1] << 8) | McAccount.AccountColors [i,2])));
+                }
+            }
+            if (!AccountColorIndexCache.ContainsKey (accountId)) {
+                var account = McAccount.QueryById<McAccount> (accountId);
+                AccountColorIndexCache [accountId] = account.ColorIndex;
+            }
+            var index = AccountColorIndexCache [accountId];
+            return accountColors [index];
         }
     }
 

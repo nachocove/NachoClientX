@@ -5,43 +5,53 @@ using System.IO;
 using NachoPlatform;
 using Android.Graphics;
 
-namespace NachoClient.AndroidClient
+namespace NachoPlatform
 {
-    public class ImageAndroid : PlatformImage
+    public class PlatformImageFactory : IPlatformImageFactory
+    {
+
+        public static readonly PlatformImageFactory Instance = new PlatformImageFactory (); 
+
+        private PlatformImageFactory()
+        {
+        }
+
+        public IPlatformImage FromPath (string path)
+        {
+            var image = BitmapFactory.DecodeFile (path);
+            if (image != null) {
+                return new PlatformImage (image);
+            }
+            return null;
+        }
+
+        public IPlatformImage FromStream (Stream stream)
+        {
+            var image = BitmapFactory.DecodeStream (stream);
+            if (image != null) {
+                return new PlatformImage (image);
+            }
+            return null;
+        }
+    }
+
+    public class PlatformImage : IPlatformImage
     {
 
         Bitmap Image;
         
-        public ImageAndroid (Bitmap image)
+        public PlatformImage (Bitmap image)
         {
             Image = image;
         }
 
-        public static ImageAndroid FromPath (string path)
-        {
-            var image = BitmapFactory.DecodeFile (path);
-            if (image != null) {
-                return new ImageAndroid (image);
-            }
-            return null;
-        }
-
-        public static ImageAndroid FromStream (Stream stream)
-        {
-            var image = BitmapFactory.DecodeStream (stream);
-            if (image != null) {
-                return new ImageAndroid (image);
-            }
-            return null;
-        }
-
-        public override Tuple<float, float> Size {
+        public Tuple<float, float> Size {
             get {
                 return new Tuple<float, float> ((float)Image.Width, (float)Image.Height);
             }
         }
 
-        public override System.IO.Stream ResizedData (float maxWidth, float maxHeight)
+        public System.IO.Stream ResizedData (float maxWidth, float maxHeight)
         {
             float originalWidth = (float)Image.Width;
             float originalHeight = (float)Image.Height;
@@ -62,7 +72,7 @@ namespace NachoClient.AndroidClient
             return stream;
         }
 
-        public override void Dispose ()
+        public void Dispose ()
         {
             Image.Dispose ();
         }

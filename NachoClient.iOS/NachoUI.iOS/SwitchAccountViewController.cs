@@ -102,8 +102,9 @@ namespace NachoClient.iOS
             View.AddSubview (spinner);
             spinner.StartAnimating ();
             spinner.HidesWhenStopped = true;
+            LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
+            LoginHelpers.SetMostRecentAccount (account.Id);
             NcApplication.Instance.Account = account;
-            LoginHelpers.SetSwitchToTime (account);
             switchAccountCallback (account);
             Deactivate (null, (McAccount acct) => {
                 UIView.Transition (UIApplication.SharedApplication.Delegate.GetWindow (), 0.75, UIViewAnimationOptions.TransitionFlipFromRight, () => {

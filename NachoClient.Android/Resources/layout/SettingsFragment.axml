@@ -40,6 +40,28 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="@color/NachoBackgroundGray" />
+                <LinearLayout
+                    android:background="@android:color/white"
+                    android:orientation="horizontal"
+                    android:paddingLeft="5dp"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left|center_vertical"
+                        android:text="@string/unread_count_label"
+                        android:textSize="14dp"
+                        android:textColor="@android:color/black" />
+                    <Spinner
+                        android:id="@+id/unread_spinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="28dp"
+                        android:gravity="right"
+                        android:layout_gravity="right|center_vertical"
+                        android:entries="@array/unread_count"
+                        android:prompt="@string/unread_count_prompt" />
+                </LinearLayout>
                 <Button
                     android:id="@+id/crash_button"
                     android:layout_width="match_parent"

@@ -153,7 +153,7 @@ namespace NachoClient.AndroidClient
                 accountImage = itemView.FindViewById<ImageView> (Resource.Id.account_image);
                 separator = itemView.FindViewById<View> (Resource.Id.separator);
 
-                itemView.Click += (object sender, EventArgs e) => listener (base.Position);
+                itemView.Click += (object sender, EventArgs e) => listener (base.AdapterPosition);
             }
         }
 
@@ -174,8 +174,8 @@ namespace NachoClient.AndroidClient
                 separator = itemView.FindViewById<View> (Resource.Id.separator);
                 folder = itemView.FindViewById<ImageView> (Resource.Id.folder);
 
-                itemView.Click += (object sender, EventArgs e) => listener (base.Position);
-                toggle.Click += (object sender, EventArgs e) => toggleListener (base.Position);
+                itemView.Click += (object sender, EventArgs e) => listener (base.AdapterPosition);
+                toggle.Click += (object sender, EventArgs e) => toggleListener (base.AdapterPosition);
             }
         }
 
@@ -232,7 +232,6 @@ namespace NachoClient.AndroidClient
         {
             var vh = holder as HeaderViewHolder;
             var d = folderLists.displayList [position];
-            var node = d.node;
 
             if (0 == position) {
                 vh.header.Visibility = ViewStates.Gone;

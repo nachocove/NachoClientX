@@ -437,6 +437,27 @@ namespace NachoClient.iOS
             FadeCustomSegue.Transition (this, searchController);
         }
 
+        bool SalesforceBccAdded = false;
+        Dictionary<string, bool> SalesforceAddressCache = new Dictionary<string, bool>();
+
+        void MaybeAddSalesforceBcc()
+        {
+            if (!SalesforceBccAdded) {
+                string extraBcc = EmailHelper.ExtraSalesforceBccAddress (SalesforceAddressCache, Composer.Message);
+                if (null != extraBcc) {
+                    SalesforceBccAdded = true;
+                    var parsedExtraBcc = NcEmailAddress.ParseBccAddressListString (extraBcc);
+                    if (0 == parsedExtraBcc.Count) {
+                        Log.Error (Log.LOG_EMAIL, "The Salesforce extra Bcc address could not be parsed.");
+                    }
+                    foreach (var address in parsedExtraBcc) {
+                        HeaderView.BccView.Append (address);
+                    }
+                    Composer.Message.Bcc = EmailHelper.AddressStringFromList (HeaderView.BccView.AddressList);
+                }
+            }
+        }
+
         // User selecting contact for To/CC/BCC field
         public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
@@ -452,6 +473,7 @@ namespace NachoClient.iOS
             } else {
                 NcAssert.CaseError ();
             }
+            MaybeAddSalesforceBcc ();
             UpdateSendEnabled ();
         }
 
@@ -686,11 +708,6 @@ namespace NachoClient.iOS
                 new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
                     DismissViewController (true, null);
                 }));
-        }
-
-        public PlatformImage ImageForMessageComposerAttachment (MessageComposer composer, Stream stream)
-        {
-            return ImageiOS.FromStream (stream);
         }
 
         void DisplayMessageBody ()
@@ -1183,6 +1200,7 @@ namespace NachoClient.iOS
             var webView = self.Superview.Superview as UIWebView;
             var composeViewController = webView.Delegate as MessageComposeViewController;
             var pasteboard = UIPasteboard.General;
+
             if (pasteboard.Images.Length > 0) {
                 var pngIndexes = pasteboard.ItemSetWithPasteboardTypes (new string[] { MobileCoreServices.UTType.PNG });
                 // FIXME: should be using UIPasteboard.TypeListImage, but I think there's a xamarin bug with that property
@@ -1201,6 +1219,139 @@ namespace NachoClient.iOS
                 });
                 composeViewController.WebViewDidPasteImages (pasteboard.Images, isPNG);
             } else {
+
+                // If the content being pasted is HTML with embedded images, the images need to be registered with the
+                // NcEmailMessageBundle for the outgoing message so that the images will be included in the sent message.
+                // The format of HTML in the pasteboard is complicated and not obvious, and manipulating it requires
+                // using the Objective-C collection classes directly.
+                // (This code is beyond ugly.  I am ashamed to have written it.)
+
+                // Does the pasteboard contain HTML?
+                NSData webData = pasteboard.DataForPasteboardType ("Apple Web Archive pasteboard type");
+                if (null != webData) {
+
+                    // Convert the raw data into a dictionary.
+                    NSPropertyListFormat format = NSPropertyListFormat.Xml;
+                    NSError error;
+                    NSObject webObject = NSPropertyListSerialization.PropertyListWithData (webData, (NSPropertyListReadOptions)0, ref format, out error);
+                    if (webObject is NSDictionary) {
+                        NSDictionary webObjectDictionary = (NSDictionary)webObject;
+
+                        // Get the inner dictionary that contains the HTML.
+                        NSObject mainResource = webObjectDictionary.ObjectForKey (new NSString ("WebMainResource"));
+                        if (mainResource is NSDictionary) {
+                            NSDictionary mainResourceDictionary = (NSDictionary)mainResource;
+
+                            // Get the UTF-8 encoded HTML and convert it to a string.
+                            NSObject resourceData = mainResourceDictionary.ObjectForKey (new NSString ("WebResourceData"));
+                            if (resourceData is NSData) {
+                                string html = NSString.FromData ((NSData)resourceData, NSStringEncoding.UTF8).ToString ();
+
+                                // The HTML is interesting only if it contains images or nacho-related attributes.
+                                if (html.Contains ("nacho") || html.Contains ("img") || html.Contains ("IMG")) {
+                                    bool changed = false;
+
+                                    // Parse the HTML string and iterate through all the nodes.
+                                    var htmlDoc = new HtmlAgilityPack.HtmlDocument ();
+                                    htmlDoc.LoadHtml (html);
+                                    var nodeQueue = new Queue<HtmlAgilityPack.HtmlNode> ();
+                                    nodeQueue.Enqueue (htmlDoc.DocumentNode);
+                                    while (0 < nodeQueue.Count) {
+                                        var node = nodeQueue.Dequeue ();
+
+                                        // Is it an image node?
+                                        if (HtmlAgilityPack.HtmlNodeType.Element == node.NodeType && "img" == node.Name && node.Attributes.Contains ("src")) {
+
+                                            try {
+                                                string src = node.GetAttributeValue ("src", "");
+                                                string srcUrl = null;
+                                                if (Uri.IsWellFormedUriString (src, UriKind.Absolute) && Uri.UriSchemeFile == new Uri(src).Scheme) {
+                                                    srcUrl = src;
+                                                } else if (Uri.IsWellFormedUriString (src, UriKind.Relative)) {
+                                                    // The "src" attribute is a relative URL.  Calculate the absolute URL.
+                                                    NSObject baseUrlObject = mainResourceDictionary.ValueForKey (new NSString ("WebResourceURL"));
+                                                    if (baseUrlObject is NSString) {
+                                                        string baseUrl = ((NSString)baseUrlObject).ToString ();
+                                                        if (Uri.IsWellFormedUriString (baseUrl, UriKind.Absolute)) {
+                                                            srcUrl = new Uri (new Uri (baseUrl), src).ToString ();
+                                                        }
+                                                    }
+                                                }
+                                                if (null != srcUrl) {
+
+                                                    // Iterate through the sub-resources in the web archive, looking for one that matches the image's URL.
+                                                    NSObject subResourceArrayObject = webObjectDictionary.ObjectForKey (new NSString ("WebSubresources"));
+                                                    if (subResourceArrayObject is NSArray) {
+                                                        NSArray subResourceArray = (NSArray)subResourceArrayObject;
+                                                        for (nuint i = 0; i < subResourceArray.Count; ++i) {
+                                                            NSDictionary subResource = subResourceArray.GetItem<NSDictionary> (i);
+                                                            NSObject subResourceUrlObject = subResource.ValueForKey (new NSString ("WebResourceURL"));
+                                                            if (subResourceUrlObject is NSString) {
+                                                                string subResourceUrl = ((NSString)subResourceUrlObject).ToString ();
+                                                                if (subResourceUrl == srcUrl) {
+
+                                                                    // Found a match.  Get the information about the image, including the image data.
+                                                                    string contentType = "image/jpg";
+                                                                    NSObject subResourceTypeObject = subResource.ValueForKey (new NSString ("WebResourceMIMEType"));
+                                                                    if (subResourceTypeObject is NSString) {
+                                                                        contentType = ((NSString)subResourceTypeObject).ToString ();
+                                                                    }
+                                                                    string fileName = Path.GetFileName (new Uri (srcUrl).AbsolutePath);
+                                                                    NSObject subResourceContentsObject = subResource.ObjectForKey (new NSString ("WebResourceData"));
+                                                                    if (subResourceContentsObject is NSData) {
+                                                                        NSData subResourceContents = (NSData)subResourceContentsObject;
+                                                                        using (var byteReader = new MemoryStream (subResourceContents.ToArray ())) {
+
+                                                                            // And finally have the bundle do its magic.
+                                                                            composeViewController.Composer.Bundle.ImportImageNode (node, fileName, contentType, byteReader);
+                                                                        }
+                                                                        changed = true;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            } catch (ArgumentOutOfRangeException ex) {
+                                                // Thrown from Uri(Uri,string) if the base URI is not absolute.
+                                                Log.Error (Log.LOG_UI, "Unexpected {0} while processing pasted HTML: {1}", ex.GetType ().Name, ex.Message);
+                                            } catch (UriFormatException ex) {
+                                                Log.Error (Log.LOG_UI, "Unexpected {0} while processing pasted HTML: {1}", ex.GetType ().Name, ex.Message);
+                                            } catch (IOException ex) {
+                                                Log.Error (Log.LOG_UI, "Unexpected {0} while processing pasted HTML: {1}", ex.GetType ().Name, ex.Message);
+                                            }
+
+                                        } else if (node.Attributes.Contains ("nacho-bundle-entry")) {
+                                            // A stray nacho-bundle-entry attribute can cause a crash when the message is sent.
+                                            node.Attributes.Remove ("nacho-bundle-entry");
+                                            changed = true;
+                                        }
+                                        foreach (var child in node.ChildNodes) {
+                                            nodeQueue.Enqueue (child);
+                                        }
+                                    }
+                                    if (changed) {
+                                        // Something changed, so the pasteboard needs to be updated before the UIWebView is notified.
+                                        // The data structures are read-only, so make copies and replace the item that is in the pasteboard.
+                                        var writer = new StringWriter ();
+                                        htmlDoc.Save (writer);
+                                        string newHtml = writer.ToString ();
+                                        NSData newResourceData = NSData.FromString (newHtml, NSStringEncoding.UTF8);
+                                        NSMutableDictionary mutableMainResourceDictionary = (NSMutableDictionary)mainResourceDictionary.MutableCopy ();
+                                        mutableMainResourceDictionary.SetValueForKey (newResourceData, new NSString ("WebResourceData"));
+                                        NSMutableDictionary mutableWebObjectDictionary = (NSMutableDictionary)webObjectDictionary.MutableCopy ();
+                                        mutableWebObjectDictionary.SetValueForKey (mutableMainResourceDictionary, new NSString ("WebMainResource"));
+                                        NSData encoded = NSPropertyListSerialization.DataWithPropertyList (
+                                            mutableWebObjectDictionary, NSPropertyListFormat.Binary, (NSPropertyListWriteOptions)0, out error);
+                                        pasteboard.SetData (encoded, "Apple Web Archive pasteboard type");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 var d = (PasteDelegate)Marshal.GetDelegateForFunctionPointer (BrowserView_OriginalPaste, typeof(PasteDelegate));
                 d (selfHandle, selector, sender);
             }

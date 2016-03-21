@@ -300,7 +300,7 @@ namespace NachoClient.AndroidClient
                         var initials = ContactsHelper.NameToLetters (attendee.DisplayName);
                         var color = Util.ColorResourceForEmail (detail.Account.Id, attendee.Email);
                         attendeePhotoView.SetEmailAddress (detail.Account.Id, attendee.Email, initials, color);
-                        attendeeNameView.Text = GetFirstName (attendee.DisplayName);
+                        attendeeNameView.Text = CalendarHelper.GetFirstName (attendee.DisplayName);
                     } else {
                         attendeePhotoView.Visibility = ViewStates.Gone;
                         attendeeNameView.Visibility = ViewStates.Gone;
@@ -428,18 +428,6 @@ namespace NachoClient.AndroidClient
                 return null;
             }
             return parent.FindViewById<TextView> (id);
-        }
-
-        private static string GetFirstName (string displayName)
-        {
-            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (names [0] == null) {
-                return "";
-            }
-            if (names [0].Length > 1) {
-                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
-            }
-            return names [0].ToUpper ();
         }
 
         private void ClearResponseButtons ()

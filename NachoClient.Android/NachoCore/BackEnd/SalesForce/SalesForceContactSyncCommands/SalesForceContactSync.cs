@@ -74,6 +74,9 @@ namespace NachoCore.SFDC
         public SalesForceContactSync (SalesForceProtoControl owner, int accountId, McPending pending = null)
         {
             Pending = pending;
+            if (null != Pending) {
+                Pending.MarkDispatched ();
+            }
             SFDCOwner = owner;
             Sm = new NcStateMachine ("SFDCPC:CONTACTSYNC") { 
                 Name = string.Format ("SFDCPC:CONTACTSYNC({0})", accountId),
@@ -90,6 +93,8 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.TempFail,
                             (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                             (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
@@ -108,6 +113,8 @@ namespace NachoCore.SFDC
                             (uint)SmEvt.E.TempFail,
                             (uint)SalesForceProtoControl.SfdcEvt.E.AuthFail,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                             (uint)NcProtoControl.PcEvt.E.PendQOrHint,
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
@@ -126,6 +133,8 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSync, ActSetsState = true },
@@ -144,6 +153,8 @@ namespace NachoCore.SFDC
                             (uint)NcProtoControl.PcEvt.E.PendQHot,
                             (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)SalesForceProtoControl.SfdcEvt.E.UiSetCred,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.UiSetServConf,
+                            (uint)SalesForceProtoControl.SfdcEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSyncContinue, ActSetsState = true },

@@ -219,6 +219,25 @@ namespace NachoClient.iOS
                 }
                 return;
             }
+            var chatNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.ChatNotificationKey);
+            var chatNotification = chatNotifications.FirstOrDefault ();
+            if (null != chatNotification) {
+                var parts = chatNotification.Value.Split (',');
+                var chatId = int.Parse (parts [0]);
+                var messageId = int.Parse (parts [1]);
+                var chat = McChat.QueryById<McChat> (chatId);
+                var message = McChatMessage.EmailMessageInChat (chatId, messageId);
+                chatNotification.Delete ();
+                if (null != chat && null != message) {
+                    if (MaybeSwitchToNotificationAccount (message)) {
+                        var chatViewController = new ChatMessagesViewController ();
+                        chatViewController.Chat = chat;
+                        chatViewController.Account = McAccount.QueryById<McAccount> (chat.AccountId);
+                        NavigationController.PushViewController (chatViewController, true);
+                    }
+                }
+                return;
+            }
         }
 
         bool MaybeSwitchToNotificationAccount (McAbstrObjectPerAcc obj)
@@ -324,49 +343,49 @@ namespace NachoClient.iOS
 
         protected void MaybeRefreshPriorityInbox ()
         {
-            NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
+            using (NcAbate.UIAbatement ()) {
 
-            if (NcApplication.Instance.Account.Id != currentAccount.Id) {
-                SwitchToAccount (NcApplication.Instance.Account);
-                return;
-            }
-
-            if (priorityInboxNeedsRefresh) {
-                priorityInboxNeedsRefresh = false;
-                List<int> adds;
-                List<int> deletes;
-                ReloadCapture.Start ();
-                if (priorityInbox.Refresh (out adds, out deletes)) {
-                    Util.UpdateTable (hotListView, adds, deletes);
+                if (NcApplication.Instance.Account.Id != currentAccount.Id) {
+                    SwitchToAccount (NcApplication.Instance.Account);
+                    return;
                 }
-                ReloadCapture.Stop ();
+
+                if (priorityInboxNeedsRefresh) {
+                    priorityInboxNeedsRefresh = false;
+                    List<int> adds;
+                    List<int> deletes;
+                    ReloadCapture.Start ();
+                    if (priorityInbox.Refresh (out adds, out deletes)) {
+                        Util.UpdateTable (hotListView, adds, deletes);
+                    }
+                    ReloadCapture.Stop ();
+                }
             }
-            NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
         }
 
         void SwitchToAccount (McAccount account)
         {
             if (IsViewLoaded) {
-                currentAccount = account;
-                priorityInboxNeedsRefresh = false;
-                NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController SwitchToAccount");
-                priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
-                if (null == hotListSource) {
-                    hotListSource = new HotListTableViewSource (this, priorityInbox);
-                    hotListView.Source = hotListSource;
-                } else {
-                    hotListSource.SetMessageThreads (priorityInbox);
+                using (NcAbate.UIAbatement ()) {
+                    currentAccount = account;
+                    priorityInboxNeedsRefresh = false;
+                    priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
+                    if (null == hotListSource) {
+                        hotListSource = new HotListTableViewSource (this, priorityInbox);
+                        hotListView.Source = hotListSource;
+                    } else {
+                        hotListSource.SetMessageThreads (priorityInbox);
+                    }
+                    hotListView.RowHeight = hotListView.Frame.Height - hotListSource.CardPeekDistance * 2.0f - hotListSource.CellCardInset.Top - hotListSource.CellCardInset.Bottom;
+                    hotListView.ContentInset = new UIEdgeInsets (
+                        hotListSource.CardPeekDistance + hotListSource.CellCardInset.Top,
+                        0,
+                        hotListSource.CardPeekDistance + hotListSource.CellCardInset.Bottom,
+                        0
+                    );
+                    hotListView.ReloadData ();
+                    switchAccountButton.SetAccountImage (account);
                 }
-                hotListView.RowHeight = hotListView.Frame.Height - hotListSource.CardPeekDistance * 2.0f - hotListSource.CellCardInset.Top - hotListSource.CellCardInset.Bottom;
-                hotListView.ContentInset = new UIEdgeInsets (
-                    hotListSource.CardPeekDistance + hotListSource.CellCardInset.Top,
-                    0,
-                    hotListSource.CardPeekDistance + hotListSource.CellCardInset.Bottom,
-                    0
-                );
-                hotListView.ReloadData ();
-                switchAccountButton.SetAccountImage (account);
-                NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController SwitchToAccount");
             }
         }
 

@@ -30,9 +30,9 @@ namespace NachoCore.Utils
         }
 
         // Message is saved into Outbox
-        public static void SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
+        public static NcResult SendTheMessage (McEmailMessage messageToSend, McAbstrCalendarRoot calendarInviteItem)
         {
-            messageToSend = SalesForceProtoControl.MaybeAddSFDCEmailToBcc (messageToSend);
+            // messageToSend = SalesForceProtoControl.MaybeAddSFDCEmailToBcc (messageToSend);
 
             var outbox = McFolder.GetClientOwnedOutboxFolder (messageToSend.AccountId);
             if (null != outbox) {
@@ -45,16 +45,15 @@ namespace NachoCore.Utils
                 referencedMessage = McEmailMessage.QueryById<McEmailMessage> (messageToSend.ReferencedEmailId);
             }
 
-            bool messageSent = false;
             List<McFolder> folders = null;
+            NcResult sendResult = null;
             if (calendarInviteItem != null) {
                 folders = McFolder.QueryByFolderEntryId<McCalendar> (calendarInviteItem.AccountId, calendarInviteItem.Id);
                 if (folders.Count == 0) {
                     Log.Error (Log.LOG_UI, "The event being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
                 } else {
                     int folderId = folders [0].Id;
-                    NachoCore.BackEnd.Instance.ForwardCalCmd (messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
-                    messageSent = true;
+                    sendResult = NachoCore.BackEnd.Instance.ForwardCalCmd (messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
                 }
             } else {
                 if (referencedMessage != null) {
@@ -64,28 +63,27 @@ namespace NachoCore.Utils
                     } else {
                         int folderId = folders [0].Id;
                         if (messageToSend.ReferencedIsForward) {
-                            NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
-                            messageSent = true;
+                            sendResult = NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
                         } else {
-                            NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
-                            messageSent = true;
+                            sendResult = NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
                         }
                     }
                 }
-                if (!messageSent) {
-                    // A new outgoing message.  Or a forward/reply that has problems.
-                    NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
-                    messageSent = true;
-                }
             }
-            if (messageSent) {
+            if (sendResult == null) {
+                // A new outgoing message.  Or a forward/reply that has problems.
+                sendResult = NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
+            }
+            if (sendResult != null) {
                 // Send status ind because the message is in the outbox
                 var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = result,
                     Account = McAccount.QueryById<McAccount> (messageToSend.AccountId),
                 });
+                return sendResult;
             }
+            return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed, NcResult.WhyEnum.Unknown);
         }
 
         private static bool MustSaveMessageToSent (int accountId)
@@ -123,7 +121,11 @@ namespace NachoCore.Utils
                         message.Delete ();
                     }
                 } else {
-                    message.Delete ();
+                    if (!message.IsChat) {
+                        // If it's a chat message, we want to keep it around in the db until
+                        // we've got the sent copy fully sync'd
+                        message.Delete ();
+                    }
                     var sentFolder = McFolder.GetDefaultSentFolder (accountId);
                     if (null != sentFolder) {
                         // Best-effort, nothing to do on non-OK retval.
@@ -262,7 +264,7 @@ namespace NachoCore.Utils
                 var path = attachment.GetFilePath ();
                 attachment.AccountId = account.Id;
                 if (attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
-                    attachment.UpdateFileMove(path);
+                    attachment.UpdateFileMove (path);
                 } else {
                     attachment.Update ();
                 }
@@ -384,7 +386,7 @@ namespace NachoCore.Utils
                 // Is this Uri any good at all?
                 if (serverURI.IsFile ||
                     !EmailHelper.IsValidHost (serverURI.Host) ||
-                    !EmailHelper.IsValidPort (serverURI.Port)) {
+                    !PortNumber_Helpers.IsValidPort (serverURI.Port)) {
                     if (serverName.Contains ("://")) {
                         // The user added a scheme, and it went bad.
                         return ParseServerWhyEnum.FailBadScheme;
@@ -410,7 +412,7 @@ namespace NachoCore.Utils
             if (!EmailHelper.IsValidHost (serverURI.Host)) {
                 return ParseServerWhyEnum.FailBadHost;
             }
-            if (!EmailHelper.IsValidPort (serverURI.Port)) {
+            if (!PortNumber_Helpers.IsValidPort (serverURI.Port)) {
                 return ParseServerWhyEnum.FailBadPort;
             }
             // Ensure there were no Query parameters.
@@ -469,15 +471,6 @@ namespace NachoCore.Utils
                 return true;
             }
             return false;
-        }
-
-        public static bool IsValidPort (int port)
-        {
-            if (port < 0 || port > 65535) {
-                return false;
-            } else {
-                return true;
-            }
         }
 
         public static bool IsMailToURL (string urlString)
@@ -848,7 +841,7 @@ namespace NachoCore.Utils
             if (null != referencedMessage) {
                 mimeMessage.InReplyTo = referencedMessage.MessageID;
                 if (null != referencedMessage.References) {
-                    foreach (var reference in MimeKit.Utils.MimeUtils.EnumerateReferences(referencedMessage.References)) {
+                    foreach (var reference in referencedMessage.References.Split('\n')) {
                         mimeMessage.References.Add (reference);
                     }
                 }
@@ -862,6 +855,28 @@ namespace NachoCore.Utils
             }
         }
 
+        public static DateTime GetNewSincePreference (int accountId)
+        {
+            switch (HowToDisplayUnreadCount ()) {
+            case ShowUnreadEnum.AllMessages:
+                return DateTime.MinValue.AddDays(2);  // Some code will subtract a day from this value
+            case ShowUnreadEnum.TodaysMessages:
+                return DateTime.Now.Date.ToUniversalTime ();  // midnight
+            case ShowUnreadEnum.RecentMessages:
+                // Get the last 'switch away' time.
+                // If the account 'switch away' time is not set, return the last background time.
+                var switchAwayTime = LoginHelpers.GetSwitchAwayTime (accountId);
+                if (default(DateTime) == switchAwayTime) {
+                    return LoginHelpers.GetBackgroundTime ();
+                } else {
+                    return switchAwayTime;
+                }
+            default:
+                NcAssert.CaseError ();
+                return DateTime.MinValue;
+            }
+        }
+
         public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount, out int likelyMessageCount)
         {
             unreadMessageCount = 0;
@@ -869,11 +884,12 @@ namespace NachoCore.Utils
             deferredMessageCount = 0;
             likelyMessageCount = 0;
 
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
                 if (account.ContainsAccount (accountId)) {
                     var inboxFolder = NcEmailManager.InboxFolder (accountId);
                     if (null != inboxFolder) {
-                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+                        var newSince = GetNewSincePreference (accountId);
+                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
                         deadlineMessageCount += McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
                         deferredMessageCount += new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
                         likelyMessageCount += new NachoLikelyToReadEmailMessages (inboxFolder).Count ();
@@ -886,14 +902,79 @@ namespace NachoCore.Utils
         {
             unreadMessageCount = 0;
 
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds ()) {
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
                 if (account.ContainsAccount (accountId)) {
                     var inboxFolder = NcEmailManager.InboxFolder (accountId);
                     if (null != inboxFolder) {
-                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+                        var newSince = GetNewSincePreference (accountId);
+                        unreadMessageCount += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, newSince);
                     }
                 }
             }
+        }
+
+        public static int GetUnreadMessageCountForBadge ()
+        {
+            var account = McAccount.GetUnifiedAccount ();
+            var unreadPref = HowToDisplayUnreadCount ();
+            DateTime since = default(DateTime);
+            if (unreadPref == ShowUnreadEnum.AllMessages) {
+                since = default(DateTime).AddDays (2);
+            } else if (unreadPref == ShowUnreadEnum.TodaysMessages) {
+                since = DateTime.Now.Date.ToUniversalTime ();
+            } else if (unreadPref == ShowUnreadEnum.RecentMessages) {
+                since = LoginHelpers.GetBackgroundTime ();
+            } else {
+                NcAssert.CaseError ();
+            }
+            var count = 0;
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
+                if (account.ContainsAccount (accountId)) {
+                    var inboxFolder = NcEmailManager.InboxFolder (accountId);
+                    if (null != inboxFolder) {
+                        count += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, since);
+                    }
+                }
+            }
+            return count;
+        }
+
+        public const string Unread_McMutablesModule = "Settings";
+        public const string Unread_McMutablesKey = "ShowUnread";
+
+        // Add to the end b/c in db
+        public enum ShowUnreadEnum : int
+        {
+            AllMessages = 1,
+            RecentMessages = 2,
+            TodaysMessages = 3,
+        };
+
+        /// <summary>
+        /// Shoulds the display all unread count if true.  Just new unread if false.
+        /// </summary>
+        /// <returns><c>true</c>, if display all unread count is set, <c>false</c> otherwise display new unread.</returns>
+        public static ShowUnreadEnum HowToDisplayUnreadCount ()
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            return (ShowUnreadEnum) McMutables.GetInt (accountId, Unread_McMutablesModule, Unread_McMutablesKey, (int) ShowUnreadEnum.AllMessages);
+        }
+
+        public static void SetHowToDisplayUnreadCount (ShowUnreadEnum showUnreader)
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            McMutables.SetInt (accountId, Unread_McMutablesModule, Unread_McMutablesKey, (int) showUnreader);
+        }
+
+        public static bool IsSalesForceContact (int accountId, string emailAddress)
+        {
+            var contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+            foreach (var contact in contacts) {
+                if (contact.Source == McAbstrItem.ItemSource.SalesForce) {
+                    return true;
+                }
+            }
+            return false;
         }
 
 
@@ -974,13 +1055,15 @@ namespace NachoCore.Utils
 
         public static void ToggleRead (McEmailMessage message)
         {
-            bool isRead = !message.IsRead;
-            message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
-                var target = (McEmailMessage)record;
-                target.IsRead = isRead;
-                return true;
-            });
-            BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, isRead);
+            if (null != message) {
+                bool isRead = !message.IsRead;
+                message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.IsRead = isRead;
+                    return true;
+                });
+                BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, isRead);
+            }
         }
 
         public static McAttachment NoteToAttachment (McNote note)
@@ -1000,7 +1083,7 @@ namespace NachoCore.Utils
             return attachment;
         }
 
-        public static HashSet<int> AccountSet(List<McEmailMessage> messages)
+        public static HashSet<int> AccountSet (List<McEmailMessage> messages)
         {
             var set = new HashSet<int> ();
             foreach (var message in messages) {
@@ -1008,6 +1091,98 @@ namespace NachoCore.Utils
             }
             return set;
         }
+            
+        // Quoted text in an email often comes inside a blockquote (Apple) or after an HR (Outlook).
+        // Therefore, those elements can easily be used to identify the start of quoted text.
+        // Howver, there are a few other scenarios that it helps to check for...
+
+        static Regex[] QuoteLinePatterns = new Regex[] {
+            // Typical attribution line from gmail, comes before the blockquote    
+            new Regex ("^On .+ wrote:$"),
+            // Typical start of quoted message from Outlook(?), comes after an empty DIV with border-top, not an HR
+            new Regex ("^From: "),
+            // Typical signature divider
+            new Regex ("^\\-\\-+"),
+            // Default iPhone, Nacho, or Samsung signature
+            new Regex ("^Sent (from|via) ")
+            // Consider adding something like ^.+,$ to find lines like "Regards," "Thanks," etc.  Maybe need to allow for
+            // two or three words like "See you soon,"  Athough need to be careful not to match "Hi so-and-so," at the start of a message.
+        };
+
+        public static bool IsQuoteLine (string line)
+        {
+            var trimmedLine = line.Trim ();
+            foreach (var pattern in QuoteLinePatterns) {
+                if (pattern.IsMatch (trimmedLine)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static bool CheckForSalesforceContacts (int accountId, Dictionary <string, bool> cache, string addresses)
+        {
+            var list = NcEmailAddress.ParseToAddressListString (addresses);
+            foreach (var address in list) {
+                var mailbox = address.ToMailboxAddress (true);
+                if (mailbox != null) {
+                    bool isSalesforceContact;
+                    if (!cache.TryGetValue (mailbox.Address, out isSalesforceContact)) {
+                        isSalesforceContact = SalesForceProtoControl.IsSalesForceContact (accountId, mailbox.Address);
+                        cache.Add (mailbox.Address, isSalesforceContact);
+                    }
+                    if (isSalesforceContact) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static string ExtraSalesforceBccAddress (Dictionary<string, bool> cache, McEmailMessage message)
+        {
+            var account = McAccount.GetSalesForceAccount ();
+            if (null != account && SalesForceProtoControl.ShouldAddBccToEmail (account.Id) &&
+                (CheckForSalesforceContacts (account.Id, cache, message.To) ||
+                CheckForSalesforceContacts (account.Id, cache, message.Cc) ||
+                CheckForSalesforceContacts (account.Id, cache, message.Bcc))) {
+                return SalesForceProtoControl.EmailToSalesforceAddress (account.Id);
+            }
+            return null;
+        }
+
+        public static NcResult SyncUnified ()
+        {
+            bool syncStarted = false;
+            var EmailAccounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).ToList ();
+            foreach (var account in EmailAccounts) {
+                if (McAccount.GetUnifiedAccount ().Id != account.Id) {
+                    var inboxFolder = McFolder.GetDefaultInboxFolder (account.Id);
+                    if (null != inboxFolder) {
+                        var nr = BackEnd.Instance.SyncCmd (inboxFolder.AccountId, inboxFolder.Id);
+                        syncStarted |= !NachoSyncResult.DoesNotSync (nr);
+                    }
+                }
+            }
+            return (syncStarted ? NcResult.OK () : NachoSyncResult.DoesNotSync ());
+        }
+
+        public static NcResult SyncUnifiedSent ()
+        {
+            bool syncStarted = false;
+            var EmailAccounts = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).ToList ();
+            foreach (var account in EmailAccounts) {
+                if (McAccount.GetUnifiedAccount ().Id != account.Id) {
+                    var sentFolder = McFolder.GetDefaultSentFolder (account.Id);
+                    if (null != sentFolder) {
+                        var nr = BackEnd.Instance.SyncCmd (sentFolder.AccountId, sentFolder.Id);
+                        syncStarted |= !NachoSyncResult.DoesNotSync (nr);
+                    }
+                }
+            }
+            return (syncStarted ? NcResult.OK () : NachoSyncResult.DoesNotSync ());
+        }
+       
     }
 }
 

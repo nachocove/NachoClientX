@@ -60,6 +60,8 @@ namespace NachoCore.IMAP
         /// </summary>
         public const int KInboxWindowMultiplier = 2;
 
+        public const string KXNachoChat = "X-Nacho-Chat";
+
         private static uint SpanSizeWithCommStatus (McProtocolState protocolState)
         {
             uint overallWindowSize = KRungSyncWindowSize [protocolState.ImapSyncRung];
@@ -84,16 +86,16 @@ namespace NachoCore.IMAP
 
         private static MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
 
-        private static HashSet<HeaderId> ImapSummaryHeaders ()
+        private static HashSet<string> ImapSummaryHeaders ()
         {
-            HashSet<HeaderId> headers = new HashSet<HeaderId> ();
-            headers.Add (HeaderId.Importance);
-            headers.Add (HeaderId.DkimSignature);
-            headers.Add (HeaderId.ContentClass);
-            headers.Add (HeaderId.XPriority);
-            headers.Add (HeaderId.Priority);
-            headers.Add (HeaderId.XMSMailPriority);
-
+            var headers = new HashSet<string> ();
+            headers.Add (HeaderId.Importance.ToString ());
+            headers.Add (HeaderId.DkimSignature.ToString ());
+            headers.Add (HeaderId.ContentClass.ToString ());
+            headers.Add (HeaderId.XPriority.ToString ());
+            headers.Add (HeaderId.Priority.ToString ());
+            headers.Add (HeaderId.XMSMailPriority.ToString ());
+            headers.Add (KXNachoChat);
             return headers;
         }
 
@@ -109,7 +111,8 @@ namespace NachoCore.IMAP
                                                   | MessageSummaryItems.Flags
                                                   | MessageSummaryItems.InternalDate
                                                   | MessageSummaryItems.MessageSize
-                                                  | MessageSummaryItems.UniqueId;
+                                                  | MessageSummaryItems.UniqueId
+                                                  | MessageSummaryItems.References;
 
             if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
                 NewMessageFlags |= MessageSummaryItems.GMailMessageId;
@@ -327,7 +330,7 @@ namespace NachoCore.IMAP
 
         public static SyncInstruction SyncInstructionForFlagSync (UniqueIdSet uidSet)
         {
-            return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<HeaderId> (), false, false);
+            return new SyncInstruction (uidSet, FlagResyncFlags, new HashSet<string> (), false, false);
         }
 
         #endregion
@@ -490,12 +493,13 @@ namespace NachoCore.IMAP
         /// Resolves the one sync, i.e. One SyncKit.
         /// </summary>
         /// <param name="BEContext">BEContext.</param>
-        /// <param name="synckit">Synckit.</param>
-        public static void ResolveOneSync (IBEContext BEContext, SyncKit synckit)
+        /// <param name = "pending">A McPending</param>
+        /// <param name = "folder">A McFolder</param>
+        public static void ResolveOneSync (IBEContext BEContext, McPending pending, McFolder folder)
         {
             var protocolState = BEContext.ProtocolState;
-            ResolveOneSync (BEContext, ref protocolState, synckit.Folder, synckit.PendingSingle);
-            MaybeAdvanceSyncStage (ref protocolState, synckit.PendingSingle != null);
+            ResolveOneSync (BEContext, ref protocolState, folder, pending);
+            MaybeAdvanceSyncStage (ref protocolState, pending != null);
         }
 
         /// <summary>

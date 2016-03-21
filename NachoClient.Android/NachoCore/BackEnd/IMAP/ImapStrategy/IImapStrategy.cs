@@ -27,7 +27,7 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The headers to fetch for the summary fetch.
         /// </summary>
-        public HashSet<HeaderId> Headers;
+        public HashSet<string> Headers;
 
         /// <summary>
         /// Whether to get Previews during fetching of the summary.
@@ -40,7 +40,7 @@ namespace NachoCore.IMAP
         /// </summary>
         public bool GetHeaders;
 
-        public SyncInstruction (IList<UniqueId> uidSet, MessageSummaryItems flags, HashSet<HeaderId> headers, bool getPreviews, bool getHeaders)
+        public SyncInstruction (IList<UniqueId> uidSet, MessageSummaryItems flags, HashSet<string> headers, bool getPreviews, bool getHeaders)
         {
             UidSet = uidSet;
             Flags = flags;

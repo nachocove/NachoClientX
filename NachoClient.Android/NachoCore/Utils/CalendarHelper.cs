@@ -389,11 +389,6 @@ namespace NachoCore.Utils
 
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
-            // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
-            // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
-            // BE goes to reference the object later on, and it is missing.
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         //Used to send a single invite to one attendee at a time rather than all attendees of an event
@@ -410,8 +405,6 @@ namespace NachoCore.Utils
 
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         public static void SendMeetingResponse (McAccount account, McCalendar c, MimeEntity mimeBody, NcResponseType response)
@@ -427,8 +420,6 @@ namespace NachoCore.Utils
             mimeMessage.Body = mimeBody;
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         public static void SendMeetingResponse (McAccount account, MailboxAddress to, string subject, string token, MimeEntity mimeBody, NcResponseType response)
@@ -441,8 +432,6 @@ namespace NachoCore.Utils
             mimeMessage.Body = mimeBody;
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         public static void SendMeetingCancelations (McAccount account, McCalendar c, string subjectOverride, MimeEntity mimeBody)
@@ -457,8 +446,6 @@ namespace NachoCore.Utils
             mimeMessage.Body = mimeBody;
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
         }
 
         private static iCalendar iCalendarCommon (McAbstrCalendarRoot cal)
@@ -1057,6 +1044,11 @@ namespace NachoCore.Utils
             if (!ValidateRecurrence (c, r)) {
                 return DateTime.MinValue;
             }
+            if (startingTime < NcEventManager.BeginningOfEventsOfInterest) {
+                // Don't bother creating McEvents for times in the past that will never show up on the calendar.
+                startingTime = NcEventManager.BeginningOfEventsOfInterest;
+            }
+
             // All date/time calculations must be done in the event's original time zone.
             TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
             DateTime eventStart = ConvertTimeFromUtc (c.StartTime, timeZone);
@@ -1686,6 +1678,18 @@ namespace NachoCore.Utils
         {
             return (local.Month == adjustment.DaylightTransitionStart.Month && local > TransitionPoint (adjustment.DaylightTransitionStart, local.Year)) ||
             (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
+        }
+
+        public static string GetFirstName (string displayName)
+        {
+            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (0 == names.Length || names [0] == null) {
+                return "";
+            }
+            if (names [0].Length > 1) {
+                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
+            }
+            return names [0].ToUpper ();
         }
     }
 }

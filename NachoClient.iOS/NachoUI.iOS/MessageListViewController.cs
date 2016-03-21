@@ -32,11 +32,6 @@ namespace NachoClient.iOS
         protected UIBarButtonItem backButton;
         protected UIBarButtonItem filterButton;
 
-        protected UIView headerWrapper;
-        protected UILabel headerView;
-        protected UIImageView headerIconLeft;
-        protected UIImageView headerIconRight;
-
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
 
@@ -129,7 +124,7 @@ namespace NachoClient.iOS
                 var messages = messageSource.GetNachoEmailMessages ();
                 var actions = new List<NcAlertAction> ();
                 foreach (var value in messages.PossibleFilterSettings) {
-                    actions.Add (new NcAlertAction (Folder_Helpers.FilterShortString(value), () => {
+                    actions.Add (new NcAlertAction (Folder_Helpers.FilterShortString (value), () => {
                         SetFilter (value);
                     }));
                 }
@@ -149,28 +144,6 @@ namespace NachoClient.iOS
 
             CustomizeBackButton ();
             MultiSelectToggle (messageSource, false);
-
-            headerWrapper = new UIView (new CGRect (0, 0, TableView.Frame.Width, 10));
-
-            headerIconLeft = new UIImageView (new CGRect (0, 0, 24, 24));
-            headerIconLeft.Image = UIImage.FromBundle ("gen-read-list");
-            headerWrapper.AddSubview (headerIconLeft);
-
-            headerIconRight = new UIImageView (new CGRect (0, 0, 24, 24));
-            headerIconRight.Image = UIImage.FromBundle ("gen-read-list");
-            headerWrapper.AddSubview (headerIconRight);
-
-            headerView = new UILabel ();
-            headerWrapper.AddSubview (headerView);
-            headerView.BackgroundColor = A.Color_NachoBackgroundGray;
-            headerView.AccessibilityLabel = "MessageListFilterSetting";
-            headerView.Font = A.Font_AvenirNextMedium17;
-            SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
-            if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
-                TableView.TableHeaderView = headerWrapper;
-            } else {
-                TableView.TableHeaderView = null;
-            }
 
             RefreshControl = new UIRefreshControl ();
             RefreshControl.Hidden = true;
@@ -212,19 +185,7 @@ namespace NachoClient.iOS
         {
             var messages = messageSource.GetNachoEmailMessages ();
             messages.FilterSetting = value;
-            SetHeaderText (value);
             RefreshThreadsIfVisible ();
-        }
-
-        void SetHeaderText (FolderFilterOptions filterSetting)
-        {
-            headerView.Text = Folder_Helpers.FilterString (filterSetting);
-            headerView.Frame = new CGRect (0, 0, headerWrapper.Frame.Width, 100);
-            headerView.SizeToFit ();
-            ViewFramer.Create (headerWrapper).Height (headerView.Frame.Height);
-            ViewFramer.Create (headerView).X ((headerWrapper.Frame.Width / 2) - (headerView.Frame.Width / 2));
-            ViewFramer.Create (headerIconLeft).X (headerView.Frame.X - headerIconLeft.Frame.Width - 15);
-            ViewFramer.Create (headerIconRight).X (headerView.Frame.Right + 15);
         }
 
         protected virtual void SetRowHeight ()
@@ -363,24 +324,24 @@ namespace NachoClient.iOS
             bool refreshVisibleCells = true;
 
             if (threadsNeedsRefresh) {
-                threadsNeedsRefresh = false;
-                NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController MaybeRefreshThreads");
-                ReloadCapture.Start ();
-                List<int> adds;
-                List<int> deletes;
-                if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
-                    Util.UpdateTable (TableView, adds, deletes);
-                    refreshVisibleCells = false;
+                using (NcAbate.UIAbatement ()) {
+                    threadsNeedsRefresh = false;
+                    ReloadCapture.Start ();
+                    List<int> adds;
+                    List<int> deletes;
+                    if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
+                        Util.UpdateTable (TableView, adds, deletes);
+                        refreshVisibleCells = false;
+                    }
+                    if (messageSource.NoMessageThreads ()) {
+                        refreshVisibleCells = !MaybeDismissView ();
+                    }
+                    if (searchDisplayController.Active) {
+                        UpdateSearchResults ();
+                        refreshVisibleCells = false;
+                    }
+                    ReloadCapture.Stop ();
                 }
-                if (messageSource.NoMessageThreads ()) {
-                    refreshVisibleCells = !MaybeDismissView ();
-                }
-                if (searchDisplayController.Active) {
-                    UpdateSearchResults ();
-                    refreshVisibleCells = false;
-                }
-                ReloadCapture.Stop ();
-                NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController MaybeRefreshThreads");
             }
             if (refreshVisibleCells) {
                 messageSource.ReconfigureVisibleCells (TableView);
@@ -397,22 +358,26 @@ namespace NachoClient.iOS
             return false;
         }
 
+        McAccount currentAccount;
+
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
 
             // Account switched
-            if (!messageSource.GetNachoEmailMessages ().IsCompatibleWithAccount (NcApplication.Instance.Account)) {
+            if ((null == currentAccount) || (currentAccount.Id != NcApplication.Instance.Account.Id)) {
                 if (searchDisplayController.Active) {
                     searchDisplayController.Active = false;
                 }
                 CancelSearchIfActive ();
                 if (HasAccountSwitcher ()) {
                     SwitchToAccount (NcApplication.Instance.Account);
-                } else {
-                    NavigationController.PopViewController (true);
-                    return;
                 }
+            }
+            currentAccount = NcApplication.Instance.Account;
+                
+            if (HasAccountSwitcher ()) {
+                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             }
 
             if (!StatusIndCallbackIsSet) {
@@ -448,8 +413,6 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             cancelRefreshTimer ();
             CancelSearchIfActive ();
-            // In case we exit during scrolling
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
         }
 
         public override void ViewDidDisappear (bool animated)
@@ -467,17 +430,21 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (null != s.Account) {
-                var m = messageSource.GetNachoEmailMessages ();
-                if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
-                    return;
+                // KLUDGE - always handle for unified account
+                if (McAccount.GetUnifiedAccount ().Id != NcApplication.Instance.Account.Id) {
+                    var m = messageSource.GetNachoEmailMessages ();
+                    if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
+                        return;
+                    }
                 }
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: {0} {1}", s.Status.SubKind, m.DisplayName ());
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: {0}", s.Status.SubKind);
 
             }
             switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshThreadsIfVisible ();
                 break;
@@ -713,12 +680,6 @@ namespace NachoClient.iOS
             messageSource.MultiSelectCancel (TableView);
             switchAccountButton.SetAccountImage (account);
             SetEmailMessages (GetNachoEmailMessages (account.Id));
-            if (messageSource.GetNachoEmailMessages ().HasFilterSemantics ()) {
-                SetHeaderText (messageSource.GetNachoEmailMessages ().FilterSetting);
-                TableView.TableHeaderView = headerWrapper;
-            } else {
-                TableView.TableHeaderView = null;
-            }
             MultiSelectToggle (messageSource, false);
             List<int> adds;
             List<int> deletes;

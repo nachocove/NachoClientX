@@ -481,7 +481,7 @@ namespace NachoCore.Utils
                     indexMatches = lastIndexResults;
                 } else {
                     indexMatches = new List<MatchedItem> ();
-                    foreach (var account in McAccount.GetAllAccounts ()) {
+                    foreach (var account in McAccount.QueryByAccountCapabilities(McAccount.AccountCapabilityEnum.ContactReader)) {
                         var index = NcBrain.SharedInstance.Index (account.Id);
                         indexMatches.AddRange (index.SearchAllContactFields (searchString, maxMatches: 100));
                     }
