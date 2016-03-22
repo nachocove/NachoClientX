@@ -678,7 +678,7 @@ namespace NachoCore.Utils
                                 hasRelatedParts = true;
                                 var attachment = new MimePart (info.ContentType ?? "image/jpeg");
                                 attachment.FileName = info.Filename;
-                                attachment.IsAttachment = true;
+                                attachment.IsAttachment = false;
                                 attachment.ContentTransferEncoding = ContentEncoding.Base64;
                                 attachment.ContentObject = new ContentObject (info.Reader.BaseStream);
                                 attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
@@ -706,7 +706,7 @@ namespace NachoCore.Utils
                                 var data = Convert.FromBase64String (parts[1]);
                                 hasRelatedParts = true;
                                 var attachment = new MimePart (contentType);
-                                attachment.IsAttachment = true;
+                                attachment.IsAttachment = false;
                                 attachment.ContentTransferEncoding = ContentEncoding.Base64;
                                 attachment.ContentObject = new ContentObject (new MemoryStream(data));
                                 attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
