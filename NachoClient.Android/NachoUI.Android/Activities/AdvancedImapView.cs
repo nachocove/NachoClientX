@@ -61,10 +61,10 @@ namespace NachoClient.AndroidClient
 
         public override string IssueWithFields ()
         {
-            if (!EmailHelper.IsValidHost (incomingServerField.Text)) {
+            if (!EmailHelper.IsValidHost (incomingServerField.Text.Trim ())) {
                 return "Invalid incoming server name. Please check that you typed it in correctly.";
             }
-            if (!EmailHelper.IsValidHost (outgoingServerField.Text)) {
+            if (!EmailHelper.IsValidHost (outgoingServerField.Text.Trim ())) {
                 return "Invalid outgoing server name. Please check that you typed it in correctly.";
             }
             if (incomingServerField.Text.Contains (":")) {
@@ -95,8 +95,8 @@ namespace NachoClient.AndroidClient
             cred.UserSpecifiedUsername = true;
             cred.Update ();
 
-            var imapServerName = incomingServerField.Text;
-            var smtpServerName = outgoingServerField.Text;
+            var imapServerName = incomingServerField.Text.Trim ();
+            var smtpServerName = outgoingServerField.Text.Trim ();
 
             int imapServerPort;
             var imapPortTryParse = int.TryParse (incomingPortField.Text, out imapServerPort);
