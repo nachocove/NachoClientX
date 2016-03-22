@@ -174,6 +174,7 @@ namespace NachoClient.iOS
                                                                         node.Attributes.Remove("nacho-bundle-entry");
                                                                         node.Attributes.Remove("nacho-resize");
                                                                         node.Attributes.Remove("nacho-original-src");
+                                                                        node.Attributes.Add("nacho-data-url", "true");
                                                                         changed = true;
                                                                         break;
                                                                     }
@@ -388,7 +389,9 @@ namespace NachoClient.iOS
                         HtmlSignatureView.Frame = cell.ContentView.Bounds;
                         cell.ContentView.AddSubview (HtmlSignatureView);
                     }
-                    HtmlSignatureView.LoadHtmlString (ViewController.EditedHtmlSignature, null);
+                    if (ViewController.EditedHtmlSignature != null) {
+                        HtmlSignatureView.LoadHtmlString (ViewController.EditedHtmlSignature, null);
+                    }
                 } else {
                     if (PlainSignatureView == null) {
                         PlainSignatureView = new UITextView ();

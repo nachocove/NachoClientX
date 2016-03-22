@@ -697,6 +697,25 @@ namespace NachoCore.Utils
                             }
                             node.Attributes.Remove ("nacho-bundle-entry");
                         }
+                        if (node.Attributes.Contains ("nacho-data-url")) {
+                            var url = new Uri (node.GetAttributeValue ("src", ""));
+                            if (url.Scheme == "data") {
+                                var parts = url.AbsolutePath.Split (new char[] { ';' }, 2);
+                                var contentType = parts [0];
+                                parts = parts [1].Split (new char[] { ',' }, 2);
+                                var data = Convert.FromBase64String (parts[1]);
+                                hasRelatedParts = true;
+                                var attachment = new MimePart (contentType);
+                                attachment.IsAttachment = true;
+                                attachment.ContentTransferEncoding = ContentEncoding.Base64;
+                                attachment.ContentObject = new ContentObject (new MemoryStream(data));
+                                attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
+                                related.Add (attachment);
+                                var src = "cid:" + attachment.ContentId;
+                                node.SetAttributeValue ("src", src);
+                                node.Attributes.Remove ("nacho-data-src");
+                            }
+                        }
                     }
                 }
                 foreach (var child in node.ChildNodes) {
