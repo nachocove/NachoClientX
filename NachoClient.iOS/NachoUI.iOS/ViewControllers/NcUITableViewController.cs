@@ -3,6 +3,7 @@
 using System;
 using UIKit;
 using NachoCore.Utils;
+using Foundation;
 
 namespace NachoClient.iOS
 {
@@ -10,6 +11,8 @@ namespace NachoClient.iOS
     {
         private string ClassName;
         public event EventHandler ViewDisappearing;
+
+        protected nfloat keyboardHeight;
 
         public NcUITableViewController () : base ()
         {
@@ -35,6 +38,8 @@ namespace NachoClient.iOS
         {
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR);
             base.ViewWillAppear (animated);
+            NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+            NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -56,6 +61,40 @@ namespace NachoClient.iOS
         {
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR);
             base.ViewDidDisappear (animated);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+        }
+
+        private void OnKeyboardNotification (NSNotification notification)
+        {
+            if (IsViewLoaded && View.Window != null) {
+                //Check if the keyboard is becoming visible
+                bool visible = notification.Name == UIKeyboard.WillShowNotification;
+                //Start an animation, using values from the keyboard
+                UIView.BeginAnimations ("AnimateForKeyboard");
+                UIView.SetAnimationBeginsFromCurrentState (true);
+                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
+                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
+                //Pass the notification, calculating keyboard height, etc.
+                var oldHeight = keyboardHeight;
+                if (visible) {
+                    var keyboardFrameInScreen = UIKeyboard.FrameEndFromNotification (notification);
+                    var keyboardFrameInWindow = View.Window.ConvertRectFromWindow (keyboardFrameInScreen, null);
+                    var keyboardFrameInView = View.ConvertRectFromView (keyboardFrameInWindow, View.Window);
+                    keyboardHeight = View.Frame.Height - keyboardFrameInView.Top;
+                } else {
+                    keyboardHeight = 0;
+                }
+                if (oldHeight != keyboardHeight) {
+                    OnKeyboardChanged ();
+                }
+                //Commit the animation
+                UIView.CommitAnimations (); 
+            }
+        }
+
+        protected virtual void OnKeyboardChanged ()
+        {
         }
     }
 }
