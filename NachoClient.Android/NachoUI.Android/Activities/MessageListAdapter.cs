@@ -254,7 +254,7 @@ namespace NachoClient.AndroidClient
                 vh.previewView.Text = "";
             } else {
                 var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
-                vh.previewView.SetText (Android.Text.Html.FromHtml (cookedPreview), Android.Widget.TextView.BufferType.Spannable);
+                vh.previewView.SetText (new Java.Lang.String (cookedPreview), Android.Widget.TextView.BufferType.Normal);
             }
 
             if (owner.multiSelectActive) {
