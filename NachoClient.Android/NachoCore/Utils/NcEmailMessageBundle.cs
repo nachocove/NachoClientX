@@ -393,7 +393,7 @@ namespace NachoCore.Utils
             return filename;
         }
 
-        protected HtmlDocument TemplateHtmlDocument ()
+        public HtmlDocument TemplateHtmlDocument ()
         {
             var documentsPath = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             var htmlPath = Path.Combine (documentsPath, "nacho.html");
