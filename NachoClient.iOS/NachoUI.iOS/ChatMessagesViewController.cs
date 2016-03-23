@@ -192,7 +192,7 @@ namespace NachoClient.iOS
             }
             var text = ComposeView.GetMessage ();
             var previousMessages = new List<McEmailMessage> ();
-            for (int i = Messages.Count - 1; i >= Messages.Count - 3 && i >= 0; --i){
+            for (int i = Messages.Count - 1; i >= Messages.Count - 5 && i >= 0; --i){
                 previousMessages.Add (Messages [i]);
             }
             ChatMessageComposer.SendChatMessage (Chat, text, previousMessages, (McEmailMessage message, NcResult result) => {

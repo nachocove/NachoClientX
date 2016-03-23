@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="15D21" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="whm-e9-YWX">
     <dependencies>
-        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9530"/>
     </dependencies>
     <scenes>
@@ -991,9 +990,7 @@
                     </view>
                     <navigationItem key="navigationItem" id="sgT-DG-MvI"/>
                     <connections>
-                        <segue destination="gDE-DU-0Wp" kind="push" identifier="SegueToSignatureEdit" id="jlF-xD-bFr"/>
                         <segue destination="sh6-zq-0y0" kind="push" identifier="SettingsToNotificationChooser" id="kK5-Or-Bs8"/>
-                        <segue destination="gDE-DU-0Wp" kind="push" identifier="SegueToDescriptionEdit" id="ytC-Oe-29B"/>
                         <segue destination="2Zy-cI-oWr" kind="push" identifier="SegueToAdvancedSettings" id="Dac-hF-ivK"/>
                         <segue destination="adP-Vh-8en" kind="push" identifier="SegueToAccountValidation" id="88w-D9-03c"/>
                         <segue destination="LUv-cO-x9F" kind="push" identifier="SegueToCertAsk" id="eyY-I1-wel"/>
@@ -1002,20 +999,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="piC-17-y5j" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-5507" y="3789"/>
-        </scene>
-        <!--Signature Edit View Controller-->
-        <scene sceneID="796-Pe-Evt">
-            <objects>
-                <viewController storyboardIdentifier="SignatureEditViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="gDE-DU-0Wp" customClass="SignatureEditViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="nZL-gR-hlj">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="iBy-Kw-URM"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="Szt-xv-yfL" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-4637" y="4068"/>
         </scene>
         <!--Contact Detail-->
         <scene sceneID="Faz-15-tSR">
@@ -1454,38 +1437,34 @@
         <image name="more-nachomail.png" width="24" height="24"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="ytC-Oe-29B"/>
-        <segue reference="STf-DG-2qn"/>
-        <segue reference="eyY-I1-wel"/>
-        <segue reference="88w-D9-03c"/>
+        <segue reference="nJv-0g-ewn"/>
+        <segue reference="Pjt-TP-v3d"/>
+        <segue reference="nsx-vp-5fz"/>
         <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="JTo-qU-j7O"/>
         <segue reference="Tfk-Mt-BlS"/>
         <segue reference="udF-bU-cV6"/>
         <segue reference="tdu-G2-PEp"/>
         <segue reference="HCr-Oa-UHV"/>
-        <segue reference="4M9-UI-9mt"/>
+        <segue reference="JTo-qU-j7O"/>
         <segue reference="b2R-9j-Kqr"/>
-        <segue reference="z8t-Er-kGd"/>
-        <segue reference="d1S-bn-Rkc"/>
         <segue reference="2D9-t9-ebv"/>
-        <segue reference="QDW-pm-HY2"/>
-        <segue reference="gVj-FW-dv1"/>
+        <segue reference="oCQ-GI-yPC"/>
         <segue reference="oUa-Te-1to"/>
         <segue reference="H86-lc-tSW"/>
-        <segue reference="K4H-to-cZ8"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="B7C-Lk-RW2"/>
-        <segue reference="oCQ-GI-yPC"/>
-        <segue reference="H7r-gd-Nf5"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="47y-6M-xBI"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="urW-p2-x1h"/>
         <segue reference="Gi8-ik-ZM2"/>
+        <segue reference="urW-p2-x1h"/>
+        <segue reference="rEt-DF-c51"/>
         <segue reference="vNg-HB-UMF"/>
-        <segue reference="nJv-0g-ewn"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="DDa-hb-SgY"/>
+        <segue reference="ay2-o2-R8l"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="eTD-uL-AQU"/>
+        <segue reference="d1S-bn-Rkc"/>
+        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="B7C-Lk-RW2"/>
+        <segue reference="gVj-FW-dv1"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

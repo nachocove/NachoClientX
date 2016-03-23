@@ -31,8 +31,11 @@ namespace NachoCore.Utils
             Message.IsChat = true;
             Message.DateReceived = DateTime.Now;
             Message.IsRead = true;
-            if (previousMessages.Count > 0) {
-                Message.ReferencedEmailId = previousMessages [0].Id;
+            foreach (var previousMessage in previousMessages) {
+                if (!String.IsNullOrEmpty (previousMessage.ServerId)) {
+                    Message.ReferencedEmailId = previousMessage.Id;
+                    break;
+                }
             }
             InitialAttachments = McAttachment.QueryByItemId (Chat.AccountId, Chat.Id, McAbstrFolderEntry.ClassCodeEnum.Chat);
             foreach (var attachment in InitialAttachments) {

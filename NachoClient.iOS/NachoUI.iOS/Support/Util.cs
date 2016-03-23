@@ -309,6 +309,8 @@ namespace NachoClient
 
         static Random random = new Random ();
 
+        public static List<UIColor> accountColors = null;
+
         public static int PickRandomColorForUser ()
         {
             int randomNumber = random.Next (2, colors.Count);
@@ -322,6 +324,24 @@ namespace NachoClient
                 index = 1;
             }
             return colors [index];
+        }
+
+        static Dictionary<int, int> AccountColorIndexCache = new Dictionary<int, int> ();
+
+        public static UIColor ColorForAccount (int accountId)
+        {
+            if (accountColors == null) {
+                accountColors = new List<UIColor> (McAccount.AccountColors.Length / 3);
+                for (int i = 0; i < McAccount.AccountColors.Length / 3; ++i) {
+                    accountColors.Add (UIColor.FromRGB(McAccount.AccountColors [i,0], McAccount.AccountColors [i,1], McAccount.AccountColors [i,2]));
+                }
+            }
+            if (!AccountColorIndexCache.ContainsKey (accountId)) {
+                var account = McAccount.QueryById<McAccount> (accountId);
+                AccountColorIndexCache [accountId] = account.ColorIndex;
+            }
+            var index = AccountColorIndexCache [accountId];
+            return accountColors [index];
         }
 
         public static UIColor GetContactColor (McContact contact)

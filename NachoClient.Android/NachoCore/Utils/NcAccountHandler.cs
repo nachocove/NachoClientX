@@ -120,6 +120,7 @@ namespace NachoCore.Model
                 account.Signature = "Sent from Nacho Mail";
                 account.SetAccountService (service);
                 account.DisplayName = NcServiceHelper.AccountServiceName (service);
+                account.AssignOpenColorIndex ();
                 account.Insert ();
                 if (customize != null) {
                     customize (account);

@@ -170,6 +170,26 @@ namespace NachoClient.AndroidClient
             fragment.StartActivityForResult (intent, requestCode);
             return outputUri;
         }
+
+        public static List<int> accountColors = null;
+
+        static Dictionary<int, int> AccountColorIndexCache = new Dictionary<int, int> ();
+
+        public static int ColorForAccount (int accountId)
+        {
+            if (accountColors == null) {
+                accountColors = new List<int> (McAccount.AccountColors.Length / 3);
+                for (int i = 0; i < McAccount.AccountColors.Length / 3; ++i) {
+                    accountColors.Add (unchecked((int)(0xFF000000 | (McAccount.AccountColors [i,0] << 16) | (McAccount.AccountColors [i,1] << 8) | McAccount.AccountColors [i,2])));
+                }
+            }
+            if (!AccountColorIndexCache.ContainsKey (accountId)) {
+                var account = McAccount.QueryById<McAccount> (accountId);
+                AccountColorIndexCache [accountId] = account.ColorIndex;
+            }
+            var index = AccountColorIndexCache [accountId];
+            return accountColors [index];
+        }
     }
 
 

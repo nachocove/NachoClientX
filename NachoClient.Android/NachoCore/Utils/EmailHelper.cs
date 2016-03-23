@@ -57,15 +57,19 @@ namespace NachoCore.Utils
                 }
             } else {
                 if (referencedMessage != null) {
-                    folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
-                    if (folders.Count == 0) {
-                        Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
+                    if (String.IsNullOrEmpty (referencedMessage.ServerId)) {
+                        Log.Error (Log.LOG_UI, "The message being forwarded or replied is not on the server. It will be sent as a regular outgoing message.");
                     } else {
-                        int folderId = folders [0].Id;
-                        if (messageToSend.ReferencedIsForward) {
-                            sendResult = NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                        folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
+                        if (folders.Count == 0) {
+                            Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
                         } else {
-                            sendResult = NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                            int folderId = folders [0].Id;
+                            if (messageToSend.ReferencedIsForward) {
+                                sendResult = NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                            } else {
+                                sendResult = NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                            }
                         }
                     }
                 }
@@ -386,7 +390,7 @@ namespace NachoCore.Utils
                 // Is this Uri any good at all?
                 if (serverURI.IsFile ||
                     !EmailHelper.IsValidHost (serverURI.Host) ||
-                    !EmailHelper.IsValidPort (serverURI.Port)) {
+                    !PortNumber_Helpers.IsValidPort (serverURI.Port)) {
                     if (serverName.Contains ("://")) {
                         // The user added a scheme, and it went bad.
                         return ParseServerWhyEnum.FailBadScheme;
@@ -412,7 +416,7 @@ namespace NachoCore.Utils
             if (!EmailHelper.IsValidHost (serverURI.Host)) {
                 return ParseServerWhyEnum.FailBadHost;
             }
-            if (!EmailHelper.IsValidPort (serverURI.Port)) {
+            if (!PortNumber_Helpers.IsValidPort (serverURI.Port)) {
                 return ParseServerWhyEnum.FailBadPort;
             }
             // Ensure there were no Query parameters.
@@ -471,15 +475,6 @@ namespace NachoCore.Utils
                 return true;
             }
             return false;
-        }
-
-        public static bool IsValidPort (int port)
-        {
-            if (port < 0 || port > 65535) {
-                return false;
-            } else {
-                return true;
-            }
         }
 
         public static bool IsMailToURL (string urlString)
@@ -920,6 +915,32 @@ namespace NachoCore.Utils
                     }
                 }
             }
+        }
+
+        public static int GetUnreadMessageCountForBadge ()
+        {
+            var account = McAccount.GetUnifiedAccount ();
+            var unreadPref = HowToDisplayUnreadCount ();
+            DateTime since = default(DateTime);
+            if (unreadPref == ShowUnreadEnum.AllMessages) {
+                since = default(DateTime).AddDays (2);
+            } else if (unreadPref == ShowUnreadEnum.TodaysMessages) {
+                since = DateTime.Now.Date.ToUniversalTime ();
+            } else if (unreadPref == ShowUnreadEnum.RecentMessages) {
+                since = LoginHelpers.GetBackgroundTime ();
+            } else {
+                NcAssert.CaseError ();
+            }
+            var count = 0;
+            foreach (var accountId in McAccount.GetAllConfiguredNormalAccountIds ()) {
+                if (account.ContainsAccount (accountId)) {
+                    var inboxFolder = NcEmailManager.InboxFolder (accountId);
+                    if (null != inboxFolder) {
+                        count += McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id, since);
+                    }
+                }
+            }
+            return count;
         }
 
         public const string Unread_McMutablesModule = "Settings";

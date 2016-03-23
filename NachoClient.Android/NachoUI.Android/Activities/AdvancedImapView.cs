@@ -61,10 +61,10 @@ namespace NachoClient.AndroidClient
 
         public override string IssueWithFields ()
         {
-            if (!EmailHelper.IsValidHost (incomingServerField.Text)) {
+            if (!EmailHelper.IsValidHost (incomingServerField.Text.Trim ())) {
                 return "Invalid incoming server name. Please check that you typed it in correctly.";
             }
-            if (!EmailHelper.IsValidHost (outgoingServerField.Text)) {
+            if (!EmailHelper.IsValidHost (outgoingServerField.Text.Trim ())) {
                 return "Invalid outgoing server name. Please check that you typed it in correctly.";
             }
             if (incomingServerField.Text.Contains (":")) {
@@ -73,12 +73,13 @@ namespace NachoClient.AndroidClient
             if (outgoingServerField.Text.Contains (":")) {
                 return "Invalid outgoing server name. Scheme or port number is not allowed.";
             }
-            int result;
-            if (!int.TryParse (incomingPortField.Text, out result)) {
-                return "Invalid incoming port number. It must be a number.";
+            string err = PortNumber_Helpers.CheckPortValidity (incomingPortField.Text, "incoming");
+            if (!string.IsNullOrEmpty (err)) {
+                return err;
             }
-            if (!int.TryParse (outgoingPortField.Text, out result)) {
-                return "Invalid outgoing port number. It must be a number.";
+            err = PortNumber_Helpers.CheckPortValidity (outgoingPortField.Text, "outgoing");
+            if (!string.IsNullOrEmpty (err)) {
+                return err;
             }
             return null;
         }
@@ -94,8 +95,8 @@ namespace NachoClient.AndroidClient
             cred.UserSpecifiedUsername = true;
             cred.Update ();
 
-            var imapServerName = incomingServerField.Text;
-            var smtpServerName = outgoingServerField.Text;
+            var imapServerName = incomingServerField.Text.Trim ();
+            var smtpServerName = outgoingServerField.Text.Trim ();
 
             int imapServerPort;
             var imapPortTryParse = int.TryParse (incomingPortField.Text, out imapServerPort);

@@ -134,6 +134,9 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_StatusBarHeightChanged == s.Status.SubKind) {
                 ConfigureAndLayout ();
             }
+            if (NcResult.SubKindEnum.Info_AccountSetChanged == s.Status.SubKind) {
+                ConfigureAndLayout ();
+            }
         }
 
         protected override void Cleanup ()
@@ -174,7 +177,17 @@ namespace NachoClient.iOS
             var credentialsViewController = (SalesforceCredentialsViewController)accountStoryboard.InstantiateViewController ("SalesforceCredentialsViewController");
             credentialsViewController.Service = McAccount.AccountServiceEnum.SalesForce;
             credentialsViewController.AccountDelegate = this;
-            NavigationController.PushViewController (credentialsViewController, true);
+            var closeButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (closeButton, "icn-close");
+            closeButton.AccessibilityLabel = "Close";
+            closeButton.Clicked += (object sender, EventArgs e) => { 
+                credentialsViewController.Cancel ();
+                DismissViewController(true, null); 
+            };
+            credentialsViewController.NavigationItem.LeftBarButtonItem = closeButton;
+            var navigationController = new UINavigationController (credentialsViewController);
+            Util.ConfigureNavBar (false, navigationController);
+            PresentViewController (navigationController, true, null);
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -210,11 +223,19 @@ namespace NachoClient.iOS
 
         public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
         {
-            var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
-            syncingViewController.AccountDelegate = this;
-            syncingViewController.Account = account;
-            BackEnd.Instance.Start (syncingViewController.Account.Id);
-            NavigationController.PushViewController (syncingViewController, true);
+            if (account.AccountService == McAccount.AccountServiceEnum.SalesForce) {
+                BackEnd.Instance.Start (account.Id);
+                DismissViewController (true, () => {
+                    var holder = new SegueHolder(account);
+                    PerformSegue("SegueToSalesforceSettings", holder);
+                });
+            }else{
+                var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
+                syncingViewController.AccountDelegate = this;
+                syncingViewController.Account = account;
+                BackEnd.Instance.Start (syncingViewController.Account.Id);
+                NavigationController.PushViewController (syncingViewController, true);
+            }
         }
 
         public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
@@ -280,6 +301,7 @@ namespace NachoClient.iOS
                 break;
             }
             UnreadCountBlock.SetValue (label);
+            (UIApplication.SharedApplication.Delegate as AppDelegate).UpdateBadge ();
         }
 
     }

@@ -72,6 +72,9 @@ namespace NachoClient.AndroidClient
 
             SetVisibility (ViewStates.Visible, vh.senderView, vh.subjectView, vh.dateView);
 
+            var dot = vh.isUnreadView.Drawable as GradientDrawable;
+            dot.SetColor (NachoClient.AndroidClient.Util.ColorForAccount(message.AccountId));
+
             if (!message.IsRead && !isDraft) {
                 vh.isUnreadView.Visibility = ViewStates.Visible;
             } else {
