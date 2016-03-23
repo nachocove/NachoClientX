@@ -175,6 +175,7 @@ namespace NachoClient.iOS
 
         public void Send ()
         {
+            ComposeView.SetEnabled (false);
             if (Chat == null) {
                 var addresses = HeaderView.ToView.AddressList;
                 Chat = McChat.ChatForAddresses (Account.Id, addresses);
@@ -196,13 +197,16 @@ namespace NachoClient.iOS
                 previousMessages.Add (Messages [i]);
             }
             ChatMessageComposer.SendChatMessage (Chat, text, previousMessages, (McEmailMessage message, NcResult result) => {
-                if (result.isOK()){
-                    Chat.AddMessage (message);
-                    ComposeView.Clear ();
-                    ChatView.ScrollToBottom ();
-                    PendingSendMap.Add(result.Value as string, message.Id);
-                }else{
-                    NcAlertView.ShowMessage (this, "Could not send messasge", "Sorry, there was a problem sending the message.  Please try again.");
+                if (IsViewLoaded){
+                    ComposeView.SetEnabled(true);
+                    if (result.isOK()){
+                        Chat.AddMessage (message);
+                        ComposeView.Clear ();
+                        ChatView.ScrollToBottom ();
+                        PendingSendMap.Add(result.Value as string, message.Id);
+                    }else{
+                        NcAlertView.ShowMessage (this, "Could not send messasge", "Sorry, there was a problem sending the message.  Please try again.");
+                    }
                 }
             });
         }
@@ -845,6 +849,13 @@ namespace NachoClient.iOS
         void Send (object sender, EventArgs e)
         {
             ChatViewController.Send ();
+        }
+
+        public void SetEnabled (bool isEnabled)
+        {
+            SendButton.Enabled = isEnabled;
+            MessageField.Editable = isEnabled;
+            AttachButton.Enabled = isEnabled;
         }
 
         void Attach (object sender, EventArgs e)
