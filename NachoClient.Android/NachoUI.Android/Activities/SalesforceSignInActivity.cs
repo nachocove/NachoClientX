@@ -27,7 +27,8 @@ namespace NachoClient.AndroidClient
             SetContentView (Resource.Layout.SalesforceSignInActivity);
 
             if (null == bundle || null == FragmentManager.FindFragmentByTag<SupportFragment> (SIGNIN_FRAGMENT_TAG)) {
-                var signInFragment = SalesforceSignInFragment.newInstance (McAccount.AccountServiceEnum.SalesForce, null);
+                var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.SalesForce).FirstOrDefault ();
+                var signInFragment = SalesforceSignInFragment.newInstance (account);
                 FragmentManager.BeginTransaction ().Replace (Resource.Id.content, signInFragment, SIGNIN_FRAGMENT_TAG).Commit ();
             }
         }

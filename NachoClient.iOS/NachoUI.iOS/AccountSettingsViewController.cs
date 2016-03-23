@@ -336,7 +336,7 @@ namespace NachoClient.iOS
         {
             DisplayNameTextBlock.SetValue (account.DisplayName);
 
-            SignatureBlock.SetValue (account.Signature);
+            UpdateSignatureBlock ();
 
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (account.DaysToSyncEmail));
 
@@ -363,6 +363,17 @@ namespace NachoClient.iOS
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             contentView.Frame = new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, contentViewWidth, contentViewHeight);
             scrollView.ContentSize = new CGSize (contentView.Frame.Width + 2 * A.Card_Horizontal_Indent, contentView.Frame.Height + 2 * A.Card_Vertical_Indent);
+        }
+
+        void UpdateSignatureBlock ()
+        {
+            if (!string.IsNullOrEmpty (account.HtmlSignature)) {
+                var serializer = new HtmlTextSerializer (account.HtmlSignature);
+                var text = serializer.Serialize ();
+                SignatureBlock.SetValue (text);
+            } else {
+                SignatureBlock.SetValue (account.Signature);
+            }
         }
 
         protected override void OnKeyboardChanged ()
@@ -410,20 +421,6 @@ namespace NachoClient.iOS
                 vc.Setup (this, account.Id, account.NotificationConfiguration);
                 return;
             }
-            if (segue.Identifier == "SegueToSignatureEdit") {
-                var vc = (SignatureEditViewController)segue.DestinationViewController;
-                var tag = "Create a signature that will appear at the end of every email that you send.";
-                vc.Setup ("Signature", tag, account.Signature);
-                vc.OnSave = OnSaveSignature;
-                return;
-            }
-            if (segue.Identifier == "SegueToDescriptionEdit") {
-                var vc = (SignatureEditViewController)segue.DestinationViewController;
-                var tag = "Create a descriptive label for this account.";
-                vc.Setup ("Description", tag, account.DisplayName);
-                vc.OnSave = OnSaveDescription;
-                return;
-            }
             if (segue.Identifier == "SegueToAdvancedSettings") {
                 var vc = (AdvancedSettingsViewController)segue.DestinationViewController;
                 vc.Setup (account);
@@ -449,7 +446,10 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SegueToDescriptionEdit", this);
+                var descriptionViewController = new SettingsTextPropertyViewController ();
+                var tag = "Create a descriptive label for this account.";
+                descriptionViewController.Setup ("Description", tag, account.DisplayName, OnSaveDescription);
+                NavigationController.PushViewController (descriptionViewController, true);
             }
         }
 
@@ -506,7 +506,10 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PerformSegue ("SegueToSignatureEdit", this);
+                var signatureController = new SignatureEditViewController ();
+                signatureController.Account = account;
+                signatureController.OnSave = OnSaveSignature;
+                NavigationController.PushViewController (signatureController, true);
             }
         }
 
@@ -571,11 +574,12 @@ namespace NachoClient.iOS
             account.Update ();
         }
 
-        void OnSaveSignature (string text)
+        void OnSaveSignature (SignatureEditViewController signatureController)
         {
-            SignatureBlock.SetValue (text);
-            account.Signature = text;
+            account.Signature = signatureController.EditedPlainSignature;
+            account.HtmlSignature = signatureController.EditedHtmlSignature;
             account.Update ();
+            UpdateSignatureBlock ();
         }
 
         void OnSaveDescription (string text)
@@ -664,20 +668,7 @@ namespace NachoClient.iOS
 
         public void StartGoogleLogin ()
         {
-            var scopes = new List<string> ();
-            scopes.Add ("email");
-            scopes.Add ("profile");
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            var auth = new NachoCore.Utils.GoogleOAuth2Authenticator (
-                           clientId: GoogleOAuthConstants.ClientId,
-                           clientSecret: GoogleOAuthConstants.ClientSecret,
-                           scope: String.Join (" ", scopes.ToArray ()),
-                           accessTokenUrl: new Uri ("https://accounts.google.com/o/oauth2/token"),
-                           authorizeUrl: new Uri ("https://accounts.google.com/o/oauth2/auth"),
-                           redirectUrl: new Uri ("http://www.nachocove.com/authorization_callback"),
-                           loginHint: account.EmailAddr);
+            var auth = new GoogleOAuth2Authenticator (account.EmailAddr);
 
             auth.AllowCancel = true;
 

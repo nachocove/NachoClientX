@@ -41,6 +41,7 @@ namespace NachoCore.IMAP
         {
             Synckit = syncKit;
             PendingSingle = Synckit.PendingSingle;
+            Synckit.PendingSingle = null;
             if (null != PendingSingle) {
                 PendingSingle.MarkDispatched ();
             }
@@ -71,14 +72,16 @@ namespace NachoCore.IMAP
                 NcCapture.AddKind (KImapSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
                 evt = syncFolder (mailKitFolder);
-                ImapStrategy.ResolveOneSync (BEContext, Synckit);
+                ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
+                PendingSingle = null; // we resolved it.
                 break;
 
             case SyncKit.MethodEnum.QuickSync:
                 NcCapture.AddKind (KImapQuickSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapQuickSyncTiming);
                 evt = QuickSync (mailKitFolder, timespan);
-                ImapStrategy.ResolveOneSync (BEContext, Synckit);
+                ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
+                PendingSingle = null; // we resolved it.
                 break;
 
             default:
@@ -209,7 +212,6 @@ namespace NachoCore.IMAP
             }
 
             // Update the sync count and last attempt and set the Highest and lowest sync'd
-            var exeCtxt = NcApplication.Instance.ExecutionContext;
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 if (Synckit.MaxSynced.HasValue && Synckit.MaxSynced.Value > target.ImapUidHighestUidSynced) {

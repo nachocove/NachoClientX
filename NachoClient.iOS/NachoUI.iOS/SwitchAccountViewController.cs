@@ -103,6 +103,7 @@ namespace NachoClient.iOS
             spinner.StartAnimating ();
             spinner.HidesWhenStopped = true;
             LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
+            LoginHelpers.SetMostRecentAccount (account.Id);
             NcApplication.Instance.Account = account;
             switchAccountCallback (account);
             Deactivate (null, (McAccount acct) => {

@@ -301,11 +301,15 @@ namespace NachoCore.Model
 
         public string Signature { get; set; }
 
+        public string HtmlSignature { get; set; }
+
         public NotificationConfigurationEnum NotificationConfiguration { get; set; }
 
         public bool FastNotificationEnabled { get; set; }
 
         public bool IsMdmBased { get; set; }
+
+        public int ColorIndex { get; set; }
 
         /// <summary>
         /// Does this account have the given capability or capabilities?
@@ -644,6 +648,46 @@ namespace NachoCore.Model
                 return true;
             }
             return Id == accountId;
+        }
+
+        public static byte[,] AccountColors = new byte[,] {
+            { 0xE0, 0xE0, 0xE0 },
+            { 0x01, 0x6B, 0x5E },
+            { 0xFA, 0xBF, 0x20 },
+            { 0xD2, 0x47, 0x47 },
+            { 0xBE, 0xCA, 0x39 },
+            { 0x4F, 0x64, 0x6D },
+            { 0xF3, 0x68, 0x00 },
+            { 0x2B, 0xD9, 0xB2 },
+            { 0x3C, 0xB9, 0x6A }
+        };
+
+        public void AssignOpenColorIndex ()
+        {
+            if (AccountType == AccountTypeEnum.Device || AccountType == AccountTypeEnum.Unified || AccountType == AccountTypeEnum.SalesForce) {
+                ColorIndex = 0;
+            } else {
+                var indexCounts = new Dictionary<int, int> ();
+                var colorCount = AccountColors.Length / 3;
+                for (int i = 0; i < colorCount; ++i) {
+                    indexCounts [i] = 0;
+                }
+                foreach (var account in GetAllAccounts()) {
+                    indexCounts [account.ColorIndex] += 1;
+                }
+                int targetCount = 0;
+                bool didAssignColor = false;
+                while (!didAssignColor) {
+                    for (int i = 1; i < colorCount; ++i) {
+                        if (indexCounts [i] == targetCount) {
+                            ColorIndex = i;
+                            didAssignColor = true;
+                            break;
+                        }
+                    }
+                    ++targetCount;
+                }
+            }
         }
     }
 

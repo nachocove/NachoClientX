@@ -19,6 +19,10 @@ namespace NachoCore.Utils
 
         public static int ToggleHotOrNot (McEmailMessage message)
         {
+            if (null == message) {
+                return 0;
+            }
+
             int oldUserAction = message.UserAction;
             int newUserAction = 0;
 
@@ -46,12 +50,14 @@ namespace NachoCore.Utils
                     target.UserAction = newUserAction;
                     return true;
                 });
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
-                    Account = McAccount.QueryById<McAccount> (message.AccountId),
-                });
-                if (oldUserAction != newUserAction) {
-                    NcBrain.UpdateUserAction (message.AccountId, message.Id, message.UserAction);
+                if (null != message) {
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                        Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
+                        Account = McAccount.QueryById<McAccount> (message.AccountId),
+                    });
+                    if (oldUserAction != newUserAction) {
+                        NcBrain.UpdateUserAction (message.AccountId, message.Id, message.UserAction);
+                    }
                 }
             }, "ToggleHotOrNot");
             return newUserAction;

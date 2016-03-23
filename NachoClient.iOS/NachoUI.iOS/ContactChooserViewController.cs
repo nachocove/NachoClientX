@@ -141,7 +141,11 @@ namespace NachoClient.iOS
 
             // Update the auto-complete on each keystroke
             autoCompleteTextField.EditingChanged += delegate {
-                searcher.SearchFor (autoCompleteTextField.Text);
+                // It is possible for EditingChanged to be called after the view has been
+                // dismissed if the user is using dictation.
+                if (null != searcher) {
+                    searcher.SearchFor (autoCompleteTextField.Text);
+                }
             };
 
             // Finish up when the Done key is selected

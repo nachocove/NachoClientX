@@ -1820,6 +1820,14 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration52.cs">
       <Link>NachoCore\Model\Migration\NcMigration52.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\UnreadMessageIndicator.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration53.cs">
+      <Link>NachoCore\Model\Migration\NcMigration53.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration54.cs">
+      <Link>NachoCore\Model\Migration\NcMigration54.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SettingsTextPropertyViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
