@@ -28,6 +28,7 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
         private bool skipNextLayout = false;
+        bool HasAppearedOnce;
 
         McAccount currentAccount;
 
@@ -35,6 +36,7 @@ namespace NachoClient.iOS
 
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
+            HasAppearedOnce = false;
         }
 
         public override void ViewDidLoad ()
@@ -183,6 +185,28 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
 
             PermissionManager.DealWithNotificationPermission ();
+
+            if (HasAppearedOnce) {
+                UpdateUnreadStatus ();
+            }
+            HasAppearedOnce = true;
+        }
+
+        void UpdateUnreadStatus ()
+        {
+            foreach (var indexPath in hotListView.IndexPathsForVisibleRows) {
+                var cell = hotListView.CellAt (indexPath);
+                if (cell != null) {
+                    if (indexPath.Row < priorityInbox.Count ()) {
+                        var thread = priorityInbox.GetEmailThread (indexPath.Row);
+                        var message = thread.FirstMessageSpecialCase ();
+                        if (message != null) {
+                            var unreadMessageView = (UnreadMessageIndicator)cell.ContentView.ViewWithTag (HotListTableViewSource.UNREAD_IMAGE_TAG);
+                            unreadMessageView.State = message.IsRead ? UnreadMessageIndicator.MessageState.Read : UnreadMessageIndicator.MessageState.Unread;
+                        }
+                    }
+                }
+            }
         }
        
         // Called from NachoTabBarController
