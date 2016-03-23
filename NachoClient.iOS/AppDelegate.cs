@@ -1025,7 +1025,8 @@ namespace NachoClient.iOS
                         NcEmailArchiver.Archive (message);
                         BadgeNotifUpdate ();
                     } else if (actionIdentifier == NotificationActionIdentifierMark) {
-                        EmailHelper.MarkAsRead (thread, force: true);
+                        // Bypassing EmailHelper becuase it runs the command in a task and BadgeNotifUpdate doesn't see the change
+                        BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id, true);
                         BadgeNotifUpdate ();
                     } else if (actionIdentifier == NotificationActionIdentifierDelete) {
                         NcEmailArchiver.Delete (message);
