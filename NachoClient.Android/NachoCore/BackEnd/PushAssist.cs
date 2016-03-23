@@ -40,6 +40,7 @@ namespace NachoCore
         public static int DeferPeriodMsec = 30 * 1000;
         protected static string DeviceToken;
         private static bool IsCertPolicyInstalled;
+        static X509Certificate2Collection SSLCerts;
 
         protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
@@ -147,7 +148,6 @@ namespace NachoCore
             };
         }
 
-        X509Certificate2Collection SSLCerts;
         public void InstallCertPolicy ()
         {
             var identity = new ServerIdentity (new Uri ("https://" + BuildInfo.PingerHostname));
@@ -534,7 +534,7 @@ namespace NachoCore
                 Log.Info (Log.LOG_PUSH, "PA is disabled in account setting (accountId={0})", account.Id);
             }
             // Uncomment for debugging on simulator
-            // PushAssist.SetDeviceToken ("SIMULATOR");
+            // SetDeviceToken ("SIMULATOR");
         }
 
         public void Defer ()
@@ -1054,7 +1054,9 @@ namespace NachoCore
                 return;
             }
 
-            request.SetPrivateCerts (SSLCerts);
+            if (null != SSLCerts) {
+                request.SetPrivateCerts (SSLCerts);
+            }
             ResetTimeout (timeoutAction);
             HttpClient.SendRequest (request, (MaxTimeoutMsec / 1000),
                 (response, token) => {
@@ -1063,7 +1065,7 @@ namespace NachoCore
                     if (HttpStatusCode.OK == response.StatusCode) {
                         Log.Info (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, content);
                     } else {
-                        Log.Warn (Log.LOG_PUSH, "PA response ({0}): statusCode={1}", ClientContext, response.StatusCode);
+                        Log.Error (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, content);
                     }
                     resultProcessing (response, null, token);
                     PushAssistFinish ();
