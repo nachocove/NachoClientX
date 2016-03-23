@@ -1274,7 +1274,7 @@ namespace NachoCore.Utils
             }
         }
 
-        static Regex HttpLinkPattern = new Regex ("(http(s)://)?(\\w+\\.)+\\w{2,8}(([^\\s])*[\\w])?");
+        static Regex HttpLinkPattern = new Regex ("(http(s)?://)?(\\w+\\.)+\\w{2,8}(([^\\s])*[\\w])?");
         static Regex EmailLinkPattern = new Regex ("[\\w\\.\\-_\\+]+@(\\w+\\.)+\\w{2,8}");
 
         private void DetectLinksInNode(HtmlNode node)
