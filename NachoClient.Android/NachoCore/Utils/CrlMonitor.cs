@@ -409,7 +409,7 @@ namespace NachoCore.Utils
         void DownloadCrl (CancellationToken cToken)
         {
             var request = new NcHttpRequest (HttpMethod.Get, Urls [UrlIndex]);
-            Log.Info (Log.LOG_SYS, "{0}: Updating crl url {1} (retry {2})", Name, UrlIndex, Retries);
+            Log.Info (Log.LOG_SYS, "{0}: Updating crl url {1}:{2} (retry {3})", Name, UrlIndex, Urls[UrlIndex], Retries);
             HttpClient.SendRequest (request, DefaultTimeoutSecs, DownloadSuccess, DownloadError, cToken);
         }
 
@@ -429,6 +429,10 @@ namespace NachoCore.Utils
                 if (HttpStatusCode.OK == response.StatusCode) {
                     NcAssert.True (null != response.Content, "content should not be null");
                     Log.Info (Log.LOG_PUSH, "{0}: CRL pull response: statusCode={1}", Name, response.StatusCode);
+
+                    if (File.Exists (crlPath)) {
+                        File.Delete (crlPath);
+                    }
 
                     // copy the downloaded data to cache crlPath
                     using (var fs = new FileStream (crlPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
