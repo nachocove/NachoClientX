@@ -301,6 +301,8 @@ namespace NachoCore.Model
 
         public string Signature { get; set; }
 
+        public string HtmlSignature { get; set; }
+
         public NotificationConfigurationEnum NotificationConfiguration { get; set; }
 
         public bool FastNotificationEnabled { get; set; }

@@ -4,75 +4,75 @@ using System;
 using CoreGraphics;
 using Foundation;
 using UIKit;
+using System.Collections.Generic;
+using System.IO;
+using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public partial class SignatureEditViewController : NcUIViewControllerNoLeaks
+    public partial class SignatureEditViewController : NcUITableViewController
     {
-        public SignatureEditViewController (IntPtr handle)
-            : base (handle)
+
+        public McAccount Account;
+        public Action<SignatureEditViewController> OnSave;
+        public string EditedPlainSignature;
+        public string EditedHtmlSignature;
+        public bool IsHtmlEnabled { get; private set; }
+
+        NcUIBarButtonItem CancelButton;
+        NcUIBarButtonItem SaveButton;
+
+        SignatureEditTableViewSource Source;
+
+        public SignatureEditViewController () : base ()
         {
         }
 
-        public delegate void OnSaveCallback (string text);
-
-        string itemTitle;
-        string explanatoryText;
-        string existingText;
-        public OnSaveCallback OnSave;
-
-        UILabel labelView;
-        NcTextView textView;
-        UIBarButtonItem saveButton;
-        UIBarButtonItem cancelButton;
-
-        private static nfloat HORIZONTAL_MARGIN = 15f;
-        private static nfloat VERTICAL_MARGIN = 15f;
-
-        public void Setup (string title, string explanatoryText, string existingText)
+        public override void LoadView ()
         {
-            this.itemTitle = title;
-            this.explanatoryText = explanatoryText;
-            this.existingText = existingText;
+            EditedPlainSignature = Account.Signature;
+            EditedHtmlSignature = Account.HtmlSignature;
+            var tableView = new UITableView (new CGRect(0.0f, 0.0f, PreferredContentSize.Width, PreferredContentSize.Height), UITableViewStyle.Grouped);
+            tableView.Source = Source = new SignatureEditTableViewSource (this);
+            View = TableView = tableView;
         }
 
-        protected override void CreateViewHierarchy ()
+        public override void ViewDidLoad ()
         {
-            cancelButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (cancelButton, "icn-close");
-            cancelButton.AccessibilityLabel = "Close";
-            cancelButton.Clicked += CancelButton_Clicked;
+            base.ViewDidLoad ();
 
-            saveButton = new NcUIBarButtonItem ();
-            saveButton.Title = "Save";
-            saveButton.AccessibilityLabel = "Send";
-            saveButton.Clicked += SaveButton_Clicked;
+            IsHtmlEnabled = !String.IsNullOrEmpty (Account.HtmlSignature);
 
-            NavigationItem.LeftBarButtonItem = cancelButton;
-            NavigationItem.RightBarButtonItem = saveButton;
+            NavigationItem.Title = "Signature";
 
-            labelView = new UILabel (new CGRect (0, 0, View.Frame.Width, 0));
-            labelView.Font = A.Font_AvenirNextRegular14;
-            labelView.TextColor = UIColor.Black;
-            labelView.TextAlignment = UITextAlignment.Center;
-            labelView.BackgroundColor = A.Color_NachoLightGrayBackground;
-            labelView.LineBreakMode = UILineBreakMode.WordWrap;
-            View.AddSubview (labelView);
+            CancelButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (CancelButton, "icn-close");
+            CancelButton.AccessibilityLabel = "Close";
+            CancelButton.Clicked += CancelButton_Clicked;
 
-            textView = new NcTextView (new CGRect (HORIZONTAL_MARGIN, 0, View.Frame.Width - (2 * HORIZONTAL_MARGIN), View.Frame.Height));
-            textView.Font = A.Font_AvenirNextRegular14;
-            textView.TextColor = A.Color_NachoBlack;
-            textView.BackgroundColor = UIColor.White;
-            textView.ContentInset = new UIEdgeInsets (VERTICAL_MARGIN, 0, VERTICAL_MARGIN, 0);
-            textView.SelectionChanged += SelectionChangedHandler;
-            View.AddSubview (textView);
+            SaveButton = new NcUIBarButtonItem ();
+            SaveButton.Title = "Save";
+            SaveButton.AccessibilityLabel = "Send";
+            SaveButton.Clicked += SaveButton_Clicked;
+
+            NavigationItem.LeftBarButtonItem = CancelButton;
+            NavigationItem.RightBarButtonItem = SaveButton;
+
+            TableView.ReloadData ();
+            Source.ScheduleResizeSignatureView ();
+
         }
 
         void SaveButton_Clicked (object sender, EventArgs e)
         {
-            if (null != OnSave) {
-                OnSave (textView.Text);
+            if (IsHtmlEnabled) {
+                EditedPlainSignature = "";
+            } else {
+                EditedHtmlSignature = "";
             }
+            View.EndEditing (true);
+            OnSave (this);
             NavigationController.PopViewController (true);
         }
 
@@ -82,82 +82,496 @@ namespace NachoClient.iOS
             NavigationController.PopViewController (true);
         }
 
-        protected override void ConfigureAndLayout ()
+        public void ToggleHtmlEnabled (bool isEnabled)
         {
-            if (null == explanatoryText) {
-                labelView.Hidden = true;
-                ViewFramer.Create (labelView).Height (0);
-            } else {
-                labelView.Hidden = false;
-                labelView.Lines = 0;
-                labelView.Text = explanatoryText;
-                labelView.SizeToFit ();
-                ViewFramer.Create (labelView).AdjustHeight (20).Width (View.Frame.Width);
+            if (isEnabled != IsHtmlEnabled) {
+                IsHtmlEnabled = isEnabled;
+                TableView.ReloadData ();
             }
-
-            textView.Text = existingText;
-            textView.SelectedRange = new NSRange (0, 0);
-            textView.BecomeFirstResponder ();
-
-            Layout ();
         }
 
-        protected override void Cleanup ()
+        public void PasteHtml ()
         {
-            textView.SelectionChanged -= SelectionChangedHandler;
-            textView = null;
+            var pasteboard = UIPasteboard.General;
+            if (pasteboard.Contains (new string[] { "Apple Web Archive pasteboard type" })) {
+                NSData webData = pasteboard.DataForPasteboardType ("Apple Web Archive pasteboard type");
+                if (null != webData) {
+
+                    // Convert the raw data into a dictionary.
+                    NSPropertyListFormat format = NSPropertyListFormat.Xml;
+                    NSError error;
+                    NSObject webObject = NSPropertyListSerialization.PropertyListWithData (webData, (NSPropertyListReadOptions)0, ref format, out error);
+                    if (webObject is NSDictionary) {
+                        NSDictionary webObjectDictionary = (NSDictionary)webObject;
+
+                        // Get the inner dictionary that contains the HTML.
+                        NSObject mainResource = webObjectDictionary.ObjectForKey (new NSString ("WebMainResource"));
+                        if (mainResource is NSDictionary) {
+                            NSDictionary mainResourceDictionary = (NSDictionary)mainResource;
+
+                            // Get the UTF-8 encoded HTML and convert it to a string.
+                            NSObject resourceData = mainResourceDictionary.ObjectForKey (new NSString ("WebResourceData"));
+                            if (resourceData is NSData) {
+                                string html = NSString.FromData ((NSData)resourceData, NSStringEncoding.UTF8).ToString ();
+                                EditedHtmlSignature = html;
+
+                                // The HTML is interesting only if it contains images or nacho-related attributes.
+                                if (html.Contains ("nacho") || html.Contains ("img") || html.Contains ("IMG")) {
+                                    bool changed = false;
+
+                                    // Parse the HTML string and iterate through all the nodes.
+                                    var htmlDoc = new HtmlAgilityPack.HtmlDocument ();
+                                    htmlDoc.LoadHtml (html);
+                                    var nodeQueue = new Queue<HtmlAgilityPack.HtmlNode> ();
+                                    nodeQueue.Enqueue (htmlDoc.DocumentNode);
+                                    while (0 < nodeQueue.Count) {
+                                        var node = nodeQueue.Dequeue ();
+
+                                        // Is it an image node?
+                                        if (HtmlAgilityPack.HtmlNodeType.Element == node.NodeType && "img" == node.Name && node.Attributes.Contains ("src")) {
+
+                                            try {
+                                                string src = node.GetAttributeValue ("src", "");
+                                                string srcUrl = null;
+                                                if (Uri.IsWellFormedUriString (src, UriKind.Absolute) && Uri.UriSchemeFile == new Uri (src).Scheme) {
+                                                    srcUrl = src;
+                                                } else if (Uri.IsWellFormedUriString (src, UriKind.Relative)) {
+                                                    // The "src" attribute is a relative URL.  Calculate the absolute URL.
+                                                    NSObject baseUrlObject = mainResourceDictionary.ValueForKey (new NSString ("WebResourceURL"));
+                                                    if (baseUrlObject is NSString) {
+                                                        string baseUrl = ((NSString)baseUrlObject).ToString ();
+                                                        if (Uri.IsWellFormedUriString (baseUrl, UriKind.Absolute)) {
+                                                            srcUrl = new Uri (new Uri (baseUrl), src).ToString ();
+                                                        }
+                                                    }
+                                                }
+                                                if (null != srcUrl) {
+
+                                                    // Iterate through the sub-resources in the web archive, looking for one that matches the image's URL.
+                                                    NSObject subResourceArrayObject = webObjectDictionary.ObjectForKey (new NSString ("WebSubresources"));
+                                                    if (subResourceArrayObject is NSArray) {
+                                                        NSArray subResourceArray = (NSArray)subResourceArrayObject;
+                                                        for (nuint i = 0; i < subResourceArray.Count; ++i) {
+                                                            NSDictionary subResource = subResourceArray.GetItem<NSDictionary> (i);
+                                                            NSObject subResourceUrlObject = subResource.ValueForKey (new NSString ("WebResourceURL"));
+                                                            if (subResourceUrlObject is NSString) {
+                                                                string subResourceUrl = ((NSString)subResourceUrlObject).ToString ();
+                                                                if (subResourceUrl == srcUrl) {
+
+                                                                    // Found a match.  Get the information about the image, including the image data.
+                                                                    string contentType = "image/jpg";
+                                                                    NSObject subResourceTypeObject = subResource.ValueForKey (new NSString ("WebResourceMIMEType"));
+                                                                    if (subResourceTypeObject is NSString) {
+                                                                        contentType = ((NSString)subResourceTypeObject).ToString ();
+                                                                    }
+                                                                    NSObject subResourceContentsObject = subResource.ObjectForKey (new NSString ("WebResourceData"));
+                                                                    if (subResourceContentsObject is NSData) {
+                                                                        NSData subResourceContents = (NSData)subResourceContentsObject;
+                                                                        string dataUrl = string.Format ("data:{0};base64,{1}",
+                                                                            contentType, Convert.ToBase64String(subResourceContents.ToArray ()));
+                                                                        node.Attributes.Remove("src");
+                                                                        node.SetAttributeValue ("src", dataUrl);
+                                                                        node.Attributes.Remove("nacho-bundle-entry");
+                                                                        node.Attributes.Remove("nacho-resize");
+                                                                        node.Attributes.Remove("nacho-original-src");
+                                                                        node.Attributes.Add("nacho-data-url", "true");
+                                                                        changed = true;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            } catch (ArgumentOutOfRangeException ex) {
+                                                // Thrown from Uri(Uri,string) if the base URI is not absolute.
+                                                Log.Error (Log.LOG_UI, "Unexpected {0} while processing pasted HTML: {1}", ex.GetType ().Name, ex.Message);
+                                            } catch (UriFormatException ex) {
+                                                Log.Error (Log.LOG_UI, "Unexpected {0} while processing pasted HTML: {1}", ex.GetType ().Name, ex.Message);
+                                            } catch (IOException ex) {
+                                                Log.Error (Log.LOG_UI, "Unexpected {0} while processing pasted HTML: {1}", ex.GetType ().Name, ex.Message);
+                                            }
+
+                                        } else if (node.Attributes.Contains ("nacho-bundle-entry")) {
+                                            // A stray nacho-bundle-entry attribute can cause a crash when the message is sent.
+                                            node.Attributes.Remove ("nacho-bundle-entry");
+                                            changed = true;
+                                        }
+                                        foreach (var child in node.ChildNodes) {
+                                            nodeQueue.Enqueue (child);
+                                        }
+                                    }
+                                    if (changed) {
+                                        var writer = new StringWriter ();
+                                        htmlDoc.Save (writer);
+                                        html = writer.ToString ();
+                                    }
+                                }
+                                EditedHtmlSignature = html;
+                                TableView.ReloadData ();
+                            }
+                        }
+                    }
+                }
+            } else {
+                NcAlertView.ShowMessage (this, "No HTML", "The clipboard does not contain any HTML");
+            }
         }
 
         protected override void OnKeyboardChanged ()
         {
-            Layout ();
-            MakeCaretVisible (false);
-        }
-
-        private void Layout ()
-        {
-            var yOffset = labelView.Frame.Bottom;
-            ViewFramer.Create (textView).Y(yOffset).Height (View.Frame.Height - yOffset - keyboardHeight);
-        }
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            NavigationItem.Title = itemTitle;
+            TableView.ContentInset = new UIEdgeInsets (0.0f, 0.0f, keyboardHeight, 0.0f); 
+//            MakeCaretVisible (false);
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-            }
+//            if (null != this.NavigationController) {
+//                this.NavigationController.ToolbarHidden = true;
+//            }
         }
 
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
-                this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
-                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
-            }
+            Source.MakeSignatureFieldFirstResponder ();
         }
 
         public override bool HidesBottomBarWhenPushed {
             get {
-                return this.NavigationController.TopViewController == this;
+                return true;
             }
         }
 
-        private void MakeCaretVisible (bool animated)
+//        private void MakeCaretVisible (bool animated)
+//        {
+//            var caretFrame = plainTextView.GetCaretRectForPosition (plainTextView.SelectedTextRange.End);
+//            plainTextView.ScrollRectToVisible (caretFrame, animated);
+//        }
+//
+//        private void SelectionChangedHandler (object sender, EventArgs args)
+//        {
+//            MakeCaretVisible (true);
+//        }
+    }
+
+    public class SignatureEditTableViewSource : UITableViewSource, IUIWebViewDelegate
+    {
+
+        SignatureEditViewController ViewController;
+        UIWebView HtmlSignatureView;
+        UITextView PlainSignatureView;
+        HeaderFooterView SignatureHeaderLabel;
+        HeaderFooterView PasteFooterLabel;
+
+        nfloat PreviewHeight = 0.0f;
+
+        const string SwitchCellIdentifier = "SwitchCellIdentifier";
+        const string ButtonCellIdentifier = "ButtonCellIdentifier";
+        const string PreviewCellIdentifier = "PreviewCellIdentifier";
+
+        static UIEdgeInsets PreviewPadding = new UIEdgeInsets(10.0f, 10.0f, 10.0f, 10.0f);
+
+        static UIFont PlainTextFont = A.Font_AvenirNextRegular17;
+
+        public SignatureEditTableViewSource(SignatureEditViewController vc)
         {
-            var caretFrame = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
-            textView.ScrollRectToVisible (caretFrame, animated);
+            ViewController = vc;
+
+            var headerFont = A.Font_AvenirNextRegular17;
+
+            SignatureHeaderLabel = new HeaderFooterView ();
+            SignatureHeaderLabel.Label.Text = "This signature will appear at the bottom of every message you send";
+
+            PasteFooterLabel = new HeaderFooterView ();
         }
 
-        private void SelectionChangedHandler (object sender, EventArgs args)
+        public override nint NumberOfSections (UITableView tableView)
         {
-            MakeCaretVisible (true);
+            if (ViewController.IsHtmlEnabled) {
+                return 3;
+            }
+            return 2;
         }
+
+        public override nint RowsInSection (UITableView tableview, nint section)
+        {
+            return 1;
+        }
+
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == 0) {
+                return (nfloat)Math.Max (PreviewHeight, PlainTextFont.LineHeight + PreviewPadding.Top + PreviewPadding.Bottom);
+            }
+            return tableView.RowHeight;
+        }
+
+        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
+        {
+            if (section == 0) {
+                return SignatureHeaderLabel.PreferredHeightForWidth (tableView.Bounds.Width);
+            }
+            return 0.0f;
+        }
+
+        public override UIView GetViewForHeader (UITableView tableView, nint section)
+        {
+            if (section == 0) {
+                return SignatureHeaderLabel;
+            }
+            return null;
+        }
+
+        public override nfloat GetHeightForFooter (UITableView tableView, nint section)
+        {
+            if (section == 1) {
+                if (ViewController.IsHtmlEnabled) {
+                    UpdatePasteFooterText ();
+                    return PasteFooterLabel.PreferredHeightForWidth (tableView.Bounds.Width);
+                }
+            }
+            return 0.0f;
+        }
+
+        public override UIView GetViewForFooter (UITableView tableView, nint section)
+        {
+            if (section == 1) {
+                if (ViewController.IsHtmlEnabled) {
+                    UpdatePasteFooterText ();
+                    return PasteFooterLabel;
+                }
+            }
+            return null;
+        }
+
+        void UpdatePasteFooterText ()
+        {
+            if (UIPasteboard.General.Contains (new string[] { "Apple Web Archive pasteboard type" })) {
+                PasteFooterLabel.Label.Text =  "It looks like you've copied some HTML content.  You can paste it here to use it as your signature";
+            } else {
+                PasteFooterLabel.Label.Text = "To add an HTML signature, you first need to copy the content of your signature from another source, and then return here to paste it";
+            }
+        }
+
+        public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            return null;
+        }
+
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            if (indexPath.Section == 1) {
+                var cell = tableView.DequeueReusableCell (SwitchCellIdentifier) as SwitchCell;
+                if (cell == null) {
+                    cell = new SwitchCell (SwitchCellIdentifier);
+                }
+                cell.Label.Text = "Use Rich Text Signature";
+                cell.SwitchView.On = ViewController.IsHtmlEnabled;
+                cell.OnSwitch = SwitchedTextType;
+                return cell;
+            } else if (indexPath.Section == 0) {
+                var cell = tableView.DequeueReusableCell (PreviewCellIdentifier);
+                if (cell == null) {
+                    cell = new UITableViewCell ();
+                }
+                if (ViewController.IsHtmlEnabled) {
+                    if (HtmlSignatureView == null) {
+                        HtmlSignatureView = new UIWebView ();
+                        HtmlSignatureView.WeakDelegate = this;
+                        HtmlSignatureView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+                    }
+                    if (PlainSignatureView != null && PlainSignatureView.Superview != null) {
+                        PlainSignatureView.RemoveFromSuperview ();
+                    }
+                    if (HtmlSignatureView.Superview == null) {
+                        HtmlSignatureView.Frame = cell.ContentView.Bounds;
+                        cell.ContentView.AddSubview (HtmlSignatureView);
+                    }
+                    if (ViewController.EditedHtmlSignature != null) {
+                        HtmlSignatureView.LoadHtmlString (ViewController.EditedHtmlSignature, null);
+                    }
+                } else {
+                    if (PlainSignatureView == null) {
+                        PlainSignatureView = new UITextView ();
+                        PlainSignatureView.Font = PlainTextFont;
+                        PlainSignatureView.TextContainerInset = PreviewPadding;
+                        PlainSignatureView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+                        PlainSignatureView.Changed += PlainSignatureChanged;
+                    }
+                    if (HtmlSignatureView != null && HtmlSignatureView.Superview != null) {
+                        HtmlSignatureView.RemoveFromSuperview ();
+                    }
+                    if (PlainSignatureView.Superview == null) {
+                        PlainSignatureView.Frame = cell.ContentView.Bounds;
+                        cell.ContentView.AddSubview (PlainSignatureView);
+                    }
+                    PlainSignatureView.Text = ViewController.EditedPlainSignature;
+                }
+                return cell;
+            } else if (indexPath.Section == 2) {
+                var cell = tableView.DequeueReusableCell (ButtonCellIdentifier) as ButtonCell;
+                if (cell == null) {
+                    cell = new ButtonCell (ButtonCellIdentifier);
+                }
+                cell.Button.SetTitle ("Paste HTML Signature", UIControlState.Normal);
+                cell.Button.Enabled = UIPasteboard.General.Contains (new string[] { "Apple Web Archive pasteboard type" });
+                cell.OnSelect = Paste;
+                return cell;
+            }
+            return null;
+        }
+
+        [Export ("webViewDidFinishLoad:")]
+        public void LoadingFinished (UIKit.UIWebView webView)
+        {
+            ResizeHtmlSignatureView ();
+        }
+
+        public void MakeSignatureFieldFirstResponder ()
+        {
+            if (PlainSignatureView != null && PlainSignatureView.Superview != null) {
+                PlainSignatureView.BecomeFirstResponder ();
+            }
+        }
+
+        public void ScheduleResizeSignatureView ()
+        {
+             var selector = new ObjCRuntime.Selector ("resizeSignatureView");
+             var timer = NSTimer.CreateTimer (0.0, this, selector, null, false);
+             NSRunLoop.Main.AddTimer (timer, NSRunLoopMode.Default);
+        }
+
+        [Export ("resizeSignatureView")]
+        void ResizeSignatureView ()
+        {
+            if (PlainSignatureView != null && PlainSignatureView.Superview != null) {
+                ResizePlainSignatureView ();
+            }
+            if (HtmlSignatureView != null && HtmlSignatureView.Superview != null) {
+                ResizeHtmlSignatureView ();
+            }
+        }
+
+        void ResizePlainSignatureView ()
+        {
+            var frame = PlainSignatureView.Frame;
+            PlainSignatureView.Frame = new CGRect (frame.X, frame.Y, frame.Width, 1.0f);
+            if (PlainSignatureView.ContentSize.Height != frame.Height) {
+                PreviewHeight = PlainSignatureView.ContentSize.Height;
+                PlainSignatureView.Frame = frame;
+                // Evidently this reloads the sizes of the cells, but not the contents, which is exactly what we want in this case
+                ViewController.TableView.BeginUpdates ();
+                ViewController.TableView.EndUpdates ();
+            }else{
+                PlainSignatureView.Frame = frame;
+            }
+        }
+
+        void ResizeHtmlSignatureView ()
+        {
+            var frame = HtmlSignatureView.Frame;
+            HtmlSignatureView.Frame = new CGRect (frame.X, frame.Y, frame.Width, 1.0f);
+            if (HtmlSignatureView.ScrollView.ContentSize.Height != frame.Height) {
+                PreviewHeight = HtmlSignatureView.ScrollView.ContentSize.Height;
+                HtmlSignatureView.Frame = frame;
+                // Evidently this reloads the sizes of the cells, but not the contents, which is exactly what we want in this case
+                ViewController.TableView.BeginUpdates ();
+                ViewController.TableView.EndUpdates ();
+            }else{
+                HtmlSignatureView.Frame = frame;
+            }
+        }
+
+        void PlainSignatureChanged (object sender, EventArgs e)
+        {
+            ViewController.EditedPlainSignature = PlainSignatureView.Text;
+            ResizePlainSignatureView ();
+            PlainSignatureView.SetContentOffset (new CGPoint (0.0f, 0.0f), false);
+        }
+
+        void SwitchedTextType (UISwitch switchView)
+        {
+            ViewController.ToggleHtmlEnabled (switchView.On);
+            ScheduleResizeSignatureView ();
+        }
+
+        void Paste ()
+        {
+            ViewController.PasteHtml ();
+        }
+
+        private class HeaderFooterView : UIView {
+
+            public UILabel Label;
+            static UIEdgeInsets TextInsets = new UIEdgeInsets (5.0f, 10.0f, 5.0f, 10.0f);
+
+            public HeaderFooterView() : base(new CGRect(0.0f, 0.0f, 320.0f, 20.0f))
+            {
+                Label = new UILabel (new CGRect(TextInsets.Left, TextInsets.Top, Bounds.Width - TextInsets.Left - TextInsets.Right, Bounds.Height - TextInsets.Top - TextInsets.Bottom));
+                Label.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+                Label.Font = A.Font_AvenirNextRegular14;
+                Label.TextAlignment = UITextAlignment.Center;
+                Label.Lines = 0;
+                Label.LineBreakMode = UILineBreakMode.WordWrap;
+                Label.TextColor = A.Color_NachoTextGray;
+                AddSubview (Label);
+            }
+
+            public nfloat PreferredHeightForWidth (nfloat width) {
+                var size = Label.SizeThatFits (new CGSize (width, 999999999.0f));
+                return size.Height + TextInsets.Top + TextInsets.Bottom;
+            }
+        }
+
+        private class SwitchCell : UITableViewCell
+        {
+
+            public readonly UISwitch SwitchView;
+            public readonly UILabel Label;
+            nfloat LeftPadding = 10.0f;
+            nfloat RightPadding = 10.0f;
+            public Action<UISwitch> OnSwitch;
+
+            public SwitchCell(string reuseIdentifier) : base(UITableViewCellStyle.Default, reuseIdentifier)
+            {
+                SwitchView = new UISwitch();
+                SwitchView.Frame = new CGRect(Bounds.Width - RightPadding - SwitchView.Frame.Width, (Bounds.Height - SwitchView.Frame.Height) / 2.0f, SwitchView.Frame.Width, SwitchView.Frame.Height);
+                SwitchView.AutoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin | UIViewAutoresizing.FlexibleLeftMargin;
+                SwitchView.ValueChanged += (object sender, EventArgs e) => {
+                    OnSwitch (SwitchView);
+                };
+                Label = new UILabel(new CGRect(LeftPadding, 0.0f, SwitchView.Frame.X - LeftPadding, Bounds.Height));
+                Label.Font = A.Font_AvenirNextRegular17;
+                Label.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+                ContentView.AddSubview (Label);
+                ContentView.AddSubview (SwitchView);
+            }
+
+        }
+
+        private class ButtonCell : UITableViewCell
+        {
+
+            public readonly UIButton Button;
+            public Action OnSelect;
+
+            public ButtonCell(string reuseIdentifier) : base(UITableViewCellStyle.Default, reuseIdentifier)
+            {
+                Button = new UIButton (UIButtonType.Custom);
+                Button.TitleLabel.Font = A.Font_AvenirNextRegular17;
+                Button.SetTitleColor(A.Color_NachoGreen, UIControlState.Normal);
+                Button.SetTitleColor(A.Color_NachoTextGray, UIControlState.Disabled);
+                Button.Frame = Bounds;
+                Button.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+                Button.TouchUpInside += (object sender, EventArgs e) => {
+                    OnSelect ();
+                };
+                ContentView.AddSubview (Button);
+            }
+
+        }
+
     }
 }
