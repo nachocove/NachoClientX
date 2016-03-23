@@ -674,23 +674,25 @@ namespace NachoCore.Utils
                                     node.Attributes.Remove ("nacho-original-src");
                                 }
                                 var info = Bundle.MemberForEntryName (entryName);
-                                OpenReaders.Add (info.Reader);
-                                hasRelatedParts = true;
-                                var attachment = new MimePart (info.ContentType ?? "image/jpeg");
-                                attachment.FileName = info.Filename;
-                                attachment.IsAttachment = false;
-                                attachment.ContentTransferEncoding = ContentEncoding.Base64;
-                                attachment.ContentObject = new ContentObject (info.Reader.BaseStream);
-                                attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
-                                related.Add (attachment);
-                                var src = "cid:" + attachment.ContentId;
-                                node.SetAttributeValue ("src", src);
-                                AdjustEstimatedSizesForAttachment (info.Reader.BaseStream);
-                                SrcsByEntryName [entryName] = src;
-                                if (mcattachment != null) {
-                                    mcattachment.ContentId = attachment.ContentId;
-                                    mcattachment.Update ();
-                                    AttachmentsInHtml [mcattachment.Id] = true;
+                                if (info != null) {
+                                    OpenReaders.Add (info.Reader);
+                                    hasRelatedParts = true;
+                                    var attachment = new MimePart (info.ContentType ?? "image/jpeg");
+                                    attachment.FileName = info.Filename;
+                                    attachment.IsAttachment = false;
+                                    attachment.ContentTransferEncoding = ContentEncoding.Base64;
+                                    attachment.ContentObject = new ContentObject (info.Reader.BaseStream);
+                                    attachment.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
+                                    related.Add (attachment);
+                                    var src = "cid:" + attachment.ContentId;
+                                    node.SetAttributeValue ("src", src);
+                                    AdjustEstimatedSizesForAttachment (info.Reader.BaseStream);
+                                    SrcsByEntryName [entryName] = src;
+                                    if (mcattachment != null) {
+                                        mcattachment.ContentId = attachment.ContentId;
+                                        mcattachment.Update ();
+                                        AttachmentsInHtml [mcattachment.Id] = true;
+                                    }
                                 }
                             } else {
                                 node.SetAttributeValue ("src", SrcsByEntryName [entryName]);
@@ -698,8 +700,12 @@ namespace NachoCore.Utils
                             node.Attributes.Remove ("nacho-bundle-entry");
                         }
                         if (node.Attributes.Contains ("nacho-data-url")) {
-                            var url = new Uri (node.GetAttributeValue ("src", ""));
-                            if (url.Scheme == "data") {
+                            Uri url = null;
+                            try {
+                                url = new Uri (node.GetAttributeValue ("src", ""));
+                            }catch{
+                            }
+                            if (url != null && url.Scheme == "data") {
                                 var parts = url.AbsolutePath.Split (new char[] { ';' }, 2);
                                 var contentType = parts [0];
                                 parts = parts [1].Split (new char[] { ',' }, 2);
@@ -713,8 +719,8 @@ namespace NachoCore.Utils
                                 related.Add (attachment);
                                 var src = "cid:" + attachment.ContentId;
                                 node.SetAttributeValue ("src", src);
-                                node.Attributes.Remove ("nacho-data-src");
                             }
+                            node.Attributes.Remove ("nacho-data-src");
                         }
                     }
                 }
