@@ -59,7 +59,7 @@ namespace NachoClient.iOS
                 int likelyCount;
                 int deferredCount;
                 int deadlineCount;
-                EmailHelper.GetMessageCounts (account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount, EmailHelper.GetNewSincePreference ());
+                EmailHelper.GetMessageCounts (account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     unreadMessages.SetValue (String.Format ("Go to Inbox ({0:N0} unread)", unreadCount));
                     deadlineMessages.SetValue (String.Format ("Go to Deadlines ({0:N0})", deadlineCount));

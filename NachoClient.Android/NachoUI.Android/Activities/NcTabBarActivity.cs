@@ -165,11 +165,6 @@ namespace NachoClient.AndroidClient
             StartActivity (new Intent (this, typeof(AddAccountActivity)));
         }
 
-        public void ConnectToSalesforce()
-        {
-            StartActivity (new Intent (this, typeof(SalesforceSignInActivity)));
-        }
-
         public virtual void MaybeSwitchAccount ()
         {
         }
@@ -179,7 +174,6 @@ namespace NachoClient.AndroidClient
         {
             Log.Info (Log.LOG_UI, "NcActivity account selected {0}", account.DisplayName);
             MaybeSwitchAccount ();
-            LoginHelpers.SetSwitchToTime (account);
 
             // Pop the switcher if the activity hasn't already done it.
             var f = FragmentManager.FindFragmentById (Resource.Id.content);

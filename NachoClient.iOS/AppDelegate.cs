@@ -542,7 +542,8 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
-            BadgeNotifClear ();
+            NotifyAllowed = false;
+            UpdateBadge ();
             if (doingPerformFetch) {
                 CompletePerformFetchWithoutShutdown ();
             }
@@ -575,7 +576,9 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: Called");
             bool isInitializing = NcApplication.Instance.IsInitializing;
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
-            BadgeNotifGoInactive ();
+            UpdateGoInactiveTime ();
+            UpdateBadge ();
+            NotifyAllowed = true;
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
 
             if (DateTime.MinValue != foregroundTime) {
@@ -1098,20 +1101,12 @@ namespace NachoClient.iOS
         static public NSString ChatNotificationKey = new NSString ("McChat.Id,McChatMessage.MessageId");
         static public NSString EventNotificationKey = new NSString ("NotifiOS.handle");
 
-        private bool BadgeNotifAllowed = true;
+        private bool NotifyAllowed = true;
 
-        private void BadgeNotifClear ()
-        {
-            UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
-            BadgeNotifAllowed = false;
-            Log.Info (Log.LOG_UI, "BadgeNotifClear: exit");
-        }
-
-        private void BadgeNotifGoInactive ()
+        private void UpdateGoInactiveTime ()
         {
             McMutables.Set (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
-            BadgeNotifAllowed = true;
-            Log.Info (Log.LOG_UI, "BadgeNotifGoInactive: exit");
+            Log.Info (Log.LOG_UI, "UpdateGoInactiveTime: exit");
         }
 
         private bool NotifyEmailMessage (McEmailMessage message, McAccount account, bool withSound)
@@ -1210,11 +1205,30 @@ namespace NachoClient.iOS
             return true;
         }
 
+        public void UpdateBadge ()
+        {
+            bool shouldClearBadge = EmailHelper.HowToDisplayUnreadCount () == EmailHelper.ShowUnreadEnum.RecentMessages && !NotifyAllowed;
+            if (shouldClearBadge) {
+                UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
+            } else {
+                int badgeCount = EmailHelper.GetUnreadMessageCountForBadge();
+                badgeCount += McChat.UnreadMessageCountForBadge ();
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: badge count = {0}", badgeCount);
+                UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
+            }
+        }
+
         // It is okay if this function is called more than it needs to be.
         private void BadgeNotifUpdate ()
         {
+            if (NotificationCanBadge) {
+                UpdateBadge ();
+            } else {
+                Log.Info (Log.LOG_UI, "Skip badging due to lack of user permission.");
+            }
+
             Log.Info (Log.LOG_UI, "BadgeNotifUpdate: called");
-            if (!BadgeNotifAllowed) {
+            if (!NotifyAllowed) {
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: early exit");
                 return;
             }
@@ -1223,7 +1237,6 @@ namespace NachoClient.iOS
             var since = DateTime.Parse (datestring);
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
             var unreadChatMessages = McChat.UnreadMessagesSince (since);
-            var badgeCount = unreadAndHot.Count () + unreadChatMessages.Count ();
             var soundExpressed = false;
             int remainingVisibleSlots = 10;
             var accountTable = new Dictionary<int, McAccount> ();
@@ -1236,7 +1249,6 @@ namespace NachoClient.iOS
             foreach (var message in unreadAndHot) {
                 if (!string.IsNullOrEmpty (message.MessageID) && notifiedMessageIDs.Contains (message.MessageID)) {
                     Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Skipping message {0} because a message with that message ID has already been processed", message.Id);
-                    --badgeCount;
                     message.MarkHasBeenNotified (true);
                     continue;
                 }
@@ -1257,13 +1269,11 @@ namespace NachoClient.iOS
                     account = newAccount;
                 }
                 if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message)) {
-                    --badgeCount;
                     message.MarkHasBeenNotified (false);
                     continue;
                 }
                 if (!NotifyEmailMessage (message, account, !soundExpressed)) {
                     Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification attempt for message {0} failed.", message.Id);
-                    --badgeCount;
                     continue;
                 } else {
                     soundExpressed = true;
@@ -1296,15 +1306,16 @@ namespace NachoClient.iOS
                         }
                         chatTable.Add (message.ChatId, chat);
                     }
+                    if (message.HasBeenNotified) {
+                        continue;
+                    }
                     if ((null == account) || (null == chat) || !NotificationHelper.ShouldNotifyChatMessage (message)) {
-                        --badgeCount;
                         // Have to re-query as McEmailMessage or else UpdateWithOCApply complains of a type mismatch
                         McEmailMessage.QueryById<McEmailMessage>(message.Id).MarkHasBeenNotified (false);
                         continue;
                     }
                     if (!NotifyChatMessage (message, chat, account, !soundExpressed)) {
                         Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification attempt for message {0} failed.", message.Id);
-                        --badgeCount;
                         continue;
                     } else {
                         soundExpressed = true;
@@ -1320,13 +1331,6 @@ namespace NachoClient.iOS
             }
 
             accountTable.Clear ();
-
-            if (NotificationCanBadge) {
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: badge count = {0}", badgeCount);
-                UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
-            } else {
-                Log.Info (Log.LOG_UI, "Skip badging due to lack of user permission.");
-            }
         }
 
         public static void TestScheduleEmailNotification ()

@@ -28,6 +28,11 @@ namespace NachoCore.Utils
             return node;
         }
 
+        public static void AddAttributeWithEscaping (this HtmlNode element, string name, string value)
+        {
+            element.Attributes.Add (name, value.Replace ("&", "&amp;").Replace ("<", "&lt;"));
+        }
+
         public static HtmlDocument CopyUntilNode (this HtmlDocument doc, HtmlNode targetNode)
         {
             var copyDoc = new HtmlDocument ();

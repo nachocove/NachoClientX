@@ -663,6 +663,8 @@
     <Compile Include="NachoUI.Android\Activities\ChatViewFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\ChatParticipantListActivity.cs" />
     <Compile Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration53.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration54.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -1892,6 +1894,7 @@
     <AndroidResource Include="Resources\layout\ChatParticipantListCell.axml" />
     <AndroidResource Include="Resources\layout\ChatParticipantListActivity.axml" />
     <AndroidResource Include="Resources\layout\ChatParticipantListFragment.axml" />
+    <AndroidResource Include="Resources\layout\spinner_item.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />

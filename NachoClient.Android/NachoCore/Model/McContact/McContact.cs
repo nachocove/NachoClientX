@@ -1628,6 +1628,11 @@ namespace NachoCore.Model
             }
         }
 
+        public static int CountByAccountId (int accountId)
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM McContact WHERE AccountId = ?", accountId);
+        }
+
         public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false)
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (GetAllContactsQueryString (withEclipsing, accountId), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);

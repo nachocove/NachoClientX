@@ -26,8 +26,6 @@ namespace NachoClient.AndroidClient
     {
         void AddAccount ();
 
-        void ConnectToSalesforce ();
-
         void AccountSelected (McAccount account);
 
         void AccountShortcut (int destination);
@@ -91,7 +89,10 @@ namespace NachoClient.AndroidClient
 
         void AccountAdapter_AccountSelected (object sender, McAccount account)
         {
+            LoginHelpers.SetSwitchAwayTime (NcApplication.Instance.Account.Id);
+            LoginHelpers.SetMostRecentAccount (account.Id);
             NcApplication.Instance.Account = account;
+
             var parent = (AccountListDelegate)Activity;
             parent.AccountSelected (account);
         }
@@ -323,7 +324,7 @@ namespace NachoClient.AndroidClient
                 int likelyCount;
                 int deferredCount;
                 int deadlineCount;
-                EmailHelper.GetMessageCounts (account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount, EmailHelper.GetNewSincePreference ());
+                EmailHelper.GetMessageCounts (account, out unreadCount, out deferredCount, out deadlineCount, out likelyCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     var unreadView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_inbox);
                     var deadlineView = view.FindViewById<Android.Widget.TextView> (Resource.Id.to_deadlines);
@@ -340,7 +341,7 @@ namespace NachoClient.AndroidClient
         {
             NcTask.Run (() => {
                 int unreadMessageCount;
-                EmailHelper.GetUnreadMessageCount (account, out unreadMessageCount, EmailHelper.GetNewSincePreference ());
+                EmailHelper.GetUnreadMessageCount (account, out unreadMessageCount);
                 InvokeOnUIThread.Instance.Invoke (() => {
                     unreadView.Text = String.Format ("({0:N0})", unreadMessageCount);
                 });
