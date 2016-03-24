@@ -115,8 +115,14 @@ namespace NachoCore.IMAP
             }
 
             BodyPart imapBody;
-            if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
-                Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure: {0}", email.ImapBodyStructure);
+            try {
+                if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
+                    Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure: {0}", email.ImapBodyStructure);
+                    return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                        NcResult.WhyEnum.BadOrMalformed);
+                }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure: {0}\n{1}", email.ImapBodyStructure, ex);
                 return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
                     NcResult.WhyEnum.BadOrMalformed);
             }
