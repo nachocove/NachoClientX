@@ -1054,7 +1054,7 @@ namespace NachoCore.Utils
         public static void MarkAsRead (McEmailMessageThread thread, bool force = false)
         {
             var message = thread.SingleMessageSpecialCase ();
-            MarkAsRead (message);
+            MarkAsRead (message, force);
         }
 
         public static void ToggleRead (McEmailMessage message)
