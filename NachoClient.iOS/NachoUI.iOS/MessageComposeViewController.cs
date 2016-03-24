@@ -94,6 +94,7 @@ namespace NachoClient.iOS
             EmailAccounts = new List<McAccount> (McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).Where((McAccount a) => { return a.AccountType != McAccount.AccountTypeEnum.Unified; }));
             NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
             NavigationItem.BackBarButtonItem.Title = "";
+            HasShownOnce = false;
         }
 
         #endregion
@@ -698,6 +699,7 @@ namespace NachoClient.iOS
 
         public void MessageComposerDidCompletePreparation (MessageComposer composer)
         {
+            Log.Info (Log.LOG_UI, "MessageComposeViewController MessageComposerDidCompletePreparation()");
             UpdateSendEnabled ();
             DisplayMessageBody ();
         }
@@ -714,6 +716,7 @@ namespace NachoClient.iOS
         {
             if (Composer.Bundle != null) {
                 if (Composer.Bundle.FullHtmlUrl != null) {
+                    Log.Info (Log.LOG_UI, "MessageComposeViewController DisplayMessageBody() using uri");
                     var url = new NSUrl (Composer.Bundle.FullHtmlUrl.AbsoluteUri);
                     // Here's how WKWebView would work
                     // if (url.Scheme.ToLowerInvariant().Equals("file")){
@@ -735,12 +738,22 @@ namespace NachoClient.iOS
                     NSUrlRequest request = new NSUrlRequest (url);
                     WebView.LoadRequest (request);
                 } else {
+                    Log.Info (Log.LOG_UI, "MessageComposeViewController DisplayMessageBody() using html");
                     var html = Composer.Bundle.FullHtml;
+                    var url = new NSUrl (Composer.Bundle.BaseUrl.AbsoluteUri);
                     if (html != null) {
-                        var url = new NSUrl (Composer.Bundle.BaseUrl.AbsoluteUri);
                         WebView.LoadHtmlString (new NSString (html), url);
+                    } else {
+                        Log.Error (Log.LOG_UI, "MessageComposeViewController DisplayMessageBody() null html");
+                        WebView.LoadHtmlString (new NSString ("<html><body><div><br></div></body></html>"), url);
                     }
                 }
+            } else {
+                Log.Error (Log.LOG_UI, "DisplayMessageBody called without a valid bundle");
+                NcAlertView.Show (this, "Could not load message", "Sorry, the message could not be loaded. Please try again.",
+                    new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                        DismissViewController (true, null);
+                    }));
             }
         }
 
@@ -798,6 +811,7 @@ namespace NachoClient.iOS
         [Export ("webViewDidFinishLoad:")]
         public void LoadingFinished (UIWebView webView)
         {
+            Log.Info (Log.LOG_UI, "MessageComposeViewController LoadingFinished()");
             IsWebViewLoaded = true;
             UpdateScrollViewSize ();
             EnableEditingInWebView ();
@@ -829,6 +843,7 @@ namespace NachoClient.iOS
 
         private void MakeWebViewFirstResponder ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposeViewController MakeWebViewFirstResponder()");
             EvaluateJavaScript ("Editor.defaultEditor.focus()");
         }
 

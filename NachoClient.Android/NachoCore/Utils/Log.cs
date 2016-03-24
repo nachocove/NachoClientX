@@ -209,6 +209,7 @@ namespace NachoCore.Utils
         private void _Log (int threadId, ulong subsystem, LogLevelSettings settings, TelemetryEventType teleType,
                            string fmt, string level, params object[] list)
         {
+            NcTimeStamp.Add ("Before ToConsole");
             if (settings.ToConsole (subsystem)) {
                 // Get the caller information
                 string callInfo = "";
@@ -228,12 +229,16 @@ namespace NachoCore.Utils
                 WriteLine ("{0}", String.Format (new NachoFormatter (),
                     Log.ModuleString (subsystem) + ":" + level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
+            NcTimeStamp.Add ("After ToConsole");
             if (settings.ToTelemetry (subsystem)) {
+                NcTimeStamp.Add ("Before Telemetry");
                 Telemetry.RecordLogEvent (threadId, teleType, subsystem, fmt, list);
+                NcTimeStamp.Add ("After Telemetry");
             }
             LogElement elem;
             int maxIndirect = 5;
             while (0 < maxIndirect && Log.IndirectQ.TryDequeue (out elem)) {
+                NcTimeStamp.Add ("Recursively calling _Log for queued message");
                 var message = "@" + String.Format ("{0:yyyy-MM-ddTHH:mm:ss.fffZ}", elem.Occurred) + ": " + elem.Message;
                 var parms = new object[1] { message };
                 switch (elem.Level) {
@@ -254,6 +259,7 @@ namespace NachoCore.Utils
                     break;
                 }
                 --maxIndirect;
+                NcTimeStamp.Add ("Recursive call done");
             }
         }
 

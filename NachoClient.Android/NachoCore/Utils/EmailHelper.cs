@@ -57,15 +57,19 @@ namespace NachoCore.Utils
                 }
             } else {
                 if (referencedMessage != null) {
-                    folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
-                    if (folders.Count == 0) {
-                        Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
+                    if (String.IsNullOrEmpty (referencedMessage.ServerId)) {
+                        Log.Error (Log.LOG_UI, "The message being forwarded or replied is not on the server. It will be sent as a regular outgoing message.");
                     } else {
-                        int folderId = folders [0].Id;
-                        if (messageToSend.ReferencedIsForward) {
-                            sendResult = NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                        folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
+                        if (folders.Count == 0) {
+                            Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
                         } else {
-                            sendResult = NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                            int folderId = folders [0].Id;
+                            if (messageToSend.ReferencedIsForward) {
+                                sendResult = NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                            } else {
+                                sendResult = NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, true);
+                            }
                         }
                     }
                 }
