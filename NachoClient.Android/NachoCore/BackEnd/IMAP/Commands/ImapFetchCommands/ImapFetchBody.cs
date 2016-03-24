@@ -56,6 +56,8 @@ namespace NachoCore.IMAP
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 }
             }
+            // call will do nothing if the hint isn't there.
+            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);
             return result;
         }
 
@@ -75,6 +77,8 @@ namespace NachoCore.IMAP
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 }
             }
+            // call will do nothing if the hint isn't there.
+            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);
             return result;
         }
 
@@ -208,7 +212,6 @@ namespace NachoCore.IMAP
             }
             Cts.Token.ThrowIfCancellationRequested ();
 
-            BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);
             MimeHelpers.PossiblyExtractAttachmentsFromBody (body, email, Cts.Token);
 
             return NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
