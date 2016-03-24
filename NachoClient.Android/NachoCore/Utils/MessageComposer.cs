@@ -185,8 +185,10 @@ namespace NachoCore.Utils
         public void StartPreparingMessage ()
         {
             if (MessagePreparationState != MessagePreparationStatus.NotStarted) {
+                Log.Info (Log.LOG_UI, "MessageComposer StartPreparingMessage return early because in {0} state", MessagePreparationState);
                 return;
             }
+            Log.Info (Log.LOG_UI, "MessageComposer StartPreparingMessage()");
             if (RelatedThread != null) {
                 RelatedMessage = RelatedThread.FirstMessageSpecialCase ();
             }
@@ -209,6 +211,7 @@ namespace NachoCore.Utils
 
         private void PrepareNewMessage ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposer PrepareNewMessage()");
             // For a new message, we need to first save it to the database so we have an Id
             // that will be referenced by the bundle, attachments, etc.
             if (RelatedThread != null) {
@@ -250,6 +253,7 @@ namespace NachoCore.Utils
 
         private void PrepareSavedMessage ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposer PrepareSavedMessage()");
             // This is essentially a draft message, so there's no need to do anything
             // but load & display the contents that were saved.
             if (Bundle.NeedsUpdate) {
@@ -264,6 +268,7 @@ namespace NachoCore.Utils
 
         private void CopyAttachments (List<McAttachment> attachments)
         {
+            Log.Info (Log.LOG_UI, "MessageComposer CopyAttachments()");
             foreach (var attachment in attachments) {
                 CopyAttachment (attachment);
             }
@@ -276,6 +281,7 @@ namespace NachoCore.Utils
 
         private void DownloadRelatedMessage ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposer DownloadRelatedMessage()");
             if (RelatedMessage.BodyId == 0) {
                 var body = McBody.InsertPlaceholder (RelatedMessage.AccountId);
                 RelatedMessage = RelatedMessage.UpdateWithOCApply<McEmailMessage> ((McAbstrObject record) => {
@@ -290,7 +296,9 @@ namespace NachoCore.Utils
                 RelatedMessageDownloader.Delegate = this;
                 RelatedMessageDownloader.Bundle = relatedBundle;
                 RelatedMessageDownloader.Download (RelatedMessage);
+                Log.Info (Log.LOG_UI, "MessageComposer DownloadRelatedMessage() starting downloader");
             } else {
+                Log.Info (Log.LOG_UI, "MessageComposer DownloadRelatedMessage() already ready to go");
                 PrepareMessageBodyUsingRelatedBundle (relatedBundle);
             }
         }
@@ -300,6 +308,7 @@ namespace NachoCore.Utils
             if (downloader == MainMessageDownloader) {
                 FinishPreparingMessage ();
             } else if (downloader == RelatedMessageDownloader) {
+                Log.Info (Log.LOG_UI, "MessageComposer related message download complete");
                 PrepareMessageBodyUsingRelatedBundle (downloader.Bundle);
             } else {
                 NcAssert.CaseError ();
@@ -311,6 +320,7 @@ namespace NachoCore.Utils
             if (downloader == MainMessageDownloader) {
                 Delegate.MessageComposerDidFailToLoadMessage (this);
             } else if (downloader == RelatedMessageDownloader) {
+                Log.Info (Log.LOG_UI, "MessageComposer related message download failed");
                 FinishPreparingMessage ();
             } else {
                 NcAssert.CaseError ();
@@ -319,6 +329,7 @@ namespace NachoCore.Utils
 
         void PrepareMessageBodyUsingRelatedBundle (NcEmailMessageBundle relatedBundle)
         {
+            Log.Info (Log.LOG_UI, "MessageComposer PrepareMessageBodyUsingRelatedBundle()");
             NcTask.Run (() => {
                 var doc = new HtmlDocument ();
                 doc.LoadHtml (relatedBundle.FullHtml);
@@ -477,6 +488,7 @@ namespace NachoCore.Utils
 
         protected virtual void PrepareMessageBody ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposer PrepareMessageBody()");
             NcTask.Run (() => {
                 var htmlDoc = Bundle.TemplateHtmlDocument ();
                 InsertInitialHtml (htmlDoc);
@@ -489,6 +501,7 @@ namespace NachoCore.Utils
 
         protected virtual void FinishPreparingMessage ()
         {
+            Log.Info (Log.LOG_UI, "MessageComposer FinishPreparingMessage()");
             MessagePreparationState = MessagePreparationStatus.Done;
             if (Delegate != null) {
                 Delegate.MessageComposerDidCompletePreparation (this);
