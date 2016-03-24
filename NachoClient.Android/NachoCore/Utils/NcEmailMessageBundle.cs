@@ -331,8 +331,8 @@ namespace NachoCore.Utils
 
         public MemberInfo MemberForEntryName (string entryName)
         {
-            var entry = Manifest.Entries [entryName];
-            if (entry != null) {
+            BundleManifest.Entry entry = null;
+            if (Manifest.Entries.TryGetValue (entryName, out entry)) {
                 var reader = Storage.BinaryReaderForPath (entry.Path);
                 return new MemberInfo (Path.GetFileName (entry.Path), entry.ContentType, reader);
             }

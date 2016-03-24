@@ -171,9 +171,13 @@ namespace NachoCore.IMAP
         {
             BodyPart imapBody = null;
             if (!string.IsNullOrEmpty (email.ImapBodyStructure)) {
-                if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
-                    Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure");
-                    return null;
+                try {
+                    if (!BodyPart.TryParse (email.ImapBodyStructure, out imapBody)) {
+                        Log.Error (Log.LOG_IMAP, "Couldn't reconstitute ImapBodyStructure");
+                        return null;
+                    }
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_IMAP, "Could not parse BodyPart from ImapBodyStructure: {0}\n{1}", email.ImapBodyStructure, ex);
                 }
             }
             List<FetchKit.DownloadPart> Parts = null;

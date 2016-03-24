@@ -285,6 +285,9 @@ namespace NachoClient.AndroidClient
 
         void PickAttachment ()
         {
+
+            Save (() => {});
+
             InputMethodManager imm = (InputMethodManager)Activity.GetSystemService (Activity.InputMethodService);
             imm.HideSoftInputFromWindow (View.WindowToken, HideSoftInputFlags.NotAlways);
 
