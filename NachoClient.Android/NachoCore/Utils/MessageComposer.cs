@@ -545,6 +545,10 @@ namespace NachoCore.Utils
         {
             if (Message.BodyId != 0) {
                 Body = McBody.QueryById<McBody> (Message.BodyId);
+            } else {
+                Body = null;
+            }
+            if (Body != null) {
                 Body.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
                 Body.UpdateData ((FileStream stream) => {
                     Mime.WriteTo (stream);
