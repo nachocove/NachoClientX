@@ -274,10 +274,15 @@ namespace NachoCore.Utils
             });
         }
 
+        static bool ReadyToLog ()
+        {
+            return NachoCore.Model.NcModel.IsInitialized && Telemetry.Initialized;
+        }
+
         private void _TryLog (int threadId, ulong subsystem, LogLevelSettings settings, TelemetryEventType teleType,
                               string fmt, string level, LogElement.LevelEnum queueLevel, params object[] list)
         {
-            if (NachoCore.Model.NcModel.IsInitialized) {
+            if (ReadyToLog ()) {
                 _Log (threadId, subsystem, settings, teleType, fmt, level, list);
             } else {
                 QueueLog (threadId, subsystem, queueLevel, String.Format (fmt, list));
