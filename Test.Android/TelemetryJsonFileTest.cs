@@ -7,6 +7,7 @@ using NUnit.Framework;
 using Newtonsoft.Json;
 using NachoCore;
 using NachoCore.Utils;
+using System.Text;
 
 namespace Test.Common
 {
@@ -430,9 +431,9 @@ namespace Test.Common
         }
 
         [Test]
-        public void TestTelemetryJsonFileTableError ()
+        public void TestTelemetryJsonFileError ()
         {
-            // Manually an invalid JSON file and tries to instiante a JSON file table from it.
+            // Manually an invalid JSON file and tries to instantiate a JSON file from it.
             var filePath = Path.Combine (NcApplication.GetDataDirPath (), "log");
             var jsonEvent = new TelemetryLogEvent (TelemetryEventType.INFO) {
                 thread_id = 1,
@@ -440,11 +441,53 @@ namespace Test.Common
                 timestamp = "INVALID",
             };
             var json = JsonConvert.SerializeObject (jsonEvent);
-            File.WriteAllText (filePath, json);
+            using (var file = File.Open (filePath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite)) {
+                var bytes = Encoding.UTF8.GetBytes (JsonConvert.SerializeObject (jsonEvent) + "\n");
+                file.Write (bytes, 0, bytes.Length);
+            }
 
             Assert.True (File.Exists (filePath));
-            FileTable = new WrappedTelemetryJsonFileTable ();
-            Assert.False (File.Exists (filePath));
+            var jsonFile = new Telemetry.TelemetryJsonFile (filePath);
+            Assert.AreEqual (DateTime.MinValue, jsonFile.FirstTimestamp);
+            Assert.AreEqual (DateTime.MinValue, jsonFile.LatestTimestamp);
+            Assert.AreEqual (0, jsonFile.NumberOfEntries);
+            jsonFile.Close ();
+            File.Delete (filePath);
+
+            DateTime first;
+            DateTime last;
+            using (var file = File.Open (filePath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite)) {
+                first = DateTime.UtcNow;
+                jsonEvent = new TelemetryLogEvent (TelemetryEventType.INFO) {
+                    thread_id = 1,
+                    message = "Some message",
+                    timestamp = TelemetryJsonEvent.AwsDateTime (first),
+                };
+                var bytes = Encoding.UTF8.GetBytes (JsonConvert.SerializeObject (jsonEvent) + "\n");
+                file.Write (bytes, 0, bytes.Length);
+
+                jsonEvent = new TelemetryLogEvent (TelemetryEventType.INFO) {
+                    thread_id = 1,
+                    message = "This event has an invalid timestamp",
+                    timestamp = "INVALID",
+                };
+                bytes = Encoding.UTF8.GetBytes (JsonConvert.SerializeObject (jsonEvent) + "\n");
+                file.Write (bytes, 0, bytes.Length);
+
+                last = DateTime.UtcNow;
+                jsonEvent = new TelemetryLogEvent (TelemetryEventType.INFO) {
+                    thread_id = 1,
+                    message = "Some other message",
+                    timestamp = TelemetryJsonEvent.AwsDateTime (last),
+                };
+                bytes = Encoding.UTF8.GetBytes (JsonConvert.SerializeObject (jsonEvent) + "\n");
+                file.Write (bytes, 0, bytes.Length);
+            }
+            jsonFile = new Telemetry.TelemetryJsonFile (filePath);
+            Assert.AreEqual (first.ToString (), jsonFile.FirstTimestamp.ToString ());
+            Assert.AreEqual (last.ToString (), jsonFile.LatestTimestamp.ToString ());
+            Assert.AreEqual (2, jsonFile.NumberOfEntries);
+            jsonFile.Close ();
         }
     }
 }

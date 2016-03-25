@@ -36,7 +36,7 @@ namespace NachoCore.Utils
 
             public DateTime FirstTimestamp {
                 get {
-                    InitState ();
+                    Initialize ();
                     return _FirstTimestamp;
                 }
             }
@@ -45,7 +45,7 @@ namespace NachoCore.Utils
 
             public DateTime LatestTimestamp {
                 get {
-                    InitState ();
+                    Initialize ();
                     return _LatestTimestamp;
                 }
             }
@@ -54,7 +54,7 @@ namespace NachoCore.Utils
 
             public int NumberOfEntries {
                 get {
-                    InitState ();
+                    Initialize ();
                     return _NumberOfEntries;
                 }
             }
@@ -64,7 +64,7 @@ namespace NachoCore.Utils
             // Analysis disable once MemberHidesStaticFromOuterClass
             bool Initialized;
 
-            void InitState ()
+            void Initialize ()
             {
                 if (!Initialized) {
                     lock (InitLockObj) {
@@ -76,18 +76,23 @@ namespace NachoCore.Utils
                                 // Open the JSON file for read and count how many entries. Also, extract the time stamp
                                 var tmpFile = File.Open (FilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                                 using (var reader = new StreamReader (tmpFile)) {
-                                    string lastLine = null;
-                                    var line = reader.ReadLine ();
-                                    while (!String.IsNullOrEmpty (line)) {
-                                        if (0 == _NumberOfEntries) {
-                                            _FirstTimestamp = ExtractTimestamp (line);
+                                    string line;
+                                    while ((line = reader.ReadLine ()) != null) {
+                                        if (String.IsNullOrEmpty (line)) {
+                                            continue;
                                         }
+                                        DateTime lastDateTime;
+                                        try {
+                                            lastDateTime = ExtractTimestamp (line);
+                                        } catch (FormatException ex) {
+                                            Console.WriteLine ("Bad timestamp in file: {0}", line);
+                                            continue;
+                                        }
+                                        if (0 == _NumberOfEntries) {
+                                            _FirstTimestamp = lastDateTime;
+                                        }
+                                        _LatestTimestamp = lastDateTime;
                                         _NumberOfEntries += 1;
-                                        lastLine = line;
-                                        line = reader.ReadLine ();
-                                    }
-                                    if (null != lastLine) {
-                                        _LatestTimestamp = ExtractTimestamp (lastLine);
                                     }
                                 }
                                 tmpFile.Close ();
@@ -117,7 +122,7 @@ namespace NachoCore.Utils
             public bool Add (TelemetryJsonEvent jsonEvent)
             {
                 lock (LockObj) {
-                    InitState ();
+                    Initialize ();
                     if (null == jsonEvent) {
                         return false;
                     }
