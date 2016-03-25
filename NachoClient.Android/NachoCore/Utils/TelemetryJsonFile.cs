@@ -50,7 +50,7 @@ namespace NachoCore.Utils
                 }
             }
 
-            int _NumberOfEntries = -1;
+            int _NumberOfEntries;
 
             public int NumberOfEntries {
                 get {
