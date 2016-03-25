@@ -31,6 +31,7 @@ namespace NachoCore.Utils
             LatestTimestamp = DateTime.MinValue;
 
             if (!File.Exists (FilePath)) {
+                // Analysis disable once BitwiseOperatorOnEnumWithoutFlags
                 JsonFile = File.Open (FilePath, FileMode.Create | FileMode.Append, FileAccess.Write);
             } else {
                 // Open the JSON file for read and count how many entries. Also, extract the time stamp
@@ -107,10 +108,9 @@ namespace NachoCore.Utils
                 if (!Directory.Exists (dirName)) {
                     Console.WriteLine ("TelemetryJsonFile parent dir {0} has disappeared", dirName);
                 } else {
-                    DirectoryInfo d = new DirectoryInfo(dirName);
-                    FileInfo[] Files = d.GetFiles();
-                    foreach(FileInfo file in Files)
-                    {
+                    DirectoryInfo d = new DirectoryInfo (dirName);
+                    FileInfo[] Files = d.GetFiles ();
+                    foreach (FileInfo file in Files) {
                         Console.WriteLine ("File in {0}: {1} size {2}", dirName, file.Name, file.Length);
                     }
                 }
@@ -191,7 +191,7 @@ namespace NachoCore.Utils
 
         protected static TelemetryEventClass GetEventClass (string eventType)
         {
-            TelemetryEventClass eventClass = TelemetryEventClass.None;
+            TelemetryEventClass eventClass;
             switch (eventType) {
             case TelemetryLogEvent.ERROR:
             case TelemetryLogEvent.WARN:
