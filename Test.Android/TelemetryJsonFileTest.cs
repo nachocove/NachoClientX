@@ -10,18 +10,18 @@ using NachoCore.Utils;
 
 namespace Test.Common
 {
-    public class WrappedTelemetryJsonFileTable : TelemetryJsonFileTable
+    public class WrappedTelemetryJsonFileTable : Telemetry.TelemetryJsonFileTable
     {
         public static DateTime UtcNow;
 
-        public Dictionary<TelemetryEventClass, TelemetryJsonFile> GetWriteFiles ()
+        public Dictionary<Telemetry.TelemetryEventClass, Telemetry.TelemetryJsonFile> GetWriteFiles ()
         {
             return WriteFiles;
         }
 
-        public TelemetryJsonFile GetWriteFile (TelemetryEventClass eventClass)
+        public Telemetry.TelemetryJsonFile GetWriteFile (Telemetry.TelemetryEventClass eventClass)
         {
-            TelemetryJsonFile jsonFile;
+            Telemetry.TelemetryJsonFile jsonFile;
             if (WriteFiles.TryGetValue (eventClass, out jsonFile)) {
                 return jsonFile;
             }
@@ -33,11 +33,6 @@ namespace Test.Common
             return ReadFiles;
         }
 
-        public new static TelemetryEventClass GetEventClass (string eventType)
-        {
-            return TelemetryJsonFileTable.GetEventClass (eventType);
-        }
-
         protected static DateTime MockGetUtcNow ()
         {
             return UtcNow;
@@ -46,9 +41,9 @@ namespace Test.Common
         public static void SetMockUtcNow (bool doMock)
         {
             if (doMock) {
-                TelemetryJsonFileTable.GetNowUtc = MockGetUtcNow;
+                Telemetry.TelemetryJsonFileTable.GetNowUtc = MockGetUtcNow;
             } else {
-                TelemetryJsonFileTable.GetNowUtc = DefaultGetUtcNow;
+                Telemetry.TelemetryJsonFileTable.GetNowUtc = DefaultGetUtcNow;
             }
         }
     }
@@ -65,7 +60,7 @@ namespace Test.Common
         {
             // Delete all JSON files
             var files = Directory.GetFiles (NcApplication.GetDataDirPath ());
-            foreach (var eventClass in TelemetryJsonFileTable.AllEventClasses()) {
+            foreach (var eventClass in Telemetry.TelemetryJsonFileTable.AllEventClasses) {
                 var eventClassString = eventClass.ToString ().ToLowerInvariant ();
                 foreach (var file in files) {
                     if (file.Contains (eventClassString)) {
@@ -79,8 +74,8 @@ namespace Test.Common
         [SetUp]
         public void Setup ()
         {
-            OriginalMaxEvents = TelemetryJsonFileTable.MAX_EVENTS;
-            OriginalMaxDuration = TelemetryJsonFileTable.MAX_DURATION;
+            OriginalMaxEvents = Telemetry.TelemetryJsonFileTable.MAX_EVENTS;
+            OriginalMaxDuration = Telemetry.TelemetryJsonFileTable.MAX_DURATION;
 
             DeleteFiles ();
             WrappedTelemetryJsonFileTable.SetMockUtcNow (true);
@@ -89,8 +84,8 @@ namespace Test.Common
         [TearDown]
         public void Teardown ()
         {
-            TelemetryJsonFileTable.MAX_EVENTS = OriginalMaxEvents;
-            TelemetryJsonFileTable.MAX_DURATION = OriginalMaxDuration;
+            Telemetry.TelemetryJsonFileTable.MAX_EVENTS = OriginalMaxEvents;
+            Telemetry.TelemetryJsonFileTable.MAX_DURATION = OriginalMaxDuration;
 
             DeleteFiles ();
             if (null != FileTable) {
@@ -122,7 +117,7 @@ namespace Test.Common
             var filePath = Path.Combine (NcApplication.GetDataDirPath (), "log");
 
             // Create the file. Check it is in the expected initial state with nothing
-            var jsonFile = new TelemetryJsonFile (filePath);
+            var jsonFile = new Telemetry.TelemetryJsonFile (filePath);
             Assert.AreEqual (DateTime.MinValue, jsonFile.FirstTimestamp);
             Assert.AreEqual (DateTime.MinValue, jsonFile.LatestTimestamp);
             Assert.AreEqual (0, jsonFile.NumberOfEntries);
@@ -163,7 +158,7 @@ namespace Test.Common
 
             // Close the file and re-open it. Make sure the timestamp and # entries are correct
             jsonFile.Close ();
-            jsonFile = new TelemetryJsonFile (filePath);
+            jsonFile = new Telemetry.TelemetryJsonFile (filePath);
             Assert.AreEqual (TimestampTicks (event1.timestamp), jsonFile.FirstTimestamp.Ticks);
             Assert.AreEqual (TimestampTicks (event3.timestamp), jsonFile.LatestTimestamp.Ticks);
             Assert.AreEqual (3, jsonFile.NumberOfEntries);
@@ -193,7 +188,7 @@ namespace Test.Common
             Assert.True (added);
 
             var writeFiles = FileTable.GetWriteFiles ();
-            TelemetryJsonFile jsonFile;
+            Telemetry.TelemetryJsonFile jsonFile;
             bool found = writeFiles.TryGetValue (WrappedTelemetryJsonFileTable.GetEventClass (jsonEvent.event_type), out jsonFile);
             Assert.AreEqual (shouldAdd, found);
             if (shouldAdd) {
@@ -201,7 +196,7 @@ namespace Test.Common
             }
         }
 
-        protected void CheckJsonFile (TelemetryJsonFile jsonFile, int numEntries, TelemetryJsonEvent jsonEvent)
+        protected void CheckJsonFile (Telemetry.TelemetryJsonFile jsonFile, int numEntries, TelemetryJsonEvent jsonEvent)
         {
             Assert.AreEqual (numEntries, jsonFile.NumberOfEntries);
             if (1 == numEntries) {
@@ -228,7 +223,7 @@ namespace Test.Common
             FileTable = new WrappedTelemetryJsonFileTable ();
             CheckWriteFilesCount (0);
             CheckReadFilesCount (0);
-            TelemetryJsonFileTable.MAX_DURATION = long.MaxValue; // disable duration check temporarily
+            Telemetry.TelemetryJsonFileTable.MAX_DURATION = long.MaxValue; // disable duration check temporarily
 
             // Add a log event. This should create the log file
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 1, 2, 3, 456);
@@ -318,7 +313,7 @@ namespace Test.Common
             CheckReadFilesCount (6);
 
             // Check all read files
-            string[] expectedReadFiles = new string[] {
+            string[] expectedReadFiles = new [] {
                 "20150526010203456.20150526125500101.log",
                 "20150526020203456.20150526020203456.ui",
                 "20150526030000001.20150526030000001.protocol",
@@ -368,7 +363,7 @@ namespace Test.Common
             Assert.True (added);
             CheckReadFilesCount (0);
             CheckWriteFilesCount (1);
-            Assert.AreEqual (1, FileTable.GetWriteFile (TelemetryEventClass.Log).NumberOfEntries);
+            Assert.AreEqual (1, FileTable.GetWriteFile (Telemetry.TelemetryEventClass.Log).NumberOfEntries);
 
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 2, 0, 0, DateTimeKind.Utc);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
@@ -379,7 +374,7 @@ namespace Test.Common
             Assert.True (added);
             CheckReadFilesCount (0);
             CheckWriteFilesCount (1);
-            Assert.AreEqual (2, FileTable.GetWriteFile (TelemetryEventClass.Log).NumberOfEntries);
+            Assert.AreEqual (2, FileTable.GetWriteFile (Telemetry.TelemetryEventClass.Log).NumberOfEntries);
 
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 3, 0, 0);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
@@ -390,7 +385,7 @@ namespace Test.Common
             Assert.True (added);
             CheckReadFilesCount (0);
             CheckWriteFilesCount (1);
-            Assert.AreEqual (3, FileTable.GetWriteFile (TelemetryEventClass.Log).NumberOfEntries);
+            Assert.AreEqual (3, FileTable.GetWriteFile (Telemetry.TelemetryEventClass.Log).NumberOfEntries);
 
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 4, 0, 0);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
@@ -409,7 +404,7 @@ namespace Test.Common
             CheckReadFilesCount (0);
             CheckWriteFilesCount (0);
 
-            TelemetryJsonFileTable.MAX_DURATION = 5 * TimeSpan.TicksPerMinute;
+            Telemetry.TelemetryJsonFileTable.MAX_DURATION = 5 * TimeSpan.TicksPerMinute;
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 5, 0, 0);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
                 timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
@@ -419,7 +414,7 @@ namespace Test.Common
             Assert.True (added);
             CheckReadFilesCount (0);
             CheckWriteFilesCount (1);
-            Assert.AreEqual (1, FileTable.GetWriteFile (TelemetryEventClass.Log).NumberOfEntries);
+            Assert.AreEqual (1, FileTable.GetWriteFile (Telemetry.TelemetryEventClass.Log).NumberOfEntries);
 
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 10, 0, 1);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {

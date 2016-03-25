@@ -84,6 +84,58 @@ namespace NachoCore.Utils
                 return Path.Combine (dirName, newFileName);
             }
 
+            /// <summary>
+            /// Map the eventType into an TelemetryEventClass
+            /// </summary>
+            /// <returns>The TelemetryEventClass</returns>
+            /// <param name="eventType">Event type.</param>
+            public static TelemetryEventClass GetEventClass (string eventType)
+            {
+                TelemetryEventClass eventClass;
+                switch (eventType) {
+                case TelemetryLogEvent.ERROR:
+                case TelemetryLogEvent.WARN:
+                case TelemetryLogEvent.INFO:
+                case TelemetryLogEvent.DEBUG:
+                    eventClass = TelemetryEventClass.Log;
+                    break;
+                case TelemetryProtocolEvent.WBXML_REQUEST:
+                case TelemetryProtocolEvent.WBXML_RESPONSE:
+                case TelemetryProtocolEvent.IMAP_REQUEST:
+                case TelemetryProtocolEvent.IMAP_RESPONSE:
+                    eventClass = TelemetryEventClass.Protocol;
+                    break;
+                case TelemetryUiEvent.UI:
+                    eventClass = TelemetryEventClass.Ui;
+                    break;
+                case TelemetrySupportEvent.SUPPORT:
+                    eventClass = TelemetryEventClass.Support;
+                    break;
+                case TelemetrySamplesEvent.SAMPLES:
+                    eventClass = TelemetryEventClass.Samples;
+                    break;
+                case TelemetryStatistics2Event.STATISTICS2:
+                    eventClass = TelemetryEventClass.Statistics2;
+                    break;
+                case TelemetryDistributionEvent.DISTRIBUTION:
+                    eventClass = TelemetryEventClass.Distribution;
+                    break;
+                case TelemetryCounterEvent.COUNTER:
+                    eventClass = TelemetryEventClass.Counter;
+                    break;
+                case TelemetryTimeSeriesEvent.TIME_SERIES:
+                    eventClass = TelemetryEventClass.Time_Series;
+                    break;
+                case TelemetrySupportRequestEvent.SUPPORT_REQUEST:
+                    eventClass = TelemetryEventClass.Support_Request;
+                    break;
+                default:
+                    var msg = String.Format ("GetEventClass: unknown type {0}", eventType);
+                    throw new NcAssert.NachoDefaultCaseFailure (msg);
+                }
+                return eventClass;
+            }
+
             #endregion
 
             public void Initialize ()
@@ -102,7 +154,7 @@ namespace NachoCore.Utils
             ///     No new read file for a given event class can be created until the existing one is deleted. The
             ///     read file is piped into a GZIP stream to convert to a gzip file during the upload.
             /// </summary>
-            TelemetryJsonFileTable ()
+            protected TelemetryJsonFileTable ()
             {
                 WriteFiles = new Dictionary<TelemetryEventClass, TelemetryJsonFile> ();
                 ReadFiles = new SortedSet<string> ();
@@ -149,58 +201,6 @@ namespace NachoCore.Utils
             protected string GetFilePath (TelemetryEventClass eventClass)
             {
                 return Path.Combine (NcApplication.GetDataDirPath (), eventClass.ToString ().ToLowerInvariant ());
-            }
-
-            /// <summary>
-            /// Map the eventType into an TelemetryEventClass
-            /// </summary>
-            /// <returns>The TelemetryEventClass</returns>
-            /// <param name="eventType">Event type.</param>
-            protected TelemetryEventClass GetEventClass (string eventType)
-            {
-                TelemetryEventClass eventClass;
-                switch (eventType) {
-                case TelemetryLogEvent.ERROR:
-                case TelemetryLogEvent.WARN:
-                case TelemetryLogEvent.INFO:
-                case TelemetryLogEvent.DEBUG:
-                    eventClass = TelemetryEventClass.Log;
-                    break;
-                case TelemetryProtocolEvent.WBXML_REQUEST:
-                case TelemetryProtocolEvent.WBXML_RESPONSE:
-                case TelemetryProtocolEvent.IMAP_REQUEST:
-                case TelemetryProtocolEvent.IMAP_RESPONSE:
-                    eventClass = TelemetryEventClass.Protocol;
-                    break;
-                case TelemetryUiEvent.UI:
-                    eventClass = TelemetryEventClass.Ui;
-                    break;
-                case TelemetrySupportEvent.SUPPORT:
-                    eventClass = TelemetryEventClass.Support;
-                    break;
-                case TelemetrySamplesEvent.SAMPLES:
-                    eventClass = TelemetryEventClass.Samples;
-                    break;
-                case TelemetryStatistics2Event.STATISTICS2:
-                    eventClass = TelemetryEventClass.Statistics2;
-                    break;
-                case TelemetryDistributionEvent.DISTRIBUTION:
-                    eventClass = TelemetryEventClass.Distribution;
-                    break;
-                case TelemetryCounterEvent.COUNTER:
-                    eventClass = TelemetryEventClass.Counter;
-                    break;
-                case TelemetryTimeSeriesEvent.TIME_SERIES:
-                    eventClass = TelemetryEventClass.Time_Series;
-                    break;
-                case TelemetrySupportRequestEvent.SUPPORT_REQUEST:
-                    eventClass = TelemetryEventClass.Support_Request;
-                    break;
-                default:
-                    var msg = String.Format ("GetEventClass: unknown type {0}", eventType);
-                    throw new NcAssert.NachoDefaultCaseFailure (msg);
-                }
-                return eventClass;
             }
 
             /// <summary>
