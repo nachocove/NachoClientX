@@ -48,7 +48,7 @@ namespace Test.Common
         }
     }
 
-    public class TelemetryJsonFileTest
+    public class TelemetryJsonFileTest : NcTestBase
     {
         protected WrappedTelemetryJsonFileTable FileTable;
 
