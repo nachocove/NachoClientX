@@ -63,6 +63,16 @@ namespace NachoCore
         /// <value>The cred epoch.</value>
         private int SavedCredEpoch;
 
+        /// <summary>
+        /// The command name
+        /// </summary>
+        protected string CmdName;
+
+        /// <summary>
+        /// The command name with account Id
+        /// </summary>
+        protected string CmdNameWithAccount;
+
         public bool DelayNotAllowed { get; set; }
 
         protected enum ResolveAction
@@ -79,8 +89,10 @@ namespace NachoCore
             PendingList = new List<McPending> ();
             PendingResolveLockObj = new object ();
             InternalCts = new CancellationTokenSource ();
-            Cts = CancellationTokenSource.CreateLinkedTokenSource (InternalCts.Token, BEContext.ProtoControl.Cts.Token);
+            Cts = CancellationTokenSource.CreateLinkedTokenSource (InternalCts.Token, BEContext.ProtoControl.Cts.Token, NcTask.Cts.Token);
             SavedCredEpoch = BEContext.Cred.Epoch;
+            CmdName = GetType ().Name;
+            CmdNameWithAccount = string.Format ("{0}{{{1}}}", CmdName, AccountId);
         }
 
         /// <summary>
@@ -102,7 +114,11 @@ namespace NachoCore
 
         public virtual void Cancel ()
         {
-            InternalCts.Cancel ();
+            try {
+                InternalCts.Cancel ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_BACKEND, "NcCommand/{0}.Cancel() exception: {1}", CmdNameWithAccount, ex);
+            }
         }
 
         // TODO - should these be in the interface?
@@ -123,7 +139,7 @@ namespace NachoCore
                 ConsolidatePending ();
                 foreach (var pending in PendingList) {
                     if (pending.State != McPending.StateEnum.Dispatched) {
-                        Log.Error (Log.LOG_BACKEND, "ResolveAllDeferred: Ignoring non-Dispatched pending {0} in state {1}", pending, pending.State);
+                        Log.Error (Log.LOG_BACKEND, "NcCommand/ResolveAllDeferred: Ignoring non-Dispatched pending {0} in state {1}", pending, pending.State);
                         continue;
                     }
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
@@ -179,7 +195,7 @@ namespace NachoCore
             }
         }
 
-        public static Event TryLock (object lockObj, int timeout, Func<Event> func = null)
+        public Event TryLock (object lockObj, int timeout, Func<Event> func = null)
         {
             if (Monitor.TryEnter (lockObj, timeout)) {
                 try {
@@ -192,7 +208,7 @@ namespace NachoCore
                     Monitor.Exit (lockObj);
                 }
             } else {
-                throw new CommandLockTimeOutException (string.Format ("Could not acquire lock object after {0:n0}ms", timeout));
+                throw new CommandLockTimeOutException (string.Format ("{0}: Could not acquire lock object after {1:n0}ms", CmdNameWithAccount, timeout));
             }
         }
 

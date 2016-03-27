@@ -17,12 +17,10 @@ namespace NachoCore.SFDC
         protected const int KDefaultTimeout = 2;
         protected const int KMaxRetries = 3;
 
-        protected string CmdName;
         protected NcStateMachine OwnerSm;
         protected int Attempt { get; set; }
         public SFDCCommand (IBEContext beContext) : base (beContext)
         {
-            CmdName = GetType ().Name;
             OwnerSm = null;
         }
 
@@ -126,7 +124,7 @@ namespace NachoCore.SFDC
                 }
                 Finish (evt, false);
             } catch (Exception ex) {
-                Log.Error (Log.LOG_SFDC, "{0}: Could not process json: {1}", CmdName, ex);
+                Log.Error (Log.LOG_SFDC, "{0}: Could not process json: {1}", CmdNameWithAccount, ex);
                 Finish (Event.Create ((uint)SmEvt.E.HardFail, "SFDCVERSUNKERROR"), true);
             }
         }
@@ -156,13 +154,13 @@ namespace NachoCore.SFDC
 
                     default:
                         var message = error.SelectToken ("message");
-                        Log.Error (Log.LOG_SFDC, "{0}: unknown error code: {1}: {2}", CmdName, code, null != message ? (string)message : "UNKNOWN");
+                        Log.Error (Log.LOG_SFDC, "{0}: unknown error code: {1}: {2}", CmdNameWithAccount, code, null != message ? (string)message : "UNKNOWN");
                         return Event.Create ((uint)SmEvt.E.HardFail, "SFDCUNKERROR");
                     }
                 }
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCNOERROR");
             } catch (JsonReaderException) {
-                Log.Warn (Log.LOG_SFDC, "{0}: Could not process json response: {1}", CmdName, jsonResponse);
+                Log.Warn (Log.LOG_SFDC, "{0}: Could not process json response: {1}", CmdNameWithAccount, jsonResponse);
                 return Event.Create ((uint)SmEvt.E.HardFail, "SFDCNOJSON");
             }
         }
@@ -175,7 +173,7 @@ namespace NachoCore.SFDC
         protected virtual void ErrorAction (Exception ex, CancellationToken cToken)
         {
             if (ex != null) {
-                Log.Info (Log.LOG_SFDC, "Request {0} failed: {1}", CmdName, ex.Message);
+                Log.Info (Log.LOG_SFDC, "Request {0} failed: {1}", CmdNameWithAccount, ex.Message);
             }
 
             Event evt;
@@ -208,7 +206,7 @@ namespace NachoCore.SFDC
             // before we do anything, make sure we aren't cancelled. We don't want to process
             // anything or move the SM to a new state if we're cancelled.
             if (Cts.Token.IsCancellationRequested) {
-                Log.Info (Log.LOG_SFDC, "{0}({1}): Cancelled", CmdName, AccountId);
+                Log.Info (Log.LOG_SFDC, "{0}({1}): Cancelled", CmdNameWithAccount, AccountId);
                 return;
             }
             ReportCommResult (serverFailedGenerally);
