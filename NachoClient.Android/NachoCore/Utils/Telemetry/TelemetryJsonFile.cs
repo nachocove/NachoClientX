@@ -64,7 +64,7 @@ namespace NachoCore.Utils
             // Analysis disable once MemberHidesStaticFromOuterClass
             bool Initialized;
 
-            void Initialize ()
+            public void Initialize ()
             {
                 if (!Initialized) {
                     lock (InitLockObj) {

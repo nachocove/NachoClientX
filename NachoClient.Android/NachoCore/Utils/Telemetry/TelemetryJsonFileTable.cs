@@ -140,6 +140,12 @@ namespace NachoCore.Utils
 
             #endregion
 
+            protected Dictionary<TelemetryEventClass, TelemetryJsonFile> WriteFiles;
+            protected SortedSet<string> ReadFiles;
+            protected Dictionary<string, Action> PendingCallbacks;
+            protected object WriteFilesLockObj = new object ();
+            protected object ReadFilesLockObj = new object ();
+
             public void Initialize ()
             {
                 // does nothing. Just a handy method to call on the instance to CREATE the shared instance
@@ -183,31 +189,36 @@ namespace NachoCore.Utils
             /// </remarks>
             void InitWriteFiles ()
             {
-                foreach (var eventClass in AllEventClasses) {
-                    var filePath = GetFilePath (eventClass);
-                    if (File.Exists (filePath)) {
-                        TelemetryJsonFile jsonFile = null;
-                        jsonFile = new TelemetryJsonFile (filePath);
-                        WriteFiles.Add (eventClass, jsonFile);
+                lock (WriteFilesLockObj) {
+                    foreach (var eventClass in AllEventClasses) {
+                        // sometimes a Add() call (see below) can be hit before we're done here
+                        // specifically if the telemetry entry isn't a log entry (like a Support entry).
+                        // In that case, an entry for this WriteFile will already exist, and we don't need to initialize it.
+                        TelemetryJsonFile jsonFile;
+                        if (!WriteFiles.TryGetValue (eventClass, out jsonFile)) {
+                            var filePath = GetFilePath (eventClass);
+                            if (File.Exists (filePath)) {
+                                jsonFile = new TelemetryJsonFile (filePath);
+                                jsonFile.Initialize (); // we're presumably in a task, so take the extra second or so to initialize/read the file.
+                                WriteFiles.Add (eventClass, jsonFile);
+                            }
+                        }
                     }
+                    Initialized = true;
                 }
-                Initialized = true;
             }
 
             void InitReadFiles ()
             {
-                foreach (var eventClass in AllEventClasses) {
-                    var filePath = GetFilePath (eventClass);
-                    foreach (var readFilePath in GetReadFiles (filePath)) {
-                        ReadFiles.Add (readFilePath);
+                lock (ReadFilesLockObj) {
+                    foreach (var eventClass in AllEventClasses) {
+                        var filePath = GetFilePath (eventClass);
+                        foreach (var readFilePath in GetReadFiles (filePath)) {
+                            ReadFiles.Add (readFilePath);
+                        }
                     }
                 }
             }
-
-            protected Dictionary<TelemetryEventClass, TelemetryJsonFile> WriteFiles;
-            protected SortedSet<string> ReadFiles;
-            protected Dictionary<string, Action> PendingCallbacks;
-            protected object LockObj = new object ();
 
             /// <summary>
             /// Create a ile path based on the eventClass.
@@ -246,7 +257,7 @@ namespace NachoCore.Utils
 
             public bool Add (TelemetryJsonEvent jsonEvent)
             {
-                lock (LockObj) {
+                lock (WriteFilesLockObj) {
                     TelemetryJsonFile writeFile;
                     var eventClass = GetEventClass (jsonEvent.event_type);
                     if (!WriteFiles.TryGetValue (eventClass, out writeFile)) {
@@ -299,34 +310,36 @@ namespace NachoCore.Utils
 
             protected void Finalize (TelemetryEventClass eventClass, Action callback = null)
             {
-                lock (LockObj) {
-                    TelemetryJsonFile writeFile;
-                    if (!WriteFiles.TryGetValue (eventClass, out writeFile)) {
-                        return;
-                    }
-                    if (0 == writeFile.NumberOfEntries) {
-                        NcAssert.True (writeFile.FirstTimestamp == DateTime.MinValue);
-                        return;
-                    }
+                lock (WriteFilesLockObj) {
+                    lock (ReadFilesLockObj) {
+                        TelemetryJsonFile writeFile;
+                        if (!WriteFiles.TryGetValue (eventClass, out writeFile)) {
+                            return;
+                        }
+                        if (0 == writeFile.NumberOfEntries) {
+                            NcAssert.True (writeFile.FirstTimestamp == DateTime.MinValue);
+                            return;
+                        }
 
-                    NcAssert.True (File.Exists (writeFile.FilePath));
-                    NcAssert.True ((DateTime.MinValue != writeFile.FirstTimestamp) && (DateTime.MinValue != writeFile.LatestTimestamp));
-                    WriteFiles.Remove (eventClass);
-                    writeFile.Close ();
+                        NcAssert.True (File.Exists (writeFile.FilePath));
+                        NcAssert.True ((DateTime.MinValue != writeFile.FirstTimestamp) && (DateTime.MinValue != writeFile.LatestTimestamp));
+                        WriteFiles.Remove (eventClass);
+                        writeFile.Close ();
 
-                    var newFilePath = GetReadFilePath (writeFile.FilePath, writeFile.FirstTimestamp, writeFile.LatestTimestamp);
-                    File.Move (writeFile.FilePath, newFilePath);
+                        var newFilePath = GetReadFilePath (writeFile.FilePath, writeFile.FirstTimestamp, writeFile.LatestTimestamp);
+                        File.Move (writeFile.FilePath, newFilePath);
 
-                    ReadFiles.Add (newFilePath);
-                    if (null != callback) {
-                        PendingCallbacks.Add (newFilePath, callback);
+                        ReadFiles.Add (newFilePath);
+                        if (null != callback) {
+                            PendingCallbacks.Add (newFilePath, callback);
+                        }
                     }
                 }
             }
 
             public void FinalizeAll ()
             {
-                lock (LockObj) {
+                lock (WriteFilesLockObj) {
                     foreach (var eventClass in AllEventClasses) {
                         Finalize (eventClass);
                     }
@@ -335,7 +348,7 @@ namespace NachoCore.Utils
 
             public string GetNextReadFile ()
             {
-                lock (LockObj) {
+                lock (ReadFilesLockObj) {
                     if (0 == ReadFiles.Count) {
                         return null;
                     }
@@ -345,7 +358,7 @@ namespace NachoCore.Utils
 
             public void Remove (string path, out Action callback)
             {
-                lock (LockObj) {
+                lock (ReadFilesLockObj) {
                     callback = null;
                     try {
                         File.Delete (path);
