@@ -31,17 +31,7 @@ namespace NachoCore.Utils
     {
         private static bool Initialized = false;
 
-        private static AmazonDynamoDBClient Client;
         private static AmazonS3Client S3Client;
-        private static Table LogTable;
-        private static Table SupportTable;
-        private static Table CounterTable;
-        private static Table CaptureTable;
-        private static Table UiTable;
-        private static Table WbxmlTable;
-
-        private static int t2EventCount = -1;
-        private static int t2SupportEventCount = -1;
 
         private static string ClientId {
             get {
@@ -65,38 +55,26 @@ namespace NachoCore.Utils
 
         private bool FreshInstall;
 
-        public TelemetryBEAWS ()
-        {
-        }
-
         public void Initialize ()
         {
             // Clean up all leftover gzipped JSON files
-            foreach (var gzFilePath in Directory.EnumerateFiles (NcApplication.GetDataDirPath ())) {
-                if (gzFilePath.EndsWith (".gz")) {
-                    SafeFileDelete (gzFilePath);
-                }
+            foreach (var gzFilePath in Directory.GetFiles (NcApplication.GetDataDirPath (), "*.gz")) {
+                SafeFileDelete (gzFilePath);
             }
 
-            InitializeTables ();
+            var credentials = GetCognitoId ();
+            InitializeT3 (credentials);
         }
 
-        private void InitializeTables ()
+        TelemetryAWSCredentials GetCognitoId ()
         {
-            var config = new AmazonDynamoDBConfig ();
-            config.UseHttp = false;
-            config.AuthenticationRegion = "us-west-2";
-            config.ServiceURL = "https://dynamodb.us-west-2.amazonaws.com";
-            // Disable exponential backoff to implement our own linear backoff scheme.
-            config.MaxErrorRetry = 0;
-
             var credentials = new TelemetryAWSCredentials (
-                                  BuildInfo.AwsAccountId,
-                                  BuildInfo.AwsIdentityPoolId,
-                                  BuildInfo.AwsUnauthRoleArn,
-                                  BuildInfo.AwsAuthRoleArn,
-                                  RegionEndpoint.USEast1
-                              );
+                BuildInfo.AwsAccountId,
+                BuildInfo.AwsIdentityPoolId,
+                BuildInfo.AwsUnauthRoleArn,
+                BuildInfo.AwsAuthRoleArn,
+                RegionEndpoint.USEast1
+            );
 
             // We get a different Cognito id each time it runs because unauthenticated
             // identities (that we use) are anonymous. But doing so would mean it is
@@ -110,40 +88,15 @@ namespace NachoCore.Utils
                 });
                 FreshInstall = true;
             }
+            return credentials;
+        }
+
+        private void InitializeT3 (TelemetryAWSCredentials credentials)
+        {
                 
-            Retry (() => {
-                if (-1 == t2EventCount) {
-                    t2EventCount = McTelemetryEvent.QueryCount ();
-                }
-                if (-1 == t2SupportEventCount) {
-                    t2SupportEventCount = McTelemetrySupportEvent.QueryCount ();
-                }
-                if ((0 == t2EventCount) && (0 == t2SupportEventCount)) {
-                    // Do not iniitalize DynamoDB client and tables if teledb is empty. This allows
-                    // us to remove DynamoDB tables in AWS for dev and alpha projects.
-                    return;
-                }
-                Client = new AmazonDynamoDBClient (credentials, config);
-
-                LogTable = Table.LoadTableAsync (Client, TableName ("log"), NcTask.Cts.Token);
-                SupportTable = Table.LoadTableAsync (Client, TableName ("support"), NcTask.Cts.Token);
-                CounterTable = Table.LoadTableAsync (Client, TableName ("counter"), NcTask.Cts.Token);
-                CaptureTable = Table.LoadTableAsync (Client, TableName ("capture"), NcTask.Cts.Token);
-                UiTable = Table.LoadTableAsync (Client, TableName ("ui"), NcTask.Cts.Token);
-                WbxmlTable = Table.LoadTableAsync (Client, TableName ("wbxml"), NcTask.Cts.Token);
-            });
-
             Retry (() => {
                 S3Client = new AmazonS3Client (credentials, RegionEndpoint.USWest2);
             });
-        }
-
-        private void DisposeClient ()
-        {
-            if (null != Client) {
-                Client.Dispose ();
-                Client = null;
-            }
         }
 
         private void DisposeS3Client ()
@@ -162,9 +115,8 @@ namespace NachoCore.Utils
                     action ();
                     isDone = true;
                 } catch (Exception e) {
-                    if (!HandleAWSException (e, "AWS init", false)) {
+                    if (!HandleAWSException (e, "AWS init")) {
                         if (NcTask.Cts.Token.IsCancellationRequested) {
-                            DisposeClient ();
                             DisposeS3Client ();
                             NcTask.Cts.Token.ThrowIfCancellationRequested ();
                         }
@@ -176,70 +128,9 @@ namespace NachoCore.Utils
             }
         }
 
-        public void ReinitializeTables ()
-        {
-            DisposeClient ();
-            InitializeTables ();
-        }
-
         public string GetUserName ()
         {
             return ClientId;
-        }
-
-        public bool SendEvents (List<TelemetryEvent> tEvents)
-        {
-            var writeDict = new Dictionary<Table, DocumentBatchWrite> ();
-            foreach (var tEvent in tEvents) {
-                Table eventTable = null;
-                Document eventItem = null;
-
-                if (tEvent.IsLogEvent ()) {
-                    eventItem = LogEvent (tEvent);
-                    eventTable = LogTable;
-                } else if (tEvent.IsSupportEvent ()) {
-                    eventItem = SupportEvent (tEvent);
-                    eventTable = SupportTable;
-                } else if (tEvent.IsCounterEvent ()) {
-                    eventItem = CounterEvent (tEvent);
-                    eventTable = CounterTable;
-                } else if (tEvent.IsCaptureEvent ()) {
-                    eventItem = CaptureEvent (tEvent);
-                    eventTable = CaptureTable;
-                } else if (tEvent.IsUiEvent ()) {
-                    eventItem = UiEvent (tEvent);
-                    eventTable = UiTable;
-                } else if (tEvent.IsWbxmlEvent ()) {
-                    eventItem = WbxmlEvent (tEvent);
-                    eventTable = WbxmlTable;
-                } else {
-                    NcAssert.True (false);
-                }
-
-                if (null != eventItem) {
-                    NcAssert.True (null != eventTable);
-                    // To DynamoDB
-                    // Get the table batch write. Create one if it doesn't exist
-                    DocumentBatchWrite batchWrite;
-                    if (!writeDict.TryGetValue (eventTable, out batchWrite)) {
-                        batchWrite = new DocumentBatchWrite (eventTable);
-                        writeDict.Add (eventTable, batchWrite);
-                    }
-                    eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
-                    batchWrite.AddDocumentToPut (eventItem);
-                }
-            }
-
-            var multiBatchWrite = new MultiTableDocumentBatchWrite ();
-            foreach (var batchWrite in writeDict.Values) {
-                multiBatchWrite.AddBatch (batchWrite);
-            }
-            return AwsSendBatchEvents (multiBatchWrite);
-        }
-
-        private string TableName (string name)
-        {
-            return BuildInfo.AwsPrefix + ".telemetry." + name;
         }
 
         private Document InitializeEvent (TelemetryEvent tEvent)
@@ -265,14 +156,13 @@ namespace NachoCore.Utils
         /// <returns><c>true</c>, if AWS exception was handled, <c>false</c> otherwise.
         /// In that case, the caller must re-throw.</returns>
         /// <param name="e">E.</param>
-        private bool HandleAWSException (Exception e, string description, bool doReinitialize = true)
+        /// <param name = "description"></param>
+        private bool HandleAWSException (Exception e, string description)
         {
             if (null != e) {
+                Console.WriteLine ("Some exception caught in AWS send event\n{0}", e);
                 if (e is AggregateException) {
                     return HandleAWSException (e.InnerException, description);
-                }
-                if (e is ProvisionedThroughputExceededException) {
-                    return true;
                 }
                 if (e is TaskCanceledException) {
                     if (NcTask.Cts.Token.IsCancellationRequested) {
@@ -287,22 +177,12 @@ namespace NachoCore.Utils
                     // or this exception will be swallowed and telemetry task will not exit.
                     return false;
                 }
-                if (e is AmazonDynamoDBException) {
-                    Console.WriteLine ("AWS DynamoDB exception caught in AWS send event\n{0}", e.Message);
-                    ReinitializeTables ();
-                    return true;
-                }
                 if (e is AmazonServiceException) {
                     Console.WriteLine ("AWS exception caught in AWS send event\n{0}", e.Message);
                     return true;
                 }
-            }
-            // FIXME - An exception is thrown but the exception is null.
-            // This workaround simply catches everything and re-initializes
-            // the connection and tables.
-            Console.WriteLine ("Some exception caught in AWS send event\n{0}", e);
-            if (doReinitialize) {
-                ReinitializeTables ();
+            } else {
+                Console.WriteLine ("Null Exception throw in AWS Telemetry");
             }
             return true;
         }
@@ -317,7 +197,6 @@ namespace NachoCore.Utils
                         cleanup ();
                     }
                     if (NcTask.Cts.Token.IsCancellationRequested) {
-                        DisposeClient ();
                         DisposeS3Client ();
                         NcTask.Cts.Token.ThrowIfCancellationRequested ();
                     }
@@ -332,28 +211,12 @@ namespace NachoCore.Utils
             return true;
         }
 
-        private bool AwsSendOneEvent (Table eventTable, Document eventItem)
-        {
-            return AwsSendEvent (() => {
-                eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
-                var task = eventTable.PutItemAsync (eventItem);
-                task.Wait (NcTask.Cts.Token);
-            }, "AWS send one event");
-        }
-
-        private bool AwsSendBatchEvents (MultiTableDocumentBatchWrite multiBatchWrite)
-        {
-            return AwsSendEvent (() => {
-                var task = multiBatchWrite.ExecuteAsync (NcTask.Cts.Token);
-                task.Wait (NcTask.Cts.Token);
-            }, "AWS send batch events");
-        }
-
         protected void SafeFileDelete (string path)
         {
             try {
                 File.Delete (path);
-            } catch (IOException) {
+            } catch (IOException ex) {
+                Console.WriteLine ("Could not delete file {0}: {1}", path, ex);
             }
         }
 
@@ -446,7 +309,7 @@ namespace NachoCore.Utils
                 user_id = NcApplication.Instance.UserId,
             };
             var json = JsonConvert.SerializeObject (
-                           jsonEvent, Newtonsoft.Json.Formatting.None,
+                           jsonEvent, Formatting.None,
                            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
             // Create the temporary JSON .gz file

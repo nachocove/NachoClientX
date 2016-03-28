@@ -255,7 +255,6 @@
     <Compile Include="NachoCore\Adapters\NcCalendarManager.cs" />
     <Compile Include="NachoCore\Utils\NcQueue.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs" />
-    <Compile Include="NachoCore\Model\McTelemetryEvent.cs" />
     <Compile Include="BuildInfo.cs" />
     <Compile Include="NachoCore\Mockables\IHttpWebRequest.cs" />
     <Compile Include="NachoCore\Mockables\MockableHttpWebRequest.cs" />

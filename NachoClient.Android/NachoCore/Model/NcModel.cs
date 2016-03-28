@@ -146,13 +146,11 @@ namespace NachoCore.Model
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
-        public static string[] ExemptTables = new string[] { 
+        public static string[] ExemptTables = new [] { 
             "McAccount", "sqlite_sequence", "McMigration", "McLicenseInformation", "McBuildInfo",
         };
 
         public string DbFileName { set; get; }
-
-        public string TeleDbFileName { set; get; }
 
         public object WriteNTransLockObj { private set; get; }
 
@@ -168,7 +166,7 @@ namespace NachoCore.Model
         public SQLiteConnection Db {
             get {
                 var threadId = Thread.CurrentThread.ManagedThreadId;
-                NcSQLiteConnection db = null;
+                NcSQLiteConnection db;
                 while (true) {
                     if (!DbConns.TryGetValue (threadId, out db)) {
                         db = new NcSQLiteConnection (DbFileName, 
@@ -188,26 +186,9 @@ namespace NachoCore.Model
             set {
                 NcAssert.True (null == value);
                 var threadId = Thread.CurrentThread.ManagedThreadId;
-                NcSQLiteConnection db = null;
+                NcSQLiteConnection db;
                 if (DbConns.TryRemove (threadId, out db)) {
                     db.Eliminate (); 
-                }
-            }
-        }
-
-        private object _TeleDbLock;
-        private SQLiteConnection _TeleDb = null;
-
-        public SQLiteConnection TeleDb {
-            get {
-                lock (_TeleDbLock) {
-                    if (null == _TeleDb) {
-                        _TeleDb = new SQLiteConnection (TeleDbFileName,
-                            SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex,
-                            storeDateTimeAsTicks: true);
-                        _TeleDb.BusyTimeout = TimeSpan.FromSeconds (10.0);
-                    }
-                    return _TeleDb;
                 }
             }
         }
@@ -399,18 +380,6 @@ namespace NachoCore.Model
             ConfigureDb (Db);
         }
 
-        private void InitializeTeleDb ()
-        {
-            if (null == _TeleDbLock) {
-                _TeleDbLock = new object ();
-            }
-            AutoVacuum = AutoVacuumEnum.INCREMENTAL;
-            ConfigureDb (TeleDb);
-            // Auto-vacuum setting requires the table to be created after.
-            TeleDb.CreateTable<McTelemetryEvent> ();
-            TeleDb.CreateTable<McTelemetrySupportEvent> ();
-        }
-
         private void QueueLogInfo (string message)
         {
             Log.IndirectQ.Enqueue (new LogElement () {
@@ -448,8 +417,6 @@ namespace NachoCore.Model
             DbFileName = Path.Combine (GetDataDirPath (), "db");
             FreshInstall = !File.Exists (DbFileName);
             InitializeDb ();
-            TeleDbFileName = Path.Combine (GetDataDirPath (), "teledb");
-            InitializeTeleDb ();
             NcApplicationMonitor.Instance.MonitorEvent += (sender, e) => Scrub ();
             //mark all the files for skip backup
             MarkDataDirForSkipBackup ();
@@ -536,31 +503,24 @@ namespace NachoCore.Model
 
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
                 var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
-                var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                foreach (var idx in new int[] { 0, 1 }) {
-                    // Integrity check is slow but it was useful when we were tracking
-                    // down integrity problem. Comment it out for future reuse
+                var threadId = Thread.CurrentThread.ManagedThreadId;
+                // Integrity check is slow but it was useful when we were tracking
+                // down integrity problem. Comment it out for future reuse
 //                    if (0 == walCheckpointCount) {
 //                        var ok = db.ExecuteScalar<string> ("PRAGMA integrity_check(1);");
 //                        if ("ok" != ok) {
 //                            Console.WriteLine ("Corrupted db detected. ({0})", db.DatabasePath);
-//                            if (TeleDbFileName == db.DatabasePath) {
-//                                NcModel.Instance.ResetTeleDb ();
-//                                thisDb = TeleDb;
-//                            }
 //                        }
 //                    }
 //                    walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
 
-                    lock (WriteNTransLockObj) {
-                        if (NcApplication.Instance.IsQuickSync) {
-                            return;
-                        }
-                        var thisDb = (0 == idx) ? Db : TeleDb;
-                        List<CheckpointResult> results = thisDb.Query<CheckpointResult> (checkpointCmd);
-                        if ((0 < results.Count) && (0 != results [0].busy)) {
-                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", thisDb.DatabasePath);
-                        }
+                lock (WriteNTransLockObj) {
+                    if (NcApplication.Instance.IsQuickSync) {
+                        return;
+                    }
+                    List<CheckpointResult> results = Db.Query<CheckpointResult> (checkpointCmd);
+                    if ((0 < results.Count) && (0 != results [0].busy)) {
+                        Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", Db.DatabasePath);
                     }
                 }
             }, null, 10000, 2000);
@@ -585,7 +545,7 @@ namespace NachoCore.Model
 
         public bool IsInTransaction ()
         {
-            int depth = 0;
+            int depth;
             return (TransDepth.TryGetValue (Thread.CurrentThread.ManagedThreadId, out depth) && depth > 0);
         }
 
@@ -639,7 +599,7 @@ namespace NachoCore.Model
 
         public void TakeTokenOrSleep ()
         {
-            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+            if (NcApplication.Instance.UiThreadId != Thread.CurrentThread.ManagedThreadId &&
                 !IsInTransaction ()) {
                 RateLimiter.TakeTokenOrSleep ();
             }
@@ -849,27 +809,6 @@ namespace NachoCore.Model
         private static void Scrub ()
         {
             // The contents of this method change, depending on what we are scrubbing for.
-        }
-
-        public void ResetTeleDb ()
-        {
-            lock (_TeleDbLock) {
-                // Close the connection
-                _TeleDb.Close ();
-                _TeleDb.Dispose ();
-                _TeleDb = null; // next reference will re-initialize the connection
-
-                // Rename the db file
-                var timestamp = DateTime.Now.ToString ().Replace (' ', '_').Replace ('/', '-');
-                File.Replace (TeleDbFileName, TeleDbFileName + "." + timestamp, null);
-                File.Replace (TeleDbFileName + "-wal", TeleDbFileName + "-wal." + timestamp, null);
-                File.Replace (TeleDbFileName + "-shm", TeleDbFileName + "-shm." + timestamp, null);
-
-                // Recreate the db
-                InitializeTeleDb ();
-
-                Log.Error (Log.LOG_DB, "TeleDB corrupted. Reset.");
-            }
         }
 
         public static void MayIncrementallyVacuum (SQLiteConnection db, int numberOfPages)
