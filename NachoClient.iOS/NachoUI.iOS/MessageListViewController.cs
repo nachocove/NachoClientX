@@ -490,7 +490,23 @@ namespace NachoClient.iOS
             if (segue.Identifier == "MessageListToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = sender as SegueHolder;
-                vc.SetOwner (this, true, h);
+                int accountId = 0;
+                if (h.value is McEmailMessage) {
+                    accountId = ((McEmailMessage)h.value).AccountId;
+                }
+                if (h.value is McEmailMessageThread) {
+                    var message = ((McEmailMessageThread)h.value).FirstMessage ();
+                    if (null == message) {
+                        return;
+                    }
+                    accountId = message.AccountId;
+                }
+                if (h.value is UITableView) {
+                    accountId = messageSource.MultiSelectAccount (h.value as UITableView);
+                }
+                // TODO: Multiselect?
+                NcAssert.False (0 == accountId);
+                vc.SetOwner (this, true, accountId, h);
                 return;
             }
             if (segue.Identifier == "NachoNowToEditEvent") {
@@ -579,7 +595,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
-            vc.SetOwner (null, false, null);
+            vc.SetOwner (null, false, 0, null);
             vc.DismissFolderChooser (false, null);
         }
 

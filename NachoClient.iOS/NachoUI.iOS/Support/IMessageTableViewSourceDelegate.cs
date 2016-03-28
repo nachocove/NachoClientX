@@ -30,6 +30,8 @@ namespace NachoClient.iOS
 
         void MultiSelectToggle (UITableView tableView);
 
+        int MultiSelectAccount (UITableView tableview);
+
         bool RefreshEmailMessages (out List<int> adds, out List<int> deletes);
 
         void BackgroundRefreshEmailMessages (NachoMessagesRefreshCompletionDelegate completionAction);
