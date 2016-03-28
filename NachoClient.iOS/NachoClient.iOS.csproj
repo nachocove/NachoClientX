@@ -733,9 +733,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\NcApplication.cs">
       <Link>NcApplication.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry.cs">
-      <Link>NachoCore\Utils\Telemetry.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcQueue.cs">
       <Link>NachoCore\Utils\NcQueue.cs</Link>
     </Compile>
@@ -1113,9 +1110,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAbate.cs">
       <Link>NachoCore\Utils\NcAbate.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryAWS.cs">
-      <Link>NachoCore\Utils\TelemetryAWS.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.designer.cs">
       <DependentUpon>ContactDefaultSelectionViewController.cs</DependentUpon>
@@ -1351,17 +1345,8 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControl.cs">
       <Link>NachoCore\BackEnd\SMTP\SmtpProtoControl.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryEvent.cs">
-      <Link>NachoCore\Utils\TelemetryEvent.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonEvent.cs">
-      <Link>NachoCore\Utils\TelemetryJsonEvent.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcSamples.cs">
       <Link>NachoCore\Utils\NcSamples.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFile.cs">
-      <Link>NachoCore\Utils\TelemetryJsonFile.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration26.cs">
       <Link>NachoCore\Model\Migration\NcMigration26.cs</Link>
@@ -1828,8 +1813,23 @@
       <Link>NachoCore\Model\Migration\NcMigration54.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\SettingsTextPropertyViewController.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFileTable.cs">
-      <Link>NachoCore\Utils\TelemetryJsonFileTable.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry\Telemetry.cs">
+      <Link>NachoCore\Utils\Telemetry\Telemetry.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry\TelemetryAWS.cs">
+      <Link>NachoCore\Utils\Telemetry\TelemetryAWS.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry\TelemetryEvent.cs">
+      <Link>NachoCore\Utils\Telemetry\TelemetryEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry\TelemetryJsonEvent.cs">
+      <Link>NachoCore\Utils\Telemetry\TelemetryJsonEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry\TelemetryJsonFile.cs">
+      <Link>NachoCore\Utils\Telemetry\TelemetryJsonFile.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry\TelemetryJsonFileTable.cs">
+      <Link>NachoCore\Utils\Telemetry\TelemetryJsonFileTable.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

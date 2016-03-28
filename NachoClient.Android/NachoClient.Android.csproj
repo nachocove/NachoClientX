@@ -253,7 +253,6 @@
     <Compile Include="NachoCore\Model\NcModel.cs" />
     <Compile Include="NachoCore\Utils\NcEmailAddress.cs" />
     <Compile Include="NachoCore\Adapters\NcCalendarManager.cs" />
-    <Compile Include="NachoCore\Utils\Telemetry.cs" />
     <Compile Include="NachoCore\Utils\NcQueue.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs" />
     <Compile Include="NachoCore\Model\McTelemetryEvent.cs" />
@@ -395,16 +394,12 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration22.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration23.cs" />
     <Compile Include="NachoCore\BackEnd\NcProtoControl.cs" />
-    <Compile Include="NachoCore\Utils\TelemetryAWS.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration24.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration25.cs" />
     <Compile Include="NachoCore\Utils\PermissionManager.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpProtoControl.cs" />
-    <Compile Include="NachoCore\Utils\TelemetryEvent.cs" />
-    <Compile Include="NachoCore\Utils\TelemetryJsonEvent.cs" />
     <Compile Include="NachoCore\Utils\NcSamples.cs" />
-    <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
     <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
@@ -665,7 +660,12 @@
     <Compile Include="NachoUI.Android\Activities\ChatParticipantListFragment.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration53.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration54.cs" />
-    <Compile Include="NachoCore\Utils\TelemetryJsonFileTable.cs" />
+    <Compile Include="NachoCore\Utils\Telemetry\Telemetry.cs" />
+    <Compile Include="NachoCore\Utils\Telemetry\TelemetryAWS.cs" />
+    <Compile Include="NachoCore\Utils\Telemetry\TelemetryEvent.cs" />
+    <Compile Include="NachoCore\Utils\Telemetry\TelemetryJsonEvent.cs" />
+    <Compile Include="NachoCore\Utils\Telemetry\TelemetryJsonFile.cs" />
+    <Compile Include="NachoCore\Utils\Telemetry\TelemetryJsonFileTable.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -735,6 +735,7 @@
     <Folder Include="NachoCore\BackEnd\SalesForce\" />
     <Folder Include="NachoCore\BackEnd\SalesForce\SalesForceSetupCommands\" />
     <Folder Include="NachoCore\BackEnd\SalesForce\SalesForceContactSyncCommands\" />
+    <Folder Include="NachoCore\Utils\Telemetry\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
