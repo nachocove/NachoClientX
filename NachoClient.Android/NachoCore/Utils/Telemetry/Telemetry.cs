@@ -48,7 +48,11 @@ namespace NachoCore.Utils
             }
         }
 
-        public static bool Initialized { get; protected set; }
+        public static bool Initialized {
+            get {
+                return Telemetry.TelemetryJsonFileTable.Initialized;
+            }
+        }
 
         public bool TelemetryPending ()
         {
@@ -117,7 +121,6 @@ namespace NachoCore.Utils
             FailToSendLogLimiter = new NcRateLimter (1.0 / 64.0, 64.0);
             FailToSendLogLimiter.Enabled = true;
             NcTimeStamp.Add ("Telementry() end");
-            Initialized = true;
         }
 
         // This is kind of a hack. When Telemetry is reporting the counter values,
@@ -513,14 +516,8 @@ namespace NachoCore.Utils
                 }
                 Counters [0].ReportPeriod = 5 * 60; // report once every 5 min
 
-                // Capture the transaction time to telemetry server
-                const string CAPTURE_NAME = "Telemetry.SendEvent";
-                NcCapture.AddKind (CAPTURE_NAME);
-                NcCapture transactionTime = NcCapture.Create (CAPTURE_NAME);
-
                 Log.Info (Log.LOG_LIFECYCLE, "Telemetry starts running");
 
-                int eventDeleted = 0;
                 SendSha1AccountEmailAddresses ();
                 DateTime heartBeat = DateTime.Now;
                 while (true) {

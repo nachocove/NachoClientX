@@ -187,14 +187,8 @@ namespace NachoCore.Utils
                     var filePath = GetFilePath (eventClass);
                     if (File.Exists (filePath)) {
                         TelemetryJsonFile jsonFile = null;
-                        try {
-                            jsonFile = new TelemetryJsonFile (filePath);
-                            WriteFiles.Add (eventClass, jsonFile);
-                        } catch (Exception e) {
-                            // JSON table is not initialized. Can log to console
-                            Console.WriteLine ("Fail to open JSON file {0}: {1}", filePath, e);
-                            File.Delete (filePath); // this file must be somehow in bad state. Delete it
-                        }
+                        jsonFile = new TelemetryJsonFile (filePath);
+                        WriteFiles.Add (eventClass, jsonFile);
                     }
                 }
                 Initialized = true;
@@ -315,6 +309,7 @@ namespace NachoCore.Utils
                         return;
                     }
 
+                    NcAssert.True (File.Exists (writeFile.FilePath));
                     NcAssert.True ((DateTime.MinValue != writeFile.FirstTimestamp) && (DateTime.MinValue != writeFile.LatestTimestamp));
                     WriteFiles.Remove (eventClass);
                     writeFile.Close ();
