@@ -441,7 +441,7 @@ namespace NachoCore
 
                 ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
-                Telemetry.SharedInstance.Throttling = false;
+                Telemetry.Instance.Throttling = false;
 
                 // Submit a support request, to make the chances even higher that this will be noticed and investigated.
                 var supportInfo = new System.Collections.Generic.Dictionary<string, string> ();
@@ -837,7 +837,7 @@ namespace NachoCore
                 return false;
             }
             if (new FileInfo (StartupLog).Length > 2) {
-                Telemetry.JsonFileTable.FinalizeAll (); // close of all JSON files
+                Telemetry.Instance.FinalizeAll (); // close of all JSON files
                 return true;
             }
             return false;
@@ -884,7 +884,7 @@ namespace NachoCore
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
                     numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
-                    if ((0 == numTelemetryEvents) && (null == Telemetry.JsonFileTable.GetNextReadFile ())) {
+                    if ((0 == numTelemetryEvents) && !Telemetry.Instance.TelemetryPending ()) {
                         telemetryDone = true;
                     }
                 }

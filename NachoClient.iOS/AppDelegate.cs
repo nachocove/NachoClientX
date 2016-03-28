@@ -389,7 +389,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                Telemetry.SharedInstance.Throttling = false;
+                Telemetry.Instance.Throttling = false;
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
