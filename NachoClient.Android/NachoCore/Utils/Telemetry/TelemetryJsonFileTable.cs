@@ -25,8 +25,10 @@ namespace NachoCore.Utils
             static Regex jsonFileRegEx;
 
             static object InstanceLockObj = new object ();
+            // Analysis disable once MemberHidesStaticFromOuterClass
             static TelemetryJsonFileTable _Instance;
 
+            // Analysis disable once MemberHidesStaticFromOuterClass
             public static TelemetryJsonFileTable Instance {
                 get {
                     if (null == _Instance) {
@@ -159,10 +161,27 @@ namespace NachoCore.Utils
                 WriteFiles = new Dictionary<TelemetryEventClass, TelemetryJsonFile> ();
                 ReadFiles = new SortedSet<string> ();
                 PendingCallbacks = new Dictionary<string, Action> ();
-                Init ();
+                NcTask.Run (() => {
+                    Thread.Sleep (500);
+                    InitWriteFiles ();
+                }, "TelemetryJsonFileTable.InitWriteFiles");
+                NcTask.Run (() => {
+                    Thread.Sleep (5000);
+                    InitReadFiles ();
+                }, "TelemetryJsonFileTable.InitReadFiles");
             }
 
-            void Init ()
+            /// <summary>
+            /// For each type of event, find the file associated with it, if any, and create a TelemetryJsonFile object from
+            /// it, adding it to the WriteFiles list.
+            /// </summary>
+            /// <remarks>
+            /// Note that this function sets Initialized to true. We need only this function to do it (and not InitReadFiles),
+            /// because this is what the logger is waiting on to start logging to file instead of queueing messages up in memory.
+            /// For ReadFiles, we don't really care, because once the list is initialized, anything can add to the OrderedSet,
+            /// and the telemetry process will pick things off this list and push them to external telemetry (s3 currently).
+            /// </remarks>
+            void InitWriteFiles ()
             {
                 foreach (var eventClass in AllEventClasses) {
                     var filePath = GetFilePath (eventClass);
@@ -170,21 +189,25 @@ namespace NachoCore.Utils
                         TelemetryJsonFile jsonFile = null;
                         try {
                             jsonFile = new TelemetryJsonFile (filePath);
+                            WriteFiles.Add (eventClass, jsonFile);
                         } catch (Exception e) {
                             // JSON table is not initialized. Can log to console
-                            Console.WriteLine ("Fail to open JSON file {0} (exception={1})", filePath, e);
-                        }
-                        if (null != jsonFile) {
-                            WriteFiles.Add (eventClass, jsonFile);
-                        } else {
+                            Console.WriteLine ("Fail to open JSON file {0}: {1}", filePath, e);
                             File.Delete (filePath); // this file must be somehow in bad state. Delete it
                         }
                     }
+                }
+                Initialized = true;
+            }
+
+            void InitReadFiles ()
+            {
+                foreach (var eventClass in AllEventClasses) {
+                    var filePath = GetFilePath (eventClass);
                     foreach (var readFilePath in GetReadFiles (filePath)) {
                         ReadFiles.Add (readFilePath);
                     }
                 }
-                Initialized = true;
             }
 
             protected Dictionary<TelemetryEventClass, TelemetryJsonFile> WriteFiles;
