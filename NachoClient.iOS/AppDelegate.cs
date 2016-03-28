@@ -289,6 +289,8 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            DateTime t = DateTime.UtcNow;
+
             // move data files to Documents/Data if needed
             NachoPlatform.DataFileMigration.MigrateDataFilesIfNeeded ();
             // One-time initialization that do not need to be shut down later.
@@ -440,7 +442,7 @@ namespace NachoClient.iOS
             Window.RootViewController = appViewController;
             Window.MakeKeyAndVisible ();
 
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
+            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit (t={0})", DateTime.UtcNow-t);
 
             return true;
         }
