@@ -24,6 +24,7 @@ using NachoCore.Utils;
 using Android.Graphics.Drawables;
 using Android.Widget;
 using NachoPlatform;
+using Android.Graphics;
 
 namespace NachoClient.AndroidClient
 {
@@ -542,6 +543,27 @@ namespace NachoClient.AndroidClient
 
         }
 
+        private static Bitmap BitmapFromPathConstrainedToSize (string path, int maxWidth, int maxHeight)
+        {
+            var options = new BitmapFactory.Options ();
+            options.InJustDecodeBounds = true;
+            BitmapFactory.DecodeFile (path, options);
+            int width = options.OutWidth;
+            int height = options.OutHeight;
+            int sampleSize = 1;
+            while (width > maxWidth || height > maxHeight) {
+                sampleSize += 1;
+                width = width / 2;
+                height = height / 2;
+            }
+            if (sampleSize > 1) {
+                sampleSize -= 1;
+            }
+            options.InJustDecodeBounds = false;
+            options.InSampleSize = sampleSize;
+            return BitmapFactory.DecodeFile (path, options);
+        }
+
         public static void BindChatAttachments (McEmailMessage message, View view, LayoutInflater inflater, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected, NcAttachmentView.AttachmentErrorCallback onAttachmentError)
         {
             var attachmentListView = view.FindViewById<LinearLayout> (Resource.Id.attachment_list_views);
@@ -549,12 +571,29 @@ namespace NachoClient.AndroidClient
 
             var attachments = McAttachment.QueryByItemId (message.AccountId, message.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
             if (null != attachments) {
-                foreach (var a in attachments) {
-                    var cell = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
-                    new NcAttachmentView (a, cell, onAttachmentSelected, onAttachmentError);
-                    attachmentListView.AddView (cell);
+                foreach (var attachment in attachments) {
+                    string contentType = attachment.ContentType == null ? "" : attachment.ContentType.ToLower ();
+                    if (contentType.StartsWith ("image/") && attachment.FilePresence == McAbstrFileDesc.FilePresenceEnum.Complete) {
+                        var imageView = new ImageView (view.Context);
+                        BindChatImageAttachment (attachment, imageView, onAttachmentSelected);
+                        attachmentListView.AddView (imageView);
+                    } else {
+                        var cell = inflater.Inflate (Resource.Layout.AttachmentListViewCell, null);
+                        new NcAttachmentView (attachment, cell, onAttachmentSelected, onAttachmentError);
+                        attachmentListView.AddView (cell);
+                    }
                 }
             }
+        }
+
+        static void BindChatImageAttachment(McAttachment attachment, ImageView imageView, NcAttachmentView.AttachmentSelectedCallback onAttachmentSelected){
+            using (var image = BitmapFromPathConstrainedToSize(attachment.GetFilePath (), 1024, 1024)) {
+                imageView.SetAdjustViewBounds (true);
+                imageView.SetImageBitmap (image);
+            }
+            imageView.Click += (object sender, EventArgs e) => {
+                onAttachmentSelected (attachment);
+            };
         }
 
         public static void BindChatAttachmentColors (View view, bool useDarkBackground)
@@ -574,11 +613,18 @@ namespace NachoClient.AndroidClient
             for (int i = 0; i < attachmentListView.ChildCount; i++) {
                 var attachmentView = attachmentListView.GetChildAt (i);
                 attachmentView.SetBackgroundResource (backgroundColorId);
-                attachmentView.FindViewById (Resource.Id.separator).Visibility = ViewStates.Gone;
+                var separator = attachmentView.FindViewById (Resource.Id.separator);
+                if (separator != null) {
+                    separator.Visibility = ViewStates.Gone;
+                }
                 var nameView = attachmentView.FindViewById<TextView> (Resource.Id.attachment_name);
-                nameView.SetTextColor (view.Resources.GetColor (textColorId));
+                if (nameView != null) {
+                    nameView.SetTextColor (view.Resources.GetColor (textColorId));
+                }
                 var descriptionView = attachmentView.FindViewById<TextView> (Resource.Id.attachment_description);
-                descriptionView.SetTextColor (view.Resources.GetColor (textColorId));
+                if (descriptionView != null) {
+                    descriptionView.SetTextColor (view.Resources.GetColor (textColorId));
+                }
             }
         }
 
