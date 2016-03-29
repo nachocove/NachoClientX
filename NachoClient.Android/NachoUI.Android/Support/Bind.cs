@@ -538,6 +538,7 @@ namespace NachoClient.AndroidClient
             previewView.SetTextColor (view.Resources.GetColor (textColorId));
             previewView.SetBackgroundResource (backgroundColorId);
             previewCardView.SetCardBackgroundColor (view.Resources.GetColor (backgroundColorId));
+            previewView.RequestLayout ();
 
         }
 
