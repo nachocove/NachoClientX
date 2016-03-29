@@ -89,9 +89,11 @@ namespace NachoClient.iOS
         {
             if (Bundle != null) {
                 if (Bundle.FullHtmlUrl == null) {
+                    var baseUrl = new NSUrl (Bundle.BaseUrl.ToString ());
                     if (Bundle.FullHtml != null) {
-                        var baseUrl = new NSUrl (Bundle.BaseUrl.ToString ());
                         LoadHtmlString (Bundle.FullHtml, baseUrl);
+                    } else {
+                        LoadHtmlString ("<html><body></body></html>", baseUrl);
                     }
                 } else {
                     var url = new NSUrl (Bundle.FullHtmlUrl.ToString ());
