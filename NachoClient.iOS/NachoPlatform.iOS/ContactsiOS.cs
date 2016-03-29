@@ -327,7 +327,7 @@ namespace NachoPlatform
             contact.ServerId = ServerId;
 
             if (Person.HasImage) {
-                var data = Person.GetImage (ABPersonImageFormat.OriginalSize);
+                var data = Person.GetImage (ABPersonImageFormat.Thumbnail);
                 if (null != data) {
                     McPortrait portrait = null;
                     if (0 != contact.PortraitId) {

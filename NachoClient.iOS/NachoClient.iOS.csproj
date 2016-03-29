@@ -1831,6 +1831,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFileTable.cs">
       <Link>NachoCore\Utils\TelemetryJsonFileTable.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration55.cs">
+      <Link>NachoCore\Model\Migration\NcMigration55.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

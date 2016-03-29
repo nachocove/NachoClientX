@@ -666,6 +666,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration53.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration54.cs" />
     <Compile Include="NachoCore\Utils\TelemetryJsonFileTable.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration55.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
