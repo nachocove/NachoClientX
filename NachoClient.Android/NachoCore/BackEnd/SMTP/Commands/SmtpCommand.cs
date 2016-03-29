@@ -39,13 +39,17 @@ namespace NachoCore.SMTP
         public override void Cancel ()
         {
             base.Cancel ();
-            if (!BEContext.ProtoControl.Cts.IsCancellationRequested) {
-                try {
-                    TryLock (Client.SyncRoot, KLockTimeout);
-                } catch (CommandLockTimeOutException ex) {
-                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, AccountId, ex.Message);
-                    Client.DOA = true;
+            try {
+                if (!BEContext.ProtoControl.Cts.IsCancellationRequested) {
+                    try {
+                        TryLock (Client.SyncRoot, KLockTimeout);
+                    } catch (CommandLockTimeOutException ex) {
+                        Log.Error (Log.LOG_IMAP, "{0}.Cancel(): {1}", CmdNameWithAccount, ex.Message);
+                        Client.DOA = true;
+                    }
                 }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_BACKEND, "{0}.Cancel(): exception: {1}", CmdNameWithAccount, ex);
             }
         }
 
@@ -74,43 +78,42 @@ namespace NachoCore.SMTP
 
         public override void Execute (NcStateMachine sm)
         {
-            var cmdname = this.GetType ().Name;
             NcTask.Run (() => {
                 Event evt;
                 Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
                 bool serverFailedGenerally = false;
 
-                Log.Info (Log.LOG_SMTP, "{0}({1}): Started", cmdname, AccountId);
+                Log.Info (Log.LOG_SMTP, "{0}: Started", CmdNameWithAccount);
                 try {
                     evt = ExecuteConnectAndAuthEvent ();
                     // In the no-exception case, ExecuteCommand is resolving McPending.
                     Cts.Token.ThrowIfCancellationRequested ();
                 } catch (OperationCanceledException) {
-                    Log.Info (Log.LOG_SMTP, "{0}: OperationCanceledException", cmdname);
+                    Log.Info (Log.LOG_SMTP, "{0}: OperationCanceledException", CmdNameWithAccount);
                     ResolveAllDeferred ();
                     // No event posted to SM if cancelled.
                     return;
                 } catch (KeychainItemNotFoundException ex) {
-                    Log.Error (Log.LOG_SMTP, "{0}: KeychainItemNotFoundException: {1}", cmdname, ex.Message);
+                    Log.Error (Log.LOG_SMTP, "{0}: KeychainItemNotFoundException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPKEYCHFAIL");
                 } catch (CommandLockTimeOutException ex) {
-                    Log.Error (Log.LOG_SMTP, "{0}: CommandLockTimeOutException: {0}", cmdname, ex.Message);
+                    Log.Error (Log.LOG_SMTP, "{0}: CommandLockTimeOutException: {0}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPLOKTIME");
                     Client.DOA = true;
                 } catch (SocketException ex) {
-                    Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", cmdname, ex.Message);
+                    Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.InvalidDest);
                     evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", BackEnd.AutoDFailureReasonEnum.CannotFindServer);
                     serverFailedGenerally = true;
                 } catch (ServiceNotConnectedException) {
                     // FIXME - this needs to feed into NcCommStatus, not loop forever.
-                    Log.Info (Log.LOG_SMTP, "{0}: ServiceNotConnectedException", cmdname);
+                    Log.Info (Log.LOG_SMTP, "{0}: ServiceNotConnectedException", CmdNameWithAccount);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.ReDisc, "SMTPCONN");
                 } catch (AuthenticationException ex) {
-                    Log.Info (Log.LOG_SMTP, "{0}: AuthenticationException: {1}", cmdname, ex.Message);
+                    Log.Info (Log.LOG_SMTP, "{0}: AuthenticationException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     if (!HasPasswordChanged ()) {
                         evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH1");
@@ -119,7 +122,7 @@ namespace NachoCore.SMTP
                         evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPAUTH1TEMP");
                     }
                 } catch (ServiceNotAuthenticatedException ex) {
-                    Log.Info (Log.LOG_SMTP, "{0}: ServiceNotAuthenticatedException: {1}", cmdname, ex.Message);
+                    Log.Info (Log.LOG_SMTP, "{0}: ServiceNotAuthenticatedException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     if (!HasPasswordChanged ()) {
                         evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH2");
@@ -128,40 +131,40 @@ namespace NachoCore.SMTP
                         evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPAUTH2TEMP");
                     }
                 } catch (SmtpProtocolException ex) {
-                    Log.Info (Log.LOG_SMTP, "{0}: SmtpProtocolException: {1}", cmdname, ex.Message);
+                    Log.Info (Log.LOG_SMTP, "{0}: SmtpProtocolException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPPROTOEX");
                     serverFailedGenerally = true;
                 } catch (SmtpCommandException ex) {
-                    Log.Info (Log.LOG_SMTP, "{0}: SmtpCommandException: {1}", cmdname, ex.Message);
+                    Log.Info (Log.LOG_SMTP, "{0}: SmtpCommandException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCMDEX");
                     serverFailedGenerally = true;
                 } catch (InvalidOperationException ex) {
-                    Log.Error (Log.LOG_SMTP, "{0}: InvalidOperationException: {1}", cmdname, ex.Message);
+                    Log.Error (Log.LOG_SMTP, "{0}: InvalidOperationException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPHARD1");
                     serverFailedGenerally = true;
                 } catch (FormatException ex) {
-                    Log.Error (Log.LOG_SMTP, "FormatException: {0}", ex.ToString ());
+                    Log.Error (Log.LOG_SMTP, "{0}: FormatException: {1}", CmdNameWithAccount, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPFORMATHARD");
                 } catch (IOException ex) {
-                    Log.Info (Log.LOG_SMTP, "{0}: IOException: {1}", cmdname, ex.ToString ());
+                    Log.Info (Log.LOG_SMTP, "{0}: IOException: {1}", CmdNameWithAccount, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPIO");
                     serverFailedGenerally = true;
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_SMTP, "{0}: Exception : {1}", cmdname, ex.ToString ());
+                    Log.Error (Log.LOG_SMTP, "{0}: Exception : {1}", CmdNameWithAccount, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPHARD2");
                     serverFailedGenerally = true;
                 } finally {
-                    Log.Info (Log.LOG_SMTP, "{0}({1}): Finished (failed {2})", cmdname, AccountId, serverFailedGenerally);
+                    Log.Info (Log.LOG_SMTP, "{0}: Finished (failed {1})", CmdNameWithAccount, serverFailedGenerally);
                 }
 
                 if (Cts.Token.IsCancellationRequested) {
-                    Log.Info (Log.LOG_SMTP, "{0}({1}): Cancelled", cmdname, AccountId);
+                    Log.Info (Log.LOG_SMTP, "{0}: Cancelled", CmdNameWithAccount);
                     return;
                 }
                 ReportCommResult (BEContext.Server.Host, serverFailedGenerally);
@@ -176,7 +179,7 @@ namespace NachoCore.SMTP
                     break;
                 }
                 sm.PostEvent (evt);
-            }, cmdname);
+            }, CmdName);
         }
 
         protected void ReportCommResult (string host, bool didFailGenerally)
@@ -236,8 +239,7 @@ namespace NachoCore.SMTP
 
         protected void ProtocolLoggerStopAndLog ()
         {
-            //string ClassName = this.GetType ().Name + " ";
-            //Log.Info (Log.LOG_SMTP, "{0}SMTP exchange\n{1}", ClassName, Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ()));
+            //Log.Info (Log.LOG_SMTP, "{0}SMTP exchange\n{1}", CmdNameWithAccount, Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ()));
             Client.MailKitProtocolLogger.Stop ();
         }
     }
