@@ -89,7 +89,7 @@ namespace NachoCore
             PendingList = new List<McPending> ();
             PendingResolveLockObj = new object ();
             InternalCts = new CancellationTokenSource ();
-            Cts = CancellationTokenSource.CreateLinkedTokenSource (InternalCts.Token, BEContext.ProtoControl.Cts.Token, NcTask.Cts.Token);
+            Cts = CancellationTokenSource.CreateLinkedTokenSource (InternalCts.Token, BEContext.ProtoControl.Cts.Token);
             SavedCredEpoch = BEContext.Cred.Epoch;
             CmdName = GetType ().Name;
             CmdNameWithAccount = string.Format ("{0}{{{1}}}", CmdName, AccountId);
