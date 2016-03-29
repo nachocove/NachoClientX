@@ -693,24 +693,25 @@ namespace NachoCore.Model
             return ResolveAsCancelled (true);
         }
 
-        private void EmailBodyError (int accountId, string serverId)
+        public static void EmailBodyError (int accountId, string serverId)
         {
             var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
             if (null == email) {
-                Log.Warn (Log.LOG_AS, "{0}: ResolveAsHardFail/EmailBodyError: can't find McEmailMessage with ServerId {1}", this, serverId);
+                Log.Warn (Log.LOG_AS, "EmailBodyError: can't find McEmailMessage with ServerId {0}", serverId);
                 return;
             }
             McBody body = null;
             if (0 != email.BodyId) {
                 body = McBody.QueryById<McBody> (email.BodyId);
                 if (null == body) {
-                    Log.Error (Log.LOG_AS, "{0}: ResolveAsHardFail/EmailBodyError: BodyId {1} has no body", this, email.BodyId);
+                    Log.Error (Log.LOG_AS, "EmailBodyError: BodyId {0} has no body", email.BodyId);
                 }
             }
             if (null == body) {
                 body = McBody.InsertError (accountId);
                 email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
-                    email.BodyId = body.Id;
+                    var target = (McEmailMessage)record;
+                    target.BodyId = body.Id;
                     return true;
                 });
             } else {

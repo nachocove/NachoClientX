@@ -76,6 +76,7 @@ namespace NachoCore.IMAP
                     email.Delete ();
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 }
+                McPending.EmailBodyError (email.AccountId, email.ServerId);
             }
             // call will do nothing if the hint isn't there.
             BackEnd.Instance.BodyFetchHints.RemoveHint (AccountId, email.Id);

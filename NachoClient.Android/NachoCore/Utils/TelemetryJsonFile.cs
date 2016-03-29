@@ -84,7 +84,7 @@ namespace NachoCore.Utils
                                         DateTime lastDateTime;
                                         try {
                                             lastDateTime = ExtractTimestamp (line);
-                                        } catch (FormatException ex) {
+                                        } catch (FormatException) {
                                             Console.WriteLine ("Bad timestamp in file: {0}", line);
                                             continue;
                                         }
