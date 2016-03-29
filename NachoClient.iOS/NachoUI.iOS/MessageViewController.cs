@@ -66,6 +66,7 @@ namespace NachoClient.iOS
 
 
 
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -132,7 +133,7 @@ namespace NachoClient.iOS
             // it is about to be popped?  Catch & avoid that case.
             var message = thread.FirstMessageSpecialCase ();
             if (null != message) {
-                if (!NcApplication.Instance.Account.ContainsAccount(message.AccountId)) {
+                if (!NcApplication.Instance.Account.ContainsAccount (message.AccountId)) {
                     Log.Error (Log.LOG_UI, "MessageViewController mismatched accounts {0} {1}.", NcApplication.Instance.Account.Id, message.AccountId);
                     if (null != NavigationController) {
                         NavigationController.PopViewController (false);
@@ -676,7 +677,10 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "MessageViewToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
-                vc.SetOwner (this, true, thread);
+                var message = thread.FirstMessage ();
+                if (null != message) {
+                    vc.SetOwner (this, true, message.Id, thread);
+                }
                 return;
             }
             if (segue.Identifier == "MessageViewToEditEvent") {
@@ -792,7 +796,7 @@ namespace NachoClient.iOS
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
             MoveThisMessage (folder);
-            vc.SetOwner (null, false, null);
+            vc.SetOwner (null, false, 0, null);
             vc.DismissFolderChooser (false, new Action (delegate {
                 NavigationController.PopViewController (true);
             }));

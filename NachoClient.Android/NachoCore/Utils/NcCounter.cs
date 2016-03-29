@@ -183,16 +183,11 @@ namespace NachoCore.Utils
 
         public NcCounter AddChild (string name)
         {
-            NcTimeStamp.Add ("NcCounter.AddChild before lock: " + name);
             _Lock.WaitOne ();
-            NcTimeStamp.Add ("NcCounter.AddChild lock acquired: " + name);
             NcCounter counter = new NcCounter (Name + "." + name, UpdateParent);
-            NcTimeStamp.Add ("NcCounter.AddChild created: " + name);
             counter.Parent = this;
             Children.Add (counter);
-            NcTimeStamp.Add ("NcCounter.AddChild before lock release: " + name);
             _Lock.ReleaseMutex ();
-            NcTimeStamp.Add ("NcCounter.AddChild lock released: " + name);
             return counter;
         }
 

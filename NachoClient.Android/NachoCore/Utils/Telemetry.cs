@@ -1,21 +1,16 @@
 //  Copyright (C) 2014-2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using NachoCore.Model;
 using Newtonsoft.Json;
-using System.Json;
-using System.Security.Cryptography;
-using System.Text;
 using NachoPlatform;
 
 namespace NachoCore.Utils
 {
-    public class Telemetry
+    public partial class Telemetry
     {
         public static bool ENABLED = true;
 
@@ -33,27 +28,35 @@ namespace NachoCore.Utils
         // Assuming typical upload time of 50 msec, 200 msec pause gives roughly 4 uploads per seconds.
         private const int THROTTLING_IDLE_PERIOD = 200;
 
-        private static Telemetry _SharedInstance;
+        private static Telemetry _Instance;
         private static object lockObject = new object();
 
-        public static Telemetry SharedInstance {
+        public static Telemetry Instance {
             get {
-                if (null == _SharedInstance) {
-                    NcTimeStamp.Add ("Create SharedInstance before lock");
+                if (null == _Instance) {
                     lock (lockObject) {
-                        NcTimeStamp.Add ("Create SharedInstance lock acquired");
-                        if (null == _SharedInstance) {
-                            NcTimeStamp.Add ("Before new Telemetry()");
-                            _SharedInstance = new Telemetry ();
-                            NcTimeStamp.Add ("After new Telemetry()");
+                        if (null == _Instance) {
+                            _Instance = new Telemetry ();
                         }
                     }
                 }
-                return _SharedInstance;
+                return _Instance;
             }
         }
 
-        public CancellationToken Token;
+        public static bool Initialized { get; protected set; }
+
+        public bool TelemetryPending ()
+        {
+            return Telemetry.TelemetryJsonFileTable.Instance.GetNextReadFile () != null;
+        }
+
+        public void FinalizeAll ()
+        {
+            Telemetry.TelemetryJsonFileTable.Instance.FinalizeAll ();
+        }
+
+        CancellationToken Token;
 
         private AutoResetEvent DbUpdated;
 
@@ -73,27 +76,16 @@ namespace NachoCore.Utils
         // optionally purge them
         protected static int PurgeCounter = 0;
 
-        private static TelemetryJsonFileTable _JsonFileTable = new TelemetryJsonFileTable ();
-
-        public static TelemetryJsonFileTable JsonFileTable {
-            get {
-                NcAssert.True (null != _JsonFileTable);
-                return _JsonFileTable;
-            }
-        }
-
-        public Telemetry ()
+        Telemetry ()
         {
+            Telemetry.TelemetryJsonFileTable.Instance.Initialize ();
             BackEnd = null;
-            NcTimeStamp.Add ("Before DbUpdated");
             DbUpdated = new AutoResetEvent (false);
-            NcTimeStamp.Add ("Before Counters");
             Counters = new NcCounter[(int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE];
             Counters [0] = new NcCounter ("Telemetry", true);
             Counters [0].AutoReset = true;
             Counters [0].ReportPeriod = 0;
             Counters [0].PreReportCallback = PreReportAdjustment;
-            NcTimeStamp.Add ("After Counters [0]");
 
             Type teleEvtType = typeof(TelemetryEventType);
             foreach (TelemetryEventType type in Enum.GetValues(teleEvtType)) {
@@ -104,20 +96,17 @@ namespace NachoCore.Utils
                 }
                 Counters [(int)type] = Counters [0].AddChild (Enum.GetName (teleEvtType, type));
             }
-            NcTimeStamp.Add ("After Counters loop");
             // Counter must be the last counter created!
             Counters [(int)TelemetryEventType.COUNTER] = Counters [0].AddChild ("COUNTER");
-            NcTimeStamp.Add ("After last counter");
 
             // Add other non-event type related counters
             FailToSend = Counters [0].AddChild ("FAIL_TO_SEND");
-            NcTimeStamp.Add ("After FailToSend");
 
             // Allow one failure log per 64 sec or roughly 1 per min. 1/64
             // is chosen so that the arithematic is exact.
             FailToSendLogLimiter = new NcRateLimter (1.0 / 64.0, 64.0);
             FailToSendLogLimiter.Enabled = true;
-            NcTimeStamp.Add ("Telementry() end");
+            Initialized = true;
         }
 
         // This is kind of a hack. When Telemetry is reporting the counter values,
@@ -128,11 +117,11 @@ namespace NachoCore.Utils
         // no longer effect at all.
         private static void PreReportAdjustment ()
         {
-            SharedInstance.Counters [(int)TelemetryEventType.COUNTER].Click (1);
-            SharedInstance.Counters [0].Click ((int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE - 1);
+            Instance.Counters [(int)TelemetryEventType.COUNTER].Click ();
+            Instance.Counters [0].Click ((int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE - 1);
         }
 
-        private static void MayPurgeEvents (int limit)
+        private static void MayPurgeEvents ()
         {
             // Only check once every N events
             PurgeCounter = (PurgeCounter + 1) % 512;
@@ -144,14 +133,10 @@ namespace NachoCore.Utils
 
         private static void RecordJsonEvent (TelemetryEventType eventType, TelemetryJsonEvent jsonEvent)
         {
-            SharedInstance.Counters [(int)eventType].Click ();
-            NcTimeStamp.Add ("After SharedInstance.Counters.Click()");
-            JsonFileTable.Add (jsonEvent);
-            NcTimeStamp.Add ("After JsonFileTable.Add()");
-            MayPurgeEvents (2000000);
-            NcTimeStamp.Add ("After MayPurgeEvents()");
-            Telemetry.SharedInstance.DbUpdated.Set ();
-            NcTimeStamp.Add ("After DbUpdated.Set()");
+            Instance.Counters [(int)eventType].Click ();
+            Telemetry.TelemetryJsonFileTable.Instance.Add (jsonEvent);
+            MayPurgeEvents ();
+            Telemetry.Instance.DbUpdated.Set ();
         }
 
         public static void RecordLogEvent (int threadId, TelemetryEventType type, ulong subsystem, string fmt, params object[] list)
@@ -161,7 +146,6 @@ namespace NachoCore.Utils
             }
 
             NcAssert.True (TelemetryEvent.IsLogEvent (type));
-            NcTimeStamp.Add ("Before create jsonEvent");
             var jsonEvent = new TelemetryLogEvent (type) {
                 thread_id = threadId,
                 module = Log.ModuleString (subsystem),
@@ -171,9 +155,7 @@ namespace NachoCore.Utils
                 jsonEvent.message = jsonEvent.message.Substring (0, MAX_AWS_LEN - 4);
                 jsonEvent.message += " ...";
             }
-            NcTimeStamp.Add ("After create jsonEvent");
             RecordJsonEvent (type, jsonEvent);
-            NcTimeStamp.Add ("After RecordJsonEvent");
         }
 
         protected static void RecordProtocolEvent (TelemetryEventType type, byte[] payload)
@@ -463,8 +445,8 @@ namespace NachoCore.Utils
 
         public static void StartService ()
         {
-            SharedInstance.Throttling = true;
-            SharedInstance.Start ();
+            Instance.Throttling = true;
+            Instance.Start ();
         }
 
         public void Start ()
@@ -560,7 +542,7 @@ namespace NachoCore.Utils
 
                     bool succeed = false;
                     // Old teledb-based telemetry
-                    NcAssert.True (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId);
+                    NcAssert.True (NcApplication.Instance.UiThreadId != Thread.CurrentThread.ManagedThreadId);
                     List<TelemetryEvent> tEvents = null;
                     List<McTelemetryEvent> dbEvents = null;
                     // Always check for support event first
@@ -570,13 +552,13 @@ namespace NachoCore.Utils
                         dbEvents = McTelemetryEvent.QueryMultiple (MAX_QUERY_ITEMS);
                     }
                     if (0 == dbEvents.Count) {
-                        var readFile = JsonFileTable.GetNextReadFile ();
+                        var readFile = Telemetry.TelemetryJsonFileTable.Instance.GetNextReadFile ();
                         if (null != readFile) {
                             // New log file-based telemetry
                             succeed = BackEnd.UploadEvents (readFile);
                             if (succeed) {
                                 Action supportCallback;
-                                JsonFileTable.Remove (readFile, out supportCallback);
+                                Telemetry.TelemetryJsonFileTable.Instance.Remove (readFile, out supportCallback);
                                 if (null != supportCallback) {
                                     InvokeOnUIThread.Instance.Invoke (supportCallback);
                                 }

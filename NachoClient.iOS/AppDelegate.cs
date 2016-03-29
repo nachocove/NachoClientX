@@ -320,12 +320,8 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.ContinueRemoveAccountIfNeeded ();
 
-            NcTimeStamp.Add ("Before Log");
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
-            NcTimeStamp.Add ("After Log, before PlatformIndication");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
-            NcTimeStamp.Add ("After PlatformIndication");
-            NcTimeStamp.Dump ();
 
             NcApplication.Instance.StartBasalServices ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartBasalServices complete");
@@ -389,7 +385,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                Telemetry.SharedInstance.Throttling = false;
+                Telemetry.Instance.Throttling = false;
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
