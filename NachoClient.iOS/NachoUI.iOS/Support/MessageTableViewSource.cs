@@ -10,6 +10,7 @@ using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Brain;
+using System.Linq;
 
 namespace NachoClient.iOS
 {
@@ -449,7 +450,7 @@ namespace NachoClient.iOS
             MultiSelectToggle (tableView);
         }
 
-        void UpdateMultiSelectAccounts(McEmailMessageThread messageThread, int delta)
+        void UpdateMultiSelectAccounts (McEmailMessageThread messageThread, int delta)
         {
             var message = messageThread.FirstMessage ();
             if (null == message) {
@@ -467,6 +468,12 @@ namespace NachoClient.iOS
                 NcAssert.True (1 == delta);
                 MultiSelectAccounts.Add (message.AccountId, delta);
             }
+        }
+
+        public int MultiSelectAccount (UITableView tableView)
+        {
+            NcAssert.True (1 == MultiSelectAccounts.Count);
+            return MultiSelectAccounts.Keys.First<int> ();
         }
 
         /// <summary>
@@ -917,7 +924,7 @@ namespace NachoClient.iOS
                     }
                 }
             }
-            if (null != headerText && null != messageThreads && messageThreads.HasFilterSemantics()) {
+            if (null != headerText && null != messageThreads && messageThreads.HasFilterSemantics ()) {
                 headerText.Text = Folder_Helpers.FilterString (messageThreads.FilterSetting);
             }
         }

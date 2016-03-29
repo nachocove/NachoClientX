@@ -73,7 +73,7 @@ namespace NachoClient.iOS
         protected void EndRefreshingOnUIThread (object sender)
         {
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
-                if (refreshControl.Refreshing){
+                if (refreshControl.Refreshing) {
                     refreshControl.EndRefreshing ();
                 }
             });
@@ -130,7 +130,7 @@ namespace NachoClient.iOS
             hotEventView = new HotEventView (new CGRect (0, 0, View.Frame.Width, 69));
             View.AddSubview (hotEventView);
 
-            hotListView = new UITableView (new CGRect(0, hotEventView.Frame.Bottom, View.Frame.Width, View.Frame.Height - hotEventView.Frame.Bottom), UITableViewStyle.Plain);
+            hotListView = new UITableView (new CGRect (0, hotEventView.Frame.Bottom, View.Frame.Width, View.Frame.Height - hotEventView.Frame.Bottom), UITableViewStyle.Plain);
             hotListView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             hotListView.BackgroundColor = A.Color_NachoBackgroundGray;
             hotListView.DecelerationRate = UIScrollView.DecelerationRateFast;
@@ -271,7 +271,7 @@ namespace NachoClient.iOS
                 Log.Error (Log.LOG_UI, "MaybeSwitchToNotificationAccount: no account for {0}", obj.Id);
                 return false;
             }
-            if (NcApplication.Instance.Account.ContainsAccount(notificationAccount.Id)){
+            if (NcApplication.Instance.Account.ContainsAccount (notificationAccount.Id)) {
                 return true;
             }
             NcApplication.Instance.Account = notificationAccount;
@@ -322,7 +322,19 @@ namespace NachoClient.iOS
             } else if (segue.Identifier == "NachoNowToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = sender as SegueHolder;
-                vc.SetOwner (this, true, h);
+                int accountId = 0;
+                if (h.value is McEmailMessage) {
+                    accountId = ((McEmailMessage)h.value).AccountId;
+                }
+                if (h.value is McEmailMessageThread) {
+                    var message = ((McEmailMessageThread)h.value).FirstMessage ();
+                    if (null == message) {
+                        return;
+                    }
+                    accountId = message.AccountId;
+                }
+                NcAssert.False (0 == accountId);
+                vc.SetOwner (this, true, accountId, h);
             } else {
                 Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
                 NcAssert.CaseError ();
@@ -472,7 +484,7 @@ namespace NachoClient.iOS
             if (null != calendarInvite) {
                 var account = McAccount.EmailAccountForCalendar (calendarInvite);
                 var composeViewController = new MessageComposeViewController (account);
-                composeViewController.Composer.RelatedCalendarItem  = calendarInvite;
+                composeViewController.Composer.RelatedCalendarItem = calendarInvite;
                 composeViewController.Composer.Message = McEmailMessage.MessageWithSubject (account, "Fwd: " + calendarInvite.Subject);
                 composeViewController.Present ();
 
@@ -510,7 +522,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
-            vc.SetOwner (null, false, null);
+            vc.SetOwner (null, false, 0, null);
             vc.DismissFolderChooser (false, null);
         }
 

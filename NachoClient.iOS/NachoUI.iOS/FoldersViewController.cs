@@ -29,15 +29,17 @@ namespace NachoClient.iOS
         {
         }
 
+        int accountId;
         protected object cookie;
         protected bool modal;
         protected INachoFolderChooserParent owner;
 
-        public void SetOwner (INachoFolderChooserParent owner, bool modal, object cookie)
+        public void SetOwner (INachoFolderChooserParent owner, bool modal, int accountId, object cookie)
         {
             this.owner = owner;
             this.modal = modal;
             this.cookie = cookie;
+            this.accountId = accountId;
         }
 
         public void DismissFolderChooser (bool animated, Action action)
@@ -65,6 +67,7 @@ namespace NachoClient.iOS
             TableView.TableHeaderView = v;
                 
             if (modal) {
+                NcAssert.False (0 == accountId);
                 var navBar = new UINavigationBar (new CGRect (0, 20, View.Frame.Width, 44));
                 navBar.BarStyle = UIBarStyle.Default;
                 navBar.Translucent = false;
@@ -98,6 +101,7 @@ namespace NachoClient.iOS
                 switchAccountButton = new SwitchAccountButton (switchAccountButtonPressed);
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
                 NavigationItem.TitleView = switchAccountButton;
+                accountId = NcApplication.Instance.Account.Id;
             }
         }
 
@@ -106,15 +110,16 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
 
             if (null == folderTableViewSource) {
-                folderTableViewSource = new FolderTableViewSource (NcApplication.Instance.Account.Id, hideFakeFolders: modal);
+                folderTableViewSource = new FolderTableViewSource (accountId, hideFakeFolders: modal);
                 TableView.Source = folderTableViewSource;
                 TableView.ReloadData ();
             } else {
-                folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
+                folderTableViewSource.Refresh (accountId);
                 TableView.ReloadData ();
             }
 
             if (null != switchAccountButton) {
+                NcAssert.False (modal);
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             }
 
@@ -134,6 +139,7 @@ namespace NachoClient.iOS
 
         void FolderTableViewSource_OnAccountSelected (object sender, McAccount account)
         {
+            NcAssert.False (modal);
             FolderLists.SetDefaultAccount (account.Id);
             folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
             TableView.ReloadData ();
@@ -178,6 +184,8 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
+            NcAssert.False (modal);
+            accountId = account.Id;
             switchAccountButton.SetAccountImage (account);
             folderTableViewSource.Refresh (NcApplication.Instance.Account.Id);
             TableView.ReloadData ();
@@ -220,6 +228,7 @@ namespace NachoClient.iOS
 
         private void ComposeMessage ()
         {
+            NcAssert.False (modal);
             var account = McAccount.EmailAccountForAccount (NcApplication.Instance.Account);
             var composeViewController = new MessageComposeViewController (account);
             composeViewController.Present ();

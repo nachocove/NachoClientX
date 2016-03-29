@@ -202,7 +202,19 @@ namespace NachoClient.iOS
             if (segue.Identifier == "MessageListToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = (SegueHolder)sender;
-                vc.SetOwner (this, true, h);
+                int accountId = 0;
+                if (h.value is McEmailMessage) {
+                    accountId = ((McEmailMessage)h.value).AccountId;
+                }
+                if (h.value is McEmailMessageThread) {
+                    var message = ((McEmailMessageThread)h.value).FirstMessage ();
+                    if (null == message) {
+                        return;
+                    }
+                    accountId = message.AccountId;
+                }
+                NcAssert.False (0 == accountId);
+                vc.SetOwner (this, true, accountId, h);
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageView") {
@@ -1073,7 +1085,7 @@ namespace NachoClient.iOS
         protected bool PerformAction (string action, string number)
         {
             try {
-                return Util.PerformAction(action, number);
+                return Util.PerformAction (action, number);
             } catch (Exception e) {
                 Log.Warn (Log.LOG_UI, "Cannot perform action {0} ({1})", action, e);
                 return false;
@@ -1160,7 +1172,7 @@ namespace NachoClient.iOS
 
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
-            vc.SetOwner (null, false, null);
+            vc.SetOwner (null, false, 0, null);
             vc.DismissFolderChooser (false, null);
         }
 
