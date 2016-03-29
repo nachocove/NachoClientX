@@ -535,12 +535,16 @@ namespace NachoClient.iOS
             if (disposed) {
                 return;
             }
-            var webView = BodyWebView.ResuableWebView (yOffset, preferredWidth, visibleArea.Height);
-            webView.OnLinkSelected = onLinkSelected;
-            webView.LoadBundle (Bundle, LayoutAndNotifyParent);
-            AddSubview (webView);
-            childViews.Add (webView);
-            yOffset += webView.ContentSize.Height;
+            if (Bundle.NeedsUpdate) {
+                ShowErrorMessage (NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed, NcResult.WhyEnum.Unknown));
+            } else {
+                var webView = BodyWebView.ResuableWebView (yOffset, preferredWidth, visibleArea.Height);
+                webView.OnLinkSelected = onLinkSelected;
+                webView.LoadBundle (Bundle, LayoutAndNotifyParent);
+                AddSubview (webView);
+                childViews.Add (webView);
+                yOffset += webView.ContentSize.Height;
+            }
         }
 
         void RenderTextString (string text)

@@ -157,7 +157,11 @@ namespace NachoCore.Utils
 
         void BundleUpdated ()
         {
-            IndicateSuccess ();
+            if (Bundle.NeedsUpdate) {
+                FailWithResult (NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed, NcResult.WhyEnum.Unknown));
+            } else {
+                IndicateSuccess ();
+            }
         }
 
         void StartListeningForStatusIndicator ()
