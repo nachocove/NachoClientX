@@ -190,7 +190,6 @@ namespace NachoCore.Model
         /// </summary>
         /// <returns>The the value of the latest record we successfuly wrote or pulled from the DB, otherwise, this</returns>
         /// <param name="mutator">Mutator must return false if it can't apply change.</param>
-        /// <param name="count">Count is the same as the retval from plain-old Update(). 0 indicates failure.</param>
         /// <param name="tries">Tries before giving up.</param>
         /// <typeparam name="T">T must match the type of the object.</typeparam>
         public virtual T UpdateWithOCApply<T> (Mutator mutator, int tries = 100) where T : McAbstrObject, new()
