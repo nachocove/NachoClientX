@@ -288,7 +288,7 @@ namespace NachoPlatform
                         }
                     }
                 } catch (Exception ex) {
-                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Error Processing response: {0}", OriginalRequest.guid, ex);
+                    Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Error Processing response: {1}", OriginalRequest.guid, ex);
                     ErrorAction (ex, Token);
                 } finally {
                     File.Delete (filename);
