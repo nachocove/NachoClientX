@@ -225,10 +225,10 @@ namespace NachoPlatform
             
             public override void DidFinishDownloading (NSUrlSession session, NSUrlSessionDownloadTask downloadTask, NSUrl location)
             {
+                var taskName = taskDescriptionOrUnknown (downloadTask);
 #if DEBUG
-                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidFinishDownloading request {1}ms", taskDescriptionOrUnknown(downloadTask), sw.ElapsedMilliseconds);
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): DidFinishDownloading request {1}ms", taskName, sw.ElapsedMilliseconds);
 #endif
-
                 if (!Token.IsCancellationRequested && null != SuccessAction) {
                     NcAssert.True (downloadTask.Response is NSHttpUrlResponse);
                     NcAssert.True (location.IsFileUrl);
@@ -239,8 +239,29 @@ namespace NachoPlatform
                     // to a permanent location in your app’s sandbox container directory before returning from this delegate method.
                     //
                     // If you choose to open the file for reading, you should do the actual reading in another thread to avoid blocking the delegate queue.
-
-                    var fileStream = new FileStream (location.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    FileStream fileStream = null;
+                    try {
+                        fileStream = new FileStream (location.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    } catch (Exception ex) {
+                        NcTask.Run (() => {
+                            try {
+                                if (null != ErrorAction) {
+                                    ErrorAction (ex, Token);
+                                } else {
+                                    Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): Could not run open temp file: {1}\n{2}", taskName, location.Path, ex);
+                                }
+                            } catch (Exception exInner) {
+                                Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): Could not run ErrorAction in DidFinishDownloading: {1}", taskName, exInner);
+                            }
+                        }, "NsUrlSession_DidFinishDownloading_ErrorAction");
+                        if (null != fileStream) {
+                            fileStream.Dispose ();
+                        }
+                        if (File.Exists (location.Path)) {
+                            File.Delete (location.Path);
+                        }
+                        return;
+                    }
                     var resp = downloadTask.Response as NSHttpUrlResponse;
                     int status = (int)resp.StatusCode;
 
@@ -250,7 +271,7 @@ namespace NachoPlatform
                                 SuccessAction (response, Token);
                             }
                         } catch (Exception ex) {
-                            Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): Error running SuccessAction: {1}", taskDescriptionOrUnknown(downloadTask), ex);
+                            Log.Error (Log.LOG_HTTP, "NcHttpClient({0}): Error running SuccessAction: {1}", taskName, ex);
                         } finally {
                             fileStream.Dispose ();
                             if (File.Exists (location.Path)) {
