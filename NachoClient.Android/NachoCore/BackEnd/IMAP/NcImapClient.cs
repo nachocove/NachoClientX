@@ -64,19 +64,12 @@ namespace NachoCore.IMAP
 
         protected override Stream CreateStream (UniqueId? uid, string section, int offset, int length)
         {
-            // TODO Use a file-base stream, instead of memory. Need to figure out which file to open, and how
-            // to pass that information in here.
-            string uidString;
-            if (uid.HasValue) {
-                uidString = uid.Value.ToString ();
-            } else {
-                uidString = "none";
-            }
-            if (null != StreamContext && StreamContext.Uid.ToString () != uidString) {
-                Log.Error (Log.LOG_IMAP, "StreamContext UID {0} does not match uid {1}", StreamContext.Uid, uidString);
+            // a sanity check. Don't bother with the sanity check if we're not passed a valid uid. Some servers just don't seem to.
+            if (uid.HasValue && uid.Value.ToString () != StreamContext.Uid.ToString ()) {
+                Log.Error (Log.LOG_IMAP, "StreamContext UID {0} does not match uid {1}", StreamContext.Uid, uid.Value.ToString ());
             }
             Stream stream;
-            if (null == StreamContext || StreamContext.Uid.ToString () != uidString) {
+            if (null == StreamContext) {
                 stream = base.CreateStream (uid, section, offset, length);
             } else {
                 stream = new FileStream (StreamContext.FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
