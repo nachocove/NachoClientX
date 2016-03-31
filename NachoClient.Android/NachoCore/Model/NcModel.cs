@@ -481,6 +481,7 @@ namespace NachoCore.Model
 
         private NcTimer CheckPointTimer;
         private NcTimer DbConnGCTimer;
+        private object DbConnGCTimerLock = new object ();
         private DateTime lastDbConnGC = default(DateTime);
 
         private class CheckpointResult
@@ -516,13 +517,16 @@ namespace NachoCore.Model
                     }
                 });
             }
-            if (null != DbConnGCTimer) {
-                DbConnGCTimer.Dispose ();
-                DbConnGCTimer = null;
+            lock (DbConnGCTimerLock) {
+                // If Stop() was called in between the timer firing and this method running,
+                // don't create a new timer.
+                if (null != DbConnGCTimer) {
+                    DbConnGCTimer.Dispose ();
+                    // Avoid recurring timer because C# will dump many invocations into the Q and run them concurrently.
+                    DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
+                    DbConnGCTimer.Stfu = true;
+                }
             }
-            // Avoid recurring timer because C# will dump many invocations into the Q and run them concurrently.
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
-            DbConnGCTimer.Stfu = true;
         }
 
         public void Start ()
@@ -531,8 +535,15 @@ namespace NachoCore.Model
             if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.PlatformIndication) {
                 initialGcTimerLength = 1 * 1000;
             }
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, initialGcTimerLength, Timeout.Infinite);
-            DbConnGCTimer.Stfu = true;
+            lock (DbConnGCTimerLock) {
+                // In an ideal world, there won't already be a timer running.  But if there is, just let it be.
+                // If the existing timer is disposed and a new one created, then two GCs could happen only a
+                // second apart and bug https://github.com/nachocove/qa/issues/1812 could be triggered.
+                if (null == DbConnGCTimer) {
+                    DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, initialGcTimerLength, Timeout.Infinite);
+                    DbConnGCTimer.Stfu = true;
+                }
+            }
 
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
                 var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
@@ -577,9 +588,11 @@ namespace NachoCore.Model
                 CheckPointTimer.Dispose ();
                 CheckPointTimer = null;
             }
-            if (null != DbConnGCTimer) {
-                DbConnGCTimer.Dispose ();
-                DbConnGCTimer = null;
+            lock (DbConnGCTimerLock) {
+                if (null != DbConnGCTimer) {
+                    DbConnGCTimer.Dispose ();
+                    DbConnGCTimer = null;
+                }
             }
         }
 
