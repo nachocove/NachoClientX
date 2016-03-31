@@ -10,9 +10,9 @@ namespace NachoCore.Utils
         // All subsequent assertion exceptions must be derived of NachoAssertionFailure.
         public class NachoAssertionFailure : Exception
         {
-            public NachoAssertionFailure (string message) : base (message)
+            public NachoAssertionFailure (string message) : base (string.Format ("{0}/{1}", Guid.NewGuid ().ToString ("N"), message))
             {
-                Log.Error (Log.LOG_ASSERT, "{0}:::{1}", message, System.Environment.StackTrace);
+                Log.Error (Log.LOG_ASSERT, "{0}:::{1}", message, Environment.StackTrace);
             }
         }
 
