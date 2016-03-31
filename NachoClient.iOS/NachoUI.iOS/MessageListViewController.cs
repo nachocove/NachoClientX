@@ -667,7 +667,9 @@ namespace NachoClient.iOS
         {
             List<int> adds;
             List<int> deletes;
+            NcAssert.NotNull (searchResultsSource, "UpdateSearchResults: searchResultsSource is null");
             searchResultsSource.RefreshEmailMessages (out adds, out deletes);
+            NcAssert.NotNull (searchDisplayController, "UpdateSearchResults: searchDisplayController is null");
             if (null != searchDisplayController.SearchResultsTableView) {
                 searchDisplayController.SearchResultsTableView.ReloadData ();
             }
