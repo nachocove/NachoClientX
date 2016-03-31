@@ -12,7 +12,7 @@ namespace NachoCore.Utils
         {
             public NachoAssertionFailure (string message) : base (string.Format ("{0}/{1}", Guid.NewGuid ().ToString ("N"), message))
             {
-                Log.Error (Log.LOG_ASSERT, "{0}:::{1}", message, Environment.StackTrace);
+                Log.Error (Log.LOG_ASSERT, "{0}:::{1}", Message, Environment.StackTrace);
             }
         }
 
