@@ -1897,6 +1897,10 @@
     <AndroidResource Include="Resources\layout\ChatParticipantListActivity.axml" />
     <AndroidResource Include="Resources\layout\ChatParticipantListFragment.axml" />
     <AndroidResource Include="Resources\layout\spinner_item.axml" />
+    <AndroidResource Include="Resources\drawable-hdpi\more_contacts.png" />
+    <AndroidResource Include="Resources\drawable-mdpi\more_contacts.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\more_contacts.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\more_contacts.png" />
   </ItemGroup>
   <ItemGroup>
     <AndroidEnvironment Include="Properties\AndroidEnvironment.txt" />
