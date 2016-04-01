@@ -78,7 +78,6 @@ namespace NachoCore.Model
 
         public int RowVersion { get; set; }
 
-        [Indexed]
         public int MigrationVersion { get; set; }
 
         protected Boolean isDeleted;
