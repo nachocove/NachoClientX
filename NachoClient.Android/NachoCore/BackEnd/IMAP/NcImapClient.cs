@@ -65,7 +65,7 @@ namespace NachoCore.IMAP
         protected override Stream CreateStream (UniqueId? uid, string section, int offset, int length)
         {
             // a sanity check. Don't bother with the sanity check if we're not passed a valid uid. Some servers just don't seem to.
-            if (uid.HasValue && uid.Value.ToString () != StreamContext.Uid.ToString ()) {
+            if (null != StreamContext && uid.HasValue && uid.Value.ToString () != StreamContext.Uid.ToString ()) {
                 Log.Error (Log.LOG_IMAP, "StreamContext UID {0} does not match uid {1}", StreamContext.Uid, uid.Value.ToString ());
             }
             Stream stream;
