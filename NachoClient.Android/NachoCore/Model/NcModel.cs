@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+﻿// Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -82,6 +82,30 @@ namespace NachoCore.Model
                 }
             }
         }
+
+        // To learn more about how the database plans and executes queries, define QUERY_DEBUG,
+        // and then call NcModel.Instance.ExplainQuery(query) for the problematic queries.
+        // The query string can have '?' in it without passing any actual arguments.
+        #if QUERY_DEBUG
+
+        private class QueryPlan {
+            public int selectid { get; set; }
+            public int order { get; set; }
+            public int from { get; set; }
+            public string detail { get; set; }
+        }
+
+        public string ExplainQuery (string query)
+        {
+            var plan = this.Query<QueryPlan> (string.Format ("EXPLAIN QUERY PLAN {0}", query));
+            StringBuilder result = new StringBuilder ();
+            foreach (var row in plan) {
+                result.AppendFormat ("|{0}|{1}|{2}| {3}\n", row.selectid, row.order, row.from, row.detail);
+            }
+            return result.ToString ();
+        }
+
+        #endif
     }
 
     public sealed class NcModel
@@ -528,6 +552,15 @@ namespace NachoCore.Model
                 }
             }
         }
+
+        #if QUERY_DEBUG
+
+        public void ExplainQuery (string query)
+        {
+            Log.Info (Log.LOG_DB, "Query: {0}\n{1}", query, ((NcSQLiteConnection)Db).ExplainQuery (query));
+        }
+
+        #endif
 
         public void Start ()
         {

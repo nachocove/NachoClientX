@@ -177,10 +177,8 @@ namespace NachoCore.Model
         // Valid when in Deferred state.
         public uint DefersRemaining { set; get; }
         // Valid when in Deferred state.
-        [Indexed]
         public bool DeferredSerialIssueOnly { set; get; }
         // Valid when Deferred, Blocked, or Failed.
-        [Indexed]
         // Set if the McPending may not be delayed or deferred.
         // Has the side-effect that the McPending will be deleted on restart.
         // Always valid.
