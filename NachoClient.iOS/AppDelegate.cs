@@ -716,6 +716,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "WillTerminate: Exit");
         }
 
+        private int performFetchCount = 0;
         private bool doingPerformFetch = false;
         private bool performFetchNotifyPending = false;
         private bool performFetchShutdownPending = false;
@@ -729,6 +730,12 @@ namespace NachoClient.iOS
         private List<int> pushAccounts;
         // PushAssist is active only when the app is registered for remote notifications
         private bool hasRegisteredForRemoteNotifications = false;
+
+        private class PerformFetchCountObject
+        {
+            public int count;
+            public PerformFetchCountObject (int count) { this.count = count; }
+        }
 
         private bool fetchComplete {
             get {
@@ -744,19 +751,29 @@ namespace NachoClient.iOS
 
         private void FinalBadgeNotify ()
         {
+            int savedPerformFetchCount = performFetchCount;
             performFetchNotifyPending = true;
             performFetchShutdownPending = true;
             BadgeNotifUpdate (() => {
-                performFetchNotifyPending = false;
-                if (!performFetchShutdownPending) {
-                    FinalizePerformFetch (fetchResult);
-                    NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
+                // The BadgeNotifUpdate() might survive across a shutdown and complete when the next
+                // PerformFetch is running.  Only finalize the PerformFetch if it is the same one
+                // as when the call was started.
+                if (performFetchCount == savedPerformFetchCount) {
+                    performFetchNotifyPending = false;
+                    if (!performFetchShutdownPending) {
+                        FinalizePerformFetch (fetchResult);
+                        NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
+                    }
                 }
             });
         }
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
+            if (!doingPerformFetch) {
+                // The delivery of the event was delayed.  PerformFetch is no longer active.
+                return;
+            }
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
             int accountId = (null != statusEvent.Account) ? statusEvent.Account.Id : -1;
             switch (statusEvent.Status.SubKind) {
@@ -829,6 +846,7 @@ namespace NachoClient.iOS
 
         protected void FinalizePerformFetch (UIBackgroundFetchResult result)
         {
+            Log.Info (Log.LOG_LIFECYCLE, "Finalize PerformFetch ({0})", result.ToString ());
             if (null != performFetchTimer) {
                 performFetchTimer.Dispose ();
                 performFetchTimer = null;
@@ -836,6 +854,7 @@ namespace NachoClient.iOS
             var handler = CompletionHandler;
             CompletionHandler = null;
             fetchCause = null;
+            ++performFetchCount;
             doingPerformFetch = false;
             performFetchNotifyPending = false;
             performFetchShutdownPending = false;
@@ -913,6 +932,12 @@ namespace NachoClient.iOS
                 NcCommStatus.Instance.Reset ("StartFetch");
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
+
+            ++performFetchCount;
+            doingPerformFetch = true;
+            performFetchNotifyPending = false;
+            performFetchShutdownPending = false;
+
             // iOS only allows a limited amount of time to fetch data in the background.
             // Set a timer to force everything to shut down before iOS kills the app.
             // The timer should fire once per second starting when the app has about
@@ -922,12 +947,14 @@ namespace NachoClient.iOS
             if (15 < performFetchTime && performFetchTime < 1000) {
                 initialTimerDelay = TimeSpan.FromSeconds (performFetchTime - 10.0);
             }
+            Log.Info (Log.LOG_LIFECYCLE, "Starting PerformFetch timer: {0:n2} seconds of background time remaining. Timer will start in {1:n2} seconds.",
+                performFetchTime, initialTimerDelay.TotalSeconds);
             performFetchTimer = new Timer (((object state) => {
                 InvokeOnUIThread.Instance.Invoke (() => {
                     var remaining = application.BackgroundTimeRemaining;
                     Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer: {0:n2} seconds remaining.", remaining);
-                    if (doingPerformFetch) {
-                        if (5.0 >= remaining && !performFetchNotifyPending && !performFetchShutdownPending) {
+                    if (((PerformFetchCountObject)state).count == performFetchCount) {
+                        if (5.5 >= remaining && !performFetchNotifyPending && !performFetchShutdownPending) {
                             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch ran out of time. Shutting down the app.");
                             FinalBadgeNotify ();
                             CompletePerformFetch ();
@@ -936,7 +963,7 @@ namespace NachoClient.iOS
                             FinalizePerformFetch (fetchResult);
                         }
                     } else {
-                        // The PerformFetch is done.  The timer isn't needed any more.
+                        Log.Info(Log.LOG_LIFECYCLE, "PerformFetch timer fired after perform fetch completed. Disabling the timer.");
                         try {
                             performFetchTimer.Change (Timeout.Infinite, Timeout.Infinite);
                         } catch (Exception ex) {
@@ -945,10 +972,7 @@ namespace NachoClient.iOS
                         }
                     }
                 });
-            }), null, initialTimerDelay, TimeSpan.FromSeconds (1));
-            doingPerformFetch = true;
-            performFetchNotifyPending = false;
-            performFetchShutdownPending = false;
+            }), new PerformFetchCountObject (performFetchCount), initialTimerDelay, TimeSpan.FromSeconds (1));
         }
 
         protected void SaveNotification (string traceMessage, string key, nint id)
