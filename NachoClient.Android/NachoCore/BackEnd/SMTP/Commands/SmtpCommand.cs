@@ -78,6 +78,7 @@ namespace NachoCore.SMTP
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             NcTask.Run (() => {
                 Event evt;
                 Tuple<ResolveAction, NcResult.WhyEnum> action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.None, NcResult.WhyEnum.Unknown);
@@ -253,6 +254,7 @@ namespace NachoCore.SMTP
         }
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             WaitCommand.Execute (sm);
         }
         public override void Cancel ()

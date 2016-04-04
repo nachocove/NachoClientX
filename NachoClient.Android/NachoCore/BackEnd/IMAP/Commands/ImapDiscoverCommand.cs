@@ -27,6 +27,7 @@ namespace NachoCore.IMAP
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             Sm = sm;
             NcTask.Run (() => {
                 Event evt = ExecuteCommandInternal ();

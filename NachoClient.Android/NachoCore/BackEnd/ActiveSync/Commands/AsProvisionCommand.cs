@@ -140,6 +140,7 @@ namespace NachoCore.ActiveSync
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             OwnerSm = sm;
             Sm.Name = OwnerSm.Name + ":PROV";
             Sm.Start ();

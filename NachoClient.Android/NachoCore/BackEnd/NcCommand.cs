@@ -28,7 +28,7 @@ namespace NachoCore
         /// The command-specific cancellation token source. Used when the Cancel() method is called.
         /// </summary>
         /// <value>The internal cts.</value>
-        private CancellationTokenSource InternalCts { get; set; }
+        protected CancellationTokenSource InternalCts { get; set; }
 
         /// <summary>
         /// Because of threading, the PendingResolveLockObj must be locked before resolving.
@@ -105,7 +105,10 @@ namespace NachoCore
         /// </description>
         ~NcCommand ()
         {
-            Cts.Dispose ();
+            if (null != Cts) {
+                Cts.Dispose ();
+                Cts = null;
+            }
         }
 
         public virtual void Execute (NcStateMachine sm)
@@ -236,6 +239,7 @@ namespace NachoCore
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             Sm = sm;
 
             WaitTimer = new NcTimer ("NcWaitCommand:WaitTimer",

@@ -533,6 +533,7 @@ namespace NachoCore.ActiveSync
 
         public override void Execute (NcStateMachine ownerSm)
         {
+            base.Execute (ownerSm);
             OwnerSm = ownerSm;
             Sm.Name = OwnerSm.Name + ":AUTOD";
             Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
