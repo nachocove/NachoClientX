@@ -271,10 +271,12 @@ namespace NachoCore
             McPendingHelper.Instance.Stop ();
             ApplyAcrossAccounts ("Stop", (accountId) => Stop (accountId));
             BodyFetchHints.Reset ();
+            Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() exited");
         }
 
         public void Stop (int accountId)
         {
+            Log.Info (Log.LOG_BACKEND, "BackEnd.Stop({0}) called", accountId);
             if (!AccountHasServices (accountId)) {
                 CreateServices (accountId);
             }
@@ -282,6 +284,7 @@ namespace NachoCore
             // Don't use ApplyAcrossServices, as that will start the services if they aren't already.
             var services = GetServices (accountId);
             if (null != services) {
+                Log.Info (Log.LOG_BACKEND, "BackEnd.Stop({0}) stopping {1} services", accountId, services.Count);
                 // Despite the call to CreateServices() above, GetServices() can return null if the
                 // account is in the process of being removed.
                 foreach (var service in services) {
@@ -289,6 +292,7 @@ namespace NachoCore
                 }
             }
             CredReqActive.Remove (accountId);
+            Log.Info (Log.LOG_BACKEND, "BackEnd.Stop({0}) exited", accountId);
         }
 
         public void Remove (int accountId)
@@ -357,6 +361,7 @@ namespace NachoCore
 
                 // don't use ApplyAcrossServices, as we'll wind up right back here.
                 var services = GetServices (accountId);
+                Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) starting {1} services", accountId, services.Count);
                 foreach (var service in services) {
                     NcTask.Run (() => service.Start (), string.Format ("Start_{0}:{1}_", service.GetType ().Name, accountId));
                 }

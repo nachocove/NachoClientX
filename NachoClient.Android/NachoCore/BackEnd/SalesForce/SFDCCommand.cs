@@ -37,6 +37,7 @@ namespace NachoCore.SFDC
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             if (Cts.IsCancellationRequested) {
                 return;
             }

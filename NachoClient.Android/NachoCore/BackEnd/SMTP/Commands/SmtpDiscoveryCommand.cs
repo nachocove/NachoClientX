@@ -22,6 +22,7 @@ namespace NachoCore.SMTP
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             NcTask.Run (() => {
                 Event evt = ExecuteCommand ();
                 if (!Cts.Token.IsCancellationRequested) {
