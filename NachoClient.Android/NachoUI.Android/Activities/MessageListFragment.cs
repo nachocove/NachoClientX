@@ -153,6 +153,7 @@ namespace NachoClient.AndroidClient
             searchEditText.EditorAction += SearchString_Enter;
 
             emailSearcher = new EmailSearch ((string searchString, List<McEmailMessageThread> results) => {
+                NcAssert.NotNull (messageListAdapter, "EmailSearch: messageListAdapter is null");
                 messageListAdapter.RefreshSearchMatches ();
             });
                 
