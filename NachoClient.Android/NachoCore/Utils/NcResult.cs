@@ -129,7 +129,7 @@ namespace NachoCore.Utils
             Error_FolderDeleteFailed,
             Error_FolderUpdateFailed,
             Error_SyncFailed,
-            Error_SyncFailedToComplete,
+            Error_SyncFailedToComplete_Obsolete,
             Error_FolderSyncFailed,
             Error_MeetingResponseFailed,
             Error_ContactSearchCommandFailed,
