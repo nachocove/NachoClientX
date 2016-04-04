@@ -133,6 +133,10 @@ namespace NachoPlatform
             var session = NSUrlSession.FromConfiguration (config, dele, null);
             var task = session.CreateDownloadTask (req);
             task.TaskDescription = request.guid;
+            if (cancellationToken.IsCancellationRequested) {
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Cancellation requested", request.guid);
+                return;
+            }
             cancellationToken.Register (() => {
                 // make sure don't run on the UI thread.
                 if (NSThread.Current.IsMainThread) {

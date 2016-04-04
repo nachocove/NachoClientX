@@ -166,6 +166,10 @@ namespace NachoPlatform
 
             var rq = builder.Build ();
             var call = cloned.NewCall (rq);
+            if (cancellationToken.IsCancellationRequested) {
+                Log.Info (Log.LOG_HTTP, "NcHttpClient({0}): Cancellation requested", request.guid);
+                return;
+            }
             cancellationToken.Register (() => {
                 if (!call.IsCanceled) {
                     if (Android.OS.Looper.MyLooper () == Android.OS.Looper.MainLooper) {
