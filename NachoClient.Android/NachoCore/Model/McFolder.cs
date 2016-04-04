@@ -21,10 +21,8 @@ namespace NachoCore.Model
 
     public class McFolder : McAbstrFolderEntry
     {
-        [Indexed]
         public bool IsClientOwned { get; set; }
 
-        [Indexed]
         public bool IsHidden { get; set; }
 
         [Indexed]
