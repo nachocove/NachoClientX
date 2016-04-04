@@ -297,6 +297,10 @@ namespace NachoCore.Utils
                     writeFile.Close ();
 
                     var newFilePath = GetReadFilePath (writeFile.FilePath, writeFile.FirstTimestamp, writeFile.LatestTimestamp);
+                    if (File.Exists (newFilePath)) {
+                        // file exists from a previous incarnation. Delete it. Perhaps we crashed before the file could be uploaded
+                        File.Delete (newFilePath);
+                    }
                     File.Move (writeFile.FilePath, newFilePath);
 
                     ReadFiles.Add (newFilePath);
