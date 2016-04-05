@@ -31,5 +31,10 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUCC");
             });
         }
+
+        protected override Event ExecuteCommand ()
+        {
+            throw new NotImplementedException ();
+        }
     }
 }
