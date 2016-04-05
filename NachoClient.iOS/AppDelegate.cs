@@ -900,17 +900,18 @@ namespace NachoClient.iOS
             NcMigration.Setup ();
             if (NcMigration.WillStartService ()) {
                 Log.Error (Log.LOG_SYS, "PerformFetch called while migrations still need to run.");
-                FinalizePerformFetch (UIBackgroundFetchResult.NoData); // or UIBackgroundFetchResult.Failed?
+                FinalizePerformFetch (UIBackgroundFetchResult.NoData);
                 return;
             }
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
 
-            if (10.0 > application.BackgroundTimeRemaining) {
+            if (8.0 > application.BackgroundTimeRemaining) {
                 // Launching the app took up most of the perform fetch window.  There isn't enough
                 // time left to run a full quick sync.
                 Log.Warn (Log.LOG_LIFECYCLE, "Skipping quick sync {0} because only {1:n2} seconds are left.", cause, application.BackgroundTimeRemaining);
-                FinalizePerformFetch (fetchResult);
+                FinalizePerformFetch (UIBackgroundFetchResult.NoData);
+                return;
             }
 
             fetchAccounts = McAccount.GetAllConfiguredNormalAccountIds ();
