@@ -98,17 +98,27 @@ namespace NachoCore
             Owner = owner;
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
-            NewCancellation ();
             if (Account.AccountType != McAccount.AccountTypeEnum.Device) {
                 NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
                 NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
             }
         }
 
-        public CancellationTokenSource Cts { get; protected set; }
-        private void NewCancellation ()
-        {
-            Cts = new CancellationTokenSource ();
+        protected CancellationTokenSource _Cts;
+        public CancellationTokenSource Cts { 
+            get {
+                if (!IsStarted) {
+                    Log.Warn (Log.LOG_BACKEND, "Called Cts getter but IsStarted is false! {0}", Environment.StackTrace);
+                }
+                if (null == _Cts) {
+                    _Cts = new CancellationTokenSource ();
+                }
+                return _Cts;
+            }
+
+            protected set {
+                _Cts = value;
+            }
         }
 
         static public INcHttpClient TestHttpClient { get; set; }
@@ -406,9 +416,6 @@ namespace NachoCore
                         Server != null ? Server.Id.ToString () : "null", Server != null ? NcCommStatus.Instance.Quality (Server.Id).ToString () : "");
                     return false;
                 }
-                if (Cts.IsCancellationRequested) {
-                    NewCancellation ();
-                }
                 return true;
             }
         }
@@ -425,7 +432,10 @@ namespace NachoCore
 
         protected virtual void ForceStop ()
         {
-            Cts.Cancel ();
+            if (null != Cts) {
+                Cts.Cancel ();
+                Cts = null;
+            }
             Sm.PostEvent ((uint)PcEvt.E.Park, "PCFORCESTOP");
         }
 
