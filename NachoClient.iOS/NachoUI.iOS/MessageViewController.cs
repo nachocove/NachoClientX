@@ -54,20 +54,12 @@ namespace NachoClient.iOS
         protected static nfloat TOVIEW_LEFT_MARGIN = 20;
         protected static nfloat CCVIEW_LEFT_MARGIN = 20;
         protected static nfloat CHILI_ICON_WIDTH = 20;
+
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
-
-
-
-
-
-
-
-
-
-#else
+        #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
         nfloat HEADER_TOP_MARGIN = 0;
@@ -679,7 +671,7 @@ namespace NachoClient.iOS
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var message = thread.FirstMessage ();
                 if (null != message) {
-                    vc.SetOwner (this, true, message.Id, thread);
+                    vc.SetOwner (this, true, message.AccountId, thread);
                 }
                 return;
             }
