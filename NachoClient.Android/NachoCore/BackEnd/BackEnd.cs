@@ -363,7 +363,7 @@ namespace NachoCore
                 var services = GetServices (accountId);
                 Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) starting {1} services", accountId, services.Count);
                 foreach (var service in services) {
-                    service.Start ();
+                    NcTask.Run (() => service.Start (), string.Format ("Start_{0}:{1}_", service.GetType ().Name, accountId));
                 }
 
                 // See if we have an OAuth2 credential for this account. 
