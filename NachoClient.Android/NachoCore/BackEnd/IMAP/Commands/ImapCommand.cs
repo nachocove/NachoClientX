@@ -20,7 +20,7 @@ using NachoPlatform;
 
 namespace NachoCore.IMAP
 {
-    public class ImapCommand : NcCommand
+    public abstract class ImapCommand : NcCommand
     {
         /// <summary>
         /// The ImapClient for this command.
@@ -84,11 +84,7 @@ namespace NachoCore.IMAP
         }
 
         // MUST be overridden by subclass.
-        protected virtual Event ExecuteCommand ()
-        {
-            NcAssert.True (false);
-            return null;
-        }
+        protected abstract Event ExecuteCommand ();
 
         public override void Cancel ()
         {
@@ -710,7 +706,6 @@ namespace NachoCore.IMAP
 
         public override void Execute (NcStateMachine sm)
         {
-            base.Execute (sm);
             Sm = sm;
             WaitCommand.Execute (sm);
         }
@@ -718,6 +713,11 @@ namespace NachoCore.IMAP
         public override void Cancel ()
         {
             WaitCommand.Cancel ();
+        }
+
+        protected override Event ExecuteCommand ()
+        {
+            throw new NotImplementedException ();
         }
     }
 
