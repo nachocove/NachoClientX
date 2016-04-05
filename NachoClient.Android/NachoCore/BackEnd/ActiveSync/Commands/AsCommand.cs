@@ -635,7 +635,6 @@ namespace NachoCore.ActiveSync
         }
         public override void Execute (NcStateMachine sm)
         {
-            base.Execute (sm);
             WaitCommand.Execute (sm);
         }
         public override void Cancel ()
