@@ -1023,6 +1023,7 @@ namespace NachoCore.Model
             DeferredReason = DeferredEnum.UntilTime;
             DeferredUntilTime = eligibleAfter;
             ResolveAsDeferred (control, DeferredEnum.UntilTime, onFail);
+            McPendingHelper.Instance.AddCheckTime (eligibleAfter);
         }
 
         public void ResolveAsDeferred (NcProtoControl control, DateTime eligibleAfter, NcResult.WhyEnum why)
@@ -1400,6 +1401,16 @@ namespace NachoCore.Model
             ).OrderBy (x => x.Priority).ToList ();
         }
 
+        public static DateTime? QueryNextDeferredUntilTime ()
+        {
+            try {
+                var next = NcModel.Instance.Db.Table<McPending> ().Where (rec => rec.State == StateEnum.Deferred && rec.DeferredReason == DeferredEnum.UntilTime).OrderBy (x => x.DeferredUntilTime).First ();
+                return next.DeferredUntilTime;
+            } catch (System.InvalidOperationException e){
+                return null;
+            }
+        }
+
         public static IEnumerable<McPending> QueryByToken (int accountId, string token)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (x => 
@@ -1623,6 +1634,7 @@ namespace NachoCore.Model
     {
         static McPendingHelper _Instance;
         static object LockObj = new object ();
+        private DateTime? CheckTime;
 
         public static McPendingHelper Instance {
             get {
@@ -1637,9 +1649,25 @@ namespace NachoCore.Model
             }
         }
 
+        public void AddCheckTime (DateTime checkTime)
+        {
+            if (!CheckTime.HasValue || checkTime < CheckTime.Value) {
+                CheckTime = checkTime;
+                PendingOnTimeTimerStart ();
+            }
+        }
+
         public void Start ()
         {
-            PendingOnTimeTimerStart ();
+            ScheduleNextCheck ();
+        }
+
+        private void ScheduleNextCheck ()
+        {
+            var nextDeferredTime = McPending.QueryNextDeferredUntilTime ();
+            if (nextDeferredTime.HasValue) {
+                AddCheckTime (nextDeferredTime.Value);
+            }
         }
 
         public void Stop ()
@@ -1659,11 +1687,23 @@ namespace NachoCore.Model
             }
 
             lock (PendingOnTimeTimerLockObj) {
-                if (null == PendingOnTimeTimer) {
-                    PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => McPending.MakeEligibleOnTime (), null, 1000, 1000);
-                    PendingOnTimeTimer.Stfu = true;
-                }                        
+                if (PendingOnTimeTimer != null) {
+                    PendingOnTimeTimer.Dispose ();
+                }
+                var span = CheckTime.Value - DateTime.UtcNow;
+                if (span.TotalSeconds < 1.0) {
+                    span = new TimeSpan (0, 0, 1);
+                }
+                PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", FireTimer, null, span, System.Threading.Timeout.InfiniteTimeSpan);
+                PendingOnTimeTimer.Stfu = true;                        
             }
+        }
+
+        void FireTimer(object state)
+        {
+            CheckTime = null;
+            McPending.MakeEligibleOnTime ();
+            ScheduleNextCheck ();
         }
 
         void PendingOnTimeTimerStop ()
