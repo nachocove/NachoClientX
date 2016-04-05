@@ -189,17 +189,24 @@ namespace NachoCore.Model
 
         public AutoVacuumEnum AutoVacuum { set; get; }
 
+        private ConcurrentQueue<NcSQLiteConnection> ConnectionPool;
+
         public SQLiteConnection Db {
             get {
                 var threadId = Thread.CurrentThread.ManagedThreadId;
                 NcSQLiteConnection db = null;
                 while (true) {
                     if (!DbConns.TryGetValue (threadId, out db)) {
-                        db = new NcSQLiteConnection (DbFileName, 
-                            SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
-                            storeDateTimeAsTicks: true);
-                        db.BusyTimeout = TimeSpan.FromSeconds (10.0);
-                        db.TraceThreshold = 500;
+                        if (!ConnectionPool.TryDequeue (out db)) {
+                            Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} + connection", threadId);
+                            db = new NcSQLiteConnection (DbFileName, 
+                                SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
+                                storeDateTimeAsTicks: true);
+                            db.BusyTimeout = TimeSpan.FromSeconds (10.0);
+                            db.TraceThreshold = 500;
+                        } else {
+                            Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} > connection", threadId);
+                        }
                         NcAssert.True (DbConns.TryAdd (threadId, db));
                     }
                     if (db.SetLastAccess ()) {
@@ -214,7 +221,8 @@ namespace NachoCore.Model
                 var threadId = Thread.CurrentThread.ManagedThreadId;
                 NcSQLiteConnection db = null;
                 if (DbConns.TryRemove (threadId, out db)) {
-                    db.Eliminate (); 
+                    Log.Info (Log.LOG_DB, "NcSQLiteConnection {0,3:###} < connection", threadId);
+                    ConnectionPool.Enqueue (db);
                 }
             }
         }
@@ -397,6 +405,7 @@ namespace NachoCore.Model
         {
             RateLimiter = new NcRateLimter (16, 0.250);
             DbConns = new ConcurrentDictionary<int, NcSQLiteConnection> ();
+            ConnectionPool = new ConcurrentQueue<NcSQLiteConnection> ();
             TransDepth = new ConcurrentDictionary<int, int> ();
             AutoVacuum = AutoVacuumEnum.NONE;
             var watch = Stopwatch.StartNew ();
@@ -503,56 +512,6 @@ namespace NachoCore.Model
             }
         }
 
-        private NcTimer CheckPointTimer;
-        private NcTimer DbConnGCTimer;
-        private object DbConnGCTimerLock = new object ();
-        private DateTime lastDbConnGC = default(DateTime);
-
-        private class CheckpointResult
-        {
-            // Note: these property names can't be changed - they are hard-coded in the SQLite C code.
-            public int busy { set; get; }
-
-            public int log { set; get; }
-
-            public int checkpointed { set; get; }
-        }
-
-        private void DbConnGCTimerCallback (Object state)
-        {
-            DateTime staleCutoff;
-            if (default(DateTime) == lastDbConnGC) {
-                staleCutoff = DateTime.UtcNow - TimeSpan.FromSeconds (2 * NcSQLiteConnection.KGCSeconds);
-            } else {
-                staleCutoff = lastDbConnGC - TimeSpan.FromSeconds (NcSQLiteConnection.KGCSeconds);
-            }
-            lastDbConnGC = DateTime.UtcNow;
-            Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections older than {0:n0} seconds", (DateTime.UtcNow - staleCutoff).TotalSeconds);
-            foreach (var kvp in DbConns) {
-                NcSQLiteConnection dummy;
-                if (kvp.Key == NcApplication.Instance.UiThreadId) {
-                    continue;
-                }
-                kvp.Value.EliminateIfStale (staleCutoff, () => {
-                    if (!DbConns.TryRemove (kvp.Key, out dummy)) {
-                        Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
-                    } else {
-                        Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
-                    }
-                });
-            }
-            lock (DbConnGCTimerLock) {
-                // If Stop() was called in between the timer firing and this method running,
-                // don't create a new timer.
-                if (null != DbConnGCTimer) {
-                    DbConnGCTimer.Dispose ();
-                    // Avoid recurring timer because C# will dump many invocations into the Q and run them concurrently.
-                    DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
-                    DbConnGCTimer.Stfu = true;
-                }
-            }
-        }
-
         #if QUERY_DEBUG
 
         public void ExplainQuery (string query)
@@ -564,52 +523,6 @@ namespace NachoCore.Model
 
         public void Start ()
         {
-            int initialGcTimerLength = 15 * 1000;
-            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.PlatformIndication) {
-                initialGcTimerLength = 1 * 1000;
-            }
-            lock (DbConnGCTimerLock) {
-                // In an ideal world, there won't already be a timer running.  But if there is, just let it be.
-                // If the existing timer is disposed and a new one created, then two GCs could happen only a
-                // second apart and bug https://github.com/nachocove/qa/issues/1812 could be triggered.
-                if (null == DbConnGCTimer) {
-                    DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, initialGcTimerLength, Timeout.Infinite);
-                    DbConnGCTimer.Stfu = true;
-                }
-            }
-
-            CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
-                var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
-                var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                foreach (var idx in new int[] { 0, 1 }) {
-                    // Integrity check is slow but it was useful when we were tracking
-                    // down integrity problem. Comment it out for future reuse
-//                    if (0 == walCheckpointCount) {
-//                        var ok = db.ExecuteScalar<string> ("PRAGMA integrity_check(1);");
-//                        if ("ok" != ok) {
-//                            Console.WriteLine ("Corrupted db detected. ({0})", db.DatabasePath);
-//                            if (TeleDbFileName == db.DatabasePath) {
-//                                NcModel.Instance.ResetTeleDb ();
-//                                thisDb = TeleDb;
-//                            }
-//                        }
-//                    }
-//                    walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
-
-                    lock (WriteNTransLockObj) {
-                        if (NcApplication.Instance.IsQuickSync) {
-                            return;
-                        }
-                        var thisDb = (0 == idx) ? Db : TeleDb;
-                        List<CheckpointResult> results = thisDb.Query<CheckpointResult> (checkpointCmd);
-                        if ((0 < results.Count) && (0 != results [0].busy)) {
-                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", thisDb.DatabasePath);
-                        }
-                    }
-                }
-            }, null, 10000, 2000);
-            CheckPointTimer.Stfu = true;
-
             NcTask.Run (() => {
                 McFolder.InitializeJunkFolders ();
             }, "InitializeJunkFolders");
@@ -617,16 +530,6 @@ namespace NachoCore.Model
 
         public void Stop ()
         {
-            if (null != CheckPointTimer) {
-                CheckPointTimer.Dispose ();
-                CheckPointTimer = null;
-            }
-            lock (DbConnGCTimerLock) {
-                if (null != DbConnGCTimer) {
-                    DbConnGCTimer.Dispose ();
-                    DbConnGCTimer = null;
-                }
-            }
         }
 
         public bool IsInTransaction ()
