@@ -520,11 +520,6 @@ namespace NachoCore.IMAP
                         return true;
                     });
                 }
-                var exeCtxt = NcApplication.Instance.ExecutionContext;
-                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                    // Need to tell the BE that we did what it asked us to, i.e. sync. Even though there's nothing to do.
-                    BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
-                }
             }
 
             // If there's a pending, resolving it will send the StatusInd, otherwise, we need to send it ourselves.
