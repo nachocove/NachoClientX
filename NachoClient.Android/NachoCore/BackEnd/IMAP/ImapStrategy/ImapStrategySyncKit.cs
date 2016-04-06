@@ -277,7 +277,7 @@ namespace NachoCore.IMAP
             // Get the list of emails we have locally in the range (0-startingPoint) over span.
             UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span * KResyncMultiplier);
             // Get the list of emails on the server in the range (0-startingPoint) over span.
-            UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span * KResyncMultiplier);
+            UniqueIdSet currentUidSet = GetCurrentUIDSet (folder, 0, startingPoint, span * KResyncMultiplier);
             // if both are empty, we're done. Nothing to do.
             var startingUid = new UniqueId (startingPoint - 1);
             if (currentMails.Any () || currentUidSet.Any ()) {
@@ -375,6 +375,9 @@ namespace NachoCore.IMAP
             if (folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
                 return true;  // folder metadata is stale. Get new data.
             }
+            if (folder.ImapNeedFullSync) {
+                return true;
+            }
             return false;
         }
 
@@ -443,7 +446,7 @@ namespace NachoCore.IMAP
             return currentMails;
         }
 
-        private static UniqueIdSet getCurrentUIDSet (McFolder folder, uint min, uint max, uint span)
+        public static UniqueIdSet GetCurrentUIDSet (McFolder folder, uint min, uint max, uint span)
         {
             UniqueIdSet uids;
             if (!string.IsNullOrEmpty (folder.ImapUidSet)) {

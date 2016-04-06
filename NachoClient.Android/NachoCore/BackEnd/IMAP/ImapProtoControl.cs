@@ -11,6 +11,7 @@ using System.Threading;
 using MailKit.Security;
 using System.Net;
 using System.Text;
+using System.Linq;
 
 namespace NachoCore.IMAP
 {
@@ -460,6 +461,12 @@ namespace NachoCore.IMAP
             LastIsDoNotDelayOk = IsDoNotDelayOk;
         }
 
+        public static void ResetDaysToSync (int accountId)
+        {
+            // number of accounts and number of folders per account should be smallish, so no need to NcTask.Run this.
+            NcModel.Instance.Db.Execute ("UPDATE McFolder SET ImapNeedFullSync=1 WHERE AccountId=?", accountId);
+        }
+
         public void StatusIndEventHandler (Object sender, EventArgs ea)
         {
             var siea = (StatusIndEventArgs)ea;
@@ -469,6 +476,7 @@ namespace NachoCore.IMAP
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_DaysToSyncChanged:
                 if (!Cts.IsCancellationRequested) {
+                    ImapProtoControl.ResetDaysToSync (AccountId);
                     Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
                 }
                 break;
