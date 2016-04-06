@@ -34,10 +34,8 @@ namespace NachoCore.Model
         [Indexed]
         public string ServerId { get; set; }
 
-        [Indexed]
         public bool IsAwaitingDelete { get; set; }
 
-        [Indexed]
         public bool IsAwaitingCreate { get; set; }
 
         public virtual ClassCodeEnum GetClassCode ()

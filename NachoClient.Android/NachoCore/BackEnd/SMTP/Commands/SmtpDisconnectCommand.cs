@@ -10,6 +10,10 @@ namespace NachoCore.SMTP
     {
         public SmtpDisconnectCommand (IBEContext beContext, NcSmtpClient smtp) : base (beContext, smtp)
         {
+            // The disconnect command runs alongside the shutdown of the ProtoContoller. As such,
+            // we don't want the command linked to the ProtoController's Cts, so replace it with
+            // one simply linked to the InternalCts.
+            Cts = CancellationTokenSource.CreateLinkedTokenSource (InternalCts.Token);
         }
 
         /// <summary>

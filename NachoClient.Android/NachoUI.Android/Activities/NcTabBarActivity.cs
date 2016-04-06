@@ -62,8 +62,8 @@ namespace NachoClient.AndroidClient
             var calendarButton = view.FindViewById<Android.Views.View> (Resource.Id.calendar);
             calendarButton.Click += CalendarButton_Click;
 
-            var contactsButton = view.FindViewById<Android.Views.View> (Resource.Id.contacts);
-            contactsButton.Click += ContactsButton_Click;
+            var chatButton = view.FindViewById<Android.Views.View> (Resource.Id.chat);
+            chatButton.Click += ChatButton_Click;
 
             var moreButton = view.FindViewById<Android.Views.View> (Resource.Id.more);
             moreButton.Click += MoreButton_Click;
@@ -133,13 +133,13 @@ namespace NachoClient.AndroidClient
             StartActivity (InboxIntent (this));
         }
 
-        void ContactsButton_Click (object sender, EventArgs e)
+        void ChatButton_Click (object sender, EventArgs e)
         {
-            if (this is ContactsActivity) {
+            if (this is ChatListActivity) {
                 return;
             } 
             var intent = new Intent ();
-            intent.SetClass (this, typeof(ContactsActivity));
+            intent.SetClass (this, typeof(ChatListActivity));
             intent.SetFlags (ActivityFlags.ClearTop | ActivityFlags.SingleTop | ActivityFlags.NoAnimation);
             StartActivity (intent);
         }

@@ -74,6 +74,7 @@ namespace NachoCore.ActiveSync
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             // Op is a "dummy" here for DRY purposes.
             Execute (sm, ref Op);
         }

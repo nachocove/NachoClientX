@@ -854,7 +854,6 @@ namespace NachoClient.iOS
         public void SetEnabled (bool isEnabled)
         {
             SendButton.Enabled = isEnabled;
-            MessageField.Editable = isEnabled;
             AttachButton.Enabled = isEnabled;
         }
 

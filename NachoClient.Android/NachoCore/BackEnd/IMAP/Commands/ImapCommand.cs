@@ -20,7 +20,7 @@ using NachoPlatform;
 
 namespace NachoCore.IMAP
 {
-    public class ImapCommand : NcCommand
+    public abstract class ImapCommand : NcCommand
     {
         /// <summary>
         /// The ImapClient for this command.
@@ -60,16 +60,6 @@ namespace NachoCore.IMAP
         public INcCommStatus NcCommStatusSingleton { set; get; }
 
         /// <summary>
-        /// The command name
-        /// </summary>
-        protected string CmdName;
-
-        /// <summary>
-        /// The command name with account Id
-        /// </summary>
-        protected string CmdNameWithAccount;
-
-        /// <summary>
         /// Key for capture data
         /// </summary>
         const string KCaptureFolderMetadata = "ImapCommand.FolderMetadata";
@@ -90,38 +80,37 @@ namespace NachoCore.IMAP
             RedactProtocolLogFunc = null;
             NcCommStatusSingleton = NcCommStatus.Instance;
             DontReportCommResult = false;
-            CmdName = GetType ().Name;
-            CmdNameWithAccount = string.Format ("{0}{{{1}}}", CmdName, AccountId);
             RetryCount = 0;
         }
 
         // MUST be overridden by subclass.
-        protected virtual Event ExecuteCommand ()
-        {
-            NcAssert.True (false);
-            return null;
-        }
+        protected abstract Event ExecuteCommand ();
 
         public override void Cancel ()
         {
             base.Cancel ();
-            // When the back end is being shut down, we can't afford to wait for the cancellation
-            // to be processed.
-            if (HasClient && !BEContext.ProtoControl.Cts.IsCancellationRequested) {
-                // Wait for the command to notice the cancellation and release the lock.
-                // TODO MailKit is not always good about cancelling in a timely manner.
-                // When MailKit is fixed, this code should be adjusted.
-                try {
-                    TryLock (Client.SyncRoot, KLockTimeout);
-                } catch (CommandLockTimeOutException ex) {
-                    Log.Error (Log.LOG_IMAP, "{0}.Cancel(): {1}", CmdNameWithAccount, ex.Message);
-                    Client.DOA = true;
+            try {
+                // When the back end is being shut down, we can't afford to wait for the cancellation
+                // to be processed.
+                if (HasClient && !BEContext.ProtoControl.Cts.IsCancellationRequested) {
+                    // Wait for the command to notice the cancellation and release the lock.
+                    // TODO MailKit is not always good about cancelling in a timely manner.
+                    // When MailKit is fixed, this code should be adjusted.
+                    try {
+                        TryLock (Client.SyncRoot, KLockTimeout);
+                    } catch (CommandLockTimeOutException ex) {
+                        Log.Error (Log.LOG_IMAP, "{0}.Cancel(): {1}", CmdNameWithAccount, ex.Message);
+                        Client.DOA = true;
+                    }
                 }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_BACKEND, "{0}.Cancel(): exception: {1}", CmdNameWithAccount, ex);
             }
         }
 
         public override void Execute (NcStateMachine sm)
         {
+            base.Execute (sm);
             Sm = sm;
             NcTask.Run (() => {
                 ExecuteNoTask ();
@@ -181,26 +170,26 @@ namespace NachoCore.IMAP
                     // In the no-exception case, ExecuteCommand is resolving McPending.
                     Cts.Token.ThrowIfCancellationRequested ();
                 } catch (OperationCanceledException) {
-                    Log.Info (Log.LOG_IMAP, "OperationCanceledException");
+                    Log.Info (Log.LOG_IMAP, "{0}: OperationCanceledException", CmdNameWithAccount);
                     ResolveAllDeferred ();
                     // No event posted to SM if cancelled.
                     return;
                 } catch (KeychainItemNotFoundException ex) {
-                    Log.Error (Log.LOG_IMAP, "KeychainItemNotFoundException: {0}", ex.Message);
+                    Log.Error (Log.LOG_IMAP, "{0}: KeychainItemNotFoundException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPKEYCHFAIL");
                 } catch (CommandLockTimeOutException ex) {
-                    Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
+                    Log.Error (Log.LOG_IMAP, "{0}: CommandLockTimeOutException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
                     Client.DOA = true;
                 } catch (ServiceNotConnectedException) {
-                    Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
+                    Log.Info (Log.LOG_IMAP, "{0}: ServiceNotConnectedException", CmdNameWithAccount);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
                     serverFailedGenerally = true;
                 } catch (AuthenticationException ex) {
-                    Log.Info (Log.LOG_IMAP, "AuthenticationException: {0}", ex.Message);
+                    Log.Info (Log.LOG_IMAP, "{0}: AuthenticationException: {1}", CmdNameWithAccount, ex.Message);
                     if (!HasPasswordChanged ()) {
                         evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
                         action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.AccessDeniedOrBlocked);
@@ -210,7 +199,7 @@ namespace NachoCore.IMAP
                         action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     }
                 } catch (ServiceNotAuthenticatedException) {
-                    Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
+                    Log.Info (Log.LOG_IMAP, "{0}: ServiceNotAuthenticatedException", CmdNameWithAccount);
                     if (!HasPasswordChanged ()) {
                         evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
                         action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.AccessDeniedOrBlocked);
@@ -220,15 +209,15 @@ namespace NachoCore.IMAP
                         action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     }
                 } catch (ImapCommandException ex) {
-                    Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
+                    Log.Info (Log.LOG_IMAP, "{0}: ImapCommandException {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
                 } catch (FolderNotFoundException ex) {
-                    Log.Info (Log.LOG_IMAP, "FolderNotFoundException {0}", ex.Message);
+                    Log.Info (Log.LOG_IMAP, "{0}: FolderNotFoundException {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.ConflictWithServer);
                     evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPFOLDRESYNC");
                 } catch (IOException ex) {
-                    Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
+                    Log.Info (Log.LOG_IMAP, "{0}: IOException: {1}", CmdNameWithAccount, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPIO");
                     serverFailedGenerally = true;
@@ -238,7 +227,7 @@ namespace NachoCore.IMAP
                     // to be reconnected.
                     Client.DOA = true;
 
-                    Log.Info (Log.LOG_IMAP, "ImapProtocolException: {0}", ex.ToString ());
+                    Log.Info (Log.LOG_IMAP, "{0}: ImapProtocolException: {1}", CmdNameWithAccount, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPPROTOTEMPFAIL");
                     serverFailedGenerally = true;
@@ -247,16 +236,16 @@ namespace NachoCore.IMAP
                     // other commands, it's probably a temporary failure.
                     Client.DOA = true;
 
-                    Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
+                    Log.Error (Log.LOG_IMAP, "{0}: SocketException: {1}", CmdNameWithAccount, ex.Message);
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.DeferAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
                     serverFailedGenerally = true;
                 } catch (InvalidOperationException ex) {
-                    Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
+                    Log.Error (Log.LOG_IMAP, "{0}: InvalidOperationException: {1}", CmdNameWithAccount, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.ProtocolError);
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD1");
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
+                    Log.Error (Log.LOG_IMAP, "{0}: Exception : {1}", CmdNameWithAccount, ex.ToString ());
                     action = new Tuple<ResolveAction, NcResult.WhyEnum> (ResolveAction.FailAll, NcResult.WhyEnum.Unknown);
                     evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPHARD2");
                     serverFailedGenerally = true;
@@ -724,6 +713,11 @@ namespace NachoCore.IMAP
         public override void Cancel ()
         {
             WaitCommand.Cancel ();
+        }
+
+        protected override Event ExecuteCommand ()
+        {
+            throw new NotImplementedException ();
         }
     }
 

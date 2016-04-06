@@ -85,8 +85,8 @@ namespace NachoClient.AndroidClient
             cancelButton.Click += CancelButton_Click;
 
             // Highlight the tab bar icon of this activity
-//            var chatsImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.contacts_image);
-//            chatsImage.SetImageResource (Resource.Drawable.nav_chat_active);
+            var chatsImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.chat_image);
+            chatsImage.SetImageResource (Resource.Drawable.nav_chat_active);
 
             chatListAdapter = new ChatListAdapter (this);
             Sync ();

@@ -114,14 +114,26 @@ namespace NachoCore
             if (!String.IsNullOrEmpty (moniker)) {
                 Log.Info (Log.LOG_SYS, "NcApplicationMonitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);
             }
-            var processMemory = PlatformProcess.GetUsedMemory () / (1024 * 1024);
-            ProcessMemory.AddSample ((int)processMemory);
+            long processMemory;
+            try {
+                processMemory = PlatformProcess.GetUsedMemory () / (1024 * 1024);
+                ProcessMemory.AddSample ((int)processMemory);
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "NcApplicationMonitor: Could not get PlatformProcess.GetUsedMemory: {0}", ex);
+                processMemory = -1;
+            }
             Log.Info (Log.LOG_SYS, "NcApplicationMonitor: Memory: Process {0} MB, GC {1} MB",
                 processMemory, GC.GetTotalMemory (true) / (1024 * 1024));
             int minWorker, maxWorker, minCompletion, maxCompletion;
             ThreadPool.GetMinThreads (out minWorker, out minCompletion);
             ThreadPool.GetMaxThreads (out maxWorker, out maxCompletion);
-            int systemThreads = PlatformProcess.GetNumberOfSystemThreads ();
+            int systemThreads;
+            try {
+                systemThreads = PlatformProcess.GetNumberOfSystemThreads ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "NcApplicationMonitor: could not get PlatformProcess.GetNumberOfSystemThreads: {0}", ex);
+                systemThreads = -1;
+            }
             string message = string.Format ("NcApplicationMonitor: Threads: Min {0}/{1}, Max {2}/{3}, System {4}",
                                  minWorker, minCompletion, maxWorker, maxCompletion, systemThreads);
             if (50 > systemThreads) {
@@ -138,10 +150,23 @@ namespace NachoCore
                 Log.Info (Log.LOG_SYS, "NcApplicationMonitor: DB Row Counts (non-zero):\n{0}", string.Join ("\n", counts.Select (x => string.Format ("{0}: {1}", x.Key, x.Value)).ToList ()));
                 LastDBRowCounts = DateTime.UtcNow;
             }
-            Log.Info (Log.LOG_SYS, "NcApplicationMonitor: Files: Max {0}, Currently open {1}",
-                PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
+            int maxfd;
+            int openfd;
+            try {
+                maxfd = PlatformProcess.GetCurrentNumberOfFileDescriptors ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "NcApplicationMonitor: could not get PlatformProcess.GetCurrentNumberOfFileDescriptors: {0}", ex);
+                maxfd = -1;
+            }
+            try {
+                openfd = PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "NcApplicationMonitor: could not get PlatformProcess.GetCurrentNumberOfInUseFileDescriptors: {0}", ex);
+                openfd = -1;
+            }
+            Log.Info (Log.LOG_SYS, "NcApplicationMonitor: Files: Max {0}, Currently open {1}", maxfd, openfd);
             // DumpFileLeaks ();
-            if (150 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
+            if (150 < openfd) {
                 DumpFileDescriptors ();
             }
             NcModel.Instance.DumpLastAccess ();
@@ -154,14 +179,18 @@ namespace NachoCore
 
         public static void DumpFileDescriptors ()
         {
-            var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
-            Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", openFds.Length);
-            foreach (var fd in openFds) {
-                var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
-                if (null == path) {
-                    continue;
+            try {
+                var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
+                Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", openFds.Length);
+                foreach (var fd in openFds) {
+                    var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
+                    if (null == path) {
+                        continue;
+                    }
+                    Log.Info (Log.LOG_SYS, "fd {0}: {1}", fd, path);
                 }
-                Log.Info (Log.LOG_SYS, "fd {0}: {1}", fd, path);
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "Monitor: Could not dump open files: {0}", ex);
             }
         }
 
@@ -179,52 +208,55 @@ namespace NachoCore
 
         public static void DumpFileLeaks ()
         {
-            var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
-            if (DateTime.MinValue == firstRun) {
-                firstRun = DateTime.Now;
-            }
-            foreach (var e in FDtracker) {
-                e.Value.active = false;
-            }
-            foreach (var fd in openFds) {
-                var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
-                FirstSeen firstSeen;
-                if (FDtracker.TryGetValue (fd, out firstSeen)) {
-                    firstSeen.active = true;
-                    if (path != firstSeen.path) {
-                        firstSeen.path = path;
-                        firstSeen.firstSeen = DateTime.Now;
+            try {
+                var openFds = PlatformProcess.GetCurrentInUseFileDescriptors ();
+                if (DateTime.MinValue == firstRun) {
+                    firstRun = DateTime.Now;
+                }
+                foreach (var e in FDtracker) {
+                    e.Value.active = false;
+                }
+                foreach (var fd in openFds) {
+                    var path = PlatformProcess.GetFileNameForDescriptor (int.Parse (fd));
+                    FirstSeen firstSeen;
+                    if (FDtracker.TryGetValue (fd, out firstSeen)) {
+                        firstSeen.active = true;
+                        if (path != firstSeen.path) {
+                            firstSeen.path = path;
+                            firstSeen.firstSeen = DateTime.Now;
+                        }
+                    } else {
+                        var fs = new FirstSeen ();
+                        fs.active = true;
+                        fs.path = path;
+                        fs.firstSeen = DateTime.Now;
+                        FDtracker.Add (fd, fs);
                     }
-                } else {
-                    var fs = new FirstSeen ();
-                    fs.active = true;
-                    fs.path = path;
-                    fs.firstSeen = DateTime.Now;
-                    FDtracker.Add (fd, fs);
                 }
-            }
-            var toRemove = new List<string> ();
-            foreach (var e in FDtracker) {
-                if (!e.Value.active) {
-                    toRemove.Add (e.Key);
+                var toRemove = new List<string> ();
+                foreach (var e in FDtracker) {
+                    if (!e.Value.active) {
+                        toRemove.Add (e.Key);
+                    }
                 }
-            }
-            bool printHeader = true;
-            foreach (var e in FDtracker) {
-                // Don't report files created when the app starts
-                if (firstRun.AddMinutes (5) > e.Value.firstSeen) {
-                    continue;
+                bool printHeader = true;
+                foreach (var e in FDtracker) {
+                    // Don't report files created when the app starts
+                    if (firstRun.AddMinutes (5) > e.Value.firstSeen) {
+                        continue;
+                    }
+                    if (printHeader) {
+                        printHeader = false;
+                        Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping potential file leaks");
+                    }
+                    if (DateTime.Now.AddMinutes (-2) > e.Value.firstSeen) {
+                        Log.Warn (Log.LOG_SYS, "Monitor: potential leaked FD {0} ({1}): {2}", e.Key, (DateTime.Now - e.Value.firstSeen).TotalSeconds, e.Value.path);
+                    }
                 }
-                if (printHeader) {
-                    printHeader = false;
-                    Log.Warn (Log.LOG_SYS, "Monitor: FD Dumping potential file leaks");
-                }
-                if (DateTime.Now.AddMinutes (-2) > e.Value.firstSeen) {
-                    Log.Warn (Log.LOG_SYS, "Monitor: potential leaked FD {0} ({1}): {2}", e.Key, (DateTime.Now - e.Value.firstSeen).TotalSeconds, e.Value.path);
-                }
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "Monitor: Could not DumpFileLeaks: {0}", ex);
             }
         }
-
     }
 }
 

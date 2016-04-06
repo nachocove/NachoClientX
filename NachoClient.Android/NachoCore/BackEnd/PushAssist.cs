@@ -829,7 +829,6 @@ namespace NachoCore
                 NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
             
             var clientId = NcApplication.Instance.ClientId;
-            var parameters = Owner.PushAssistParameters ();
             if (String.IsNullOrEmpty (clientId) ||
                 String.IsNullOrEmpty (ClientContext) ||
                 String.IsNullOrEmpty (SessionToken)) {
@@ -837,6 +836,11 @@ namespace NachoCore
                     "DoDeferSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
                     clientId, ClientContext, DebugSessionToken);
                 PostHardFail ("DEFER_PARAM_ERROR");
+            }
+            var parameters = Owner.PushAssistParameters ();
+            if (null == parameters) {
+                ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_NO_PARAMS");
+                return;
             }
             var jsonRequest = new DeferSessionRequest () {
                 RequestData = SafeToBase64 (parameters.RequestData),

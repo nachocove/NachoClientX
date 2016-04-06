@@ -54,7 +54,7 @@ namespace NachoClient.iOS
         protected const int MESSAGE_HEADER_TAG = 99107;
         protected const int TOOLBAR_TAG = 99109;
         protected const int USER_MORE_TAG = 99110;
-        protected const int UNREAD_IMAGE_TAG = 99111;
+        public const int UNREAD_IMAGE_TAG = 99111;
         protected const int CARD_VIEW_TAG = 99112;
 
         protected const int UNREAD_MESSAGES_VIEW = 99115;
@@ -497,7 +497,9 @@ namespace NachoClient.iOS
                     var messageThread = messageThreads.GetEmailThread (indexPath.Row);
                     var message = messageThread.FirstMessageSpecialCase ();
                     EmailHelper.ToggleRead (message);
-                    tableView.ReloadRows (new NSIndexPath[]{ indexPath }, UITableViewRowAnimation.None);
+
+                    var unreadMessageView = (UnreadMessageIndicator)cell.ContentView.ViewWithTag (HotListTableViewSource.UNREAD_IMAGE_TAG);
+                    unreadMessageView.State = message.IsRead ? UnreadMessageIndicator.MessageState.Read : UnreadMessageIndicator.MessageState.Unread;
                 }
             }
         }
