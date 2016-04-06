@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace Test.Common
 {
-    public class TelemetryJsonEventTest
+    public class TelemetryJsonEventTest : NcTestBase
     {
         protected DateTime GetUtcNow ()
         {

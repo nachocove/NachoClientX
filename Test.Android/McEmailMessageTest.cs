@@ -253,13 +253,13 @@ namespace Test.Common
 
             List<McEmailMessageThread> messageList =
                 McEmailMessage.QueryActiveMessageItemsByScore (defaultAccountId, Folder.Id, 0.6);
-            CheckMessages (messages, messageList, 8, 5, 4, 2);
+            CheckMessages (messages, messageList, 8, 4, 2);
 
             messageList = McEmailMessage.QueryActiveMessageItemsByScore (defaultAccountId, Folder.Id, 0.4);
-            CheckMessages (messages, messageList, 8, 5, 4, 0, 2);
+            CheckMessages (messages, messageList, 8, 4, 0, 2);
 
             messageList = McEmailMessage.QueryActiveMessageItemsByScore2 (defaultAccountId, Folder.Id, 0.4, 0.1);
-            CheckMessages (messages, messageList, 5, 1);
+            CheckMessages (messages, messageList);
         }
 
         [Test]

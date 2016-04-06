@@ -30,7 +30,6 @@ namespace NachoCore.Model
     public class McAbstrFileDesc : McAbstrObjectPerAcc
     {
 
-        [Indexed]
         public bool IsValid { get; set; }
 
         public DateTime FileGCOkAfter { get; set; }

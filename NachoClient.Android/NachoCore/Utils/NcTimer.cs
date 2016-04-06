@@ -112,11 +112,7 @@ namespace NachoCore.Utils
                         }
                         localCallback (state);
                         HasFired = true;
-                        int dbCount = NachoCore.Model.NcModel.Instance.NumberDbConnections;
-                        if (15 < dbCount) {
-                            NachoCore.Model.NcModel.Instance.Db = null;
-                            Log.Info (Log.LOG_SYS, "NcTimer {0}/{1} closing DB, connections: {2}", Id, Who, dbCount);
-                        }
+                        NachoCore.Model.NcModel.Instance.Db = null;
                     }
                 }
             };

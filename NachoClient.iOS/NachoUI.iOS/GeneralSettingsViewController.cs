@@ -301,7 +301,7 @@ namespace NachoClient.iOS
                 break;
             }
             UnreadCountBlock.SetValue (label);
-            (UIApplication.SharedApplication.Delegate as AppDelegate).UpdateBadge ();
+            (UIApplication.SharedApplication.Delegate as AppDelegate).UpdateBadgeCount ();
         }
 
     }

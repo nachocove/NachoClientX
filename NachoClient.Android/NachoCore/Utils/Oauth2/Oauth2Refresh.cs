@@ -126,7 +126,6 @@ namespace NachoCore
                 lock (LockObj) {
                     if (!Started) {
                         if (Cts.IsCancellationRequested) {
-                            Cts.Dispose ();
                             Cts = new CancellationTokenSource ();
                         }
                         if (null != RefreshTimer) {
@@ -290,7 +289,23 @@ namespace NachoCore
         protected virtual void RefreshOauth2 (McCred cred)
         {
             NcAssert.NotNull (Cts, "_Oauth2RefreshCancelSource is null");
-            cred.RefreshOAuth2 (TokenRefreshSuccess, TokenRefreshFailure, Cts.Token);
+            var account = McAccount.QueryById<McAccount> (cred.AccountId);
+            Oauth2TokenRefresh refresh;
+            switch (account.AccountService) {
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                refresh = new GoogleOauth2Refresh (cred);
+                break;
+
+            case McAccount.AccountServiceEnum.SalesForce:
+                refresh = new SFDCOauth2Refresh (cred);
+                break;
+
+            default:
+                Log.Error (Log.LOG_SYS, "RefreshOAuth2({0}:{1}): Can not refresh", account.Id, account.AccountService);
+                return;
+            }
+
+            refresh.Refresh (TokenRefreshSuccess, TokenRefreshFailure, Cts.Token, (int)cred.ExpirySecs);
         }
 
         /// <summary>
@@ -429,6 +444,10 @@ namespace NachoCore
             Log.Info (Log.LOG_SYS, "{0}: OAUTH2 request: {1}:{2}", logHeader, request.Method, request.RequestUri.AbsoluteUri);
 
 #endif
+            if (Token.IsCancellationRequested) {
+                Log.Info (Log.LOG_SYS, "{0}: Cancellation requested.", logHeader);
+                return;
+            }
 
             HttpClient.SendRequest (request, TimeoutSecs, ((response, token) => {
                 if (response.StatusCode != System.Net.HttpStatusCode.OK) {
