@@ -101,11 +101,7 @@ namespace NachoCore.IMAP
         Event RegularSync (NcImapFolder mailKitFolder, out bool changed)
         {
             changed = false;
-            var evt = syncFolder (mailKitFolder, ref changed);
-            if (DeleteOldEmail () > 0) {
-                changed = true;
-            }
-            return evt;
+            return syncFolder (mailKitFolder, ref changed);
         }
 
         /// <summary>
@@ -202,6 +198,19 @@ namespace NachoCore.IMAP
                 }
             }
 
+            if (null != Synckit.DeleteEmailIds && Synckit.DeleteEmailIds.Count > 0) {
+                changed = true;
+                var sw = new PlatformStopwatch ();
+                sw.Start ();
+                foreach (var emailId in Synckit.DeleteEmailIds) {
+                    var email = emailId.GetMessage ();
+                    if (null != email) {
+                        email.Delete ();
+                    }
+                }
+                sw.Stop ();
+                Log.Info (Log.LOG_IMAP, "{0}: removing {1} old emails (took {2}ms)", Synckit.Folder.ImapFolderNameRedacted (), Synckit.DeleteEmailIds.Count, sw.ElapsedMilliseconds);
+            }
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
@@ -255,27 +264,6 @@ namespace NachoCore.IMAP
                     return true;
                 });
             }
-        }
-
-        int DeleteOldEmail ()
-        {
-            if (Synckit.Folder.ImapNeedFullSync ||
-                BEContext.Account.DaysToSyncEmail == NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0) {
-                return 0;
-            }
-            var uidSet = ImapStrategy.GetCurrentUIDSet (Synckit.Folder, 0, 0, 0);
-            if (uidSet == null || uidSet.Count == 0) {
-                return 0;
-            }
-            var lowestUid = uidSet.Min ().Id;
-            var oldEmailList = McEmailMessage.QueryByAccountId<McEmailMessage> (AccountId).Where (x => x.ImapUid < lowestUid).ToList ().OrderBy (x => x.ImapUid);
-            Log.Info (Log.LOG_IMAP, "ImapSync({0}): {1} old messages needing local expunge", AccountId, oldEmailList.Count ());
-            var emailsDeleted = 0;
-            foreach (var email in oldEmailList) {
-                email.Delete ();
-                emailsDeleted++;
-            }
-            return emailsDeleted;
         }
 
         private UniqueIdSet GetNewOrChangedMessages (NcImapFolder mailKitFolder, SyncInstruction syncInst, out UniqueIdSet vanished)

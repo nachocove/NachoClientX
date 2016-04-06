@@ -216,6 +216,13 @@ namespace NachoCore.IMAP
                     }
                     ResolveOneSync (BEContext, ref protocolState, folder, pending);
                 }
+                if (null == syncKit) {
+                    // see if we can/should delete some older emails
+                    var emailList = GetEmailsToDelete (folder);
+                    if (null != emailList && emailList.Count > 0) {
+                        syncKit = new SyncKit (folder, emailList);
+                    }
+                }
             }
             if (null == syncKit) {
                 // update the sync count, even though there was nothing to do.
@@ -234,6 +241,20 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
+        List<NcEmailMessageIndex> GetEmailsToDelete (McFolder folder)
+        {
+            if (folder.ImapNeedFullSync ||
+                BEContext.Account.DaysToSyncEmail == NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0) {
+                return null;
+            }
+            var uidSet = getCurrentUIDSet (folder, 0, 0, 0);
+            if (uidSet == null || uidSet.Count == 0) {
+                return null;
+            }
+            var lowestUid = uidSet.Min ().Id;
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                string.Format ("SELECT Id FROM McEmailMessage WHERE AccountId = ? AND ImapUid < ?", folder.AccountId, lowestUid));
+        }
         #endregion
 
         #region SyncInstructions
@@ -277,7 +298,7 @@ namespace NachoCore.IMAP
             // Get the list of emails we have locally in the range (0-startingPoint) over span.
             UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, startingPoint, span * KResyncMultiplier);
             // Get the list of emails on the server in the range (0-startingPoint) over span.
-            UniqueIdSet currentUidSet = GetCurrentUIDSet (folder, 0, startingPoint, span * KResyncMultiplier);
+            UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, startingPoint, span * KResyncMultiplier);
             // if both are empty, we're done. Nothing to do.
             var startingUid = new UniqueId (startingPoint - 1);
             if (currentMails.Any () || currentUidSet.Any ()) {
@@ -354,7 +375,7 @@ namespace NachoCore.IMAP
 
         public static void resetLastSyncPoint (ref McFolder folder)
         {
-            if (folder.ImapLastUidSynced != folder.ImapUidNext) {
+            if (folder.ImapLastUidSynced != folder.ImapUidNext || folder.ImapNeedFullSync) {
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     McFolder target = (McFolder)record;
                     target.ImapLastUidSynced = target.ImapUidNext; // reset to the top
@@ -446,7 +467,7 @@ namespace NachoCore.IMAP
             return currentMails;
         }
 
-        public static UniqueIdSet GetCurrentUIDSet (McFolder folder, uint min, uint max, uint span)
+        private static UniqueIdSet getCurrentUIDSet (McFolder folder, uint min, uint max, uint span)
         {
             UniqueIdSet uids;
             if (!string.IsNullOrEmpty (folder.ImapUidSet)) {

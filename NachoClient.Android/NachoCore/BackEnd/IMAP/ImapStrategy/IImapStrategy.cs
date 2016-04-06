@@ -101,6 +101,11 @@ namespace NachoCore.IMAP
         /// </summary>
         public List<SyncInstruction> SyncInstructions;
 
+        /// <summary>
+        /// List of email Ids which we need to delete
+        /// </summary>
+        public List<NcEmailMessageIndex> DeleteEmailIds;
+
         public SyncKit (McFolder folder, McPending pending)
         {
             Method = MethodEnum.QuickSync;
@@ -114,6 +119,14 @@ namespace NachoCore.IMAP
             Method = MethodEnum.Sync;
             Folder = folder;
             SyncInstructions = syncInstructions ?? new List<SyncInstruction> ();
+        }
+
+        public SyncKit (McFolder folder, List<NcEmailMessageIndex> emailsToDelete)
+        {
+            Method = MethodEnum.Sync;
+            Folder = folder;
+            SyncInstructions = new List<SyncInstruction> ();
+            DeleteEmailIds = emailsToDelete;
         }
 
         public uint? MaxSynced {
