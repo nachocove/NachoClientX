@@ -67,27 +67,44 @@ namespace NachoCore.IMAP
             }
             Event evt;
             NcCapture cap;
+            bool changed;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.Sync:
                 NcCapture.AddKind (KImapSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
-                evt = syncFolder (mailKitFolder);
-                ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
-                PendingSingle = null; // we resolved it.
+                evt = RegularSync (mailKitFolder, out changed);
                 break;
 
             case SyncKit.MethodEnum.QuickSync:
                 NcCapture.AddKind (KImapQuickSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapQuickSyncTiming);
-                evt = QuickSync (mailKitFolder, timespan);
-                ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
-                PendingSingle = null; // we resolved it.
+                evt = QuickSync (mailKitFolder, timespan, out changed);
                 break;
 
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
             }
+
+            Finish (changed);
+            ImapStrategy.ResolveOneSync (BEContext, PendingSingle, Synckit.Folder);
+            PendingSingle = null; // we resolved it.
             cap.Dispose ();
+            return evt;
+        }
+
+        /// <summary>
+        /// Regular sync.
+        /// </summary>
+        /// <returns>The sync.</returns>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="changed">Changed.</param>
+        Event RegularSync (NcImapFolder mailKitFolder, out bool changed)
+        {
+            changed = false;
+            var evt = syncFolder (mailKitFolder, ref changed);
+            if (DeleteOldEmail () > 0) {
+                changed = true;
+            }
             return evt;
         }
 
@@ -99,13 +116,14 @@ namespace NachoCore.IMAP
         /// <returns>The Event to post</returns>
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="timespan">Timespan.</param>
-        private Event QuickSync (NcImapFolder mailKitFolder, TimeSpan timespan)
+        /// <param name="changed">Has anything changed?</param>
+        Event QuickSync (NcImapFolder mailKitFolder, TimeSpan timespan, out bool changed)
         {
-            bool changed = GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan);
+            changed = GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan);
             Event evt;
             var protocolState = BEContext.ProtocolState;
             if (ImapStrategy.FillInQuickSyncKit (ref protocolState, ref Synckit, AccountId)) {
-                evt = syncFolder (mailKitFolder);
+                evt = syncFolder (mailKitFolder, ref changed);
                 changed = true;
             } else {
                 // TODO: Need to figure out how strategy knows when to stop trying quicksync.
@@ -119,7 +137,6 @@ namespace NachoCore.IMAP
                     evt = Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCQKNONE");
                 }
             }
-            Finish (changed);
             return evt;
         }
 
@@ -132,9 +149,9 @@ namespace NachoCore.IMAP
         /// </description>
         /// <returns>The folder.</returns>
         /// <param name="mailKitFolder">Mail kit folder.</param>
-        private Event syncFolder (NcImapFolder mailKitFolder)
+        /// <param name="changed">Has anything changed?</param>
+        private Event syncFolder (NcImapFolder mailKitFolder, ref bool changed)
         {
-            bool changed = false;
             // start by uploading messages
             if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
                 var uidSet = new UniqueIdSet ();
@@ -185,7 +202,6 @@ namespace NachoCore.IMAP
                 }
             }
 
-            Finish (changed);
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
@@ -239,6 +255,27 @@ namespace NachoCore.IMAP
                     return true;
                 });
             }
+        }
+
+        int DeleteOldEmail ()
+        {
+            if (Synckit.Folder.ImapNeedFullSync ||
+                BEContext.Account.DaysToSyncEmail == NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0) {
+                return 0;
+            }
+            var uidSet = ImapStrategy.GetCurrentUIDSet (Synckit.Folder, 0, 0, 0);
+            if (uidSet == null || uidSet.Count == 0) {
+                return 0;
+            }
+            var lowestUid = uidSet.Min ().Id;
+            var oldEmailList = McEmailMessage.QueryByAccountId<McEmailMessage> (AccountId).Where (x => x.ImapUid < lowestUid).ToList ().OrderBy (x => x.ImapUid);
+            Log.Info (Log.LOG_IMAP, "ImapSync({0}): {1} old messages needing local expunge", AccountId, oldEmailList.Count ());
+            var emailsDeleted = 0;
+            foreach (var email in oldEmailList) {
+                email.Delete ();
+                emailsDeleted++;
+            }
+            return emailsDeleted;
         }
 
         private UniqueIdSet GetNewOrChangedMessages (NcImapFolder mailKitFolder, SyncInstruction syncInst, out UniqueIdSet vanished)
