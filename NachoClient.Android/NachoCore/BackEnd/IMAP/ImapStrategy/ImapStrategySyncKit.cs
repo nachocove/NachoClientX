@@ -33,7 +33,7 @@ namespace NachoCore.IMAP
         /// <summary>
         /// Easy way to disable old-email-deleting
         /// </summary>
-        const bool KImapAllowDeleteOldEmails = true;
+        const bool KImapAllowDeleteOldEmails = false;
 
         /// <summary>
         /// The size of the initial (rung 0) sync window size. It's also the base-number for other
