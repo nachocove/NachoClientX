@@ -59,15 +59,20 @@ namespace NachoCore.IMAP
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
             }
-            UpdateImapSetting (mailKitFolder, ref Synckit.Folder);
-
             if (UInt32.MinValue != Synckit.Folder.ImapUidValidity &&
                 Synckit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                 return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
             }
+
+            var changed = UpdateImapSetting (mailKitFolder, ref Synckit.Folder);
+            if (changed) {
+                // HACK: Ignore strategy and do a QuickSync.
+                Synckit = new SyncKit (Synckit.Folder, Synckit.PendingSingle);
+            }
+
             Event evt;
             NcCapture cap;
-            bool changed;
+            changed = false;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.Sync:
                 NcCapture.AddKind (KImapSyncTiming);
