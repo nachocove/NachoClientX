@@ -203,6 +203,8 @@ namespace NachoCore.IMAP
                 }
             }
 
+            // THis section is only for deleting LOCAL emails, i.e. ones that strategy tells us to
+            // (probably old ones we no longer need). It is NOT meant to delete messages on the server.
             if (null != Synckit.DeleteEmailIds && Synckit.DeleteEmailIds.Count > 0) {
                 changed = true;
                 var sw = new PlatformStopwatch ();
