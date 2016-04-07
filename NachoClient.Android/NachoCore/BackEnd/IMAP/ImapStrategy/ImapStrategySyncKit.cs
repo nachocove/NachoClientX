@@ -190,7 +190,7 @@ namespace NachoCore.IMAP
                 return null;
             }
             bool havePending = null != pending;
-            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (UidNext {1}, LastExamined {2}, LastSynced {3}, HighestSynced {4}, LowestSynced {5}, Pending {6}, QuickSync {7})",
+            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (UidNext {1}, LastExamined {2}, LastSynced {3}, HighestSynced {4}, LowestSynced {5}, Pending {6}, QuickSync {7}, ImapNeedFullSync {8})",
                 folder.ImapFolderNameRedacted (), 
                 folder.ImapUidNext,
                 folder.ImapLastExamine.ToString ("MM/dd/yyyy hh:mm:ss.fff tt"),
@@ -198,7 +198,8 @@ namespace NachoCore.IMAP
                 folder.ImapUidHighestUidSynced, 
                 folder.ImapUidLowestUidSynced, 
                 havePending,
-                quickSync);
+                quickSync,
+                folder.ImapNeedFullSync);
 
             SyncKit syncKit = null;
             if (HasNewMail (folder) || havePending || quickSync || NeedFolderMetadata (folder)) {
