@@ -656,10 +656,7 @@ namespace NachoCore.IMAP
                 }
             }
             if (summary.Envelope.ReplyTo.Count > 0) {
-                if (summary.Envelope.ReplyTo.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} ReplyTo entries in message.", summary.Envelope.ReplyTo.Count);
-                }
-                emailMessage.ReplyTo = summary.Envelope.ReplyTo [0].ToString ();
+                emailMessage.ReplyTo = string.Join (";", summary.Envelope.ReplyTo);
             }
             if (summary.Envelope.Sender.Count > 0) {
                 if (summary.Envelope.Sender.Count > 1) {
