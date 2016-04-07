@@ -188,11 +188,14 @@ namespace NachoCore.IMAP
                 if (SyncInstructions.Any ()) {
                     me += " SyncInstructions {";
                     foreach (var inst in SyncInstructions) {
-                        me += string.Format (" {{{0}}}", inst);;
+                        me += string.Format (" {{{0}}}", inst);
+                        ;
                     }
                     me += "}";
                 }
-                me += string.Format (" UploadMessages {{{0}}}", null != UploadMessages ? UploadMessages.Count : 0);
+                if (null != UploadMessages && UploadMessages.Count > 0) {
+                    me += string.Format (" UploadMessages {{{0}}}", UploadMessages.Count);
+                }
                 break;
 
             default:
@@ -202,7 +205,7 @@ namespace NachoCore.IMAP
                 me += " pending=true";
             }
             if (null != DeleteEmailIds && DeleteEmailIds.Count > 0) {
-                me += string.Format (" DeleteEmails {{{0}:{1}}}", DeleteEmailIds.Min (), DeleteEmailIds.Max ());
+                me += string.Format (" DeleteEmailIDs {{{0}:{1}}}", DeleteEmailIds.Min ().Id, DeleteEmailIds.Max ().Id);
             }
             me += ")";
             return me;
