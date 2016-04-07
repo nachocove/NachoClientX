@@ -37,6 +37,12 @@ namespace NachoCore.IMAP
         {
             var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
             var mailKitFolder = GetOpenMailkitFolder (IdleFolder);
+            var changed = UpdateImapSetting (mailKitFolder, ref IdleFolder);
+            if (changed) {
+                GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ());
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEBEFORE");
+            }
+
             if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
             }
