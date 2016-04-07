@@ -28,7 +28,7 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The maximum number of emails we'll delete in one go.
         /// </summary>
-        const int KImapMaxEmailDeleteCount = 200;
+        const int KImapMaxEmailDeleteCount = 100;
 
         /// <summary>
         /// Easy way to disable old-email-deleting
