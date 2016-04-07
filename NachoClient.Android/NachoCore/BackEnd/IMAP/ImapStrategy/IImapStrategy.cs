@@ -189,7 +189,6 @@ namespace NachoCore.IMAP
                     me += " SyncInstructions {";
                     foreach (var inst in SyncInstructions) {
                         me += string.Format (" {{{0}}}", inst);
-                        ;
                     }
                     me += "}";
                 }
