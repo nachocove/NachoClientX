@@ -201,6 +201,9 @@ namespace NachoCore.IMAP
             if (null != PendingSingle) {
                 me += " pending=true";
             }
+            if (null != DeleteEmailIds && DeleteEmailIds.Count > 0) {
+                me += string.Format (" DeleteEmails {{{0}:{1}}}", DeleteEmailIds.Min (), DeleteEmailIds.Max ());
+            }
             me += ")";
             return me;
         }
