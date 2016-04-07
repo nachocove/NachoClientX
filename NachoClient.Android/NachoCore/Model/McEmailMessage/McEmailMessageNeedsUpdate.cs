@@ -41,7 +41,12 @@ namespace NachoCore.Model
 
         public static int Get (McEmailMessage message)
         {
-            return NcModel.Instance.Db.Query<McEmailMessageNeedsUpdate> ("SELECT * FROM McEmailMessageNeedsUpdate WHERE EmailMessageId = ?", message.Id).First ().NeedsUpdate;
+            var needsUpdate = NcModel.Instance.Db.Query<McEmailMessageNeedsUpdate> ("SELECT * FROM McEmailMessageNeedsUpdate WHERE EmailMessageId = ?", message.Id).FirstOrDefault ();
+            if (null != needsUpdate) {
+                return needsUpdate.NeedsUpdate;
+            } else {
+                return 0;
+            }
         }
             
     }
