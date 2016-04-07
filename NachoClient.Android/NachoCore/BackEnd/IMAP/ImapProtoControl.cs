@@ -11,7 +11,6 @@ using System.Threading;
 using MailKit.Security;
 using System.Net;
 using System.Text;
-using System.Linq;
 
 namespace NachoCore.IMAP
 {
