@@ -241,6 +241,19 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
+        /// <summary>
+        /// Gets the list NcEmailMessageIndex to delete. We select emails to delete simply by querying for all
+        /// existing emails with an ImapUid lower than the smallest one in the folder.ImapUidSet. We update
+        /// the set (via GetFolderMetadata) by taking the DaysToSync into account, so the lowest number there 
+        /// will match the user-set DaysToSync. McEmailMessage.ImapUid is indexed, so this should be a relatively
+        /// quick query.
+        /// </summary>
+        /// <remarks>
+        /// We might want to limit the result-set. In the case where someone switched from All back to 'One Month'
+        /// the list to delete could be quite large, resulting in a pretty long-running ImapSyncCommand.
+        /// </remarks>
+        /// <returns>The emails to delete.</returns>
+        /// <param name="folder">Folder.</param>
         List<NcEmailMessageIndex> GetEmailsToDelete (McFolder folder)
         {
             if (folder.ImapNeedFullSync ||
