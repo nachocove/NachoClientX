@@ -202,15 +202,20 @@ namespace NachoCore.IMAP
                 changed = true;
                 var sw = new PlatformStopwatch ();
                 sw.Start ();
-                foreach (var emailId in Synckit.DeleteEmailIds) {
-                    Cts.Token.ThrowIfCancellationRequested ();
-                    var email = emailId.GetMessage ();
-                    if (null != email) {
-                        email.Delete ();
+                int deleted = 0;
+                try {
+                    foreach (var emailId in Synckit.DeleteEmailIds) {
+                        Cts.Token.ThrowIfCancellationRequested ();
+                        var email = emailId.GetMessage ();
+                        if (null != email) {
+                            email.Delete ();
+                            deleted++;
+                        }
                     }
+                } finally {
+                    sw.Stop ();
+                    Log.Info (Log.LOG_IMAP, "{0}: removed {1} old emails (took {2}ms)", Synckit.Folder.ImapFolderNameRedacted (), deleted, sw.ElapsedMilliseconds);
                 }
-                sw.Stop ();
-                Log.Info (Log.LOG_IMAP, "{0}: removing {1} old emails (took {2}ms)", Synckit.Folder.ImapFolderNameRedacted (), Synckit.DeleteEmailIds.Count, sw.ElapsedMilliseconds);
             }
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }

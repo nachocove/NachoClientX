@@ -28,7 +28,12 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The maximum number of emails we'll delete in one go.
         /// </summary>
-        const int KImapMaxEmailDeleteCount = 1000;
+        const int KImapMaxEmailDeleteCount = 200;
+
+        /// <summary>
+        /// Easy way to disable old-email-deleting
+        /// </summary>
+        const bool KImapAllowDeleteOldEmails = true;
 
         /// <summary>
         /// The size of the initial (rung 0) sync window size. It's also the base-number for other
@@ -257,7 +262,8 @@ namespace NachoCore.IMAP
         /// <param name="folder">Folder.</param>
         List<NcEmailMessageIndex> GetEmailsToDelete (McFolder folder)
         {
-            if (folder.ImapNeedFullSync ||
+            if (!KImapAllowDeleteOldEmails ||
+                folder.ImapNeedFullSync ||
                 BEContext.Account.DaysToSyncEmail == NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0) {
                 return null;
             }
@@ -274,6 +280,7 @@ namespace NachoCore.IMAP
                 lowestUid,
                 KImapMaxEmailDeleteCount);
         }
+
         #endregion
 
         #region SyncInstructions
@@ -459,7 +466,7 @@ namespace NachoCore.IMAP
                 var emails = getCurrentEmailUids (Synckit.Folder, 0, startingPoint, span);
                 if (emails.Any ()) {
                     var startingUid = new UniqueId (startingPoint - 1);
-                    if (startingPointMustBeInSet && !emails.Contains(startingUid)) {
+                    if (startingPointMustBeInSet && !emails.Contains (startingUid)) {
                         emails.Add (startingUid);
                         startingPointMustBeInSet = false;
                     }
