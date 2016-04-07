@@ -203,6 +203,7 @@ namespace NachoCore.IMAP
                 var sw = new PlatformStopwatch ();
                 sw.Start ();
                 foreach (var emailId in Synckit.DeleteEmailIds) {
+                    Cts.Token.ThrowIfCancellationRequested ();
                     var email = emailId.GetMessage ();
                     if (null != email) {
                         email.Delete ();
