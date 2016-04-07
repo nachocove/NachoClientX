@@ -57,7 +57,7 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The time in seconds after which we'll add the inbox to the top of the list in SyncFolderList.
         /// </summary>
-        const int KInboxMinSyncTime = 5 * 60;
+        const int KInboxMinSyncTime = 60;
 
         /// <summary>
         /// The multiplier we apply to the span for messages we're just resyncing, i.e. checking for flag changes and deletion.
