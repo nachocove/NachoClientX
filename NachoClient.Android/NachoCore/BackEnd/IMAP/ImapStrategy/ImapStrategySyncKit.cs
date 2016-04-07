@@ -26,6 +26,11 @@ namespace NachoCore.IMAP
         const int KImapSyncRung0InboxCount = 100;
 
         /// <summary>
+        /// The maximum number of emails we'll delete in one go.
+        /// </summary>
+        const int KImapMaxEmailDeleteCount = 1000;
+
+        /// <summary>
         /// The size of the initial (rung 0) sync window size. It's also the base-number for other
         /// window size calculations, i.e. multiplied by a certain number for CellFast and another
         /// number for Wifi, etc.
@@ -248,10 +253,6 @@ namespace NachoCore.IMAP
         /// will match the user-set DaysToSync. McEmailMessage.ImapUid is indexed, so this should be a relatively
         /// quick query.
         /// </summary>
-        /// <remarks>
-        /// We might want to limit the result-set. In the case where someone switched from All back to 'One Month'
-        /// the list to delete could be quite large, resulting in a pretty long-running ImapSyncCommand.
-        /// </remarks>
         /// <returns>The emails to delete.</returns>
         /// <param name="folder">Folder.</param>
         List<NcEmailMessageIndex> GetEmailsToDelete (McFolder folder)
@@ -265,8 +266,13 @@ namespace NachoCore.IMAP
                 return null;
             }
             var lowestUid = uidSet.Min ().Id;
+            // get list of email Ids less than lowestUid, ordered lowest to highest, limited to KImapMaxEmailDeleteCount.
+            // this gives us a bounded list of oldest-first email IDs
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                string.Format ("SELECT Id FROM McEmailMessage WHERE AccountId = ? AND ImapUid < ?", folder.AccountId, lowestUid));
+                "SELECT Id FROM McEmailMessage WHERE AccountId = ? AND ImapUid < ? ORDER BY ImapUid ASC LIMIT ?",
+                folder.AccountId,
+                lowestUid,
+                KImapMaxEmailDeleteCount);
         }
         #endregion
 
