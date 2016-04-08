@@ -675,6 +675,11 @@ namespace NachoClient.iOS
 
             UIApplication.SharedApplication.KeyWindow.AddSubview (imageView);
             UIApplication.SharedApplication.KeyWindow.BringSubviewToFront (imageView);
+
+            NcTask.Run (() => {
+                NcModel.Instance.CleanupOldDbConnections (TimeSpan.FromMinutes (10), 20);
+            }, "CleanupOldDbConnections");
+
             Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: Exit");
         }
 
