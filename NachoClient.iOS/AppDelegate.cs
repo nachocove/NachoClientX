@@ -1328,11 +1328,9 @@ namespace NachoClient.iOS
                 // NotificationCanBadge must be called on the UI thread, so it must be called before starting
                 // the task.
                 bool canBadge = NotificationCanBadge;
-                // This task might be running while the app is being shut down.  To avoid NcTask's complaints
-                // about a task still running, use a C# task instead of NcTask.
-                Task.Run (() => {
+                NcTask.Run (() => {
                     BadgeNotificationsTask (canBadge, updateDone);
-                });
+                }, "BadgeCountAndMessageNotifications");
             } else {
                 BadgeNotificationsTask (true, updateDone);
             }
