@@ -75,6 +75,7 @@ namespace NachoClient.AndroidClient
                                 isForeground = false;
                                 NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
                                 LoginHelpers.SetBackgroundTime (DateTime.UtcNow);
+                                NcModel.Instance.CleanupOldDbConnections (TimeSpan.FromMinutes (10), 20);
                                 Log.Info (Log.LOG_LIFECYCLE, "LifecycleSpy:GoToBackgroundTimer exited.");
                             }
                         }
