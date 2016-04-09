@@ -358,7 +358,6 @@
                     <connections>
                         <outlet property="contentView" destination="Eah-J2-DQ8" id="yAg-eH-sEm"/>
                         <outlet property="scrollView" destination="KaS-n3-biG" id="nfQ-gv-r0k"/>
-                        <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="DcC-EH-FAx"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="g1S-pD-vZ9" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -393,26 +392,10 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="YZC-ks-ek3"/>
-                    <connections>
-                        <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="2D9-t9-ebv"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="UfH-96-Z9b" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-5137" y="1075"/>
-        </scene>
-        <!--Label Selection View Controller-->
-        <scene sceneID="QNT-Vv-DeF">
-            <objects>
-                <viewController storyboardIdentifier="LabelSelectionViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Epo-ZI-KmC" customClass="LabelSelectionViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="Hs7-Fm-c95">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="Y6q-vD-mQg" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-3568" y="1846"/>
         </scene>
         <!--Notes Viewer View Controller-->
         <scene sceneID="Hd9-0q-M2W">
@@ -596,7 +579,6 @@
                         <segue destination="qAG-NA-NKz" kind="push" identifier="ContactToNotes" id="alQ-9Z-W4y"/>
                         <segue destination="vgr-FH-RtX" kind="custom" identifier="ContactToContactEdit" customClass="FadeCustomSegue" id="mLY-u0-R5O"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
-                        <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="Ar9-Nl-fq9"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelector" modalTransitionStyle="crossDissolve" id="WNu-7Y-s9s"/>
                     </connections>
                 </viewController>
@@ -962,8 +944,8 @@
     </resources>
     <inferredMetricsTieBreakers>
         <segue reference="STf-DG-2qn"/>
-        <segue reference="nsx-vp-5fz"/>
-        <segue reference="Pjt-TP-v3d"/>
+        <segue reference="eyY-I1-wel"/>
+        <segue reference="88w-D9-03c"/>
         <segue reference="OTH-fc-eqV"/>
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="vNg-HB-UMF"/>
@@ -971,7 +953,6 @@
         <segue reference="oUa-Te-1to"/>
         <segue reference="dAf-rc-Hh3"/>
         <segue reference="z8t-Er-kGd"/>
-        <segue reference="Ar9-Nl-fq9"/>
         <segue reference="WNu-7Y-s9s"/>
         <segue reference="mLY-u0-R5O"/>
         <segue reference="alQ-9Z-W4y"/>
