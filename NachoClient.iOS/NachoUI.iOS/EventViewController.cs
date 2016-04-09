@@ -158,9 +158,33 @@ namespace NachoClient.iOS
             { 10080, "1 week before" },
         };
 
+        UIStoryboard mainStorybaord;
+        UIStoryboard MainStoryboard {
+            get {
+                if (mainStorybaord == null) {
+                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                }
+                return mainStorybaord;
+            }
+
+        }
+
+        public EventViewController () : base ()
+        {
+        }
+
         public EventViewController (IntPtr handle)
             : base (handle)
         {
+        }
+
+        public override void ViewDidLoad ()
+        {
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+            base.ViewDidLoad ();
         }
 
         protected override void CreateViewHierarchy ()
@@ -790,57 +814,20 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        void ShowContact (McContact contact)
         {
-            if (segue.Identifier.Equals ("EventToEventAttendees")) {
-                var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.Setup (null, detail.Account, detail.SpecificItem.attendees, detail.SpecificItem,
-                    false, CalendarHelper.IsOrganizer (detail.SeriesItem.OrganizerEmail, detail.Account.EmailAddr),
-                    detail.IsRecurring);
-                return;
-            }
+            var vc = MainStoryboard.InstantiateViewController ("ContactDetailViewController") as ContactDetailViewController;
+            vc.contact = contact;
+            NavigationController.PushViewController (vc, true);
+        }
 
-            if (segue.Identifier.Equals ("EventToAlert")) {
-                var dc = (AlertChooserViewController)segue.DestinationViewController;
-                dc.SetReminder (detail.SpecificItem.HasReminder (), detail.SpecificItem.GetReminder ());
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    uint reminder;
-                    detail.SpecificItem.ReminderIsSet = dc.GetReminder (out reminder);
-                    if (detail.SpecificItem.ReminderIsSet) {
-                        detail.SpecificItem.Reminder = reminder;
-                    }
-                    SyncMeetingRequest ();
-                };
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EventToPhone")) {
-                // TODO I don't this this seque is possible.
-                var dc = (PhoneViewController)segue.DestinationViewController;
-                dc.SetPhone ("");
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    // TODO Do something with the phone number that is returned.
-                    // dc.GetPhone ();
-                };
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EventToNotes")) {
-                var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this, detail.SpecificItem.GetSubject (), insertDate: false);
-                return;
-            }
-
-            if (segue.Identifier.Equals ("SegueToContactDetail")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
-                destinationController.contact = c;
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
+        void ShowAttendees ()
+        {
+            var dc = MainStoryboard.InstantiateViewController ("EventAttendeeViewController") as EventAttendeeViewController;
+            dc.Setup (null, detail.Account, detail.SpecificItem.attendees, detail.SpecificItem,
+                false, CalendarHelper.IsOrganizer (detail.SeriesItem.OrganizerEmail, detail.Account.EmailAddr),
+                detail.IsRecurring);
+            NavigationController.PushViewController (dc, true);
         }
 
         protected void ShowNothing ()
@@ -1282,14 +1269,29 @@ namespace NachoClient.iOS
 
         private void AttendeeTapGestureRecognizerTap ()
         {
-            PerformSegue ("EventToEventAttendees", this);
+            ShowAttendees ();
         }
 
         private void AlertTapGestureRecognizerTap ()
         {
             if (detail.Account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                PerformSegue ("EventToAlert", this);
+                ShowAlert ();
             }
+        }
+
+        void ShowAlert ()
+        {
+            var dc = new AlertChooserViewController ();
+            dc.SetReminder (detail.SpecificItem.HasReminder (), detail.SpecificItem.GetReminder ());
+            dc.ViewDisappearing += (object s, EventArgs e) => {
+                uint reminder;
+                detail.SpecificItem.ReminderIsSet = dc.GetReminder (out reminder);
+                if (detail.SpecificItem.ReminderIsSet) {
+                    detail.SpecificItem.Reminder = reminder;
+                }
+                SyncMeetingRequest ();
+            };
+            NavigationController.PushViewController (dc, true);
         }
 
         private void OrganizerTapGestureRecognizerTap ()
@@ -1299,12 +1301,19 @@ namespace NachoClient.iOS
                 NcContactGleaner.GleanContacts (detail.SeriesItem.OrganizerEmail, detail.Account.Id, false);
                 contact = McContact.QueryByEmailAddress (detail.Account.Id, detail.SeriesItem.OrganizerEmail).FirstOrDefault ();
             }
-            PerformSegue ("SegueToContactDetail", new SegueHolder (contact));
+            ShowContact (contact);
         }
 
         private void NotesTapGestureRecognizerTap ()
         {
-            PerformSegue ("EventToNotes", this);
+            ShowNotes ();
+        }
+
+        void ShowNotes ()
+        {
+            var dc = MainStoryboard.InstantiateViewController ("NotesViewController") as NotesViewController;
+            dc.SetOwner (this, detail.SpecificItem.GetSubject (), insertDate: false);
+            NavigationController.PushViewController (dc, true);
         }
 
         /// <summary>
@@ -1397,7 +1406,7 @@ namespace NachoClient.iOS
 
         private void ExtraAttendeesTouchUpInside (object sender, EventArgs e)
         {
-            PerformSegue ("EventToEventAttendees", this);
+            ShowAttendees ();
         }
 
         private void AttachmentsOnSelected (McAttachment attachment)

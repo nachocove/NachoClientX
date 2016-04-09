@@ -89,7 +89,7 @@ namespace NachoClient.iOS
             if (0 != indexPath.Row) {
                 var e = calendar.GetEvent (indexPath.Section, indexPath.Row - 1);
                 if (null != e) {
-                    owner.PerformSegueForDelegate ("NachoNowToEventView", new SegueHolder (e));
+                    owner.ShowEvent (e);
                 }
             }
         }

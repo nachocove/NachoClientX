@@ -155,7 +155,7 @@ namespace NachoClient.iOS
                 case HotEventView.OPEN_TAG:
                     var e = McEvent.QueryById<McEvent> (eventId);
                     if (null != e) {
-                        PerformSegue ("NachoNowToEventView", new SegueHolder (e));
+                        ShowEvent (e);
                     }
                     break;
                 }
@@ -223,7 +223,7 @@ namespace NachoClient.iOS
                 eventNotification.Delete ();
                 if (null != e) {
                     if (MaybeSwitchToNotificationAccount (e)) {
-                        PerformSegue ("NachoNowToEventView", new SegueHolder (e));
+                        ShowEvent (e);
                     }
                 }
             }
@@ -293,6 +293,13 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (messageViewController, true);
         }
 
+        void ShowEvent (McEvent calendarEvent)
+        {
+            var vc = new EventViewController ();
+            vc.SetCalendarItem (calendarEvent);
+            NavigationController.PushViewController (vc, true);
+        }
+
         void EditEvent (McCalendar calendarEvent)
         {
             var vc = new EditEventViewController ();
@@ -303,13 +310,7 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            
-            if (segue.Identifier == "NachoNowToEventView") {
-                var vc = (EventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var e = holder.value as McEvent;
-                vc.SetCalendarItem (e);
-            } else if (segue.Identifier == "NachoNowToMessageList") {
+            if (segue.Identifier == "NachoNowToMessageList") {
                 var holder = (SegueHolder)sender;
                 var messageList = (INachoEmailMessages)holder.value;
                 var messageListViewController = (MessageListViewController)segue.DestinationViewController;

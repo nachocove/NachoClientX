@@ -224,7 +224,7 @@ namespace NachoClient.iOS
             var eventId = McMutables.Get (deviceAccount.Id, "EventNotif", currentAccountIdString);
             if (null != eventId) {
                 Log.Info (Log.LOG_UI, "StartupViewController ShowingEvent");
-                var vc = (EventViewController)Storyboard.InstantiateViewController ("EventViewController");
+                var vc = new EventViewController ();
                 var item = McEvent.QueryById<McEvent> (Convert.ToInt32 (eventId));
                 vc.SetCalendarItem (item);
                 McMutables.Delete (deviceAccount.Id, "EventNotif", currentAccountIdString);

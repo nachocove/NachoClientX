@@ -379,7 +379,7 @@ namespace NachoClient.iOS
 
         void ShowAlert ()
         {
-            var dc = MainStoryboard.InstantiateViewController ("EventAttendeeViewController") as AlertChooserViewController;
+            var dc = new AlertChooserViewController ();
             dc.SetReminder (c.ReminderIsSet, c.Reminder);
             ExtractValues ();
             dc.ViewDisappearing += (object s, EventArgs e) => {
@@ -394,7 +394,7 @@ namespace NachoClient.iOS
 
         void ShowCalendarChooser ()
         {
-            var dc = MainStoryboard.InstantiateViewController ("ChooseCalendarViewController") as ChooseCalendarViewController;
+            var dc = new ChooseCalendarViewController();
             ExtractValues ();
             dc.SetCalendars (GetChoosableCalendars (), calendarFolder);
             dc.ViewDisappearing += (object s, EventArgs e) => {

@@ -139,6 +139,13 @@ namespace NachoClient.iOS
             vc.SetOwner (this);
         }
 
+        public void ShowEvent (McEvent calendarEvent)
+        {
+            var vc = new EventViewController ();
+            vc.SetCalendarItem (calendarEvent);
+            NavigationController.PushViewController (vc, true);
+        }
+
         /// <summary>
         /// Prepares for segue.
         /// </summary>
@@ -146,14 +153,6 @@ namespace NachoClient.iOS
         /// <param name="sender">Typically the cell that was clicked.</param>
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier == "NachoNowToEventView") {
-                var vc = (EventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var e = holder.value as McEvent;
-                vc.SetCalendarItem (e);
-                return;
-            }
-
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
