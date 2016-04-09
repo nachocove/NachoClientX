@@ -33,7 +33,6 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" id="47A-TQ-Je6"/>
                     <connections>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEventView" id="56g-2o-gUv"/>
                         <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventView" id="Kmd-x6-iCJ"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="rew-s7-VAQ"/>
@@ -202,7 +201,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" userLabel="Contacts Search View" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
                             <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
@@ -234,7 +233,7 @@
                     </connections>
                 </searchDisplayController>
             </objects>
-            <point key="canvasLocation" x="796" y="548"/>
+            <point key="canvasLocation" x="796" y="556"/>
         </scene>
         <!--Advanced Settings View Controller-->
         <scene sceneID="eed-GO-vzW">
@@ -253,7 +252,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="D2w-gC-MW9" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1360" y="330"/>
+            <point key="canvasLocation" x="-3040" y="4882"/>
         </scene>
         <!--Drafts View Controller-->
         <scene sceneID="DqQ-E2-ipI">
@@ -274,7 +273,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="865" y="-446"/>
+            <point key="canvasLocation" x="-5607" y="-174"/>
         </scene>
         <!--Cert Ask View Controller-->
         <scene sceneID="sRh-yQ-JkD">
@@ -289,7 +288,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="OaO-Lv-bxz" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-920" y="150"/>
+            <point key="canvasLocation" x="-2488" y="4093"/>
         </scene>
         <!--Account Validation View Controller-->
         <scene sceneID="zKg-bZ-wb2">
@@ -304,14 +303,14 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="V2o-ry-ikP" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1593" y="-287"/>
+            <point key="canvasLocation" x="81" y="3617"/>
         </scene>
         <!--Chooser-->
         <scene sceneID="Ora-ag-cc2">
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
@@ -330,7 +329,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="580" y="-2439"/>
+            <point key="canvasLocation" x="772" y="-1455"/>
         </scene>
         <!--Notification Chooser View Controller-->
         <scene sceneID="ngQ-k6-uNM">
@@ -344,17 +343,17 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="ACI-Lc-wVg" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4642" y="4798"/>
+            <point key="canvasLocation" x="-4074" y="4838"/>
         </scene>
         <!--Contact Edit View Controller-->
         <scene sceneID="0AJ-Oh-Ge6">
             <objects>
                 <viewController storyboardIdentifier="ContactEditViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="vgr-FH-RtX" customClass="ContactEditViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="LA3-O3-pLG">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="KaS-n3-biG">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Eah-J2-DQ8" userLabel="View - Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -374,14 +373,14 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="g1S-pD-vZ9" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="364" y="724"/>
+            <point key="canvasLocation" x="244" y="1452"/>
         </scene>
         <!--Message List View Controller-->
         <scene sceneID="piL-bm-yTE">
             <objects>
                 <tableViewController storyboardIdentifier="MessageListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kq1-eO-X0p" customClass="MessageListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="PBw-9w-NMN">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <connections>
                             <outlet property="dataSource" destination="kq1-eO-X0p" id="XpW-1e-5mf"/>
@@ -391,7 +390,6 @@
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" id="ted-eg-Hzc"/>
                     <connections>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="c79-xS-Npa"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="uqv-uq-oCq"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" modalTransitionStyle="crossDissolve" id="FD7-0T-FGT"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="z10-H9-HYt"/>
@@ -399,7 +397,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="151" y="1972"/>
+            <point key="canvasLocation" x="-305" y="2348"/>
         </scene>
         <!--Message Thread View Controller-->
         <scene sceneID="iAW-bD-vnX">
@@ -415,14 +413,13 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="1P6-H9-JTD"/>
                     <connections>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="f6U-bH-mTW"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="sSC-cG-RLf"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="dMa-zN-I2w"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="uYc-UB-Nqv" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1763" y="1181"/>
+            <point key="canvasLocation" x="-1875" y="1077"/>
         </scene>
         <!--Contact List View-->
         <scene sceneID="V3D-7x-Btg">
@@ -458,7 +455,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="UfH-96-Z9b" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1527" y="2243"/>
+            <point key="canvasLocation" x="863" y="3179"/>
         </scene>
         <!--Label Selection View Controller-->
         <scene sceneID="QNT-Vv-DeF">
@@ -473,43 +470,15 @@
             </objects>
             <point key="canvasLocation" x="2205" y="2238"/>
         </scene>
-        <!--Message View Controller-->
-        <scene sceneID="eKj-ii-dif">
-            <objects>
-                <viewController storyboardIdentifier="MessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="96Q-f8-PuZ" customClass="MessageViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="1rs-zQ-j9D">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
-                        <subviews>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="C3K-cn-kde">
-                                <rect key="frame" x="0.0" y="-26" width="320" height="504"/>
-                                <gestureRecognizers/>
-                            </scrollView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                        <gestureRecognizers/>
-                    </view>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" id="9RR-VH-nzx"/>
-                    <connections>
-                        <outlet property="scrollView" destination="C3K-cn-kde" id="6w9-Au-3zp"/>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="MessageViewToEditEvent" id="99V-JV-Y0L"/>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="SegueToEditEvent" id="twQ-jE-jZd"/>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageViewToFolders" modalTransitionStyle="crossDissolve" id="c2Q-C8-ZgX"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-2679" y="2298"/>
-        </scene>
         <!--Event View Controller-->
         <scene sceneID="m1F-Fe-LQp">
             <objects>
                 <viewController storyboardIdentifier="EventViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="em2-Kh-10O" userLabel="Event View Controller" customClass="EventViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="7sU-e0-LE8">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" keyboardDismissMode="onDrag" id="9Cj-t4-I4R">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="TgG-lg-u6k" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -535,17 +504,17 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jJS-cc-DzZ" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1651" y="-3578"/>
+            <point key="canvasLocation" x="-4435" y="-3770"/>
         </scene>
         <!--Phone View Controller-->
         <scene sceneID="WJn-nf-jaa">
             <objects>
                 <viewController storyboardIdentifier="PhoneViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="h6r-hi-wYu" customClass="PhoneViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="72U-9J-8TO">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" keyboardDismissMode="onDrag" id="0lh-SH-GHD">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <rect key="frame" x="0.0" y="-32" width="320" height="568"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="aLR-ed-Nzc" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
@@ -570,17 +539,17 @@
                     <color key="tintColor" red="0.20784313730000001" green="0.81568627449999997" blue="0.74509803919999995" alpha="1" colorSpace="deviceRGB"/>
                 </barButtonItem>
             </objects>
-            <point key="canvasLocation" x="-879" y="-3562"/>
+            <point key="canvasLocation" x="-3375" y="-4250"/>
         </scene>
         <!--Choose Calendar View Controller-->
         <scene sceneID="w8I-bN-nC2">
             <objects>
                 <viewController storyboardIdentifier="ChooseCalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="cXD-rq-iSl" userLabel="Choose Calendar View Controller" customClass="ChooseCalendarViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="eJB-Pb-Y39">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="2Bb-OE-BsP">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="ucq-Ja-oju" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -599,17 +568,17 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="QU2-pC-E3Z" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="73" y="-1526"/>
+            <point key="canvasLocation" x="-4479" y="-2598"/>
         </scene>
         <!--Edit Event View Controller-->
         <scene sceneID="ndR-FK-UVf">
             <objects>
                 <viewController storyboardIdentifier="EditEventViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="15q-DA-GFk" customClass="EditEventViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="fIw-3C-DaA">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="ur7-bo-IIh">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Gsy-wq-3TG" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -641,10 +610,10 @@
             <objects>
                 <viewController storyboardIdentifier="AlertChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="p7r-P8-BKK" customClass="AlertChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="87C-EB-0MK">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Utd-6b-paG">
-                                <rect key="frame" x="-1" y="32" width="320" height="504"/>
+                                <rect key="frame" x="-1" y="0.0" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Qls-U5-Qsb" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -663,7 +632,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Sw8-hu-my8" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="191" y="-226"/>
+            <point key="canvasLocation" x="-2193" y="-2586"/>
         </scene>
         <!--Notes Viewer View Controller-->
         <scene sceneID="Hd9-0q-M2W">
@@ -698,10 +667,10 @@
             <objects>
                 <viewController storyboardIdentifier="NotesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="qAG-NA-NKz" customClass="NotesViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="LZR-Ny-gTT">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="19G-Gm-Ixk">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="fO8-qu-GHp" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -720,7 +689,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="kiK-9g-6gb" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-415" y="-2299"/>
+            <point key="canvasLocation" x="-2047" y="-3851"/>
         </scene>
         <!--Nacho Tab Bar Controller-->
         <scene sceneID="4Iv-Sw-nIy">
@@ -826,10 +795,10 @@
             <objects>
                 <viewController storyboardIdentifier="ContactDetailViewController" title="Contact Detail" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MG9-1p-N0l" customClass="ContactDetailViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="zQH-nM-jXW">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="RJq-gT-NuY">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="njj-ho-OMu" userLabel="View - ContentView">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -847,7 +816,6 @@
                         <segue destination="qAG-NA-NKz" kind="push" identifier="ContactToNotes" id="alQ-9Z-W4y"/>
                         <segue destination="vgr-FH-RtX" kind="custom" identifier="ContactToContactEdit" customClass="FadeCustomSegue" id="mLY-u0-R5O"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="kYM-OY-NE0"/>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="6J3-c2-bz5"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
                         <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="Ar9-Nl-fq9"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelector" modalTransitionStyle="crossDissolve" id="WNu-7Y-s9s"/>
@@ -856,14 +824,14 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8i2-Mi-xrm" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-653" y="868"/>
+            <point key="canvasLocation" x="-557" y="971"/>
         </scene>
         <!--Event Attendee View Controller-->
         <scene sceneID="odK-NZ-B9r">
             <objects>
                 <viewController storyboardIdentifier="EventAttendeeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="rp9-J1-cgU" customClass="EventAttendeeViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="lA6-eN-CZq">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="WcB-L4-4xt"/>
@@ -945,7 +913,6 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="XEc-ET-UDe"/>
                     <connections>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="i6d-Pz-anv"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="e7N-39-HB4"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="TCS-zD-Pad"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="lof-V2-Nc4"/>
@@ -953,7 +920,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="TZT-bK-ZdC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4351" y="2243"/>
+            <point key="canvasLocation" x="-4207" y="3043"/>
         </scene>
         <!--Inbox Navigation Controller-->
         <scene sceneID="OK6-7u-Mab">
@@ -1003,7 +970,6 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="xDy-7i-efd"/>
                     <connections>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="jZp-Tj-sBa"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="w5M-2I-OPz"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="NjM-BZ-zUf"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="b83-m2-lyF"/>
@@ -1045,7 +1011,6 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="XjX-O2-c15"/>
                     <connections>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="9ww-mc-gRP"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="FUw-4q-4q9"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="62b-xt-XXd"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="Vqu-N7-OvL"/>
@@ -1070,7 +1035,6 @@
                     <tabBarItem key="tabBarItem" title="Inbox" id="QX4-1r-Lvc" userLabel="Inbox"/>
                     <navigationItem key="navigationItem" id="vg1-S8-ywa"/>
                     <connections>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="TXU-m3-8i5"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="fHx-e4-Ujt"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="IoZ-Yo-ies"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="u7I-4F-wRY"/>
@@ -1229,7 +1193,6 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="l9o-hP-TXM"/>
                     <connections>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="B7C-Lk-RW2"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="gVj-FW-dv1"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="H86-lc-tSW"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="oCQ-GI-yPC"/>
@@ -1246,25 +1209,24 @@
     </resources>
     <inferredMetricsTieBreakers>
         <segue reference="w67-dy-XSq"/>
-        <segue reference="sSC-cG-RLf"/>
-        <segue reference="z10-H9-HYt"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="NjM-BZ-zUf"/>
-        <segue reference="rEt-DF-c51"/>
+        <segue reference="56g-2o-gUv"/>
+        <segue reference="UJW-GW-OZz"/>
+        <segue reference="wQh-Gq-11B"/>
+        <segue reference="rew-s7-VAQ"/>
+        <segue reference="Kmd-x6-iCJ"/>
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="vNg-HB-UMF"/>
+        <segue reference="rEt-DF-c51"/>
         <segue reference="oUa-Te-1to"/>
-        <segue reference="f6U-bH-mTW"/>
         <segue reference="j2D-VY-BIq"/>
         <segue reference="7sK-rg-HQL"/>
         <segue reference="m2D-2n-RiV"/>
-        <segue reference="b2R-9j-Kqr"/>
-        <segue reference="2D9-t9-ebv"/>
         <segue reference="z8t-Er-kGd"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="JTo-qU-j7O"/>
-        <segue reference="udF-bU-cV6"/>
-        <segue reference="mLY-u0-R5O"/>
+        <segue reference="d1S-bn-Rkc"/>
+        <segue reference="dAf-rc-Hh3"/>
+        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="WNu-7Y-s9s"/>
+        <segue reference="2D9-t9-ebv"/>
         <segue reference="STf-DG-2qn"/>
         <segue reference="nsx-vp-5fz"/>
         <segue reference="Pjt-TP-v3d"/>

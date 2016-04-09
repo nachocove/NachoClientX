@@ -210,13 +210,6 @@ namespace NachoClient.iOS
                 vc.SetOwner (this, true, accountId, h);
                 return;
             }
-            if (segue.Identifier == "NachoNowToMessageView") {
-                var vc = (INachoMessageViewer)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;  
-                vc.SetSingleMessageThread (thread);
-                return;
-            }
             if (segue.Identifier == "NachoNowToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
@@ -1118,7 +1111,9 @@ namespace NachoClient.iOS
 
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
-            PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+            var messageViewController = new MessageViewController ();
+            messageViewController.SetSingleMessageThread (messageThread);
+            NavigationController.PushViewController (messageViewController, true);
         }
 
         public void DeferThread (McEmailMessageThread thread)

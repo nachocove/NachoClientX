@@ -238,7 +238,7 @@ namespace NachoClient.iOS
                         var t = new McEmailMessageThread ();
                         t.FirstMessageId = messageId;
                         t.MessageCount = 1;
-                        PerformSegue ("NachoNowToMessageView", new SegueHolder (t));
+                        ShowMessage (t);
                     }
                 }
                 return;
@@ -286,6 +286,13 @@ namespace NachoClient.iOS
             cancelRefreshTimer ();
         }
 
+        void ShowMessage (McEmailMessageThread thread)
+        {
+            var messageViewController = new MessageViewController ();
+            messageViewController.SetSingleMessageThread (thread);
+            NavigationController.PushViewController (messageViewController, true);
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier == "NachoNowToEditEventView") {
@@ -304,11 +311,6 @@ namespace NachoClient.iOS
                 var messageList = (INachoEmailMessages)holder.value;
                 var messageListViewController = (MessageListViewController)segue.DestinationViewController;
                 messageListViewController.SetEmailMessages (messageList);
-            } else if (segue.Identifier == "NachoNowToMessageView") {
-                var vc = (INachoMessageViewer)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var thread = holder.value as McEmailMessageThread;
-                vc.SetSingleMessageThread (thread);
             } else if (segue.Identifier == "SegueToMessageThreadView") {
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
@@ -489,7 +491,11 @@ namespace NachoClient.iOS
         ///  IMessageTableViewSourceDelegate
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
-            PerformSegue ("NachoNowToMessageList", new SegueHolder (NcEmailManager.Inbox (NcApplication.Instance.Account.Id)));
+            if (messageThread.HasMultipleMessages ()) {
+                PerformSegue ("NachoNowToMessageList", new SegueHolder (NcEmailManager.Inbox (NcApplication.Instance.Account.Id)));
+            } else {
+                ShowMessage (messageThread);
+            }
         }
 
         ///  IMessageTableViewSourceDelegate

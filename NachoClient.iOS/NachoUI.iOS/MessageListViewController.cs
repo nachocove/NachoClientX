@@ -466,13 +466,6 @@ namespace NachoClient.iOS
             if (null != blurry) {
                 blurry.CaptureView (this.View);
             }
-            if (segue.Identifier == "NachoNowToMessageView") {
-                var vc = (INachoMessageViewer)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var thread = holder.value as McEmailMessageThread;
-                vc.SetSingleMessageThread (thread);
-                return;
-            }
             if (segue.Identifier == "SegueToMessageThreadView") {
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
@@ -532,8 +525,15 @@ namespace NachoClient.iOS
             } else if (messageThread.HasMultipleMessages ()) {
                 PerformSegue ("SegueToMessageThreadView", new SegueHolder (messageThread));
             } else {
-                PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+                ShowMessage (messageThread);
             }
+        }
+
+        void ShowMessage (McEmailMessageThread thread)
+        {
+            var messageViewController = new MessageViewController ();
+            messageViewController.SetSingleMessageThread (thread);
+            NavigationController.PushViewController (messageViewController, true);
         }
 
         public void DeferThread (McEmailMessageThread thread)

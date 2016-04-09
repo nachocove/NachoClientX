@@ -525,10 +525,10 @@ namespace NachoClient.iOS
             }
             if (messageThread.HasMultipleMessages ()) {
                 Log.Info (Log.LOG_UI, "HotList RowSelected segue to message thread view");
-                owner.PerformSegueForDelegate ("SegueToMessageThreadView", new SegueHolder (messageThread));
+                owner.MessageThreadSelected (messageThread);
             } else {
                 Log.Info (Log.LOG_UI, "HotList RowSelected segue to message thread view");
-                owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
+                owner.MessageThreadSelected (messageThread);
             }
         }
 
