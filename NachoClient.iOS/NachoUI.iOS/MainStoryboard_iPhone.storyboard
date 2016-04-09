@@ -212,7 +212,6 @@
                     <navigationItem key="navigationItem" title="Contacts" id="I0n-EO-ORC"/>
                     <connections>
                         <outlet property="searchDisplayController" destination="d2b-8D-Qih" id="NuX-J9-6Lz"/>
-                        <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="dAf-rc-Hh3"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="pfN-iL-6BF" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -343,9 +342,6 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="SdG-99-Ifp"/>
-                    <connections>
-                        <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="Aba-pv-mzB"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="pD4-ER-Ao1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -477,36 +473,6 @@
             </objects>
             <point key="canvasLocation" x="-5507" y="3789"/>
         </scene>
-        <!--Contact Detail-->
-        <scene sceneID="Faz-15-tSR">
-            <objects>
-                <viewController storyboardIdentifier="ContactDetailViewController" title="Contact Detail" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MG9-1p-N0l" customClass="ContactDetailViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="zQH-nM-jXW">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <subviews>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="RJq-gT-NuY">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" id="njj-ho-OMu" userLabel="View - ContentView">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                                    </view>
-                                </subviews>
-                            </scrollView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="xBH-1J-udq"/>
-                    <connections>
-                        <outlet property="contentView" destination="njj-ho-OMu" id="j6u-eh-quk"/>
-                        <outlet property="scrollView" destination="RJq-gT-NuY" id="PRQ-NN-dgK"/>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="8i2-Mi-xrm" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-4333" y="-120"/>
-        </scene>
         <!--Event Attendee View Controller-->
         <scene sceneID="odK-NZ-B9r">
             <objects>
@@ -520,13 +486,12 @@
                         <outlet property="addAttendeeButton" destination="4z6-Fd-6ku" id="dnv-oH-k1n"/>
                         <segue destination="Mow-Gy-F9N" kind="push" identifier="EventAttendeesToContactChooser" id="4M9-UI-9mt"/>
                         <segue destination="HJp-il-GU9" kind="push" identifier="SegueToContactSearch" id="tt1-JW-EVV"/>
-                        <segue destination="MG9-1p-N0l" kind="push" identifier="SegueToContactDetail" id="5u2-X0-TbZ"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wXN-oz-Khv" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem systemItem="add" id="4z6-Fd-6ku" userLabel="Bar Button Item - Add"/>
             </objects>
-            <point key="canvasLocation" x="-5137" y="-1863"/>
+            <point key="canvasLocation" x="-4345" y="-1855"/>
         </scene>
         <!--About Us Navigation Controller-->
         <scene sceneID="nZ5-g1-nam">
@@ -869,7 +834,6 @@
         <segue reference="rEt-DF-c51"/>
         <segue reference="Gi8-ik-ZM2"/>
         <segue reference="vNg-HB-UMF"/>
-        <segue reference="5u2-X0-TbZ"/>
         <segue reference="tt1-JW-EVV"/>
         <segue reference="STf-DG-2qn"/>
         <segue reference="eyY-I1-wel"/>

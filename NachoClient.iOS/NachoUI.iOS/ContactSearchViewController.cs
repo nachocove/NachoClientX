@@ -148,15 +148,15 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals ("ContactsToContactDetail")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
-                destinationController.contact = c;
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        void ShowContact (McContact contact)
+        {
+            var destinationController = new ContactDetailViewController ();
+            destinationController.contact = contact;
+            NavigationController.PushViewController (destinationController, true);
         }
 
         /// IContactsTableViewSourceDelegate

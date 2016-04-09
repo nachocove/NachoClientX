@@ -50,7 +50,7 @@ namespace NachoClient.iOS
 
         public void ParticipantSelected (McChatParticipant participant)
         {
-            var contactDetailViewController = MainStoryboard.InstantiateViewController ("ContactDetailViewController") as ContactDetailViewController;
+            var contactDetailViewController = new ContactDetailViewController ();
             contactDetailViewController.contact = McContact.QueryById<McContact> (participant.ContactId);
             NavigationController.PushViewController (contactDetailViewController, true);
         }

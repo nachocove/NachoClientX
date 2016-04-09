@@ -227,7 +227,7 @@ namespace NachoClient.iOS
         {
             if (ParticipantsByEmailId.Count == 1) {
                 var participant = ParticipantsByEmailId.Values.First();
-                var contactDetailViewController = MainStoryboard.InstantiateViewController ("ContactDetailViewController") as ContactDetailViewController;
+                var contactDetailViewController = new ContactDetailViewController ();
                 contactDetailViewController.contact = McContact.QueryById<McContact> (participant.ContactId);
                 NavigationController.PushViewController (contactDetailViewController, true);
             } else {

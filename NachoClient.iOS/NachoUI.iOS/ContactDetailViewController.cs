@@ -85,10 +85,36 @@ namespace NachoClient.iOS
 
         protected List<TapGesturePair> tapGestures = new List<TapGesturePair> ();
 
+        UIStoryboard mainStorybaord;
+        UIStoryboard MainStoryboard {
+            get {
+                if (mainStorybaord == null) {
+                    mainStorybaord = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                }
+                return mainStorybaord;
+            }
+
+        }
+
+        public ContactDetailViewController () : base ()
+        {
+            messageSource = new MessageTableViewSource (this);
+            MultiSelect = new HashSet<int> ();
+        }
+
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
             messageSource = new MessageTableViewSource (this);
             MultiSelect = new HashSet<int> ();
+        }
+
+        public override void ViewDidLoad ()
+        {
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+            base.ViewDidLoad ();
         }
 
         public override void ViewDidAppear (bool animated)
@@ -179,24 +205,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier == "MessageListToFolders") {
-                var vc = (INachoFolderChooser)segue.DestinationViewController;
-                var h = (SegueHolder)sender;
-                int accountId = 0;
-                if (h.value is McEmailMessage) {
-                    accountId = ((McEmailMessage)h.value).AccountId;
-                }
-                if (h.value is McEmailMessageThread) {
-                    var message = ((McEmailMessageThread)h.value).FirstMessage ();
-                    if (null == message) {
-                        return;
-                    }
-                    accountId = message.AccountId;
-                }
-                NcAssert.False (0 == accountId);
-                vc.SetOwner (this, true, accountId, h);
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -1103,8 +1111,12 @@ namespace NachoClient.iOS
 
         public void MoveThread (McEmailMessageThread thread)
         {
-            var holder = new SegueHolder (thread);
-            PerformSegue ("MessageListToFolders", holder);
+            var vc = MainStoryboard.InstantiateViewController ("FoldersViewController") as FoldersViewController;
+            var message = thread.FirstMessage ();
+            if (message != null) {
+                vc.SetOwner (this, true, message.AccountId, thread);
+                PresentViewController (vc, true, null);
+            }
         }
 
         public void MessageThreadSelected (McEmailMessageThread messageThread)
