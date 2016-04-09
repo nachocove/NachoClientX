@@ -177,14 +177,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("SegueToContactEdit")) {
-                var dvc = (ContactEditViewController)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var contact = (McContact)holder.value;
-                dvc.contact = contact;
-                return;
-            }
-
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -350,12 +342,19 @@ namespace NachoClient.iOS
                     "You have selected a contact without an e-mail address. Would you like to edit this contact?",
                     new NcAlertAction ("No", NcAlertActionStyle.Cancel, null),
                     new NcAlertAction ("Edit Contact", () => {
-                        PerformSegue ("SegueToContactEdit", new SegueHolder (contact));
+                        EditContact (contact);
                     }));
             } else {
                 NcAlertView.ShowMessage (this, "E-mail Address Missing",
                     "You have selected a contact without an e-mail address.");
             }
+        }
+
+        void EditContact (McContact contact)
+        {
+            var dvc = new ContactEditViewController ();
+            dvc.contact = contact;
+            NavigationController.PushViewController (dvc, true);
         }
 
         protected void CancelSearchIfActive ()

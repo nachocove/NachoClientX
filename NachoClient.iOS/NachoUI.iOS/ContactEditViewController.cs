@@ -145,6 +145,11 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
+            scrollView = new UIScrollView (View.Bounds);
+            contentView = new UIView (scrollView.Bounds);
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+            
             moreButtonIndent = View.Frame.Width - 40;
 
             switch (controllerType) {
@@ -157,6 +162,10 @@ namespace NachoClient.iOS
             }
 
             base.ViewDidLoad ();
+        }
+
+        public ContactEditViewController () : base ()
+        {
         }
 
         public ContactEditViewController (IntPtr handle) : base (handle)

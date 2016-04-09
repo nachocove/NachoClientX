@@ -314,7 +314,6 @@
                     </navigationItem>
                     <connections>
                         <outlet property="ContactsButton" destination="PfB-rr-F7z" id="JTC-Ef-UAG"/>
-                        <segue destination="vgr-FH-RtX" kind="push" identifier="SegueToContactEdit" id="d1S-bn-Rkc"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -335,35 +334,6 @@
             </objects>
             <point key="canvasLocation" x="-4490" y="4710"/>
         </scene>
-        <!--Contact Edit View Controller-->
-        <scene sceneID="0AJ-Oh-Ge6">
-            <objects>
-                <viewController storyboardIdentifier="ContactEditViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="vgr-FH-RtX" customClass="ContactEditViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="LA3-O3-pLG">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <subviews>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="KaS-n3-biG">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" id="Eah-J2-DQ8" userLabel="View - Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                                    </view>
-                                </subviews>
-                            </scrollView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="zfP-si-gdC"/>
-                    <connections>
-                        <outlet property="contentView" destination="Eah-J2-DQ8" id="yAg-eH-sEm"/>
-                        <outlet property="scrollView" destination="KaS-n3-biG" id="nfQ-gv-r0k"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="g1S-pD-vZ9" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-3548" y="236"/>
-        </scene>
         <!--Contact List View-->
         <scene sceneID="V3D-7x-Btg">
             <objects>
@@ -375,7 +345,6 @@
                     <navigationItem key="navigationItem" id="SdG-99-Ifp"/>
                     <connections>
                         <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="Aba-pv-mzB"/>
-                        <segue destination="vgr-FH-RtX" kind="push" identifier="ContactsToContactEdit" id="TEI-cG-N0R"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="pD4-ER-Ao1" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -562,7 +531,6 @@
                         <outlet property="contentView" destination="njj-ho-OMu" id="j6u-eh-quk"/>
                         <outlet property="scrollView" destination="RJq-gT-NuY" id="PRQ-NN-dgK"/>
                         <segue destination="qAG-NA-NKz" kind="push" identifier="ContactToNotes" id="alQ-9Z-W4y"/>
-                        <segue destination="vgr-FH-RtX" kind="custom" identifier="ContactToContactEdit" customClass="FadeCustomSegue" id="mLY-u0-R5O"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
                     </connections>
                 </viewController>
@@ -930,7 +898,6 @@
         <segue reference="eyY-I1-wel"/>
         <segue reference="88w-D9-03c"/>
         <segue reference="Aba-pv-mzB"/>
-        <segue reference="TEI-cG-N0R"/>
         <segue reference="alQ-9Z-W4y"/>
         <segue reference="OTH-fc-eqV"/>
         <segue reference="Gi8-ik-ZM2"/>

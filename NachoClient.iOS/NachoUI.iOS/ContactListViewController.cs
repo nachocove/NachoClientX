@@ -105,7 +105,7 @@ namespace NachoClient.iOS
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
                 if (NcApplication.Instance.Account.CanAddContact ()) {
-                    PerformSegue ("ContactsToContactEdit", new SegueHolder (NcApplication.Instance.Account));
+                    AddContact (NcApplication.Instance.Account);
                 } else {
                     var canAddAccounts = McAccount.GetCanAddContactAccounts ();
                     var actions = new NcAlertAction[canAddAccounts.Count];
@@ -113,7 +113,7 @@ namespace NachoClient.iOS
                         var account = canAddAccounts [n];
                         var displayName = account.DisplayName + ": " + account.EmailAddr;
                         actions [n] = new NcAlertAction (displayName, () => {
-                            PerformSegue ("ContactsToContactEdit", new SegueHolder (account));
+                            AddContact (account);
                         });
                     }
                     NcActionSheet.Show (addContactButton, this, null,
@@ -203,16 +203,16 @@ namespace NachoClient.iOS
                 destinationController.contact = c;
                 return;
             }
-            if (segue.Identifier.Equals ("ContactsToContactEdit")) {
-                var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
-                destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
-                var h = sender as SegueHolder;
-                var a = (McAccount)h.value;
-                destinationViewController.account = a;
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        void AddContact (McAccount account)
+        {
+            var destinationViewController = new ContactEditViewController ();
+            destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
+            destinationViewController.account = account;
+            NavigationController.PushViewController (destinationViewController, true);
         }
 
         protected void RefreshContactsIfVisible ()

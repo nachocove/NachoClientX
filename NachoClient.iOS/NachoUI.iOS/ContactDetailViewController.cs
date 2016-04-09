@@ -170,6 +170,13 @@ namespace NachoClient.iOS
             }
         }
 
+        void EditContact ()
+        {
+            var destinationViewController = new ContactEditViewController ();
+            destinationViewController.contact = contact;
+            FadeCustomSegue.Transition (this, destinationViewController);
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("ContactToNotes")) {
@@ -177,11 +184,6 @@ namespace NachoClient.iOS
                 dc.SetOwner (this, contact.GetDisplayNameOrEmailAddress (), insertDate: true);
                 return;
             }
-            if (segue.Identifier.Equals ("ContactToContactEdit")) {
-                var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
-                destinationViewController.contact = contact;
-                return;
-                         }
             if (segue.Identifier == "MessageListToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = (SegueHolder)sender;
@@ -384,7 +386,7 @@ namespace NachoClient.iOS
         {
             switch (selectedSegment) {
             case 0:
-                PerformSegue ("ContactToContactEdit", this);
+                EditContact ();
                 break;
             case 1:
                 //TODO: Multi-Select
