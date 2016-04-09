@@ -255,34 +255,6 @@
             </objects>
             <point key="canvasLocation" x="1360" y="330"/>
         </scene>
-        <!--Credentials Ask View Controller-->
-        <scene sceneID="Mxz-Dm-4gL">
-            <objects>
-                <viewController storyboardIdentifier="CredentialsAskViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="VDO-OG-GJY" customClass="CredentialsAskViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="uUY-QH-xp7">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <subviews>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="xqS-6N-LvE">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" id="JB1-8n-Xrf">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                                    </view>
-                                </subviews>
-                            </scrollView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <connections>
-                        <outlet property="contentView" destination="JB1-8n-Xrf" id="35e-Fw-bzN"/>
-                        <outlet property="scrollView" destination="xqS-6N-LvE" id="5dg-41-9nG"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="rSD-4U-AAw" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-8769" y="4203"/>
-        </scene>
         <!--Drafts View Controller-->
         <scene sceneID="DqQ-E2-ipI">
             <objects>
@@ -1293,7 +1265,7 @@
         <segue reference="JTo-qU-j7O"/>
         <segue reference="udF-bU-cV6"/>
         <segue reference="mLY-u0-R5O"/>
-        <segue reference="nJv-0g-ewn"/>
+        <segue reference="STf-DG-2qn"/>
         <segue reference="nsx-vp-5fz"/>
         <segue reference="Pjt-TP-v3d"/>
     </inferredMetricsTieBreakers>
