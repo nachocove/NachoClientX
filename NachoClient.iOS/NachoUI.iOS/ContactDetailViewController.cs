@@ -172,16 +172,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals ("SegueToContactDefaultSelector")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                var type = (ContactDefaultSelectionViewController.DefaultSelectionType)h.value2;
-                ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
-                destinationController.SetContact (c);
-                destinationController.viewType = type;
-                destinationController.owner = this;
-                return;
-            }
             if (segue.Identifier.Equals ("ContactToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetOwner (this, contact.GetDisplayNameOrEmailAddress (), insertDate: true);
@@ -690,12 +680,12 @@ namespace NachoClient.iOS
                 if (address == null) {
                     if (contact.EmailAddresses.Count == 0) {
                         if (contact.CanUserEdit ()) {
-                            PerformSegue ("SegueToContactDefaultSelector", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                            SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder);
                         } else {
                             Util.ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
                         }
                     } else {
-                        PerformSegue ("SegueToContactDefaultSelector", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+                        SelectDefault (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector);
                     }
                 } else {
                     ComposeMessage (address);
@@ -705,7 +695,18 @@ namespace NachoClient.iOS
 
         protected void DefaultCallTapHandler ()
         {
-            Util.CallContact ("SegueToContactDefaultSelector", contact, this);
+            Util.CallContact (contact, (ContactDefaultSelectionViewController.DefaultSelectionType type) => {
+                SelectDefault(contact, type);
+            });
+        }
+            
+        void SelectDefault (McContact contact, ContactDefaultSelectionViewController.DefaultSelectionType type)
+        {
+            var destinationController = new ContactDefaultSelectionViewController ();
+            destinationController.SetContact (contact);
+            destinationController.viewType = type;
+            destinationController.owner = this;
+            PresentViewController (destinationController, true, null);
         }
 
         protected nfloat AddEmailAddress (McContactEmailAddressAttribute email, nfloat yOffset, UIView contactInfoScrollView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */

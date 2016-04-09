@@ -80,6 +80,11 @@ namespace NachoClient.iOS
 
         public DefaultSelectionType viewType;
 
+        public ContactDefaultSelectionViewController () : base ()
+        {
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
+
         public ContactDefaultSelectionViewController (IntPtr handle) : base (handle)
         {
         }
