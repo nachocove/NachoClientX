@@ -191,14 +191,7 @@ namespace NachoClient.iOS
                 var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
                 destinationViewController.contact = contact;
                 return;
-            }
-            if (segue.Identifier == "NachoNowToMessagePriority") {
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-                return;
-            }
+                         }
             if (segue.Identifier == "MessageListToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = (SegueHolder)sender;
@@ -1126,6 +1119,13 @@ namespace NachoClient.iOS
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
             PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+        }
+
+        public void DeferThread (McEmailMessageThread thread)
+        {
+            var priorityViewController = new MessagePriorityViewController ();
+            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
+            PresentViewController (priorityViewController, true, null);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

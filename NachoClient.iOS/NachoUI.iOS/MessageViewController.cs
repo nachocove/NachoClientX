@@ -683,11 +683,6 @@ namespace NachoClient.iOS
                 vc.SetCalendarItem (c);
                 return;
             }
-//            if (segue.Identifier == "SegueToDatePicker") {
-//                var vc = (DatePickerViewController)segue.DestinationViewController;
-//                vc.owner = this;
-//                return;
-//            }
             if (segue.Identifier == "SegueToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;

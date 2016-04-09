@@ -61,6 +61,8 @@ namespace NachoClient.iOS
         void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts);
 
         void RespondToMessageThread (McEmailMessageThread thread, EmailHelper.Action action);
+
+        void DeferThread (McEmailMessageThread thread);
     }
 }
 

@@ -24,6 +24,11 @@ namespace NachoClient.iOS
         const float BUTTON_PADDING_HEIGHT = 15;
         const float BUTTON_PADDING_WIDTH = 35;
 
+        public MessagePriorityViewController () : base ()
+        {
+            ModalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+        }
+
         public MessagePriorityViewController (IntPtr handle) : base (handle)
         {
         }
@@ -109,7 +114,7 @@ namespace NachoClient.iOS
                     new ButtonInfo ("Forever", "modal-forever", () => DateSelected (MessageDeferralType.Forever, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
                     null,
-                    new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),
+                    new ButtonInfo ("Pick Date", "modal-pick-date", ShowDatePicker),
                     null,
                 });
                 break;
@@ -197,14 +202,15 @@ namespace NachoClient.iOS
                 blurry.CaptureView (this.View);
             }
 
-            if (segue.Identifier == "MessagePriorityToDatePicker") {
-                var vc = (DatePickerViewController)segue.DestinationViewController;
-                vc.owner = this;
-                return;
-            }
-
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        public void ShowDatePicker ()
+        {
+            var picker = new DatePickerViewController ();
+            picker.owner = this;
+            PresentViewController (picker, true, null);
         }
 
         public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)

@@ -480,13 +480,6 @@ namespace NachoClient.iOS
                 vc.SetEmailMessages (messageSource.GetNachoEmailMessages ().GetAdapterForThread (thread));
                 return;
             }
-            if (segue.Identifier == "NachoNowToMessagePriority") {
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
-                return;
-            }
             if (segue.Identifier == "MessageListToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = sender as SegueHolder;
@@ -541,6 +534,13 @@ namespace NachoClient.iOS
             } else {
                 PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
             }
+        }
+
+        public void DeferThread (McEmailMessageThread thread)
+        {
+            var priorityViewController = new MessagePriorityViewController ();
+            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
+            PresentViewController (priorityViewController, true, null);
         }
 
         public void DealWithThreadInOutbox (McEmailMessageThread messageThread)

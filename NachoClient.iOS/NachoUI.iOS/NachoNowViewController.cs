@@ -314,11 +314,6 @@ namespace NachoClient.iOS
                 var thread = (McEmailMessageThread)holder.value;
                 var vc = (MessageListViewController)segue.DestinationViewController;
                 vc.SetEmailMessages (priorityInbox.GetAdapterForThread (thread));
-            } else if (segue.Identifier == "NachoNowToMessagePriority") {
-                var holder = (SegueHolder)sender;
-                var thread = (McEmailMessageThread)holder.value;
-                var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
             } else if (segue.Identifier == "NachoNowToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = sender as SegueHolder;
@@ -505,6 +500,13 @@ namespace NachoClient.iOS
         ///  IMessageTableViewSourceDelegate
         public void MultiSelectChange (IMessageTableViewSource source, int count, bool multipleAccounts)
         {
+        }
+
+        public void DeferThread (McEmailMessageThread thread)
+        {
+            var priorityViewController = new MessagePriorityViewController ();
+            priorityViewController.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
+            PresentViewController (priorityViewController, true, null);
         }
 
         public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)

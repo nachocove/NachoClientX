@@ -1043,7 +1043,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+            owner.DeferThread (messageThread);
         }
 
         protected void ShowFileChooser (McEmailMessageThread messageThread)
