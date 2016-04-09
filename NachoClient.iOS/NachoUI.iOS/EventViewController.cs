@@ -1311,7 +1311,7 @@ namespace NachoClient.iOS
 
         void ShowNotes ()
         {
-            var dc = MainStoryboard.InstantiateViewController ("NotesViewController") as NotesViewController;
+            var dc = new NotesViewController();
             dc.SetOwner (this, detail.SpecificItem.GetSubject (), insertDate: false);
             NavigationController.PushViewController (dc, true);
         }

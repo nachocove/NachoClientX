@@ -37,7 +37,6 @@ namespace NachoClient.iOS
         UILabel EmptyListLabel;
 
         // segue id's
-        string FilesToNotesSegueId = "AttachmentsToNotes";
         string FilesToNotesModalSegueId = "AttachmentsToNotesModal";
 
         // animation constants
@@ -340,13 +339,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals (FilesToNotesSegueId)) {
-                var dc = (NotesViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                selectedNote = (McNote)holder.value;
-                dc.SetOwner (this, null, insertDate: false);
-                return;
-            }
             if (segue.Identifier.Equals (FilesToNotesModalSegueId)) {
                 var dc = (NotesViewerViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -619,13 +611,21 @@ namespace NachoClient.iOS
         public void NoteAction (McNote note, UIView alertParentView)
         {
             if (null == Owner) {
-                PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
+                ShowNote (note);
                 return;
             }
 
             FileChooserSheet (note, alertParentView, () => {
                 PerformSegue (FilesToNotesModalSegueId, new SegueHolder (note));
             });
+        }
+
+        void ShowNote (McNote note)
+        {
+            var dc = new NotesViewController ();
+            selectedNote = note;
+            dc.SetOwner (this, null, insertDate: false);
+            NavigationController.PushViewController (dc, true);
         }
 
         private void searchClicked (object sender, EventArgs e)

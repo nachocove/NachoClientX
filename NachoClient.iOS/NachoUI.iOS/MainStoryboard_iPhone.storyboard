@@ -379,35 +379,6 @@
             </objects>
             <point key="canvasLocation" x="-5070" y="3153"/>
         </scene>
-        <!--Notes View Controller-->
-        <scene sceneID="OcZ-uK-llj">
-            <objects>
-                <viewController storyboardIdentifier="NotesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="qAG-NA-NKz" customClass="NotesViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="LZR-Ny-gTT">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <subviews>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="19G-Gm-Ixk">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" id="fO8-qu-GHp" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                                    </view>
-                                </subviews>
-                            </scrollView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="Hd3-ha-VyJ"/>
-                    <connections>
-                        <outlet property="contentView" destination="fO8-qu-GHp" id="0lJ-eF-qwT"/>
-                        <outlet property="scrollView" destination="19G-Gm-Ixk" id="xYW-DC-sdf"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="kiK-9g-6gb" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-4311" y="997"/>
-        </scene>
         <!--Nacho Tab Bar Controller-->
         <scene sceneID="4Iv-Sw-nIy">
             <objects>
@@ -446,7 +417,6 @@
                     </view>
                     <navigationItem key="navigationItem" id="lw1-fW-wNn"/>
                     <connections>
-                        <segue destination="qAG-NA-NKz" kind="push" identifier="AttachmentsToNotes" id="Kfq-r2-VA6"/>
                         <segue destination="nWJ-PS-9xE" kind="modal" identifier="AttachmentsToNotesModal" id="7EA-mX-9sf"/>
                     </connections>
                 </viewController>
@@ -530,7 +500,6 @@
                     <connections>
                         <outlet property="contentView" destination="njj-ho-OMu" id="j6u-eh-quk"/>
                         <outlet property="scrollView" destination="RJq-gT-NuY" id="PRQ-NN-dgK"/>
-                        <segue destination="qAG-NA-NKz" kind="push" identifier="ContactToNotes" id="alQ-9Z-W4y"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
                     </connections>
                 </viewController>
@@ -894,18 +863,17 @@
         <image name="more-nachomail.png" width="24" height="24"/>
     </resources>
     <inferredMetricsTieBreakers>
+        <segue reference="47y-6M-xBI"/>
+        <segue reference="OTH-fc-eqV"/>
+        <segue reference="oUa-Te-1to"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="Gi8-ik-ZM2"/>
+        <segue reference="vNg-HB-UMF"/>
+        <segue reference="5u2-X0-TbZ"/>
+        <segue reference="tt1-JW-EVV"/>
         <segue reference="STf-DG-2qn"/>
         <segue reference="eyY-I1-wel"/>
         <segue reference="88w-D9-03c"/>
-        <segue reference="Aba-pv-mzB"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="OTH-fc-eqV"/>
-        <segue reference="Gi8-ik-ZM2"/>
-        <segue reference="vNg-HB-UMF"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="oUa-Te-1to"/>
-        <segue reference="z8t-Er-kGd"/>
-        <segue reference="47y-6M-xBI"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

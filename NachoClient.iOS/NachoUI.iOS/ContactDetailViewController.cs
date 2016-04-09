@@ -179,11 +179,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals ("ContactToNotes")) {
-                var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this, contact.GetDisplayNameOrEmailAddress (), insertDate: true);
-                return;
-            }
             if (segue.Identifier == "MessageListToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = (SegueHolder)sender;
@@ -392,9 +387,16 @@ namespace NachoClient.iOS
                 //TODO: Multi-Select
                 break;
             case 2:
-                PerformSegue ("ContactToNotes", new SegueHolder (contact));
+                ShowNotes ();
                 break;
             }
+        }
+
+        void ShowNotes ()
+        {
+            var dc = new NotesViewController ();
+            dc.SetOwner (this, contact.GetDisplayNameOrEmailAddress (), insertDate: true);
+            NavigationController.PushViewController (dc, true);
         }
 
         protected void LayoutView ()
