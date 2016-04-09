@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="15D21" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="whm-e9-YWX">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10116" systemVersion="15E65" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="whm-e9-YWX">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9530"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
     </dependencies>
     <scenes>
         <!--Switch Account View Controller-->
@@ -35,13 +35,10 @@
                     <connections>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="RaB-9o-azo"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="NachoNowToCompose" id="Zli-hF-qvP"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEventView" id="56g-2o-gUv"/>
                         <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventView" id="Kmd-x6-iCJ"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="rew-s7-VAQ"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="NachoNowToFolders" modalTransitionStyle="crossDissolve" id="UJW-GW-OZz"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="CalendarToEmailCompose" id="SxL-6k-kbd"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMailTo" id="LxT-Hd-cWn"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="wQh-Gq-11B"/>
                     </connections>
                 </viewController>
@@ -69,7 +66,6 @@
                         <outlet property="dateView" destination="OaC-4H-Y1h" id="g76-sY-DyU"/>
                         <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventView" id="zDw-Tx-fTt"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="CalendarToEditEventView" id="6Lm-Uk-Knv"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="CalendarToEmailCompose" id="AiM-59-h7m"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -192,7 +188,6 @@
                         <segue destination="kq1-eO-X0p" kind="push" identifier="FoldersToMessageList" id="szv-KC-TId"/>
                         <segue destination="SnS-WJ-KWp" kind="push" identifier="SegueToDeferredList" id="rEt-DF-c51"/>
                         <segue destination="S8F-Mj-kVD" kind="push" identifier="SegueToHotList" id="zOx-eF-clw"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToCompose" id="urW-p2-x1h"/>
                         <segue destination="Png-41-0bk" kind="push" identifier="SegueToDrafts" id="ob4-Hl-1Og"/>
                         <segue destination="PLY-NH-kiA" kind="push" identifier="SegueToLikelyToRead" id="oUa-Te-1to"/>
                         <segue destination="2MA-z5-r9e" kind="push" identifier="SegueToInbox" id="Gi8-ik-ZM2"/>
@@ -305,8 +300,6 @@
                     <connections>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="YP0-6b-YTW"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="iIU-5R-oQQ"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="DraftsToCompose" id="P73-mq-dtr"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="hef-Th-Qhf"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -388,10 +381,10 @@
             <objects>
                 <viewController storyboardIdentifier="ContactEditViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="vgr-FH-RtX" customClass="ContactEditViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="LA3-O3-pLG">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="KaS-n3-biG">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Eah-J2-DQ8" userLabel="View - Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -431,10 +424,8 @@
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="hxO-14-opZ"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="c79-xS-Npa"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="uqv-uq-oCq"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="Sbt-au-uDg"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" modalTransitionStyle="crossDissolve" id="FD7-0T-FGT"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="z10-H9-HYt"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="DraftsToCompose" id="J61-cj-Xla"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -446,7 +437,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="MessageThreadViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="3s4-Wa-4oT" customClass="MessageThreadViewController" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="Ezw-cc-nmk">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <connections>
                             <outlet property="dataSource" destination="3s4-Wa-4oT" id="QxV-kY-o4Q"/>
@@ -458,7 +449,6 @@
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="2en-5V-Csf"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="f6U-bH-mTW"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="sSC-cG-RLf"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="L0W-zt-xdj"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="dMa-zN-I2w"/>
                     </connections>
                 </tableViewController>
@@ -478,8 +468,6 @@
                     <connections>
                         <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="Aba-pv-mzB"/>
                         <segue destination="vgr-FH-RtX" kind="push" identifier="ContactsToContactEdit" id="TEI-cG-N0R"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToQuickMessageCompose" id="RKu-FY-1IX"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMessageCompose" id="M29-IF-JzO"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelection" modalTransitionStyle="crossDissolve" id="VR8-PG-xAi"/>
                     </connections>
                 </viewController>
@@ -497,7 +485,6 @@
                     </view>
                     <navigationItem key="navigationItem" id="YZC-ks-ek3"/>
                     <connections>
-                        <segue destination="tAw-fh-hJX" kind="modal" identifier="SegueToMessageCompose" modalTransitionStyle="crossDissolve" id="OdP-nC-eJd"/>
                         <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="2D9-t9-ebv"/>
                     </connections>
                 </viewController>
@@ -523,10 +510,10 @@
             <objects>
                 <viewController storyboardIdentifier="MessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="96Q-f8-PuZ" customClass="MessageViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="1rs-zQ-j9D">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="C3K-cn-kde">
-                                <rect key="frame" x="0.0" y="34" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="-26" width="320" height="504"/>
                                 <gestureRecognizers/>
                             </scrollView>
                         </subviews>
@@ -538,12 +525,10 @@
                     <connections>
                         <outlet property="scrollView" destination="C3K-cn-kde" id="6w9-Au-3zp"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageViewToMessagePriority" modalTransitionStyle="crossDissolve" id="qB9-ce-7gT"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageViewToCompose" id="RHB-Or-A5o"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="MessageViewToEditEvent" id="99V-JV-Y0L"/>
                         <segue destination="zX3-wE-NUY" kind="modal" identifier="SegueToDatePicker" modalTransitionStyle="crossDissolve" id="vUs-ft-xdy"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="SegueToEditEvent" id="twQ-jE-jZd"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageViewToFolders" modalTransitionStyle="crossDissolve" id="c2Q-C8-ZgX"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMailTo" id="EUF-Gz-AvW"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessageDeadline" modalTransitionStyle="crossDissolve" id="vSR-5M-L48"/>
                     </connections>
                 </viewController>
@@ -556,10 +541,10 @@
             <objects>
                 <viewController storyboardIdentifier="EventViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="em2-Kh-10O" userLabel="Event View Controller" customClass="EventViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="7sU-e0-LE8">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" keyboardDismissMode="onDrag" id="9Cj-t4-I4R">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="TgG-lg-u6k" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -581,7 +566,6 @@
                         <segue destination="15q-DA-GFk" kind="push" identifier="EventToEditEvent" id="k2t-Pj-AhS"/>
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EventToEventAttendees" id="HCr-Oa-UHV"/>
                         <segue destination="MG9-1p-N0l" kind="push" identifier="SegueToContactDetail" id="udF-bU-cV6"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMailTo" id="kEo-Rl-rFG"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jJS-cc-DzZ" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -593,10 +577,10 @@
             <objects>
                 <viewController storyboardIdentifier="PhoneViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="h6r-hi-wYu" customClass="PhoneViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="72U-9J-8TO">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" keyboardDismissMode="onDrag" id="0lh-SH-GHD">
-                                <rect key="frame" x="0.0" y="-32" width="320" height="568"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="aLR-ed-Nzc" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
@@ -628,10 +612,10 @@
             <objects>
                 <viewController storyboardIdentifier="ChooseCalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="cXD-rq-iSl" userLabel="Choose Calendar View Controller" customClass="ChooseCalendarViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="eJB-Pb-Y39">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="2Bb-OE-BsP">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="ucq-Ja-oju" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -692,10 +676,10 @@
             <objects>
                 <viewController storyboardIdentifier="AlertChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="p7r-P8-BKK" customClass="AlertChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="87C-EB-0MK">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Utd-6b-paG">
-                                <rect key="frame" x="-1" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="-1" y="32" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Qls-U5-Qsb" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -749,10 +733,10 @@
             <objects>
                 <viewController storyboardIdentifier="NotesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="qAG-NA-NKz" customClass="NotesViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="LZR-Ny-gTT">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="19G-Gm-Ixk">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="fO8-qu-GHp" userLabel="Content View">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -811,7 +795,6 @@
                     </view>
                     <navigationItem key="navigationItem" id="lw1-fW-wNn"/>
                     <connections>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="AttachmentsToCompose" id="p7w-hx-Y70"/>
                         <segue destination="qAG-NA-NKz" kind="push" identifier="AttachmentsToNotes" id="Kfq-r2-VA6"/>
                         <segue destination="nWJ-PS-9xE" kind="modal" identifier="AttachmentsToNotesModal" id="7EA-mX-9sf"/>
                     </connections>
@@ -819,43 +802,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="PMN-Ra-w2D" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-6207" y="2968"/>
-        </scene>
-        <!--Compose-->
-        <scene sceneID="8Ab-xz-sT2">
-            <objects>
-                <viewController storyboardIdentifier="MessageComposeViewController" title="Compose" useStoryboardIdentifierAsRestorationIdentifier="YES" id="tAw-fh-hJX" customClass="MessageComposeViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="SAP-Km-eLj">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <subviews>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Ad7-zj-0RZ" userLabel="Scroll View - scrollView">
-                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" id="Za1-Fi-gqx" userLabel="View - contentView">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                                    </view>
-                                </subviews>
-                            </scrollView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" title="Compose" id="JFt-bp-ygy"/>
-                    <connections>
-                        <outlet property="contentView" destination="Za1-Fi-gqx" id="Lgz-hX-jFU"/>
-                        <outlet property="scrollView" destination="Ad7-zj-0RZ" id="oxX-sO-fdG"/>
-                        <segue destination="Mow-Gy-F9N" kind="custom" identifier="ComposeToContactChooser" customClass="FadeCustomSegue" id="xrp-ey-B0j"/>
-                        <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessagePriority" modalTransitionStyle="crossDissolve" id="DDa-hb-SgY"/>
-                        <segue destination="ErX-HX-Xxl" kind="modal" identifier="SegueToIntentSelection" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="5qs-bm-OYT"/>
-                        <segue destination="q23-o6-SFp" kind="modal" identifier="SegueToQuickResponse" modalTransitionStyle="crossDissolve" id="tsd-Qf-0s2"/>
-                        <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="zby-Sy-Y3J"/>
-                        <segue destination="HJp-il-GU9" kind="custom" identifier="ComposeToContactSearch" customClass="FadeCustomSegue" id="ay2-o2-R8l"/>
-                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="eTD-uL-AQU"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-3787" y="-3847"/>
         </scene>
         <!--Intent Selection View Controller-->
         <scene sceneID="mbi-5g-bbR">
@@ -873,19 +819,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="q3l-8c-9gn" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-2761" y="-3422"/>
-        </scene>
-        <!--Quick Response View Controller-->
-        <scene sceneID="1t6-KQ-LC9">
-            <objects>
-                <viewController storyboardIdentifier="QuickResponseViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="q23-o6-SFp" customClass="QuickResponseViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="Uhk-Cy-i5T">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="QKM-dO-2L9" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-2731" y="-4173"/>
         </scene>
         <!--Add Attachment View Controller-->
         <scene sceneID="iNT-Bg-Usj">
@@ -1005,10 +938,10 @@
             <objects>
                 <viewController storyboardIdentifier="ContactDetailViewController" title="Contact Detail" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MG9-1p-N0l" customClass="ContactDetailViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="zQH-nM-jXW">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="RJq-gT-NuY">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="32" width="320" height="504"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="njj-ho-OMu" userLabel="View - ContentView">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -1031,7 +964,6 @@
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
                         <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="Ar9-Nl-fq9"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelector" modalTransitionStyle="crossDissolve" id="WNu-7Y-s9s"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMessageCompose" id="jlp-70-Yjw"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="EVd-W1-ppt"/>
                     </connections>
                 </viewController>
@@ -1044,7 +976,7 @@
             <objects>
                 <viewController storyboardIdentifier="EventAttendeeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="rp9-J1-cgU" customClass="EventAttendeeViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="lA6-eN-CZq">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="WcB-L4-4xt"/>
@@ -1053,7 +985,6 @@
                         <segue destination="Mow-Gy-F9N" kind="push" identifier="EventAttendeesToContactChooser" id="4M9-UI-9mt"/>
                         <segue destination="HJp-il-GU9" kind="push" identifier="SegueToContactSearch" id="tt1-JW-EVV"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelection" id="b2R-9j-Kqr"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMessageCompose" id="Lyd-ot-Ei5"/>
                         <segue destination="MG9-1p-N0l" kind="push" identifier="SegueToContactDetail" id="5u2-X0-TbZ"/>
                     </connections>
                 </viewController>
@@ -1130,7 +1061,6 @@
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="i6d-Pz-anv"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="1Ii-My-0CB"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="e7N-39-HB4"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="K16-Rc-eqt"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="TCS-zD-Pad"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="lof-V2-Nc4"/>
                     </connections>
@@ -1190,7 +1120,6 @@
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="jZp-Tj-sBa"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="NFD-Zl-Isi"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="w5M-2I-OPz"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="b7l-xO-b4e"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="NjM-BZ-zUf"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="b83-m2-lyF"/>
                     </connections>
@@ -1234,7 +1163,6 @@
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="9ww-mc-gRP"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="Ruw-76-4Ym"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="FUw-4q-4q9"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="P25-H0-Oji"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="62b-xt-XXd"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="Vqu-N7-OvL"/>
                     </connections>
@@ -1261,7 +1189,6 @@
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="TXU-m3-8i5"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="FLp-fw-o2T"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="fHx-e4-Ujt"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="5bX-kM-ctS"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="IoZ-Yo-ies"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="u7I-4F-wRY"/>
                     </connections>
@@ -1422,7 +1349,6 @@
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="B7C-Lk-RW2"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="H7r-gd-Nf5"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="gVj-FW-dv1"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="K4H-to-cZ8"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="H86-lc-tSW"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="oCQ-GI-yPC"/>
                     </connections>
@@ -1437,34 +1363,31 @@
         <image name="more-nachomail.png" width="24" height="24"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="nJv-0g-ewn"/>
-        <segue reference="Pjt-TP-v3d"/>
-        <segue reference="nsx-vp-5fz"/>
-        <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="udF-bU-cV6"/>
-        <segue reference="tdu-G2-PEp"/>
         <segue reference="HCr-Oa-UHV"/>
+        <segue reference="zDw-Tx-fTt"/>
+        <segue reference="nJv-0g-ewn"/>
+        <segue reference="nsx-vp-5fz"/>
+        <segue reference="Pjt-TP-v3d"/>
+        <segue reference="Tfk-Mt-BlS"/>
         <segue reference="JTo-qU-j7O"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="udF-bU-cV6"/>
+        <segue reference="mLY-u0-R5O"/>
         <segue reference="b2R-9j-Kqr"/>
         <segue reference="2D9-t9-ebv"/>
-        <segue reference="oCQ-GI-yPC"/>
-        <segue reference="oUa-Te-1to"/>
-        <segue reference="H86-lc-tSW"/>
+        <segue reference="z8t-Er-kGd"/>
         <segue reference="Gi8-ik-ZM2"/>
-        <segue reference="urW-p2-x1h"/>
+        <segue reference="NjM-BZ-zUf"/>
         <segue reference="rEt-DF-c51"/>
-        <segue reference="vNg-HB-UMF"/>
         <segue reference="szv-KC-TId"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="DDa-hb-SgY"/>
-        <segue reference="ay2-o2-R8l"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="eTD-uL-AQU"/>
-        <segue reference="d1S-bn-Rkc"/>
+        <segue reference="vNg-HB-UMF"/>
+        <segue reference="oUa-Te-1to"/>
+        <segue reference="z10-H9-HYt"/>
+        <segue reference="f6U-bH-mTW"/>
+        <segue reference="sSC-cG-RLf"/>
+        <segue reference="2en-5V-Csf"/>
+        <segue reference="j2D-VY-BIq"/>
         <segue reference="B5b-jg-ZNg"/>
-        <segue reference="B7C-Lk-RW2"/>
-        <segue reference="gVj-FW-dv1"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
